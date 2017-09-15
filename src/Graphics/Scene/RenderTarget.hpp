@@ -1,4 +1,4 @@
-/*
+/*!
  * RenderTarget.hpp
  *
  *  Created on: 10.09.2017
@@ -34,4 +34,5 @@ private:
 
 }
 
-#endif /* SRC_GRAPHICS_SCENE_RENDERTARGET_HPP_ */
+/*! SRC_GRAPHICS_SCENE_RENDERTARGET_HPP_ */
+#endif

@@ -1,4 +1,4 @@
-/*
+/*!
  * StringUtils.hpp
  *
  *  Created on: 11.09.2017
@@ -14,7 +14,7 @@
 
 namespace sgl {
 
-// Converts strings like "This is a test!" with seperator ' ' to { "This", "is", "a", "test!" }
+//! Converts strings like "This is a test!" with seperator ' ' to { "This", "is", "a", "test!" }
 template<class InputIterator>
 void splitString(const char *stringObject, char seperator, InputIterator list) {
 	size_t stringObjectLength = strlen(stringObject);
@@ -38,4 +38,5 @@ void splitString(const char *stringObject, char seperator, InputIterator list) {
 
 }
 
-#endif /* SRC_UTILS_STRINGUTILS_HPP_ */
+/*! SRC_UTILS_STRINGUTILS_HPP_ */
+#endif

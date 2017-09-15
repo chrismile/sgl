@@ -1,4 +1,4 @@
-/*
+/*!
  * ShaderAttributes.hpp
  *
  *  Created on: 07.02.2015
@@ -32,11 +32,11 @@ enum DLL_OBJECT VertexMode : short {
 };
 
 
-// Shader attributes are the heart of the graphics engine.
-// They manage the interaction between shaders and geometry.
-// First, you create a new instance with "ShaderManager->createShaderAttributes(shaderProgram)".
-// Then you can add geometry buffers containing all vertices, indices, etc.
-// Finally, you can use "Renderer->render(shaderAttributes)" to render your geometry in every frame.
+/*! Shader attributes are the heart of the graphics engine.
+ * They manage the interaction between shaders and geometry.
+ * First, you create a new instance with "ShaderManager->createShaderAttributes(shaderProgram)".
+ * Then you can add geometry buffers containing all vertices, indices, etc.
+ * Finally, you can use "Renderer->render(shaderAttributes)" to render your geometry in every frame. */
 
 class ShaderAttributes;
 typedef boost::shared_ptr<ShaderAttributes> ShaderAttributesPtr;
@@ -51,9 +51,9 @@ public:
 	virtual ~ShaderAttributes() {}
 	virtual ShaderAttributesPtr copy(ShaderProgramPtr &_shader, bool ignoreMissingAttrs = true)=0;
 
-	// Adds a geometry buffer to the shader attributes.
-	// "offset" and "stride" optionally specify the location of the attributes in the buffer.
-	// [format=ATTRIB_FLOAT,components=3] e.g. means glm::vec3 data
+	/*! Adds a geometry buffer to the shader attributes.
+	 * "offset" and "stride" optionally specify the location of the attributes in the buffer.
+	 * [format=ATTRIB_FLOAT,components=3] e.g. means glm::vec3 data */
 	virtual void addGeometryBuffer(GeometryBufferPtr &geometryBuffer, const char *attributeName,
 			VertexAttributeFormat format, int components, int offset = 0, int stride = 0)=0;
 	virtual void setIndexGeometryBuffer(GeometryBufferPtr &geometryBuffer, VertexAttributeFormat format)=0;
@@ -78,4 +78,5 @@ protected:
 
 }
 
-#endif /* GRAPHICS_SHADER_SHADERATTRIBUTES_HPP_ */
+/*! GRAPHICS_SHADER_SHADERATTRIBUTES_HPP_ */
+#endif

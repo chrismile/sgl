@@ -1,4 +1,4 @@
-/*
+/*!
  * Renderable.hpp
  *
  *  Created on: 27.08.2017
@@ -22,4 +22,5 @@ typedef boost::shared_ptr<Renderable> RenderablePtr;
 
 }
 
-#endif /* SRC_GRAPHICS_SCENE_RENDERABLE_HPP_ */
+/*! SRC_GRAPHICS_SCENE_RENDERABLE_HPP_ */
+#endif

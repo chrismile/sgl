@@ -1,4 +1,4 @@
-/*
+/*!
  * StringStream.hpp
  *
  *  Created on: 03.08.2015
@@ -26,14 +26,14 @@ public:
 	inline const char *getBuffer() const { return buffer; }
 	void reserve(size_t size = STD_BUFFER_SIZE);
 
-	// Serialization
+	//! Serialization
 	void write(const void *data, size_t size);
 	template<typename T>
 	void write(const T &val) { write(toString(val)); }
 	void write(const char *str);
 	void write(const std::string &str);
 
-	// Serialization with pipe operator
+	//! Serialization with pipe operator
 	template<typename T>
 	StringWriteStream& operator<<(const T &val) { write(val); return *this; }
 	StringWriteStream& operator<<(const char *str) { write(str); return *this; }
@@ -41,8 +41,10 @@ public:
 
 protected:
 	void resize();
-	size_t bufferSize; // The current buffer size (only the used part of the buffer counts)
-	size_t capacity; // The maximum buffer size before it needs to be increased/reallocated
+	//! The current buffer size (only the used part of the buffer counts)
+	size_t bufferSize;
+	//! The maximum buffer size before it needs to be increased/reallocated
+	size_t capacity;
 	char *buffer;
 };
 
@@ -54,24 +56,27 @@ public:
 	~StringReadStream();
 	inline size_t getSize() const { return bufferSize; }
 
-	// Deserialization
+	//! Deserialization
 	void read(void *data, size_t size);
 	template<typename T>
 	void read(T &val) { read((void*)&val, sizeof(T)); }
 	void read(std::string &str);
 
-	// Deserialization with pipe operator
+	//! Deserialization with pipe operator
 	template<typename T>
 	StringReadStream& operator>>(T &val) { read(val); return *this; }
 	StringReadStream& operator>>(std::string &str) { read(str); return *this; }
 
 protected:
 	void resize();
-	size_t bufferSize; // The total buffer size
-	size_t bufferStart; // The current point in the buffer where the code reads from
+	//! The total buffer size
+	size_t bufferSize;
+	//! The current point in the buffer where the code reads from
+	size_t bufferStart;
 	char *buffer;
 };
 
 }
 
-#endif /* STRINGSTREAM_HPP_ */
+/*! STRINGSTREAM_HPP_ */
+#endif

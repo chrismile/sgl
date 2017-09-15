@@ -1,4 +1,4 @@
-/*
+/*!
  * ResourceManager.hpp
  *
  *  Created on: 10.01.2015
@@ -24,15 +24,17 @@ class ResourceManager : public Singleton<ResourceManager>
 {
 friend class ResourceLoadingProcess;
 public:
-	// Interface
-	ResourceBufferPtr getFileSync(const char *filename); // Loads the resource from the hard-drive
-	//ResourceBufferPtr getFileAsync(const char *filename); // Returns empty buffer; RESOURCE_LOADED_ASYNC_EVENT is triggered when the file was loaded
+	//! Interface
+	//! Loads the resource from the hard-drive
+	ResourceBufferPtr getFileSync(const char *filename);
+	//! Returns empty buffer; RESOURCE_LOADED_ASYNC_EVENT is triggered when the file was loaded
+	//ResourceBufferPtr getFileAsync(const char *filename);
 
 private:
-	// Internal interface for querying already loaded files
+	//! Internal interface for querying already loaded files
 	ResourceBufferPtr getResourcePointer(const char *filename);
 
-	// Internes Laden der Daten
+	//! Internes Laden der Daten
 	bool loadFile(const char *filename, ResourceBufferPtr &resource);
 
 	std::map< std::string, boost::weak_ptr<ResourceBuffer> > resourceFiles;
@@ -41,4 +43,5 @@ private:
 
 }
 
-#endif /* UTILS_FILE_RESOURCEMANAGER_HPP_ */
+/*! UTILS_FILE_RESOURCEMANAGER_HPP_ */
+#endif

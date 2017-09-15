@@ -1,4 +1,4 @@
-/*
+/*!
  * Plane.hpp
  *
  *  Created on: 10.09.2017
@@ -14,7 +14,7 @@ namespace sgl {
 
 class AABB3;
 
-// Plane in 3D, ax + by + cz + d = 0
+//! Plane in 3D, ax + by + cz + d = 0
 class Plane {
 public:
 	Plane() : a(0.0f), b(0.0f), c(1.0f), d(0.0f) {}
@@ -33,4 +33,5 @@ public:
 
 }
 
-#endif /* SRC_MATH_GEOMETRY_PLANE_HPP_ */
+/*! SRC_MATH_GEOMETRY_PLANE_HPP_ */
+#endif

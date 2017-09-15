@@ -1,4 +1,4 @@
-/*
+/*!
  * Renderer.hpp
  *
  *  Created on: 10.01.2015
@@ -56,15 +56,16 @@ class RendererInterface
 {
 public:
 	virtual ~RendererInterface() {}
-	virtual void errorCheck()=0; // Outputs e.g. "glGetError"
+	//! Outputs e.g. "glGetError"
+	virtual void errorCheck()=0;
 
-	// Creation functions
+	//! Creation functions
 	virtual FramebufferObjectPtr createFBO()=0;
 	virtual RenderbufferObjectPtr createRBO(int _width, int _height, RenderbufferType rboType, int _samples = 0)=0;
 	virtual GeometryBufferPtr createGeometryBuffer(size_t size, BufferType type = VERTEX_BUFFER, BufferUse bufferUse = BUFFER_STATIC)=0;
 	virtual GeometryBufferPtr createGeometryBuffer(size_t size, void *data, BufferType type = VERTEX_BUFFER, BufferUse bufferUse = BUFFER_STATIC)=0;
 
-	// Functions for managing viewports/render targets
+	//! Functions for managing viewports/render targets
 	virtual void bindFBO(FramebufferObjectPtr _fbo, bool force = false)=0;
 	virtual void unbindFBO(bool force = false)=0;
 	virtual FramebufferObjectPtr getFBO()=0;
@@ -72,7 +73,7 @@ public:
 	virtual void setCamera(CameraPtr _viewport, bool force = false)=0;
 	virtual CameraPtr getCamera()=0;
 
-	// State changes
+	//! State changes
 	virtual void bindTexture(TexturePtr &tex, unsigned int textureUnit = 0)=0;
 	virtual void setBlendMode(BlendMode mode)=0;
 	virtual void setModelMatrix(const glm::mat4 &matrix)=0;
@@ -81,7 +82,7 @@ public:
 	virtual void setLineWidth(float width)=0;
 	virtual void setPointSize(float size)=0;
 
-	// Stencil buffer
+	//! Stencil buffer
 	virtual void enableStencilTest()=0;
 	virtual void disableStencilTest()=0;
 	virtual void setStencilMask(unsigned int mask)=0;
@@ -89,17 +90,22 @@ public:
 	virtual void setStencilFunc(unsigned int func, int ref, unsigned int mask)=0;
 	virtual void setStencilOp(unsigned int sfail, unsigned int dpfail, unsigned int dppass)=0;
 
-	// Rendering
+	//! Rendering
 	virtual void render(ShaderAttributesPtr &shaderAttributes)=0;
-	virtual void setPolygonMode(unsigned int polygonMode)=0; // For debugging purposes
-	virtual void enableWireframeMode(const Color &_wireframeColor = Color(255,255,255))=0; // For debugging purposes
-	virtual void disableWireframeMode()=0; // For debugging purposes
+	//! For debugging purposes
+	virtual void setPolygonMode(unsigned int polygonMode)=0;
+	//! For debugging purposes
+	virtual void enableWireframeMode(const Color &_wireframeColor = Color(255,255,255))=0;
+	//! For debugging purposes
+	virtual void disableWireframeMode()=0;
 
-	// Utility functions
+	//! Utility functions
 	virtual void blitTexture(TexturePtr &tex, const AABB2 &renderRect)=0;
 	virtual void blitTexture(TexturePtr &tex, const AABB2 &renderRect, ShaderProgramPtr &shader)=0;
-	virtual TexturePtr resolveMultisampledTexture(TexturePtr &tex)=0; // Just returns tex if not multisampled
-	virtual void blurTexture(TexturePtr &tex)=0; // Texture needs GL_LINEAR filter for best results!
+	//! Just returns tex if not multisampled
+	virtual TexturePtr resolveMultisampledTexture(TexturePtr &tex)=0;
+	//! Texture needs GL_LINEAR filter for best results!
+	virtual void blurTexture(TexturePtr &tex)=0;
 	virtual TexturePtr getScaledTexture(TexturePtr &tex, Point2 newSize)=0;
 	virtual void blitTextureFXAAAntialiased(TexturePtr &tex)=0;
 };
@@ -108,4 +114,5 @@ extern RendererInterface *Renderer;
 
 }
 
-#endif /* GRAPHICS_RENDERER_HPP_ */
+/*! GRAPHICS_RENDERER_HPP_ */
+#endif

@@ -1,4 +1,4 @@
-/*
+/*!
  * Point2.hpp
  *
  *  Created on: 10.01.2015
@@ -20,4 +20,5 @@ public:
 
 }
 
-#endif /* MATH_POINT2_HPP_ */
+/*! MATH_POINT2_HPP_ */
+#endif

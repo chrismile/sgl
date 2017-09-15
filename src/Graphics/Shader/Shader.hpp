@@ -1,4 +1,4 @@
-/*
+/*!
  * Shader.hpp
  *
  *  Created on: 15.01.2015
@@ -27,7 +27,7 @@ class Color;
 class Texture;
 typedef boost::shared_ptr<Texture> TexturePtr;
 
-// A single shader, e.g. fragment (pixel) shader, vertex shader, geometry shader, ...
+//! A single shader, e.g. fragment (pixel) shader, vertex shader, geometry shader, ...
 class DLL_OBJECT Shader
 {
 public:
@@ -39,7 +39,7 @@ public:
 
 typedef boost::shared_ptr<Shader> ShaderPtr;
 
-// The shader program is the sum of the different shaders attached and linked together
+//! The shader program is the sum of the different shaders attached and linked together
 class DLL_OBJECT ShaderProgram
 {
 public:
@@ -51,7 +51,7 @@ public:
 	virtual bool linkProgram()=0;
 	virtual void bind()=0;
 
-	// Uniform variables are shared between different executions of a shader program
+	//! Uniform variables are shared between different executions of a shader program
 	virtual bool hasUniform(const char *name)=0;
 	virtual int getUniformLoc(const char *name)=0;
 	virtual bool setUniform(const char *name, int value)=0;
@@ -68,4 +68,5 @@ typedef boost::weak_ptr<ShaderProgram> WeakShaderProgramPtr;
 
 }
 
-#endif /* GRAPHICS_SHADER_SHADER_HPP_ */
+/*! GRAPHICS_SHADER_SHADER_HPP_ */
+#endif

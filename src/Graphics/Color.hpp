@@ -1,4 +1,4 @@
-/*
+/*!
  * Color.hpp
  *
  *  Created on: 27.08.2017
@@ -50,10 +50,12 @@ private:
 
 Color colorFromHex(const std::string &hexColor);
 Color colorFromFloat(float R = 0.0f, float G = 0.0f, float B = 0.0f, float A = 1.0f);
-Color colorLerp(const Color &color1, const Color &color2, float factor); // 0 <= factor <= 1
+//! 0 <= factor <= 1
+Color colorLerp(const Color &color1, const Color &color2, float factor);
 
 }
 
 
 
-#endif /* SRC_GRAPHICS_COLOR_HPP_ */
+/*! SRC_GRAPHICS_COLOR_HPP_ */
+#endif

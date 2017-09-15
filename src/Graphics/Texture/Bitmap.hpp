@@ -1,4 +1,4 @@
-/*
+/*!
  * Bitmap.hpp
  *
  *  Created on: 01.10.2016
@@ -21,7 +21,7 @@ class Rectangle;
 class Bitmap;
 typedef boost::shared_ptr<Bitmap> BitmapPtr;
 
-// For now only a bit-depth of 32-bit is properly supported!
+//! For now only a bit-depth of 32-bit is properly supported!
 class Bitmap
 {
 public:
@@ -29,25 +29,26 @@ public:
 	Bitmap(int width, int height, int bpp = 32) : bitmap(NULL), w(0), h(0), bpp(32) { allocate(width, height, 32); }
 	~Bitmap() { freeData(); }
 
-	// Allocation, memory management, loading and saving
+	//! Allocation, memory management, loading and saving
 	void allocate(int width, int height, int bpp = 32);
 	void fromMemory(void *data, int width, int height, int bpp = 32);
 	void fromFile(const char *filename);
 	BitmapPtr clone();
 	bool savePNG(const char *filename, bool mirror = false);
 
-	// Set color data of all pixels
+	//! Set color data of all pixels
 	void fill(const Color &color);
 	void memset(uint8_t data);
 
-	// Operations on pixel data
+	//! Operations on pixel data
 	void blit(BitmapPtr &aim, const Point2 &pos);
 	void blit(BitmapPtr &aim, const Rectangle &sourceRectangle, const Rectangle &destinationRectangle);
 	BitmapPtr resizeBiCubic(int destW, int destH);
 	void colorize(Color color);
-	BitmapPtr rotated(int degree); // 90, 180 or 270
+	//! 90, 180 or 270
+	BitmapPtr rotated(int degree);
 
-	// Floor operations
+	//! Floor operations
 	void floorPixelPosition(int& x, int& y);
 	void setPixelFloor(Color col, int x, int y);
 	void setPixelFloor(BitmapPtr &img, int sourceX, int sourceY, int destX, int destY);
@@ -55,7 +56,7 @@ public:
 	void blendPixelFloor(BitmapPtr &img, int sourceX, int sourceY, int destX, int destY);
 	void blitWrap(BitmapPtr &img, int x, int y);
 
-	// Bitmap attributes & accessing the pixels
+	//! Bitmap attributes & accessing the pixels
 	const inline uint8_t *getPixelsConst() const { return bitmap; }
 	inline uint8_t *getPixels() { return bitmap; }
 	inline int getWidth() const { return w; }
@@ -70,14 +71,17 @@ public:
 	Color getPixelColor(int x, int y) const;
 	void setPixelColor(int x, int y, const Color &color);
 	void setPixel(int x, int y, const uint8_t *color);
-	void blendPixelColor(int x, int y, const Color &color); // Alpha-blending
+	//! Alpha-blending
+	void blendPixelColor(int x, int y, const Color &color);
 
 protected:
 	void freeData();
 	uint8_t *bitmap;
-	int w, h, bpp; // bits per Pixel
+	//! bits per Pixel
+	int w, h, bpp;
 };
 
 }
 
-#endif /* BITMAP_HPP_ */
+/*! BITMAP_HPP_ */
+#endif

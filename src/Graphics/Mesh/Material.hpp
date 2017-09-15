@@ -1,4 +1,4 @@
-/*
+/*!
  * Material.hpp
  *
  *  Created on: 08.04.2015
@@ -36,11 +36,11 @@ struct MaterialInfo {
 	MaterialInfo() : loaded(false), minificationFilter(0), magnificationFilter(0),
 			textureWrapS(0), textureWrapT(0), anisotropicFilter(false) {}
 
-	// File information
+	//! File information
 	std::string filename;
 	std::string materialName;
 
-	// Material data
+	//! Material data
 	bool loaded;
 	Color color;
 	std::string textureFilename;
@@ -62,26 +62,27 @@ struct MaterialInfo {
 class DLL_OBJECT MaterialManagerInterface : public FileManager<Material, MaterialInfo>
 {
 public:
-	// Reference-counted loading:
-	// Load the material with the name 'materialName' from the file 'filename'
+	/*! Reference-counted loading:
+	 * Load the material with the name 'materialName' from the file 'filename' */
 	MaterialPtr getMaterial(const char *filename, const char *materialName);
 
 	//! Get the material this element describes
 	MaterialPtr getMaterial(tinyxml2::XMLElement *materialElement);
 
 protected:
-	// Create the material if the file was already parsed.
-	// Otherwise parse the file, add all material information and create the material described by the info
+	/*! Create the material if the file was already parsed.
+	 * Otherwise parse the file, add all material information and create the material described by the info */
 	virtual MaterialPtr loadAsset(MaterialInfo &info);
 
-	// Parse the XML element and create the material info from it
+	//! Parse the XML element and create the material info from it
 	MaterialInfo loadMaterialInfo(tinyxml2::XMLElement *materialElement);
 
-	// Create a material from the info
+	//! Create a material from the info
 	MaterialPtr createMaterial(const MaterialInfo &info);
 };
 extern MaterialManagerInterface *MaterialManager;
 
 }
 
-#endif /* GRAPHICS_MESH_MATERIAL_HPP_ */
+/*! GRAPHICS_MESH_MATERIAL_HPP_ */
+#endif

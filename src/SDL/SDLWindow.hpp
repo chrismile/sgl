@@ -1,4 +1,4 @@
-/*
+/*!
  * SDLWindow.hpp
  *
  *  Created on: 27.08.2017
@@ -17,30 +17,33 @@ class SDLWindow : public Window
 {
 public:
 	SDLWindow();
-	virtual void errorCheck(); // Outputs e.g. "SDL_GetError"
+	//! Outputs e.g. "SDL_GetError"
+	virtual void errorCheck();
 
-	// Initialize/close the window
+	//! Initialize/close the window
 	virtual void initialize(const WindowSettings &settings);
 	virtual void close();
 
-	// Change the window attributes
-	virtual void toggleFullscreen(bool nativeFullscreen = true); // Try to keep resolution
+	//! Change the window attributes
+	//! Try to keep resolution
+	virtual void toggleFullscreen(bool nativeFullscreen = true);
 	virtual void serializeSettings(SettingsFile &settings);
 	virtual WindowSettings deserializeSettings(const SettingsFile &settings);
 
-	// Update the window
+	//! Update the window
 	virtual void update();
-	virtual bool processEvents(); // Returns false if the game should quit
+	//! Returns false if the game should quit
+	virtual bool processEvents();
 	virtual void clear(const Color &color = Color(0, 0, 0));
 	virtual void flip();
 
-	// Utility functions/getters for the main window attributes
+	//! Utility functions/getters for the main window attributes
 	virtual void saveScreenshot(const char *filename);
 	virtual bool isFullscreen() { return windowSettings.fullscreen; }
 	virtual int getWidth() { return windowSettings.width; }
 	virtual int getHeight() { return windowSettings.height; }
 
-	// Getting SDL specific data
+	//! Getting SDL specific data
 	inline SDL_Window *getSDLWindow() { return sdlWindow; }
 	inline SDL_GLContext getGLContext() { return glContext; }
 
@@ -48,9 +51,11 @@ private:
 	SDL_Window *sdlWindow;
 	SDL_GLContext glContext;
 	WindowSettings windowSettings;
-	SDL_DisplayMode oldDisplayMode; // For toggle fullscreen: Resolution before going fullscreen
+	//! For toggle fullscreen: Resolution before going fullscreen
+	SDL_DisplayMode oldDisplayMode;
 };
 
 }
 
-#endif /* SRC_SDL_SDLWINDOW_HPP_ */
+/*! SRC_SDL_SDLWINDOW_HPP_ */
+#endif

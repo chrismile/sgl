@@ -1,4 +1,4 @@
-/*
+/*!
  * Math.hpp
  *
  *  Created on: 27.08.2017
@@ -11,7 +11,7 @@
 #include <cmath>
 #include <glm/fwd.hpp>
 
-// Collection of math utility functions
+//! Collection of math utility functions
 namespace sgl
 {
 
@@ -78,7 +78,7 @@ inline float floorMod(float a, float b) {
 	return a-b*div;
 }
 
-// Interpolation
+//! Interpolation
 template <typename T> T interpolateLinear(const T &val1, const T &val2, float factor)
 {
 	return val1 + factor * (val2 - val1);
@@ -102,4 +102,5 @@ float vectorAngle(const glm::vec2 &u, const glm::vec2& v);
 
 }
 
-#endif /* SRC_MATH_MATH_HPP_ */
+/*! SRC_MATH_MATH_HPP_ */
+#endif

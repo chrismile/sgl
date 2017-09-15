@@ -1,4 +1,4 @@
-/*
+/*!
  * TextureManager.hpp
  *
  *  Created on: 31.03.2015
@@ -21,7 +21,8 @@ public:
 	TexturePtr createTexture(void *data, int w, int h,
 			int textureMinFilter = GL_LINEAR, int textureMagFilter = GL_LINEAR,
 			int textureWrapS = GL_REPEAT, int textureWrapT = GL_REPEAT, bool anisotropicFilter = false);
-	TexturePtr createMultisampledTexture(int w, int h, int numSamples); // Only for FBOs!
+	//! Only for FBOs!
+	TexturePtr createMultisampledTexture(int w, int h, int numSamples);
 	void setNPOTHandling(NPOTHandling npot) { npotHandling = npot; }
 
 protected:
@@ -31,4 +32,5 @@ protected:
 
 }
 
-#endif /* GRAPHICS_OPENGL_TEXTUREMANAGER_HPP_ */
+/*! GRAPHICS_OPENGL_TEXTUREMANAGER_HPP_ */
+#endif

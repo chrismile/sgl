@@ -1,4 +1,4 @@
-/*
+/*!
  * AppLogic.hpp
  *
  *  Created on: 02.09.2015
@@ -22,7 +22,8 @@ public:
 	AppLogic();
 	virtual ~AppLogic();
 	virtual void run();
-	virtual void update(float dt); // Call this function in derived class
+	//! Call this function in derived class
+	virtual void update(float dt);
 	virtual void resolutionChanged(EventPtr event) { }
 	virtual void render() {}
 	virtual void setFPSCounterEnabled(bool enabled);
@@ -35,4 +36,5 @@ private:
 
 }
 
-#endif /* LOGIC_APPLOGIC_HPP_ */
+/*! LOGIC_APPLOGIC_HPP_ */
+#endif

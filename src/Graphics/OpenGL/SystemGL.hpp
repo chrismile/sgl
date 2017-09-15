@@ -1,4 +1,4 @@
-/*
+/*!
  * SystemGL.hpp
  *
  *  Created on: 10.01.2015
@@ -15,24 +15,24 @@
 
 namespace sgl {
 
-// Get information about the OpenGL context
+//! Get information about the OpenGL context
 class DLL_OBJECT SystemGL : public Singleton<SystemGL>
 {
 public:
 	SystemGL();
 
-	// Information about version of OpenGL
+	//! Information about version of OpenGL
 	bool isGLExtensionAvailable(const char *extensionName);
 	inline int getGLMajorVersionNumber() { return mayorVersionNumber; }
 	inline int getGLMinorVersionNumber() { return minorVersionNumber; }
 	inline int getGLMajorShadingLanguageVersionNumber() { return mayorShadingLanguageVersionNumber; }
 	inline int getGLMinorShadingLanguageVersionNumber() { return minorShadingLanguageVersionNumber; }
 
-	// Returns whether the current OpenGL context supports the features of the passed OpenGL version
-	// You could for example call "openglVersionMinimum(3)" or "openglVersionMinimum(2, 1)"
+	/*! Returns whether the current OpenGL context supports the features of the passed OpenGL version
+	 * You could for example call "openglVersionMinimum(3)" or "openglVersionMinimum(2, 1)" */
 	bool openglVersionMinimum(int major, int minor = 0);
 
-	// Information about hardware limitations
+	//! Information about hardware limitations
 	inline int getMaximumTextureSize() { return maximumTextureSize; }
 	inline int getMaximumTextureSamples() { return maxSamples; }
 	inline float getMaximumAnisotropy() { return maxSamples; }
@@ -40,8 +40,9 @@ public:
 	inline float getMaximumLineSize() { return glLineSizeRange[1]; }
 	inline float getLineSizeIncrementStep() { return glLineSizeIncrementStep; }
 
-	// Enable/disable features of engine
-	void setPremulAlphaEnabled(bool enabled); // Standard: true
+	//! Enable/disable features of engine
+	//! Standard: true
+	void setPremulAlphaEnabled(bool enabled);
 	bool isPremulAphaEnabled() { return premulAlphaEnabled; }
 
 private:
@@ -62,4 +63,5 @@ private:
 
 }
 
-#endif /* GRAPHICS_OPENGL_SYSTEMGL_HPP_ */
+/*! GRAPHICS_OPENGL_SYSTEMGL_HPP_ */
+#endif

@@ -1,4 +1,4 @@
-/*
+/*!
  * XML.hpp
  *
  *  Created on: 02.10.2016
@@ -17,18 +17,18 @@ using namespace tinyxml2;
 
 namespace sgl {
 
-// Copys and pastes "element" including all of its child elements to "parentAim"
-// Returns the copied element.
+/*! Copys and pastes "element" including all of its child elements to "parentAim"
+ * Returns the copied element. */
 XMLElement *insertElementCopy(XMLElement *element, XMLElement *parentAim);
 
-// Returns the first child element of parent with the matching attribute "id"
+//! Returns the first child element of parent with the matching attribute "id"
 XMLElement *getChildWithID(XMLElement *parent, const char *id);
 
-// Returns the first child element of parent with the matching attribute "attributeName"
+//! Returns the first child element of parent with the matching attribute "attributeName"
 XMLElement *firstChildWithAttribute(XMLElement *parent, const char *attributeName, const char *attributeValue);
 
-// Pushes the "key" with the desired value on the XMLPrinter stack if "value" doesn't equal "standard"
-// Example: pushAttributeNotEqual(printer, "damping", damping, 0.0f);
+/*! Pushes the "key" with the desired value on the XMLPrinter stack if "value" doesn't equal "standard"
+ * Example: pushAttributeNotEqual(printer, "damping", damping, 0.0f); */
 template<class T>
 void pushAttributeNotEqual(XMLPrinter *printer, const char *key, const T &value, const T &standard)
 {
@@ -41,7 +41,7 @@ void pushAttributeNotEqual(XMLPrinter *printer, const char *key, const float &va
 
 
 
-// Classes for easily iterating over XMLElements
+//! Classes for easily iterating over XMLElements
 
 typedef std::function<bool(tinyxml2::XMLElement*)> XMLItFilterFunc;
 struct XMLItFilter {
@@ -54,7 +54,7 @@ private:
 	XMLItFilterFunc filterFunc;
 };
 
-// E.g.: Name equals X, Attribute Y equals X
+//! E.g.: Name equals X, Attribute Y equals X
 inline XMLItFilter XMLNameFilter(const std::string& name) {
 	return XMLItFilter([name](tinyxml2::XMLElement* e) -> bool { return name == e->Name(); });
 }
@@ -97,4 +97,5 @@ public:
 
 }
 
-#endif /* UTILS_XML_HPP_ */
+/*! UTILS_XML_HPP_ */
+#endif

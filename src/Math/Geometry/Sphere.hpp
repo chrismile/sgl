@@ -1,4 +1,4 @@
-/*
+/*!
  * Sphere.hpp
  *
  *  Created on: 10.09.2017
@@ -22,4 +22,5 @@ public:
 
 }
 
-#endif /* SRC_MATH_GEOMETRY_SPHERE_HPP_ */
+/*! SRC_MATH_GEOMETRY_SPHERE_HPP_ */
+#endif

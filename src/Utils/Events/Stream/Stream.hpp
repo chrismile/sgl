@@ -1,4 +1,4 @@
-/*
+/*!
  * Stream.hpp
  *
  *  Created on: 03.08.2015
@@ -11,7 +11,8 @@
 #include <cstdint>
 #include <boost/shared_ptr.hpp>
 
-const size_t STD_BUFFER_SIZE = 256; // Standard size: 256 bytes
+//! Standard size: 256 bytes
+const size_t STD_BUFFER_SIZE = 256;
 
 #include "BinaryStream.hpp"
 
@@ -24,4 +25,5 @@ typedef boost::shared_ptr<ReadStream> ReadStreamPtr;
 
 }
 
-#endif /* STREAM_HPP_ */
+/*! STREAM_HPP_ */
+#endif

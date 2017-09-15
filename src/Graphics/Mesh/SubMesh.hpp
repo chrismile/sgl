@@ -1,4 +1,4 @@
-/*
+/*!
  * SubMesh.hpp
  *
  *  Created on: 10.01.2015
@@ -21,14 +21,15 @@ class DLL_OBJECT SubMesh
 	friend class Mesh;
 public:
 	SubMesh(ShaderProgramPtr &shader);
-	SubMesh(bool textured); // Automatically retrieves the standard shaders
+	//! Automatically retrieves the standard shaders
+	SubMesh(bool textured);
 	void render();
 	inline MaterialPtr &getMaterial() { return material; }
 	inline void setMaterial(const MaterialPtr &_material) { material = _material; }
 	inline const AABB3 &getAABB() const { return aabb; }
 	inline void setAABB(const AABB3 &_aabb) { aabb = _aabb; }
 
-	// Call these functions to create a mesh manually
+	//! Call these functions to create a mesh manually
 	void createVertices(VertexPlain *vertices, size_t numVertices);
 	void createVertices(VertexTextured *vertices, size_t numVertices);
 	void createIndices(uint8_t *indices, size_t numIndices);
@@ -47,4 +48,5 @@ typedef boost::shared_ptr<SubMesh> SubMeshPtr;
 
 }
 
-#endif /* GRAPHICS_MESH_SUBMESH_HPP_ */
+/*! GRAPHICS_MESH_SUBMESH_HPP_ */
+#endif

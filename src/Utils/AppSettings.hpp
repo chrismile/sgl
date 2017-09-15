@@ -1,4 +1,4 @@
-/*
+/*!
  * AppSettings.hpp
  *
  *  Created on: 10.01.2015
@@ -45,7 +45,7 @@ private:
 	std::map<std::string, std::string> settings;
 };
 
-/* AppSettings can application-specific settings on the one hand, and basic settings
+/*! AppSettings can application-specific settings on the one hand, and basic settings
  * like the screen resolution or the audio system on the other hand.
  * AppSettings will create the instances of the render system, etc. on startup.
  */
@@ -73,4 +73,5 @@ private:
 
 }
 
-#endif /* SYSTEM_APPSETTINGS_HPP_ */
+/*! SYSTEM_APPSETTINGS_HPP_ */
+#endif

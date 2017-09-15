@@ -1,4 +1,4 @@
-/*
+/*!
  * Ray3.hpp
  *
  *  Created on: 10.09.2017
@@ -20,7 +20,7 @@ struct RaycastResult {
 	float t;
 };
 
-// Plane in 3D, ax + by + cz + d = 0
+//! Plane in 3D, ax + by + cz + d = 0
 class Ray3 {
 public:
 	Ray3(const glm::vec3 &origin, const glm::vec3 &direction) : origin(origin), direction(direction) {}
@@ -34,4 +34,5 @@ private:
 
 }
 
-#endif /* SRC_MATH_GEOMETRY_RAY3_HPP_ */
+/*! SRC_MATH_GEOMETRY_RAY3_HPP_ */
+#endif

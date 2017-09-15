@@ -1,4 +1,4 @@
-/*
+/*!
  * Transform.hpp
  *
  *  Created on: 27.08.2017
@@ -23,4 +23,5 @@ public:
 
 }
 
-#endif /* SRC_GRAPHICS_SCENE_TRANSFORM_HPP_ */
+/*! SRC_GRAPHICS_SCENE_TRANSFORM_HPP_ */
+#endif

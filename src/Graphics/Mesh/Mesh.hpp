@@ -1,4 +1,4 @@
-/*
+/*!
  * Mesh.hpp
  *
  *  Created on: 10.01.2015
@@ -20,7 +20,7 @@ public:
 	bool loadFromXML(const char *filename);
 	inline const AABB3 &getAABB() const { return aabb; }
 
-	// Call these functions to create a mesh manually
+	//! Call these functions to create a mesh manually
 	void addSubMesh(SubMeshPtr &submesh);
 	void finalizeManualMesh();
 
@@ -34,4 +34,5 @@ typedef boost::shared_ptr<Mesh> MeshPtr;
 
 }
 
-#endif /* GRAPHICS_MESH_MESH_HPP_ */
+/*! GRAPHICS_MESH_MESH_HPP_ */
+#endif

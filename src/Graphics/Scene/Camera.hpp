@@ -1,4 +1,4 @@
-/*
+/*!
  * Camera.hpp
  *
  *  Created on: 27.08.2017
@@ -33,14 +33,16 @@ public:
 	virtual ~Camera() {}
 	void onResolutionChanged(EventPtr event);
 
-	// Render target & viewport area
+	//! Render target & viewport area
 	void setViewport(const AABB2 &_viewport) { viewport = _viewport; }
-	AABB2 getViewport() const { return viewport; } // Relative coordinates
-	glm::ivec4 getViewportLTWH(); // Viewport left, top, width, height for OpenGL/DirectX
+	//! Relative coordinates
+	AABB2 getViewport() const { return viewport; }
+	//! Viewport left, top, width, height for OpenGL/DirectX
+	glm::ivec4 getViewportLTWH();
 	void setRenderTarget(RenderTargetPtr target);
 	inline RenderTargetPtr getRenderTarget() { return renderTarget; }
 
-	// Frustum data
+	//! Frustum data
 	inline float getNearClipDistance() const { return nearDist; }
 	inline float getFarClipDistance()  const { return farDist; }
 	inline float getFOVy()             const { return fovy; }
@@ -49,31 +51,32 @@ public:
 	void setFarClipDistance(float dist)  { farDist = dist; invalidateFrustum(); }
 	void setFOVy(float fov)              { fovy = fov; invalidateFrustum(); }
 
-	// Set projection type: Orthogonal or perspective
+	//! Set projection type: Orthogonal or perspective
 	//virtual void setProjectionType(ProjectionType pt);
 	//virtual void setOrthoWindow(float w, float h);
 
-	// View & projection matrices
+	//! View & projection matrices
 	inline glm::mat4 getViewMatrix()            { updateCamera(); return modelMatrix; }
 	inline glm::mat4 getProjectionMatrix()      { updateCamera(); return projMat; }
 	inline glm::mat4 getViewProjMatrix()        { updateCamera(); return viewProjMat; }
 	inline glm::mat4 getInverseViewProjMatrix() { updateCamera(); return inverseViewProjMat; }
 
-	// For frustum culling
+	//! For frustum culling
 	virtual bool isVisible(const AABB3& bound) const;
 	virtual bool isVisible(const Sphere& bound) const;
 	virtual bool isVisible(const glm::vec2 &vert) const;
 	virtual bool isVisible(const glm::vec3 &vert) const;
 
-	// AABB of a slice of the view frustum in distance planeDistance
+	//! AABB of a slice of the view frustum in distance planeDistance
 	AABB2 getAABB2(float planeDistance = -1.0f);
-	// Position of the Mouse in the plane with the given distance
+	//! Position of the Mouse in the plane with the given distance
 	glm::vec2 mousePositionInPlane(float planeDistance = -1.0f);
 
 protected:
-	// screenPos has to be in relative window coordinates [0,1]x[0,1]
+	//! screenPos has to be in relative window coordinates [0,1]x[0,1]
 	Ray3 getCameraToViewportRay(const glm::vec2 &screenPos);
-	void updateCamera(); // Calls updateFrustumPlanes
+	//! Calls updateFrustumPlanes
+	void updateCamera();
 	void updateFrustumPlanes();
 	void invalidateFrustum() { recalcFrustum = true; }
 	void invalidateView() { recalcModelMat = true; }
@@ -92,7 +95,8 @@ protected:
 
 	AABB2 viewport;
 
-	glm::mat4 projMat, viewProjMat, inverseViewProjMat; // modelMatrix of Camera is view matrix
+	//! modelMatrix of Camera is view matrix
+	glm::mat4 projMat, viewProjMat, inverseViewProjMat;
 	AABB3 boundingBox;
 	glm::vec3 worldSpaceCorners[8];
 	Plane frustumPlanes[6];
@@ -102,4 +106,5 @@ protected:
 
 }
 
-#endif /* SRC_GRAPHICS_SCENE_CAMERA_HPP_ */
+/*! SRC_GRAPHICS_SCENE_CAMERA_HPP_ */
+#endif

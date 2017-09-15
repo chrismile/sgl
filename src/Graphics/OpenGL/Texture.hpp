@@ -1,4 +1,4 @@
-/*
+/*!
  * Texture.hpp
  *
  *  Created on: 31.03.2015
@@ -27,4 +27,5 @@ protected:
 
 }
 
-#endif /* GRAPHICS_OPENGL_TEXTURE_HPP_ */
+/*! GRAPHICS_OPENGL_TEXTURE_HPP_ */
+#endif

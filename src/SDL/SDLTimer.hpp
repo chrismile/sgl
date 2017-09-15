@@ -1,4 +1,4 @@
-/*
+/*!
  * SDLTimer.hpp
  *
  *  Created on: 19.01.2015
@@ -21,12 +21,13 @@ class SDLTimer : public TimerInterface
 {
 public:
 	SDLTimer();
-	virtual uint32_t getTicks() { return SDL_GetTicks(); } // in milliseconds
+	//! in milliseconds
+	virtual uint32_t getTicks() { return SDL_GetTicks(); }
 	virtual void delay(uint32_t milliseconds) { SDL_Delay(milliseconds); }
 
-	// High-resolution timer
-	// Windows implementation: QueryPerformanceCounter (can vary across platforms and threads...)
-	// POSIX solution: std::chrono (not reliable at least on MSVC)
+	/*! High-resolution timer
+	 * Windows implementation: QueryPerformanceCounter (can vary across platforms and threads...)
+	 * POSIX solution: std::chrono (not reliable at least on MSVC) */
 	virtual uint64_t getMicroSecondsTicks();
 
 private:
@@ -38,4 +39,5 @@ private:
 
 }
 
-#endif /* SDL_SDLTIMER_HPP_ */
+/*! SDL_SDLTIMER_HPP_ */
+#endif

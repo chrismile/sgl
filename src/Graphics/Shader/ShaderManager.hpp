@@ -1,4 +1,4 @@
-/*
+/*!
  * ShaderManager.hpp
  *
  *  Created on: 30.01.2015
@@ -28,11 +28,11 @@ struct ShaderInfo {
 class DLL_OBJECT ShaderManagerInterface : public FileManager<Shader, ShaderInfo>
 {
 public:
-	// Reference-counted loading
+	//! Reference-counted loading
 	ShaderProgramPtr getShaderProgram(const std::list<std::string> &shaderIDs);
 	ShaderPtr getShader(const char *shaderID, ShaderType shaderType);
 
-	// Create shader/program (manual loading)
+	//! Create shader/program (manual loading)
 	virtual ShaderPtr createShader(ShaderType sh)=0;
 	virtual ShaderProgramPtr createShaderProgram()=0;
 	virtual ShaderAttributesPtr createShaderAttributes(ShaderProgramPtr &shader)=0;
@@ -46,4 +46,5 @@ extern ShaderManagerInterface *ShaderManager;
 
 }
 
-#endif /* GRAPHICS_SHADER_SHADERMANAGER_HPP_ */
+/*! GRAPHICS_SHADER_SHADERMANAGER_HPP_ */
+#endif

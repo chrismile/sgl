@@ -1,4 +1,4 @@
-/*
+/*!
  * Defs.hpp
  *
  *  Created on: 27.08.2017
@@ -31,7 +31,7 @@
 # define DLL_OBJECT
 #endif
 
-// The MinGW version of GDB doesn't break on the standard assert.
+//! The MinGW version of GDB doesn't break on the standard assert.
 #include <cassert>
 #define CUSTOM_ASSERT
 
@@ -52,4 +52,5 @@ inline void MY_ASSERT(bool expression) {
 #endif
 
 
-#endif /* SRC_DEFS_HPP_ */
+/*! SRC_DEFS_HPP_ */
+#endif

@@ -1,4 +1,4 @@
-/*
+/*!
  * RBO.hpp
  *
  *  Created on: 10.01.2015
@@ -34,4 +34,5 @@ typedef boost::shared_ptr<RenderbufferObject> RenderbufferObjectPtr;
 
 }
 
-#endif /* GRAPHICS_BUFFERS_RBO_HPP_ */
+/*! GRAPHICS_BUFFERS_RBO_HPP_ */
+#endif

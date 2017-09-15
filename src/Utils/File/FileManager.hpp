@@ -1,4 +1,4 @@
-/*
+/*!
  * FileManager.hpp
  *
  *  Created on: 15.01.2015
@@ -34,7 +34,7 @@ boost::shared_ptr<AssetType> FileManager<AssetType, AssetInfo>::getAsset(AssetIn
 {
 	auto it = assetMap.find(assetInfo);
 
-	// Do we need to (re-)load the asset?
+	//! Do we need to (re-)load the asset?
 	if (it == assetMap.end() || it->second._empty() || it->second.expired()) {
 		boost::shared_ptr<AssetType> asset = loadAsset(assetInfo);
 		assetMap[assetInfo] = boost::weak_ptr<AssetType>(asset);
@@ -47,4 +47,5 @@ boost::shared_ptr<AssetType> FileManager<AssetType, AssetInfo>::getAsset(AssetIn
 }
 
 
-#endif /* UTILS_FILE_FILEMANAGER_HPP_ */
+/*! UTILS_FILE_FILEMANAGER_HPP_ */
+#endif

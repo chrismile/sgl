@@ -1,4 +1,4 @@
-/*
+/*!
  * GeometryBuffer.hpp
  *
  *  Created on: 11.01.2015
@@ -34,4 +34,5 @@ private:
 
 }
 
-#endif /* GRAPHICS_OPENGL_GEOMETRYBUFFER_HPP_ */
+/*! GRAPHICS_OPENGL_GEOMETRYBUFFER_HPP_ */
+#endif

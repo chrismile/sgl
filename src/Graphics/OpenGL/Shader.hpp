@@ -1,4 +1,4 @@
-/*
+/*!
  * Shader.hpp
  *
  *  Created on: 15.01.2015
@@ -23,12 +23,13 @@ public:
 	void setShaderText(const std::string &text);
 	bool compile();
 
-	// Implementation dependent
+	//! Implementation dependent
 	inline GLuint getShaderID() const { return shaderID; }
 	inline GLuint getShaderType() const { return shaderType; }
 	inline const char *getFileID() const { return fileID.c_str(); }
 	inline void setFileID(const char *_fileID) { fileID = _fileID; }
-	std::string getShaderDebugType(); // Returns e.g. "Fragment Shader" for logging purposes
+	//! Returns e.g. "Fragment Shader" for logging purposes
+	std::string getShaderDebugType();
 
 private:
 	GLuint shaderID;
@@ -69,7 +70,8 @@ public:
 	inline GLuint getShaderProgramID() { return shaderProgramID; }
 
 private:
-	int getUniformLoc_error(const char *name); // Prints an error message if the uniform doesn't exist
+	//! Prints an error message if the uniform doesn't exist
+	int getUniformLoc_error(const char *name);
 	std::map<std::string, int> uniforms;
 	std::map<std::string, int> attributes;
 	GLuint shaderProgramID;
@@ -78,4 +80,5 @@ private:
 
 }
 
-#endif /* GRAPHICS_OPENGL_SHADER_HPP_ */
+/*! GRAPHICS_OPENGL_SHADER_HPP_ */
+#endif

@@ -1,4 +1,4 @@
-/*
+/*!
  * EventManager.hpp
  *
  *  Created on: 10.09.2017
@@ -42,13 +42,13 @@ public:
 	EventManager();
 	void update();
 
-	// Creates a listener
+	//! Creates a listener
 	ListenerToken addListener(uint32_t eventType, EventFunc func);
 	void removeListener(uint32_t eventType, ListenerToken token);
 
-	// Event function is called instantly
+	//! Event function is called instantly
 	void triggerEvent(EventPtr event);
-	// Adds an event to the event queue, which is updated by calling the function "update"
+	//! Adds an event to the event queue, which is updated by calling the function "update"
 	void queueEvent(EventPtr event);
 	//bool threadSafeQueueEvent(const EventDataPtr &event);
 
@@ -62,4 +62,5 @@ private:
 
 }
 
-#endif /* SRC_UTILS_EVENTS_EVENTMANAGER_HPP_ */
+/*! SRC_UTILS_EVENTS_EVENTMANAGER_HPP_ */
+#endif

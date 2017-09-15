@@ -1,4 +1,4 @@
-/*
+/*!
  * Vertex.hpp
  *
  *  Created on: 09.04.2015
@@ -44,4 +44,5 @@ struct VertexColorTextured
 
 }
 
-#endif /* GRAPHICS_MESH_VERTEX_HPP_ */
+/*! GRAPHICS_MESH_VERTEX_HPP_ */
+#endif

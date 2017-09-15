@@ -139,7 +139,7 @@ void ShaderAttributesGL3::addGeometryBuffer(GeometryBufferPtr &geometryBuffer, c
 	GLuint dataType = (GLuint)format;
 	glEnableVertexAttribArray(shaderLoc);
 	geometryBuffer->bind();
-	glVertexAttribPointer(shaderLoc, components, dataType, GL_FALSE, stride, (void*)offset);
+	glVertexAttribPointer(shaderLoc, components, dataType, GL_FALSE, stride, (void*)(intptr_t)offset);
 	rendererGL->bindVAO(0);
 
 	// Compute the number of elements/vertices
@@ -236,7 +236,7 @@ void ShaderAttributesGL2::bind()
 		attributeData.geometryBuffer->bind();
 		glEnableVertexAttribArray(attributeData.shaderLoc);
 		glVertexAttribPointer(attributeData.shaderLoc, attributeData.components, attributeData.attributeType,
-				GL_FALSE, attributeData.stride, (void*)attributeData.offset);
+				GL_FALSE, attributeData.stride, (void*)(intptr_t)attributeData.offset);
 	}
 
 	if (indexBuffer) {

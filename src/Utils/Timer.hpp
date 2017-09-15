@@ -1,4 +1,4 @@
-/*
+/*!
  * Timer.hpp
  *
  *  Created on: 11.01.2015
@@ -36,7 +36,7 @@ public:
 		cursor = 0;
 	}
 
-	// Adds a FPS value to be smoothed
+	//! Adds a FPS value to be smoothed
 	void addValue(const T &value) {
 		buffer[cursor++ % filterSize] = value;
 	}
@@ -79,11 +79,13 @@ public:
 	TimerInterface();
 	virtual ~TimerInterface() {}
 	void update();
-	virtual uint32_t getTicks()=0; // in milliseconds
+	//! in milliseconds
+	virtual uint32_t getTicks()=0;
 	virtual void delay(uint32_t milliseconds)=0;
 
 	inline float getElapsedRealTime() { return elapsed; }
-	float getElapsed(); // Get elapsed time in seconds
+	//! Get elapsed time in seconds
+	float getElapsed();
 	inline uint32_t getTimeInMS() { return currTime; }
 	inline float getTimeInS() { return currTimeSecs; }
 
@@ -91,19 +93,24 @@ public:
 	bool isFPS(uint32_t fps);
 	void setFixedFPS(uint32_t fps, int smoothingFilterSize = -1);
 
-	// High-resolution timer
-	// Windows implementation: QueryPerformanceCounter (can vary across platforms and threads...)
-	// POSIX solution: std::chrono (not reliable at least on MSVC)
+	/*! High-resolution timer
+	 * Windows implementation: QueryPerformanceCounter (can vary across platforms and threads...)
+	 * POSIX solution: std::chrono (not reliable at least on MSVC) */
 	virtual uint64_t getMicroSecondsTicks()=0;
 
 private:
-	uint32_t elapsed;  // Elapsed time since the last frame
-	uint32_t currTime;  // Current time in milliseconds
-	uint32_t lastTime; // Time of last frame
-	float currTimeSecs;  // Current time in milliseconds
-	float elapsedSecs;  // Elapsed time since the last frame in milliseconds
+	//! Elapsed time since the last frame
+	uint32_t elapsed;
+	//! Current time in milliseconds
+	uint32_t currTime;
+	//! Time of last frame
+	uint32_t lastTime;
+	//! Current time in milliseconds
+	float currTimeSecs;
+	//! Elapsed time since the last frame in milliseconds
+	float elapsedSecs;
 
-	// Fixed FPS and frame smoothing
+	//! Fixed FPS and frame smoothing
 	bool fixedTimeStep;
 	uint32_t fixedFPS;
 	FrameSmoother<float> frameSmoother;
@@ -113,4 +120,5 @@ extern TimerInterface *Timer;
 
 }
 
-#endif /* SYSTEM_TIMER_HPP_ */
+/*! SYSTEM_TIMER_HPP_ */
+#endif

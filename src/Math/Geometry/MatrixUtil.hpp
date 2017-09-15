@@ -1,4 +1,4 @@
-/*
+/*!
  * MatrixUtil.hpp
  *
  *  Created on: 10.09.2017
@@ -19,7 +19,7 @@ glm::vec3 transformDirection(const glm::mat4 &mat, const glm::vec3 &vec);
 glm::vec2 transformPoint(const glm::mat4 &mat, const glm::vec2 &vec);
 glm::vec2 transformDirection(const glm::mat4 &mat, const glm::vec2 &vec);
 
-// Special types of matrices
+//! Special types of matrices
 inline     glm::mat4 matrixIdentity() {return glm::mat4(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);}
 inline     glm::mat4 matrixZero() {return glm::mat4(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);}
 DLL_OBJECT glm::mat4 matrixTranslation(const glm::vec3 &vec);
@@ -32,4 +32,5 @@ DLL_OBJECT glm::mat4 matrixSkewY(float f);
 
 }
 
-#endif /* SRC_MATH_GEOMETRY_MATRIXUTIL_HPP_ */
+/*! SRC_MATH_GEOMETRY_MATRIXUTIL_HPP_ */
+#endif

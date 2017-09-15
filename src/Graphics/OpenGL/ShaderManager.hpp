@@ -1,4 +1,4 @@
-/*
+/*!
  * ShaderManager.hpp
  *
  *  Created on: 07.02.2015
@@ -29,4 +29,5 @@ protected:
 
 }
 
-#endif /* GRAPHICS_OPENGL_SHADERMANAGER_HPP_ */
+/*! GRAPHICS_OPENGL_SHADERMANAGER_HPP_ */
+#endif

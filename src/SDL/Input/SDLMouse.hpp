@@ -1,4 +1,4 @@
-/*
+/*!
  * SDLMouse.hpp
  *
  *  Created on: 10.01.2015
@@ -27,7 +27,7 @@ public:
 	virtual ~SDLMouse();
 	virtual void update(float dt);
 
-	// Mouse position
+	//! Mouse position
 	virtual Point2 getAxis();
 	virtual int getX();
 	virtual int getY();
@@ -35,21 +35,23 @@ public:
 	virtual bool mouseMoved();
 	virtual void warp(const Point2 &windowPosition);
 
-	// Mouse buttons
+	//! Mouse buttons
 	virtual bool isButtonDown(int button);
 	virtual bool isButtonUp(int button);
 	virtual bool buttonPressed(int button);
 	virtual bool buttonReleased(int button);
-	virtual float getScrollWheel(); // -1: Scroll down; 0: No scrolling; 1: Scroll up
+	//! -1: Scroll down; 0: No scrolling; 1: Scroll up
+	virtual float getScrollWheel();
 
-	// Function for event processing (SDL only suppots querying scroll wheel state within the event queue)
+	//! Function for event processing (SDL only suppots querying scroll wheel state within the event queue)
 	void setScrollWheelValue(int val);
 
 protected:
-	// States in the current and last frame
+	//! States in the current and last frame
 	MouseState state, oldState;
 };
 
 }
 
-#endif /* SDL_SDLMOUSE_HPP_ */
+/*! SDL_SDLMOUSE_HPP_ */
+#endif

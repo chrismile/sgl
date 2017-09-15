@@ -1,4 +1,4 @@
-/*
+/*!
  * ResourceBuffer.hpp
  *
  *  Created on: 13.01.2015
@@ -27,12 +27,15 @@ public:
 private:
 	char *data;
 	size_t bufferSize;
-	std::atomic<bool> loaded; // For asynchronously loaded resources
-	boost::shared_ptr<ResourceBuffer> parentZipFileResource; // optional!
+	//! For asynchronously loaded resources
+	std::atomic<bool> loaded;
+	//! optional!
+	boost::shared_ptr<ResourceBuffer> parentZipFileResource;
 };
 
 typedef boost::shared_ptr<ResourceBuffer> ResourceBufferPtr;
 
 }
 
-#endif /* UTILS_FILE_RESOURCEBUFFER_HPP_ */
+/*! UTILS_FILE_RESOURCEBUFFER_HPP_ */
+#endif

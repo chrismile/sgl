@@ -1,4 +1,4 @@
-/*
+/*!
  * FBO.hpp
  *
  *  Created on: 10.01.2015
@@ -16,9 +16,9 @@
 
 namespace sgl {
 
-// Note: https://www.opengl.org/sdk/docs/man3/xhtml/glTexImage2DMultisample.xml
-//   -> "glTexImage2DMultisample is available only if the GL version is 3.2 or greater."
-// You can't use multisampled textures on systems with GL < 3.2!
+/*! Note: https://www.opengl.org/sdk/docs/man3/xhtml/glTexImage2DMultisample.xml
+ *   -> "glTexImage2DMultisample is available only if the GL version is 3.2 or greater."
+ * You can't use multisampled textures on systems with GL < 3.2! */
 class DLL_OBJECT FramebufferObjectGL : public FramebufferObject
 {
 public:
@@ -58,4 +58,5 @@ private:
 
 }
 
-#endif /* GRAPHICS_OPENGL_FBO_HPP_ */
+/*! GRAPHICS_OPENGL_FBO_HPP_ */
+#endif

@@ -1,4 +1,4 @@
-/*
+/*!
  * AABB3.hpp
  *
  *  Created on: 10.09.2017
@@ -27,12 +27,13 @@ public:
 	inline glm::vec3 getMinimum() const { return min; }
 	inline glm::vec3 getMaximum() const { return max; }
 
-	// Merge the two AABBs
+	//! Merge the two AABBs
 	void combine(const AABB3 &otherAABB);
-	// Transform AABB
+	//! Transform AABB
 	AABB3 transformed(const glm::mat4 &matrix);
 };
 
 }
 
-#endif /* SRC_MATH_GEOMETRY_AABB3_HPP_ */
+/*! SRC_MATH_GEOMETRY_AABB3_HPP_ */
+#endif

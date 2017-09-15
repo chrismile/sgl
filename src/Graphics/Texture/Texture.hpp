@@ -1,4 +1,4 @@
-/*
+/*!
  * Texture.hpp
  *
  *  Created on: 10.01.2015
@@ -60,7 +60,8 @@ protected:
 	int h;
 	int bpp;
 	int minificationFilter, magnificationFilter, textureWrapS, textureWrapT;
-	int samples; // For MSAA
+	//! For MSAA
+	int samples;
 };
 
 typedef boost::shared_ptr<Texture> TexturePtr;
@@ -68,4 +69,5 @@ typedef boost::weak_ptr<Texture> WeakTexturePtr;
 
 }
 
-#endif /* GRAPHICS_TEXTURE_TEXTURE_HPP_ */
+/*! GRAPHICS_TEXTURE_TEXTURE_HPP_ */
+#endif

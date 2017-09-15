@@ -1,4 +1,4 @@
-/*
+/*!
  * Execute.hpp
  *
  *  Created on: 27.08.2017
@@ -13,12 +13,13 @@
 
 namespace sgl {
 
-// Executes the program "appName" with the argument list "args".
+//! Executes the program "appName" with the argument list "args".
 int executeProgram(const char *appName, std::list<std::string> &args);
 
-// Returns output of program
+//! Returns output of program
 std::string exec(const char* command);
 
 }
 
-#endif /* SRC_UTILS_EXECUTE_HPP_ */
+/*! SRC_UTILS_EXECUTE_HPP_ */
+#endif

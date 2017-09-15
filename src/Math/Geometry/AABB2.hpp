@@ -1,4 +1,4 @@
-/*
+/*!
  * AABB2.hpp
  *
  *  Created on: 10.09.2017
@@ -29,12 +29,13 @@ public:
 	inline float getWidth() const { return max.x - min.x; }
 	inline float getHeight() const { return max.y - min.y; }
 
-	// Merge the two AABBs
+	//! Merge the two AABBs
 	void combine(const AABB2 &otherAABB);
-	// Transform AABB
+	//! Transform AABB
 	AABB2 transformed(const glm::mat4 &matrix);
 };
 
 }
 
-#endif /* SRC_MATH_GEOMETRY_AABB2_HPP_ */
+/*! SRC_MATH_GEOMETRY_AABB2_HPP_ */
+#endif

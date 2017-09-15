@@ -1,4 +1,4 @@
-/*
+/*!
  * RBO.hpp
  *
  *  Created on: 10.01.2015
@@ -31,4 +31,5 @@ private:
 
 }
 
-#endif /* GRAPHICS_OPENGL_RBO_HPP_ */
+/*! GRAPHICS_OPENGL_RBO_HPP_ */
+#endif

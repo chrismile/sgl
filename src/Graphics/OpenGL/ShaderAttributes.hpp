@@ -1,4 +1,4 @@
-/*
+/*!
  * ShaderAttributes.hpp
  *
  *  Created on: 07.02.2015
@@ -33,7 +33,7 @@ struct AttributeData {
 	int stride;
 };
 
-// Abstract class
+//! Abstract class
 class ShaderAttributesGL : public ShaderAttributes
 {
 friend class ShaderAttributesGL2;
@@ -51,11 +51,12 @@ protected:
 	GeometryBufferPtr indexBuffer;
 	ShaderProgramPtr shader;
 	ShaderProgramGL *shaderGL;
-	int mMatrix, vMatrix, pMatrix, mvpMatrix, time, resolution; // Location of the transformation matrices
+	//! Location of the transformation matrices
+	int mMatrix, vMatrix, pMatrix, mvpMatrix, time, resolution;
 };
 
-// The OpenGL 3 implementation of shader attributes.
-// Vertex Array Objects are used to minimize the number of API calls.
+/*! The OpenGL 3 implementation of shader attributes.
+ * Vertex Array Objects are used to minimize the number of API calls. */
 class ShaderAttributesGL3 : public ShaderAttributesGL
 {
 public:
@@ -63,8 +64,8 @@ public:
 	~ShaderAttributesGL3();
 	ShaderAttributesPtr copy(ShaderProgramPtr &_shader, bool ignoreMissingAttrs = true);
 
-	// Adds a geometry buffer to the shader attributes.
-	// "offset" and "stride" optionally specify the location of the attributes in the buffer.
+	/*! Adds a geometry buffer to the shader attributes.
+	 * "offset" and "stride" optionally specify the location of the attributes in the buffer. */
 	void addGeometryBuffer(GeometryBufferPtr &geometryBuffer, const char *attributeName,
 			VertexAttributeFormat format, int components, int offset = 0, int stride = 0);
 	void bind();
@@ -73,7 +74,7 @@ protected:
 	unsigned int vaoID;
 };
 
-// The old OpenGL 2 implementation binds the attributes manually.
+//! The old OpenGL 2 implementation binds the attributes manually.
 class ShaderAttributesGL2 : public ShaderAttributesGL
 {
 public:
@@ -81,8 +82,8 @@ public:
 	~ShaderAttributesGL2();
 	ShaderAttributesPtr copy(ShaderProgramPtr &_shader, bool ignoreMissingAttrs = true);
 
-	// Adds a geometry buffer to the shader attributes.
-	// "offset" and "stride" optionally specify the location of the attributes in the buffer.
+	/*! Adds a geometry buffer to the shader attributes.
+	 * "offset" and "stride" optionally specify the location of the attributes in the buffer. */
 	void addGeometryBuffer(GeometryBufferPtr &geometryBuffer, const char *attributeName,
 			VertexAttributeFormat format, int components, int offset = 0, int stride = 0);
 	void bind();
@@ -90,4 +91,5 @@ public:
 
 }
 
-#endif /* GRAPHICS_OPENGL_SHADERATTRIBUTES_HPP_ */
+/*! GRAPHICS_OPENGL_SHADERATTRIBUTES_HPP_ */
+#endif
