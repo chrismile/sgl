@@ -5,6 +5,7 @@ sgl is a collection of utility functions for developing OpenGL graphics applicat
 ## Usage
 
 The most recommended way of learning to use this library is reading and understanding the sample code in the directory 'samples' (still work in progress).
+
 If you built the doxygen documentation for this project (for more details see the next section), you can also look there for more information on classes and interfaces.
 
 
@@ -18,13 +19,13 @@ Similar packages should also be available on other distributions.
 
 To start the compilation, launch the following commands in the directory of the project:
 
-`cd build
+```cd build
 rm -rf *
 cmake ..
-make`
+make```
 
 If doxygen is installed on your system, you can call
-`doxygen doxygen.conf`
+```doxygen doxygen.conf```
 to generate the documentation for this project.
 
 
