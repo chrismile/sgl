@@ -13,19 +13,27 @@ If you built the doxygen documentation for this project (for more details see th
 
 On Ubuntu 17.04 for example, you can install all necessary packages with this command:
 
-`sudo apt-get install libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libglew-dev libpng-dev libboost-filesystem-dev libtinyxml2-dev`
+```
+sudo apt-get install libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libglew-dev libpng-dev libboost-filesystem-dev libtinyxml2-dev
+```
 
 Similar packages should also be available on other distributions.
 
 To start the compilation, launch the following commands in the directory of the project:
 
-```cd build
+```
+cd build
 rm -rf *
 cmake ..
-make```
+make
+```
 
 If doxygen is installed on your system, you can call
-```doxygen doxygen.conf```
+
+```
+doxygen doxygen.conf
+```
+
 to generate the documentation for this project.
 
 
