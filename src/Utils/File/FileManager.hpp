@@ -2,7 +2,7 @@
  * FileManager.hpp
  *
  *  Created on: 15.01.2015
- *      Author: Christoph
+ *      Author: Christoph Neuhauser
  */
 
 #ifndef UTILS_FILE_FILEMANAGER_HPP_

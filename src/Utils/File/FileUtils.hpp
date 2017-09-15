@@ -2,7 +2,7 @@
  * FileUtils.hpp
  *
  *  Created on: 10.09.2017
- *      Author: christoph
+ *      Author: Christoph Neuhauser
  */
 
 #ifndef SRC_UTILS_FILE_FILEUTILS_HPP_

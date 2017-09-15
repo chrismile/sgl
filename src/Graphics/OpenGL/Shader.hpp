@@ -2,7 +2,7 @@
  * Shader.hpp
  *
  *  Created on: 15.01.2015
- *      Author: Christoph
+ *      Author: Christoph Neuhauser
  */
 
 #ifndef GRAPHICS_OPENGL_SHADER_HPP_

@@ -2,7 +2,7 @@
  * StringStream.cpp
  *
  *  Created on: 03.08.2015
- *      Author: Christoph
+ *      Author: Christoph Neuhauser
  */
 
 #include "Stream.hpp"

@@ -2,7 +2,7 @@
  * Gamepad.hpp
  *
  *  Created on: 10.01.2015
- *      Author: Christoph
+ *      Author: Christoph Neuhauser
  */
 
 #ifndef INPUT_GAMEPAD_HPP_

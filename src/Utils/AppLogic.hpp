@@ -2,7 +2,7 @@
  * AppLogic.hpp
  *
  *  Created on: 02.09.2015
- *      Author: Christoph
+ *      Author: Christoph Neuhauser
  */
 
 #ifndef LOGIC_APPLOGIC_HPP_

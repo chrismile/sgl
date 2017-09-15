@@ -2,7 +2,7 @@
  * TextureManager.hpp
  *
  *  Created on: 30.01.2015
- *      Author: Christoph
+ *      Author: Christoph Neuhauser
  */
 
 #ifndef GRAPHICS_TEXTURE_TEXTUREMANAGER_HPP_

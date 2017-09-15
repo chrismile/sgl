@@ -2,7 +2,7 @@
  * SDLTimer.hpp
  *
  *  Created on: 19.01.2015
- *      Author: Christoph
+ *      Author: Christoph Neuhauser
  */
 
 #ifndef SDL_SDLTIMER_HPP_

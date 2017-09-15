@@ -2,7 +2,7 @@
  * Material.cpp
  *
  *  Created on: 08.04.2015
- *      Author: Christoph
+ *      Author: Christoph Neuhauser
  */
 
 #include "Material.hpp"

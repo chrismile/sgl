@@ -2,7 +2,7 @@
  * AABB3.hpp
  *
  *  Created on: 10.09.2017
- *      Author: christoph
+ *      Author: Christoph Neuhauser
  */
 
 #ifndef SRC_MATH_GEOMETRY_AABB3_HPP_

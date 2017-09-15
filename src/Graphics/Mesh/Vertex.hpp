@@ -2,7 +2,7 @@
  * Vertex.hpp
  *
  *  Created on: 09.04.2015
- *      Author: Christoph
+ *      Author: Christoph Neuhauser
  */
 
 #ifndef GRAPHICS_MESH_VERTEX_HPP_

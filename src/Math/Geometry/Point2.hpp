@@ -2,7 +2,7 @@
  * Point2.hpp
  *
  *  Created on: 10.01.2015
- *      Author: Christoph
+ *      Author: Christoph Neuhauser
  */
 
 #ifndef MATH_POINT2_HPP_

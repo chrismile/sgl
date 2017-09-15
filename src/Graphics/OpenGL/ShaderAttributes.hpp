@@ -2,7 +2,7 @@
  * ShaderAttributes.hpp
  *
  *  Created on: 07.02.2015
- *      Author: Christoph
+ *      Author: Christoph Neuhauser
  */
 
 #ifndef GRAPHICS_OPENGL_SHADERATTRIBUTES_HPP_
@@ -65,9 +65,19 @@ public:
 	ShaderAttributesPtr copy(ShaderProgramPtr &_shader, bool ignoreMissingAttrs = true);
 
 	/*! Adds a geometry buffer to the shader attributes.
-	 * "offset" and "stride" optionally specify the location of the attributes in the buffer. */
+	 * Example: "format=ATTRIB_FLOAT,components=3" e.g. means vec3 data.
+	 * \param geometryBuffer is the geometry buffer containing the data.
+	 * \param attributeName is the name of the attribute in the shader the data shall be bound to
+	 * \param format is the data type of a scalar value in the buffer (e.g. int, float, etc.)
+	 * \param components is the size of our vector. If this value is > 4, it is handled as a matrix.
+	 * \param offset is the starting position in byte of the attribute inside one buffer element
+	 * \param stride is the offset in byte between two buffer elements (0 means no interleaving data)
+	 * \param instancing is the number by which the instance count is increased with every instance.
+	 *         A value of 0 means no instancing. Use Renderer->renderInstanced if this value is > 0.
+	 *  NOTE: Instancing is only supported if OpenGL >= 3.3 or OpenGL ES >= 3.0! */
 	void addGeometryBuffer(GeometryBufferPtr &geometryBuffer, const char *attributeName,
-			VertexAttributeFormat format, int components, int offset = 0, int stride = 0);
+			VertexAttributeFormat format, int components,
+			int offset = 0, int stride = 0, int instancing = 0);
 	void bind();
 
 protected:
@@ -82,10 +92,9 @@ public:
 	~ShaderAttributesGL2();
 	ShaderAttributesPtr copy(ShaderProgramPtr &_shader, bool ignoreMissingAttrs = true);
 
-	/*! Adds a geometry buffer to the shader attributes.
-	 * "offset" and "stride" optionally specify the location of the attributes in the buffer. */
 	void addGeometryBuffer(GeometryBufferPtr &geometryBuffer, const char *attributeName,
-			VertexAttributeFormat format, int components, int offset = 0, int stride = 0);
+			VertexAttributeFormat format, int components,
+			int offset = 0, int stride = 0, int instancing = 0);
 	void bind();
 };
 

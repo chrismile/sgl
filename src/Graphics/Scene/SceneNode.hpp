@@ -2,7 +2,7 @@
  * SceneNode.hpp
  *
  *  Created on: 27.08.2017
- *      Author: christoph
+ *      Author: Christoph Neuhauser
  */
 
 #ifndef SRC_GRAPHICS_SCENE_SCENENODE_HPP_

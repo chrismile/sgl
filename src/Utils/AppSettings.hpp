@@ -2,7 +2,7 @@
  * AppSettings.hpp
  *
  *  Created on: 10.01.2015
- *      Author: Christoph
+ *      Author: Christoph Neuhauser
  */
 
 #ifndef SYSTEM_APPSETTINGS_HPP_

@@ -2,7 +2,7 @@
  * ShaderManager.hpp
  *
  *  Created on: 30.01.2015
- *      Author: Christoph
+ *      Author: Christoph Neuhauser
  */
 
 #ifndef GRAPHICS_SHADER_SHADERMANAGER_HPP_

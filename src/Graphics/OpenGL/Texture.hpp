@@ -2,7 +2,7 @@
  * Texture.hpp
  *
  *  Created on: 31.03.2015
- *      Author: Christoph
+ *      Author: Christoph Neuhauser
  */
 
 #ifndef GRAPHICS_OPENGL_TEXTURE_HPP_

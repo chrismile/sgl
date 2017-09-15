@@ -2,7 +2,7 @@
  * XML.cpp
  *
  *  Created on: 02.10.2016
- *      Author: Christoph Neuhausertoph
+ *      Author: Christoph Neuhauser
  */
 
 #include "XML.hpp"

@@ -2,7 +2,7 @@
  * Material.hpp
  *
  *  Created on: 08.04.2015
- *      Author: Christoph
+ *      Author: Christoph Neuhauser
  */
 
 #ifndef GRAPHICS_MESH_MATERIAL_HPP_

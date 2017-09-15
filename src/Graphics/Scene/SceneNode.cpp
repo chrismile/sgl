@@ -2,7 +2,7 @@
  * SceneNode.cpp
  *
  *  Created on: 27.08.2017
- *      Author: christoph
+ *      Author: Christoph Neuhauser
  */
 
 #include "SceneNode.hpp"

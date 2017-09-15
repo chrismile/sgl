@@ -2,7 +2,7 @@
  * Ray3.cpp
  *
  *  Created on: 10.09.2017
- *      Author: christoph
+ *      Author: Christoph Neuhauser
  */
 
 #include "Plane.hpp"

@@ -2,7 +2,7 @@
  * ResourceManager.hpp
  *
  *  Created on: 10.01.2015
- *      Author: Christoph
+ *      Author: Christoph Neuhauser
  */
 
 #ifndef UTILS_FILE_RESOURCEMANAGER_HPP_

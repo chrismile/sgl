@@ -2,7 +2,7 @@
  * ShaderAttributes.hpp
  *
  *  Created on: 07.02.2015
- *      Author: Christoph
+ *      Author: Christoph Neuhauser
  */
 
 #ifndef GRAPHICS_SHADER_SHADERATTRIBUTES_HPP_
@@ -47,15 +47,27 @@ class DLL_OBJECT ShaderAttributes
 {
 	friend class ShaderProgram;
 public:
-	ShaderAttributes() : vertexMode(VERTEX_MODE_TRIANGLES), indexFormat(ATTRIB_UNSIGNED_SHORT), numVertices(0), numIndices(0) {}
+	ShaderAttributes() : vertexMode(VERTEX_MODE_TRIANGLES), indexFormat(ATTRIB_UNSIGNED_SHORT),
+		numVertices(0), numIndices(0), instanceCount(0) {}
 	virtual ~ShaderAttributes() {}
+
+	//! Creates copy of attributes with other shader
 	virtual ShaderAttributesPtr copy(ShaderProgramPtr &_shader, bool ignoreMissingAttrs = true)=0;
 
 	/*! Adds a geometry buffer to the shader attributes.
-	 * "offset" and "stride" optionally specify the location of the attributes in the buffer.
-	 * [format=ATTRIB_FLOAT,components=3] e.g. means glm::vec3 data */
+	 * Example: "format=ATTRIB_FLOAT,components=3" e.g. means vec3 data.
+	 * \param geometryBuffer is the geometry buffer containing the data.
+	 * \param attributeName is the name of the attribute in the shader the data shall be bound to
+	 * \param format is the data type of a scalar value in the buffer (e.g. int, float, etc.)
+	 * \param components is the size of our vector. If this value is > 4, it is handled as a matrix.
+	 * \param offset is the starting position in byte of the attribute inside one buffer element
+	 * \param stride is the offset in byte between two buffer elements (0 means no interleaving data)
+	 * \param instancing is the number by which the instance count is increased in every frame.
+	 *         A value of 0 means no instancing. Use Renderer->renderInstanced if this value is > 0.
+	 *  NOTE: Instancing is only supported if OpenGL >= 3.3 or OpenGL ES >= 3.0! */
 	virtual void addGeometryBuffer(GeometryBufferPtr &geometryBuffer, const char *attributeName,
-			VertexAttributeFormat format, int components, int offset = 0, int stride = 0)=0;
+			VertexAttributeFormat format, int components,
+			int offset = 0, int stride = 0, int instancing = 0)=0;
 	virtual void setIndexGeometryBuffer(GeometryBufferPtr &geometryBuffer, VertexAttributeFormat format)=0;
 	virtual void bind()=0;
 	virtual ShaderProgram *getShaderProgram()=0;
@@ -66,6 +78,9 @@ public:
 	inline VertexAttributeFormat getIndexFormat() const { return indexFormat; }
 	inline size_t getNumVertices() const { return numVertices; }
 	inline size_t getNumIndices() const { return numIndices; }
+	//! Gets and sets the number of instances to be rendered (standard: No instancing/0)
+	inline size_t getInstanceCount() const { return instanceCount; }
+	inline void setInstanceCount(int count) { instanceCount = count; }
 
 	// Set shared data in the renderer - done by Renderer
 	virtual void setModelViewProjectionMatrices(const glm::mat4 &m, const glm::mat4 &v, const glm::mat4 &p, const glm::mat4 &mvp)=0;
@@ -74,6 +89,7 @@ protected:
 	VertexMode vertexMode;
 	VertexAttributeFormat indexFormat;
 	size_t numVertices, numIndices;
+	int instanceCount;
 };
 
 }

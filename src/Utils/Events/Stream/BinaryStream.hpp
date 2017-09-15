@@ -2,7 +2,7 @@
  * BinaryStream.hpp
  *
  *  Created on: 03.08.2015
- *      Author: Christoph
+ *      Author: Christoph Neuhauser
  */
 
 #ifndef BINARYSTREAM_HPP_

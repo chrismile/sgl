@@ -2,7 +2,7 @@
  * Math.hpp
  *
  *  Created on: 27.08.2017
- *      Author: christoph
+ *      Author: Christoph Neuhauser
  */
 
 #ifndef SRC_MATH_MATH_HPP_
@@ -76,6 +76,14 @@ inline int floorDiv(float a, float b) {
 inline float floorMod(float a, float b) {
 	int div = floorDiv(a, b);
 	return a-b*div;
+}
+
+inline int ceilDiv(int a, int b) {
+	int div = a/b;
+	if (a > 0 && a%b != 0) {
+		div += 1;
+	}
+	return div;
 }
 
 //! Interpolation

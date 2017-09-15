@@ -2,7 +2,7 @@
  * StringStream.hpp
  *
  *  Created on: 03.08.2015
- *      Author: Christoph
+ *      Author: Christoph Neuhauser
  */
 
 #ifndef STRINGSTREAM_HPP_

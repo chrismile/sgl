@@ -2,7 +2,7 @@
  * Texture.cpp
  *
  *  Created on: 31.03.2015
- *      Author: Christoph
+ *      Author: Christoph Neuhauser
  */
 
 #include <GL/glew.h>

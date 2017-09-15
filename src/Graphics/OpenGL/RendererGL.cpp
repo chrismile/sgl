@@ -2,7 +2,7 @@
  * RendererGL.cpp
  *
  *  Created on: 10.01.2015
- *      Author: Christoph
+ *      Author: Christoph Neuhauser
  */
 
 #include <GL/glew.h>
@@ -352,27 +352,33 @@ void RendererGL::setStencilOp(unsigned int sfail, unsigned int dpfail, unsigned 
 // Rendering
 void RendererGL::render(ShaderAttributesPtr &shaderAttributes)
 {
+	ShaderAttributesPtr attr = shaderAttributes;
 	if (wireframeMode) {
-		ShaderAttributesPtr attr = shaderAttributes->copy(solidShader);
-		attr->bind();
-		attr->setModelViewProjectionMatrices(modelMatrix, viewMatrix, projectionMatrix, mvpMatrix);
+		// Not the most performat solution, but wireframe mode is for debugging anyway
+		attr = shaderAttributes->copy(solidShader);
+	}
 
-		if (attr->getNumIndices() > 0) {
-			glDrawRangeElements((GLuint)attr->getVertexMode(), 0, attr->getNumVertices()-1,
-					attr->getNumIndices(), attr->getIndexFormat(), NULL);
+	attr->bind();
+	attr->setModelViewProjectionMatrices(modelMatrix, viewMatrix, projectionMatrix, mvpMatrix);
+
+	if (attr->getNumIndices() > 0) {
+		if (attr->getInstanceCount() == 0) {
+			// Indices, no instancing
+			/*glDrawRangeElements((GLuint)attr->getVertexMode(), 0, attr->getNumVertices()-1,
+					attr->getNumIndices(), attr->getIndexFormat(), NULL);*/
+			glDrawElements((GLuint)attr->getVertexMode(), attr->getNumIndices(), attr->getIndexFormat(), NULL);
 		} else {
-			glDrawArrays((GLuint)attr->getVertexMode(), 0, attr->getNumVertices());
+			// Indices, instancing
+			glDrawElementsInstanced((GLuint)attr->getVertexMode(), attr->getNumIndices(),
+					attr->getIndexFormat(), NULL, attr->getInstanceCount());
 		}
 	} else {
-		// Normal rendering
-		shaderAttributes->bind();
-		shaderAttributes->setModelViewProjectionMatrices(modelMatrix, viewMatrix, projectionMatrix, mvpMatrix);
-
-		if (shaderAttributes->getNumIndices() > 0) {
-			glDrawRangeElements((GLuint)shaderAttributes->getVertexMode(), 0, shaderAttributes->getNumVertices()-1,
-					shaderAttributes->getNumIndices(), shaderAttributes->getIndexFormat(), NULL);
+		if (attr->getInstanceCount() == 0) {
+			// No indices, no instancing
+			glDrawArrays((GLuint)attr->getVertexMode(), 0, attr->getNumVertices());
 		} else {
-			glDrawArrays((GLuint)shaderAttributes->getVertexMode(), 0, shaderAttributes->getNumVertices());
+			// No indices, instancing
+			glDrawArraysInstanced((GLuint)attr->getVertexMode(), 0, attr->getNumVertices(), attr->getInstanceCount());
 		}
 	}
 }

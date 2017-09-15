@@ -2,7 +2,7 @@
  * XML.hpp
  *
  *  Created on: 02.10.2016
- *      Author: Christoph Neuhausertoph
+ *      Author: Christoph Neuhauser
  */
 
 #ifndef UTILS_XML_HPP_

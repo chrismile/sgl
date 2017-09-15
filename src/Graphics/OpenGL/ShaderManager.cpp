@@ -2,7 +2,7 @@
  * ShaderManager.cpp
  *
  *  Created on: 07.02.2015
- *      Author: Christoph
+ *      Author: Christoph Neuhauser
  */
 
 #include <GL/glew.h>

@@ -2,7 +2,7 @@
  * ShaderManager.cpp
  *
  *  Created on: 30.01.2015
- *      Author: Christoph
+ *      Author: Christoph Neuhauser
  */
 
 #include "ShaderManager.hpp"

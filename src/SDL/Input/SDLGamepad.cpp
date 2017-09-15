@@ -2,7 +2,7 @@
  * SDLGamepad.cpp
  *
  *  Created on: 13.02.2015
- *      Author: Christoph
+ *      Author: Christoph Neuhauser
  */
 
 #include "SDLGamepad.hpp"

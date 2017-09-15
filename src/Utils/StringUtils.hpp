@@ -2,7 +2,7 @@
  * StringUtils.hpp
  *
  *  Created on: 11.09.2017
- *      Author: christoph
+ *      Author: Christoph Neuhauser
  */
 
 #ifndef SRC_UTILS_STRINGUTILS_HPP_

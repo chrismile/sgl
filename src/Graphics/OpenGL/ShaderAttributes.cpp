@@ -2,13 +2,14 @@
  * ShaderAttributes.cpp
  *
  *  Created on: 07.02.2015
- *      Author: Christoph
+ *      Author: Christoph Neuhauser
  */
 
 #include <GL/glew.h>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/Timer.hpp>
 #include <Utils/AppSettings.hpp>
+#include <Math/Math.hpp>
 #include <Graphics/Window.hpp>
 #include "ShaderAttributes.hpp"
 #include "RendererGL.hpp"
@@ -101,6 +102,28 @@ ShaderAttributesGL3::~ShaderAttributesGL3()
 	glDeleteVertexArrays(1, &vaoID);
 }
 
+int vertexAttrFormatToIntSize(VertexAttributeFormat format) {
+	switch (format) {
+	case ATTRIB_BYTE:
+	case ATTRIB_UNSIGNED_BYTE:
+		return 1;
+	case ATTRIB_SHORT:
+	case ATTRIB_UNSIGNED_SHORT:
+	case ATTRIB_HALF_FLOAT:
+		return 2;
+	case ATTRIB_INT:
+	case ATTRIB_UNSIGNED_INT:
+	case ATTRIB_FLOAT:
+	case ATTRIB_FIXED:
+		return 4;
+	case ATTRIB_DOUBLE:
+		return sizeof(double);
+	default:
+		Logfile::get()->writeError("ERROR: vertexAttrFormatToIntSize: Invalid format");
+		return 0;
+	}
+}
+
 ShaderAttributesPtr ShaderAttributesGL3::copy(ShaderProgramPtr &_shader, bool ignoreMissingAttrs /* = true */)
 {
 	ShaderAttributesGL3 *obj = new ShaderAttributesGL3(_shader);
@@ -108,6 +131,7 @@ ShaderAttributesPtr ShaderAttributesGL3::copy(ShaderProgramPtr &_shader, bool ig
 	obj->indexFormat = this->indexFormat;
 	obj->numVertices = this->numVertices;
 	obj->numIndices = this->numIndices;
+	obj->instanceCount = this->instanceCount;
 	if (this->indexBuffer) {
 		obj->setIndexGeometryBuffer(this->indexBuffer, this->indexFormat);
 	}
@@ -123,8 +147,9 @@ ShaderAttributesPtr ShaderAttributesGL3::copy(ShaderProgramPtr &_shader, bool ig
 	return ShaderAttributesPtr(obj);
 }
 
-void ShaderAttributesGL3::addGeometryBuffer(GeometryBufferPtr &geometryBuffer, const char *attributeName,
-		VertexAttributeFormat format, int components, int offset /* = 0 */, int stride /* = 0 */)
+void ShaderAttributesGL3::addGeometryBuffer(GeometryBufferPtr &geometryBuffer,
+		const char *attributeName, VertexAttributeFormat format, int components,
+		int offset /* = 0 */, int stride /* = 0 */, int instancing /* = 0 */)
 {
 	RendererGL *rendererGL = static_cast<RendererGL*>(Renderer);
 	attributes.push_back(AttributeData(geometryBuffer, attributeName, (GLuint)format, components,
@@ -139,7 +164,17 @@ void ShaderAttributesGL3::addGeometryBuffer(GeometryBufferPtr &geometryBuffer, c
 	GLuint dataType = (GLuint)format;
 	glEnableVertexAttribArray(shaderLoc);
 	geometryBuffer->bind();
-	glVertexAttribPointer(shaderLoc, components, dataType, GL_FALSE, stride, (void*)(intptr_t)offset);
+	// OpenGL only allows a maximum of four components per attribute.
+	// E.g. 4x4 matrices are internally split into four columns.
+	int numColumns = ceilDiv(components, 4);
+	int columnSize = vertexAttrFormatToIntSize(format); // In bytes
+	for (int column = 0; column < numColumns; ++column) {
+		glVertexAttribPointer(shaderLoc+column, components, dataType, GL_FALSE,
+				stride, (void*)(intptr_t)(offset+columnSize*column));
+		if (instancing > 0) {
+			glVertexAttribDivisor(shaderLoc+column, instancing);
+		}
+	}
 	rendererGL->bindVAO(0);
 
 	// Compute the number of elements/vertices
@@ -186,6 +221,7 @@ ShaderAttributesPtr ShaderAttributesGL2::copy(ShaderProgramPtr &_shader, bool ig
 	obj->indexFormat = this->indexFormat;
 	obj->numVertices = this->numVertices;
 	obj->numIndices = this->numIndices;
+	obj->instanceCount = this->instanceCount;
 	obj->setIndexGeometryBuffer(this->indexBuffer, this->indexFormat);
 	for (AttributeData &attr : this->attributes) {
 		int shaderLoc = glGetAttribLocation(obj->shaderGL->getShaderProgramID(), attr.attributeName.c_str());
@@ -199,9 +235,15 @@ ShaderAttributesPtr ShaderAttributesGL2::copy(ShaderProgramPtr &_shader, bool ig
 	return ShaderAttributesPtr(obj);
 }
 
-void ShaderAttributesGL2::addGeometryBuffer(GeometryBufferPtr &geometryBuffer, const char *attributeName,
-		VertexAttributeFormat format, int components, int offset /* = 0 */, int stride /* = 0 */)
+void ShaderAttributesGL2::addGeometryBuffer(GeometryBufferPtr &geometryBuffer,
+		const char *attributeName, VertexAttributeFormat format, int components,
+		int offset /* = 0 */, int stride /* = 0 */, int instancing /* = 0 */)
 {
+	if (instancing > 0) {
+		Logfile::get()->writeError( "ERROR: ShaderAttributesGL2::addGeometryBuffer: OpenGL 2 does not support instancing.");
+		return;
+	}
+
 	int shaderLoc = glGetAttribLocation(shaderGL->getShaderProgramID(), attributeName);
 	if (shaderLoc < 0) {
 		Logfile::get()->writeError(std::string() + "ERROR: ShaderAttributesGL2::addGeometryBuffer: "

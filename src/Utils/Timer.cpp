@@ -2,7 +2,7 @@
  * Timer.cpp
  *
  *  Created on: 18.01.2015
- *      Author: Christoph
+ *      Author: Christoph Neuhauser
  */
 
 #include "Timer.hpp"

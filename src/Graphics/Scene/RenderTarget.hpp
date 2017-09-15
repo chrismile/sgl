@@ -2,7 +2,7 @@
  * RenderTarget.hpp
  *
  *  Created on: 10.09.2017
- *      Author: christoph
+ *      Author: Christoph Neuhauser
  */
 
 #ifndef SRC_GRAPHICS_SCENE_RENDERTARGET_HPP_

@@ -2,7 +2,7 @@
  * ResourceBuffer.hpp
  *
  *  Created on: 13.01.2015
- *      Author: Christoph
+ *      Author: Christoph Neuhauser
  */
 
 #ifndef UTILS_FILE_RESOURCEBUFFER_HPP_
