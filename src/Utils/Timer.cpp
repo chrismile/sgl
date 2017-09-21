@@ -42,7 +42,7 @@ void TimerInterface::update()
 
 	// Add time if FPS is smoothed
 	if (fixedTimeStep) 	{
-		frameSmoother.addValue(elapsed);
+		frameSmoother.addValue(elapsed/1000.0f);
 	}
 
 	// Convert the time to seconds

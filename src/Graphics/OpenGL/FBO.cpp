@@ -18,6 +18,7 @@ namespace sgl {
 FramebufferObjectGL::FramebufferObjectGL() : id(0), width(0), height(0)
 {
 	glGenFramebuffers(1, &id);
+	hasColorAttachment = false;
 }
 
 FramebufferObjectGL::~FramebufferObjectGL()
@@ -27,29 +28,32 @@ FramebufferObjectGL::~FramebufferObjectGL()
 	glDeleteFramebuffers(1, &id);
 }
 
-bool FramebufferObjectGL::bind2DTexture(TexturePtr texture, FramebufferTexture fboTex /* = COLOR_ATTACHMENT */)
+bool FramebufferObjectGL::bind2DTexture(TexturePtr texture, FramebufferAttachment attachment)
 {
-	textures[fboTex] = texture;
+	if (attachment >= COLOR_ATTACHMENT0 && attachment <= COLOR_ATTACHMENT15) {
+		hasColorAttachment = true;
+	}
+
+	textures[attachment] = texture;
 	TextureGL *textureGL = (TextureGL*)texture.get();
 
-	int glTexture = textureGL->getTexture();
+	int oglTexture = textureGL->getTexture();
 	width = textureGL->getW();
 	height = textureGL->getH();
 	int samples = texture->getNumSamples();
 	glBindFramebuffer(GL_FRAMEBUFFER, id);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-			samples == 0 ? GL_TEXTURE_2D : GL_TEXTURE_2D_MULTISAMPLE, glTexture, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, samples == 0 ? GL_TEXTURE_2D : GL_TEXTURE_2D_MULTISAMPLE, oglTexture, 0);
 	Renderer->bindFBO(Renderer->getFBO(), true);
 	bool status = checkStatus();
 	return status;
 }
 
-bool FramebufferObjectGL::bindRenderbuffer(RenderbufferObjectPtr renderbuffer, RenderbufferType rboType /* = DEPTH24_STENCIL8 */)
+bool FramebufferObjectGL::bindRenderbuffer(RenderbufferObjectPtr renderbuffer, FramebufferAttachment attachment)
 {
-	rbos[rboType] = renderbuffer;
+	rbos[attachment] = renderbuffer;
 	RenderbufferObjectGL *rbo = (RenderbufferObjectGL*)renderbuffer.get();
 	glBindFramebuffer(GL_FRAMEBUFFER, id);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo->getID());
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, rbo->getID());
 	Renderer->bindFBO(Renderer->getFBO(), true);
 	bool status = checkStatus();
 	return status;
@@ -71,6 +75,12 @@ bool FramebufferObjectGL::checkStatus()
 
 unsigned int FramebufferObjectGL::_bindInternal()
 {
+	if (!hasColorAttachment) {
+		glDrawBuffer(GL_NONE);
+		glReadBuffer(GL_NONE);
+		hasColorAttachment = true; // Only call once
+	}
+
 	glBindFramebuffer(GL_FRAMEBUFFER, id);
 	return id;
 }
@@ -79,9 +89,10 @@ unsigned int FramebufferObjectGL::_bindInternal()
 
 // OpenGL 2
 
-FramebufferObjectGL2::FramebufferObjectGL2() : id(0), width(0), height(0)
+FramebufferObjectGL2::FramebufferObjectGL2()
 {
 	glGenFramebuffersEXT(1, &id);
+	hasColorAttachment = false;
 }
 
 FramebufferObjectGL2::~FramebufferObjectGL2()
@@ -95,27 +106,31 @@ FramebufferObjectGL2::~FramebufferObjectGL2()
 	glDeleteFramebuffersEXT(1, &id);
 }
 
-bool FramebufferObjectGL2::bind2DTexture(TexturePtr texture, FramebufferTexture rboTex /* = COLOR_ATTACHMENT */)
+bool FramebufferObjectGL2::bind2DTexture(TexturePtr texture, FramebufferAttachment attachment)
 {
-	textures[rboTex] = texture;
+	if (attachment >= COLOR_ATTACHMENT0 && attachment <= COLOR_ATTACHMENT15) {
+		hasColorAttachment = true;
+	}
+
+	textures[attachment] = texture;
 	TextureGL *textureGL = (TextureGL*)texture.get();
 
-	int glTexture = textureGL->getTexture();
+	int oglTexture = textureGL->getTexture();
 	width = textureGL->getW();
 	height = textureGL->getH();
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, id);
-	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, glTexture, 0);
+	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, attachment, GL_TEXTURE_2D, oglTexture, 0);
 	Renderer->bindFBO(Renderer->getFBO(), true);
 	bool status = checkStatus();
 	return status;
 }
 
-bool FramebufferObjectGL2::bindRenderbuffer(RenderbufferObjectPtr renderbuffer, RenderbufferType rboType /* = DEPTH24_STENCIL8 */)
+bool FramebufferObjectGL2::bindRenderbuffer(RenderbufferObjectPtr renderbuffer, FramebufferAttachment attachment)
 {
-	rbos[rboType] = renderbuffer;
+	rbos[attachment] = renderbuffer;
 	RenderbufferObjectGL *rbo = (RenderbufferObjectGL*)renderbuffer.get();
 	glBindFramebuffer(GL_FRAMEBUFFER, id);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo->getID());
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, rbo->getID());
 	Renderer->bindFBO(Renderer->getFBO(), true);
 	bool status = checkStatus();
 	return status;
@@ -137,6 +152,12 @@ bool FramebufferObjectGL2::checkStatus()
 
 unsigned int FramebufferObjectGL2::_bindInternal()
 {
+	if (!hasColorAttachment) {
+		glDrawBuffer(GL_NONE);
+		glReadBuffer(GL_NONE);
+		hasColorAttachment = true; // Only call once
+	}
+
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, id);
 	return id;
 }

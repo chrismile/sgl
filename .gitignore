@@ -53,3 +53,4 @@ CTestTestfile.cmake
 # Doxygen
 docs/html/*
 docs/latex/*
+/Debug/

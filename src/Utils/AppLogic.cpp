@@ -27,7 +27,8 @@ AppLogic::AppLogic()
 	Timer->setFixedFPS(60, 4);
 	running = true;
 	screenshot = false;
-	fpsCounterEnabled = false;
+	fpsCounterEnabled = true;
+	fps = 0.0f;
 }
 
 AppLogic::~AppLogic()
@@ -38,7 +39,6 @@ void AppLogic::run()
 {
 	Window *window = AppSettings::get()->getMainWindow();
 	float timeToProcess = 0.0f;
-	float fps = 0.0f;
 	float lastFrame = Timer->getTicks()/1000.0f - 20.0f;
 	while (running == true) {
 		running = window->processEvents();
@@ -54,12 +54,17 @@ void AppLogic::run()
 				Gamepad->update(dt);
 				update(dt);
 				timeToProcess -= Timer->getElapsed();
-			} while(timeToProcess >= Timer->getElapsed());
+			} while(timeToProcess >= Timer->getElapsed() && running);
 			render();
 
 			if (fpsCounterEnabled) {
 				// TODO: Here the engine could render an FPS counter
-				std::cout << fps << std::endl;
+				static float fpsTimer = 0.0f;
+				if (fabs(fpsTimer - Timer->getTimeInS()) > 1.0f) {
+					fpsTimer = Timer->getTimeInS();
+					std::cout << fps << std::endl;
+				}
+
 			}
 
 			// Check for errors

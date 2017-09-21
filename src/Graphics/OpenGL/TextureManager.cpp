@@ -272,21 +272,26 @@ TexturePtr TextureManagerGL::createMultisampledTexture(int w, int h, int numSamp
 	glGenTextures(1, &oglTexture);
 	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, oglTexture);
 
-	/*glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, textureMagFilter);
-	glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MIN_FILTER, textureMinFilter);
-	if (textureMinFilter == GL_LINEAR_MIPMAP_LINEAR
-			|| textureMinFilter == GL_NEAREST_MIPMAP_NEAREST
-			|| textureMinFilter == GL_NEAREST_MIPMAP_LINEAR
-			|| textureMinFilter == GL_LINEAR_MIPMAP_NEAREST)
-		glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_GENERATE_MIPMAP, GL_TRUE);
-
-	glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_WRAP_S, textureWrapS);
-	glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_WRAP_T, textureWrapT);*/
-
 	glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, numSamples, GL_RGBA8, w, h, false);
 
 	return TexturePtr(new TextureGL(oglTexture, w, h, 32, GL_NEAREST,
 			GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, numSamples));
+}
+
+TexturePtr TextureManagerGL::createDepthTexture(int w, int h, DepthTextureFormat format,
+		int textureMinFilter /* = GL_LINEAR */, int textureMagFilter /* = GL_LINEAR */)
+{
+	GLuint oglTexture = 0;
+	glGenTextures(1, &oglTexture);
+	glBindTexture(GL_TEXTURE_2D, oglTexture);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, format, 1024, 1024, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, textureMagFilter);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, textureMinFilter);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	return TexturePtr(new TextureGL(oglTexture, w, h, 32, GL_NEAREST, GL_NEAREST, GL_REPEAT, GL_REPEAT));
 }
 
 }

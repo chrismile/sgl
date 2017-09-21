@@ -210,10 +210,12 @@ void RendererGL::bindTexture(TexturePtr &tex, unsigned int textureUnit /* = 0 */
 
 void RendererGL::setBlendMode(BlendMode mode)
 {
-	if (mode == blendMode || (SystemGL::get()->isPremulAphaEnabled()
+	if (mode == blendMode)
+		return;
+	/*if (mode == blendMode || (SystemGL::get()->isPremulAphaEnabled()
 			&& ((mode == BLEND_ALPHA && blendMode == BLEND_ADDITIVE)
 					|| (mode == BLEND_ADDITIVE && blendMode == BLEND_ALPHA))))
-		return;
+		return;*/
 
 	if (SystemGL::get()->isPremulAphaEnabled()) {
 		if (mode == BLEND_OVERWRITE) {
@@ -406,7 +408,11 @@ void RendererGL::disableWireframeMode()
 // Utility functions
 void RendererGL::blitTexture(TexturePtr &tex, const AABB2 &renderRect)
 {
-	blitTexture(tex, renderRect, blitShader);
+	if (tex->getNumSamples() > 0) {
+		blitTexture(tex, renderRect, resolveMSAAShader);
+	} else {
+		blitTexture(tex, renderRect, blitShader);
+	}
 }
 
 std::vector<VertexTextured> createTexturedQuad(const AABB2 &renderRect)
@@ -435,6 +441,9 @@ void RendererGL::blitTexture(TexturePtr &tex, const AABB2 &renderRect, ShaderPro
 	shaderAttributes->addGeometryBuffer(geomBuffer, "position", ATTRIB_FLOAT, 3, 0, stride);
 	shaderAttributes->addGeometryBuffer(geomBuffer, "texcoord", ATTRIB_FLOAT, 2, sizeof(glm::vec3), stride);
 	shaderAttributes->getShaderProgram()->setUniform("texture", tex);
+	if (tex->getNumSamples() > 0) {
+		shaderAttributes->getShaderProgram()->setUniform("numSamples", tex->getNumSamples());
+	}
 	render(shaderAttributes);
 }
 

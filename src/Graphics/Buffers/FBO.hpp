@@ -15,8 +15,17 @@
 
 namespace sgl {
 
-enum FramebufferTexture {
-	COLOR_ATTACHMENT, DEPTH_ATTACHMENT, STENCIL_ATTACHMENT
+enum FramebufferAttachment {
+	DEPTH_ATTACHMENT = 0x8D00, STENCIL_ATTACHMENT = 0x8D20,
+	DEPTH_STENCIL_ATTACHMENT = 0x821A, COLOR_ATTACHMENT = 0x8CE0,
+	COLOR_ATTACHMENT0 = 0x8CE0, COLOR_ATTACHMENT1 = 0x8CE1,
+	COLOR_ATTACHMENT2 = 0x8CE2, COLOR_ATTACHMENT3 = 0x8CE3,
+	COLOR_ATTACHMENT4 = 0x8CE4, COLOR_ATTACHMENT5 = 0x8CE5,
+	COLOR_ATTACHMENT6 = 0x8CE6, COLOR_ATTACHMENT7 = 0x8CE7,
+	COLOR_ATTACHMENT8 = 0x8CE8, COLOR_ATTACHMENT9 = 0x8CE9,
+	COLOR_ATTACHMENT10 = 0x8CEA, COLOR_ATTACHMENT11 = 0x8CEB,
+	COLOR_ATTACHMENT12 = 0x8CEC, COLOR_ATTACHMENT13 = 0x8CED,
+	COLOR_ATTACHMENT14 = 0x8CEE, COLOR_ATTACHMENT15 = 0x8CEF
 };
 
 /*! A framebuffer object (often called render target in DirectX) is used for offscreen rendering.
@@ -34,8 +43,8 @@ class DLL_OBJECT FramebufferObject
 public:
 	FramebufferObject() {}
 	virtual ~FramebufferObject() {}
-	virtual bool bind2DTexture(TexturePtr texture, FramebufferTexture rboTex = COLOR_ATTACHMENT)=0;
-	virtual bool bindRenderbuffer(RenderbufferObjectPtr renderbuffer, RenderbufferType rboType = DEPTH24_STENCIL8)=0;
+	virtual bool bind2DTexture(TexturePtr texture, FramebufferAttachment attachment = COLOR_ATTACHMENT)=0;
+	virtual bool bindRenderbuffer(RenderbufferObjectPtr renderbuffer, FramebufferAttachment attachment = DEPTH_ATTACHMENT)=0;
 	//! Width of framebuffer in pixels
 	virtual int getWidth()=0;
 	//! Height of framebuffer in pixels

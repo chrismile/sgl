@@ -34,6 +34,11 @@ enum NPOTHandling {
 	NPOT_SUPPORTED, NPOT_ES_SUPPORTED, NPOT_UPSCALE, NPOT_DOWNSCALE
 };
 
+enum DepthTextureFormat {
+	DEPTH_COMPONENT16 = 0x81A5, DEPTH_COMPONENT24 = 0x81A6,
+	DEPTH_COMPONENT32 = 0x81A7, DEPTH_COMPONENT32F = 0x8CAC
+};
+
 
 /*! Use TextureManager the following ways:
  * - Load texture files from your hard-disk using "getAsset"
@@ -51,8 +56,13 @@ public:
 	virtual TexturePtr createTexture(void *data, int w, int h,
 			int textureMinFilter = GL_LINEAR, int textureMagFilter = GL_LINEAR,
 			int textureWrapS = GL_REPEAT, int textureWrapT = GL_REPEAT, bool anisotropicFilter = false)=0;
+
 	//! Only for FBOs!
 	virtual TexturePtr createMultisampledTexture(int w, int h, int numSamples)=0;
+	//! bitsPerPixel must be 16, 24 or 32
+	virtual TexturePtr createDepthTexture(int w, int h, DepthTextureFormat format = DEPTH_COMPONENT16,
+			int textureMinFilter = GL_LINEAR, int textureMagFilter = GL_LINEAR)=0;
+
 	virtual void setNPOTHandling(NPOTHandling npot)=0;
 
 protected:

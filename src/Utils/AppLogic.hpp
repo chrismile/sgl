@@ -27,9 +27,12 @@ public:
 	virtual void resolutionChanged(EventPtr event) { }
 	virtual void render() {}
 	virtual void setFPSCounterEnabled(bool enabled);
+	inline float getFPS() { return fps; }
+	inline void quit() { running = false; }
 
 private:
 	bool fpsCounterEnabled;
+	float fps;
 	bool running;
 	bool screenshot;
 };
