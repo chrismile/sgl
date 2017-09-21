@@ -14,7 +14,7 @@ If you built the doxygen documentation for this project (for more details see th
 On Ubuntu 17.04 for example, you can install all necessary packages with this command:
 
 ```
-sudo apt-get install git cmake libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libglew-dev libpng-dev libboost-filesystem-dev libtinyxml2-dev
+sudo apt-get install git cmake libglm-dev libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libglew-dev libpng-dev libboost-filesystem-dev libtinyxml2-dev
 ```
 
 Similar packages should also be available on other distributions.
