@@ -9,6 +9,7 @@ include_directories(src)
 
 #make VERBOSE=1
 
+find_package(GLM REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(TinyXML2 REQUIRED)
 find_package(PNG REQUIRED)
