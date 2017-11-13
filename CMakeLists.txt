@@ -31,5 +31,5 @@ ENDIF()
 install (TARGETS sgl DESTINATION bin)
 install (
     DIRECTORY ${CMAKE_SOURCE_DIR}/src/
-    DESTINATION include
+    DESTINATION include/sgl
     FILES_MATCHING PATTERN "*.h*")
