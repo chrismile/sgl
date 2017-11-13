@@ -24,6 +24,8 @@ void TimerInterface::update()
 {
 	if (fixedTimeStep) {
 		waitForFPS(fixedFPS+40);
+	} else {
+		waitForFPS(1000);
 	}
 
 	// First frame?
@@ -54,7 +56,7 @@ void TimerInterface::update()
 float TimerInterface::getElapsed()
 {
 	if (!fixedTimeStep) {
-		return elapsed;
+		return elapsed/1000.0f;
 	} else {
 		if (1.0f/frameSmoother.getSmoothedValue() >= static_cast<float>(fixedFPS)) {
 			return 1.0f/fixedFPS;
@@ -88,6 +90,11 @@ void TimerInterface::setFixedFPS(uint32_t fps, int smoothingFilterSize)
 	if(smoothingFilterSize > 1) {
 		frameSmoother.setBufferSize(smoothingFilterSize);
 	}
+}
+
+void TimerInterface::disableFixedFPS()
+{
+	fixedTimeStep = false;
 }
 
 }

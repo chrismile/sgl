@@ -105,9 +105,9 @@ bool ShaderProgramGL::linkProgram()
 {
 	// 1. Link the shader program
 	glLinkProgram(shaderProgramID);
-	GLint succes = 0;
-	glGetProgramiv(shaderProgramID, GL_LINK_STATUS, &succes);
-	if (!succes) {
+	GLint success = 0;
+	glGetProgramiv(shaderProgramID, GL_LINK_STATUS, &success);
+	if (!success) {
 		GLint infoLogLength;
 		glGetProgramiv(shaderProgramID, GL_INFO_LOG_LENGTH, &infoLogLength);
 		GLchar *infoLog = new GLchar[infoLogLength+1];
@@ -124,12 +124,16 @@ bool ShaderProgramGL::linkProgram()
 		return false;
 	}
 
+	return true;
+}
 
+bool ShaderProgramGL::validateProgram()
+{
 	// 2. Validation
 	glValidateProgram(shaderProgramID);
-	succes = 0;
-	glGetProgramiv(shaderProgramID, GL_VALIDATE_STATUS, &succes);
-	if (!succes) {
+	GLint success = 0;
+	glGetProgramiv(shaderProgramID, GL_VALIDATE_STATUS, &success);
+	if (!success) {
 		GLint infoLogLength;
 		glGetProgramiv(shaderProgramID, GL_INFO_LOG_LENGTH, &infoLogLength);
 		GLchar *infoLog = new GLchar[infoLogLength+1];
@@ -146,7 +150,6 @@ bool ShaderProgramGL::linkProgram()
 		return false;
 	}
 
-	// Shaders linked and validated successfully!
 	return true;
 }
 
@@ -211,6 +214,11 @@ bool ShaderProgramGL::setUniform(const char *name, int value)
 	return setUniform(getUniformLoc_error(name), value);
 }
 
+bool ShaderProgramGL::setUniform(const char *name, bool value)
+{
+	return setUniform(getUniformLoc_error(name), (int)value);
+}
+
 bool ShaderProgramGL::setUniform(const char *name, float value)
 {
 	return setUniform(getUniformLoc_error(name), value);
@@ -226,7 +234,22 @@ bool ShaderProgramGL::setUniform(const char *name, const glm::vec3 &value)
 	return setUniform(getUniformLoc_error(name), value);
 }
 
+bool ShaderProgramGL::setUniform(const char *name, const glm::vec4 &value)
+{
+	return setUniform(getUniformLoc_error(name), value);
+}
+
 bool ShaderProgramGL::setUniform(const char *name, const glm::mat4 &value)
+{
+	return setUniform(getUniformLoc_error(name), value);
+}
+
+bool ShaderProgramGL::setUniform(const char *name, const glm::mat3 &value)
+{
+	return setUniform(getUniformLoc_error(name), value);
+}
+
+bool ShaderProgramGL::setUniform(const char *name, const glm::mat3x4 &value)
 {
 	return setUniform(getUniformLoc_error(name), value);
 }
@@ -239,6 +262,37 @@ bool ShaderProgramGL::setUniform(const char *name, TexturePtr &value, int textur
 bool ShaderProgramGL::setUniform(const char *name, const Color &value)
 {
 	return setUniform(getUniformLoc_error(name), value);
+}
+
+
+bool ShaderProgramGL::setUniformArray(const char *name, const int *value, size_t num)
+{
+	return setUniformArray(getUniformLoc_error(name), value, num);
+}
+
+bool ShaderProgramGL::setUniformArray(const char *name, const bool *value, size_t num)
+{
+	return setUniformArray(getUniformLoc_error(name), value, num);
+}
+
+bool ShaderProgramGL::setUniformArray(const char *name, const float *value, size_t num)
+{
+	return setUniformArray(getUniformLoc_error(name), value, num);
+}
+
+bool ShaderProgramGL::setUniformArray(const char *name, const glm::vec2 *value, size_t num)
+{
+	return setUniformArray(getUniformLoc_error(name), value, num);
+}
+
+bool ShaderProgramGL::setUniformArray(const char *name, const glm::vec3 *value, size_t num)
+{
+	return setUniformArray(getUniformLoc_error(name), value, num);
+}
+
+bool ShaderProgramGL::setUniformArray(const char *name, const glm::vec4 *value, size_t num)
+{
+	return setUniformArray(getUniformLoc_error(name), value, num);
 }
 
 
@@ -271,6 +325,27 @@ bool ShaderProgramGL::setUniform(int location, const glm::vec3 &value)
 	return true;
 }
 
+bool ShaderProgramGL::setUniform(int location, const glm::vec4 &value)
+{
+	bind();
+	glUniform4f(location, value.x, value.y, value.z, value.w);
+	return true;
+}
+
+bool ShaderProgramGL::setUniform(int location, const glm::mat3 &value)
+{
+	bind();
+	glUniformMatrix3fv(location, 1, false, glm::value_ptr(value));
+	return true;
+}
+
+bool ShaderProgramGL::setUniform(int location, const glm::mat3x4 &value)
+{
+	bind();
+	glUniformMatrix3x4fv(location, 1, false, glm::value_ptr(value));
+	return true;
+}
+
 bool ShaderProgramGL::setUniform(int location, const glm::mat4 &value)
 {
 	bind();
@@ -291,6 +366,49 @@ bool ShaderProgramGL::setUniform(int location, const Color &value)
 	bind();
 	float color[] = { value.getFloatR(), value.getFloatG(), value.getFloatB(), value.getFloatA() };
 	glUniform4fv(location, 1, color);
+	return true;
+}
+
+
+bool ShaderProgramGL::setUniformArray(int location, const int *value, size_t num)
+{
+	bind();
+	glUniform1iv(location, num, value);
+	return true;
+}
+
+bool ShaderProgramGL::setUniformArray(int location, const bool *value, size_t num)
+{
+	bind();
+	glUniform1iv(location, num, (int*)value);
+	return true;
+}
+
+bool ShaderProgramGL::setUniformArray(int location, const float *value, size_t num)
+{
+	bind();
+	glUniform1fv(location, num, value);
+	return true;
+}
+
+bool ShaderProgramGL::setUniformArray(int location, const glm::vec2 *value, size_t num)
+{
+	bind();
+	glUniform2fv(location, num, (float*)value);
+	return true;
+}
+
+bool ShaderProgramGL::setUniformArray(int location, const glm::vec3 *value, size_t num)
+{
+	bind();
+	glUniform3fv(location, num, (float*)value);
+	return true;
+}
+
+bool ShaderProgramGL::setUniformArray(int location, const glm::vec4 *value, size_t num)
+{
+	bind();
+	glUniform4fv(location, num, (float*)value);
 	return true;
 }
 

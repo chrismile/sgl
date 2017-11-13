@@ -24,7 +24,7 @@ public:
 	virtual void run();
 	//! Call this function in derived class
 	virtual void update(float dt);
-	virtual void resolutionChanged(EventPtr event) { }
+	virtual void resolutionChanged(EventPtr event) {}
 	virtual void render() {}
 	virtual void setFPSCounterEnabled(bool enabled);
 	inline float getFPS() { return fps; }

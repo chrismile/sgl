@@ -64,6 +64,7 @@ void Camera::onResolutionChanged(EventPtr event) {
 
 
 AABB2 Camera::getAABB2(float planeDistance) {
+	updateCamera();
 	Ray3 ray1 = getCameraToViewportRay(glm::vec2(0.0f, 1.0f));
 	Ray3 ray2 = getCameraToViewportRay(glm::vec2(1.0f, 0.0f));
 	Plane projPlane(glm::vec3(0.0f, 0.0f, 1.0f), -fabs(planeDistance));
@@ -76,6 +77,7 @@ AABB2 Camera::getAABB2(float planeDistance) {
 }
 
 glm::vec2 Camera::mousePositionInPlane(float planeDistance) {
+	updateCamera();
 	Window *window = AppSettings::get()->getMainWindow();
 	Ray3 ray = getCameraToViewportRay(glm::vec2(
 			Mouse->getX()/float(window->getWidth()),

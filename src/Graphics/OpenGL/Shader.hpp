@@ -46,6 +46,7 @@ public:
 	~ShaderProgramGL();
 
 	bool linkProgram();
+	bool validateProgram();
 	void attachShader(ShaderPtr shader);
 	void detachShader(ShaderPtr shader);
 	void bind();
@@ -53,19 +54,39 @@ public:
 	bool hasUniform(const char *name);
 	int getUniformLoc(const char *name);
 	bool setUniform(const char *name, int value);
+	bool setUniform(const char *name, bool value);
 	bool setUniform(const char *name, float value);
 	bool setUniform(const char *name, const glm::vec2 &value);
 	bool setUniform(const char *name, const glm::vec3 &value);
+	bool setUniform(const char *name, const glm::vec4 &value);
+	bool setUniform(const char *name, const glm::mat3 &value);
+	bool setUniform(const char *name, const glm::mat3x4 &value);
 	bool setUniform(const char *name, const glm::mat4 &value);
 	bool setUniform(const char *name, TexturePtr &value, int textureUnit = 0);
 	bool setUniform(const char *name, const Color &value);
+	bool setUniformArray(const char *name, const int *value, size_t num);
+	bool setUniformArray(const char *name, const bool *value, size_t num);
+	bool setUniformArray(const char *name, const float *value, size_t num);
+	bool setUniformArray(const char *name, const glm::vec2 *value, size_t num);
+	bool setUniformArray(const char *name, const glm::vec3 *value, size_t num);
+	bool setUniformArray(const char *name, const glm::vec4 *value, size_t num);
+
 	bool setUniform(int location, int value);
 	bool setUniform(int location, float value);
 	bool setUniform(int location, const glm::vec2 &value);
 	bool setUniform(int location, const glm::vec3 &value);
+	bool setUniform(int location, const glm::vec4 &value);
+	bool setUniform(int location, const glm::mat3 &value);
+	bool setUniform(int location, const glm::mat3x4 &value);
 	bool setUniform(int location, const glm::mat4 &value);
 	bool setUniform(int location, TexturePtr &value, int textureUnit = 0);
 	bool setUniform(int location, const Color &value);
+	bool setUniformArray(int location, const int *value, size_t num);
+	bool setUniformArray(int location, const bool *value, size_t num);
+	bool setUniformArray(int location, const float *value, size_t num);
+	bool setUniformArray(int location, const glm::vec2 *value, size_t num);
+	bool setUniformArray(int location, const glm::vec3 *value, size_t num);
+	bool setUniformArray(int location, const glm::vec4 *value, size_t num);
 
 	inline GLuint getShaderProgramID() { return shaderProgramID; }
 

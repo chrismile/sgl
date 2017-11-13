@@ -2,7 +2,7 @@
  * Random.cpp
  *
  *  Created on: 11.01.2015
- *      Author: Christoph
+ *      Author: Christoph Neuhauser
  */
 
 #include "Random.hpp"

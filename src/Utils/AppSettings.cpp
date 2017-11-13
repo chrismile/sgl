@@ -132,6 +132,10 @@ Window *AppSettings::createWindow()
 
 	SDLWindow *window = new SDLWindow;
 	WindowSettings windowSettings;// = window->deserializeSettings(settings);
+	//windowSettings.width = 1920;
+	//windowSettings.height = 1080;
+	//windowSettings.fullscreen = true;
+	//windowSettings.vSync = false;
 	window->initialize(windowSettings);
 
 	mainWindow = window;

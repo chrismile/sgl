@@ -69,7 +69,7 @@ int getMaxSamplesGLImpl(int desiredSamples) {
 		}
 	}
 
-	Logfile::get()->writeInfo("Maximum OpenGL samples (GLX): " + toString(maxSamples));
+	Logfile::get()->writeInfo("Maximum OpenGL multisamples (GLX): " + toString(maxSamples));
 
 	return min(maxSamples, desiredSamples);
 #else
@@ -137,6 +137,8 @@ void SDLWindow::initialize(const WindowSettings &settings)
 			SDL_ClearError();
 			SDL_GL_SetSwapInterval(1);;
 		}
+	} else {
+		SDL_GL_SetSwapInterval(0);
 	}
 
 	// Did something fail during the initialization?

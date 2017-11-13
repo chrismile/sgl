@@ -39,6 +39,39 @@ enum DepthTextureFormat {
 	DEPTH_COMPONENT32 = 0x81A7, DEPTH_COMPONENT32F = 0x8CAC
 };
 
+struct TextureSettings {
+	TextureSettings() {
+		textureMinFilter = GL_LINEAR;
+		textureMagFilter = GL_LINEAR;
+		textureWrapS = GL_CLAMP_TO_EDGE;
+		textureWrapT = GL_CLAMP_TO_EDGE;
+		textureWrapR = GL_CLAMP_TO_EDGE;
+		anisotropicFilter = false;
+
+		internalFormat = 0x1908; // GL_RGBA
+		pixelFormat = 0x1908; // GL_RGBA
+		pixelType = 0x1401; // GL_UNSIGNED_BYTE
+	}
+	TextureSettings(int _textureMinFilter, int _textureMagFilter,
+			int _textureWrapS, int _textureWrapT, int _textureWrapR = GL_CLAMP_TO_EDGE) : TextureSettings() {
+		textureMinFilter = _textureMinFilter;
+		textureMagFilter = _textureMagFilter;
+		textureWrapS = _textureWrapS;
+		textureWrapT = _textureWrapT;
+		textureWrapR = _textureWrapR;
+	}
+
+	int textureMinFilter;
+	int textureMagFilter;
+	int textureWrapS;
+	int textureWrapT;
+	int textureWrapR;
+	bool anisotropicFilter;
+
+	int internalFormat; // OpenGL: Format of data on GPU
+	int pixelFormat; // OpenGL: Format of pixel data, e.g. RGB, RGBA, BGRA, Depth, Stencil, ...
+	int pixelType; // OpenGL: Type of one pixel data, e.g. Unsigned Byte, Float, ...
+};
 
 /*! Use TextureManager the following ways:
  * - Load texture files from your hard-disk using "getAsset"
@@ -48,14 +81,11 @@ enum DepthTextureFormat {
 class TextureManagerInterface : public FileManager<Texture, TextureInfo>
 {
 public:
-	TexturePtr getAsset(const char *filename, int minificationFilter, int magnificationFilter,
-			int textureWrapS, int textureWrapT, bool anisotropicFilter = false);
-	virtual TexturePtr createEmptyTexture(int w, int h,
-			int textureMinFilter = GL_LINEAR, int textureMagFilter = GL_LINEAR,
-			int textureWrapS = GL_REPEAT, int textureWrapT = GL_REPEAT, bool anisotropicFilter = false)=0;
-	virtual TexturePtr createTexture(void *data, int w, int h,
-			int textureMinFilter = GL_LINEAR, int textureMagFilter = GL_LINEAR,
-			int textureWrapS = GL_REPEAT, int textureWrapT = GL_REPEAT, bool anisotropicFilter = false)=0;
+	TexturePtr getAsset(const char *filename, TextureSettings settings = TextureSettings());
+	virtual TexturePtr createEmptyTexture(int w, int h, TextureSettings settings = TextureSettings())=0;
+	virtual TexturePtr createTexture(void *data, int w, int h, TextureSettings settings = TextureSettings())=0;
+	virtual TexturePtr createEmptyTexture3D(int w, int h, int d, TextureSettings settings = TextureSettings())=0;
+	virtual TexturePtr createTexture3D(void *data, int w, int h, int d, TextureSettings settings = TextureSettings())=0;
 
 	//! Only for FBOs!
 	virtual TexturePtr createMultisampledTexture(int w, int h, int numSamples)=0;

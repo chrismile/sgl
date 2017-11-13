@@ -92,6 +92,7 @@ public:
 	void waitForFPS(uint32_t fps);
 	bool isFPS(uint32_t fps);
 	void setFixedFPS(uint32_t fps, int smoothingFilterSize = -1);
+	void disableFixedFPS();
 
 	/*! High-resolution timer
 	 * Windows implementation: QueryPerformanceCounter (can vary across platforms and threads...)

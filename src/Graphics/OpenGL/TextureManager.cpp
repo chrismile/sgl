@@ -166,10 +166,7 @@ TexturePtr TextureManagerGL::loadAsset(TextureInfo &textureInfo)
 
 }
 
-TexturePtr TextureManagerGL::createEmptyTexture(int width, int height,
-		int textureMinFilter /* = GL_LINEAR */, int textureMagFilter /* = GL_LINEAR */,
-		int textureWrapS /* = GL_REPEAT */, int textureWrapT /* = GL_REPEAT */,
-		bool anisotropicFilter /* = false */)
+TexturePtr TextureManagerGL::createEmptyTexture(int width, int height, TextureSettings settings)
 {
 	GLuint oglTexture;
 	// Create an OpenGL texture for the image
@@ -178,37 +175,34 @@ TexturePtr TextureManagerGL::createEmptyTexture(int width, int height,
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, textureMagFilter);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, textureMinFilter);
-	if (textureMinFilter == GL_LINEAR_MIPMAP_LINEAR
-			|| textureMinFilter == GL_NEAREST_MIPMAP_NEAREST
-			|| textureMinFilter == GL_NEAREST_MIPMAP_LINEAR
-			|| textureMinFilter == GL_LINEAR_MIPMAP_NEAREST) {
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, settings.textureMagFilter);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, settings.textureMinFilter);
+	if (settings.textureMinFilter == GL_LINEAR_MIPMAP_LINEAR
+			|| settings.textureMinFilter == GL_NEAREST_MIPMAP_NEAREST
+			|| settings.textureMinFilter == GL_NEAREST_MIPMAP_LINEAR
+			|| settings.textureMinFilter == GL_LINEAR_MIPMAP_NEAREST) {
 		glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
-	} else if (anisotropicFilter) {
+	} else if (settings.anisotropicFilter) {
 		float maxAnisotropy = SystemGL::get()->getMaximumAnisotropy();
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, maxAnisotropy);
 	}
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, textureWrapS);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, textureWrapT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, settings.textureWrapS);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, settings.textureWrapT);
 	glTexImage2D(GL_TEXTURE_2D,
 			0,
-			GL_RGBA,
+			settings.internalFormat,
 			width, height,
 			0,
-			GL_RGBA,
-			GL_UNSIGNED_BYTE,
+			settings.pixelFormat,
+			settings.pixelType,
 			NULL);
 
-	return TexturePtr(new TextureGL(oglTexture, width, height, 32, textureMinFilter,
-			textureMagFilter, textureWrapS, textureWrapT, 0));
+	return TexturePtr(new TextureGL(oglTexture, width, height, 32, settings.textureMinFilter,
+			settings.textureMagFilter, settings.textureWrapS, settings.textureWrapT, 0));
 }
 
-TexturePtr TextureManagerGL::createTexture(void *data, int width, int height,
-		int textureMinFilter /* = GL_LINEAR */, int textureMagFilter /* = GL_LINEAR */,
-		int textureWrapS /* = GL_REPEAT */, int textureWrapT /* = GL_REPEAT */,
-		bool anisotropicFilter /* = false */)
+TexturePtr TextureManagerGL::createTexture(void *data, int width, int height, TextureSettings settings)
 {
 	GLuint oglTexture;
 	// Create an OpenGL texture for the image
@@ -217,31 +211,101 @@ TexturePtr TextureManagerGL::createTexture(void *data, int width, int height,
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, textureMagFilter);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, textureMinFilter);
-	if (textureMinFilter == GL_LINEAR_MIPMAP_LINEAR
-			|| textureMinFilter == GL_NEAREST_MIPMAP_NEAREST
-			|| textureMinFilter == GL_NEAREST_MIPMAP_LINEAR
-			|| textureMinFilter == GL_LINEAR_MIPMAP_NEAREST) {
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, settings.textureMagFilter);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, settings.textureMinFilter);
+	if (settings.textureMinFilter == GL_LINEAR_MIPMAP_LINEAR
+			|| settings.textureMinFilter == GL_NEAREST_MIPMAP_NEAREST
+			|| settings.textureMinFilter == GL_NEAREST_MIPMAP_LINEAR
+			|| settings.textureMinFilter == GL_LINEAR_MIPMAP_NEAREST) {
 		glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
-	} else if (anisotropicFilter) {
+	} else if (settings.anisotropicFilter) {
 		float maxAnisotropy = SystemGL::get()->getMaximumAnisotropy();
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, maxAnisotropy);
 	}
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, textureWrapS);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, textureWrapT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, settings.textureWrapS);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, settings.textureWrapT);
 	glTexImage2D(GL_TEXTURE_2D,
 			0,
-			GL_RGBA,
+			settings.internalFormat,
 			width, height,
 			0,
-			GL_RGBA,
-			GL_UNSIGNED_BYTE,
+			settings.pixelFormat,
+			settings.pixelType,
 			data);
 
-	return TexturePtr(new TextureGL(oglTexture, width, height, 32, textureMinFilter,
-			textureMagFilter, textureWrapS, textureWrapT, 0));
+	return TexturePtr(new TextureGL(oglTexture, width, height, 32, settings.textureMinFilter,
+			settings.textureMagFilter, settings.textureWrapS, settings.textureWrapT, 0));
+}
+
+TexturePtr TextureManagerGL::createEmptyTexture3D(int width, int height, int depth, TextureSettings settings)
+{
+	GLuint oglTexture;
+	// Create an OpenGL texture for the image
+	glGenTextures(1, &oglTexture);
+	glBindTexture(GL_TEXTURE_3D, oglTexture);
+
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, settings.textureMagFilter);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, settings.textureMinFilter);
+	if (settings.textureMinFilter == GL_LINEAR_MIPMAP_LINEAR
+			|| settings.textureMinFilter == GL_NEAREST_MIPMAP_NEAREST
+			|| settings.textureMinFilter == GL_NEAREST_MIPMAP_LINEAR
+			|| settings.textureMinFilter == GL_LINEAR_MIPMAP_NEAREST) {
+		glTexParameteri(GL_TEXTURE_3D, GL_GENERATE_MIPMAP, GL_TRUE);
+	}
+
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, settings.textureWrapS);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, settings.textureWrapT);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, settings.textureWrapR);
+
+	glTexImage3D(GL_TEXTURE_3D,
+			0,
+			settings.internalFormat,
+			width, height, depth,
+			0,
+			settings.pixelFormat,
+			settings.pixelType,
+			NULL);
+
+	auto texture = new TextureGL(oglTexture, width, height, 32, settings.textureMinFilter,
+			settings.textureMagFilter, settings.textureWrapS, settings.textureWrapT, 0);
+	texture->setTextureType(TEXTURE_3D);
+	return TexturePtr(texture);
+}
+
+TexturePtr TextureManagerGL::createTexture3D(void *data, int width, int height, int depth, TextureSettings settings)
+{
+	GLuint oglTexture;
+	// Create an OpenGL texture for the image
+	glGenTextures(1, &oglTexture);
+	glBindTexture(GL_TEXTURE_3D, oglTexture);
+
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, settings.textureMagFilter);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, settings.textureMinFilter);
+	if (settings.textureMinFilter == GL_LINEAR_MIPMAP_LINEAR
+			|| settings.textureMinFilter == GL_NEAREST_MIPMAP_NEAREST
+			|| settings.textureMinFilter == GL_NEAREST_MIPMAP_LINEAR
+			|| settings.textureMinFilter == GL_LINEAR_MIPMAP_NEAREST) {
+		glTexParameteri(GL_TEXTURE_3D, GL_GENERATE_MIPMAP, GL_TRUE);
+	}
+
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, settings.textureWrapS);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, settings.textureWrapT);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, settings.textureWrapR);
+
+	glTexImage3D(GL_TEXTURE_3D,
+			0,
+			settings.internalFormat,
+			width, height, depth,
+			0,
+			settings.pixelFormat,
+			settings.pixelType,
+			data);
+
+	auto texture = new TextureGL(oglTexture, width, height, 32, settings.textureMinFilter,
+			settings.textureMagFilter, settings.textureWrapS, settings.textureWrapT, 0);
+	texture->setTextureType(TEXTURE_3D);
+	return TexturePtr(texture);
 }
 
 TexturePtr TextureManagerGL::createMultisampledTexture(int w, int h, int numSamples) // Only for FBOs!

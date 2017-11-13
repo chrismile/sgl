@@ -9,16 +9,15 @@
 
 namespace sgl {
 
-TexturePtr TextureManagerInterface::getAsset(const char *filename, int minificationFilter, int magnificationFilter,
-		int textureWrapS, int textureWrapT, bool anisotropicFilter /* = false */)
+TexturePtr TextureManagerInterface::getAsset(const char *filename, TextureSettings settings)
 {
 	TextureInfo info;
 	info.filename = filename;
-	info.minificationFilter = minificationFilter;
-	info.magnificationFilter = magnificationFilter;
-	info.textureWrapS = textureWrapS;
-	info.textureWrapT = textureWrapT;
-	info.anisotropicFilter = anisotropicFilter;
+	info.minificationFilter = settings.textureMinFilter;
+	info.magnificationFilter = settings.textureMagFilter;
+	info.textureWrapS = settings.textureWrapS;
+	info.textureWrapT = settings.textureWrapT;
+	info.anisotropicFilter = settings.anisotropicFilter;
 	return FileManager<Texture, TextureInfo>::getAsset(info);
 }
 

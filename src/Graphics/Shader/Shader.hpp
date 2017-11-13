@@ -49,18 +49,46 @@ public:
 	virtual void attachShader(ShaderPtr shader)=0;
 	virtual void detachShader(ShaderPtr shader)=0;
 	virtual bool linkProgram()=0;
+	virtual bool validateProgram()=0;
 	virtual void bind()=0;
 
 	//! Uniform variables are shared between different executions of a shader program
 	virtual bool hasUniform(const char *name)=0;
 	virtual int getUniformLoc(const char *name)=0;
 	virtual bool setUniform(const char *name, int value)=0;
+	virtual bool setUniform(const char *name, bool value)=0;
 	virtual bool setUniform(const char *name, float value)=0;
 	virtual bool setUniform(const char *name, const glm::vec2 &value)=0;
 	virtual bool setUniform(const char *name, const glm::vec3 &value)=0;
+	virtual bool setUniform(const char *name, const glm::vec4 &value)=0;
+	virtual bool setUniform(const char *name, const glm::mat3 &value)=0;
+	virtual bool setUniform(const char *name, const glm::mat3x4 &value)=0;
 	virtual bool setUniform(const char *name, const glm::mat4 &value)=0;
 	virtual bool setUniform(const char *name, TexturePtr &value, int textureUnit = 0)=0;
 	virtual bool setUniform(const char *name, const Color &value)=0;
+	virtual bool setUniformArray(const char *name, const int *value, size_t num)=0;
+	virtual bool setUniformArray(const char *name, const bool *value, size_t num)=0;
+	virtual bool setUniformArray(const char *name, const float *value, size_t num)=0;
+	virtual bool setUniformArray(const char *name, const glm::vec2 *value, size_t num)=0;
+	virtual bool setUniformArray(const char *name, const glm::vec3 *value, size_t num)=0;
+	virtual bool setUniformArray(const char *name, const glm::vec4 *value, size_t num)=0;
+
+	virtual bool setUniform(int location, int value)=0;
+	virtual bool setUniform(int location, float value)=0;
+	virtual bool setUniform(int location, const glm::vec2 &value)=0;
+	virtual bool setUniform(int location, const glm::vec3 &value)=0;
+	virtual bool setUniform(int location, const glm::vec4 &value)=0;
+	virtual bool setUniform(int location, const glm::mat3 &value)=0;
+	virtual bool setUniform(int location, const glm::mat3x4 &value)=0;
+	virtual bool setUniform(int location, const glm::mat4 &value)=0;
+	virtual bool setUniform(int location, TexturePtr &value, int textureUnit = 0)=0;
+	virtual bool setUniform(int location, const Color &value)=0;
+	virtual bool setUniformArray(int location, const int *value, size_t num)=0;
+	virtual bool setUniformArray(int location, const bool *value, size_t num)=0;
+	virtual bool setUniformArray(int location, const float *value, size_t num)=0;
+	virtual bool setUniformArray(int location, const glm::vec2 *value, size_t num)=0;
+	virtual bool setUniformArray(int location, const glm::vec3 *value, size_t num)=0;
+	virtual bool setUniformArray(int location, const glm::vec4 *value, size_t num)=0;
 };
 
 typedef boost::shared_ptr<ShaderProgram> ShaderProgramPtr;

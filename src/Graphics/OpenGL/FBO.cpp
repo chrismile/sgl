@@ -28,7 +28,7 @@ FramebufferObjectGL::~FramebufferObjectGL()
 	glDeleteFramebuffers(1, &id);
 }
 
-bool FramebufferObjectGL::bind2DTexture(TexturePtr texture, FramebufferAttachment attachment)
+bool FramebufferObjectGL::bindTexture(TexturePtr texture, FramebufferAttachment attachment)
 {
 	if (attachment >= COLOR_ATTACHMENT0 && attachment <= COLOR_ATTACHMENT15) {
 		hasColorAttachment = true;
@@ -42,7 +42,8 @@ bool FramebufferObjectGL::bind2DTexture(TexturePtr texture, FramebufferAttachmen
 	height = textureGL->getH();
 	int samples = texture->getNumSamples();
 	glBindFramebuffer(GL_FRAMEBUFFER, id);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, samples == 0 ? GL_TEXTURE_2D : GL_TEXTURE_2D_MULTISAMPLE, oglTexture, 0);
+	//glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, samples == 0 ? GL_TEXTURE_2D : GL_TEXTURE_2D_MULTISAMPLE, oglTexture, 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, attachment, oglTexture, 0);
 	Renderer->bindFBO(Renderer->getFBO(), true);
 	bool status = checkStatus();
 	return status;
@@ -75,13 +76,14 @@ bool FramebufferObjectGL::checkStatus()
 
 unsigned int FramebufferObjectGL::_bindInternal()
 {
+	glBindFramebuffer(GL_FRAMEBUFFER, id);
+
 	if (!hasColorAttachment) {
 		glDrawBuffer(GL_NONE);
 		glReadBuffer(GL_NONE);
 		hasColorAttachment = true; // Only call once
 	}
 
-	glBindFramebuffer(GL_FRAMEBUFFER, id);
 	return id;
 }
 
@@ -106,7 +108,7 @@ FramebufferObjectGL2::~FramebufferObjectGL2()
 	glDeleteFramebuffersEXT(1, &id);
 }
 
-bool FramebufferObjectGL2::bind2DTexture(TexturePtr texture, FramebufferAttachment attachment)
+bool FramebufferObjectGL2::bindTexture(TexturePtr texture, FramebufferAttachment attachment)
 {
 	if (attachment >= COLOR_ATTACHMENT0 && attachment <= COLOR_ATTACHMENT15) {
 		hasColorAttachment = true;

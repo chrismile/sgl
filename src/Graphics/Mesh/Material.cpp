@@ -192,7 +192,7 @@ MaterialPtr MaterialManagerInterface::createMaterial(const MaterialInfo &info)
 	material->color = info.color;
 	if (!info.textureFilename.empty()) {
 		TexturePtr texture(TextureManager->getAsset(info.textureFilename.c_str(),
-				info.minificationFilter, info.magnificationFilter, info.textureWrapS, info.textureWrapT));
+				TextureSettings(info.minificationFilter, info.magnificationFilter, info.textureWrapS, info.textureWrapT)));
 		material->texture = texture;
 	}
 	return material;

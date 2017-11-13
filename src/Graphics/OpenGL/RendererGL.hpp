@@ -81,6 +81,9 @@ public:
 	void useShaderProgram(ShaderProgramGL *shader);
 
 public:
+	// OpenGL reuses deleted texture IDs -> "unbind" texture
+	void unbindTexture(TexturePtr &tex, unsigned int textureUnit = 0);
+
 	glm::mat4 modelMatrix, viewMatrix, projectionMatrix, viewProjectionMatrix, mvpMatrix;
 	float lineWidth, pointSize;
 	bool wireframeMode;
@@ -93,7 +96,13 @@ public:
 	GLuint currentTextureUnit;
 	GLuint boundFBOID, boundVAO, boundShader;
 	CameraPtr camera;
+
+	// --- For post-processing effects ---
 	ShaderProgramPtr fxaaShader, blurShader, blitShader, resolveMSAAShader, solidShader, whiteShader;
+	void _setNormalizedViewProj();
+	void _restoreViewProj();
+	glm::mat4 oldProjMatrix, oldViewMatrix, oldModelMatrix;
+	FramebufferObjectPtr oldFBO;
 };
 
 }

@@ -15,12 +15,10 @@ namespace sgl {
 class TextureManagerGL : public TextureManagerInterface
 {
 public:
-	TexturePtr createEmptyTexture(int w, int h,
-			int textureMinFilter = GL_LINEAR, int textureMagFilter = GL_LINEAR,
-			int textureWrapS = GL_REPEAT, int textureWrapT = GL_REPEAT, bool anisotropicFilter = false);
-	TexturePtr createTexture(void *data, int w, int h,
-			int textureMinFilter = GL_LINEAR, int textureMagFilter = GL_LINEAR,
-			int textureWrapS = GL_REPEAT, int textureWrapT = GL_REPEAT, bool anisotropicFilter = false);
+	TexturePtr createEmptyTexture(int w, int h, TextureSettings settings = TextureSettings());
+	TexturePtr createTexture(void *data, int w, int h, TextureSettings settings = TextureSettings());
+	TexturePtr createEmptyTexture3D(int w, int h, int d, TextureSettings settings = TextureSettings());
+	TexturePtr createTexture3D(void *data, int w, int h, int d, TextureSettings settings = TextureSettings());
 
 	//! Only for FBOs!
 	TexturePtr createMultisampledTexture(int w, int h, int numSamples);

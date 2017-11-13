@@ -15,11 +15,13 @@ namespace sgl {
 class DLL_OBJECT TextureGL : public Texture
 {
 public:
-	TextureGL(int _texture, int _w, int _h, int _bpp, int _minificationFilter, int _magnificationFilter,
+	TextureGL(unsigned int _texture, int _w, int _h, int _bpp, int _minificationFilter, int _magnificationFilter,
 			int _textureWrapS, int _textureWrapT, int _samples = 0);
 	virtual ~TextureGL();
-	virtual void uploadPixelData(int width, int height, void *pixelData, PixelFormat pixelFormat = PIXEL_FORMAT_RGBA);
+	virtual void uploadPixelData(int width, int height, void *pixelData, PixelFormat pixelFormat = PixelFormat());
+	virtual void uploadPixelData3D(int width, int height, int depth, void *pixelData, PixelFormat pixelFormat = PixelFormat());
 	inline unsigned int getTexture() const { return texture; }
+	inline void setTextureType(TextureType type) { textureType = type; } // TODO: Remove hack by  constructor option
 
 protected:
 	unsigned int texture;

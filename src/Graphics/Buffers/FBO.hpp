@@ -43,7 +43,8 @@ class DLL_OBJECT FramebufferObject
 public:
 	FramebufferObject() {}
 	virtual ~FramebufferObject() {}
-	virtual bool bind2DTexture(TexturePtr texture, FramebufferAttachment attachment = COLOR_ATTACHMENT)=0;
+	//virtual bool bind2DTexture(TexturePtr texture, FramebufferAttachment attachment = COLOR_ATTACHMENT)=0;
+	virtual bool bindTexture(TexturePtr texture, FramebufferAttachment attachment = COLOR_ATTACHMENT)=0;
 	virtual bool bindRenderbuffer(RenderbufferObjectPtr renderbuffer, FramebufferAttachment attachment = DEPTH_ATTACHMENT)=0;
 	//! Width of framebuffer in pixels
 	virtual int getWidth()=0;

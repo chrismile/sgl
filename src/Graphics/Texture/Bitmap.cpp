@@ -106,6 +106,7 @@ void Bitmap::blit(BitmapPtr &aim, const Rectangle &sourceRectangle, const Rectan
 	}
 }
 
+// TODO
 BitmapPtr Bitmap::resizeBiCubic(int destW, int destH)
 {
 	BitmapPtr resizedBitmap(new Bitmap);
@@ -206,7 +207,8 @@ void Bitmap::fromFile(const char *filename) {
 
 	FILE *fp = fopen(filename, "rb");
 	if (fp == 0) {
-		std::cerr << "ERROR: Bitmap::fromFile: Cannot load file \"" << filename << "\"." << std::endl;
+		std::cerr << "ERROR: Bitmap::fromFile: Cannot load file \"" << filename
+				<< "\"." << std::endl;
 		return;
 	}
 
@@ -214,7 +216,8 @@ void Bitmap::fromFile(const char *filename) {
 	fread(header, 1, 8, fp);
 
 	if (png_sig_cmp(header, 0, 8)) {
-		std::cerr << "ERROR: Bitmap::fromFile: The file \"" << filename << "\" is not a PNG file." << std::endl;
+		std::cerr << "ERROR: Bitmap::fromFile: The file \"" << filename
+				<< "\" is not a PNG file." << std::endl;
 		fclose(fp);
 		return;
 	}
@@ -222,7 +225,8 @@ void Bitmap::fromFile(const char *filename) {
 	png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL,
 			NULL, NULL);
 	if (!png_ptr) {
-		std::cerr << "ERROR: Bitmap::fromFile: png_create_read_struct returned 0." << std::endl;
+		std::cerr << "ERROR: Bitmap::fromFile: png_create_read_struct returned 0."
+				<< std::endl;
 		fclose(fp);
 		return;
 	}
@@ -230,7 +234,8 @@ void Bitmap::fromFile(const char *filename) {
 	// Create png_infop struct
 	png_infop info_ptr = png_create_info_struct(png_ptr);
 	if (!info_ptr) {
-		std::cerr << "ERROR: Bitmap::fromFile: png_create_info_struct returned 0." << std::endl;
+		std::cerr << "ERROR: Bitmap::fromFile: png_create_info_struct returned 0."
+				<< std::endl;
 		png_destroy_read_struct(&png_ptr, (png_infopp) NULL, (png_infopp) NULL);
 		fclose(fp);
 		return;
@@ -239,7 +244,9 @@ void Bitmap::fromFile(const char *filename) {
 	// Create png info struct
 	png_infop end_info = png_create_info_struct(png_ptr);
 	if (!end_info) {
-		std::cerr << "ERROR: Bitmap::fromFile: png_create_info_struct returned 0. (2)" << std::endl;
+		std::cerr
+				<< "ERROR: Bitmap::fromFile: png_create_info_struct returned 0. (2)"
+				<< std::endl;
 		png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp) NULL);
 		fclose(fp);
 		return;
@@ -270,9 +277,16 @@ void Bitmap::fromFile(const char *filename) {
 	png_get_IHDR(png_ptr, info_ptr, &tempWidth, &tempHeight, &bitDepth,
 			&colorType, NULL, NULL, NULL);
 
+	if (colorType != PNG_COLOR_TYPE_RGB_ALPHA) {
+		std::cerr << "ERROR: Bitmap::fromFile: Only 32-bit RGBA PNG images supported." << std::endl;
+		png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
+		fclose(fp);
+		return;
+	}
+
 	w = tempWidth;
 	h = tempHeight;
-	bpp = bitDepth;
+	bpp = bitDepth*4;
 
 	// Update the png info struct.
 	png_read_update_info(png_ptr, info_ptr);
@@ -302,7 +316,7 @@ void Bitmap::fromFile(const char *filename) {
 
 	// Set the individual row_pointers to point at the correct offsets of imageData
 	for (int i = 0; i < (int) tempHeight; i++) {
-		rowPointers[tempHeight - 1 - i] = imageData + i * rowbytes;
+		rowPointers[i] = imageData + i * rowbytes; // tempHeight - 1 - i
 	}
 
 	// Read the png into image_data through rowPointers
@@ -347,14 +361,8 @@ bool Bitmap::savePNG(const char *filename, bool mirror /* = false */) {
 	png_bytep *rowPointers = new png_bytep[pngHeight];
 
 	// Does the program need to reverse the direction?
-	if (mirror) {
-		for (unsigned int i = 0; i < pngHeight; i++) {
-			rowPointers[pngHeight-i-1] = bitmap + (i * rowBytes);
-		}
-	} else {
-		for (unsigned int i = 0; i < pngHeight; i++) {
-			rowPointers[i] = bitmap + (i * rowBytes);
-		}
+	for (unsigned int i = 0; i < pngHeight; i++) {
+		rowPointers[i] = bitmap + (i * rowBytes);
 	}
 
 	png_write_image(pngPointer, rowPointers);

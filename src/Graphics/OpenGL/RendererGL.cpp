@@ -11,6 +11,7 @@
 #include <Math/Geometry/MatrixUtil.hpp>
 #include <Utils/Convert.hpp>
 #include <Utils/File/Logfile.hpp>
+#include <Utils/File/FileUtils.hpp>
 #include <Graphics/Mesh/Vertex.hpp>
 #include <Graphics/Texture/TextureManager.hpp>
 #include <Graphics/Scene/Camera.hpp>
@@ -41,8 +42,10 @@ RendererGL::RendererGL()
 	wireframeMode = false;
 	debugOutputExtEnabled = false;
 
-	fxaaShader = ShaderManager->getShaderProgram({"FXAA.Vertex", "FXAA.Fragment"});
-	blurShader = ShaderManager->getShaderProgram({"GaussianBlur.Vertex", "GaussianBlur.Fragment"});
+	if (FileUtils::get()->exists("Data/Shaders/FXAA.glsl"))
+		fxaaShader = ShaderManager->getShaderProgram({"FXAA.Vertex", "FXAA.Fragment"});
+	if (FileUtils::get()->exists("Data/Shaders/GaussianBlur.glsl"))
+		blurShader = ShaderManager->getShaderProgram({"GaussianBlur.Vertex", "GaussianBlur.Fragment"});
 	blitShader = ShaderManager->getShaderProgram({"Blit.Vertex", "Blit.Fragment"});
 	resolveMSAAShader = ShaderManager->getShaderProgram({"ResolveMSAA.Vertex.GL3", "ResolveMSAA.Fragment.GL3"});
 	solidShader = ShaderManager->getShaderProgram({"Mesh.Vertex.Plain", "Mesh.Fragment.Plain"});
@@ -138,7 +141,7 @@ void RendererGL::bindFBO(FramebufferObjectPtr _fbo, bool force /* = false */)
 		if (_fbo.get() != NULL) {
 			boundFBOID = _fbo->_bindInternal();
 		} else {
-			unbindFBO(force);
+			unbindFBO(true);
 		}
 	}
 }
@@ -192,7 +195,9 @@ CameraPtr RendererGL::getCamera()
 void RendererGL::bindTexture(TexturePtr &tex, unsigned int textureUnit /* = 0 */)
 {
 	TextureGL *textureGL = (TextureGL*)tex.get();
-	if (boundTextureID.at(textureUnit) != textureGL->getTexture()) {
+
+	// TODO: OpenGL reuses texture IDs after deletion. Remove bound texture ID!
+	//if (boundTextureID.at(textureUnit) != textureGL->getTexture()) {
 		boundTextureID.at(textureUnit) = textureGL->getTexture();
 
 		if (currentTextureUnit != textureUnit) {
@@ -200,11 +205,22 @@ void RendererGL::bindTexture(TexturePtr &tex, unsigned int textureUnit /* = 0 */
 			currentTextureUnit = textureUnit;
 		}
 
-		if (tex->getNumSamples() == 0) {
+		if (tex->getTextureType() == TEXTURE_3D) {
+			glBindTexture(GL_TEXTURE_3D, textureGL->getTexture());
+		} else if (tex->getNumSamples() == 0) {
 			glBindTexture(GL_TEXTURE_2D, textureGL->getTexture());
 		} else {
 			glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, textureGL->getTexture());
 		}
+	//}
+}
+
+void RendererGL::unbindTexture(TexturePtr &tex, unsigned int textureUnit /* = 0 */)
+{
+	TextureGL *textureGL = (TextureGL*)tex.get();
+
+	if (boundTextureID.at(textureUnit) == textureGL->getTexture()) {
+		boundTextureID.at(textureUnit) = 0;
 	}
 }
 
@@ -447,6 +463,28 @@ void RendererGL::blitTexture(TexturePtr &tex, const AABB2 &renderRect, ShaderPro
 	render(shaderAttributes);
 }
 
+void RendererGL::_setNormalizedViewProj() {
+	// Set a new temporal MV and P matrix to render a fullscreen quad
+	oldProjMatrix = projectionMatrix;
+	oldViewMatrix = viewMatrix;
+	oldModelMatrix = modelMatrix;
+	glm::mat4 newProjMat(matrixOrthogonalProjection(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f));
+	setProjectionMatrix(newProjMat);
+	setViewMatrix(matrixIdentity());
+	setModelMatrix(matrixIdentity());
+	oldFBO = boundFBO;
+}
+
+void RendererGL::_restoreViewProj() {
+	// Reset the matrices
+	setProjectionMatrix(oldProjMatrix);
+	setViewMatrix(oldViewMatrix);
+	setModelMatrix(oldModelMatrix);
+	bindFBO(oldFBO);
+	oldFBO = FramebufferObjectPtr();
+}
+
+
 //#define RESOLVE_BLIT_FBO
 TexturePtr RendererGL::resolveMultisampledTexture(TexturePtr &tex) // Just returns tex if not multisampled
 {
@@ -456,11 +494,11 @@ TexturePtr RendererGL::resolveMultisampledTexture(TexturePtr &tex) // Just retur
 
 #ifdef RESOLVE_BLIT_FBO
 	TexturePtr resolvedTexture = TextureManager->createEmptyTexture(tex->getW(), tex->getH(),
-			tex->getMinificationFilter(), tex->getMagnificationFilter(), tex->getWrapS(), tex->getWrapT());
+			TextureSettings(tex->getMinificationFilter(), tex->getMagnificationFilter(), tex->getWrapS(), tex->getWrapT()));
 	FramebufferObjectPtr msaaFBO = createFBO();
 	FramebufferObjectPtr resolvedFBO = createFBO();
-	msaaFBO->bind2DTexture(tex);
-	resolvedFBO->bind2DTexture(resolvedTexture);
+	msaaFBO->bindTexture(tex);
+	resolvedFBO->bindTexture(resolvedTexture);
 	int w = tex->getW(), h = tex->getH();
 
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, msaaFBO->getID());
@@ -471,18 +509,10 @@ TexturePtr RendererGL::resolveMultisampledTexture(TexturePtr &tex) // Just retur
 #else
 	// OR:
 	TexturePtr resolvedTexture = TextureManager->createEmptyTexture(tex->getW(), tex->getH(),
-			tex->getMinificationFilter(), tex->getMagnificationFilter(), tex->getWrapS(), tex->getWrapT());
+			TextureSettings(tex->getMinificationFilter(), tex->getMagnificationFilter(), tex->getWrapS(), tex->getWrapT()));
 	FramebufferObjectPtr fbo = createFBO();
-	fbo->bind2DTexture(resolvedTexture);
-
-	// Set a new temporal MV and P matrix to render a fullscreen quad
-	glm::mat4 oldProjMatrix = projectionMatrix;
-	glm::mat4 oldViewMatrix = viewMatrix;
-	glm::mat4 oldModelMatrix = modelMatrix;
-	glm::mat4 projectionMatrix(matrixOrthogonalProjection(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f));
-	setProjectionMatrix(projectionMatrix);
-	setViewMatrix(matrixIdentity());
-	setModelMatrix(matrixIdentity());
+	fbo->bindTexture(resolvedTexture);
+	_setNormalizedViewProj();
 
 	// Set-up the vertex data of the rectangle
 	std::vector<VertexTextured> fullscreenQuad(createTexturedQuad(AABB2(glm::vec2(-1.0f, -1.0f), glm::vec2(1.0f, 1.0f))));
@@ -499,11 +529,8 @@ TexturePtr RendererGL::resolveMultisampledTexture(TexturePtr &tex) // Just retur
 	// Now resolve the texture
 	bindFBO(fbo);
 	render(shaderAttributes);
+	_restoreViewProj();
 
-	// Reset the matrices
-	setProjectionMatrix(oldProjMatrix);
-	setViewMatrix(oldViewMatrix);
-	setModelMatrix(oldModelMatrix);
 #endif
 
 	return resolvedTexture;
@@ -514,16 +541,10 @@ void RendererGL::blurTexture(TexturePtr &tex)
 	// Create a framebuffer and a temporal texture for blurring
 	FramebufferObjectPtr blurFramebuffer = createFBO();
 	TexturePtr tempBlurTexture = TextureManager->createEmptyTexture(tex->getW(), tex->getH(),
-			GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER);
+			TextureSettings(GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER));
 
 	// Set a new temporal MV and P matrix to render a fullscreen quad
-	glm::mat4 oldProjMatrix = projectionMatrix;
-	glm::mat4 oldViewMatrix = viewMatrix;
-	glm::mat4 oldModelMatrix = modelMatrix;
-	glm::mat4 projectionMatrix(matrixOrthogonalProjection(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f));
-	setProjectionMatrix(projectionMatrix);
-	setViewMatrix(matrixIdentity());
-	setModelMatrix(matrixIdentity());
+	_setNormalizedViewProj();
 
 	// Set-up the vertex data of the rectangle
 	std::vector<VertexTextured> fullscreenQuad(createTexturedQuad(AABB2(glm::vec2(-1.0f, -1.0f), glm::vec2(1.0f, 1.0f))));
@@ -535,48 +556,41 @@ void RendererGL::blurTexture(TexturePtr &tex)
 	shaderAttributes->addGeometryBuffer(geomBuffer, "position", ATTRIB_FLOAT, 3, 0, stride);
 	shaderAttributes->addGeometryBuffer(geomBuffer, "texcoord", ATTRIB_FLOAT, 2, sizeof(glm::vec3), stride);
 	shaderAttributes->getShaderProgram()->setUniform("texture", tex);
+	shaderAttributes->getShaderProgram()->setUniform("texSize", glm::vec2(tex->getW(), tex->getH()));
 
 	// Perform a horizontal and a vertical blur
+	blurFramebuffer->bindTexture(tempBlurTexture);
 	bindFBO(blurFramebuffer);
-	shaderAttributes->getShaderProgram()->setUniform("horz_blur", 1);
-	blurFramebuffer->bind2DTexture(tempBlurTexture);
+	shaderAttributes->getShaderProgram()->setUniform("horzBlur", true);
 	render(shaderAttributes);
 
-	shaderAttributes->getShaderProgram()->setUniform("horz_blur", 0);
-	blurFramebuffer->bind2DTexture(tex);
+	blurFramebuffer->bindTexture(tex);
+	bindFBO(blurFramebuffer, true);
+	shaderAttributes->getShaderProgram()->setUniform("texture", tempBlurTexture);
+	shaderAttributes->getShaderProgram()->setUniform("horzBlur", false);
 	render(shaderAttributes);
 
 	// Reset the matrices
-	setProjectionMatrix(oldProjMatrix);
-	setViewMatrix(oldViewMatrix);
-	setModelMatrix(oldModelMatrix);
+	_restoreViewProj();
 }
 
 TexturePtr RendererGL::getScaledTexture(TexturePtr &tex, Point2 newSize)
 {
 	// Create a framebuffer and the storage for the scaled texture
 	FramebufferObjectPtr blurFramebuffer = createFBO();
-	TexturePtr scaledTexture = TextureManager->createEmptyTexture(newSize.x, newSize.y,
-			tex->getMinificationFilter(), tex->getMagnificationFilter(), tex->getWrapS(), tex->getWrapT());
+	TexturePtr scaledTexture = TextureManager->createEmptyTexture(newSize.x, newSize.y, TextureSettings(
+			tex->getMinificationFilter(), tex->getMagnificationFilter(), tex->getWrapS(), tex->getWrapT()));
 
 	// Set a new temporal MV and P matrix to render a fullscreen quad
-	glm::mat4 oldProjMatrix = projectionMatrix;
-	glm::mat4 oldViewMatrix = viewMatrix;
-	glm::mat4 oldModelMatrix = modelMatrix;
-	glm::mat4 projectionMatrix(matrixOrthogonalProjection(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f));
-	setProjectionMatrix(projectionMatrix);
-	setViewMatrix(matrixIdentity());
-	setModelMatrix(matrixIdentity());
+	_setNormalizedViewProj();
 
 	// Create a scaled copy of the texture
+	blurFramebuffer->bindTexture(scaledTexture);
 	bindFBO(blurFramebuffer);
-	blurFramebuffer->bind2DTexture(scaledTexture);
 	blitTexture(tex, AABB2(glm::vec2(-1,-1), glm::vec2(1,1)));
 
 	// Reset the matrices
-	setProjectionMatrix(oldProjMatrix);
-	setViewMatrix(oldViewMatrix);
-	setModelMatrix(oldModelMatrix);
+	_restoreViewProj();
 
 	return scaledTexture;
 }
@@ -584,13 +598,7 @@ TexturePtr RendererGL::getScaledTexture(TexturePtr &tex, Point2 newSize)
 void RendererGL::blitTextureFXAAAntialiased(TexturePtr &tex)
 {
 	// Set a new temporal MV and P matrix to render a fullscreen quad
-	glm::mat4 oldProjMatrix = projectionMatrix;
-	glm::mat4 oldViewMatrix = viewMatrix;
-	glm::mat4 oldModelMatrix = modelMatrix;
-	glm::mat4 projectionMatrix(matrixOrthogonalProjection(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f));
-	setProjectionMatrix(projectionMatrix);
-	setViewMatrix(matrixIdentity());
-	setModelMatrix(matrixIdentity());
+	_setNormalizedViewProj();
 
 	// Set the attributes of the shader
 	//fxaaShader->setUniform("m_Texture", tex);
@@ -604,9 +612,7 @@ void RendererGL::blitTextureFXAAAntialiased(TexturePtr &tex)
 	blitTexture(tex, AABB2(glm::vec2(-1,-1), glm::vec2(1,1)), fxaaShader);
 
 	// Reset the matrices
-	setProjectionMatrix(oldProjMatrix);
-	setViewMatrix(oldViewMatrix);
-	setModelMatrix(oldModelMatrix);
+	_restoreViewProj();
 }
 
 

@@ -26,3 +26,10 @@ target_link_libraries(sgl GLEW)
 IF(UNIX AND NOT APPLE)
 	target_link_libraries(sgl X11)
 ENDIF()
+
+# For make install
+install (TARGETS sgl DESTINATION bin)
+install (
+    DIRECTORY ${CMAKE_SOURCE_DIR}/src/
+    DESTINATION include/sgl/
+    FILES_MATCHING PATTERN "*.h*")
