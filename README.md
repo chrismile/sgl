@@ -29,13 +29,19 @@ cmake ..
 make
 ```
 
+To install the library to /usr/local, run 
+
+```
+sudo make install
+```
+
 If doxygen is installed on your system, you can call
 
 ```
 doxygen doxygen.conf
 ```
 
-to generate the documentation for this project.
+in the main directory to generate the documentation for this project.
 
 
 ## License
