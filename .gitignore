@@ -54,3 +54,5 @@ CTestTestfile.cmake
 docs/html/*
 docs/latex/*
 /Debug/
+
+build/*
