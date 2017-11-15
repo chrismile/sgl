@@ -166,10 +166,10 @@ void AppSettings::initializeSubsystems()
 	operatingSystem = MACOSX;
 #endif
 
-	if (TTF_Init() == -1) {
+	/*if (TTF_Init() == -1) {
 		Logfile::get()->writeError("ERROR: SDLWindow::initializeAudio: Couldn't initialize SDL_ttf!");
 		Logfile::get()->writeError(std::string() + "SDL_ttf initialization error: " + TTF_GetError());
-	}
+	}*/
 
 	// Create the subsystem implementations
 	Timer = new SDLTimer;
@@ -199,7 +199,7 @@ void AppSettings::release()
 	delete Timer;
 
 	//Mix_CloseAudio();
-	TTF_Quit();
+	//TTF_Quit();
 	SDL_Quit();
 }
 
