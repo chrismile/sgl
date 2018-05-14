@@ -28,8 +28,10 @@ public:
 	inline unsigned int getGLBufferType() { return oglBufferType; }
 
 private:
+	void initialize(BufferType type, BufferUse bufferUse);
 	unsigned int buffer;
 	unsigned int oglBufferType;
+	unsigned int oglBufferUsage;
 };
 
 }

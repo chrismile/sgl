@@ -14,41 +14,40 @@ namespace sgl {
 GeometryBufferGL::GeometryBufferGL(size_t size, BufferType type /* = VERTEX_BUFFER */, BufferUse bufferUse /* = BUFFER_STATIC */)
 	: GeometryBuffer(size, type, bufferUse)
 {
-	GLenum usage = GL_STATIC_DRAW;
-	if (bufferUse == BUFFER_DYNAMIC) {
-		usage = GL_DYNAMIC_DRAW;
-	} else if (bufferUse == BUFFER_STREAM) {
-		usage = GL_STREAM_DRAW;
-	}
-
-	oglBufferType = GL_ARRAY_BUFFER;
-	if (type == INDEX_BUFFER) {
-		oglBufferType = GL_ELEMENT_ARRAY_BUFFER;
-	}
+	initialize(type, bufferUse);
 
 	glGenBuffers(1, &buffer);
 	glBindBuffer(oglBufferType, buffer);
-	glBufferData(oglBufferType, size, NULL, usage);
+	glBufferData(oglBufferType, size, NULL, oglBufferUsage);
 }
 
 GeometryBufferGL::GeometryBufferGL(size_t size, void *data, BufferType type /* = VERTEX_BUFFER*/, BufferUse bufferUse /* = BUFFER_STATIC */)
 	: GeometryBuffer(size, data, type, bufferUse)
 {
-	GLenum usage = GL_STATIC_DRAW;
+	initialize(type, bufferUse);
+
+	glGenBuffers(1, &buffer);
+	glBindBuffer(oglBufferType, buffer);
+	glBufferData(oglBufferType, size, data, oglBufferUsage);
+}
+
+void GeometryBufferGL::initialize(BufferType type, BufferUse bufferUse)
+{
+	oglBufferUsage = GL_STATIC_DRAW;
 	if (bufferUse == BUFFER_DYNAMIC) {
-		usage = GL_DYNAMIC_DRAW;
+		oglBufferUsage = GL_DYNAMIC_DRAW;
 	} else if (bufferUse == BUFFER_STREAM) {
-		usage = GL_STREAM_DRAW;
+		oglBufferUsage = GL_STREAM_DRAW;
 	}
 
 	oglBufferType = GL_ARRAY_BUFFER;
 	if (type == INDEX_BUFFER) {
 		oglBufferType = GL_ELEMENT_ARRAY_BUFFER;
+	} else if (type == SHADER_STORAGE_BUFFER) {
+		oglBufferType = GL_SHADER_STORAGE_BUFFER;
+	} else if (type == UNIFORM_BUFFER) {
+		oglBufferType = GL_UNIFORM_BUFFER;
 	}
-
-	glGenBuffers(1, &buffer);
-	glBindBuffer(oglBufferType, buffer);
-	glBufferData(oglBufferType, size, data, usage);
 }
 
 GeometryBufferGL::~GeometryBufferGL()

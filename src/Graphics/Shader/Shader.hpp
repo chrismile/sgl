@@ -9,10 +9,11 @@
 #define GRAPHICS_SHADER_SHADER_HPP_
 
 #include <string>
-#include <Defs.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
 #include <glm/fwd.hpp>
+#include <Defs.hpp>
+#include <Graphics/Buffers/GeometryBuffer.hpp>
 
 namespace sgl {
 
@@ -89,6 +90,26 @@ public:
 	virtual bool setUniformArray(int location, const glm::vec2 *value, size_t num)=0;
 	virtual bool setUniformArray(int location, const glm::vec3 *value, size_t num)=0;
 	virtual bool setUniformArray(int location, const glm::vec4 *value, size_t num)=0;
+
+	/**
+	 * UBOs:
+	 * - Binding: A global slot for UBOs in the OpenGL context.
+	 * - Location (aka block index): The location of the referenced UBO within the shader.
+	 * Instead of location, one can also use the name of the UBO within the shader to reference it.
+	 * TODO: Outsource binding to Shader Manager (as shader programs have shared bindings).
+	 */
+	virtual bool setUniformBuffer(int binding, int location, GeometryBufferPtr &geometryBuffer)=0;
+	virtual bool setUniformBuffer(int binding, const char *name, GeometryBufferPtr &geometryBuffer)=0;
+
+	/**
+	 * SSBOs:
+	 * - Binding: A global slot for SSBOs in the OpenGL context.
+	 * - Location (aka resource index): The location of the referenced SSBO within the shader.
+	 * Instead of location, one can also use the name of the SSBO within the shader to reference it.
+	 * TODO: Outsource binding to Shader Manager (as shader programs have shared bindings).
+	 */
+	virtual bool setShaderStorageBuffer(int binding, int location, GeometryBufferPtr &geometryBuffer)=0;
+	virtual bool setShaderStorageBuffer(int binding, const char *name, GeometryBufferPtr &geometryBuffer)=0;
 };
 
 typedef boost::shared_ptr<ShaderProgram> ShaderProgramPtr;

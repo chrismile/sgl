@@ -135,7 +135,7 @@ void SDLWindow::initialize(const WindowSettings &settings)
 		if (boost::contains(sdlError, "Negative swap interval unsupported")) {
 			Logfile::get()->writeInfo(std::string() + "VSYNC Info: " + sdlError);
 			SDL_ClearError();
-			SDL_GL_SetSwapInterval(1);;
+			SDL_GL_SetSwapInterval(1);
 		}
 	} else {
 		SDL_GL_SetSwapInterval(0);
@@ -179,6 +179,8 @@ void SDLWindow::update()
 bool SDLWindow::processEvents()
 {
 	bool running = true;
+	SDLMouse *sdlMouse = (SDLMouse*)Mouse;
+	sdlMouse->setScrollWheelValue(0);
 	SDL_Event event;
 	while (SDL_PollEvent (&event)) {
 		switch (event.type) {
@@ -220,7 +222,6 @@ bool SDLWindow::processEvents()
 			break;
 
 		case SDL_MOUSEWHEEL:
-			SDLMouse *sdlMouse = (SDLMouse*)Mouse;
 			sdlMouse->setScrollWheelValue(event.wheel.y);
 			break;
 		}

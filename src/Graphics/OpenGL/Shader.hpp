@@ -88,6 +88,29 @@ public:
 	bool setUniformArray(int location, const glm::vec3 *value, size_t num);
 	bool setUniformArray(int location, const glm::vec4 *value, size_t num);
 
+
+	// OpenGL 3 Uniform Buffers & OpenGL 4 Shader Storage Buffers
+
+	/**
+	 * UBOs:
+	 * - Binding: A global slot for UBOs in the OpenGL context.
+	 * - Location (aka block index): The location of the referenced UBO within the shader.
+	 * Instead of location, one can also use the name of the UBO within the shader to reference it.
+	 * TODO: Outsource binding to Shader Manager (as shader programs have shared bindings).
+	 */
+	bool setUniformBuffer(int binding, int location, GeometryBufferPtr &geometryBuffer);
+	bool setUniformBuffer(int binding, const char *name, GeometryBufferPtr &geometryBuffer);
+
+	/**
+	 * SSBOs:
+	 * - Binding: A global slot for SSBOs in the OpenGL context.
+	 * - Location (aka resource index): The location of the referenced SSBO within the shader.
+	 * Instead of location, one can also use the name of the SSBO within the shader to reference it.
+	 * TODO: Outsource binding to Shader Manager (as shader programs have shared bindings).
+	 */
+	bool setShaderStorageBuffer(int binding, int location, GeometryBufferPtr &geometryBuffer);
+	bool setShaderStorageBuffer(int binding, const char *name, GeometryBufferPtr &geometryBuffer);
+
 	inline GLuint getShaderProgramID() { return shaderProgramID; }
 
 private:

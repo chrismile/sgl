@@ -8,6 +8,7 @@
 #ifndef SRC_MATH_GEOMETRY_MATRIXUTIL_HPP_
 #define SRC_MATH_GEOMETRY_MATRIXUTIL_HPP_
 
+#define GLM_ENABLE_EXPERIMENTAL
 #include <Defs.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>

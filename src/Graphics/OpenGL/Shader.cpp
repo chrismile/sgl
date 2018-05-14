@@ -412,4 +412,46 @@ bool ShaderProgramGL::setUniformArray(int location, const glm::vec4 *value, size
 	return true;
 }
 
+
+
+// OpenGL 3 Uniform Buffers & OpenGL 4 Shader Storage Buffers
+bool ShaderProgramGL::setUniformBuffer(int binding, int location, GeometryBufferPtr &geometryBuffer)
+{
+	GLuint ubo = static_cast<GeometryBufferGL*>(geometryBuffer.get())->getBuffer();
+
+	// Binding point is unique for _all_ shaders
+	glBindBufferBase(GL_UNIFORM_BUFFER, binding, ubo);
+
+	// Location is set per shader (by name, explicitly, or by layout modifier)
+	glUniformBlockBinding(shaderProgramID, location, binding);
+
+	return true;
+}
+
+bool ShaderProgramGL::setUniformBuffer(int binding, const char *name, GeometryBufferPtr &geometryBuffer)
+{
+	// Block index (aka location in the shader) can be queried by name in the shader
+	unsigned int blockIndex = glGetUniformBlockIndex(shaderProgramID, name);
+	return setUniformBuffer(binding, blockIndex, geometryBuffer);
+}
+
+
+bool ShaderProgramGL::setShaderStorageBuffer(int binding, int location, GeometryBufferPtr &geometryBuffer)
+{
+	GLuint ssbo = static_cast<GeometryBufferGL*>(geometryBuffer.get())->getBuffer();
+
+	// Binding point is unique for _all_ shaders
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, ssbo);
+
+	// Set location to resource index per shader
+	glShaderStorageBlockBinding(shaderProgramID, location, binding);
+}
+
+bool ShaderProgramGL::setShaderStorageBuffer(int binding, const char *name, GeometryBufferPtr &geometryBuffer)
+{
+	// Resource index (aka location in the shader) can be queried by name in the shader
+	unsigned int resourceIndex = glGetProgramResourceIndex(shaderProgramID, GL_SHADER_STORAGE_BLOCK, name);
+	return setShaderStorageBuffer(binding, resourceIndex, geometryBuffer);
+}
+
 }
