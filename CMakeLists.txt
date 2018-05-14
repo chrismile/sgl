@@ -28,7 +28,7 @@ IF(UNIX AND NOT APPLE)
 ENDIF()
 
 # For make install. TODO: "include/sgl/"
-install (TARGETS sgl DESTINATION bin)
+install (TARGETS sgl DESTINATION lib)
 install (
     DIRECTORY ${CMAKE_SOURCE_DIR}/src/
     DESTINATION include/sgl
