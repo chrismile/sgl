@@ -5,16 +5,19 @@
  *      Author: Christoph Neuhauser
  */
 
+#include <iostream>
+#include <cstring>
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string.hpp>
+
 #include <GL/glew.h>
+#include "glsw/glsw.h"
+
 #include "ShaderManager.hpp"
 #include <Utils/File/Logfile.hpp>
 #include "Shader.hpp"
 #include "SystemGL.hpp"
 #include "ShaderAttributes.hpp"
-#include "glsw/glsw.h"
-#include <cstring>
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/algorithm/string.hpp>
 
 namespace sgl {
 
@@ -80,11 +83,21 @@ ShaderPtr ShaderManagerGL::loadAsset(ShaderInfo &shaderInfo)
 		return ShaderPtr();
 	}
 
-	std::string shaderString;
-	if (gl != 2) {
-		shaderString = std::string() + "#version 150\n" + glswString;
+	std::string shaderString = glswString;
+	if (!boost::contains(shaderString, "#version")) {
+		if (gl == 2) {
+			shaderString = std::string() + "#version 120\n" + glswString;
+		} else if (gl == 3) {
+			shaderString = std::string() + "#version 150\n" + glswString;
+		} else {
+			shaderString = std::string() + "#version 430\n" + glswString;
+		}
 	} else {
-		shaderString = std::string() + "#version 120\n" + glswString;
+		size_t versionStart = shaderString.find("#version");
+		size_t versionEnd = shaderString.find("\n", versionStart);
+		std::string versionString = shaderString.substr(versionStart, versionEnd-versionStart);
+		shaderString.insert(versionEnd, "\n");
+		shaderString = versionString + "\n" + shaderString.erase(versionStart, versionEnd-versionStart);
 	}
 
 	ShaderGL *shaderGL = new ShaderGL(shaderInfo.shaderType);
