@@ -11,6 +11,7 @@
 #include <Defs.hpp>
 #include <cassert>
 #include <string>
+#include <vector>
 
 namespace sgl {
 
@@ -32,6 +33,16 @@ public:
 	void write(const T &val) { write((const void*)&val, sizeof(T)); }
 	void write(const char *str);
 	void write(const std::string &str);
+
+	template<typename T>
+	void writeArray(const std::vector<T> &v)
+	{
+		uint32_t size = v.size();
+		write(size);
+		if (size > 0) {
+			write((const void*)&v.front(), sizeof(T)*v.size());
+		}
+	}
 
 	//! Serialization with pipe operator
 	template<typename T>
@@ -62,6 +73,17 @@ public:
 	template<typename T>
 	void read(T &val) { read((void*)&val, sizeof(T)); }
 	void read(std::string &str);
+
+	template<typename T>
+	void readArray(std::vector<T> &v)
+	{
+		uint32_t size;
+		read(size);
+		if (size > 0) {
+			v.resize(size);
+			read((void*)&v.front(), sizeof(T)*v.size());
+		}
+	}
 
 	//! Deserialization with pipe operator
 	template<typename T>

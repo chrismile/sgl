@@ -25,6 +25,16 @@ public:
 protected:
 	ShaderPtr loadAsset(ShaderInfo &shaderInfo);
 	ShaderProgramPtr createShaderProgram(const std::list<std::string> &shaderIDs);
+
+	// Internal loading
+	std::string loadFileString(const std::string &shaderName);
+	std::string getShaderString(const std::string &globalShaderName);
+
+	// Directory in which to search for shaders (standard: Data/Shaders
+	std::string pathPrefix;
+
+	// Maps shader name -> shader source
+	std::map<std::string, std::string> effectSources;
 };
 
 }

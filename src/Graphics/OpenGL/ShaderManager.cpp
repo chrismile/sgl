@@ -7,14 +7,23 @@
 
 #include <iostream>
 #include <cstring>
+#include <string>
+#include <vector>
+#include <map>
+#include <fstream>
+#include <streambuf>
+#include <sstream>
+#include <iostream>
+
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string.hpp>
 
 #include <GL/glew.h>
-#include "glsw/glsw.h"
+//#include "glsw/glsw.h"
 
 #include "ShaderManager.hpp"
 #include <Utils/File/Logfile.hpp>
+#include <Utils/Convert.hpp>
 #include "Shader.hpp"
 #include "SystemGL.hpp"
 #include "ShaderAttributes.hpp"
@@ -23,17 +32,11 @@ namespace sgl {
 
 ShaderManagerGL::ShaderManagerGL()
 {
-	if (!glswInit()) {
-		Logfile::get()->writeError("ERROR: ShaderManager::ShaderManager: !glswInit()");
-	}
-	glswSetPath("./Data/Shaders/", ".glsl");
+	pathPrefix = "./Data/Shaders/";
 }
 
 ShaderManagerGL::~ShaderManagerGL()
 {
-	if (!glswShutdown()) {
-		Logfile::get()->writeError("ERROR: ShaderManager::~ShaderManager: !glswShutdown()");
-	}
 }
 
 ShaderProgramPtr ShaderManagerGL::createShaderProgram(const std::list<std::string> &shaderIDs)
@@ -69,36 +72,7 @@ ShaderProgramPtr ShaderManagerGL::createShaderProgram(const std::list<std::strin
 ShaderPtr ShaderManagerGL::loadAsset(ShaderInfo &shaderInfo)
 {
 	std::string id = shaderInfo.filename;
-	int gl = 2; // Standard: OpenGL 2
-	if (boost::algorithm::ends_with(id.c_str(), ".GL3") || boost::algorithm::ends_with(id.c_str(), ".GL4")) {
-		gl = boost::algorithm::ends_with(id.c_str(), ".GL3") ? 3 : 4;
-		id.erase(id.size()-4, 4);
-	}
-
-	// Load the shader using GLSW
-	const char *glswString = glswGetShader(id.c_str());
-	if (!glswString) {
-		const char *error = glswGetError();
-		Logfile::get()->writeError(std::string() + "ERROR: ShaderManager::getShader: glswGetError: " + error);
-		return ShaderPtr();
-	}
-
-	std::string shaderString = glswString;
-	if (!boost::contains(shaderString, "#version")) {
-		if (gl == 2) {
-			shaderString = std::string() + "#version 120\n" + glswString;
-		} else if (gl == 3) {
-			shaderString = std::string() + "#version 150\n" + glswString;
-		} else {
-			shaderString = std::string() + "#version 430\n" + glswString;
-		}
-	} else {
-		size_t versionStart = shaderString.find("#version");
-		size_t versionEnd = shaderString.find("\n", versionStart);
-		std::string versionString = shaderString.substr(versionStart, versionEnd-versionStart);
-		shaderString.insert(versionEnd, "\n");
-		shaderString = versionString + "\n" + shaderString.erase(versionStart, versionEnd-versionStart);
-	}
+	std::string shaderString = getShaderString(id);
 
 	ShaderGL *shaderGL = new ShaderGL(shaderInfo.shaderType);
 	ShaderPtr shader(shaderGL);
@@ -126,6 +100,88 @@ ShaderAttributesPtr ShaderManagerGL::createShaderAttributes(ShaderProgramPtr &sh
 		return ShaderAttributesPtr(new ShaderAttributesGL3(shader));
 	}
 	return ShaderAttributesPtr(new ShaderAttributesGL2(shader));
+}
+
+
+
+std::string ShaderManagerGL::loadFileString(const std::string &shaderName) {
+	std::ifstream file(shaderName.c_str());
+	if (!file.is_open()) {
+		Logfile::get()->writeError(std::string() + "Error in loadFileString: Couldn't open the file \""
+				+ shaderName + "\".");
+	}
+	std::string fileContent((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+	file.close();
+	return fileContent;
+}
+
+std::string ShaderManagerGL::getShaderString(const std::string &globalShaderName) {
+	auto it = effectSources.find(globalShaderName);
+	if (it != effectSources.end()) {
+		return it->second;
+	}
+
+	int filenameEnd = globalShaderName.find(".");
+	std::string pureFilename = globalShaderName.substr(0, filenameEnd);
+	std::string shaderFilename = pathPrefix + pureFilename + ".glsl";
+	std::string shaderInternalID = globalShaderName.substr(filenameEnd+1);
+
+	std::ifstream file(shaderFilename.c_str());
+	if (!file.is_open()) {
+		Logfile::get()->writeError(std::string() + "Error in getShader: Couldn't open the file \""
+				+ shaderFilename + "\".");
+	}
+
+	std::string shaderName = "";
+	std::string shaderContent = "";
+	int lineNum = 2;
+	std::string linestr;
+	while (getline(file, linestr)) {
+		// Remove \r if line ending is \r\n
+		if (linestr.size() > 0 && linestr.at(linestr.size()-1) == '\r') {
+			linestr = linestr.substr(0, linestr.size()-1);
+		}
+
+		if (boost::starts_with(linestr, "-- ")) {
+			if (shaderContent.size() > 0) {
+				if (shaderName.size() > 0) {
+					effectSources.insert(make_pair(shaderName, shaderContent));
+				}
+			}
+
+			shaderName = pureFilename + "." + linestr.substr(3);
+			shaderContent = std::string() + "#line " + toString(lineNum) + "\n";
+		} else if (boost::starts_with(linestr, "#version")) {
+			shaderContent = std::string() + linestr + "\n" + shaderContent + "\n";
+		} else if (boost::starts_with(linestr, "#include")) {
+			int startFilename = linestr.find("\"");
+			int endFilename = linestr.find_last_of("\"");
+			std::string includedFileName = linestr.substr(startFilename+1, endFilename-startFilename-1);
+			std::string includedFileContent = loadFileString(pathPrefix + includedFileName);
+			shaderContent += includedFileContent + "\n";
+			shaderContent += std::string() + "#line " + toString(lineNum) + "\n";
+		} else {
+			shaderContent += std::string() + linestr + "\n";
+		}
+
+		lineNum++;
+	}
+	file.close();
+
+	if (shaderName.size() > 0) {
+		effectSources.insert(make_pair(shaderName, shaderContent));
+	} else {
+		effectSources.insert(make_pair(pureFilename + ".glsl", shaderContent));
+	}
+
+	it = effectSources.find(globalShaderName);
+	if (it != effectSources.end()) {
+		return it->second;
+	}
+
+	Logfile::get()->writeError(std::string() + "Error in getShader: Couldn't find the shader \""
+			+ globalShaderName + "\".");
+	return "";
 }
 
 }

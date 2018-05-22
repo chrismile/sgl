@@ -47,7 +47,7 @@ RendererGL::RendererGL()
 	if (FileUtils::get()->exists("Data/Shaders/GaussianBlur.glsl"))
 		blurShader = ShaderManager->getShaderProgram({"GaussianBlur.Vertex", "GaussianBlur.Fragment"});
 	blitShader = ShaderManager->getShaderProgram({"Blit.Vertex", "Blit.Fragment"});
-	resolveMSAAShader = ShaderManager->getShaderProgram({"ResolveMSAA.Vertex.GL3", "ResolveMSAA.Fragment.GL3"});
+	resolveMSAAShader = ShaderManager->getShaderProgram({"ResolveMSAA.Vertex", "ResolveMSAA.Fragment"});
 	solidShader = ShaderManager->getShaderProgram({"Mesh.Vertex.Plain", "Mesh.Fragment.Plain"});
 	whiteShader = ShaderManager->getShaderProgram({"WhiteSolid.Vertex", "WhiteSolid.Fragment"});
 

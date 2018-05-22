@@ -9,6 +9,7 @@
 #include "BinaryStream.hpp"
 #include <algorithm>
 #include <cstring>
+#include <cmath>
 #include <Utils/File/Logfile.hpp>
 
 namespace sgl {
@@ -49,7 +50,7 @@ void BinaryWriteStream::write(const void *data, size_t size)
 {
 	// Check if we need to increase the buffer size
 	if (bufferSize + size > capacity) {
-		reserve(bufferSize*2);
+		reserve(std::max(bufferSize + size, bufferSize*2));
 	}
 
 	assert(bufferSize + size <= capacity);

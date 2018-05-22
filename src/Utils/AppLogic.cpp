@@ -41,13 +41,13 @@ void AppLogic::run()
 	float timeToProcess = 0.0f;
 	float lastFrame = Timer->getTicks()/1000.0f - 20.0f;
 	while (running == true) {
-		running = window->processEvents();
 		window->update();
-		window->clear(Color(0, 0, 0));
 		timeToProcess += Timer->getElapsedRealTime();
 
 		if (timeToProcess >= Timer->getElapsed()) {
 			do {
+				running = window->processEvents();
+
 				float dt = Timer->getElapsed();
 				Mouse->update(dt);
 				Keyboard->update(dt);
@@ -55,6 +55,8 @@ void AppLogic::run()
 				update(dt);
 				timeToProcess -= Timer->getElapsed();
 			} while(timeToProcess >= Timer->getElapsed() && running);
+
+			window->clear(Color(0, 0, 0));
 			render();
 
 			if (fpsCounterEnabled) {

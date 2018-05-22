@@ -131,7 +131,7 @@ Window *AppSettings::createWindow()
 	}
 
 	SDLWindow *window = new SDLWindow;
-	WindowSettings windowSettings;// = window->deserializeSettings(settings);
+	WindowSettings windowSettings = window->deserializeSettings(settings);
 	windowSettings.width = 1920;
 	windowSettings.height = 1080;
 	//windowSettings.resizable = false;

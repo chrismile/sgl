@@ -173,11 +173,12 @@ void SDLWindow::close()
 void SDLWindow::update()
 {
 	Timer->update();
-	SDL_PumpEvents();
 }
 
 bool SDLWindow::processEvents()
 {
+	SDL_PumpEvents();
+
 	bool running = true;
 	SDLMouse *sdlMouse = (SDLMouse*)Mouse;
 	sdlMouse->setScrollWheelValue(0);
@@ -263,6 +264,7 @@ WindowSettings SDLWindow::deserializeSettings(const SettingsFile &settings)
 	settings.getValueOpt("window-multisamples", windowSettings.multisamples);
 	settings.getValueOpt("window-depthSize", windowSettings.depthSize);
 	settings.getValueOpt("window-vSync", windowSettings.vSync);
+	settings.getValueOpt("window-debugContext", windowSettings.debugContext);
 	return windowSettings;
 }
 
