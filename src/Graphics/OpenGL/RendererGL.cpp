@@ -422,33 +422,42 @@ void RendererGL::disableWireframeMode()
 
 
 // Utility functions
-void RendererGL::blitTexture(TexturePtr &tex, const AABB2 &renderRect)
+void RendererGL::blitTexture(TexturePtr &tex, const AABB2 &renderRect, bool mirrored)
 {
 	if (tex->getNumSamples() > 0) {
-		blitTexture(tex, renderRect, resolveMSAAShader);
+		blitTexture(tex, renderRect, resolveMSAAShader, mirrored);
 	} else {
-		blitTexture(tex, renderRect, blitShader);
+		blitTexture(tex, renderRect, blitShader, mirrored);
 	}
 }
 
-std::vector<VertexTextured> createTexturedQuad(const AABB2 &renderRect)
+std::vector<VertexTextured> createTexturedQuad(const AABB2 &renderRect, bool mirrored = false)
 {
 	glm::vec2 min = renderRect.getMinimum();
 	glm::vec2 max = renderRect.getMaximum();
-	std::vector<VertexTextured> quad{
-		VertexTextured(glm::vec3(max.x,max.y,0), glm::vec2(1, 1)),
-		VertexTextured(glm::vec3(min.x,min.y,0), glm::vec2(0, 0)),
-		VertexTextured(glm::vec3(max.x,min.y,0), glm::vec2(1, 0)),
-		VertexTextured(glm::vec3(min.x,min.y,0), glm::vec2(0, 0)),
-		VertexTextured(glm::vec3(max.x,max.y,0), glm::vec2(1, 1)),
-		VertexTextured(glm::vec3(min.x,max.y,0), glm::vec2(0, 1))};
-	return quad;
+	if (!mirrored) {
+        return std::vector<VertexTextured>{
+                VertexTextured(glm::vec3(max.x,max.y,0), glm::vec2(1, 1)),
+                VertexTextured(glm::vec3(min.x,min.y,0), glm::vec2(0, 0)),
+                VertexTextured(glm::vec3(max.x,min.y,0), glm::vec2(1, 0)),
+                VertexTextured(glm::vec3(min.x,min.y,0), glm::vec2(0, 0)),
+                VertexTextured(glm::vec3(max.x,max.y,0), glm::vec2(1, 1)),
+                VertexTextured(glm::vec3(min.x,max.y,0), glm::vec2(0, 1))};
+	} else {
+        return std::vector<VertexTextured>{
+                VertexTextured(glm::vec3(max.x,max.y,0), glm::vec2(1, 0)),
+                VertexTextured(glm::vec3(min.x,min.y,0), glm::vec2(0, 1)),
+                VertexTextured(glm::vec3(max.x,min.y,0), glm::vec2(1, 1)),
+                VertexTextured(glm::vec3(min.x,min.y,0), glm::vec2(0, 1)),
+                VertexTextured(glm::vec3(max.x,max.y,0), glm::vec2(1, 0)),
+                VertexTextured(glm::vec3(min.x,max.y,0), glm::vec2(0, 0))};
+	}
 }
 
-void RendererGL::blitTexture(TexturePtr &tex, const AABB2 &renderRect, ShaderProgramPtr &shader)
+void RendererGL::blitTexture(TexturePtr &tex, const AABB2 &renderRect, ShaderProgramPtr &shader, bool mirrored)
 {
 	// Set-up the vertex data of the rectangle
-	std::vector<VertexTextured> fullscreenQuad(createTexturedQuad(renderRect));
+	std::vector<VertexTextured> fullscreenQuad(createTexturedQuad(renderRect, mirrored));
 
 	// Feed the shader with the data and render the quad
 	int stride = sizeof(VertexTextured);
