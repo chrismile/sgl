@@ -53,7 +53,8 @@ public:
 
 	bool hasUniform(const char *name);
 	int getUniformLoc(const char *name);
-	bool setUniform(const char *name, int value);
+    bool setUniform(const char *name, int value);
+    bool setUniform(const char *name, unsigned int value);
 	bool setUniform(const char *name, bool value);
 	bool setUniform(const char *name, float value);
 	bool setUniform(const char *name, const glm::vec2 &value);
@@ -65,6 +66,7 @@ public:
 	bool setUniform(const char *name, TexturePtr &value, int textureUnit = 0);
 	bool setUniform(const char *name, const Color &value);
 	bool setUniformArray(const char *name, const int *value, size_t num);
+	bool setUniformArray(const char *name, const unsigned int *value, size_t num);
 	bool setUniformArray(const char *name, const bool *value, size_t num);
 	bool setUniformArray(const char *name, const float *value, size_t num);
 	bool setUniformArray(const char *name, const glm::vec2 *value, size_t num);
@@ -72,6 +74,7 @@ public:
 	bool setUniformArray(const char *name, const glm::vec4 *value, size_t num);
 
 	bool setUniform(int location, int value);
+	bool setUniform(int location, unsigned int value);
 	bool setUniform(int location, float value);
 	bool setUniform(int location, const glm::vec2 &value);
 	bool setUniform(int location, const glm::vec3 &value);
@@ -82,6 +85,7 @@ public:
 	bool setUniform(int location, TexturePtr &value, int textureUnit = 0);
 	bool setUniform(int location, const Color &value);
 	bool setUniformArray(int location, const int *value, size_t num);
+	bool setUniformArray(int location, const unsigned int *value, size_t num);
 	bool setUniformArray(int location, const bool *value, size_t num);
 	bool setUniformArray(int location, const float *value, size_t num);
 	bool setUniformArray(int location, const glm::vec2 *value, size_t num);
@@ -100,6 +104,16 @@ public:
 	 */
 	bool setUniformBuffer(int binding, int location, GeometryBufferPtr &geometryBuffer);
 	bool setUniformBuffer(int binding, const char *name, GeometryBufferPtr &geometryBuffer);
+
+	/**
+	 * Atomic counters (GL_ATOMIC_COUNTER_BUFFER)
+	 * https://www.khronos.org/opengl/wiki/Atomic_Counter
+	 * - Binding: A global slot for atomic counter buffers in the OpenGL context.
+	 * - Location (aka resource index): The location of the referenced SSBO within the shader.
+	 * TODO: Outsource binding to Shader Manager (as shader programs have shared bindings).
+	 */
+	bool setAtomicCounterBuffer(int binding, int location, GeometryBufferPtr &geometryBuffer);
+	bool setAtomicCounterBuffer(int binding, const char *name, GeometryBufferPtr &geometryBuffer);
 
 	/**
 	 * SSBOs:

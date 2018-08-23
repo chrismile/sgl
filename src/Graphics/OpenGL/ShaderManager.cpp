@@ -24,6 +24,7 @@
 #include "ShaderManager.hpp"
 #include <Utils/File/Logfile.hpp>
 #include <Utils/Convert.hpp>
+#include <Utils/File/FileUtils.hpp>
 #include "Shader.hpp"
 #include "SystemGL.hpp"
 #include "ShaderAttributes.hpp"
@@ -33,6 +34,7 @@ namespace sgl {
 ShaderManagerGL::ShaderManagerGL()
 {
 	pathPrefix = "./Data/Shaders/";
+	indexFiles(pathPrefix);
 }
 
 ShaderManagerGL::~ShaderManagerGL()
@@ -115,6 +117,33 @@ std::string ShaderManagerGL::loadFileString(const std::string &shaderName) {
 	return fileContent;
 }
 
+
+void ShaderManagerGL::indexFiles(const std::string &file) {
+	if (FileUtils::get()->isDirectory(file)) {
+		// Scan content of directory
+		std::vector<std::string> elements = FileUtils::get()->getFilesInDirectoryVector(file);
+		for (std::string &childFile : elements) {
+			indexFiles(childFile);
+		}
+	} else if (FileUtils::get()->hasExtension(file.c_str(), ".glsl")) {
+		// File to index. "fileName" is name without path.
+		std::string fileName = FileUtils::get()->getPureFilename(file);
+		shaderFileMap.insert(make_pair(fileName, file));
+	}
+}
+
+
+std::string ShaderManagerGL::getShaderFileName(const std::string &pureFilename)
+{
+	auto it = shaderFileMap.find(pureFilename);
+	if (it == shaderFileMap.end()) {
+		sgl::Logfile::get()->writeError("Error in ShaderManagerGL::getShaderFileName: Unknown file name \""
+				+ pureFilename + "\".");
+		return "";
+	}
+	return it->second;
+}
+
 std::string ShaderManagerGL::getShaderString(const std::string &globalShaderName) {
 	auto it = effectSources.find(globalShaderName);
 	if (it != effectSources.end()) {
@@ -123,7 +152,7 @@ std::string ShaderManagerGL::getShaderString(const std::string &globalShaderName
 
 	int filenameEnd = globalShaderName.find(".");
 	std::string pureFilename = globalShaderName.substr(0, filenameEnd);
-	std::string shaderFilename = pathPrefix + pureFilename + ".glsl";
+	std::string shaderFilename = getShaderFileName(pureFilename + ".glsl");
 	std::string shaderInternalID = globalShaderName.substr(filenameEnd+1);
 
 	std::ifstream file(shaderFilename.c_str());
@@ -156,8 +185,9 @@ std::string ShaderManagerGL::getShaderString(const std::string &globalShaderName
 		} else if (boost::starts_with(linestr, "#include")) {
 			int startFilename = linestr.find("\"");
 			int endFilename = linestr.find_last_of("\"");
-			std::string includedFileName = linestr.substr(startFilename+1, endFilename-startFilename-1);
-			std::string includedFileContent = loadFileString(pathPrefix + includedFileName);
+			std::string includedFileName = getShaderFileName(
+					linestr.substr(startFilename+1, endFilename-startFilename-1));
+			std::string includedFileContent = loadFileString(includedFileName);
 			shaderContent += includedFileContent + "\n";
 			shaderContent += std::string() + "#line " + toString(lineNum) + "\n";
 		} else {

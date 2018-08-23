@@ -26,15 +26,26 @@ protected:
 	ShaderPtr loadAsset(ShaderInfo &shaderInfo);
 	ShaderProgramPtr createShaderProgram(const std::list<std::string> &shaderIDs);
 
-	// Internal loading
+	/// Internal loading
 	std::string loadFileString(const std::string &shaderName);
 	std::string getShaderString(const std::string &globalShaderName);
 
-	// Directory in which to search for shaders (standard: Data/Shaders
+	/**
+	 * Indexes all ".glsl" files in the directory pathPrefix (and its sub-directories recursively) to create
+	 * "shaderFileMap". Therefore, the application can easily include files with relative paths.
+	 */
+	void indexFiles(const std::string &file);
+	std::string getShaderFileName(const std::string &pureFilename);
+
+	/// Directory in which to search for shaders (standard: Data/Shaders
 	std::string pathPrefix;
 
-	// Maps shader name -> shader source
+	/// Maps shader name -> shader source, e.g. "Blur.Fragment" -> "void main() { ... }".
 	std::map<std::string, std::string> effectSources;
+
+	/// Maps file names without path to full file paths for "*.glsl" shader files,
+	/// e.g. "Blur.glsl" -> "Data/Shaders/PostProcessing/Blur.glsl".
+	std::map<std::string, std::string> shaderFileMap;
 };
 
 }
