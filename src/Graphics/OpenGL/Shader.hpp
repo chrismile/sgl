@@ -27,7 +27,7 @@ public:
 	inline GLuint getShaderID() const { return shaderID; }
 	inline GLuint getShaderType() const { return shaderType; }
 	inline const char *getFileID() const { return fileID.c_str(); }
-	inline void setFileID(const char *_fileID) { fileID = _fileID; }
+	inline void setFileID(const std::string &_fileID) { fileID = _fileID; }
 	//! Returns e.g. "Fragment Shader" for logging purposes
 	std::string getShaderDebugType();
 
@@ -109,11 +109,11 @@ public:
 	 * Atomic counters (GL_ATOMIC_COUNTER_BUFFER)
 	 * https://www.khronos.org/opengl/wiki/Atomic_Counter
 	 * - Binding: A global slot for atomic counter buffers in the OpenGL context.
-	 * - Location (aka resource index): The location of the referenced SSBO within the shader.
+	 * - Location: Not possible to specify. Oddly, only supported for uniform buffers and SSBOs in OpenGl specification.
 	 * TODO: Outsource binding to Shader Manager (as shader programs have shared bindings).
 	 */
-	bool setAtomicCounterBuffer(int binding, int location, GeometryBufferPtr &geometryBuffer);
-	bool setAtomicCounterBuffer(int binding, const char *name, GeometryBufferPtr &geometryBuffer);
+	bool setAtomicCounterBuffer(int binding, GeometryBufferPtr &geometryBuffer);
+	//bool setAtomicCounterBuffer(int binding, const char *name, GeometryBufferPtr &geometryBuffer);
 
 	/**
 	 * SSBOs:

@@ -268,7 +268,7 @@ void RendererGL::setBlendMode(BlendMode mode)
 			glEnable(GL_BLEND);
 			//glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
 			//glBlendEquation(GL_FUNC_ADD);
-			glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
+			glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 			glBlendEquation(GL_FUNC_ADD);
 			//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 

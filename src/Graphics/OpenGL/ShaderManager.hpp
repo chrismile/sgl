@@ -22,6 +22,15 @@ public:
 	ShaderPtr createShader(ShaderType sh);
 	ShaderAttributesPtr createShaderAttributes(ShaderProgramPtr &shader);
 
+    // --- Compute shader interface ---
+
+    /// Array containing maximum work-group count in x,y,z that can be passed to glDispatchCompute.
+    virtual const std::vector<int> &getMaxComputeWorkGroupCount();
+    /// Array containing maximum local work-group size (defined in shader with layout qualifier).
+    virtual const std::vector<int> &getMaxComputeWorkGroupSize();
+    /// Maximum number of work group units of a local work group, e.g. 1024 local work items.
+    virtual int getMaxWorkGroupInvocations();
+
 protected:
 	ShaderPtr loadAsset(ShaderInfo &shaderInfo);
 	ShaderProgramPtr createShaderProgram(const std::list<std::string> &shaderIDs);
@@ -46,6 +55,11 @@ protected:
 	/// Maps file names without path to full file paths for "*.glsl" shader files,
 	/// e.g. "Blur.glsl" -> "Data/Shaders/PostProcessing/Blur.glsl".
 	std::map<std::string, std::string> shaderFileMap;
+
+private:
+	std::vector<int> maxComputeWorkGroupCount;
+	std::vector<int> maxComputeWorkGroupSize;
+	int maxWorkGroupInvocations;
 };
 
 }

@@ -42,6 +42,8 @@ public:
 	double getTimeMS(const std::string &name);
 	/// Prints the time returned by "getTimeMS"
 	void printTimeMS(const std::string &name);
+	// Prints sum of all average times
+	void printTotalAvgTime();
 
 private:
     /// The names of the event regions mapped to indices for the lists below

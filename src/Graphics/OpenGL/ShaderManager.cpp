@@ -13,7 +13,6 @@
 #include <fstream>
 #include <streambuf>
 #include <sstream>
-#include <iostream>
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string.hpp>
@@ -35,11 +34,36 @@ ShaderManagerGL::ShaderManagerGL()
 {
 	pathPrefix = "./Data/Shaders/";
 	indexFiles(pathPrefix);
+
+	// Query compute shader capabilities
+	maxComputeWorkGroupCount.resize(3);
+	maxComputeWorkGroupSize.resize(3);
+	for (int i = 0; i < 3; i++) {
+		glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, i, (&maxComputeWorkGroupCount.front()) + i);
+		glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, i, (&maxComputeWorkGroupSize.front()) + i);
+	}
+	glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &maxWorkGroupInvocations);
 }
 
 ShaderManagerGL::~ShaderManagerGL()
 {
 }
+
+const std::vector<int> &ShaderManagerGL::getMaxComputeWorkGroupCount()
+{
+	return maxComputeWorkGroupCount;
+}
+
+const std::vector<int> &ShaderManagerGL::getMaxComputeWorkGroupSize()
+{
+	return maxComputeWorkGroupSize;
+}
+
+int ShaderManagerGL::getMaxWorkGroupInvocations()
+{
+	return maxWorkGroupInvocations;
+}
+
 
 ShaderProgramPtr ShaderManagerGL::createShaderProgram(const std::list<std::string> &shaderIDs)
 {

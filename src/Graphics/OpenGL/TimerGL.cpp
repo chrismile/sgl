@@ -81,4 +81,15 @@ void TimerGL::printTimeMS(const std::string &name)
     std::cout << "TIMER - " << name << ": " << timeMS << "ms" << std::endl;
 }
 
+
+void TimerGL::printTotalAvgTime()
+{
+	double timeMS = 0.0;
+	for (auto it = regionNameMap.begin(); it != regionNameMap.end(); it++) {
+		int index = it->second;
+		timeMS += static_cast<double>(elapsedTimeNS.at(index)) / static_cast<double>(numSamples.at(index)) * 1e-6;
+	}
+	std::cout << "TOTAL TIME (avg): " << timeMS << "ms" << std::endl;
+}
+
 }

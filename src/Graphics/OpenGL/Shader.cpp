@@ -461,7 +461,7 @@ bool ShaderProgramGL::setUniformBuffer(int binding, const char *name, GeometryBu
 }
 
 
-bool ShaderProgramGL::setAtomicCounterBuffer(int binding, int location, GeometryBufferPtr &geometryBuffer)
+bool ShaderProgramGL::setAtomicCounterBuffer(int binding, GeometryBufferPtr &geometryBuffer)
 {
 	GLuint buffer = static_cast<GeometryBufferGL*>(geometryBuffer.get())->getBuffer();
 
@@ -469,15 +469,15 @@ bool ShaderProgramGL::setAtomicCounterBuffer(int binding, int location, Geometry
 	glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, binding, buffer);
 
 	// Set location to resource index per shader
-	glShaderStorageBlockBinding(shaderProgramID, location, binding);
+	//glShaderStorageBlockBinding(shaderProgramID, location, binding);
 }
 
-bool ShaderProgramGL::setAtomicCounterBuffer(int binding, const char *name, GeometryBufferPtr &geometryBuffer)
+/*bool ShaderProgramGL::setAtomicCounterBuffer(int binding, const char *name, GeometryBufferPtr &geometryBuffer)
 {
 	// Resource index (aka location in the shader) can be queried by name in the shader
-	unsigned int resourceIndex = glGetProgramResourceIndex(shaderProgramID, GL_SHADER_STORAGE_BLOCK, name);
+	unsigned int resourceIndex = glGetProgramResourceIndex(shaderProgramID, GL_ATOMIC_COUNTER_BUFFER, name);
 	return setAtomicCounterBuffer(binding, resourceIndex, geometryBuffer);
-}
+}*/
 
 
 bool ShaderProgramGL::setShaderStorageBuffer(int binding, int location, GeometryBufferPtr &geometryBuffer)
