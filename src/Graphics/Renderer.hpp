@@ -100,8 +100,8 @@ public:
 	virtual void disableWireframeMode()=0;
 
 	//! Utility functions
-	virtual void blitTexture(TexturePtr &tex, const AABB2 &renderRect)=0;
-	virtual void blitTexture(TexturePtr &tex, const AABB2 &renderRect, ShaderProgramPtr &shader)=0;
+	virtual void blitTexture(TexturePtr &tex, const AABB2 &renderRect, bool mirrored = false)=0;
+	virtual void blitTexture(TexturePtr &tex, const AABB2 &renderRect, ShaderProgramPtr &shader, bool mirrored = false)=0;
 	//! Just returns tex if not multisampled
 	virtual TexturePtr resolveMultisampledTexture(TexturePtr &tex)=0;
 	//! Texture needs GL_LINEAR filter for best results!

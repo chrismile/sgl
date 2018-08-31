@@ -77,8 +77,16 @@ void *GeometryBufferGL::mapBufferRange(int offset, size_t size, BufferMapping ac
 		Logfile::get()->writeError("GeometryBufferGL::subData: offset + size > bufferSize.");
 	}
 
+	// https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glMapBufferRange.xhtml
+	GLbitfield access = 0;
+	if (accessType == BUFFER_MAP_READ_ONLY || accessType == BUFFER_MAP_READ_WRITE) {
+		access |= GL_MAP_READ_BIT;
+	} else if (accessType == BUFFER_MAP_WRITE_ONLY || accessType == BUFFER_MAP_READ_WRITE) {
+		access |= GL_MAP_WRITE_BIT;
+	}
+
 	glBindBuffer(oglBufferType, buffer);
-	return glMapBufferRange(oglBufferType, offset, size, accessType);
+	return glMapBufferRange(oglBufferType, offset, size, access);
 }
 
 void GeometryBufferGL::unmapBuffer()
