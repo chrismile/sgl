@@ -40,7 +40,7 @@ bool FramebufferObjectGL::bindTexture(TexturePtr texture, FramebufferAttachment 
 	int oglTexture = textureGL->getTexture();
 	width = textureGL->getW();
 	height = textureGL->getH();
-	int samples = texture->getNumSamples();
+	//int samples = texture->getNumSamples();
 	glBindFramebuffer(GL_FRAMEBUFFER, id);
 	//glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, samples == 0 ? GL_TEXTURE_2D : GL_TEXTURE_2D_MULTISAMPLE, oglTexture, 0);
 	glFramebufferTexture(GL_FRAMEBUFFER, attachment, oglTexture, 0);

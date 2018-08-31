@@ -445,6 +445,8 @@ bool ShaderProgramGL::setShaderStorageBuffer(int binding, int location, Geometry
 
 	// Set location to resource index per shader
 	glShaderStorageBlockBinding(shaderProgramID, location, binding);
+
+	return true;
 }
 
 bool ShaderProgramGL::setShaderStorageBuffer(int binding, const char *name, GeometryBufferPtr &geometryBuffer)

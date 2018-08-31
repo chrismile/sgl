@@ -143,10 +143,8 @@ std::string ShaderManagerGL::getShaderString(const std::string &globalShaderName
 		}
 
 		if (boost::starts_with(linestr, "-- ")) {
-			if (shaderContent.size() > 0) {
-				if (shaderName.size() > 0) {
-					effectSources.insert(make_pair(shaderName, shaderContent));
-				}
+			if (shaderContent.size() > 0 && shaderName.size() > 0) {
+				effectSources.insert(make_pair(shaderName, shaderContent));
 			}
 
 			shaderName = pureFilename + "." + linestr.substr(3);
