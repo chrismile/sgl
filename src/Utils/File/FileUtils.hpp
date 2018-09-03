@@ -41,10 +41,12 @@ public:
 	/// Check whether file has certain extension
 	bool hasExtension(const char *fileString, const char *extension);
 	std::string filenameWithoutExtension(const std::string &filename);
-	/// /home/user/Info.txt -> Info.txt
+	/// "/home/user/Info.txt" -> "Info.txt"
 	std::string getPureFilename(const std::string &path);
-	/// Info.txt -> Info
+	/// "Info.txt" -> "Info"
 	std::string removeExtension(const std::string &path);
+	/// "/home/user/Info.txt" -> "/home/user/"
+	std::string getPathToFile(const std::string &path);
 
 	std::list<std::string> getFilesInDirectoryList(const std::string &dirPath);
 	std::vector<std::string> getFilesInDirectoryVector(const std::string &dirPath);

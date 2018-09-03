@@ -107,6 +107,18 @@ std::string FileUtils::removeExtension(const std::string &path)
 	return path;
 }
 
+// "/home/user/Info.txt" -> "/home/user/"
+std::string FileUtils::getPathToFile(const std::string &path)
+{
+	for (int i = path.size()-1; i >= 0; --i) {
+		if (path.at(i) == '/' || path.at(i) == '\\') {
+			return path.substr(0, i+1);
+		}
+	}
+	return path;
+}
+
+
 std::list<std::string> FileUtils::getFilesInDirectoryList(const std::string &dirPath)
 {
 	boost::filesystem::path dir(dirPath);
