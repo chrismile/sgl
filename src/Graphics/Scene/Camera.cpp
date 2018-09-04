@@ -93,9 +93,10 @@ void Camera::updateCamera() {
 		projMat = glm::perspective(fovy, aspect, nearDist, farDist);
 	}
 	if (recalcModelMat) {
-		modelMatrix = matrixTranslation(this->transform.position)
-				* glm::mat4(this->transform.orientation)
-				* matrixScaling(this->transform.scale);
+		modelMatrix =
+		        glm::mat4(this->transform.orientation)
+		        * matrixTranslation(this->transform.position)
+		        * matrixScaling(this->transform.scale);
 	}
 	if (recalcFrustum || recalcModelMat) {
 		viewProjMat = projMat * modelMatrix;
