@@ -361,8 +361,14 @@ bool Bitmap::savePNG(const char *filename, bool mirror /* = false */) {
 	png_bytep *rowPointers = new png_bytep[pngHeight];
 
 	// Does the program need to reverse the direction?
-	for (unsigned int i = 0; i < pngHeight; i++) {
-		rowPointers[i] = bitmap + (i * rowBytes);
+	if (mirror) {
+		for (unsigned int i = 0; i < pngHeight; i++) {
+			rowPointers[i] = bitmap + ((pngHeight-i-1) * rowBytes);
+		}
+	} else {
+		for (unsigned int i = 0; i < pngHeight; i++) {
+			rowPointers[i] = bitmap + (i * rowBytes);
+		}
 	}
 
 	png_write_image(pngPointer, rowPointers);

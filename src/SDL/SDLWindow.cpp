@@ -274,6 +274,14 @@ void SDLWindow::saveScreenshot(const char *filename)
 	glReadPixels(0, 0, windowSettings.width, windowSettings.height, GL_RGBA, GL_UNSIGNED_BYTE, bitmap->getPixels());
 	bitmap->savePNG(filename, true);
 	Logfile::get()->write(std::string() + "INFO: SDLWindow::saveScreenshot: Screenshot saved to \"" + filename + "\".", BLUE);
+	/*
+	// Mirrored BMP image
+	SDL_Surface *surface = SDL_CreateRGBSurfaceFrom(bitmap->getPixels(), windowSettings.width, windowSettings.height,
+			32, windowSettings.width*4, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+	std::string bmpFilename = std::string() + filename + ".bmp";
+	SDL_SaveBMP(surface, bmpFilename.c_str());
+	SDL_FreeSurface(surface);
+	 */
 }
 
 }

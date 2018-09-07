@@ -15,7 +15,8 @@ namespace sgl {
 /*! VERTEX_BUFFER: GL_ARRAY_BUFFER (vertex data)
  * INDEX_BUFFER: GL_ELEMENT_ARRAY_BUFFER (indices) */
 enum BufferType {
-	VERTEX_BUFFER = 0x8892, INDEX_BUFFER = 0x8893, SHADER_STORAGE_BUFFER = 0x90D2, UNIFORM_BUFFER = 0x8A11
+	VERTEX_BUFFER = 0x8892, INDEX_BUFFER = 0x8893, SHADER_STORAGE_BUFFER = 0x90D2, UNIFORM_BUFFER = 0x8A11,
+	ATOMIC_COUNTER_BUFFER = 0x92C0
 };
 
 /*! BUFFER_STATIC: Data is uploaded to the buffer only once and won't be updated afterwards (static meshes)
