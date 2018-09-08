@@ -53,6 +53,9 @@ public:
 	//! Outputs e.g. "SDL_GetError"
 	virtual void errorCheck() {}
 
+	/// Returns whether this window uses
+	virtual bool isDebugContext()=0;
+
 	//! Initialize/close the window
 	virtual void initialize(const WindowSettings&)=0;
 	virtual void close()=0;

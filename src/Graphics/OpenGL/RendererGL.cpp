@@ -12,10 +12,12 @@
 #include <Utils/Convert.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
+#include <Utils/AppSettings.hpp>
 #include <Graphics/Mesh/Vertex.hpp>
 #include <Graphics/Texture/TextureManager.hpp>
 #include <Graphics/Scene/Camera.hpp>
 #include <Graphics/Scene/RenderTarget.hpp>
+#include <Graphics/Window.hpp>
 #include "SystemGL.hpp"
 #include "FBO.hpp"
 #include "RBO.hpp"
@@ -25,6 +27,62 @@
 #include "Texture.hpp"
 
 namespace sgl {
+
+std::string getErrorSeverityString(GLenum severity)
+{
+    const std::map<GLenum, std::string> severityMap = {
+            { GL_DEBUG_SEVERITY_HIGH,         "High" },
+            { GL_DEBUG_SEVERITY_MEDIUM,       "Medium" },
+            { GL_DEBUG_SEVERITY_LOW,          "Low" },
+            { GL_DEBUG_SEVERITY_NOTIFICATION, "Notification" }
+    };
+    return severityMap.at(severity);
+}
+
+std::string getErrorSourceString(GLenum source)
+{
+    const std::map<GLenum, std::string> sourceMap = {
+            { GL_DEBUG_SOURCE_API, "OpenGL API" },
+            { GL_DEBUG_SOURCE_WINDOW_SYSTEM, "Window System" },
+            { GL_DEBUG_SOURCE_WINDOW_SYSTEM, "Shader Compiler" },
+            { GL_DEBUG_SOURCE_THIRD_PARTY, "Third Party" },
+            { GL_DEBUG_SOURCE_APPLICATION, "Application" },
+            { GL_DEBUG_SOURCE_OTHER, "Other" }
+    };
+    return sourceMap.at(source);
+}
+
+std::string getErrorTypeString(GLenum type)
+{
+    const std::map<GLenum, std::string> typeMap = {
+            { GL_DEBUG_TYPE_ERROR, "API Error" },
+            { GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR, "Deprecated Behavior" },
+            { GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR, "Undefined Behavior" },
+            { GL_DEBUG_TYPE_PORTABILITY, "Non-Portable Functionality" },
+            { GL_DEBUG_TYPE_PERFORMANCE, "Bad Performance" },
+            { GL_DEBUG_TYPE_MARKER, "Command Stream Annotation" },
+            { GL_DEBUG_TYPE_PUSH_GROUP, "Group Pushing" },
+            { GL_DEBUG_TYPE_POP_GROUP, "Group Popping" },
+            { GL_DEBUG_TYPE_OTHER, "Other" }
+    };
+    return typeMap.at(type);
+}
+
+// Uses KHR_debug. For more information see https://www.khronos.org/opengl/wiki/Debug_Output.
+void openglErrorCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message,
+        const void* userParam)
+{
+    Logfile::get()->writeError("OpenGL Error:");
+    Logfile::get()->writeError("=============");
+    Logfile::get()->writeError(std::string() + " Message ID: " + sgl::toString(id));
+    Logfile::get()->writeError(std::string() + " Severity: " + getErrorSeverityString(severity));
+    Logfile::get()->writeError(std::string() + " Type: " + getErrorTypeString(type));
+    Logfile::get()->writeError(std::string() + " Source: " + getErrorSourceString(source));
+    Logfile::get()->writeError(std::string() + " Message: " + message);
+    Logfile::get()->writeError("");
+
+	Renderer->callApplicationErrorCallback();
+}
 
 RendererGL::RendererGL()
 {
@@ -51,11 +109,47 @@ RendererGL::RendererGL()
 	solidShader = ShaderManager->getShaderProgram({"Mesh.Vertex.Plain", "Mesh.Fragment.Plain"});
 	whiteShader = ShaderManager->getShaderProgram({"WhiteSolid.Vertex", "WhiteSolid.Fragment"});
 
-	if (SystemGL::get()->isGLExtensionAvailable("ARB_debug_output")
-			|| SystemGL::get()->isGLExtensionAvailable("KHR_debug")) {
+	// https://www.khronos.org/opengl/wiki/Debug_Output
+	if ((SystemGL::get()->isGLExtensionAvailable("ARB_debug_output")
+			|| SystemGL::get()->isGLExtensionAvailable("KHR_debug")
+			|| SystemGL::get()->openglVersionMinimum(4, 3))
+			&& AppSettings::get()->getMainWindow()->isDebugContext()) {
 		glEnable(GL_DEBUG_OUTPUT);
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+		setDebugVerbosity(DEBUG_OUTPUT_MEDIUM_AND_ABOVE);
+		glDebugMessageCallback((GLDEBUGPROC)openglErrorCallback, NULL);
 		debugOutputExtEnabled = true;
 	}
+}
+
+void RendererGL::setErrorCallback(std::function<void()> callback)
+{
+	applicationErrorCallback = callback;
+}
+
+void RendererGL::callApplicationErrorCallback()
+{
+	if (applicationErrorCallback) {
+		applicationErrorCallback();
+	}
+}
+
+void RendererGL::setDebugVerbosity(DebugVerbosity verbosity)
+{
+	GLboolean activeHigh = GL_TRUE, activeMedium = GL_FALSE, activeLow = GL_FALSE, activeNotification = GL_FALSE;
+	if ((int)verbosity > 0) {
+		activeMedium = GL_TRUE;
+	}
+	if ((int)verbosity > 1) {
+		activeLow = GL_TRUE;
+	}
+	if ((int)verbosity > 2) {
+		activeNotification = GL_TRUE;
+	}
+	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_HIGH, 0, NULL, activeHigh);
+	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_MEDIUM, 0, NULL, activeMedium);
+	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_LOW, 0, NULL, activeLow);
+	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, NULL, activeNotification);
 }
 
 std::vector<std::string> getErrorMessages() {

@@ -8,15 +8,18 @@
 #ifndef GRAPHICS_RENDERER_HPP_
 #define GRAPHICS_RENDERER_HPP_
 
+#include <functional>
+
+#include <boost/shared_ptr.hpp>
+#include <glm/fwd.hpp>
+
 #include <Defs.hpp>
 #include <Math/Geometry/AABB2.hpp>
 #include <Math/Geometry/Point2.hpp>
 #include <Graphics/Color.hpp>
 #include <Graphics/Texture/Texture.hpp>
-#include <boost/shared_ptr.hpp>
 #include <Graphics/Buffers/RBO.hpp>
 #include <Graphics/Buffers/GeometryBuffer.hpp>
-#include <glm/fwd.hpp>
 
 namespace sgl {
 
@@ -33,6 +36,13 @@ typedef boost::shared_ptr<ShaderAttributes> ShaderAttributesPtr;
 
 enum DLL_OBJECT BlendMode {
 	BLEND_OVERWRITE, BLEND_ALPHA, BLEND_ADDITIVE, BLEND_SUBTRACTIVE, BLEND_MODULATIVE
+};
+
+enum DebugVerbosity {
+	DEBUG_OUTPUT_CRITICAL_ONLY = 0,
+	DEBUG_OUTPUT_MEDIUM_AND_ABOVE = 1,
+	DEBUG_OUTPUT_LOW_AND_ABOVE = 2,
+	DEBUG_OUTPUT_NOTIFICATION_AND_ABOVE = 3
 };
 
 #ifndef GL_COLOR_BUFFER_BIT
@@ -56,8 +66,15 @@ class RendererInterface
 {
 public:
 	virtual ~RendererInterface() {}
-	//! Outputs e.g. "glGetError"
+
+	/// Outputs e.g. "glGetError" (only necessary if no debug context was created)
 	virtual void errorCheck()=0;
+	// The functions below only work in an OpenGL debug context
+	/// Sets a callback function that is called (synchronously) when an error in the OpenGL context occurs
+	virtual void setErrorCallback(std::function<void()> callback)=0;
+	virtual void callApplicationErrorCallback()=0;
+	/// Set how much error reporting the program wants
+	virtual void setDebugVerbosity(DebugVerbosity verbosity)=0;
 
 	//! Creation functions
 	virtual FramebufferObjectPtr createFBO()=0;
@@ -69,7 +86,8 @@ public:
 	virtual void bindFBO(FramebufferObjectPtr _fbo, bool force = false)=0;
 	virtual void unbindFBO(bool force = false)=0;
 	virtual FramebufferObjectPtr getFBO()=0;
-	virtual void clearFramebuffer(unsigned int buffers = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT, const Color& col = Color(0, 0, 0), float depth = 0.0f, unsigned short stencil = 0)=0;
+	virtual void clearFramebuffer(unsigned int buffers = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT,
+			const Color& col = Color(0, 0, 0), float depth = 0.0f, unsigned short stencil = 0)=0;
 	virtual void setCamera(CameraPtr _viewport, bool force = false)=0;
 	virtual CameraPtr getCamera()=0;
 

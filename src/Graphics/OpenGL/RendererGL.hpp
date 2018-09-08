@@ -10,6 +10,8 @@
 
 #include <vector>
 #include <glm/glm.hpp>
+#include <GL/glew.h>
+
 #include <Graphics/Renderer.hpp>
 #include <Graphics/Buffers/FBO.hpp>
 #include <Graphics/Shader/Shader.hpp>
@@ -22,8 +24,15 @@ class RendererGL : public RendererInterface
 {
 public:
 	RendererGL();
+
 	//! Outputs e.g. "glGetError"
 	virtual void errorCheck();
+	// The functions below only work in an OpenGL debug context
+	/// Sets a callback function that is called (synchronously) when an error in the OpenGL context occurs
+	virtual void setErrorCallback(std::function<void()> callback);
+	virtual void callApplicationErrorCallback();
+	/// Set how much error reporting the program wants
+	virtual void setDebugVerbosity(DebugVerbosity verbosity);
 
 	//! Creation functions
 	virtual FramebufferObjectPtr createFBO();
@@ -83,6 +92,10 @@ public:
 public:
 	// OpenGL reuses deleted texture IDs -> "unbind" texture
 	void unbindTexture(TexturePtr &tex, unsigned int textureUnit = 0);
+
+	// For debugging purposes
+	std::function<void()> applicationErrorCallback;
+	//DebugVerbosity debugVerbosity;
 
 	glm::mat4 modelMatrix, viewMatrix, projectionMatrix, viewProjectionMatrix, mvpMatrix;
 	float lineWidth, pointSize;
