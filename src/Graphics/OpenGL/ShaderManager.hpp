@@ -22,6 +22,17 @@ public:
 	ShaderPtr createShader(ShaderType sh);
 	ShaderAttributesPtr createShaderAttributes(ShaderProgramPtr &shader);
 
+	/**
+	 * Deletes all cached shaders in the ShaderManager. This is necessary e.g. when wanting to switch to a
+	 * different rendering technique with "addPreprocessorDefine" after already loading a certain shader.
+	 * Already loaded shaders will stay intact thanks to reference counting.
+	 */
+    virtual void invalidateShaderCache()
+    {
+        assetMap.clear();
+        effectSources.clear();
+    }
+
     // --- Compute shader interface ---
 
     /// Array containing maximum work-group count in x,y,z that can be passed to glDispatchCompute.
@@ -36,8 +47,10 @@ protected:
 	ShaderProgramPtr createShaderProgram(const std::list<std::string> &shaderIDs);
 
 	/// Internal loading
-	std::string loadFileString(const std::string &shaderName);
+	std::string loadHeaderFileString(const std::string &shaderName);
+	std::string getHeaderName(const std::string &lineString);
 	std::string getShaderString(const std::string &globalShaderName);
+    std::string getPreprocessorDefines();
 
 	/**
 	 * Indexes all ".glsl" files in the directory pathPrefix (and its sub-directories recursively) to create

@@ -130,16 +130,74 @@ ShaderAttributesPtr ShaderManagerGL::createShaderAttributes(ShaderProgramPtr &sh
 
 
 
-std::string ShaderManagerGL::loadFileString(const std::string &shaderName) {
+std::string ShaderManagerGL::loadHeaderFileString(const std::string &shaderName) {
 	std::ifstream file(shaderName.c_str());
 	if (!file.is_open()) {
-		Logfile::get()->writeError(std::string() + "Error in loadFileString: Couldn't open the file \""
+		Logfile::get()->writeError(std::string() + "Error in loadHeaderFileString: Couldn't open the file \""
 				+ shaderName + "\".");
+		return "";
 	}
-	std::string fileContent((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+	//std::string fileContent((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+	std::string fileContent = getPreprocessorDefines();
+
+	// Support preprocessor for embedded headers
+	std::string linestr;
+	int lineNum = 1;
+	while (getline(file, linestr)) {
+		// Remove \r if line ending is \r\n
+		if (linestr.size() > 0 && linestr.at(linestr.size()-1) == '\r') {
+			linestr = linestr.substr(0, linestr.size()-1);
+		}
+
+		if (boost::starts_with(linestr, "#include")) {
+			std::string includedFileName = getShaderFileName(getHeaderName(linestr));
+			std::string includedFileContent = loadHeaderFileString(includedFileName);
+			fileContent += includedFileContent + "\n";
+			fileContent += std::string() + "#line " + toString(lineNum) + "\n";
+		} else {
+			fileContent += std::string() + linestr + "\n";
+		}
+
+		lineNum++;
+	}
+
+
 	file.close();
+	fileContent = std::string() + "#line " + toString(1) + "\n" + fileContent;
 	return fileContent;
 }
+
+
+std::string ShaderManagerGL::getHeaderName(const std::string &lineString)
+{
+	// Filename in quotes?
+	int startFilename = lineString.find("\"");
+	int endFilename = lineString.find_last_of("\"");
+	if (startFilename > 0 && endFilename > 0) {
+		return lineString.substr(startFilename+1, endFilename-startFilename-1);
+	} else {
+		// Filename is user-specified #define directive?
+		std::vector<std::string> line;
+		boost::algorithm::split(line, lineString, boost::is_any_of("\t "), boost::token_compress_on);
+		if (line.size() < 2) {
+			Logfile::get()->writeError("Error in ShaderManagerGL::getHeaderFilename: Too few tokens.");
+			return "";
+		}
+
+		auto it = preprocessorDefines.find(line.at(1));
+		if (it != preprocessorDefines.end()) {
+			int startFilename = it->second.find("\"");
+			int endFilename = it->second.find_last_of("\"");
+			return it->second.substr(startFilename+1, endFilename-startFilename-1);
+		} else {
+			Logfile::get()->writeError("Error in ShaderManagerGL::getHeaderFilename: Invalid include directive.");
+			return "";
+		}
+	}
+}
+
+
+
 
 
 void ShaderManagerGL::indexFiles(const std::string &file) {
@@ -168,6 +226,17 @@ std::string ShaderManagerGL::getShaderFileName(const std::string &pureFilename)
 	return it->second;
 }
 
+
+std::string ShaderManagerGL::getPreprocessorDefines()
+{
+    std::string preprocessorStatements;
+    for (auto it = preprocessorDefines.begin(); it != preprocessorDefines.end(); it++) {
+        preprocessorStatements += std::string() + "#define " + it->first + " " + it->second + "\n";
+    }
+    return preprocessorStatements;
+}
+
+
 std::string ShaderManagerGL::getShaderString(const std::string &globalShaderName) {
 	auto it = effectSources.find(globalShaderName);
 	if (it != effectSources.end()) {
@@ -186,8 +255,8 @@ std::string ShaderManagerGL::getShaderString(const std::string &globalShaderName
 	}
 
 	std::string shaderName = "";
-	std::string shaderContent = "";
-	int lineNum = 2;
+	std::string shaderContent = "#line 1\n";
+	int lineNum = 1;
 	std::string linestr;
 	while (getline(file, linestr)) {
 		// Remove \r if line ending is \r\n
@@ -201,15 +270,12 @@ std::string ShaderManagerGL::getShaderString(const std::string &globalShaderName
 			}
 
 			shaderName = pureFilename + "." + linestr.substr(3);
-			shaderContent = std::string() + "#line " + toString(lineNum) + "\n";
+			shaderContent = std::string() + getPreprocessorDefines() + "#line " + toString(lineNum) + "\n";
 		} else if (boost::starts_with(linestr, "#version")) {
 			shaderContent = std::string() + linestr + "\n" + shaderContent + "\n";
 		} else if (boost::starts_with(linestr, "#include")) {
-			int startFilename = linestr.find("\"");
-			int endFilename = linestr.find_last_of("\"");
-			std::string includedFileName = getShaderFileName(
-					linestr.substr(startFilename+1, endFilename-startFilename-1));
-			std::string includedFileContent = loadFileString(includedFileName);
+			std::string includedFileName = getShaderFileName(getHeaderName(linestr));
+			std::string includedFileContent = loadHeaderFileString(includedFileName);
 			shaderContent += includedFileContent + "\n";
 			shaderContent += std::string() + "#line " + toString(lineNum) + "\n";
 		} else {
