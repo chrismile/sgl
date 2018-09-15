@@ -74,7 +74,7 @@ void ShaderAttributesGL::setModelViewProjectionMatrices(const glm::mat4 &m, cons
 		shaderGL->setUniform(mvpMatrix, mvp);
 	}
 	if (time >= 0) {
-		shaderGL->setUniform(time, Timer->getTimeInS());
+		shaderGL->setUniform(time, Timer->getTimeInSeconds());
 	}
 	if (resolution >= 0) {
 		Window *window = AppSettings::get()->getMainWindow();

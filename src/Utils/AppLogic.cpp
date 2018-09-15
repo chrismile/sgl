@@ -18,16 +18,17 @@
 #include <Utils/File/FileUtils.hpp>
 #include <Graphics/Renderer.hpp>
 #include <string>
-#include <SDL2/SDL.h>
 
 namespace sgl {
 
 AppLogic::AppLogic()
 {
-	Timer->setFixedFPS(60, 4);
+	Timer->setFixedPhysicsFPS(true, 30);
+	Timer->setFPSLimit(true, 60);
 	running = true;
 	screenshot = false;
-	fpsCounterEnabled = true;
+	fpsCounterUpdateFrequency = 1e6;
+	printFPS = true;
 	fps = 0.0f;
 }
 
@@ -35,72 +36,76 @@ AppLogic::~AppLogic()
 {
 }
 
+void AppLogic::saveScreenshot()
+{
+	std::string filename = FileUtils::get()->getConfigDirectory() + "Screenshot";
+	bool nonExistent = false;
+	for (int i = 1; i < 999; ++i) {
+		if (!FileUtils::get()->exists(filename + toString(i) + ".png")) {
+			filename += toString(i);
+			filename += ".png";
+			nonExistent = true;
+			break;
+		}
+	}
+	if (!nonExistent) filename += "999.png";
+	AppSettings::get()->getMainWindow()->saveScreenshot(filename.c_str());
+	screenshot = false;
+}
+
 void AppLogic::run()
 {
 	Window *window = AppSettings::get()->getMainWindow();
-	float timeToProcess = 0.0f;
-	float lastFrame = Timer->getTicks()/1000.0f - 20.0f;
-	while (running == true) {
-		window->update();
-		timeToProcess += Timer->getElapsedRealTime();
+	// Used for only calling "updateFixed(...)" at fixed update rate
+	uint64_t accumulatedTimeFixed = 0;
+	float fixedFPSInMicroSeconds = Timer->getFixedPhysicsFPS()*1000000ul;
+	uint64_t fpsTimer = 0;
 
-		if (timeToProcess >= Timer->getElapsed()) {
-			do {
-				running = window->processEvents();
+	while (running) {
+		Timer->update();
+		accumulatedTimeFixed += Timer->getElapsedMicroseconds();
 
-				float dt = Timer->getElapsed();
-				Mouse->update(dt);
-				Keyboard->update(dt);
-				Gamepad->update(dt);
-				update(dt);
-				timeToProcess -= Timer->getElapsed();
-			} while(timeToProcess >= Timer->getElapsed() && running);
+		do {
+			updateFixed(Timer->getFixedPhysicsFPS());
+			accumulatedTimeFixed -= fixedFPSInMicroSeconds;
+		} while(Timer->getFixedPhysicsFPSEnabled() && accumulatedTimeFixed >= fixedFPSInMicroSeconds);
 
-			window->clear(Color(0, 0, 0));
-			render();
+		running = window->processEvents([this](const SDL_Event &event) { this->processSDLEvent(event); });
 
-			if (fpsCounterEnabled) {
-				// TODO: Here the engine could render an FPS counter
-				static float fpsTimer = 0.0f;
-				if (fabs(fpsTimer - Timer->getTimeInS()) > 1.0f) {
-					fpsTimer = Timer->getTimeInS();
-					std::cout << fps << std::endl;
-				}
+		float dt = Timer->getElapsedSeconds();
+		Mouse->update(dt);
+		Keyboard->update(dt);
+		Gamepad->update(dt);
+		updateBase(dt);
+		update(dt);
 
+		window->clear(Color(0, 0, 0));
+		render();
+
+		if (abs((long int)fpsTimer - (long int)Timer->getTicksMicroseconds()) > fpsCounterUpdateFrequency) {
+			fps = 1.0f/Timer->getElapsedSeconds();
+			fpsTimer = Timer->getTicksMicroseconds();
+			if (printFPS) {
+				std::cout << fps << std::endl;
 			}
-
-			// Check for errors
-			Renderer->errorCheck();
-			window->errorCheck();
-
-			// Save a screenshot before flipping the backbuffer surfaces if necessary
-			if (screenshot) {
-				std::string filename = FileUtils::get()->getConfigDirectory() + "Screenshot";
-				bool nonExistent = false;
-				for (int i = 1; i < 999; ++i) {
-					if (!FileUtils::get()->exists(filename + toString(i) + ".png")) {
-						filename += toString(i);
-						filename += ".png";
-						nonExistent = true;
-						break;
-					}
-				}
-				if (!nonExistent) filename += "999.png";
-				window->saveScreenshot(filename.c_str());
-				screenshot = false;
-			}
-			window->flip();
 		}
 
-		if (((Timer->getTicks()/1000.0f) - lastFrame) >= 0.5f) {
-			fps = 1.0f/Timer->getElapsed();
-			lastFrame = Timer->getTicks()/1000.0f;
+		// Check for errors
+		Renderer->errorCheck();
+		window->errorCheck();
+
+		// Save a screenshot before flipping the backbuffer surfaces if necessary
+		if (screenshot) {
+			saveScreenshot();
 		}
+		Timer->waitForFPSLimit();
+		window->flip();
 	}
+
 	Logfile::get()->write("INFO: End of main loop.", BLUE);
 }
 
-void AppLogic::update(float dt)
+void AppLogic::updateBase(float dt)
 {
 	EventManager::get()->update();
 	if (Keyboard->keyPressed(SDLK_PRINTSCREEN)
@@ -113,10 +118,9 @@ void AppLogic::update(float dt)
 	}
 }
 
-void AppLogic::setFPSCounterEnabled(bool enabled)
+void AppLogic::setPrintFPS(bool enabled)
 {
-	fpsCounterEnabled = enabled;
-	// TODO
+	printFPS = enabled;
 }
 
 

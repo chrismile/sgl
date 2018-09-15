@@ -9,9 +9,9 @@
 
 namespace sgl {
 
-ShaderProgramPtr ShaderManagerInterface::getShaderProgram(const std::list<std::string> &shaderIDs)
+ShaderProgramPtr ShaderManagerInterface::getShaderProgram(const std::list<std::string> &shaderIDs, bool dumpTextDebug)
 {
-	return createShaderProgram(shaderIDs);
+	return createShaderProgram(shaderIDs, dumpTextDebug);
 }
 
 ShaderPtr ShaderManagerInterface::getShader(const char *shaderFilename, ShaderType shaderType)

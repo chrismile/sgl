@@ -175,7 +175,7 @@ void SDLWindow::update()
 	Timer->update();
 }
 
-bool SDLWindow::processEvents()
+bool SDLWindow::processEvents(std::function<void(const SDL_Event&)> eventHandler)
 {
 	SDL_PumpEvents();
 
@@ -202,7 +202,8 @@ bool SDLWindow::processEvents()
 				}
 				break;
 			default:
-				break;
+                eventHandler(event);
+                break;
 			}
 			break;
 
@@ -210,7 +211,8 @@ bool SDLWindow::processEvents()
 			if ((SDL_GetModState() & KMOD_CTRL) == 0) {
 				Keyboard->addToKeyBuffer(event.text.text);
 			}
-			break;
+            eventHandler(event);
+            break;
 
 		case SDL_WINDOWEVENT:
 			switch (event.window.event) {
@@ -220,11 +222,16 @@ bool SDLWindow::processEvents()
 				EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
 				break;
 			}
-			break;
+            eventHandler(event);
+            break;
 
 		case SDL_MOUSEWHEEL:
 			sdlMouse->setScrollWheelValue(event.wheel.y);
-			break;
+            eventHandler(event);
+            break;
+
+		default:
+            eventHandler(event);
 		}
 	}
 	return running;

@@ -16,12 +16,12 @@
 #include <Graphics/OpenGL/SystemGL.hpp>
 #include <Graphics/Mesh/Material.hpp>
 #include <Utils/Timer.hpp>
-#include <SDL/SDLTimer.hpp>
 #include <SDL/SDLWindow.hpp>
 #include <SDL/Input/SDLMouse.hpp>
 #include <SDL/Input/SDLKeyboard.hpp>
 #include <SDL/Input/SDLGamepad.hpp>
-#include <SDL2/SDL_ttf.h>
+//#include <SDL2/SDL_ttf.h>
+#include <ImGui/ImGuiWrapper.hpp>
 #include <fstream>
 #include <boost/algorithm/string/trim.hpp>
 
@@ -173,7 +173,7 @@ void AppSettings::initializeSubsystems()
 	}*/
 
 	// Create the subsystem implementations
-	Timer = new SDLTimer;
+	Timer = new TimerInterface;
 	//AudioManager = new SDLMixerAudioManager;
 	TextureManager = new TextureManagerGL;
 	ShaderManager = new ShaderManagerGL;
@@ -184,15 +184,19 @@ void AppSettings::initializeSubsystems()
 	Keyboard = new SDLKeyboard;
 	Gamepad = new SDLGamepad;
 
+    ImGuiWrapper::get()->initialize();
+
 	SystemGL::get();
 }
 
 void AppSettings::release()
 {
-	mainWindow->serializeSettings(settings);
+    mainWindow->serializeSettings(settings);
 	settings.saveToFile(settingsFilename.c_str());
 
-	delete Renderer;
+    ImGuiWrapper::get()->shutdown();
+
+    delete Renderer;
 	delete MaterialManager;
 	delete ShaderManager;
 	delete TextureManager;

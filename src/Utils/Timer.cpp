@@ -5,96 +5,64 @@
  *      Author: Christoph Neuhauser
  */
 
+#include <chrono>
+#include <thread>
+
 #include "Timer.hpp"
 
 namespace sgl {
 
-TimerInterface::TimerInterface() : frameSmoother(10, 1.0f/60.0f)
+TimerInterface::TimerInterface() : currentTime(0), lastTime(0), elapsedMicroSeconds(0),
+		fpsLimitEnabled(true), fpsLimit(60), fixedPhysicsFPSEnabled(true), physicsFPS(60)
 {
-	elapsed  = 0;
-	currTime  = 0;
-	lastTime = 0;
-	currTimeSecs = 0.0f;
-	elapsedSecs = 0.0f;
-	fixedTimeStep = false;
-	fixedFPS = 0;
+}
+
+void TimerInterface::sleepMilliseconds(unsigned int milliseconds)
+{
+	std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+}
+
+void TimerInterface::waitForFPSLimit()
+{
+	if (!fpsLimitEnabled) {
+		return;
+	}
+
+	uint64_t timeSinceUpdate = getTicksMicroseconds() - lastTime;
+	int64_t sleepTimeMicroSeconds = 1e6 / (fpsLimit+10) - timeSinceUpdate;
+	if (sleepTimeMicroSeconds > 0) {
+		std::this_thread::sleep_for(std::chrono::microseconds(sleepTimeMicroSeconds));
+	}
 }
 
 void TimerInterface::update()
 {
-	if (fixedTimeStep) {
-		waitForFPS(fixedFPS+40);
-	} else {
-		waitForFPS(1000);
-	}
-
-	// First frame?
 	if (lastTime == 0) {
-		lastTime = getTicks()-1;
-	}
-
-	currTime = getTicks();
-	elapsed = currTime - lastTime;
-	lastTime = currTime;
-
-	// Normalize elapsed for too big time steps
-	if (elapsed >= 200) {
-		elapsed = 200;
-	}
-
-	// Add time if FPS is smoothed
-	if (fixedTimeStep) 	{
-		frameSmoother.addValue(elapsed/1000.0f);
-	}
-
-	// Convert the time to seconds
-	currTimeSecs = currTime/1000.0f;
-	elapsedSecs = elapsed/1000.0f;
-}
-
-
-float TimerInterface::getElapsed()
-{
-	if (!fixedTimeStep) {
-		return elapsed/1000.0f;
-	} else {
-		if (1.0f/frameSmoother.getSmoothedValue() >= static_cast<float>(fixedFPS)) {
-			return 1.0f/fixedFPS;
+		// Set elapsed time in first frame to frame limit (or 60FPS if not set otherwise)
+		lastTime = getTicksMicroseconds();
+		if (fpsLimitEnabled) {
+            elapsedMicroSeconds = 1.0/fpsLimit*1e6;
 		} else {
-			return frameSmoother.getSmoothedValue();
+			elapsedMicroSeconds = 1.0/60.0*1e6;
 		}
+	} else {
+        currentTime = getTicksMicroseconds();
+		elapsedMicroSeconds = currentTime - lastTime;
+		lastTime = currentTime;
+	}
+
+	// Normalize elapsed time for too big time steps, e.g. 10 seconds.
+	if (elapsedMicroSeconds >= 10e6) {
+		elapsedMicroSeconds = 10e6;
 	}
 }
 
-void TimerInterface::waitForFPS(unsigned int fps)
+uint64_t TimerInterface::getTicksMicroseconds()
 {
-	while(!isFPS(fps)) {
-		delay(1);
-	}
-}
-
-bool TimerInterface::isFPS(unsigned int fps)
-{
-	if (getTicks() - lastTime < 1000.0f / fps) {
-		return false;
-	}
-	return true;
-}
-
-
-void TimerInterface::setFixedFPS(uint32_t fps, int smoothingFilterSize)
-{
-	fixedTimeStep = true;
-	fixedFPS = fps;
-	frameSmoother.setStdValue(1.0f/static_cast<float>(fps));
-	if(smoothingFilterSize > 1) {
-		frameSmoother.setBufferSize(smoothingFilterSize);
-	}
-}
-
-void TimerInterface::disableFixedFPS()
-{
-	fixedTimeStep = false;
+	auto now = std::chrono::high_resolution_clock::now();
+	auto duration = now.time_since_epoch();
+	auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
+	return microseconds;
 }
 
 }

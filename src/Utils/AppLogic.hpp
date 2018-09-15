@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <boost/shared_ptr.hpp>
+#include <SDL2/SDL.h>
 
 namespace sgl {
 
@@ -22,19 +23,29 @@ public:
 	AppLogic();
 	virtual ~AppLogic();
 	virtual void run();
-	//! Call this function in derived class
-	virtual void update(float dt);
+	virtual void updateBase(float dt);
+
+	/// Override these functions in the derived classes
+	virtual void update(float dt) {} // Called once per rendered frame
+	virtual void updateFixed(float dt) {} // Called at a fixed rate (e.g. for physics simulation)
+	virtual void processSDLEvent(const SDL_Event &event) {}
 	virtual void resolutionChanged(EventPtr event) {}
 	virtual void render() {}
-	virtual void setFPSCounterEnabled(bool enabled);
+
+	virtual void setPrintFPS(bool enabled);
 	inline float getFPS() { return fps; }
 	inline void quit() { running = false; }
 
+protected:
+    float fps;
+
 private:
-	bool fpsCounterEnabled;
-	float fps;
+    void saveScreenshot();
 	bool running;
 	bool screenshot;
+
+    uint64_t fpsCounterUpdateFrequency;
+    bool printFPS;
 };
 
 }

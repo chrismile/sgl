@@ -36,7 +36,7 @@ public:
 	//! Update the window
 	virtual void update();
 	//! Returns false if the game should quit
-	virtual bool processEvents();
+	virtual bool processEvents(std::function<void(const SDL_Event&)> eventHandler);
 	virtual void clear(const Color &color = Color(0, 0, 0));
 	virtual void flip();
 

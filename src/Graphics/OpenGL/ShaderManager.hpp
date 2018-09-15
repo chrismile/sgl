@@ -44,7 +44,7 @@ public:
 
 protected:
 	ShaderPtr loadAsset(ShaderInfo &shaderInfo);
-	ShaderProgramPtr createShaderProgram(const std::list<std::string> &shaderIDs);
+	ShaderProgramPtr createShaderProgram(const std::list<std::string> &shaderIDs, bool dumpTextDebug);
 
 	/// Internal loading
 	std::string loadHeaderFileString(const std::string &shaderName);

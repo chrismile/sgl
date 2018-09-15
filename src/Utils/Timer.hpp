@@ -15,106 +15,49 @@
 
 namespace sgl {
 
-template<typename T>
-class DLL_OBJECT FrameSmoother
+class TimerInterface
 {
 public:
-	FrameSmoother(int _filterSize, const T &stdValue)
-		: cursor(0), filterSize(_filterSize), stdValue(stdValue) {
-		buffer = new T[filterSize];
-	}
+    TimerInterface();
 
-	~FrameSmoother() {
-		delete[] buffer;
-	}
-
-	void setBufferSize(int _filterSize) {
-		reset();
-		delete[] buffer;
-		filterSize = _filterSize;
-		buffer = new T[filterSize];
-		cursor = 0;
-	}
-
-	//! Adds a FPS value to be smoothed
-	void addValue(const T &value) {
-		buffer[cursor++ % filterSize] = value;
-	}
-
-	T getSmoothedValue() const {
-		int n = cursor < filterSize ? cursor : filterSize;
-		if (n == 0) {
-			return stdValue;
-		} else {
-			T avg;
-			memset(&avg, 0, sizeof(avg));
-			for (int i = 0; i < n; ++i) {
-				avg += buffer[i];
-			}
-			avg /= static_cast<T>(n);
-			return avg;
-		}
-	}
-
-	void reset() {
-		cursor = 0;
-	}
-
-	void setStdValue(const T &value) {
-		stdValue = value;
-	}
-
-protected:
-	T *buffer;
-	int cursor;
-	int filterSize;
-	T stdValue;
-};
-
-
-
-class DLL_OBJECT TimerInterface
-{
-public:
-	TimerInterface();
-	virtual ~TimerInterface() {}
 	void update();
-	//! in milliseconds
-	virtual uint32_t getTicks()=0;
-	virtual void delay(uint32_t milliseconds)=0;
+	void sleepMilliseconds(unsigned int milliseconds);
+	void waitForFPSLimit();
 
-	inline float getElapsedRealTime() { return elapsed; }
-	//! Get elapsed time in seconds
-	float getElapsed();
-	inline uint32_t getTimeInMS() { return currTime; }
-	inline float getTimeInS() { return currTimeSecs; }
+    uint64_t getTicksMicroseconds();
+    float getTimeInSeconds() { currentTime / 1e6; }
+	uint64_t getElapsedMicroseconds() { return elapsedMicroSeconds; }
+	float getElapsedSeconds() { return elapsedMicroSeconds / 1e6; }
 
-	void waitForFPS(uint32_t fps);
-	bool isFPS(uint32_t fps);
-	void setFixedFPS(uint32_t fps, int smoothingFilterSize = -1);
-	void disableFixedFPS();
+	/**
+     * In real-time applications, we usually have two main goals:
+     * - Hit perfect VSync refresh rate of the monitor (e.g. 60FPS)
+     * - Update physics simulations at a fixed FPS rate (e.g. 30FPS)
+     * The following two functions can help for reaching these goals.
+     */
 
-	/*! High-resolution timer
-	 * Windows implementation: QueryPerformanceCounter (can vary across platforms and threads...)
-	 * POSIX solution: std::chrono (not reliable at least on MSVC) */
-	virtual uint64_t getMicroSecondsTicks()=0;
+	/// Sets whether an FPS cap should be used. This is necessary for e.g. applications without VSync that
+	/// don't want to utilize 100% of the system resources.
+	inline void setFPSLimit(bool enabled, unsigned int fpsLimit) {
+		fpsLimitEnabled = enabled; this->fpsLimit = fpsLimit;
+	}
+	inline bool getFPSLimitEnabled() { return fpsLimitEnabled; }
+	inline unsigned int getTargetFPS() { return fpsLimit; }
+
+	/// Sets whether we want fixed FPS for physics updates. You can place functions that expect this fixed
+	/// FPS in AppSettings::fixedUpdate(float dt).
+	inline void setFixedPhysicsFPS(bool enabled, unsigned int physicsFPS) {
+		fixedPhysicsFPSEnabled = enabled; this->physicsFPS = physicsFPS;
+	}
+	inline bool getFixedPhysicsFPSEnabled() { return fixedPhysicsFPSEnabled; }
+	inline unsigned int getFixedPhysicsFPS() { return physicsFPS; }
 
 private:
-	//! Elapsed time since the last frame
-	uint32_t elapsed;
-	//! Current time in milliseconds
-	uint32_t currTime;
-	//! Time of last frame
-	uint32_t lastTime;
-	//! Current time in milliseconds
-	float currTimeSecs;
-	//! Elapsed time since the last frame in milliseconds
-	float elapsedSecs;
-
-	//! Fixed FPS and frame smoothing
-	bool fixedTimeStep;
-	uint32_t fixedFPS;
-	FrameSmoother<float> frameSmoother;
+	uint64_t currentTime, lastTime, elapsedMicroSeconds;
+	bool fpsLimitEnabled;
+	unsigned int fpsLimit;
+	bool fixedPhysicsFPSEnabled;
+	unsigned int physicsFPS;
 };
 
 extern TimerInterface *Timer;

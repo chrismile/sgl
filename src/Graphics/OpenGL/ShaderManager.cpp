@@ -64,10 +64,12 @@ int ShaderManagerGL::getMaxWorkGroupInvocations()
 	return maxWorkGroupInvocations;
 }
 
-
-ShaderProgramPtr ShaderManagerGL::createShaderProgram(const std::list<std::string> &shaderIDs)
+static bool dumpTextDebugStatic = false;
+ShaderProgramPtr ShaderManagerGL::createShaderProgram(const std::list<std::string> &shaderIDs, bool dumpTextDebug)
 {
 	ShaderProgramPtr shaderProgram = createShaderProgram();
+	dumpTextDebugStatic = dumpTextDebug;
+
 	for (const std::string &shaderID : shaderIDs) {
 		ShaderPtr shader;
 		std::string shaderID_lower = boost::algorithm::to_lower_copy(shaderID);
@@ -91,6 +93,7 @@ ShaderProgramPtr ShaderManagerGL::createShaderProgram(const std::list<std::strin
 		}
 		shaderProgram->attachShader(shader);
 	}
+	dumpTextDebugStatic = false;
 	shaderProgram->linkProgram();
 	return shaderProgram;
 }
@@ -99,6 +102,12 @@ ShaderPtr ShaderManagerGL::loadAsset(ShaderInfo &shaderInfo)
 {
 	std::string id = shaderInfo.filename;
 	std::string shaderString = getShaderString(id);
+
+	if (dumpTextDebugStatic) {
+		std::cout << "Shader dump (" << id << "):" << std::endl;
+		std::cout << "--------------------------------------------" << std::endl;
+		std::cout << shaderString << std::endl << std::endl;
+	}
 
 	ShaderGL *shaderGL = new ShaderGL(shaderInfo.shaderType);
 	ShaderPtr shader(shaderGL);
@@ -138,7 +147,7 @@ std::string ShaderManagerGL::loadHeaderFileString(const std::string &shaderName)
 		return "";
 	}
 	//std::string fileContent((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-	std::string fileContent = getPreprocessorDefines();
+	std::string fileContent = getPreprocessorDefines() + "#line 1\n";
 
 	// Support preprocessor for embedded headers
 	std::string linestr;
@@ -149,6 +158,8 @@ std::string ShaderManagerGL::loadHeaderFileString(const std::string &shaderName)
 			linestr = linestr.substr(0, linestr.size()-1);
 		}
 
+		lineNum++;
+
 		if (boost::starts_with(linestr, "#include")) {
 			std::string includedFileName = getShaderFileName(getHeaderName(linestr));
 			std::string includedFileContent = loadHeaderFileString(includedFileName);
@@ -157,13 +168,11 @@ std::string ShaderManagerGL::loadHeaderFileString(const std::string &shaderName)
 		} else {
 			fileContent += std::string() + linestr + "\n";
 		}
-
-		lineNum++;
 	}
 
 
 	file.close();
-	fileContent = std::string() + "#line " + toString(1) + "\n" + fileContent;
+	fileContent = fileContent;
 	return fileContent;
 }
 
@@ -191,6 +200,7 @@ std::string ShaderManagerGL::getHeaderName(const std::string &lineString)
 			return it->second.substr(startFilename+1, endFilename-startFilename-1);
 		} else {
 			Logfile::get()->writeError("Error in ShaderManagerGL::getHeaderFilename: Invalid include directive.");
+			Logfile::get()->writeError(std::string() + "Line string: " + lineString);
 			return "";
 		}
 	}
@@ -264,6 +274,8 @@ std::string ShaderManagerGL::getShaderString(const std::string &globalShaderName
 			linestr = linestr.substr(0, linestr.size()-1);
 		}
 
+		lineNum++;
+
 		if (boost::starts_with(linestr, "-- ")) {
 			if (shaderContent.size() > 0 && shaderName.size() > 0) {
 				effectSources.insert(make_pair(shaderName, shaderContent));
@@ -272,7 +284,7 @@ std::string ShaderManagerGL::getShaderString(const std::string &globalShaderName
 			shaderName = pureFilename + "." + linestr.substr(3);
 			shaderContent = std::string() + getPreprocessorDefines() + "#line " + toString(lineNum) + "\n";
 		} else if (boost::starts_with(linestr, "#version")) {
-			shaderContent = std::string() + linestr + "\n" + shaderContent + "\n";
+			shaderContent = std::string() + linestr + "\n" + shaderContent + "#line " + toString(lineNum) + "\n";
 		} else if (boost::starts_with(linestr, "#include")) {
 			std::string includedFileName = getShaderFileName(getHeaderName(linestr));
 			std::string includedFileContent = loadHeaderFileString(includedFileName);
@@ -281,8 +293,6 @@ std::string ShaderManagerGL::getShaderString(const std::string &globalShaderName
 		} else {
 			shaderContent += std::string() + linestr + "\n";
 		}
-
-		lineNum++;
 	}
 	file.close();
 

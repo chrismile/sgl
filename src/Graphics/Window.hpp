@@ -8,8 +8,11 @@
 #ifndef SRC_GRAPHICS_WINDOW_HPP_
 #define SRC_GRAPHICS_WINDOW_HPP_
 
+#include <functional>
 #include <Defs.hpp>
 #include <Graphics/Color.hpp>
+
+union SDL_Event;
 
 namespace sgl {
 
@@ -43,7 +46,6 @@ struct WindowSettings {
 
 class SettingsFile;
 
-
 //! Use AppSettings (Utils/AppSettings.hpp) to create a window using the user's preferred settings
 
 class Window
@@ -68,7 +70,7 @@ public:
 	//! Update the window
 	virtual void update()=0;
 	//! Returns false if the game should quit
-	virtual bool processEvents()=0;
+	virtual bool processEvents(std::function<void(const SDL_Event&)> eventHandler)=0;
 	virtual void clear(const Color &color = Color(0, 0, 0))=0;
 	virtual void flip()=0;
 
