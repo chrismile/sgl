@@ -20,6 +20,15 @@ namespace sgl {
 
 class ShaderProgramGL;
 
+// Bound in all shaders to binding 0
+struct MatrixBlock
+{
+    glm::mat4 mMatrix; // Model matrix
+    glm::mat4 vMatrix; // View matrix
+    glm::mat4 pMatrix; // Projection matrix
+    glm::mat4 mvpMatrix; // Model-view-projection matrix
+};
+
 class RendererGL : public RendererInterface
 {
 public:
@@ -67,6 +76,9 @@ public:
 
 	//! Rendering
 	virtual void render(ShaderAttributesPtr &shaderAttributes);
+	//! Rendering with overwritten shader (e.g. for multi-pass rendering without calling copy()).
+	virtual void render(ShaderAttributesPtr &shaderAttributes, ShaderProgramPtr &passShader);
+
 	//! For debugging purposes
 	virtual void setPolygonMode(unsigned int polygonMode);
 	//! For debugging purposes
@@ -93,11 +105,18 @@ public:
 	// OpenGL reuses deleted texture IDs -> "unbind" texture
 	void unbindTexture(TexturePtr &tex, unsigned int textureUnit = 0);
 
+	// Update matrix uniform buffer object
+    void createMatrixBlock();
+    void updateMatrixBlock();
+    bool matrixBlockNeedsUpdate = true;
+    MatrixBlock matrixBlock;
+    sgl::GeometryBufferPtr matrixBlockBuffer;
+
 	// For debugging purposes
 	std::function<void()> applicationErrorCallback;
 	//DebugVerbosity debugVerbosity;
 
-	glm::mat4 modelMatrix, viewMatrix, projectionMatrix, viewProjectionMatrix, mvpMatrix;
+	glm::mat4 modelMatrix, viewMatrix, projectionMatrix, mvpMatrix;
 	float lineWidth, pointSize;
 	bool wireframeMode;
 	//! https://www.khronos.org/opengl/wiki/Debug_Output

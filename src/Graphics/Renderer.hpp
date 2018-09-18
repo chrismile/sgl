@@ -110,6 +110,9 @@ public:
 
 	//! Rendering
 	virtual void render(ShaderAttributesPtr &shaderAttributes)=0;
+	//! Rendering with overwritten shader (e.g. for multi-pass rendering without calling copy()).
+	virtual void render(ShaderAttributesPtr &shaderAttributes, ShaderProgramPtr &passShader)=0;
+
 	//! For debugging purposes
 	virtual void setPolygonMode(unsigned int polygonMode)=0;
 	//! For debugging purposes

@@ -70,6 +70,9 @@ public:
 			int offset = 0, int stride = 0, int instancing = 0)=0;
 	virtual void setIndexGeometryBuffer(GeometryBufferPtr &geometryBuffer, VertexAttributeFormat format)=0;
 	virtual void bind()=0;
+	/// Pass a shader attribute in case you want to do multi-pass rendering without a call to copy().
+	/// NOTE: Expects the passed shader to have the same binding point like the shader attached (is not checked!).
+	virtual void bind(ShaderProgramPtr passShader)=0;
 	virtual ShaderProgram *getShaderProgram()=0;
 
 	// Query information on the shader attributes
@@ -81,9 +84,6 @@ public:
 	//! Gets and sets the number of instances to be rendered (standard: No instancing/0)
 	inline size_t getInstanceCount() const { return instanceCount; }
 	inline void setInstanceCount(int count) { instanceCount = count; }
-
-	// Set shared data in the renderer - done by Renderer
-	virtual void setModelViewProjectionMatrices(const glm::mat4 &m, const glm::mat4 &v, const glm::mat4 &p, const glm::mat4 &mvp)=0;
 
 protected:
 	VertexMode vertexMode;

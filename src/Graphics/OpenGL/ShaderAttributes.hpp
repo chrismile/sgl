@@ -43,7 +43,6 @@ public:
 	~ShaderAttributesGL() {}
 
 	void setIndexGeometryBuffer(GeometryBufferPtr &geometryBuffer, VertexAttributeFormat format);
-	void setModelViewProjectionMatrices(const glm::mat4 &m, const glm::mat4 &v, const glm::mat4 &p, const glm::mat4 &mvp);
 	ShaderProgram *getShaderProgram() { return shader.get(); }
 
 protected:
@@ -51,8 +50,6 @@ protected:
 	GeometryBufferPtr indexBuffer;
 	ShaderProgramPtr shader;
 	ShaderProgramGL *shaderGL;
-	//! Location of the transformation matrices
-	int mMatrix, vMatrix, pMatrix, mvpMatrix, time, resolution;
 };
 
 /*! The OpenGL 3 implementation of shader attributes.
@@ -79,6 +76,7 @@ public:
 			VertexAttributeFormat format, int components,
 			int offset = 0, int stride = 0, int instancing = 0);
 	void bind();
+	void bind(ShaderProgramPtr passShader);
 
 protected:
 	unsigned int vaoID;
@@ -96,6 +94,7 @@ public:
 			VertexAttributeFormat format, int components,
 			int offset = 0, int stride = 0, int instancing = 0);
 	void bind();
+	void bind(ShaderProgramPtr passShader);
 };
 
 }

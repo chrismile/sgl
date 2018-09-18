@@ -41,12 +41,6 @@ ShaderAttributesGL::ShaderAttributesGL(ShaderProgramPtr &_shader)
 {
 	shader = _shader;
 	shaderGL = (ShaderProgramGL*)_shader.get();
-	mMatrix = shader->getUniformLoc("mMatrix");
-	vMatrix = shader->getUniformLoc("vMatrix");
-	pMatrix = shader->getUniformLoc("pMatrix");
-	mvpMatrix = shader->getUniformLoc("mvpMatrix");
-	time = shader->getUniformLoc("time");
-	resolution = shader->getUniformLoc("resolution");
 }
 
 void ShaderAttributesGL::setIndexGeometryBuffer(GeometryBufferPtr &geometryBuffer, VertexAttributeFormat format)
@@ -56,31 +50,6 @@ void ShaderAttributesGL::setIndexGeometryBuffer(GeometryBufferPtr &geometryBuffe
 	indexFormat = format;
 }
 
-void ShaderAttributesGL::setModelViewProjectionMatrices(const glm::mat4 &m, const glm::mat4 &v, const glm::mat4 &p, const glm::mat4 &mvp)
-{
-	if (mMatrix >= 0) {
-		shaderGL->setUniform(mMatrix, m);
-	}
-	if (vMatrix >= 0) {
-		shaderGL->setUniform(vMatrix, v);
-	}
-	if (pMatrix >= 0) {
-		shaderGL->setUniform(pMatrix, p);
-	}
-	if (mvpMatrix >= 0) {
-		shaderGL->setUniform(mvpMatrix, mvp);
-	}
-	if (mvpMatrix >= 0) {
-		shaderGL->setUniform(mvpMatrix, mvp);
-	}
-	if (time >= 0) {
-		shaderGL->setUniform(time, Timer->getTimeInSeconds());
-	}
-	if (resolution >= 0) {
-		Window *window = AppSettings::get()->getMainWindow();
-		shaderGL->setUniform(resolution, glm::vec2(window->getWidth(), window->getHeight()));
-	}
-}
 
 
 // ---------------------------------- OpenGL 3 ----------------------------------
@@ -196,13 +165,19 @@ void ShaderAttributesGL3::addGeometryBuffer(GeometryBufferPtr &geometryBuffer,
 
 void ShaderAttributesGL3::bind()
 {
-	shader->bind();
+	bind(shader);
+}
+
+void ShaderAttributesGL3::bind(ShaderProgramPtr passShader)
+{
+	passShader->bind();
 	RendererGL *rendererGL = static_cast<RendererGL*>(Renderer);
 	rendererGL->bindVAO(vaoID);
 	if (indexBuffer) {
 		indexBuffer->bind();
 	}
 }
+
 
 
 
@@ -272,13 +247,18 @@ void ShaderAttributesGL2::addGeometryBuffer(GeometryBufferPtr &geometryBuffer,
 
 void ShaderAttributesGL2::bind()
 {
-	shader->bind();
+	bind(shader);
+}
+
+void ShaderAttributesGL2::bind(ShaderProgramPtr passShader)
+{
+	passShader->bind();
 
 	for (AttributeData &attributeData : attributes) {
 		attributeData.geometryBuffer->bind();
 		glEnableVertexAttribArray(attributeData.shaderLoc);
 		glVertexAttribPointer(attributeData.shaderLoc, attributeData.components, attributeData.attributeType,
-				GL_FALSE, attributeData.stride, (void*)(intptr_t)attributeData.offset);
+							  GL_FALSE, attributeData.stride, (void*)(intptr_t)attributeData.offset);
 	}
 
 	if (indexBuffer) {

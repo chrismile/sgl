@@ -90,7 +90,7 @@ RendererGL::RendererGL()
 	setBlendMode(BLEND_ALPHA);
 	boundTextureID.resize(32, 0);
 
-	modelMatrix = viewMatrix = projectionMatrix = viewProjectionMatrix = mvpMatrix = matrixIdentity();
+	modelMatrix = viewMatrix = projectionMatrix = mvpMatrix = matrixIdentity();
 	lineWidth = 1.0f;
 	pointSize = 1.0f;
 	currentTextureUnit = 0;
@@ -99,6 +99,8 @@ RendererGL::RendererGL()
 	boundShader = 0;
 	wireframeMode = false;
 	debugOutputExtEnabled = false;
+
+	createMatrixBlock();
 
 	if (FileUtils::get()->exists("Data/Shaders/FXAA.glsl"))
 		fxaaShader = ShaderManager->getShaderProgram({"FXAA.Vertex", "FXAA.Fragment"});
@@ -261,9 +263,12 @@ FramebufferObjectPtr RendererGL::getFBO()
 void RendererGL::clearFramebuffer(unsigned int buffers /* = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT */,
 		const Color& col /* = Color(0, 0, 0) */, float depth /* = 0.0f */, unsigned short stencil /* = 0*/ )
 {
-	glClearColor(col.getFloatR(), col.getFloatG(), col.getFloatB(), col.getFloatA());
-	glClearDepth(depth);
-	glClearStencil(stencil);
+	if ((buffers & GL_COLOR_BUFFER_BIT) != 0)
+		glClearColor(col.getFloatR(), col.getFloatG(), col.getFloatB(), col.getFloatA());
+	if ((buffers & GL_DEPTH_BUFFER_BIT) != 0)
+		glClearDepth(depth);
+	if ((buffers & GL_STENCIL_BUFFER_BIT) != 0)
+		glClearStencil(stencil);
 	glClear(buffers);
 }
 
@@ -395,21 +400,19 @@ void RendererGL::setBlendMode(BlendMode mode)
 void RendererGL::setModelMatrix(const glm::mat4 &matrix)
 {
 	modelMatrix = matrix;
-	mvpMatrix = viewProjectionMatrix * modelMatrix;
+	matrixBlockNeedsUpdate = true;
 }
 
 void RendererGL::setViewMatrix(const glm::mat4 &matrix)
 {
 	viewMatrix = matrix;
-	viewProjectionMatrix = projectionMatrix * viewMatrix;
-	mvpMatrix = viewProjectionMatrix * modelMatrix;
+	matrixBlockNeedsUpdate = true;
 }
 
 void RendererGL::setProjectionMatrix(const glm::mat4 &matrix)
 {
 	projectionMatrix = matrix;
-	viewProjectionMatrix = projectionMatrix * viewMatrix;
-	mvpMatrix = viewProjectionMatrix * modelMatrix;
+	matrixBlockNeedsUpdate = true;
 }
 
 void RendererGL::setLineWidth(float width)
@@ -471,7 +474,8 @@ void RendererGL::render(ShaderAttributesPtr &shaderAttributes)
 	}
 
 	attr->bind();
-	attr->setModelViewProjectionMatrices(modelMatrix, viewMatrix, projectionMatrix, mvpMatrix);
+	updateMatrixBlock();
+	//attr->setModelViewProjectionMatrices(modelMatrix, viewMatrix, projectionMatrix, mvpMatrix);
 
 	if (attr->getNumIndices() > 0) {
 		if (attr->getInstanceCount() == 0) {
@@ -495,7 +499,65 @@ void RendererGL::render(ShaderAttributesPtr &shaderAttributes)
 	}
 }
 
-void  RendererGL::setPolygonMode(unsigned int polygonMode) // For debugging purposes
+void RendererGL::render(ShaderAttributesPtr &shaderAttributes, ShaderProgramPtr &passShader)
+{
+	ShaderAttributesPtr attr = shaderAttributes;
+	if (wireframeMode) {
+		// Not the most performat solution, but wireframe mode is for debugging anyway
+		attr = shaderAttributes->copy(solidShader);
+	}
+
+	attr->bind(passShader);
+	updateMatrixBlock();
+	//attr->setModelViewProjectionMatrices(modelMatrix, viewMatrix, projectionMatrix, mvpMatrix);
+
+	if (attr->getNumIndices() > 0) {
+		if (attr->getInstanceCount() == 0) {
+			// Indices, no instancing
+			/*glDrawRangeElements((GLuint)attr->getVertexMode(), 0, attr->getNumVertices()-1,
+					attr->getNumIndices(), attr->getIndexFormat(), NULL);*/
+			glDrawElements((GLuint)attr->getVertexMode(), attr->getNumIndices(), attr->getIndexFormat(), NULL);
+		} else {
+			// Indices, instancing
+			glDrawElementsInstanced((GLuint)attr->getVertexMode(), attr->getNumIndices(),
+									attr->getIndexFormat(), NULL, attr->getInstanceCount());
+		}
+	} else {
+		if (attr->getInstanceCount() == 0) {
+			// No indices, no instancing
+			glDrawArrays((GLuint)attr->getVertexMode(), 0, attr->getNumVertices());
+		} else {
+			// No indices, instancing
+			glDrawArraysInstanced((GLuint)attr->getVertexMode(), 0, attr->getNumVertices(), attr->getInstanceCount());
+		}
+	}
+}
+
+void RendererGL::createMatrixBlock()
+{
+	matrixBlockBuffer = this->createGeometryBuffer(sizeof(MatrixBlock), &matrixBlock, UNIFORM_BUFFER);
+
+	// Binding point is unique for _all_ shaders
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, static_cast<GeometryBufferGL*>(matrixBlockBuffer.get())->getBuffer());
+}
+
+void RendererGL::updateMatrixBlock()
+{
+	if (matrixBlockNeedsUpdate) {
+		mvpMatrix = projectionMatrix * viewMatrix * modelMatrix;
+		matrixBlock.mMatrix = modelMatrix;
+		matrixBlock.vMatrix = viewMatrix;
+		matrixBlock.pMatrix = projectionMatrix;
+		matrixBlock.mvpMatrix = mvpMatrix;
+		matrixBlockBuffer->subData(0, sizeof(MatrixBlock), &matrixBlock);
+		matrixBlockNeedsUpdate = false;
+	}
+}
+
+
+
+
+void RendererGL::setPolygonMode(unsigned int polygonMode) // For debugging purposes
 {
 	glPolygonMode(GL_FRONT_AND_BACK, polygonMode);
 }

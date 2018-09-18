@@ -69,6 +69,9 @@ protected:
 	/// e.g. "Blur.glsl" -> "Data/Shaders/PostProcessing/Blur.glsl".
 	std::map<std::string, std::string> shaderFileMap;
 
+	// If a file named "GlobalDefines.glsl" is found: Appended to all shaders
+	std::string globalDefines;
+
 private:
 	std::vector<int> maxComputeWorkGroupCount;
 	std::vector<int> maxComputeWorkGroupSize;

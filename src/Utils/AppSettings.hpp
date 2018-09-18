@@ -58,6 +58,9 @@ public:
 	Window *createWindow();
 	void release();
 
+	// Called in main if GUI should be loaded
+	void setLoadGUI() { useGUI = true; }
+
 	inline RenderSystem getRenderSystem() { return renderSystem; }
 	inline OperatingSystem getOS() { return operatingSystem; }
 	Window *getMainWindow();
@@ -69,6 +72,7 @@ private:
 	RenderSystem renderSystem;
 	OperatingSystem operatingSystem;
 	Window *mainWindow;
+	bool useGUI = false;
 };
 
 }

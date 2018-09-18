@@ -35,6 +35,17 @@ ShaderManagerGL::ShaderManagerGL()
 	pathPrefix = "./Data/Shaders/";
 	indexFiles(pathPrefix);
 
+	// Was a file called "GlobalDefines.glsl" found? If yes, store its content in "globalDefines".
+	auto it = shaderFileMap.find("GlobalDefines.glsl");
+	if (it != shaderFileMap.end()) {
+		std::ifstream file(it->second);
+		if (!file.is_open()) {
+			Logfile::get()->writeError(std::string() + "ShaderManagerGL::ShaderManagerGL: Unexpected error "
+											  "occured while loading \"GlobalDefines.glsl\".");
+		}
+		globalDefines = std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+	}
+
 	// Query compute shader capabilities
 	maxComputeWorkGroupCount.resize(3);
 	maxComputeWorkGroupSize.resize(3);
@@ -147,7 +158,7 @@ std::string ShaderManagerGL::loadHeaderFileString(const std::string &shaderName)
 		return "";
 	}
 	//std::string fileContent((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-	std::string fileContent = getPreprocessorDefines() + "#line 1\n";
+	std::string fileContent = "#line 1\n";
 
 	// Support preprocessor for embedded headers
 	std::string linestr;
@@ -243,7 +254,7 @@ std::string ShaderManagerGL::getPreprocessorDefines()
     for (auto it = preprocessorDefines.begin(); it != preprocessorDefines.end(); it++) {
         preprocessorStatements += std::string() + "#define " + it->first + " " + it->second + "\n";
     }
-    return preprocessorStatements;
+    return preprocessorStatements + globalDefines;
 }
 
 

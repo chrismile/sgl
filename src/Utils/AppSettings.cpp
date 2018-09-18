@@ -184,7 +184,9 @@ void AppSettings::initializeSubsystems()
 	Keyboard = new SDLKeyboard;
 	Gamepad = new SDLGamepad;
 
-    ImGuiWrapper::get()->initialize();
+	if (useGUI) {
+		ImGuiWrapper::get()->initialize();
+	}
 
 	SystemGL::get();
 }

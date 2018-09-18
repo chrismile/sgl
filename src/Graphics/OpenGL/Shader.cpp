@@ -439,6 +439,15 @@ bool ShaderProgramGL::setUniformArray(int location, const glm::vec4 *value, size
 
 
 
+void ShaderProgramGL::setUniformImageTexture(unsigned int unit, TexturePtr texture, unsigned int format /*= GL_RGBA8 */,
+							unsigned int access /* = GL_READ_WRITE */, unsigned int level /* = 0 */,
+							bool layered /* = false */, unsigned int layer /* = 0 */)
+{
+	glBindImageTexture(unit, ((TextureGL*)texture.get())->getTexture(), level, layered, layer, access, format);
+}
+
+
+
 // OpenGL 3 Uniform Buffers & OpenGL 4 Shader Storage Buffers
 bool ShaderProgramGL::setUniformBuffer(int binding, int location, GeometryBufferPtr &geometryBuffer)
 {

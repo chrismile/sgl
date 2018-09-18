@@ -93,6 +93,24 @@ public:
 	bool setUniformArray(int location, const glm::vec4 *value, size_t num);
 
 
+	// Image Load and Store
+
+	/**
+	 * Binds a level of a texture to a uniform image unit in a shader.
+	 * For more details see: https://www.khronos.org/opengl/wiki/GLAPI/glBindImageTexture
+	 * @param unit: The binding in the shader to which the image should be attached.
+	 * @param texture: The texture to bind an image from.
+	 * @param format: The format used when performing formatted stores to the image.
+	 * @param access: GL_READ_ONLY, GL_WRITE_ONLY, or GL_READ_WRITE.
+	 * @param level: The level of a texture (usually of a mip-map) to be bound.
+	 * @param layered: When using a layered texture (e.g. GL_TEXTURE_2D_ARRAY) whether all layers should be bound.
+	 * @param layer: The layer to bind if "layered" is false.
+	 */
+	void setUniformImageTexture(unsigned int unit, TexturePtr texture, unsigned int format = GL_RGBA8,
+								unsigned int access = GL_READ_WRITE, unsigned int level = 0,
+								bool layered = false, unsigned int layer = 0);
+
+
 	// OpenGL 3 Uniform Buffers & OpenGL 4 Shader Storage Buffers
 
 	/**
