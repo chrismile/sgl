@@ -75,6 +75,56 @@ int ShaderManagerGL::getMaxWorkGroupInvocations()
 	return maxWorkGroupInvocations;
 }
 
+
+
+void ShaderManagerGL::bindUniformBuffer(int binding, GeometryBufferPtr &geometryBuffer)
+{
+	GLuint bufferID = static_cast<GeometryBufferGL*>(geometryBuffer.get())->getBuffer();
+
+	auto it = uniformBuffers.find(binding);
+	if (uniformBuffers.find(binding) != uniformBuffers.end()
+			&& static_cast<GeometryBufferGL*>(it->second.get())->getBuffer() == bufferID) {
+		// Already bound
+		return;
+	}
+
+	glBindBufferBase(GL_UNIFORM_BUFFER, binding, bufferID);
+    uniformBuffers[binding] = geometryBuffer;
+}
+
+void ShaderManagerGL::bindAtomicCounterBuffer(int binding, GeometryBufferPtr &geometryBuffer)
+{
+	GLuint bufferID = static_cast<GeometryBufferGL*>(geometryBuffer.get())->getBuffer();
+
+	auto it = atomicCounterBuffers.find(binding);
+	if (atomicCounterBuffers.find(binding) != atomicCounterBuffers.end()
+		&& static_cast<GeometryBufferGL*>(it->second.get())->getBuffer() == bufferID) {
+		// Already bound
+		return;
+	}
+
+	glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, binding, bufferID);
+	atomicCounterBuffers[binding] = geometryBuffer;
+}
+
+void ShaderManagerGL::bindShaderStorageBuffer(int binding, GeometryBufferPtr &geometryBuffer)
+{
+	GLuint bufferID = static_cast<GeometryBufferGL*>(geometryBuffer.get())->getBuffer();
+
+	auto it = shaderStorageBuffers.find(binding);
+	if (shaderStorageBuffers.find(binding) != shaderStorageBuffers.end()
+		&& static_cast<GeometryBufferGL*>(it->second.get())->getBuffer() == bufferID) {
+		// Already bound
+		return;
+	}
+
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, bufferID);
+	shaderStorageBuffers[binding] = geometryBuffer;
+}
+
+
+
+
 static bool dumpTextDebugStatic = false;
 ShaderProgramPtr ShaderManagerGL::createShaderProgram(const std::list<std::string> &shaderIDs, bool dumpTextDebug)
 {

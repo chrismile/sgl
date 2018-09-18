@@ -11,6 +11,7 @@
 #include "RendererGL.hpp"
 #include "Texture.hpp"
 #include "ShaderAttributes.hpp"
+#include "ShaderManager.hpp"
 #include <Utils/File/Logfile.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -451,10 +452,8 @@ void ShaderProgramGL::setUniformImageTexture(unsigned int unit, TexturePtr textu
 // OpenGL 3 Uniform Buffers & OpenGL 4 Shader Storage Buffers
 bool ShaderProgramGL::setUniformBuffer(int binding, int location, GeometryBufferPtr &geometryBuffer)
 {
-	GLuint ubo = static_cast<GeometryBufferGL*>(geometryBuffer.get())->getBuffer();
-
 	// Binding point is unique for _all_ shaders
-	glBindBufferBase(GL_UNIFORM_BUFFER, binding, ubo);
+	ShaderManager->bindUniformBuffer(binding, geometryBuffer);
 
 	// Location is set per shader (by name, explicitly, or by layout modifier)
 	glUniformBlockBinding(shaderProgramID, location, binding);
@@ -466,16 +465,18 @@ bool ShaderProgramGL::setUniformBuffer(int binding, const char *name, GeometryBu
 {
 	// Block index (aka location in the shader) can be queried by name in the shader
 	unsigned int blockIndex = glGetUniformBlockIndex(shaderProgramID, name);
-	return setUniformBuffer(binding, blockIndex, geometryBuffer);
+    if (blockIndex == GL_INVALID_INDEX) {
+        Logfile::get()->writeError(std::string() + "ERROR: ShaderProgramGL::setUniformBuffer: "
+                                   + "No uniform block called \"" + name + "\" in this shader program.");
+    }
+    return setUniformBuffer(binding, blockIndex, geometryBuffer);
 }
 
 
 bool ShaderProgramGL::setAtomicCounterBuffer(int binding, GeometryBufferPtr &geometryBuffer)
 {
-	GLuint buffer = static_cast<GeometryBufferGL*>(geometryBuffer.get())->getBuffer();
-
 	// Binding point is unique for _all_ shaders
-	glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, binding, buffer);
+	ShaderManager->bindAtomicCounterBuffer(binding, geometryBuffer);
 
 	// Set location to resource index per shader
 	//glShaderStorageBlockBinding(shaderProgramID, location, binding);
@@ -491,10 +492,8 @@ bool ShaderProgramGL::setAtomicCounterBuffer(int binding, GeometryBufferPtr &geo
 
 bool ShaderProgramGL::setShaderStorageBuffer(int binding, int location, GeometryBufferPtr &geometryBuffer)
 {
-	GLuint ssbo = static_cast<GeometryBufferGL*>(geometryBuffer.get())->getBuffer();
-
 	// Binding point is unique for _all_ shaders
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, ssbo);
+    ShaderManager->bindShaderStorageBuffer(binding, geometryBuffer);
 
 	// Set location to resource index per shader
 	glShaderStorageBlockBinding(shaderProgramID, location, binding);
@@ -506,6 +505,10 @@ bool ShaderProgramGL::setShaderStorageBuffer(int binding, const char *name, Geom
 {
 	// Resource index (aka location in the shader) can be queried by name in the shader
 	unsigned int resourceIndex = glGetProgramResourceIndex(shaderProgramID, GL_SHADER_STORAGE_BLOCK, name);
+    if (resourceIndex == GL_INVALID_INDEX) {
+        Logfile::get()->writeError(std::string() + "ERROR: ShaderProgramGL::setShaderStorageBuffer: "
+                                   + "No shader storage buffer called \"" + name + "\" in this shader program.");
+    }
 	return setShaderStorageBuffer(binding, resourceIndex, geometryBuffer);
 }
 

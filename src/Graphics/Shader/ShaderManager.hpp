@@ -76,6 +76,14 @@ public:
 	/// Maximum number of work group units of a local work group, e.g. 1024 local work items.
 	virtual int getMaxWorkGroupInvocations()=0;
 
+
+	// --- Shader program resources ---
+
+	virtual void bindUniformBuffer(int binding, GeometryBufferPtr &geometryBuffer)=0;
+	virtual void bindAtomicCounterBuffer(int binding, GeometryBufferPtr &geometryBuffer)=0;
+	virtual void bindShaderStorageBuffer(int binding, GeometryBufferPtr &geometryBuffer)=0;
+
+
 protected:
 	virtual ShaderPtr loadAsset(ShaderInfo &shaderInfo)=0;
 	virtual ShaderProgramPtr createShaderProgram(const std::list<std::string> &shaderIDs, bool dumpTextDebug)=0;
