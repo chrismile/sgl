@@ -12,6 +12,8 @@
 #include <boost/shared_ptr.hpp>
 #include <SDL2/SDL.h>
 
+#include "Utils/FramerateSmoother.hpp"
+
 namespace sgl {
 
 class Event;
@@ -46,6 +48,8 @@ private:
 
     uint64_t fpsCounterUpdateFrequency;
     bool printFPS;
+
+	FramerateSmoother framerateSmoother;
 };
 
 }

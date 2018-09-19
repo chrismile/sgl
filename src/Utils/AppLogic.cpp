@@ -21,7 +21,7 @@
 
 namespace sgl {
 
-AppLogic::AppLogic()
+AppLogic::AppLogic() : framerateSmoother(16)
 {
 	Timer->setFixedPhysicsFPS(true, 30);
 	Timer->setFPSLimit(true, 60);
@@ -72,7 +72,9 @@ void AppLogic::run()
 
 		running = window->processEvents([this](const SDL_Event &event) { this->processSDLEvent(event); });
 
-		float dt = Timer->getElapsedSeconds();
+		//float dt = Timer->getElapsedSeconds();
+		framerateSmoother.addSample(1.0f/Timer->getElapsedSeconds());
+		float dt = 1.0f / framerateSmoother.computeAverage();
 		Mouse->update(dt);
 		Keyboard->update(dt);
 		Gamepad->update(dt);
@@ -83,7 +85,7 @@ void AppLogic::run()
 		render();
 
 		if (abs((long int)fpsTimer - (long int)Timer->getTicksMicroseconds()) > fpsCounterUpdateFrequency) {
-			fps = 1.0f/Timer->getElapsedSeconds();
+			fps = 1.0f/dt;//Timer->getElapsedSeconds();
 			fpsTimer = Timer->getTicksMicroseconds();
 			if (printFPS) {
 				std::cout << fps << std::endl;
