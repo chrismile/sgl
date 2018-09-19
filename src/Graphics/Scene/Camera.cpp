@@ -71,8 +71,8 @@ AABB2 Camera::getAABB2(float planeDistance) {
 	RaycastResult intersection1 = ray1.intersects(projPlane);
 	RaycastResult intersection2 = ray2.intersects(projPlane);
 	AABB2 aabb2;
-	aabb2.min = ray1.getPoint(intersection1.t);
-	aabb2.max = ray2.getPoint(intersection2.t);
+	aabb2.min = ray1.getPoint2D(intersection1.t);
+	aabb2.max = ray2.getPoint2D(intersection2.t);
 	return aabb2;
 }
 
@@ -84,7 +84,7 @@ glm::vec2 Camera::mousePositionInPlane(float planeDistance) {
 			Mouse->getY()/float(window->getHeight())));
 	Plane physicsPlane(glm::vec3(0.0f, 0.0f, 1.0f), -fabs(planeDistance));
 	RaycastResult intersection = ray.intersects(physicsPlane);
-	glm::vec2 planePosition = ray.getPoint(intersection.t);
+	glm::vec2 planePosition = ray.getPoint2D(intersection.t);
 	return planePosition;
 }
 
