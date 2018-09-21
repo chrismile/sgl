@@ -9,9 +9,12 @@
 #define GRAPHICS_SHADER_SHADER_HPP_
 
 #include <string>
+#include <list>
+
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
 #include <glm/fwd.hpp>
+
 #include <Defs.hpp>
 #include <Graphics/Buffers/GeometryBuffer.hpp>
 
@@ -36,6 +39,13 @@ public:
 	virtual ~Shader() {}
 	virtual void setShaderText(const std::string &text)=0;
 	virtual bool compile()=0;
+
+	// The identifier used for loading the shader, e.g. "Blit.Vertex"
+	inline const char *getFileID() const { return fileID.c_str(); }
+	inline void setFileID(const std::string &_fileID) { fileID = _fileID; }
+
+protected:
+	std::string fileID;
 };
 
 typedef boost::shared_ptr<Shader> ShaderPtr;
@@ -46,6 +56,7 @@ class DLL_OBJECT ShaderProgram
 public:
 	ShaderProgram() {}
 	virtual ~ShaderProgram() {}
+	inline std::list<ShaderPtr> &getShaderList() { return shaders; }
 
 	virtual void attachShader(ShaderPtr shader)=0;
 	virtual void detachShader(ShaderPtr shader)=0;
@@ -145,6 +156,9 @@ public:
 	 */
 	virtual bool setShaderStorageBuffer(int binding, int location, GeometryBufferPtr &geometryBuffer)=0;
 	virtual bool setShaderStorageBuffer(int binding, const char *name, GeometryBufferPtr &geometryBuffer)=0;
+
+protected:
+	std::list<ShaderPtr> shaders;
 };
 
 typedef boost::shared_ptr<ShaderProgram> ShaderProgramPtr;

@@ -8,6 +8,8 @@
 #include <chrono>
 #include <thread>
 
+#include <SDL2/SDL.h>
+
 #include "Timer.hpp"
 
 namespace sgl {
@@ -15,6 +17,8 @@ namespace sgl {
 TimerInterface::TimerInterface() : currentTime(0), lastTime(0), elapsedMicroSeconds(0),
 		fpsLimitEnabled(true), fpsLimit(60), fixedPhysicsFPSEnabled(true), physicsFPS(60)
 {
+	perfFreq = SDL_GetPerformanceFrequency();
+	startFrameTime = SDL_GetPerformanceCounter();
 }
 
 void TimerInterface::sleepMilliseconds(unsigned int milliseconds)
@@ -29,7 +33,7 @@ void TimerInterface::waitForFPSLimit()
 	}
 
 	uint64_t timeSinceUpdate = getTicksMicroseconds() - lastTime;
-	int64_t sleepTimeMicroSeconds = 1e6 / (fpsLimit+10) - timeSinceUpdate;
+	int64_t sleepTimeMicroSeconds = 1e6 / (fpsLimit+2) - timeSinceUpdate;
 	if (sleepTimeMicroSeconds > 0) {
 		std::this_thread::sleep_for(std::chrono::microseconds(sleepTimeMicroSeconds));
 	}
@@ -59,10 +63,12 @@ void TimerInterface::update()
 
 uint64_t TimerInterface::getTicksMicroseconds()
 {
-	auto now = std::chrono::high_resolution_clock::now();
+	/*auto now = std::chrono::high_resolution_clock::now();
 	auto duration = now.time_since_epoch();
 	auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
-	return microseconds;
+	return microseconds;*/
+	uint64_t currentTime = static_cast<double>(SDL_GetPerformanceCounter() - startFrameTime) / perfFreq * 1e6;
+    return currentTime;
 }
 
 }

@@ -172,7 +172,6 @@ void SDLWindow::close()
 
 void SDLWindow::update()
 {
-	Timer->update();
 }
 
 bool SDLWindow::processEvents(std::function<void(const SDL_Event&)> eventHandler)

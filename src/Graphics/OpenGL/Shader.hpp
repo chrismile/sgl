@@ -26,15 +26,12 @@ public:
 	//! Implementation dependent
 	inline GLuint getShaderID() const { return shaderID; }
 	inline GLuint getShaderType() const { return shaderType; }
-	inline const char *getFileID() const { return fileID.c_str(); }
-	inline void setFileID(const std::string &_fileID) { fileID = _fileID; }
 	//! Returns e.g. "Fragment Shader" for logging purposes
 	std::string getShaderDebugType();
 
 private:
 	GLuint shaderID;
 	ShaderType shaderType;
-	std::string fileID;
 };
 
 typedef boost::shared_ptr<Shader> ShaderPtr;
@@ -151,7 +148,6 @@ private:
 	std::map<std::string, int> uniforms;
 	std::map<std::string, int> attributes;
 	GLuint shaderProgramID;
-	std::list<ShaderPtr> shaders;
 };
 
 }

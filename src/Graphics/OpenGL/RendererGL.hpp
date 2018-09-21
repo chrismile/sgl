@@ -53,7 +53,8 @@ public:
 	virtual void bindFBO(FramebufferObjectPtr _fbo, bool force = false);
 	virtual void unbindFBO(bool force = false);
 	virtual FramebufferObjectPtr getFBO();
-	virtual void clearFramebuffer(unsigned int buffers = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT, const Color& col = Color(0, 0, 0), float depth = 0.0f, unsigned short stencil = 0);
+	virtual void clearFramebuffer(unsigned int buffers = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT,
+			const Color& col = Color(0, 0, 0), float depth = 1.0f, unsigned short stencil = 0);
 	virtual void setCamera(CameraPtr _viewport, bool force = false);
 	virtual CameraPtr getCamera();
 

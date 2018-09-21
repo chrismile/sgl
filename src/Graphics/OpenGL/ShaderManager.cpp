@@ -83,7 +83,8 @@ void ShaderManagerGL::bindUniformBuffer(int binding, GeometryBufferPtr &geometry
 
 	auto it = uniformBuffers.find(binding);
 	if (uniformBuffers.find(binding) != uniformBuffers.end()
-			&& static_cast<GeometryBufferGL*>(it->second.get())->getBuffer() == bufferID) {
+			&& static_cast<GeometryBufferGL*>(it->second.get())->getBuffer() == bufferID
+			&& geometryBuffer.get() == it->second.get()) {
 		// Already bound
 		return;
 	}
@@ -98,7 +99,8 @@ void ShaderManagerGL::bindAtomicCounterBuffer(int binding, GeometryBufferPtr &ge
 
 	auto it = atomicCounterBuffers.find(binding);
 	if (atomicCounterBuffers.find(binding) != atomicCounterBuffers.end()
-		&& static_cast<GeometryBufferGL*>(it->second.get())->getBuffer() == bufferID) {
+			&& static_cast<GeometryBufferGL*>(it->second.get())->getBuffer() == bufferID
+			&& geometryBuffer.get() == it->second.get()) {
 		// Already bound
 		return;
 	}
@@ -113,7 +115,8 @@ void ShaderManagerGL::bindShaderStorageBuffer(int binding, GeometryBufferPtr &ge
 
 	auto it = shaderStorageBuffers.find(binding);
 	if (shaderStorageBuffers.find(binding) != shaderStorageBuffers.end()
-		&& static_cast<GeometryBufferGL*>(it->second.get())->getBuffer() == bufferID) {
+			&& static_cast<GeometryBufferGL*>(it->second.get())->getBuffer() == bufferID
+			&& geometryBuffer.get() == it->second.get()) {
 		// Already bound
 		return;
 	}

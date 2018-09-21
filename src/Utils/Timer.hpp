@@ -54,6 +54,9 @@ public:
 
 private:
 	uint64_t currentTime, lastTime, elapsedMicroSeconds;
+    uint64_t perfFreq;
+    uint64_t startFrameTime;
+
 	bool fpsLimitEnabled;
 	unsigned int fpsLimit;
 	bool fixedPhysicsFPSEnabled;

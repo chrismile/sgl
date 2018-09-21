@@ -190,13 +190,17 @@ TexturePtr TextureManagerGL::createEmptyTexture(int width, int height, TextureSe
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, settings.textureWrapS);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, settings.textureWrapT);
 	glTexImage2D(GL_TEXTURE_2D,
-			0,
-			settings.internalFormat,
-			width, height,
-			0,
-			settings.pixelFormat,
-			settings.pixelType,
-			NULL);
+				 0,
+				 settings.internalFormat,
+				 width, height,
+				 0,
+				 settings.pixelFormat,
+				 settings.pixelType,
+				 NULL);
+	/*glTexStorage2D(GL_TEXTURE_2D,
+				   1,
+				   settings.internalFormat,
+				   width, height);*/
 
 	return TexturePtr(new TextureGL(oglTexture, width, height, 32, settings.textureMinFilter,
 			settings.textureMagFilter, settings.textureWrapS, settings.textureWrapT, 0));
