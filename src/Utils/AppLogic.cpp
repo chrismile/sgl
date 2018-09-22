@@ -29,7 +29,7 @@ AppLogic::AppLogic() : framerateSmoother(16)
 	screenshot = false;
 	fpsCounterUpdateFrequency = 1e6;
 	printFPS = true;
-	fps = 0.0f;
+	fps = 60.0f;
 }
 
 AppLogic::~AppLogic()
