@@ -44,7 +44,7 @@ std::string getErrorSourceString(GLenum source)
     const std::map<GLenum, std::string> sourceMap = {
             { GL_DEBUG_SOURCE_API, "OpenGL API" },
             { GL_DEBUG_SOURCE_WINDOW_SYSTEM, "Window System" },
-            { GL_DEBUG_SOURCE_WINDOW_SYSTEM, "Shader Compiler" },
+            { GL_DEBUG_SOURCE_SHADER_COMPILER, "Shader Compiler" },
             { GL_DEBUG_SOURCE_THIRD_PARTY, "Third Party" },
             { GL_DEBUG_SOURCE_APPLICATION, "Application" },
             { GL_DEBUG_SOURCE_OTHER, "Other" }

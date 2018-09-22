@@ -56,7 +56,7 @@ protected:
 	ShaderProgramPtr createShaderProgram(const std::list<std::string> &shaderIDs, bool dumpTextDebug);
 
 	/// Internal loading
-	std::string loadHeaderFileString(const std::string &shaderName);
+	std::string loadHeaderFileString(const std::string &shaderName, std::string &appendContent);
 	std::string getHeaderName(const std::string &lineString);
 	std::string getShaderString(const std::string &globalShaderName);
     std::string getPreprocessorDefines();

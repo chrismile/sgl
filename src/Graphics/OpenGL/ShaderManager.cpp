@@ -203,7 +203,7 @@ ShaderAttributesPtr ShaderManagerGL::createShaderAttributes(ShaderProgramPtr &sh
 
 
 
-std::string ShaderManagerGL::loadHeaderFileString(const std::string &shaderName) {
+std::string ShaderManagerGL::loadHeaderFileString(const std::string &shaderName, std::string &appendContent) {
 	std::ifstream file(shaderName.c_str());
 	if (!file.is_open()) {
 		Logfile::get()->writeError(std::string() + "Error in loadHeaderFileString: Couldn't open the file \""
@@ -226,9 +226,12 @@ std::string ShaderManagerGL::loadHeaderFileString(const std::string &shaderName)
 
 		if (boost::starts_with(linestr, "#include")) {
 			std::string includedFileName = getShaderFileName(getHeaderName(linestr));
-			std::string includedFileContent = loadHeaderFileString(includedFileName);
+			std::string includedFileContent = loadHeaderFileString(includedFileName, appendContent);
 			fileContent += includedFileContent + "\n";
 			fileContent += std::string() + "#line " + toString(lineNum) + "\n";
+		} else if (boost::starts_with(linestr, "#extension") || boost::starts_with(linestr, "#version")) {
+			appendContent += linestr + "\n";
+			fileContent = std::string() + fileContent + "#line " + toString(lineNum) + "\n";
 		} else {
 			fileContent += std::string() + linestr + "\n";
 		}
@@ -330,6 +333,7 @@ std::string ShaderManagerGL::getShaderString(const std::string &globalShaderName
 
 	std::string shaderName = "";
 	std::string shaderContent = "#line 1\n";
+	std::string appendContent = "";
 	int lineNum = 1;
 	std::string linestr;
 	while (getline(file, linestr)) {
@@ -342,22 +346,26 @@ std::string ShaderManagerGL::getShaderString(const std::string &globalShaderName
 
 		if (boost::starts_with(linestr, "-- ")) {
 			if (shaderContent.size() > 0 && shaderName.size() > 0) {
+				shaderContent = appendContent + shaderContent;
 				effectSources.insert(make_pair(shaderName, shaderContent));
 			}
 
 			shaderName = pureFilename + "." + linestr.substr(3);
 			shaderContent = std::string() + getPreprocessorDefines() + "#line " + toString(lineNum) + "\n";
-		} else if (boost::starts_with(linestr, "#version")) {
-			shaderContent = std::string() + linestr + "\n" + shaderContent + "#line " + toString(lineNum) + "\n";
-		} else if (boost::starts_with(linestr, "#include")) {
+			appendContent = "";
+		} else if (boost::starts_with(linestr, "#version") || boost::starts_with(linestr, "#extension")) {
+			appendContent += linestr + "\n";
+			shaderContent = std::string() + shaderContent + "#line " + toString(lineNum) + "\n";
+        } else if (boost::starts_with(linestr, "#include")) {
 			std::string includedFileName = getShaderFileName(getHeaderName(linestr));
-			std::string includedFileContent = loadHeaderFileString(includedFileName);
+			std::string includedFileContent = loadHeaderFileString(includedFileName, appendContent);
 			shaderContent += includedFileContent + "\n";
 			shaderContent += std::string() + "#line " + toString(lineNum) + "\n";
 		} else {
 			shaderContent += std::string() + linestr + "\n";
 		}
 	}
+	shaderContent = appendContent + shaderContent;
 	file.close();
 
 	if (shaderName.size() > 0) {
