@@ -18,7 +18,7 @@ class DLL_OBJECT AABB3 {
 public:
 	glm::vec3 min, max;
 
-	AABB3() {}
+	AABB3() : min(FLT_MAX), max(-FLT_MAX) {}
 	AABB3(glm::vec3 min, glm::vec3 max) : min(min), max(max) {}
 
 	inline glm::vec3 getDimensions() const { return max - min; }
