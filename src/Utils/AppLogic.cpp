@@ -36,7 +36,12 @@ AppLogic::~AppLogic()
 {
 }
 
-void AppLogic::saveScreenshot()
+void AppLogic::saveScreenshot(const std::string &filename)
+{
+	AppSettings::get()->getMainWindow()->saveScreenshot(filename.c_str());
+}
+
+void AppLogic::makeScreenshot()
 {
 	std::string filename = FileUtils::get()->getConfigDirectory() + "Screenshot";
 	bool nonExistent = false;
@@ -49,7 +54,7 @@ void AppLogic::saveScreenshot()
 		}
 	}
 	if (!nonExistent) filename += "999.png";
-	AppSettings::get()->getMainWindow()->saveScreenshot(filename.c_str());
+	saveScreenshot(filename);
 	screenshot = false;
 }
 
@@ -98,7 +103,7 @@ void AppLogic::run()
 
 		// Save a screenshot before flipping the backbuffer surfaces if necessary
 		if (screenshot) {
-			saveScreenshot();
+			makeScreenshot();
 		}
 		Timer->waitForFPSLimit();
 		window->flip();

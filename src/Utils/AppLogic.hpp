@@ -39,10 +39,11 @@ public:
 	inline void quit() { running = false; }
 
 protected:
-    float fps;
+	virtual void saveScreenshot(const std::string &filename);
+	float fps;
 
 private:
-    void saveScreenshot();
+    void makeScreenshot();
 	bool running;
 	bool screenshot;
 

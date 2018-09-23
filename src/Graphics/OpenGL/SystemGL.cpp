@@ -59,14 +59,8 @@ SystemGL::SystemGL()
 	glGetFloatv(GL_LINE_WIDTH_GRANULARITY, &glLineSizeIncrementStep);
 	glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maximumAnisotropy);
 
-	if (AppSettings::get()->getRenderSystem() != OPENGLES || isGLExtensionAvailable("GL_OES_texture_npot")) {
-		TextureManager->setNPOTHandling(NPOT_SUPPORTED);
-	} else {
-		TextureManager->setNPOTHandling(NPOT_ES_SUPPORTED);
-	}
-
-	if (!openglVersionMinimum(2, 0)) {
-		Logfile::get()->writeError("FATAL ERROR: The minimum supported OpenGL version is OpenGL 2.0.");
+	if (!openglVersionMinimum(3, 1)) {
+		Logfile::get()->writeError("FATAL ERROR: The minimum supported OpenGL version is OpenGL 3.1.");
 	}
 
 	premulAlphaEnabled = true;

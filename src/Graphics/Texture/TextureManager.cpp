@@ -9,7 +9,7 @@
 
 namespace sgl {
 
-TexturePtr TextureManagerInterface::getAsset(const char *filename, TextureSettings settings)
+TexturePtr TextureManagerInterface::getAsset(const char *filename, const TextureSettings &settings)
 {
 	TextureInfo info;
 	info.filename = filename;

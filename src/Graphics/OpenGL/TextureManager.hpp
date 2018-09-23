@@ -15,12 +15,10 @@ namespace sgl {
 class TextureManagerGL : public TextureManagerInterface
 {
 public:
-	TexturePtr createEmptyTexture(int w, int h, TextureSettings settings = TextureSettings());
-	TexturePtr createTexture(void *data, int w, int h, TextureSettings settings = TextureSettings());
-	TexturePtr createEmptyTexture3D(int w, int h, int d, TextureSettings settings = TextureSettings());
-	TexturePtr createTexture3D(void *data, int w, int h, int d, TextureSettings settings = TextureSettings());
-
-	TexturePtr createTextureArray(void *data, int w, int h, int d, TextureSettings settings = TextureSettings());
+    TexturePtr createEmptyTexture(int w, int h, const TextureSettings &settings = TextureSettings());
+    TexturePtr createTexture(void *data, int w, int h, const TextureSettings &settings = TextureSettings());
+    TexturePtr createEmptyTexture(int w, int h, int d, const TextureSettings &settings = TextureSettings());
+    TexturePtr createTexture(void *data, int w, int h, int d, const TextureSettings &settings = TextureSettings());
 
 	//! Only for FBOs!
 	TexturePtr createMultisampledTexture(int w, int h, int numSamples);
@@ -28,11 +26,9 @@ public:
 	TexturePtr createDepthTexture(int w, int h, DepthTextureFormat format = DEPTH_COMPONENT16,
 			int textureMinFilter = GL_LINEAR, int textureMagFilter = GL_LINEAR);
 
-	void setNPOTHandling(NPOTHandling npot) { npotHandling = npot; }
-
 protected:
 	virtual TexturePtr loadAsset(TextureInfo &textureInfo);
-	NPOTHandling npotHandling;
+	void createTextureInternal();
 };
 
 }
