@@ -277,42 +277,77 @@ TexturePtr TextureManagerGL::createEmptyTexture3D(int width, int height, int dep
 	return TexturePtr(texture);
 }
 
-TexturePtr TextureManagerGL::createTexture3D(void *data, int width, int height, int depth, TextureSettings settings)
-{
-	GLuint oglTexture;
-	// Create an OpenGL texture for the image
-	glGenTextures(1, &oglTexture);
-	glBindTexture(GL_TEXTURE_3D, oglTexture);
+	TexturePtr TextureManagerGL::createTexture3D(void *data, int width, int height, int depth, TextureSettings settings)
+	{
+		GLuint oglTexture;
+		// Create an OpenGL texture for the image
+		glGenTextures(1, &oglTexture);
+		glBindTexture(GL_TEXTURE_3D, oglTexture);
 
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, settings.textureMagFilter);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, settings.textureMinFilter);
-	if (settings.textureMinFilter == GL_LINEAR_MIPMAP_LINEAR
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, settings.textureMagFilter);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, settings.textureMinFilter);
+		if (settings.textureMinFilter == GL_LINEAR_MIPMAP_LINEAR
 			|| settings.textureMinFilter == GL_NEAREST_MIPMAP_NEAREST
 			|| settings.textureMinFilter == GL_NEAREST_MIPMAP_LINEAR
 			|| settings.textureMinFilter == GL_LINEAR_MIPMAP_NEAREST) {
-		glTexParameteri(GL_TEXTURE_3D, GL_GENERATE_MIPMAP, GL_TRUE);
+			glTexParameteri(GL_TEXTURE_3D, GL_GENERATE_MIPMAP, GL_TRUE);
+		}
+
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, settings.textureWrapS);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, settings.textureWrapT);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, settings.textureWrapR);
+
+		glTexImage3D(GL_TEXTURE_3D,
+					 0,
+					 settings.internalFormat,
+					 width, height, depth,
+					 0,
+					 settings.pixelFormat,
+					 settings.pixelType,
+					 data);
+
+		auto texture = new TextureGL(oglTexture, width, height, 32, settings.textureMinFilter,
+									 settings.textureMagFilter, settings.textureWrapS, settings.textureWrapT, 0);
+		texture->setTextureType(TEXTURE_3D);
+		return TexturePtr(texture);
 	}
 
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, settings.textureWrapS);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, settings.textureWrapT);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, settings.textureWrapR);
+	TexturePtr TextureManagerGL::createTextureArray(void *data, int width, int height, int depth, TextureSettings settings)
+	{
+		GLuint oglTexture;
+		// Create an OpenGL texture for the image
+		glGenTextures(1, &oglTexture);
+		glBindTexture(GL_TEXTURE_2D_ARRAY, oglTexture);
 
-	glTexImage3D(GL_TEXTURE_3D,
-			0,
-			settings.internalFormat,
-			width, height, depth,
-			0,
-			settings.pixelFormat,
-			settings.pixelType,
-			data);
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, settings.textureMagFilter);
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, settings.textureMinFilter);
+		if (settings.textureMinFilter == GL_LINEAR_MIPMAP_LINEAR
+			|| settings.textureMinFilter == GL_NEAREST_MIPMAP_NEAREST
+			|| settings.textureMinFilter == GL_NEAREST_MIPMAP_LINEAR
+			|| settings.textureMinFilter == GL_LINEAR_MIPMAP_NEAREST) {
+			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_GENERATE_MIPMAP, GL_TRUE);
+		}
 
-	auto texture = new TextureGL(oglTexture, width, height, 32, settings.textureMinFilter,
-			settings.textureMagFilter, settings.textureWrapS, settings.textureWrapT, 0);
-	texture->setTextureType(TEXTURE_3D);
-	return TexturePtr(texture);
-}
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, settings.textureWrapS);
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, settings.textureWrapT);
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, settings.textureWrapR);
 
-TexturePtr TextureManagerGL::createMultisampledTexture(int w, int h, int numSamples) // Only for FBOs!
+		glTexImage3D(GL_TEXTURE_2D_ARRAY,
+					 0,
+					 settings.internalFormat,
+					 width, height, depth,
+					 0,
+					 settings.pixelFormat,
+					 settings.pixelType,
+					 data);
+
+		auto texture = new TextureGL(oglTexture, width, height, 32, settings.textureMinFilter,
+									 settings.textureMagFilter, settings.textureWrapS, settings.textureWrapT, 0);
+		texture->setTextureType(TEXTURE_3D);
+		return TexturePtr(texture);
+	}
+
+	TexturePtr TextureManagerGL::createMultisampledTexture(int w, int h, int numSamples) // Only for FBOs!
 {
 	// https://www.opengl.org/sdk/docs/man3/xhtml/glTexImage2DMultisample.xml
 	//   -> "glTexImage2DMultisample is available only if the GL version is 3.2 or greater."

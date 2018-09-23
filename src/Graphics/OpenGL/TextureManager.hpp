@@ -20,6 +20,8 @@ public:
 	TexturePtr createEmptyTexture3D(int w, int h, int d, TextureSettings settings = TextureSettings());
 	TexturePtr createTexture3D(void *data, int w, int h, int d, TextureSettings settings = TextureSettings());
 
+	TexturePtr createTextureArray(void *data, int w, int h, int d, TextureSettings settings = TextureSettings());
+
 	//! Only for FBOs!
 	TexturePtr createMultisampledTexture(int w, int h, int numSamples);
 	//! bitsPerPixel must be 16, 24 or 32

@@ -87,6 +87,8 @@ public:
 	virtual TexturePtr createEmptyTexture3D(int w, int h, int d, TextureSettings settings = TextureSettings())=0;
 	virtual TexturePtr createTexture3D(void *data, int w, int h, int d, TextureSettings settings = TextureSettings())=0;
 
+	virtual TexturePtr createTextureArray(void *data, int w, int h, int d, TextureSettings settings = TextureSettings())=0;
+
 	//! Only for FBOs!
 	virtual TexturePtr createMultisampledTexture(int w, int h, int numSamples)=0;
 	//! bitsPerPixel must be 16, 24 or 32
