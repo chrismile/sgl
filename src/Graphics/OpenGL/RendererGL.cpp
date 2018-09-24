@@ -13,7 +13,6 @@
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
 #include <Utils/AppSettings.hpp>
-#include <Graphics/Mesh/Vertex.hpp>
 #include <Graphics/Texture/TextureManager.hpp>
 #include <Graphics/Scene/Camera.hpp>
 #include <Graphics/Scene/RenderTarget.hpp>
@@ -306,6 +305,8 @@ void RendererGL::bindTexture(TexturePtr &tex, unsigned int textureUnit /* = 0 */
 
 		if (tex->getTextureType() == TEXTURE_3D) {
 			glBindTexture(GL_TEXTURE_3D, textureGL->getTexture());
+		} else if (tex->getTextureType() == TEXTURE_2D_ARRAY) {
+			glBindTexture(GL_TEXTURE_2D_ARRAY, textureGL->getTexture());
 		} else if (tex->getNumSamples() == 0) {
 			glBindTexture(GL_TEXTURE_2D, textureGL->getTexture());
 		} else {
@@ -588,7 +589,7 @@ void RendererGL::blitTexture(TexturePtr &tex, const AABB2 &renderRect, bool mirr
 	}
 }
 
-std::vector<VertexTextured> createTexturedQuad(const AABB2 &renderRect, bool mirrored = false)
+std::vector<VertexTextured> RendererGL::createTexturedQuad(const AABB2 &renderRect, bool mirrored /* = false */)
 {
 	glm::vec2 min = renderRect.getMinimum();
 	glm::vec2 max = renderRect.getMaximum();

@@ -301,7 +301,7 @@ TexturePtr TextureManagerGL::createMultisampledTexture(int w, int h, int numSamp
 
 	glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, numSamples, GL_RGBA8, w, h, false);
 
-	TextureSettings settings(GL_TEXTURE_2D_MULTISAMPLE, GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+	TextureSettings settings(TEXTURE_2D_MULTISAMPLE, GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 	settings.internalFormat = GL_RGBA8;
 	settings.pixelFormat = GL_RGBA8;
 	settings.pixelType = GL_BYTE;

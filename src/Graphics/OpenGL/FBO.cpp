@@ -84,6 +84,17 @@ unsigned int FramebufferObjectGL::_bindInternal()
 		hasColorAttachment = true; // Only call once
 	}
 
+	// More than one color attachment
+	if (textures.size() > 1) {
+		if (colorAttachments.size() == 0) {
+			colorAttachments.reserve(textures.size());
+			for (auto it = textures.begin(); it != textures.end(); it++) {
+				colorAttachments.push_back(it->first);
+			}
+		}
+		glDrawBuffers(colorAttachments.size(), &colorAttachments.front());
+	}
+
 	return id;
 }
 

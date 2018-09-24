@@ -20,6 +20,7 @@
 #include <Graphics/Texture/Texture.hpp>
 #include <Graphics/Buffers/RBO.hpp>
 #include <Graphics/Buffers/GeometryBuffer.hpp>
+#include <Graphics/Mesh/Vertex.hpp>
 
 namespace sgl {
 
@@ -129,6 +130,7 @@ public:
 	virtual void blurTexture(TexturePtr &tex)=0;
 	virtual TexturePtr getScaledTexture(TexturePtr &tex, Point2 newSize)=0;
 	virtual void blitTextureFXAAAntialiased(TexturePtr &tex)=0;
+	virtual std::vector<VertexTextured> createTexturedQuad(const AABB2 &renderRect, bool mirrored = false)=0;
 };
 
 extern RendererInterface *Renderer;

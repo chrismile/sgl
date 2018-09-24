@@ -8,11 +8,14 @@
 #ifndef GRAPHICS_OPENGL_FBO_HPP_
 #define GRAPHICS_OPENGL_FBO_HPP_
 
+#include <GL/glew.h>
+
 #include <Graphics/Buffers/FBO.hpp>
 #include <Graphics/Buffers/RBO.hpp>
 #include <Graphics/Texture/Texture.hpp>
 #include <map>
 #include <list>
+#include <vector>
 
 namespace sgl {
 
@@ -36,6 +39,7 @@ protected:
 	unsigned int id;
 	std::map<FramebufferAttachment, TexturePtr> textures;
 	std::map<FramebufferAttachment, RenderbufferObjectPtr> rbos;
+	std::vector<GLuint> colorAttachments;
 	int width, height;
 	bool hasColorAttachment;
 };

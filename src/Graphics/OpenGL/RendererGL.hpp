@@ -96,8 +96,9 @@ public:
 	virtual void blurTexture(TexturePtr &tex);
 	virtual TexturePtr getScaledTexture(TexturePtr &tex, Point2 newSize);
 	virtual void blitTextureFXAAAntialiased(TexturePtr &tex);
+    virtual std::vector<VertexTextured> createTexturedQuad(const AABB2 &renderRect, bool mirrored = false);
 
-	// OpenGL-specific calls
+    // OpenGL-specific calls
 	void bindVAO(GLuint vao);
 	GLuint getVAO();
 	void useShaderProgram(ShaderProgramGL *shader);
