@@ -55,7 +55,10 @@ public:
 
     /// Removes a preprocessor #define token set by "addPreprocessorDefine"
     void removePreprocessorDefine(const std::string &token) {
-        preprocessorDefines.erase(preprocessorDefines.find(token));
+    	auto it = preprocessorDefines.find(token);
+    	if (it != preprocessorDefines.end()) {
+			preprocessorDefines.erase(it);
+    	}
     }
 
 

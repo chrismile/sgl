@@ -86,6 +86,11 @@ void AppLogic::run()
 		updateBase(dt);
 		update(dt);
 
+		// Decided to quit during update?
+		if (!running) {
+		    break;
+		}
+
 		window->clear(Color(0, 0, 0));
 		render();
 

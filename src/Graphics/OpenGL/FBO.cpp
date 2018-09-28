@@ -89,10 +89,14 @@ unsigned int FramebufferObjectGL::_bindInternal()
 		if (colorAttachments.size() == 0) {
 			colorAttachments.reserve(textures.size());
 			for (auto it = textures.begin(); it != textures.end(); it++) {
-				colorAttachments.push_back(it->first);
+				if (it->first >= COLOR_ATTACHMENT0 && it->first <= COLOR_ATTACHMENT15) {
+					colorAttachments.push_back(it->first);
+				}
 			}
 		}
-		glDrawBuffers(colorAttachments.size(), &colorAttachments.front());
+		if (colorAttachments.size() > 1) {
+			glDrawBuffers(colorAttachments.size(), &colorAttachments.front());
+		}
 	}
 
 	return id;

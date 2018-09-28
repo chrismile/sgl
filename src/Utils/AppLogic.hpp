@@ -41,6 +41,7 @@ public:
 protected:
 	virtual void saveScreenshot(const std::string &filename);
 	float fps;
+	FramerateSmoother framerateSmoother;
 
 private:
     void makeScreenshot();
@@ -50,7 +51,6 @@ private:
     uint64_t fpsCounterUpdateFrequency;
     bool printFPS;
 
-	FramerateSmoother framerateSmoother;
 };
 
 }
