@@ -24,7 +24,7 @@ public:
 	void scale(const glm::vec3 &scale) { recalcModelMat = true; transform.scale.x *= scale.x; transform.scale.y *= scale.y; transform.scale.z *= scale.z; }
 	void rotate(const glm::quat &ort) { recalcModelMat = true; transform.orientation *= ort; }
 
-	glm::vec3 &setPosition() { return transform.position; }
+	glm::vec3 &getPosition() { return transform.position; }
 	glm::vec3 &getScale() { return transform.scale; }
 	glm::quat &getOrientation() { return transform.orientation; }
 
