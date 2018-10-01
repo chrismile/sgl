@@ -28,6 +28,23 @@ void AABB3::combine(const AABB3 &otherAABB)
 		max.z = otherAABB.max.z;
 }
 
+void AABB3::combine(const glm::vec3 &pt)
+{
+	if (pt.x < min.x)
+		min.x = pt.x;
+	if (pt.y < min.y)
+		min.y = pt.y;
+	if (pt.z < min.z)
+		min.z = pt.z;
+
+	if (pt.x > max.x)
+		max.x = pt.x;
+	if (pt.y > max.y)
+		max.y = pt.y;
+	if (pt.z > max.z)
+		max.z = pt.z;
+}
+
 AABB3 AABB3::transformed(const glm::mat4 &matrix)
 {
 	glm::vec3 transformedCorners[8];

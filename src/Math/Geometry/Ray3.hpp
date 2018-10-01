@@ -13,6 +13,7 @@
 namespace sgl {
 
 class AABB3;
+class Plane;
 
 struct RaycastResult {
 	RaycastResult(bool hit, float t) : hit(hit), t(t) {}

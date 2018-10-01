@@ -31,6 +31,8 @@ public:
 
 	//! Merge the two AABBs
 	void combine(const AABB2 &otherAABB);
+	//! Merge AABB with a point
+	void combine(const glm::vec2 &pt);
 	//! Transform AABB
 	AABB2 transformed(const glm::mat4 &matrix);
 };

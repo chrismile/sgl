@@ -48,6 +48,9 @@ public:
 	void detachShader(ShaderPtr shader);
 	void bind();
 
+	// Compute shader interface
+	void dispatchCompute(int numGroupsX, int numGroupsY, int numGroupsZ = 1);
+
 	bool hasUniform(const char *name);
 	int getUniformLoc(const char *name);
     bool setUniform(const char *name, int value);

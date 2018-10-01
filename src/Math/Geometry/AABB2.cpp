@@ -22,6 +22,18 @@ void AABB2::combine(const AABB2 &otherAABB)
 		max.y = otherAABB.max.y;
 }
 
+void AABB2::combine(const glm::vec2 &pt)
+{
+	if (pt.x < min.x)
+		min.x = pt.x;
+	if (pt.y < min.y)
+		min.y = pt.y;
+	if (pt.x > max.x)
+		max.x = pt.x;
+	if (pt.y > max.y)
+		max.y = pt.y;
+}
+
 AABB2 AABB2::transformed(const glm::mat4 &matrix)
 {
 	glm::vec2 transformedCorners[4];

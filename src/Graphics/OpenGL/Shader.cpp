@@ -180,6 +180,14 @@ void ShaderProgramGL::bind()
 }
 
 
+void ShaderProgramGL::dispatchCompute(int numGroupsX, int numGroupsY, int numGroupsZ)
+{
+	this->bind();
+	glDispatchCompute(numGroupsX, numGroupsY, numGroupsZ);
+}
+
+
+
 bool ShaderProgramGL::hasUniform(const char *name)
 {
 	return getUniformLoc(name) >= 0;
