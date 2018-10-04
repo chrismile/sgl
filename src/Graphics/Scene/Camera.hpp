@@ -47,6 +47,7 @@ public:
 	inline float getFarClipDistance()  const { return farDist; }
 	inline float getFOVy()             const { return fovy; }
 	inline float getFOVx()             const { return 2.0f * atanf(tanf(fovy * 0.5f) * aspect); }
+	inline float getAspectRatio()      const { return aspect; }
 	void setNearClipDistance(float dist) { nearDist = dist; invalidateFrustum(); }
 	void setFarClipDistance(float dist)  { farDist = dist; invalidateFrustum(); }
 	void setFOVy(float fov)              { fovy = fov; invalidateFrustum(); }

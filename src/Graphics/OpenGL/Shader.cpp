@@ -223,14 +223,59 @@ bool ShaderProgramGL::setUniform(const char *name, int value)
 	return setUniform(getUniformLoc_error(name), value);
 }
 
+bool ShaderProgramGL::setUniform(const char *name, const glm::ivec2 &value)
+{
+	return setUniform(getUniformLoc_error(name), value);
+}
+
+bool ShaderProgramGL::setUniform(const char *name, const glm::ivec3 &value)
+{
+	return setUniform(getUniformLoc_error(name), value);
+}
+
+bool ShaderProgramGL::setUniform(const char *name, const glm::ivec4 &value)
+{
+	return setUniform(getUniformLoc_error(name), value);
+}
+
 bool ShaderProgramGL::setUniform(const char *name, unsigned int value)
 {
     return setUniform(getUniformLoc_error(name), value);
 }
 
+bool ShaderProgramGL::setUniform(const char *name, const glm::uvec2 &value)
+{
+	return setUniform(getUniformLoc_error(name), value);
+}
+
+bool ShaderProgramGL::setUniform(const char *name, const glm::uvec3 &value)
+{
+	return setUniform(getUniformLoc_error(name), value);
+}
+
+bool ShaderProgramGL::setUniform(const char *name, const glm::uvec4 &value)
+{
+	return setUniform(getUniformLoc_error(name), value);
+}
+
 bool ShaderProgramGL::setUniform(const char *name, bool value)
 {
 	return setUniform(getUniformLoc_error(name), (int)value);
+}
+
+bool ShaderProgramGL::setUniform(const char *name, const glm::bvec2 &value)
+{
+	return setUniform(getUniformLoc_error(name), value);
+}
+
+bool ShaderProgramGL::setUniform(const char *name, const glm::bvec3 &value)
+{
+	return setUniform(getUniformLoc_error(name), value);
+}
+
+bool ShaderProgramGL::setUniform(const char *name, const glm::bvec4 &value)
+{
+	return setUniform(getUniformLoc_error(name), value);
 }
 
 bool ShaderProgramGL::setUniform(const char *name, float value)
@@ -323,10 +368,80 @@ bool ShaderProgramGL::setUniform(int location, int value)
 	return true;
 }
 
+bool ShaderProgramGL::setUniform(int location, const glm::ivec2 &value)
+{
+	bind();
+	glUniform2i(location, value.x, value.y);
+	return true;
+}
+
+bool ShaderProgramGL::setUniform(int location, const glm::ivec3 &value)
+{
+	bind();
+	glUniform3i(location, value.x, value.y, value.z);
+	return true;
+}
+
+bool ShaderProgramGL::setUniform(int location, const glm::ivec4 &value)
+{
+	bind();
+	glUniform4i(location, value.x, value.y, value.z, value.w);
+	return true;
+}
+
 bool ShaderProgramGL::setUniform(int location, unsigned int value)
 {
 	bind();
 	glUniform1ui(location, value);
+	return true;
+}
+
+bool ShaderProgramGL::setUniform(int location, const glm::uvec2 &value)
+{
+	bind();
+	glUniform2ui(location, value.x, value.y);
+	return true;
+}
+
+bool ShaderProgramGL::setUniform(int location, const glm::uvec3 &value)
+{
+	bind();
+	glUniform3ui(location, value.x, value.y, value.z);
+	return true;
+}
+
+bool ShaderProgramGL::setUniform(int location, const glm::uvec4 &value)
+{
+	bind();
+	glUniform4ui(location, value.x, value.y, value.z, value.w);
+	return true;
+}
+
+bool ShaderProgramGL::setUniform(int location, bool value)
+{
+	bind();
+	glUniform1i(location, value);
+	return true;
+}
+
+bool ShaderProgramGL::setUniform(int location, const glm::bvec2 &value)
+{
+	bind();
+	glUniform2i(location, value.x, value.y);
+	return true;
+}
+
+bool ShaderProgramGL::setUniform(int location, const glm::bvec3 &value)
+{
+	bind();
+	glUniform3i(location, value.x, value.y, value.z);
+	return true;
+}
+
+bool ShaderProgramGL::setUniform(int location, const glm::bvec4 &value)
+{
+	bind();
+	glUniform4i(location, value.x, value.y, value.z, value.w);
 	return true;
 }
 
