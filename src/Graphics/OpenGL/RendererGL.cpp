@@ -536,7 +536,7 @@ void RendererGL::render(ShaderAttributesPtr &shaderAttributes, ShaderProgramPtr 
 
 void RendererGL::createMatrixBlock()
 {
-	matrixBlockBuffer = this->createGeometryBuffer(sizeof(MatrixBlock), &matrixBlock, UNIFORM_BUFFER);
+	matrixBlockBuffer = this->createGeometryBuffer(sizeof(MatrixBlock), &matrixBlock, UNIFORM_BUFFER, BUFFER_STREAM);
 
 	// Binding point is unique for _all_ shaders
 	ShaderManager->bindUniformBuffer(0, matrixBlockBuffer);
