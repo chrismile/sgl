@@ -93,10 +93,20 @@ void Camera::updateCamera() {
 		projMat = glm::perspective(fovy, aspect, nearDist, farDist);
 	}
 	if (recalcModelMat) {
-		modelMatrix =
+		/*modelMatrix =
 		        glm::mat4(this->transform.orientation)
 		        * matrixTranslation(this->transform.position)
-		        * matrixScaling(this->transform.scale);
+		        * matrixScaling(this->transform.scale);*/
+
+		cameraFront.x = cos(yaw) * cos(pitch);
+		cameraFront.y = sin(pitch);
+		cameraFront.z = sin(yaw) * cos(pitch);
+
+		cameraFront = glm::normalize(cameraFront);
+		cameraRight = glm::normalize(glm::cross(cameraFront, globalUp));
+		cameraUp    = glm::normalize(glm::cross(cameraRight, cameraFront));
+
+		modelMatrix = glm::lookAt(position, position + cameraFront, cameraUp);
 	}
 	if (recalcFrustum || recalcModelMat) {
 		viewProjMat = projMat * modelMatrix;

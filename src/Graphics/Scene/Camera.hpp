@@ -9,6 +9,7 @@
 #define SRC_GRAPHICS_SCENE_CAMERA_HPP_
 
 #include "SceneNode.hpp"
+#include <Math/Math.hpp>
 #include <Math/Geometry/AABB3.hpp>
 #include <Math/Geometry/Plane.hpp>
 #include <Math/Geometry/AABB2.hpp>
@@ -52,6 +53,14 @@ public:
 	void setFarClipDistance(float dist)  { farDist = dist; invalidateFrustum(); }
 	void setFOVy(float fov)              { fovy = fov; invalidateFrustum(); }
 
+	// View data
+	float getYaw()   const { return yaw; }
+	float getPitch() const { return pitch; }
+	void rotateYaw(float offset)   { recalcModelMat = true; yaw += offset; }
+	void setYaw(float newYaw)      { recalcModelMat = true; yaw = newYaw; }
+	void rotatePitch(float offset) { recalcModelMat = true; pitch += offset; }
+	void setPitch(float newPitch)  { recalcModelMat = true; pitch = newPitch; }
+
 	//! Set projection type: Orthogonal or perspective
 	//virtual void setProjectionType(ProjectionType pt);
 	//virtual void setOrthoWindow(float w, float h);
@@ -84,9 +93,16 @@ protected:
 
 	RenderTargetPtr renderTarget;
 
+
+	// View matrix data
 	glm::vec3 position;
-	glm::vec3 scaling;
-	glm::quat orientation;
+	//glm::vec3 scaling;
+	//glm::quat orientation;
+	float yaw = -sgl::PI/2.0f; //< around y axis
+	float pitch = 0.0f;        //< around x axis
+	glm::vec3 globalUp = glm::vec3(0.0f, 1.0f, 0.0f);
+	glm::vec3 cameraFront, cameraRight, cameraUp;
+
 
 	ProjectionType projType;
 	float fovy;
