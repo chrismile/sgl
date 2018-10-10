@@ -27,8 +27,8 @@ public:
 	inline float getFloatG () const { return g/255.0f; }
 	inline float getFloatB () const { return b/255.0f; }
 	inline float getFloatA () const { return a/255.0f; }
-	inline uint32_t getColorRGBA() const { uint32_t col = 0; col |= r; col <<= 8; col |= g; col <<= 8; col |= b; col <<= 8; col |= a; col <<= 8; return col; }
-	inline uint32_t getColorRGB() const { uint32_t col = 0; col |= r; col <<= 8; col |= g; col <<= 8; col |= b; col <<= 8; return col; }
+	inline uint32_t getColorRGBA() const { uint32_t col = a; col <<= 8; col |= b; col <<= 8; col |= g; col <<= 8; col |= r; return col; }
+	inline uint32_t getColorRGB() const { uint32_t col = 255; col <<= 8; col |= b; col <<= 8; col |= g; col <<= 8; col |= r; return col; }
 
 	inline void setR(uint8_t R) { r = R; }
 	inline void setG(uint8_t G) { g = G; }

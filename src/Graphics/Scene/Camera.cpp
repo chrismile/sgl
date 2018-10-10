@@ -46,6 +46,11 @@ glm::ivec4 Camera::getViewportLTWH() {
 			roundf(absMax.y - absMin.y)); // height
 }
 
+glm::mat4 Camera::getRotationMatrix()
+{
+	return glm::lookAt(glm::vec3(0.0f), cameraFront, cameraUp);
+}
+
 /*void Camera::setProjectionType(ProjectionType pt) {
 	;
 }
@@ -93,11 +98,6 @@ void Camera::updateCamera() {
 		projMat = glm::perspective(fovy, aspect, nearDist, farDist);
 	}
 	if (recalcModelMat) {
-		/*modelMatrix =
-		        glm::mat4(this->transform.orientation)
-		        * matrixTranslation(this->transform.position)
-		        * matrixScaling(this->transform.scale);*/
-
 		cameraFront.x = cos(yaw) * cos(pitch);
 		cameraFront.y = sin(pitch);
 		cameraFront.z = sin(yaw) * cos(pitch);
@@ -106,7 +106,9 @@ void Camera::updateCamera() {
 		cameraRight = glm::normalize(glm::cross(cameraFront, globalUp));
 		cameraUp    = glm::normalize(glm::cross(cameraRight, cameraFront));
 
-		modelMatrix = glm::lookAt(position, position + cameraFront, cameraUp);
+		modelMatrix = //glm::mat4(this->transform.orientation) *
+				glm::lookAt(glm::vec3(0.0f), cameraFront, cameraUp) *
+				matrixTranslation(-this->transform.position);
 	}
 	if (recalcFrustum || recalcModelMat) {
 		viewProjMat = projMat * modelMatrix;

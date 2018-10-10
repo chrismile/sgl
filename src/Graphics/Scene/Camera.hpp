@@ -69,7 +69,8 @@ public:
 	inline glm::mat4 getViewMatrix()            { updateCamera(); return modelMatrix; }
 	inline glm::mat4 getProjectionMatrix()      { updateCamera(); return projMat; }
 	inline glm::mat4 getViewProjMatrix()        { updateCamera(); return viewProjMat; }
-	inline glm::mat4 getInverseViewProjMatrix() { updateCamera(); return inverseViewProjMat; }
+    inline glm::mat4 getInverseViewProjMatrix() { updateCamera(); return inverseViewProjMat; }
+    glm::mat4 getRotationMatrix();
 
 	//! For frustum culling
 	virtual bool isVisible(const AABB3& bound) const;
@@ -98,8 +99,8 @@ protected:
 	glm::vec3 position;
 	//glm::vec3 scaling;
 	//glm::quat orientation;
-	float yaw = -sgl::PI/2.0f; //< around y axis
-	float pitch = 0.0f;        //< around x axis
+	float yaw = -sgl::PI/2.0f;   //< around y axis
+	float pitch = 0.0f; //< around x axis
 	glm::vec3 globalUp = glm::vec3(0.0f, 1.0f, 0.0f);
 	glm::vec3 cameraFront, cameraRight, cameraUp;
 
