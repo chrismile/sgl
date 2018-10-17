@@ -60,15 +60,15 @@ void BinaryWriteStream::write(const void *data, size_t size)
 
 void BinaryWriteStream::write(const char *str)
 {
-	size_t strSize = strlen(str);
-	write((uint16_t)strSize);
+	uint32_t strSize = strlen(str);
+	write(strSize);
 	write((void*)str, strSize);
 }
 
 void BinaryWriteStream::write(const std::string &str)
 {
-	size_t strSize = str.size();
-	write((uint16_t)strSize);
+	uint32_t strSize = str.size();
+	write(strSize);
 	write((void*)str.c_str(), strSize);
 }
 
@@ -124,15 +124,15 @@ void BinaryReadStream::read(void *data, size_t size)
 
 void BinaryReadStream::read(std::string &str)
 {
-	uint16_t strSize;
+	uint32_t strSize;
 	read(strSize);
-	if ((size_t)strSize + 1 < bufferSize - bufferStart) {
-		Logfile::get()->writeError("FATAL ERROR: BinaryReadStream::read(string)");
+	if (bufferStart + (size_t)strSize > bufferSize) {
+		Logfile::get()->writeError("FATAL ERROR: BinaryReadStream::read(string&)");
 		return;
 	}
 	char *cstr = new char[strSize+1];
 	cstr[strSize] = '\0';
-	read((void*)cstr, (size_t)strSize);
+	read((void*)cstr, strSize);
 	str = cstr;
 	delete[] cstr;
 }

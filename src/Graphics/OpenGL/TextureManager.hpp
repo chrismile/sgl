@@ -15,6 +15,8 @@ namespace sgl {
 class TextureManagerGL : public TextureManagerInterface
 {
 public:
+    TexturePtr createEmptyTexture(int w, const TextureSettings &settings = TextureSettings());
+    TexturePtr createTexture(void *data, int w, const TextureSettings &settings = TextureSettings());
     TexturePtr createEmptyTexture(int w, int h, const TextureSettings &settings = TextureSettings());
     TexturePtr createTexture(void *data, int w, int h, const TextureSettings &settings = TextureSettings());
     TexturePtr createEmptyTexture(int w, int h, int d, const TextureSettings &settings = TextureSettings());

@@ -11,10 +11,16 @@
 
 namespace sgl {
 
-TextureGL::TextureGL(unsigned int _texture, int _w, int _h, TextureSettings settings, int _samples /* = 0 */)
-        : Texture(_w, _h, settings, _samples)
+TextureGL::TextureGL(unsigned int _texture, int _w, TextureSettings settings, int _samples /* = 0 */)
+		: Texture(_w, settings, _samples)
 {
-    texture = _texture;
+	texture = _texture;
+}
+
+TextureGL::TextureGL(unsigned int _texture, int _w, int _h, TextureSettings settings, int _samples /* = 0 */)
+		: Texture(_w, _h, settings, _samples)
+{
+	texture = _texture;
 }
 
 TextureGL::TextureGL(unsigned int _texture, int _w, int _h, int _d, TextureSettings settings, int _samples /* = 0 */)
@@ -28,11 +34,18 @@ TextureGL::~TextureGL()
 	glDeleteTextures(1, &texture);
 }
 
+void TextureGL::uploadPixelData(int width, void *pixelData, PixelFormat pixelFormat)
+{
+	TexturePtr texturePtr = shared_from_this();
+	Renderer->bindTexture(texturePtr);
+	glTexSubImage1D(settings.type, 0, 0, width, pixelFormat.pixelFormat, pixelFormat.pixelType, pixelData);
+}
+
 void TextureGL::uploadPixelData(int width, int height, void *pixelData, PixelFormat pixelFormat)
 {
 	TexturePtr texturePtr = shared_from_this();
 	Renderer->bindTexture(texturePtr);
-    glTexSubImage2D(settings.type, 0, 0, 0, width, height, pixelFormat.pixelFormat, pixelFormat.pixelType, pixelData);
+	glTexSubImage2D(settings.type, 0, 0, 0, width, height, pixelFormat.pixelFormat, pixelFormat.pixelType, pixelData);
 }
 
 void TextureGL::uploadPixelData(int width, int height, int depth, void *pixelData, PixelFormat pixelFormat)

@@ -96,9 +96,6 @@ protected:
 
 
 	// View matrix data
-	glm::vec3 position;
-	//glm::vec3 scaling;
-	//glm::quat orientation;
 	float yaw = -sgl::PI/2.0f;   //< around y axis
 	float pitch = 0.0f; //< around x axis
 	glm::vec3 globalUp = glm::vec3(0.0f, 1.0f, 0.0f);

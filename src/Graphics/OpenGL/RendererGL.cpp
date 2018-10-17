@@ -307,6 +307,8 @@ void RendererGL::bindTexture(TexturePtr &tex, unsigned int textureUnit /* = 0 */
 			glBindTexture(GL_TEXTURE_3D, textureGL->getTexture());
 		} else if (tex->getTextureType() == TEXTURE_2D_ARRAY) {
 			glBindTexture(GL_TEXTURE_2D_ARRAY, textureGL->getTexture());
+		} else if (tex->getTextureType() == TEXTURE_1D) {
+			glBindTexture(GL_TEXTURE_1D, textureGL->getTexture());
 		} else if (tex->getNumSamples() == 0) {
 			glBindTexture(GL_TEXTURE_2D, textureGL->getTexture());
 		} else {

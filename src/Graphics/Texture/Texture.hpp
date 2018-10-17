@@ -47,7 +47,7 @@ struct PixelFormat {
 };
 
 enum TextureType {
-	TEXTURE_2D = 0x0DE1, TEXTURE_3D = 0x806F, TEXTURE_2D_ARRAY = 0x8C1A, TEXTURE_2D_MULTISAMPLE = 0x9100
+    TEXTURE_1D = 0x0DE0, TEXTURE_2D = 0x0DE1, TEXTURE_3D = 0x806F, TEXTURE_2D_ARRAY = 0x8C1A, TEXTURE_2D_MULTISAMPLE = 0x9100
 };
 
 struct TextureSettings {
@@ -101,11 +101,14 @@ struct TextureSettings {
 class DLL_OBJECT Texture : public boost::enable_shared_from_this<Texture>
 {
 public:
-    Texture(int _w, int _h, TextureSettings settings, int _samples = 0) : w(_w), h(_h), d(0), settings(settings),
-            samples(_samples) {}
+	Texture(int _w, TextureSettings settings, int _samples = 0) : w(_w), h(0), d(0), settings(settings),
+																  samples(_samples) {}
+	Texture(int _w, int _h, TextureSettings settings, int _samples = 0) : w(_w), h(_h), d(0), settings(settings),
+																		  samples(_samples) {}
     Texture(int _w, int _h, int _d, TextureSettings settings, int _samples = 0) : w(_w), h(_h), d(_d),
             settings(settings), samples(_samples) {}
 	virtual ~Texture() {}
+	virtual void uploadPixelData(int width, void *pixelData, PixelFormat pixelFormat = PixelFormat())=0;
 	virtual void uploadPixelData(int width, int height, void *pixelData, PixelFormat pixelFormat = PixelFormat())=0;
 	virtual void uploadPixelData(int width, int height, int depth, void *pixelData, PixelFormat pixelFormat = PixelFormat())=0;
 	inline int getW() const { return w; }
@@ -114,6 +117,7 @@ public:
 	inline int getMagnificationFilter() const { return settings.textureMagFilter; }
 	inline int getWrapS() const { return settings.textureWrapS; }
 	inline int getWrapT() const { return settings.textureWrapT; }
+	inline int getWrapR() const { return settings.textureWrapR; }
 	inline TextureSettings getSettings() const { return settings; }
 	inline TextureType getTextureType() const { return settings.type; }
 	inline bool isMultisampledTexture() const { return samples > 0; }

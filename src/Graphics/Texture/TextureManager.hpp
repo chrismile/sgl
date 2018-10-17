@@ -38,6 +38,8 @@ class TextureManagerInterface : public FileManager<Texture, TextureInfo>
 {
 public:
 	TexturePtr getAsset(const char *filename, const TextureSettings &settings = TextureSettings());
+	virtual TexturePtr createEmptyTexture(int w, const TextureSettings &settings = TextureSettings())=0;
+	virtual TexturePtr createTexture(void *data, int w, const TextureSettings &settings = TextureSettings())=0;
 	virtual TexturePtr createEmptyTexture(int w, int h, const TextureSettings &settings = TextureSettings())=0;
 	virtual TexturePtr createTexture(void *data, int w, int h, const TextureSettings &settings = TextureSettings())=0;
     virtual TexturePtr createEmptyTexture(int w, int h, int d, const TextureSettings &settings = TextureSettings())=0;
