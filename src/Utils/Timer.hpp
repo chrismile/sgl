@@ -25,7 +25,7 @@ public:
 	void waitForFPSLimit();
 
     uint64_t getTicksMicroseconds();
-    float getTimeInSeconds() { currentTime / 1e6; }
+    float getTimeInSeconds() { return currentTime / 1e6; }
 	uint64_t getElapsedMicroseconds() { return elapsedMicroSeconds; }
 	float getElapsedSeconds() { return elapsedMicroSeconds / 1e6; }
 

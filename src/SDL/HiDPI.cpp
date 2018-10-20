@@ -32,6 +32,7 @@ float getScreenScalingX11(Display *display)
         float dpi = atof(value.addr);
         return dpi/96.0f;
     }
+    return 1.0f;
 }
 
 }

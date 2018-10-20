@@ -603,6 +603,7 @@ bool ShaderProgramGL::setAtomicCounterBuffer(int binding, GeometryBufferPtr &geo
 
 	// Set location to resource index per shader
 	//glShaderStorageBlockBinding(shaderProgramID, location, binding);
+	return true;
 }
 
 /*bool ShaderProgramGL::setAtomicCounterBuffer(int binding, const char *name, GeometryBufferPtr &geometryBuffer)
