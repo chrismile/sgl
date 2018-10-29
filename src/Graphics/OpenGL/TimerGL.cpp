@@ -30,15 +30,14 @@ void TimerGL::start(const std::string &name)
 		queryIDs.push_back(queryID);
 		elapsedTimeNS.push_back(0);
 		numSamples.push_back(0);
+		queryHasFinished.push_back(false);
 	} else {
 		// Add time to already stored event of last frame
 		index = it->second;
-		GLuint64 timer;
-		glGetQueryObjectui64v(queryIDs.at(index), GL_QUERY_RESULT, &timer);
-		elapsedTimeNS.at(index) += timer;
-		numSamples.at(index) += 1;
+		addQueryTime(index);
 	}
 
+	lastIndex = index;
 	glBeginQuery(GL_TIME_ELAPSED, queryIDs.at(index));
 }
 
@@ -46,6 +45,16 @@ void TimerGL::start(const std::string &name)
 void TimerGL::end()
 {
 	glEndQuery(GL_TIME_ELAPSED);
+	queryHasFinished.at(lastIndex) = true;
+}
+
+void TimerGL::addQueryTime(size_t index)
+{
+	GLuint64 timer;
+	glGetQueryObjectui64v(queryIDs.at(index), GL_QUERY_RESULT, &timer);
+	elapsedTimeNS.at(index) += timer;
+	numSamples.at(index) += 1;
+	queryHasFinished.at(index) = false;
 }
 
 
@@ -71,6 +80,10 @@ double TimerGL::getTimeMS(const std::string &name)
 		return 0.0;
 	}
 	int index = it->second;
+	if (queryHasFinished.at(index)) {
+		// Add time to already stored event of last frame
+		addQueryTime(index);
+	}
 	return static_cast<double>(elapsedTimeNS.at(index)) / static_cast<double>(numSamples.at(index)) * 1e-6;
 }
 

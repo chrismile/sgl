@@ -46,6 +46,9 @@ public:
 	void printTotalAvgTime();
 
 private:
+	void addQueryTime(size_t index);
+	size_t lastIndex = 0;
+
     /// The names of the event regions mapped to indices for the lists below
 	std::map<std::string, size_t> regionNameMap;
     /// The OpenGL query IDs
@@ -54,6 +57,8 @@ private:
 	std::vector<uint64_t> elapsedTimeNS;
 	/// The number of measurements of each event (for computing average)
 	std::vector<size_t> numSamples;
+	/// Whether a certain query has ended, but was not yet added to elapsedTimeNS and numSamples
+	std::vector<bool> queryHasFinished;
 };
 
 }
