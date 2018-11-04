@@ -52,6 +52,14 @@ inline bool isPowerOfTwo(int x) { return (x != 0) && ((x & (x - 1)) == 0); }
 inline int nextPowerOfTwo(int x) { --x; x |= x >> 1; x |= x >> 2; x |= x >> 4; x |= x >> 8; x |= x >> 16; return x+1; }
 inline int lastPowerOfTwo(int x) { return nextPowerOfTwo(x/2+1); }
 
+inline int intlog2(int x) {
+	int log2x = 0;
+	while ((x >>= 1) != 0) {
+		++log2x;
+	}
+	return log2x;
+}
+
 inline int floorDiv(int a, int b) {
 	int div = a/b;
 	if (a < 0 && a%b != 0) {
