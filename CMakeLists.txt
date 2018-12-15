@@ -28,6 +28,9 @@ target_link_libraries(sgl GLEW)
 IF(UNIX AND NOT APPLE)
 	target_link_libraries(sgl X11)
 ENDIF()
+IF (WIN32)
+	target_compile_definitions(sgl DLL_BUILD)
+ENDIF()
 
 # For make install. TODO: "include/sgl/"
 install (TARGETS sgl DESTINATION lib)
