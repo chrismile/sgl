@@ -22,12 +22,13 @@
 #endif
 #endif
 
-#define DLL_OBJECT
 #ifdef WIN32
 # ifdef DLL_BUILD
-#  define DLL_OBJECT __declspec(dllexport)
+//#  define DLL_OBJECT __declspec(dllexport)
+#  define DLL_OBJECT
 # else
-#  define DLL_OBJECT __declspec(dllimport)
+//#  define DLL_OBJECT __declspec(dllimport)
+#  define DLL_OBJECT
 # endif
 #else
 # define DLL_OBJECT

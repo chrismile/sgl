@@ -11,7 +11,7 @@ If you built the doxygen documentation for this project (for more details see th
 
 ## Compilation
 
-On Ubuntu 17.04 for example, you can install all necessary packages with this command:
+On Ubuntu 18.04 for example, you can install all necessary packages with this command:
 
 ```
 sudo apt-get install git cmake libglm-dev libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libglew-dev libpng-dev libboost-filesystem-dev libtinyxml2-dev
@@ -42,6 +42,29 @@ doxygen doxygen.conf
 ```
 
 in the main directory to generate the documentation for this project.
+
+
+## Compilation on Windows
+
+The build process was tested on Windows 10 64-bit using MSYS2 and Mingw-w64 (http://www.msys2.org/). Using MSYS2 and Pacman, the following packages need to be installed.
+
+```
+pacman -S make git wget mingw64/mingw-w64-x86_64-gcc wget mingw64/mingw-w64-x86_64-gdb
+pacman -S mingw64/mingw-w64-x86_64-glm mingw64/mingw-w64-x86_64-libpng mingw64/mingw-w64-x86_64-SDL2 mingw64/mingw-w64-x86_64-SDL2_image mingw64/mingw-w64-x86_64-SDL2_mixer mingw64/mingw-w64-x86_64-SDL2_ttf mingw64/mingw-w64-x86_64-tinyxml2 mingw64/mingw-w64-x86_64-boost mingw64/mingw-w64-x86_64-glew mingw64/mingw-w64-x86_64-cmake
+```
+
+Finally, when SGL has been cloned, it needs to be compiled and installed to, e.g., /usr/local.
+
+```
+mkdir build
+cd build
+rm -rf *
+cmake .. -G"MSYS Makefiles" -DCMAKE_INSTALL_PREFIX=/usr/local ..
+make
+make install
+```
+
+Please note that, when launching programs using SGL on Windows, either the library path of SGL (i.e., /usr/local) needs to be included in the PATH variable, or the DLL file needs to be copied to the application directory containing the executable. When launching the program outside of the MSYS shell, the MinGW/MSYS DLL directories also need to be included in the PATH variable.
 
 
 ## License

@@ -35,7 +35,7 @@ typedef boost::shared_ptr<ShaderProgram> ShaderProgramPtr;
 class ShaderAttributes;
 typedef boost::shared_ptr<ShaderAttributes> ShaderAttributesPtr;
 
-enum DLL_OBJECT BlendMode {
+enum BlendMode {
 	BLEND_OVERWRITE, BLEND_ALPHA, BLEND_ADDITIVE, BLEND_SUBTRACTIVE, BLEND_MODULATIVE
 };
 
