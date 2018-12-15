@@ -11,11 +11,7 @@
 #include <Math/Geometry/Point2.hpp>
 #include <cstring>
 #include <iostream>
-#ifdef _WIN32
-#include <png/png.h>
-#else
 #include <png.h>
-#endif
 
 namespace sgl {
 

@@ -24,7 +24,7 @@
 
 #define DLL_OBJECT
 #ifdef WIN32
-# ifdef DLIBBUILD
+# ifdef DLL_BUILD
 #  define DLL_OBJECT __declspec(dllexport)
 # else
 #  define DLL_OBJECT __declspec(dllimport)
