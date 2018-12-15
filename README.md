@@ -65,7 +65,11 @@ make install
 export PATH=$PATH:"/c/msys64/usr/local/lib"
 ```
 
-Please note that, when launching programs using SGL on Windows, either the library path of SGL (i.e., /usr/local) needs to be included in the PATH variable, or the DLL file needs to be copied to the application directory containing the executable. When launching the program outside of the MSYS shell, the MinGW/MSYS DLL directories also need to be included in the PATH variable.
+Please note that, when launching programs using SGL on Windows, either the library path of SGL 
+(i.e., /usr/local) needs to be included in the PATH variable, or the DLL file needs to be 
+copied to the application directory containing the executable. When launching the program 
+outside of the MSYS shell, the MinGW/MSYS DLL directories also need to be included in the PATH 
+variable. To permanently modify the MSYS PATH variable, /etc/profile needs to be edited.
 
 
 ## License
