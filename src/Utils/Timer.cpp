@@ -33,7 +33,11 @@ void TimerInterface::waitForFPSLimit()
 	}
 
 	uint64_t timeSinceUpdate = getTicksMicroseconds() - lastTime;
+#ifdef _WIN32
+	int64_t sleepTimeMicroSeconds = 1e6 / (fpsLimit+10) - timeSinceUpdate;
+#else
 	int64_t sleepTimeMicroSeconds = 1e6 / (fpsLimit+2) - timeSinceUpdate;
+#endif
 	if (sleepTimeMicroSeconds > 0) {
 		std::this_thread::sleep_for(std::chrono::microseconds(sleepTimeMicroSeconds));
 	}
