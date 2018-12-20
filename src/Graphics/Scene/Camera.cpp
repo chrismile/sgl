@@ -51,6 +51,14 @@ glm::mat4 Camera::getRotationMatrix()
 	return glm::lookAt(glm::vec3(0.0f), cameraFront, cameraUp);
 }
 
+void Camera::overwriteViewMatrix(const glm::mat4 &viewMatrix)
+{
+	modelMatrix = viewMatrix;
+	viewProjMat = projMat * modelMatrix;
+	inverseViewProjMat = glm::inverse(viewProjMat);
+	recalcModelMat = false;
+}
+
 /*void Camera::setProjectionType(ProjectionType pt) {
 	;
 }

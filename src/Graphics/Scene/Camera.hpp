@@ -71,6 +71,7 @@ public:
 	inline glm::mat4 getViewProjMatrix()        { updateCamera(); return viewProjMat; }
     inline glm::mat4 getInverseViewProjMatrix() { updateCamera(); return inverseViewProjMat; }
     glm::mat4 getRotationMatrix();
+	void overwriteViewMatrix(const glm::mat4 &viewMatrix);
 
 	//! For frustum culling
 	virtual bool isVisible(const AABB3& bound) const;
