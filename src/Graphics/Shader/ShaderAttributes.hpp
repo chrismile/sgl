@@ -62,12 +62,20 @@ public:
 	 * \param components is the size of our vector. If this value is > 4, it is handled as a matrix.
 	 * \param offset is the starting position in byte of the attribute inside one buffer element
 	 * \param stride is the offset in byte between two buffer elements (0 means no interleaving data)
-	 * \param instancing is the number by which the instance count is increased in every frame.
+	 * \param instancing is the number by which the instance count is increased with every instance.
 	 *         A value of 0 means no instancing. Use Renderer->renderInstanced if this value is > 0.
+	 * \param normalizeAttr should be true for e.g. uint32_t colors that are accessed as denormalized vec4's.
+	 * \return True if geometry buffer was found, false otherwise.
 	 *  NOTE: Instancing is only supported if OpenGL >= 3.3 or OpenGL ES >= 3.0! */
-	virtual void addGeometryBuffer(GeometryBufferPtr &geometryBuffer, const char *attributeName,
+	virtual bool addGeometryBuffer(GeometryBufferPtr &geometryBuffer, const char *attributeName,
 			VertexAttributeFormat format, int components,
-			int offset = 0, int stride = 0, int instancing = 0)=0;
+			int offset = 0, int stride = 0, int instancing = 0,
+			bool normalizeAttr = false)=0;
+	/// Same as "addGeometryBuffer", but no error message if attribute not existent in shader.
+	virtual bool addGeometryBufferOptional(GeometryBufferPtr &geometryBuffer, const char *attributeName,
+			VertexAttributeFormat format, int components,
+			int offset = 0, int stride = 0, int instancing = 0,
+			bool normalizeAttr = false)=0;
 	virtual void setIndexGeometryBuffer(GeometryBufferPtr &geometryBuffer, VertexAttributeFormat format)=0;
 	virtual void bind()=0;
 	/// Pass a shader attribute in case you want to do multi-pass rendering without a call to copy().
