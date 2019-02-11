@@ -45,7 +45,7 @@ void AABB3::combine(const glm::vec3 &pt)
 		max.z = pt.z;
 }
 
-AABB3 AABB3::transformed(const glm::mat4 &matrix)
+AABB3 AABB3::transformed(const glm::mat4 &matrix) const
 {
 	glm::vec3 transformedCorners[8];
 	transformedCorners[0] = transformPoint(matrix, glm::vec3(min.x, min.y, min.z));

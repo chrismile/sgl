@@ -32,7 +32,7 @@ public:
 	//! Merge AABB with a point
 	void combine(const glm::vec3 &pt);
 	//! Transform AABB
-	AABB3 transformed(const glm::mat4 &matrix);
+	AABB3 transformed(const glm::mat4 &matrix) const;
 };
 
 }

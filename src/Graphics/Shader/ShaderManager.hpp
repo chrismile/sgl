@@ -48,10 +48,14 @@ public:
 	 * The generated preprocessor statements are of the form "#define <token> <value>".
 	 */
     template<typename T>
-    void addPreprocessorDefine(const std::string &token, const T &value)
-    {
-        preprocessorDefines[token] = toString(value);
-    }
+	void addPreprocessorDefine(const std::string &token, const T &value)
+	{
+		preprocessorDefines[token] = toString(value);
+	}
+	std::string getPreprocessorDefine(const std::string &token)
+	{
+		return preprocessorDefines[token];
+	}
 
     /// Removes a preprocessor #define token set by "addPreprocessorDefine"
     void removePreprocessorDefine(const std::string &token) {
