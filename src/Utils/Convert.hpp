@@ -17,26 +17,26 @@ namespace sgl {
 //! Conversion to and from string
 template <class T>
 std::string toString(T obj) {
-	std::ostringstream ostr;
-	ostr << obj;
-	return ostr.str();
+    std::ostringstream ostr;
+    ostr << obj;
+    return ostr.str();
 }
 template <class T>
 T fromString (const std::string &stringObject) {
-	std::stringstream strstr;
-	strstr << stringObject;
-	T type;
-	strstr >> type;
-	return type;
+    std::stringstream strstr;
+    strstr << stringObject;
+    T type;
+    strstr >> type;
+    return type;
 }
 inline std::string fromString (const std::string &stringObject) {
-	return stringObject;
+    return stringObject;
 }
 
 //! Append vector2 to vector1
 template<class T>
 void appendVector(std::vector<T> &vector1, std::vector<T> &vector2) {
-	vector1.insert(vector1.end(), vector2.begin(), vector2.end());
+    vector1.insert(vector1.end(), vector2.begin(), vector2.end());
 }
 
 //! Special string conversion functions

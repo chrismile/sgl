@@ -22,14 +22,14 @@ template <class T>
 class Singleton : public boost::interprocess::ipcdetail::intermodule_singleton<T>
 {
 public:
-	/*virtual ~Singleton () { }
-	inline static void deleteSingleton() { singleton = std::unique_ptr<T>(); }*/
+    /*virtual ~Singleton () { }
+    inline static void deleteSingleton() { singleton = std::unique_ptr<T>(); }*/
 
-	//! Creates static instance if necessary and returns the pointer to it
-	inline static T *get()
-	{
-		return &boost::interprocess::ipcdetail::intermodule_singleton<T>::get();
-	}
+    //! Creates static instance if necessary and returns the pointer to it
+    inline static T *get()
+    {
+        return &boost::interprocess::ipcdetail::intermodule_singleton<T>::get();
+    }
 };
 
 #else
@@ -40,19 +40,19 @@ template <class T>
 class Singleton
 {
 public:
-	virtual ~Singleton () { }
-	inline static void deleteSingleton() { singleton = std::unique_ptr<T>(); }
+    virtual ~Singleton () { }
+    inline static void deleteSingleton() { singleton = std::unique_ptr<T>(); }
 
-	//! Creates static instance if necessary and returns the pointer to it
-	inline static T *get()
-	{
-		if (!singleton.get())
-			singleton = std::unique_ptr<T>(new T);
-		return singleton.get();
-	}
+    //! Creates static instance if necessary and returns the pointer to it
+    inline static T *get()
+    {
+        if (!singleton.get())
+            singleton = std::unique_ptr<T>(new T);
+        return singleton.get();
+    }
 
 protected:
-	static std::unique_ptr<T> singleton;
+    static std::unique_ptr<T> singleton;
 };
 
 template <class T>

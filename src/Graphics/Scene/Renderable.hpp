@@ -14,8 +14,8 @@ namespace sgl {
 
 class Renderable {
 public:
-	virtual ~Renderable() {}
-	virtual void render();
+    virtual ~Renderable() {}
+    virtual void render();
 };
 
 typedef boost::shared_ptr<Renderable> RenderablePtr;

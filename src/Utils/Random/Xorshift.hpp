@@ -15,15 +15,15 @@ namespace sgl {
 class XorshiftRandomGenerator : public RandomGenerator
 {
 public:
-	XorshiftRandomGenerator() : RandomGenerator() { initialize(); }
-	XorshiftRandomGenerator(uint32_t _seed) : RandomGenerator(_seed) { initialize(); }
-	virtual ~XorshiftRandomGenerator() {}
-	uint32_t getRandomUint32() { return xorshift96(); }
+    XorshiftRandomGenerator() : RandomGenerator() { initialize(); }
+    XorshiftRandomGenerator(uint32_t _seed) : RandomGenerator(_seed) { initialize(); }
+    virtual ~XorshiftRandomGenerator() {}
+    uint32_t getRandomUint32() { return xorshift96(); }
 
 private:
-	void initialize();
-	uint32_t xorshift96();
-	uint32_t x, y, z;
+    void initialize();
+    uint32_t xorshift96();
+    uint32_t x, y, z;
 };
 
 }

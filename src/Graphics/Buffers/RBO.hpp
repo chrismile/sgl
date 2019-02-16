@@ -14,7 +14,7 @@
 namespace sgl {
 
 enum RenderbufferType {
-	DEPTH16, DEPTH24_STENCIL8, RGBA8
+    DEPTH16, DEPTH24_STENCIL8, RGBA8
 };
 
 /*! RBOs can be attached to framebuffer objects (see FBO.hpp).
@@ -23,11 +23,11 @@ enum RenderbufferType {
 class DLL_OBJECT RenderbufferObject
 {
 public:
-	RenderbufferObject() {}
-	virtual ~RenderbufferObject() {}
-	virtual int getWidth()=0;
-	virtual int getHeight()=0;
-	virtual int getSamples()=0;
+    RenderbufferObject() {}
+    virtual ~RenderbufferObject() {}
+    virtual int getWidth()=0;
+    virtual int getHeight()=0;
+    virtual int getSamples()=0;
 };
 
 typedef boost::shared_ptr<RenderbufferObject> RenderbufferObjectPtr;

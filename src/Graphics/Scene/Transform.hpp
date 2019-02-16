@@ -15,10 +15,10 @@ namespace sgl {
 
 class Transform {
 public:
-	Transform() : position(0.0f, 0.0f, 0.0f), scale(1.0f, 1.0f, 1.0f), orientation(1.0f, 0.0f, 0.0f, 0.0f) {}
-	glm::vec3 position;
-	glm::vec3 scale;
-	glm::quat orientation;
+    Transform() : position(0.0f, 0.0f, 0.0f), scale(1.0f, 1.0f, 1.0f), orientation(1.0f, 0.0f, 0.0f, 0.0f) {}
+    glm::vec3 position;
+    glm::vec3 scale;
+    glm::quat orientation;
 };
 
 }

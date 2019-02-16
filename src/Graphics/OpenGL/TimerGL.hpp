@@ -31,34 +31,34 @@ public:
     ~TimerGL();
 
     /// Clears all stored queries
-	void deleteAll();
+    void deleteAll();
 
-	/// Start measuring time for event with specified name (NOTE: No nested calls!)
+    /// Start measuring time for event with specified name (NOTE: No nested calls!)
     void start(const std::string &name);
     /// End measuring time for last event
     void end();
 
     /// Get the (average) time the event with the specified name took
-	double getTimeMS(const std::string &name);
-	/// Prints the time returned by "getTimeMS"
-	void printTimeMS(const std::string &name);
-	// Prints sum of all average times
-	void printTotalAvgTime();
+    double getTimeMS(const std::string &name);
+    /// Prints the time returned by "getTimeMS"
+    void printTimeMS(const std::string &name);
+    // Prints sum of all average times
+    void printTotalAvgTime();
 
 private:
-	void addQueryTime(size_t index);
-	size_t lastIndex = 0;
+    void addQueryTime(size_t index);
+    size_t lastIndex = 0;
 
     /// The names of the event regions mapped to indices for the lists below
-	std::map<std::string, size_t> regionNameMap;
+    std::map<std::string, size_t> regionNameMap;
     /// The OpenGL query IDs
-	std::vector<unsigned int> queryIDs;
-	/// The accumulated time each event took
-	std::vector<uint64_t> elapsedTimeNS;
-	/// The number of measurements of each event (for computing average)
-	std::vector<size_t> numSamples;
-	/// Whether a certain query has ended, but was not yet added to elapsedTimeNS and numSamples
-	std::vector<bool> queryHasFinished;
+    std::vector<unsigned int> queryIDs;
+    /// The accumulated time each event took
+    std::vector<uint64_t> elapsedTimeNS;
+    /// The number of measurements of each event (for computing average)
+    std::vector<size_t> numSamples;
+    /// Whether a certain query has ended, but was not yet added to elapsedTimeNS and numSamples
+    std::vector<bool> queryHasFinished;
 };
 
 }

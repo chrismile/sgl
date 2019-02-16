@@ -18,30 +18,30 @@ namespace sgl {
 
 class DLL_OBJECT SubMesh
 {
-	friend class Mesh;
+    friend class Mesh;
 public:
-	SubMesh(ShaderProgramPtr &shader);
-	//! Automatically retrieves the standard shaders
-	SubMesh(bool textured);
-	void render();
-	inline MaterialPtr &getMaterial() { return material; }
-	inline void setMaterial(const MaterialPtr &_material) { material = _material; }
-	inline const AABB3 &getAABB() const { return aabb; }
-	inline void setAABB(const AABB3 &_aabb) { aabb = _aabb; }
+    SubMesh(ShaderProgramPtr &shader);
+    //! Automatically retrieves the standard shaders
+    SubMesh(bool textured);
+    void render();
+    inline MaterialPtr &getMaterial() { return material; }
+    inline void setMaterial(const MaterialPtr &_material) { material = _material; }
+    inline const AABB3 &getAABB() const { return aabb; }
+    inline void setAABB(const AABB3 &_aabb) { aabb = _aabb; }
 
-	//! Call these functions to create a mesh manually
-	void createVertices(VertexPlain *vertices, size_t numVertices);
-	void createVertices(VertexTextured *vertices, size_t numVertices);
-	void createIndices(uint8_t *indices, size_t numIndices);
-	void createIndices(uint16_t *indices, size_t numIndices);
-	void createIndices(uint32_t *indices, size_t numIndices);
-	inline void setVertexMode(VertexMode vertexMode) { renderData->setVertexMode(vertexMode); }
+    //! Call these functions to create a mesh manually
+    void createVertices(VertexPlain *vertices, size_t numVertices);
+    void createVertices(VertexTextured *vertices, size_t numVertices);
+    void createIndices(uint8_t *indices, size_t numIndices);
+    void createIndices(uint16_t *indices, size_t numIndices);
+    void createIndices(uint32_t *indices, size_t numIndices);
+    inline void setVertexMode(VertexMode vertexMode) { renderData->setVertexMode(vertexMode); }
 
 private:
-	void computeAABB();
-	ShaderAttributesPtr renderData;
-	MaterialPtr material;
-	AABB3 aabb;
+    void computeAABB();
+    ShaderAttributesPtr renderData;
+    MaterialPtr material;
+    AABB3 aabb;
 };
 
 typedef boost::shared_ptr<SubMesh> SubMeshPtr;

@@ -16,25 +16,25 @@ namespace sgl {
 
 class DLL_OBJECT AABB2 {
 public:
-	glm::vec2 min, max;
+    glm::vec2 min, max;
 
-	AABB2() : min(FLT_MAX), max(-FLT_MAX) {}
-	AABB2(glm::vec2 min, glm::vec2 max) : min(min), max(max) {}
+    AABB2() : min(FLT_MAX), max(-FLT_MAX) {}
+    AABB2(glm::vec2 min, glm::vec2 max) : min(min), max(max) {}
 
-	inline glm::vec2 getDimensions() const { return max - min; }
-	inline glm::vec2 getExtent() const { return (max - min) / 2.0f; }
-	inline glm::vec2 getCenter() const { return (max + min) / 2.0f; }
-	inline glm::vec2 getMinimum() const { return min; }
-	inline glm::vec2 getMaximum() const { return max; }
-	inline float getWidth() const { return max.x - min.x; }
-	inline float getHeight() const { return max.y - min.y; }
+    inline glm::vec2 getDimensions() const { return max - min; }
+    inline glm::vec2 getExtent() const { return (max - min) / 2.0f; }
+    inline glm::vec2 getCenter() const { return (max + min) / 2.0f; }
+    inline glm::vec2 getMinimum() const { return min; }
+    inline glm::vec2 getMaximum() const { return max; }
+    inline float getWidth() const { return max.x - min.x; }
+    inline float getHeight() const { return max.y - min.y; }
 
-	//! Merge the two AABBs
-	void combine(const AABB2 &otherAABB);
-	//! Merge AABB with a point
-	void combine(const glm::vec2 &pt);
-	//! Transform AABB
-	AABB2 transformed(const glm::mat4 &matrix);
+    //! Merge the two AABBs
+    void combine(const AABB2 &otherAABB);
+    //! Merge AABB with a point
+    void combine(const glm::vec2 &pt);
+    //! Transform AABB
+    AABB2 transformed(const glm::mat4 &matrix);
 };
 
 }

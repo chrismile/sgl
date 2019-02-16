@@ -21,15 +21,15 @@ typedef boost::shared_ptr<RenderTarget> RenderTargetPtr;
 class RenderTarget
 {
 public:
-	void bindFramebufferObject(FramebufferObjectPtr _framebuffer);
-	void bindWindowFramebuffer();
-	FramebufferObjectPtr getFramebufferObject();
-	void bindRenderTarget();
-	int getWidth();
-	int getHeight();
+    void bindFramebufferObject(FramebufferObjectPtr _framebuffer);
+    void bindWindowFramebuffer();
+    FramebufferObjectPtr getFramebufferObject();
+    void bindRenderTarget();
+    int getWidth();
+    int getHeight();
 
 private:
-	FramebufferObjectPtr framebuffer;
+    FramebufferObjectPtr framebuffer;
 };
 
 }

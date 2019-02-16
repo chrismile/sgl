@@ -19,29 +19,29 @@ template <class AssetType, class AssetInfo>
 class FileManager
 {
 public:
-	virtual ~FileManager() {}
-	typedef boost::shared_ptr<AssetType> AssetPtr;
-	typedef boost::weak_ptr<AssetType> WeakAssetPtr;
-	AssetPtr getAsset(AssetInfo &assetInfo);
+    virtual ~FileManager() {}
+    typedef boost::shared_ptr<AssetType> AssetPtr;
+    typedef boost::weak_ptr<AssetType> WeakAssetPtr;
+    AssetPtr getAsset(AssetInfo &assetInfo);
 
 protected:
-	virtual AssetPtr loadAsset(AssetInfo &assetInfo)=0;
-	std::map<AssetInfo, WeakAssetPtr> assetMap;
+    virtual AssetPtr loadAsset(AssetInfo &assetInfo)=0;
+    std::map<AssetInfo, WeakAssetPtr> assetMap;
 };
 
 template <class AssetType, class AssetInfo>
 boost::shared_ptr<AssetType> FileManager<AssetType, AssetInfo>::getAsset(AssetInfo &assetInfo)
 {
-	auto it = assetMap.find(assetInfo);
+    auto it = assetMap.find(assetInfo);
 
-	//! Do we need to (re-)load the asset?
-	if (it == assetMap.end() || it->second._empty() || it->second.expired()) {
-		boost::shared_ptr<AssetType> asset = loadAsset(assetInfo);
-		assetMap[assetInfo] = boost::weak_ptr<AssetType>(asset);
-		return asset;
-	}
+    //! Do we need to (re-)load the asset?
+    if (it == assetMap.end() || it->second._empty() || it->second.expired()) {
+        boost::shared_ptr<AssetType> asset = loadAsset(assetInfo);
+        assetMap[assetInfo] = boost::weak_ptr<AssetType>(asset);
+        return asset;
+    }
 
-	return it->second.lock();
+    return it->second.lock();
 }
 
 }

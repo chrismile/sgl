@@ -42,10 +42,10 @@
 #ifndef NDEBUG
 #include <iostream>
 inline void MY_ASSERT(bool expression) {
-	if (!expression) {
-		std::cerr << "PUT YOUR BREAKPOINT HERE";
-	}
-	assert(expression);
+    if (!expression) {
+        std::cerr << "PUT YOUR BREAKPOINT HERE";
+    }
+    assert(expression);
 }
 #else
 #define MY_ASSERT(expr) do { (void)sizeof(expr); } while(0)

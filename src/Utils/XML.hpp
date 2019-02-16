@@ -32,9 +32,9 @@ XMLElement *firstChildWithAttribute(XMLElement *parent, const char *attributeNam
 template<class T>
 void pushAttributeNotEqual(XMLPrinter *printer, const char *key, const T &value, const T &standard)
 {
-	if (value != standard) {
-		printer->PushAttribute(key, value);
-	}
+    if (value != standard) {
+        printer->PushAttribute(key, value);
+    }
 }
 void pushAttributeNotEqual(XMLPrinter *printer, const char *key, const std::string &value, const std::string &standard);
 void pushAttributeNotEqual(XMLPrinter *printer, const char *key, const float &value, const float &standard);
@@ -46,53 +46,53 @@ void pushAttributeNotEqual(XMLPrinter *printer, const char *key, const float &va
 typedef std::function<bool(tinyxml2::XMLElement*)> XMLItFilterFunc;
 struct XMLItFilter {
 public:
-	XMLItFilter(std::function<bool(tinyxml2::XMLElement*)> f) { filterFunc = f; }
-	XMLItFilter() : XMLItFilter([](tinyxml2::XMLElement* e) { return true; }) {}
-	bool operator()(tinyxml2::XMLElement* element) { return filterFunc(element); }
+    XMLItFilter(std::function<bool(tinyxml2::XMLElement*)> f) { filterFunc = f; }
+    XMLItFilter() : XMLItFilter([](tinyxml2::XMLElement* e) { return true; }) {}
+    bool operator()(tinyxml2::XMLElement* element) { return filterFunc(element); }
 
 private:
-	XMLItFilterFunc filterFunc;
+    XMLItFilterFunc filterFunc;
 };
 
 //! E.g.: Name equals X, Attribute Y equals X
 inline XMLItFilter XMLNameFilter(const std::string& name) {
-	return XMLItFilter([name](tinyxml2::XMLElement* e) -> bool { return name == e->Name(); });
+    return XMLItFilter([name](tinyxml2::XMLElement* e) -> bool { return name == e->Name(); });
 }
 inline XMLItFilter XMLAttributeFilter(const std::string& attrName, const std::string& attrVal) {
-	return XMLItFilter([attrName,attrVal](tinyxml2::XMLElement* e) -> bool { return attrVal == e->Attribute(attrName.c_str()); });
+    return XMLItFilter([attrName,attrVal](tinyxml2::XMLElement* e) -> bool { return attrVal == e->Attribute(attrName.c_str()); });
 }
 inline XMLItFilter XMLAttributePresenceFilter(const std::string& attrName) {
-	return XMLItFilter([attrName](tinyxml2::XMLElement* e) -> bool { return e->Attribute(attrName.c_str()) != NULL; });
+    return XMLItFilter([attrName](tinyxml2::XMLElement* e) -> bool { return e->Attribute(attrName.c_str()) != NULL; });
 }
 
 
 class XMLIterator : public std::iterator<std::input_iterator_tag, tinyxml2::XMLElement> {
 private:
-	tinyxml2::XMLElement *element;
-	XMLItFilter filter;
+    tinyxml2::XMLElement *element;
+    XMLItFilter filter;
 
 public:
-	XMLIterator(tinyxml2::XMLElement* e, XMLItFilter f) : filter(f) {
-		element = e->FirstChildElement();
-		if (element != NULL && !filter(element)) {
-			operator++();
-		}
-	}
-	XMLIterator(tinyxml2::XMLElement* e) : XMLIterator(e, XMLItFilter()) { }
-	XMLIterator(const XMLIterator& otherIt) : XMLIterator(otherIt.element) {}
+    XMLIterator(tinyxml2::XMLElement* e, XMLItFilter f) : filter(f) {
+        element = e->FirstChildElement();
+        if (element != NULL && !filter(element)) {
+            operator++();
+        }
+    }
+    XMLIterator(tinyxml2::XMLElement* e) : XMLIterator(e, XMLItFilter()) { }
+    XMLIterator(const XMLIterator& otherIt) : XMLIterator(otherIt.element) {}
 
-	XMLIterator& operator++() {
-		do {
-			tinyxml2::XMLNode* next = element->NextSibling();
-			element = next ? next->ToElement() : NULL;
-		} while (element != NULL && !filter(element));
-		return *this;
-	}
-	bool operator==(const XMLIterator& rhs) { return element==rhs.element; }
-	bool operator!=(const XMLIterator& rhs) { return element!=rhs.element; }
-	tinyxml2::XMLElement* operator*() { assert(element); return element; }
-	tinyxml2::XMLElement* operator->() { assert(element); return element; }
-	bool isValid() { return element != NULL; }
+    XMLIterator& operator++() {
+        do {
+            tinyxml2::XMLNode* next = element->NextSibling();
+            element = next ? next->ToElement() : NULL;
+        } while (element != NULL && !filter(element));
+        return *this;
+    }
+    bool operator==(const XMLIterator& rhs) { return element==rhs.element; }
+    bool operator!=(const XMLIterator& rhs) { return element!=rhs.element; }
+    tinyxml2::XMLElement* operator*() { assert(element); return element; }
+    tinyxml2::XMLElement* operator->() { assert(element); return element; }
+    bool isValid() { return element != NULL; }
 };
 
 }

@@ -15,44 +15,44 @@ namespace sgl {
 
 void RenderTarget::bindFramebufferObject(FramebufferObjectPtr _framebuffer)
 {
-	framebuffer = _framebuffer;
+    framebuffer = _framebuffer;
 }
 
 void RenderTarget::bindWindowFramebuffer()
 {
-	framebuffer = FramebufferObjectPtr();
+    framebuffer = FramebufferObjectPtr();
 }
 
 FramebufferObjectPtr RenderTarget::getFramebufferObject()
 {
-	return framebuffer;
+    return framebuffer;
 }
 
 void RenderTarget::bindRenderTarget()
 {
-	if (framebuffer) {
-		Renderer->bindFBO(framebuffer);
-	} else {
-		Renderer->unbindFBO();
-	}
+    if (framebuffer) {
+        Renderer->bindFBO(framebuffer);
+    } else {
+        Renderer->unbindFBO();
+    }
 }
 
 int RenderTarget::getWidth()
 {
-	if (framebuffer) {
-		return framebuffer->getWidth();
-	} else {
-		return AppSettings::get()->getMainWindow()->getWidth();
-	}
+    if (framebuffer) {
+        return framebuffer->getWidth();
+    } else {
+        return AppSettings::get()->getMainWindow()->getWidth();
+    }
 }
 
 int RenderTarget::getHeight()
 {
-	if (framebuffer) {
-		return framebuffer->getHeight();
-	} else {
-		return AppSettings::get()->getMainWindow()->getHeight();
-	}
+    if (framebuffer) {
+        return framebuffer->getHeight();
+    } else {
+        return AppSettings::get()->getMainWindow()->getHeight();
+    }
 }
 
 }

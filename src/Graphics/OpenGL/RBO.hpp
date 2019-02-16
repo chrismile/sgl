@@ -15,18 +15,18 @@ namespace sgl {
 class DLL_OBJECT RenderbufferObjectGL : public RenderbufferObject
 {
 public:
-	RenderbufferObjectGL(int _width, int _height, RenderbufferType rboType, int _samples = 0);
-	virtual ~RenderbufferObjectGL();
-	virtual int getWidth() { return width; }
-	virtual int getHeight() { return height; }
-	virtual int getSamples() { return samples; }
-	inline GLuint getID() { return rbo; }
+    RenderbufferObjectGL(int _width, int _height, RenderbufferType rboType, int _samples = 0);
+    virtual ~RenderbufferObjectGL();
+    virtual int getWidth() { return width; }
+    virtual int getHeight() { return height; }
+    virtual int getSamples() { return samples; }
+    inline GLuint getID() { return rbo; }
 
 private:
-	GLuint rbo;
-	int width;
-	int height;
-	int samples;
+    GLuint rbo;
+    int width;
+    int height;
+    int samples;
 };
 
 }

@@ -16,18 +16,18 @@ namespace sgl {
 class DLL_OBJECT Mesh
 {
 public:
-	void render();
-	bool loadFromXML(const char *filename);
-	inline const AABB3 &getAABB() const { return aabb; }
+    void render();
+    bool loadFromXML(const char *filename);
+    inline const AABB3 &getAABB() const { return aabb; }
 
-	//! Call these functions to create a mesh manually
-	void addSubMesh(SubMeshPtr &submesh);
-	void finalizeManualMesh();
+    //! Call these functions to create a mesh manually
+    void addSubMesh(SubMeshPtr &submesh);
+    void finalizeManualMesh();
 
 private:
-	void computeAABB();
-	std::vector<SubMeshPtr> submeshes;
-	AABB3 aabb;
+    void computeAABB();
+    std::vector<SubMeshPtr> submeshes;
+    AABB3 aabb;
 };
 
 typedef boost::shared_ptr<Mesh> MeshPtr;

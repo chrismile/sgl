@@ -27,37 +27,37 @@ typedef std::list<std::pair<ListenerToken, EventFunc>> EventFuncList;
 
 class Event {
 public:
-	Event(uint32_t eventType) : eventType(eventType) {}
-	virtual ~Event() {}
-	inline uint32_t getType() const { return eventType; }
-	virtual void serialize(WriteStream &stream) {}
-	virtual void deserialize(ReadStream &stream) {}
+    Event(uint32_t eventType) : eventType(eventType) {}
+    virtual ~Event() {}
+    inline uint32_t getType() const { return eventType; }
+    virtual void serialize(WriteStream &stream) {}
+    virtual void deserialize(ReadStream &stream) {}
 
 private:
-	uint32_t eventType;
+    uint32_t eventType;
 };
 
 class DLL_OBJECT EventManager : public Singleton<EventManager> {
 public:
-	EventManager();
-	void update();
+    EventManager();
+    void update();
 
-	//! Creates a listener
-	ListenerToken addListener(uint32_t eventType, EventFunc func);
-	void removeListener(uint32_t eventType, ListenerToken token);
+    //! Creates a listener
+    ListenerToken addListener(uint32_t eventType, EventFunc func);
+    void removeListener(uint32_t eventType, ListenerToken token);
 
-	//! Event function is called instantly
-	void triggerEvent(EventPtr event);
-	//! Adds an event to the event queue, which is updated by calling the function "update"
-	void queueEvent(EventPtr event);
-	//bool threadSafeQueueEvent(const EventDataPtr &event);
+    //! Event function is called instantly
+    void triggerEvent(EventPtr event);
+    //! Adds an event to the event queue, which is updated by calling the function "update"
+    void queueEvent(EventPtr event);
+    //bool threadSafeQueueEvent(const EventDataPtr &event);
 
 
 private:
-	std::map<uint32_t, EventFuncList> listeners;
-	std::list<EventPtr> eventQueue;
-	uint32_t listenerCounter;
-	//MultithreadedQueue<EventPtr> threadSafeEventQueue
+    std::map<uint32_t, EventFuncList> listeners;
+    std::list<EventPtr> eventQueue;
+    uint32_t listenerCounter;
+    //MultithreadedQueue<EventPtr> threadSafeEventQueue
 };
 
 }

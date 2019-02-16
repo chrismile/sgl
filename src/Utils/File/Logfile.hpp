@@ -15,29 +15,29 @@ namespace sgl {
 
 //! Colors for the output text
 enum FONTCOLORS {
-	BLACK, WHITE, RED, GREEN, BLUE, PURPLE, ORANGE
+    BLACK, WHITE, RED, GREEN, BLUE, PURPLE, ORANGE
 };
 
 class Logfile : public Singleton<Logfile>
 {
 public:
-	Logfile();
-	~Logfile();
-	void createLogfile(const char *filename, const char *appName);
-	void closeLogfile();
+    Logfile();
+    ~Logfile();
+    void createLogfile(const char *filename, const char *appName);
+    void closeLogfile();
 
-	//! Write to Logfile
-	void writeTopic(const std::string &text, int size);
-	void write(const std::string &text);
-	void write(const std::string &text, int color);
-	//! Outputs text on stderr, too
-	void writeError(const std::string &text);
-	//! Outputs text on stdout, too
-	void writeInfo(const std::string &text);
+    //! Write to Logfile
+    void writeTopic(const std::string &text, int size);
+    void write(const std::string &text);
+    void write(const std::string &text, int color);
+    //! Outputs text on stderr, too
+    void writeError(const std::string &text);
+    //! Outputs text on stdout, too
+    void writeInfo(const std::string &text);
 
 private:
-	bool closedLogfile;
-	std::ofstream logfile;
+    bool closedLogfile;
+    std::ofstream logfile;
 };
 
 }

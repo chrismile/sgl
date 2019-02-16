@@ -13,9 +13,9 @@ namespace sgl {
 class Point2
 {
 public:
-	Point2(int _x, int _y) : x(_x), y(_y) {}
-	Point2() : x(0), y(0) {}
-	int x, y;
+    Point2(int _x, int _y) : x(_x), y(_y) {}
+    Point2() : x(0), y(0) {}
+    int x, y;
 };
 
 }

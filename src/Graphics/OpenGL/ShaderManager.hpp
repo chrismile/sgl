@@ -15,18 +15,18 @@ namespace sgl {
 class ShaderManagerGL : public ShaderManagerInterface
 {
 public:
-	ShaderManagerGL();
-	~ShaderManagerGL();
+    ShaderManagerGL();
+    ~ShaderManagerGL();
 
-	ShaderProgramPtr createShaderProgram();
-	ShaderPtr createShader(ShaderType sh);
-	ShaderAttributesPtr createShaderAttributes(ShaderProgramPtr &shader);
+    ShaderProgramPtr createShaderProgram();
+    ShaderPtr createShader(ShaderType sh);
+    ShaderAttributesPtr createShaderAttributes(ShaderProgramPtr &shader);
 
-	/**
-	 * Deletes all cached shaders in the ShaderManager. This is necessary e.g. when wanting to switch to a
-	 * different rendering technique with "addPreprocessorDefine" after already loading a certain shader.
-	 * Already loaded shaders will stay intact thanks to reference counting.
-	 */
+    /**
+     * Deletes all cached shaders in the ShaderManager. This is necessary e.g. when wanting to switch to a
+     * different rendering technique with "addPreprocessorDefine" after already loading a certain shader.
+     * Already loaded shaders will stay intact thanks to reference counting.
+     */
     virtual void invalidateShaderCache()
     {
         assetMap.clear();
@@ -52,43 +52,43 @@ public:
 
 
 protected:
-	ShaderPtr loadAsset(ShaderInfo &shaderInfo);
-	ShaderProgramPtr createShaderProgram(const std::list<std::string> &shaderIDs, bool dumpTextDebug);
+    ShaderPtr loadAsset(ShaderInfo &shaderInfo);
+    ShaderProgramPtr createShaderProgram(const std::list<std::string> &shaderIDs, bool dumpTextDebug);
 
-	/// Internal loading
-	std::string loadHeaderFileString(const std::string &shaderName, std::string &prependContent);
-	std::string getHeaderName(const std::string &lineString);
-	std::string getShaderString(const std::string &globalShaderName);
+    /// Internal loading
+    std::string loadHeaderFileString(const std::string &shaderName, std::string &prependContent);
+    std::string getHeaderName(const std::string &lineString);
+    std::string getShaderString(const std::string &globalShaderName);
     std::string getPreprocessorDefines();
 
-	/**
-	 * Indexes all ".glsl" files in the directory pathPrefix (and its sub-directories recursively) to create
-	 * "shaderFileMap". Therefore, the application can easily include files with relative paths.
-	 */
-	void indexFiles(const std::string &file);
-	std::string getShaderFileName(const std::string &pureFilename);
+    /**
+     * Indexes all ".glsl" files in the directory pathPrefix (and its sub-directories recursively) to create
+     * "shaderFileMap". Therefore, the application can easily include files with relative paths.
+     */
+    void indexFiles(const std::string &file);
+    std::string getShaderFileName(const std::string &pureFilename);
 
-	/// Directory in which to search for shaders (standard: Data/Shaders
-	std::string pathPrefix;
+    /// Directory in which to search for shaders (standard: Data/Shaders
+    std::string pathPrefix;
 
-	/// Maps shader name -> shader source, e.g. "Blur.Fragment" -> "void main() { ... }".
-	std::map<std::string, std::string> effectSources;
+    /// Maps shader name -> shader source, e.g. "Blur.Fragment" -> "void main() { ... }".
+    std::map<std::string, std::string> effectSources;
 
-	/// Maps file names without path to full file paths for "*.glsl" shader files,
-	/// e.g. "Blur.glsl" -> "Data/Shaders/PostProcessing/Blur.glsl".
-	std::map<std::string, std::string> shaderFileMap;
+    /// Maps file names without path to full file paths for "*.glsl" shader files,
+    /// e.g. "Blur.glsl" -> "Data/Shaders/PostProcessing/Blur.glsl".
+    std::map<std::string, std::string> shaderFileMap;
 
-	// If a file named "GlobalDefines.glsl" is found: Appended to all shaders
-	std::string globalDefines;
+    // If a file named "GlobalDefines.glsl" is found: Appended to all shaders
+    std::string globalDefines;
 
 private:
-	std::vector<int> maxComputeWorkGroupCount;
-	std::vector<int> maxComputeWorkGroupSize;
-	int maxWorkGroupInvocations;
+    std::vector<int> maxComputeWorkGroupCount;
+    std::vector<int> maxComputeWorkGroupSize;
+    int maxWorkGroupInvocations;
 
-	std::map<int, GeometryBufferPtr> uniformBuffers;
-	std::map<int, GeometryBufferPtr> atomicCounterBuffers;
-	std::map<int, GeometryBufferPtr> shaderStorageBuffers;
+    std::map<int, GeometryBufferPtr> uniformBuffers;
+    std::map<int, GeometryBufferPtr> atomicCounterBuffers;
+    std::map<int, GeometryBufferPtr> shaderStorageBuffers;
 };
 
 }

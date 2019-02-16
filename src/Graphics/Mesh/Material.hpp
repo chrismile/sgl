@@ -22,8 +22,8 @@ namespace sgl {
 class Material
 {
 public:
-	Color color;
-	TexturePtr texture;
+    Color color;
+    TexturePtr texture;
 };
 
 typedef boost::shared_ptr<Material> MaterialPtr;
@@ -33,52 +33,52 @@ int magnificationFilterFromString(const char *filter);
 int textureWrapFromString(const char *filter);
 
 struct MaterialInfo {
-	MaterialInfo() : loaded(false), minificationFilter(0), magnificationFilter(0),
-			textureWrapS(0), textureWrapT(0), anisotropicFilter(false) {}
+    MaterialInfo() : loaded(false), minificationFilter(0), magnificationFilter(0),
+            textureWrapS(0), textureWrapT(0), anisotropicFilter(false) {}
 
-	//! File information
-	std::string filename;
-	std::string materialName;
+    //! File information
+    std::string filename;
+    std::string materialName;
 
-	//! Material data
-	bool loaded;
-	Color color;
-	std::string textureFilename;
-	int minificationFilter, magnificationFilter, textureWrapS, textureWrapT;
-	bool anisotropicFilter;
+    //! Material data
+    bool loaded;
+    Color color;
+    std::string textureFilename;
+    int minificationFilter, magnificationFilter, textureWrapS, textureWrapT;
+    bool anisotropicFilter;
 
-	bool operator <(const MaterialInfo &rhs) const {
-		if (filename != rhs.filename) {
-			return filename < rhs.filename;
-		}
-		return materialName < rhs.materialName;
-	}
-	bool operator ==(const MaterialInfo &rhs) const {
-		return filename == rhs.filename && materialName == rhs.materialName;
-	}
+    bool operator <(const MaterialInfo &rhs) const {
+        if (filename != rhs.filename) {
+            return filename < rhs.filename;
+        }
+        return materialName < rhs.materialName;
+    }
+    bool operator ==(const MaterialInfo &rhs) const {
+        return filename == rhs.filename && materialName == rhs.materialName;
+    }
 };
 
 /*! Handles the loading of materials from XML files */
 class DLL_OBJECT MaterialManagerInterface : public FileManager<Material, MaterialInfo>
 {
 public:
-	/*! Reference-counted loading:
-	 * Load the material with the name 'materialName' from the file 'filename' */
-	MaterialPtr getMaterial(const char *filename, const char *materialName);
+    /*! Reference-counted loading:
+     * Load the material with the name 'materialName' from the file 'filename' */
+    MaterialPtr getMaterial(const char *filename, const char *materialName);
 
-	//! Get the material this element describes
-	MaterialPtr getMaterial(tinyxml2::XMLElement *materialElement);
+    //! Get the material this element describes
+    MaterialPtr getMaterial(tinyxml2::XMLElement *materialElement);
 
 protected:
-	/*! Create the material if the file was already parsed.
-	 * Otherwise parse the file, add all material information and create the material described by the info */
-	virtual MaterialPtr loadAsset(MaterialInfo &info);
+    /*! Create the material if the file was already parsed.
+     * Otherwise parse the file, add all material information and create the material described by the info */
+    virtual MaterialPtr loadAsset(MaterialInfo &info);
 
-	//! Parse the XML element and create the material info from it
-	MaterialInfo loadMaterialInfo(tinyxml2::XMLElement *materialElement);
+    //! Parse the XML element and create the material info from it
+    MaterialInfo loadMaterialInfo(tinyxml2::XMLElement *materialElement);
 
-	//! Create a material from the info
-	MaterialPtr createMaterial(const MaterialInfo &info);
+    //! Create a material from the info
+    MaterialPtr createMaterial(const MaterialInfo &info);
 };
 extern MaterialManagerInterface *MaterialManager;
 

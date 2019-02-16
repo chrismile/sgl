@@ -53,65 +53,65 @@ inline int nextPowerOfTwo(int x) { --x; x |= x >> 1; x |= x >> 2; x |= x >> 4; x
 inline int lastPowerOfTwo(int x) { return nextPowerOfTwo(x/2+1); }
 
 inline int intlog2(int x) {
-	int log2x = 0;
-	while ((x >>= 1) != 0) {
-		++log2x;
-	}
-	return log2x;
+    int log2x = 0;
+    while ((x >>= 1) != 0) {
+        ++log2x;
+    }
+    return log2x;
 }
 
 inline int floorDiv(int a, int b) {
-	int div = a/b;
-	if (a < 0 && a%b != 0) {
-		div -= 1;
-	}
-	return div;
+    int div = a/b;
+    if (a < 0 && a%b != 0) {
+        div -= 1;
+    }
+    return div;
 }
 
 inline int floorMod(int a, int b) {
-	int div = floorDiv(a, b);
-	return a-b*div;
+    int div = floorDiv(a, b);
+    return a-b*div;
 }
 
 inline int floorDiv(float a, float b) {
-	int div = a/b;
-	if (a < 0 && fmod(a,b) != 0) {
-		div -= 1;
-	}
-	return div;
+    int div = a/b;
+    if (a < 0 && fmod(a,b) != 0) {
+        div -= 1;
+    }
+    return div;
 }
 
 inline float floorMod(float a, float b) {
-	int div = floorDiv(a, b);
-	return a-b*div;
+    int div = floorDiv(a, b);
+    return a-b*div;
 }
 
 inline int ceilDiv(int a, int b) {
-	int div = a/b;
-	if (a > 0 && a%b != 0) {
-		div += 1;
-	}
-	return div;
+    int div = a/b;
+    if (a > 0 && a%b != 0) {
+        div += 1;
+    }
+    return div;
 }
 
 //! Interpolation
 template <typename T> T interpolateLinear(const T &val1, const T &val2, float factor)
 {
-	return val1 + factor * (val2 - val1);
+    return val1 + factor * (val2 - val1);
 }
 
 template <typename T> T interpolateHermite(const T &val1, const T &tangent1, const T &val2, const T &tangent2, float factor)
 {
-	T A(val1 * 2.0f - val2 * 2.0f + tangent1 + tangent2);
-	T B(val2 * 3.0f - val1 * 3.0f - tangent1 * 2.0f - tangent2);
-	return A * factor * factor * factor + B * factor * factor + tangent1 * factor + val1;
+    T A(val1 * 2.0f - val2 * 2.0f + tangent1 + tangent2);
+    T B(val2 * 3.0f - val1 * 3.0f - tangent1 * 2.0f - tangent2);
+    return A * factor * factor * factor + B * factor * factor + tangent1 * factor + val1;
 }
 
 template <typename T> T interpolateBilinear(const T &a, const T &b, const T &c, const T &d, float factorx, float factory)
 {
-	T p(a + factorx * (b - a));
-	T q(c + factorx * (d - c));
-	return p + factory * (q - p);
+    T p(a + factorx * (b - a));
+    T q(c + factorx * (d - c));
+    return p + factory * (q - p);
 }
 
 float vectorAngle(const glm::vec2 &u, const glm::vec2& v);

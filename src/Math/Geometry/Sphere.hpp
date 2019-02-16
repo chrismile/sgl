@@ -16,10 +16,10 @@ namespace sgl {
 
 class DLL_OBJECT Sphere {
 public:
-	Sphere() : radius(0.0f) {}
-	Sphere(glm::vec3 center, float radius) : center(center), radius(radius) {}
-	glm::vec3 center;
-	float radius;
+    Sphere() : radius(0.0f) {}
+    Sphere(glm::vec3 center, float radius) : center(center), radius(radius) {}
+    glm::vec3 center;
+    float radius;
 };
 
 }

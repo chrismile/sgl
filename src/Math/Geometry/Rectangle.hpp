@@ -16,7 +16,7 @@ namespace sgl {
 
 class DLL_OBJECT Rectangle {
 public:
-	float x, y, w, h;
+    float x, y, w, h;
 };
 
 }

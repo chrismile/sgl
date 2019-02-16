@@ -25,36 +25,36 @@ namespace sgl {
 class DLL_OBJECT FramebufferObjectGL : public FramebufferObject
 {
 public:
-	FramebufferObjectGL();
-	~FramebufferObjectGL();
-	virtual bool bindTexture(TexturePtr texture, FramebufferAttachment attachment = COLOR_ATTACHMENT);
-	virtual bool bindRenderbuffer(RenderbufferObjectPtr renderbuffer, FramebufferAttachment attachment = DEPTH_ATTACHMENT);
-	virtual int getWidth() { return width; }
-	virtual int getHeight() { return height; }
-	virtual unsigned int _bindInternal();
-	virtual unsigned int getID() { return id; }
+    FramebufferObjectGL();
+    ~FramebufferObjectGL();
+    virtual bool bindTexture(TexturePtr texture, FramebufferAttachment attachment = COLOR_ATTACHMENT);
+    virtual bool bindRenderbuffer(RenderbufferObjectPtr renderbuffer, FramebufferAttachment attachment = DEPTH_ATTACHMENT);
+    virtual int getWidth() { return width; }
+    virtual int getHeight() { return height; }
+    virtual unsigned int _bindInternal();
+    virtual unsigned int getID() { return id; }
 
 protected:
-	virtual bool checkStatus();
-	unsigned int id;
-	std::map<FramebufferAttachment, TexturePtr> textures;
-	std::map<FramebufferAttachment, RenderbufferObjectPtr> rbos;
-	std::vector<GLuint> colorAttachments;
-	int width, height;
-	bool hasColorAttachment;
+    virtual bool checkStatus();
+    unsigned int id;
+    std::map<FramebufferAttachment, TexturePtr> textures;
+    std::map<FramebufferAttachment, RenderbufferObjectPtr> rbos;
+    std::vector<GLuint> colorAttachments;
+    int width, height;
+    bool hasColorAttachment;
 };
 
 class DLL_OBJECT FramebufferObjectGL2 : public FramebufferObjectGL
 {
 public:
-	FramebufferObjectGL2();
-	~FramebufferObjectGL2();
-	virtual bool bindTexture(TexturePtr texture, FramebufferAttachment attachment = COLOR_ATTACHMENT);
-	virtual bool bindRenderbuffer(RenderbufferObjectPtr renderbuffer, FramebufferAttachment attachment = DEPTH_ATTACHMENT);
-	virtual unsigned int _bindInternal();
+    FramebufferObjectGL2();
+    ~FramebufferObjectGL2();
+    virtual bool bindTexture(TexturePtr texture, FramebufferAttachment attachment = COLOR_ATTACHMENT);
+    virtual bool bindRenderbuffer(RenderbufferObjectPtr renderbuffer, FramebufferAttachment attachment = DEPTH_ATTACHMENT);
+    virtual unsigned int _bindInternal();
 
 protected:
-	bool checkStatus();
+    bool checkStatus();
 };
 
 }
