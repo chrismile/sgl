@@ -106,7 +106,12 @@ ShaderAttributesPtr ShaderAttributesGL3::copy(ShaderProgramPtr &_shader, bool ig
     }
     if (ignoreMissingAttrs) {
         for (AttributeData &attr : this->attributes) {
-            int shaderLoc = glGetAttribLocation(obj->shaderGL->getShaderProgramID(), attr.attributeName.c_str());
+            int shaderLoc = 0;
+            if (attr.attributeName.empty()) {
+                shaderLoc = attr.shaderLoc;
+            } else {
+                shaderLoc = glGetAttribLocation(obj->shaderGL->getShaderProgramID(), attr.attributeName.c_str());
+            }
             if (shaderLoc >= 0) {
                 obj->addGeometryBufferOptional(attr.geometryBuffer, attr.attributeName.c_str(),
                                                (VertexAttributeFormat)attr.attributeType, attr.components, attr.offset,
@@ -189,7 +194,51 @@ bool ShaderAttributesGL3::addGeometryBufferOptional(GeometryBufferPtr &geometryB
     return attribFound;
 }
 
-void ShaderAttributesGL3::bind()
+void ShaderAttributesGL3::addGeometryBuffer(GeometryBufferPtr &geometryBuffer,
+                                            int attributeLocation, VertexAttributeFormat format, int components,
+                                            int offset /* = 0 */, int stride /* = 0 */, int instancing /* = 0 */,
+                                            bool normalizeAttr /* = false */)
+{
+    RendererGL *rendererGL = static_cast<RendererGL*>(Renderer);
+    attributes.push_back(AttributeData(geometryBuffer, "", (GLuint)format, components,
+                                       attributeLocation, offset, stride, instancing, normalizeAttr));
+
+    rendererGL->bindVAO(vaoID);
+    GLuint dataType = (GLuint)format;
+    glEnableVertexAttribArray(attributeLocation);
+    geometryBuffer->bind();
+    // OpenGL only allows a maximum of four components per attribute.
+    // E.g. 4x4 matrices are internally split into four columns.
+    int numColumns = ceilDiv(components, 4);
+    int columnSize = vertexAttrFormatToIntSize(format); // In bytes
+    for (int column = 0; column < numColumns; ++column) {
+        glVertexAttribPointer(attributeLocation+column, components, dataType, (int)normalizeAttr,
+                              stride, (void*)(intptr_t)(offset+columnSize*column));
+        if (instancing > 0) {
+            glVertexAttribDivisor(attributeLocation+column, instancing);
+        }
+    }
+    rendererGL->bindVAO(0);
+
+    // Compute the number of elements/vertices
+    int componentByteSize = getComponentByteSize(format);
+    int numElements = geometryBuffer->getSize();
+    if (stride == 0) {
+        numElements /= componentByteSize * components;
+    } else {
+        numElements /= stride;
+    }
+
+    // Update information about the vertices
+    if (numVertices > 0 && (int)numVertices != numElements) {
+        Logfile::get()->writeError("ERROR: ShaderAttributesGL3::addGeometryBuffer: "
+                                   "Inconsistent number of vertex attribute elements!");
+    }
+    numVertices = numElements;
+}
+
+
+    void ShaderAttributesGL3::bind()
 {
     bind(shader);
 }
@@ -225,7 +274,12 @@ ShaderAttributesPtr ShaderAttributesGL2::copy(ShaderProgramPtr &_shader, bool ig
     obj->instanceCount = this->instanceCount;
     obj->setIndexGeometryBuffer(this->indexBuffer, this->indexFormat);
     for (AttributeData &attr : this->attributes) {
-        int shaderLoc = glGetAttribLocation(obj->shaderGL->getShaderProgramID(), attr.attributeName.c_str());
+        int shaderLoc = 0;
+        if (attr.attributeName.empty()) {
+            shaderLoc = attr.shaderLoc;
+        } else {
+            shaderLoc = glGetAttribLocation(obj->shaderGL->getShaderProgramID(), attr.attributeName.c_str());
+        }
         if (shaderLoc >= 0) {
             obj->addGeometryBuffer(attr.geometryBuffer, attr.attributeName.c_str(),
                     (VertexAttributeFormat)attr.attributeType, attr.components, attr.offset, attr.stride,
@@ -284,6 +338,36 @@ bool ShaderAttributesGL2::addGeometryBufferOptional(GeometryBufferPtr &geometryB
     numVertices = numElements;
 
     return attribFound;
+}
+
+void ShaderAttributesGL2::addGeometryBuffer(GeometryBufferPtr &geometryBuffer,
+                                            int attributeLocation, VertexAttributeFormat format, int components,
+                                            int offset /* = 0 */, int stride /* = 0 */, int instancing /* = 0 */,
+                                            bool normalizeAttr /* = false */)
+{
+    if (instancing > 0) {
+        Logfile::get()->writeError( "ERROR: ShaderAttributesGL2::addGeometryBuffer: OpenGL 2 does not support instancing.");
+        return;
+    }
+
+    attributes.push_back(AttributeData(geometryBuffer, "", (GLuint)format, components, attributeLocation,
+            offset, stride, instancing, normalizeAttr));
+
+    // Compute the number of elements/vertices
+    int componentByteSize = getComponentByteSize(format);
+    int numElements = geometryBuffer->getSize();
+    if (stride == 0) {
+        numElements /= componentByteSize * components;
+    } else {
+        numElements /= stride;
+    }
+
+    // Update information about the vertices
+    if (numVertices > 0 && (int)numVertices != numElements) {
+        Logfile::get()->writeError("ERROR: ShaderAttributesGL2::addGeometryBuffer: "
+                                   "Inconsistent number of vertex attribute elements!");
+    }
+    numVertices = numElements;
 }
 
 void ShaderAttributesGL2::bind()

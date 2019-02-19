@@ -68,14 +68,19 @@ public:
      * \return True if geometry buffer was found, false otherwise.
      *  NOTE: Instancing is only supported if OpenGL >= 3.3 or OpenGL ES >= 3.0! */
     virtual bool addGeometryBuffer(GeometryBufferPtr &geometryBuffer, const char *attributeName,
-            VertexAttributeFormat format, int components,
-            int offset = 0, int stride = 0, int instancing = 0,
-            bool normalizeAttr = false)=0;
+                                   VertexAttributeFormat format, int components,
+                                   int offset = 0, int stride = 0, int instancing = 0,
+                                   bool normalizeAttr = false)=0;
     /// Same as "addGeometryBuffer", but no error message if attribute not existent in shader.
     virtual bool addGeometryBufferOptional(GeometryBufferPtr &geometryBuffer, const char *attributeName,
-            VertexAttributeFormat format, int components,
-            int offset = 0, int stride = 0, int instancing = 0,
-            bool normalizeAttr = false)=0;
+                                           VertexAttributeFormat format, int components,
+                                           int offset = 0, int stride = 0, int instancing = 0,
+                                           bool normalizeAttr = false)=0;
+    /// Same as function above, but specifies layout binding position in vertex shader instead of attribute name.
+    virtual void addGeometryBuffer(GeometryBufferPtr &geometryBuffer, int attributeLocation,
+                                   VertexAttributeFormat format, int components,
+                                   int offset = 0, int stride = 0, int instancing = 0,
+                                   bool normalizeAttr = false)=0;
     virtual void setIndexGeometryBuffer(GeometryBufferPtr &geometryBuffer, VertexAttributeFormat format)=0;
     virtual void bind()=0;
     /// Pass a shader attribute in case you want to do multi-pass rendering without a call to copy().

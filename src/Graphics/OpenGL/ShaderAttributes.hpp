@@ -86,6 +86,11 @@ public:
                                    VertexAttributeFormat format, int components,
                                    int offset = 0, int stride = 0, int instancing = 0,
                                    bool normalizeAttr = false);
+    /// Same as function above, but specifies layout binding position in vertex shader instead of attribute name.
+    virtual void addGeometryBuffer(GeometryBufferPtr &geometryBuffer, int attributeLocation,
+                                   VertexAttributeFormat format, int components,
+                                   int offset = 0, int stride = 0, int instancing = 0,
+                                   bool normalizeAttr = false);
     void bind();
     void bind(ShaderProgramPtr passShader);
 
@@ -107,6 +112,11 @@ public:
                            bool normalizeAttr = false);
     /// Same as "addGeometryBuffer", but no error message if attribute not existent in shader.
     bool addGeometryBufferOptional(GeometryBufferPtr &geometryBuffer, const char *attributeName,
+                                   VertexAttributeFormat format, int components,
+                                   int offset = 0, int stride = 0, int instancing = 0,
+                                   bool normalizeAttr = false);
+    /// Same as function above, but specifies layout binding position in vertex shader instead of attribute name.
+    virtual void addGeometryBuffer(GeometryBufferPtr &geometryBuffer, int attributeLocation,
                                    VertexAttributeFormat format, int components,
                                    int offset = 0, int stride = 0, int instancing = 0,
                                    bool normalizeAttr = false);
