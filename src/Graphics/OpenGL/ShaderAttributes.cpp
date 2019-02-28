@@ -113,16 +113,28 @@ ShaderAttributesPtr ShaderAttributesGL3::copy(ShaderProgramPtr &_shader, bool ig
                 shaderLoc = glGetAttribLocation(obj->shaderGL->getShaderProgramID(), attr.attributeName.c_str());
             }
             if (shaderLoc >= 0) {
-                obj->addGeometryBufferOptional(attr.geometryBuffer, attr.attributeName.c_str(),
-                                               (VertexAttributeFormat)attr.attributeType, attr.components, attr.offset,
-                                               attr.stride, attr.instancing, attr.normalizeAttr);
+                if (attr.attributeName.empty()) {
+                    obj->addGeometryBuffer(attr.geometryBuffer, attr.shaderLoc,
+                                           (VertexAttributeFormat)attr.attributeType, attr.components,
+                                           attr.offset, attr.stride, attr.instancing, attr.normalizeAttr);
+                } else {
+                    obj->addGeometryBufferOptional(attr.geometryBuffer, attr.attributeName.c_str(),
+                                                   (VertexAttributeFormat)attr.attributeType, attr.components,
+                                                   attr.offset, attr.stride, attr.instancing, attr.normalizeAttr);
+                }
             }
         }
     } else {
         for (AttributeData &attr : this->attributes) {
-            obj->addGeometryBufferOptional(attr.geometryBuffer, attr.attributeName.c_str(),
-                                           (VertexAttributeFormat)attr.attributeType, attr.components, attr.offset,
-                                           attr.stride, attr.instancing, attr.normalizeAttr);
+            if (attr.attributeName.empty()) {
+                obj->addGeometryBuffer(attr.geometryBuffer, attr.shaderLoc,
+                                       (VertexAttributeFormat)attr.attributeType, attr.components,
+                                       attr.offset, attr.stride, attr.instancing, attr.normalizeAttr);
+            } else {
+                obj->addGeometryBufferOptional(attr.geometryBuffer, attr.attributeName.c_str(),
+                                               (VertexAttributeFormat)attr.attributeType, attr.components,
+                                               attr.offset, attr.stride, attr.instancing, attr.normalizeAttr);
+            }
         }
     }
     obj->attributes = this->attributes;
@@ -281,9 +293,15 @@ ShaderAttributesPtr ShaderAttributesGL2::copy(ShaderProgramPtr &_shader, bool ig
             shaderLoc = glGetAttribLocation(obj->shaderGL->getShaderProgramID(), attr.attributeName.c_str());
         }
         if (shaderLoc >= 0) {
-            obj->addGeometryBuffer(attr.geometryBuffer, attr.attributeName.c_str(),
-                    (VertexAttributeFormat)attr.attributeType, attr.components, attr.offset, attr.stride,
-                    attr.instancing, attr.normalizeAttr);
+            if (attr.attributeName.empty()) {
+                obj->addGeometryBuffer(attr.geometryBuffer, attr.shaderLoc,
+                                       (VertexAttributeFormat)attr.attributeType, attr.components, attr.offset, attr.stride,
+                                       attr.instancing, attr.normalizeAttr);
+            } else {
+                obj->addGeometryBuffer(attr.geometryBuffer, attr.attributeName.c_str(),
+                                       (VertexAttributeFormat)attr.attributeType, attr.components, attr.offset, attr.stride,
+                                       attr.instancing, attr.normalizeAttr);
+            }
         }
     }
     obj->attributes = this->attributes;
