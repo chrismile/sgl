@@ -33,10 +33,20 @@ public:
     /// Clears all stored queries
     void deleteAll();
 
-    /// Start measuring time for event with specified name (NOTE: No nested calls!)
-    void start(const std::string &name);
+    /**
+     * Start measuring time for event with specified name (NOTE: No nested calls!)
+     * @param name The name of the event
+     * @param timeStamp The time stamp of the current frame (for recording frame time graphs).
+     */
+    void start(const std::string &name, float timeStamp);
     /// End measuring time for last event
     void end();
+    /**
+     * Stop last measuring event. Necessary, as time is queried at next beginning of next.
+     * Problematic if we want to quit before next call to start.
+     * NOTE: There must not be another call to @ref start for the same event afterwards!
+     */
+    void stopMeasuring();
 
     /// Get the (average) time the event with the specified name took
     double getTimeMS(const std::string &name);
@@ -44,9 +54,11 @@ public:
     void printTimeMS(const std::string &name);
     // Prints sum of all average times
     void printTotalAvgTime();
+    /// Get the (average) time the event with the specified name took
+    const std::vector<std::pair<float, uint64_t>> &getCurrentFrameTimeList() { return frameTimeList; }
 
 private:
-    void addQueryTime(size_t index);
+    void addQueryTime(size_t index, float timeStamp);
     size_t lastIndex = 0;
 
     /// The names of the event regions mapped to indices for the lists below
@@ -59,6 +71,10 @@ private:
     std::vector<size_t> numSamples;
     /// Whether a certain query has ended, but was not yet added to elapsedTimeNS and numSamples
     std::vector<bool> queryHasFinished;
+
+    /// List: Frame time stamp -> frame time in milliseconds
+    float lastTimeStamp = 0.0f;
+    std::vector<std::pair<float, uint64_t>> frameTimeList;
 };
 
 }

@@ -9,7 +9,7 @@
 
 namespace sgl {
 
-TexturePtr TextureManagerInterface::getAsset(const char *filename, const TextureSettings &settings)
+TexturePtr TextureManagerInterface::getAsset(const char *filename, const TextureSettings &settings, bool sRGB)
 {
     TextureInfo info;
     info.filename = filename;
@@ -18,6 +18,7 @@ TexturePtr TextureManagerInterface::getAsset(const char *filename, const Texture
     info.textureWrapS = settings.textureWrapS;
     info.textureWrapT = settings.textureWrapT;
     info.anisotropicFilter = settings.anisotropicFilter;
+    info.sRGB = sRGB;
     return FileManager<Texture, TextureInfo>::getAsset(info);
 }
 

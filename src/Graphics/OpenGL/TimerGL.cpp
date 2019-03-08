@@ -6,6 +6,7 @@
  */
 
 #include "TimerGL.hpp"
+#include <cassert>
 #include <iostream>
 #include <GL/glew.h>
 
@@ -18,7 +19,7 @@ TimerGL::~TimerGL()
 }
 
 
-void TimerGL::start(const std::string &name)
+void TimerGL::start(const std::string &name, float timeStamp)
 {
     size_t index = numSamples.size();
     auto it = regionNameMap.find(name);
@@ -31,13 +32,15 @@ void TimerGL::start(const std::string &name)
         elapsedTimeNS.push_back(0);
         numSamples.push_back(0);
         queryHasFinished.push_back(false);
+        frameTimeList.clear();
     } else {
         // Add time to already stored event of last frame
         index = it->second;
-        addQueryTime(index);
+        addQueryTime(index, lastTimeStamp);
     }
 
     lastIndex = index;
+    lastTimeStamp = timeStamp;
     glBeginQuery(GL_TIME_ELAPSED, queryIDs.at(index));
 }
 
@@ -48,13 +51,21 @@ void TimerGL::end()
     queryHasFinished.at(lastIndex) = true;
 }
 
-void TimerGL::addQueryTime(size_t index)
+void TimerGL::stopMeasuring()
+{
+    assert(queryHasFinished.at(lastIndex));
+    addQueryTime(lastIndex, lastTimeStamp);
+    queryHasFinished.at(lastIndex) = false;
+}
+
+void TimerGL::addQueryTime(size_t index, float timeStamp)
 {
     GLuint64 timer;
     glGetQueryObjectui64v(queryIDs.at(index), GL_QUERY_RESULT, &timer);
     elapsedTimeNS.at(index) += timer;
     numSamples.at(index) += 1;
     queryHasFinished.at(index) = false;
+    frameTimeList.push_back(std::make_pair(timeStamp, timer));
 }
 
 
@@ -81,8 +92,7 @@ double TimerGL::getTimeMS(const std::string &name)
     }
     int index = it->second;
     if (queryHasFinished.at(index)) {
-        // Add time to already stored event of last frame
-        addQueryTime(index);
+        addQueryTime(index, lastTimeStamp);
     }
     return static_cast<double>(elapsedTimeNS.at(index)) / static_cast<double>(numSamples.at(index)) * 1e-6;
 }

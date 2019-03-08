@@ -39,15 +39,14 @@ public:
     inline void quit() { running = false; }
 
 protected:
+    void makeScreenshot();
     virtual void saveScreenshot(const std::string &filename);
+    bool screenshot;
     float fps;
     FramerateSmoother framerateSmoother;
 
 private:
-    void makeScreenshot();
     bool running;
-    bool screenshot;
-
     uint64_t fpsCounterUpdateFrequency;
     bool printFPS;
 

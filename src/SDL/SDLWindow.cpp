@@ -89,6 +89,7 @@ void SDLWindow::initialize(const WindowSettings &settings)
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, windowSettings.depthSize);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    //SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 0);
 
     // Set core profile
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);

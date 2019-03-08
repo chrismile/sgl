@@ -9,13 +9,25 @@
 #define SRC_GRAPHICS_COLOR_HPP_
 
 #include <Utils/Convert.hpp>
+#include <glm/glm.hpp>
 
 namespace sgl {
 
 class Color
 {
 public:
-    Color (uint8_t R = 255, uint8_t G = 255, uint8_t B = 255, uint8_t A = 255) : r(R), g(G), b(B), a(A) {}
+    Color(uint8_t R = 255, uint8_t G = 255, uint8_t B = 255, uint8_t A = 255) : r(R), g(G), b(B), a(A) {}
+    Color(const glm::vec4 &colorNormalized) {
+        this->r = glm::clamp((int)glm::round(colorNormalized.r*255.0f), 0, 255);
+        this->g = glm::clamp((int)glm::round(colorNormalized.g*255.0f), 0, 255);
+        this->b = glm::clamp((int)glm::round(colorNormalized.b*255.0f), 0, 255);
+        this->a = glm::clamp((int)glm::round(colorNormalized.a*255.0f), 0, 255);
+    }
+    Color(const glm::vec3 &colorNormalized) {
+        this->r = glm::clamp((int)glm::round(colorNormalized.r*255.0f), 0, 255);
+        this->g = glm::clamp((int)glm::round(colorNormalized.g*255.0f), 0, 255);
+        this->b = glm::clamp((int)glm::round(colorNormalized.b*255.0f), 0, 255);
+    }
     bool operator==(const Color &color) const { return r == color.r && g == color.g && b == color.b && a == color.a; }
     bool operator!=(const Color &color) const { return r != color.r || g != color.g || b != color.b || a != color.a; }
 
@@ -23,10 +35,12 @@ public:
     inline uint8_t getG() const { return g; }
     inline uint8_t getB() const { return b; }
     inline uint8_t getA() const { return a; }
-    inline float getFloatR () const { return r/255.0f; }
-    inline float getFloatG () const { return g/255.0f; }
-    inline float getFloatB () const { return b/255.0f; }
-    inline float getFloatA () const { return a/255.0f; }
+    inline float getFloatR() const { return r/255.0f; }
+    inline float getFloatG() const { return g/255.0f; }
+    inline float getFloatB() const { return b/255.0f; }
+    inline float getFloatA() const { return a/255.0f; }
+    inline glm::vec3 getFloatColorRGB() const { return glm::vec3(r/255.0f, g/255.0f, b/255.0f); }
+    inline glm::vec4 getFloatColorRGBA() const { return glm::vec4(r/255.0f, g/255.0f, b/255.0f, a/255.0f); }
     inline uint32_t getColorRGBA() const { uint32_t col = a; col <<= 8; col |= b; col <<= 8; col |= g; col <<= 8; col |= r; return col; }
     inline uint32_t getColorRGB() const { uint32_t col = 255; col <<= 8; col |= b; col <<= 8; col |= g; col <<= 8; col |= r; return col; }
 

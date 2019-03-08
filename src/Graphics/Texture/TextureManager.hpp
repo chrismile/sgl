@@ -15,10 +15,11 @@ namespace sgl {
 
 struct TextureInfo {
     TextureInfo() : minificationFilter(0), magnificationFilter(0),
-            textureWrapS(0), textureWrapT(0), anisotropicFilter(false) {}
+            textureWrapS(0), textureWrapT(0), anisotropicFilter(false), sRGB(false) {}
     std::string filename;
     int minificationFilter, magnificationFilter, textureWrapS, textureWrapT;
     bool anisotropicFilter;
+    bool sRGB;
     bool operator <(const TextureInfo &rhs) const {
         return filename < rhs.filename;
     }
@@ -37,7 +38,7 @@ enum DepthTextureFormat {
 class TextureManagerInterface : public FileManager<Texture, TextureInfo>
 {
 public:
-    TexturePtr getAsset(const char *filename, const TextureSettings &settings = TextureSettings());
+    TexturePtr getAsset(const char *filename, const TextureSettings &settings = TextureSettings(), bool sRGB = false);
     virtual TexturePtr createEmptyTexture(int w, const TextureSettings &settings = TextureSettings())=0;
     virtual TexturePtr createTexture(void *data, int w, const TextureSettings &settings = TextureSettings())=0;
     virtual TexturePtr createEmptyTexture(int w, int h, const TextureSettings &settings = TextureSettings())=0;

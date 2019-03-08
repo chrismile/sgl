@@ -135,11 +135,19 @@ TexturePtr TextureManagerGL::loadAsset(TextureInfo &textureInfo)
     switch (image->format->BitsPerPixel) {
     case 24:
         bpp = 24;
-        format  = GL_RGB;
+        if (textureInfo.sRGB) {
+            format  = GL_SRGB;
+        } else {
+            format  = GL_RGB;
+        }
         break;
     case 32:
         bpp = 32;
-        format  = GL_RGBA;
+        if (textureInfo.sRGB) {
+            format  = GL_SRGB_ALPHA;
+        } else {
+            format  = GL_RGBA;
+        }
         break;
     default:
         Uint32 video_flags = SDL_SWSURFACE;
