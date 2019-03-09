@@ -30,6 +30,8 @@ SystemGL::SystemGL()
         }
     }
 
+    vendorString = (const char*)glGetString(GL_VENDOR);
+
     // Get OpenGL version (including GLSL)
     versionString = (char*)glGetString(GL_VERSION);
     shadingLanguageVersionString = (char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
@@ -47,7 +49,7 @@ SystemGL::SystemGL()
 
     // Log information about OpenGL context
     Logfile::get()->write(std::string() + "OpenGL Version: " + (const char*)glGetString(GL_VERSION), BLUE);
-    Logfile::get()->write(std::string() + "OpenGL Vendor: " + (const char*)glGetString(GL_VENDOR), BLUE);
+    Logfile::get()->write(std::string() + "OpenGL Vendor: " + vendorString, BLUE);
     Logfile::get()->write(std::string() + "OpenGL Renderer: " + (const char*)glGetString(GL_RENDERER), BLUE);
     Logfile::get()->write(std::string() + "OpenGL Shading Language Version: " + (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION), BLUE);
     Logfile::get()->write(std::string() + "OpenGL Extensions: " + extensionString, BLUE);

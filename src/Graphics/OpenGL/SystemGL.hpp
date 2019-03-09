@@ -27,6 +27,7 @@ public:
     inline int getGLMinorVersionNumber() { return minorVersionNumber; }
     inline int getGLMajorShadingLanguageVersionNumber() { return mayorShadingLanguageVersionNumber; }
     inline int getGLMinorShadingLanguageVersionNumber() { return minorShadingLanguageVersionNumber; }
+    inline std::string getVendorString() { return vendorString; }
 
     /*! Returns whether the current OpenGL context supports the features of the passed OpenGL version
      * You could for example call "openglVersionMinimum(3)" or "openglVersionMinimum(2, 1)" */
@@ -48,6 +49,7 @@ public:
 private:
     std::unordered_set<std::string> extensions;
     std::string versionString;
+    std::string vendorString;
     std::string shadingLanguageVersionString;
     int mayorVersionNumber;
     int minorVersionNumber;

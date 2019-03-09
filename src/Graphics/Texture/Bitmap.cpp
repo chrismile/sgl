@@ -204,7 +204,7 @@ void Bitmap::fromFile(const char *filename) {
     FILE *fp = fopen(filename, "rb");
     if (fp == 0) {
         std::cerr << "ERROR: Bitmap::fromFile: Cannot load file \"" << filename
-                << "\"." << std::endl;
+                  << "\"." << std::endl;
         return;
     }
 
@@ -213,16 +213,16 @@ void Bitmap::fromFile(const char *filename) {
 
     if (png_sig_cmp(header, 0, 8)) {
         std::cerr << "ERROR: Bitmap::fromFile: The file \"" << filename
-                << "\" is not a PNG file." << std::endl;
+                  << "\" is not a PNG file." << std::endl;
         fclose(fp);
         return;
     }
 
     png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL,
-            NULL, NULL);
+                                                 NULL, NULL);
     if (!png_ptr) {
         std::cerr << "ERROR: Bitmap::fromFile: png_create_read_struct returned 0."
-                << std::endl;
+                  << std::endl;
         fclose(fp);
         return;
     }
@@ -231,7 +231,7 @@ void Bitmap::fromFile(const char *filename) {
     png_infop info_ptr = png_create_info_struct(png_ptr);
     if (!info_ptr) {
         std::cerr << "ERROR: Bitmap::fromFile: png_create_info_struct returned 0."
-                << std::endl;
+                  << std::endl;
         png_destroy_read_struct(&png_ptr, (png_infopp) NULL, (png_infopp) NULL);
         fclose(fp);
         return;
@@ -271,10 +271,10 @@ void Bitmap::fromFile(const char *filename) {
 
     // Get the information about the PNG
     png_get_IHDR(png_ptr, info_ptr, &tempWidth, &tempHeight, &bitDepth,
-            &colorType, NULL, NULL, NULL);
+                 &colorType, NULL, NULL, NULL);
 
-    if (colorType != PNG_COLOR_TYPE_RGB_ALPHA) {
-        std::cerr << "ERROR: Bitmap::fromFile: Only 32-bit RGBA PNG images supported." << std::endl;
+    if (colorType != PNG_COLOR_TYPE_RGB_ALPHA && colorType != PNG_COLOR_TYPE_RGB) {
+        std::cerr << "ERROR: Bitmap::fromFile: Only 32-bit RGBA or 24-bit RGB PNG images supported." << std::endl;
         png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
         fclose(fp);
         return;
@@ -291,8 +291,8 @@ void Bitmap::fromFile(const char *filename) {
     int rowbytes = png_get_rowbytes(png_ptr, info_ptr);
 
     // Allocate the imageData as a big block
-    bitmap = new uint8_t[rowbytes * tempHeight];
-    png_byte *imageData = (png_byte*) bitmap;
+    uint8_t *dataPointer = new uint8_t[rowbytes * tempHeight];
+    png_byte *imageData = (png_byte*) dataPointer;
     if (imageData == NULL) {
         std::cerr << "ERROR: Bitmap::fromFile: Could not allocate memory for PNG image data." << std::endl;
         png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
@@ -322,6 +322,20 @@ void Bitmap::fromFile(const char *filename) {
     png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
     delete[] rowPointers;
     fclose(fp);
+
+    if (colorType == PNG_COLOR_TYPE_RGB_ALPHA) {
+        bitmap = dataPointer;
+    } else {
+        // Convert to RGBA
+        bitmap = new uint8_t[w*h*4];
+        for (int i = 0; i < w*h; i++) {
+            bitmap[i*4+0] = dataPointer[i*3+0];
+            bitmap[i*4+1] = dataPointer[i*3+1];
+            bitmap[i*4+2] = dataPointer[i*3+2];
+            bitmap[i*4+3] = 255;
+        }
+        delete[] dataPointer;
+    }
 }
 
 bool Bitmap::savePNG(const char *filename, bool mirror /* = false */) {
