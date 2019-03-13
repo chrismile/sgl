@@ -163,6 +163,14 @@ void SDLWindow::toggleFullscreen(bool nativeFullscreen)
     SDL_SetWindowFullscreen(sdlWindow, windowSettings.fullscreen ? fullscreenMode : 0);
 }
 
+void SDLWindow::setWindowSize(int width, int height)
+{
+    SDL_SetWindowSize(sdlWindow, width, height);
+    windowSettings.width = width;
+    windowSettings.height = height;
+    EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
+}
+
 void SDLWindow::close()
 {
     SDL_GL_DeleteContext(glContext);

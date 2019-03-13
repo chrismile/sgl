@@ -31,6 +31,20 @@ DLL_OBJECT glm::mat4 matrixOrthogonalProjection(float left, float right, float b
 DLL_OBJECT glm::mat4 matrixSkewX(float f);
 DLL_OBJECT glm::mat4 matrixSkewY(float f);
 
+/// Creates a matrix in row-major order (i.e. opposite from normal glm).
+DLL_OBJECT glm::mat4 matrixRowMajor(
+        float m11, float m12, float m13, float m14,
+        float m21, float m22, float m23, float m24,
+        float m31, float m32, float m33, float m34,
+        float m41, float m42, float m43, float m44);
+
+/// Creates a matrix in row-major order (i.e. opposite from normal glm).
+DLL_OBJECT glm::mat4 matrixColumnMajor(
+        float m11, float m21, float m31, float m41,
+        float m12, float m22, float m32, float m42,
+        float m13, float m23, float m33, float m43,
+        float m14, float m24, float m34, float m44);
+
 }
 
 /*! SRC_MATH_GEOMETRY_MATRIXUTIL_HPP_ */

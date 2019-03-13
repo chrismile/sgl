@@ -84,4 +84,32 @@ DLL_OBJECT glm::mat4 matrixSkewY(float f)
                     0.0f,   0.0f, 0.0f, 1.0f);
 }
 
+/// Creates a matrix in row-major order (i.e. opposite from normal glm).
+DLL_OBJECT glm::mat4 matrixRowMajor(
+        float m11, float m12, float m13, float m14,
+        float m21, float m22, float m23, float m24,
+        float m31, float m32, float m33, float m34,
+        float m41, float m42, float m43, float m44)
+{
+    return glm::mat4(
+            m11, m21, m31, m41,
+            m12, m22, m32, m42,
+            m13, m23, m33, m43,
+            m14, m24, m34, m44);
+}
+
+/// Creates a matrix in row-major order (i.e. opposite from normal glm).
+DLL_OBJECT glm::mat4 matrixColumnMajor(
+        float m11, float m21, float m31, float m41,
+        float m12, float m22, float m32, float m42,
+        float m13, float m23, float m33, float m43,
+        float m14, float m24, float m34, float m44)
+{
+    return glm::mat4(
+            m11, m21, m31, m41,
+            m12, m22, m32, m42,
+            m13, m23, m33, m43,
+            m14, m24, m34, m44);
+}
+
 }

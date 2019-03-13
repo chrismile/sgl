@@ -64,6 +64,7 @@ public:
 
     //! Change the window attributes
     virtual void toggleFullscreen(bool nativeFullscreen = true)=0;
+    virtual void setWindowSize(int width, int height)=0;
     virtual void serializeSettings(SettingsFile &settings)=0;
     virtual WindowSettings deserializeSettings(const SettingsFile &settings)=0;
 
