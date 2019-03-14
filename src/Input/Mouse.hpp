@@ -8,6 +8,7 @@
 #ifndef INPUT_MOUSE_HPP_
 #define INPUT_MOUSE_HPP_
 
+#include <cstdint>
 #include <Math/Geometry/Point2.hpp>
 #include <Defs.hpp>
 
