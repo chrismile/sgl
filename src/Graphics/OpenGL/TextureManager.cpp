@@ -5,6 +5,7 @@
  *      Author: Christoph Neuhauser
  */
 
+#include <iostream>
 #include <GL/glew.h>
 #include "TextureManager.hpp"
 #include "SystemGL.hpp"
