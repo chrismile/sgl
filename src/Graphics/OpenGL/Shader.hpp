@@ -49,7 +49,7 @@ public:
     void bind();
 
     // Compute shader interface
-    void dispatchCompute(int numGroupsX, int numGroupsY, int numGroupsZ = 1);
+    void dispatchCompute(int numGroupsX, int numGroupsY = 1, int numGroupsZ = 1);
 
     bool hasUniform(const char *name);
     int getUniformLoc(const char *name);

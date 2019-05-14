@@ -65,7 +65,7 @@ public:
     virtual void bind()=0;
 
     // Compute shader interface
-    virtual void dispatchCompute(int numGroupsX, int numGroupsY, int numGroupsZ = 1)=0;
+    virtual void dispatchCompute(int numGroupsX, int numGroupsY = 1, int numGroupsZ = 1)=0;
 
     //! Uniform variables are shared between different executions of a shader program
     virtual bool hasUniform(const char *name)=0;
