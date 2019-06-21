@@ -80,7 +80,7 @@ void SettingsFile::saveToFile(const char *filename)
     file << "{\n";
 
     for (auto it = settings.begin(); it != settings.end(); ++it) {
-        file << "\"" + it->first + "\": \"" + it->second  + "\"";
+        file << "\"" + it->first + "\": \"" + it->second  + "\"\n";
     }
 
     file << "}\n";
