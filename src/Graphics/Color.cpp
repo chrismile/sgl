@@ -36,6 +36,26 @@ Color colorFromFloat(float R /*= 0.0f*/, float G /*= 0.0f*/, float B /*= 0.0f*/,
     return Color(R*255.0f, G*255.0f, B*255.0f, A*255.0f);
 }
 
+Color colorFromVec3(const glm::vec3 &vecColor)
+{
+    return colorFromFloat(vecColor.x, vecColor.y, vecColor.z, 1.0f);
+}
+
+Color colorFromVec4(const glm::vec4 &vecColor)
+{
+    return colorFromFloat(vecColor.x, vecColor.y, vecColor.z, vecColor.w);
+}
+
+glm::vec3 colorToVec3(const Color &color)
+{
+    return glm::vec3(color.getFloatR(), color.getFloatG(), color.getFloatB());
+}
+
+glm::vec4 colorToVec4(const Color &color)
+{
+    return glm::vec4(color.getFloatR(), color.getFloatG(), color.getFloatB(), color.getFloatA());
+}
+
 Color colorLerp(const Color &color1, const Color &color2, float factor)
 {
     factor = clamp(factor, 0.0f, 1.0f);

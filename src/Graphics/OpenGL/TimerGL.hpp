@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <chrono>
 
 namespace sgl
 {
@@ -38,15 +39,22 @@ public:
      * @param name The name of the event
      * @param timeStamp The time stamp of the current frame (for recording frame time graphs).
      */
-    void start(const std::string &name, float timeStamp);
+    void startGPU(const std::string &name, float timeStamp);
     /// End measuring time for last event
     void end();
     /**
-     * Stop last measuring event. Necessary, as time is queried at next beginning of next.
+     * Stop last measuring event. Necessary, as time is queried at beginning of next call to @ref start.
      * Problematic if we want to quit before next call to start.
      * NOTE: There must not be another call to @ref start for the same event afterwards!
      */
     void stopMeasuring();
+
+    /**
+     * Start measuring time for event with specified name (NOTE: No nested calls!)
+     * @param name The name of the event
+     * @param timeStamp The time stamp of the current frame (for recording frame time graphs).
+     */
+    void startCPU(const std::string &name, float timeStamp);
 
     /// Get the (average) time the event with the specified name took
     double getTimeMS(const std::string &name);
@@ -71,10 +79,15 @@ private:
     std::vector<size_t> numSamples;
     /// Whether a certain query has ended, but was not yet added to elapsedTimeNS and numSamples
     std::vector<bool> queryHasFinished;
+    /// Whether a certain query has ended, but was not yet added to elapsedTimeNS and numSamples
+    std::vector<bool> isGPUQuery;
 
     /// List: Frame time stamp -> frame time in milliseconds
     float lastTimeStamp = 0.0f;
     std::vector<std::pair<float, uint64_t>> frameTimeList;
+
+    // CPU timer
+    std::chrono::time_point<std::chrono::system_clock> startTime;
 };
 
 }

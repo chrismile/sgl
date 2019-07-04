@@ -5,10 +5,12 @@
  *      Author: Christoph Neuhauser
  */
 
-#include "TimerGL.hpp"
 #include <cassert>
 #include <iostream>
+
 #include <GL/glew.h>
+
+#include "TimerGL.hpp"
 
 namespace sgl
 {
@@ -19,7 +21,7 @@ TimerGL::~TimerGL()
 }
 
 
-void TimerGL::start(const std::string &name, float timeStamp)
+void TimerGL::startGPU(const std::string &name, float timeStamp)
 {
     size_t index = numSamples.size();
     auto it = regionNameMap.find(name);
@@ -29,6 +31,7 @@ void TimerGL::start(const std::string &name, float timeStamp)
         glGenQueries(1, &queryID);
         regionNameMap.insert(make_pair(name, index));
         queryIDs.push_back(queryID);
+        isGPUQuery.push_back(true);
         elapsedTimeNS.push_back(0);
         numSamples.push_back(0);
         queryHasFinished.push_back(false);
@@ -44,28 +47,68 @@ void TimerGL::start(const std::string &name, float timeStamp)
     glBeginQuery(GL_TIME_ELAPSED, queryIDs.at(index));
 }
 
+void TimerGL::startCPU(const std::string &name, float timeStamp)
+{
+    size_t index = numSamples.size();
+    auto it = regionNameMap.find(name);
+    if (it == regionNameMap.end()) {
+        // Create a new query & add the data of a new region
+        GLuint queryID = 0;
+        regionNameMap.insert(make_pair(name, index));
+        queryIDs.push_back(0); // Just for GPU, add any value.
+        isGPUQuery.push_back(false);
+        elapsedTimeNS.push_back(0);
+        numSamples.push_back(0);
+        queryHasFinished.push_back(false);
+        frameTimeList.clear();
+    } else {
+        // Add time to already stored event of last frame
+        index = it->second;
+        addQueryTime(index, lastTimeStamp);
+    }
+
+    lastIndex = index;
+    lastTimeStamp = timeStamp;
+    startTime = std::chrono::system_clock::now();
+}
+
 
 void TimerGL::end()
 {
-    glEndQuery(GL_TIME_ELAPSED);
-    queryHasFinished.at(lastIndex) = true;
+    if (isGPUQuery.at(lastIndex)) {
+        glEndQuery(GL_TIME_ELAPSED);
+        queryHasFinished.at(lastIndex) = true;
+    } else {
+        addQueryTime(lastIndex, lastTimeStamp);
+    }
 }
 
 void TimerGL::stopMeasuring()
 {
-    assert(queryHasFinished.at(lastIndex));
-    addQueryTime(lastIndex, lastTimeStamp);
-    queryHasFinished.at(lastIndex) = false;
+    if (isGPUQuery.at(lastIndex)) {
+        assert(queryHasFinished.at(lastIndex));
+        addQueryTime(lastIndex, lastTimeStamp);
+        queryHasFinished.at(lastIndex) = false;
+    }
 }
 
 void TimerGL::addQueryTime(size_t index, float timeStamp)
 {
-    GLuint64 timer;
-    glGetQueryObjectui64v(queryIDs.at(index), GL_QUERY_RESULT, &timer);
-    elapsedTimeNS.at(index) += timer;
-    numSamples.at(index) += 1;
-    queryHasFinished.at(index) = false;
-    frameTimeList.push_back(std::make_pair(timeStamp, timer));
+    if (isGPUQuery.at(index)) {
+        GLuint64 timer;
+        glGetQueryObjectui64v(queryIDs.at(index), GL_QUERY_RESULT, &timer);
+        elapsedTimeNS.at(index) += timer;
+        numSamples.at(index) += 1;
+        queryHasFinished.at(index) = false;
+        frameTimeList.push_back(std::make_pair(timeStamp, timer));
+    } else {
+        auto endTime = std::chrono::system_clock::now();
+        auto elapsedTime = std::chrono::duration_cast<std::chrono::nanoseconds>(endTime - startTime);
+        uint64_t timer = elapsedTime.count();
+        elapsedTimeNS.at(index) += timer;
+        numSamples.at(index) += 1;
+        frameTimeList.push_back(std::make_pair(timeStamp, timer));
+    };
 }
 
 
@@ -73,7 +116,9 @@ void TimerGL::deleteAll()
 {
     size_t n = numSamples.size();
     for (size_t i = 0; i < n; i++) {
-        glDeleteQueries(1, &queryIDs.at(i));
+        if (isGPUQuery.at(i)) {
+            glDeleteQueries(1, &queryIDs.at(i));
+        }
     }
 
     regionNameMap.clear();

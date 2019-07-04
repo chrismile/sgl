@@ -64,6 +64,10 @@ private:
 
 Color colorFromHex(const std::string &hexColor);
 Color colorFromFloat(float R = 0.0f, float G = 0.0f, float B = 0.0f, float A = 1.0f);
+Color colorFromVec3(const glm::vec3 &vecColor);
+Color colorFromVec4(const glm::vec4 &vecColor);
+glm::vec3 colorToVec3(const Color &color);
+glm::vec4 colorToVec4(const Color &color);
 //! 0 <= factor <= 1
 Color colorLerp(const Color &color1, const Color &color2, float factor);
 
