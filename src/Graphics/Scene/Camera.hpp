@@ -60,6 +60,9 @@ public:
     void setYaw(float newYaw)      { recalcModelMat = true; yaw = newYaw; }
     void rotatePitch(float offset) { recalcModelMat = true; pitch += offset; }
     void setPitch(float newPitch)  { recalcModelMat = true; pitch = newPitch; }
+    const glm::vec3 &getCameraFront() const { return cameraFront; }
+    const glm::vec3 &getCameraRight() const { return cameraRight; }
+    const glm::vec3 &getCameraUp() const { return cameraUp; }
 
     //! Set projection type: Orthogonal or perspective
     //virtual void setProjectionType(ProjectionType pt);
