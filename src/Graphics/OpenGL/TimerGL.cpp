@@ -62,9 +62,7 @@ void TimerGL::startCPU(const std::string &name, float timeStamp)
         queryHasFinished.push_back(false);
         frameTimeList.clear();
     } else {
-        // Add time to already stored event of last frame
         index = it->second;
-        addQueryTime(index, lastTimeStamp);
     }
 
     lastIndex = index;
