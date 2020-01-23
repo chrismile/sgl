@@ -112,7 +112,7 @@ void SDLWindow::initialize(const WindowSettings &settings)
 
     errorCheck();
 
-    Uint32 flags = SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL;
+    Uint32 flags = SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI;
     if (windowSettings.fullscreen) flags |= SDL_WINDOW_FULLSCREEN;
     if (windowSettings.resizable) flags |= SDL_WINDOW_RESIZABLE;
 

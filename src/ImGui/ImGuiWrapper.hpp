@@ -16,7 +16,13 @@ namespace sgl
 class ImGuiWrapper : public Singleton<ImGuiWrapper>
 {
 public:
-    void initialize(); // to be called by AppSettings
+    /**
+     * Initializes ImGui for use with SDL and OpenGL.
+     * @param useDocking Whether to enable docking windows.
+     * @param useMultiViewport Whether to enable using multiple viewport windows when the user drags ImGui windows
+     * outside of the main window.
+     */
+    void initialize(bool useDocking = true, bool useMultiViewport = true); // to be called by AppSettings
     void shutdown(); // to be called by AppSettings
 
     // Insert your ImGui code between "renderStart" and "renderEnd"

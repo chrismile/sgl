@@ -15,7 +15,7 @@
 namespace sgl
 {
 
-void ImGuiWrapper::initialize() {
+void ImGuiWrapper::initialize(bool useDocking, bool useMultiViewport) {
     float scaleFactorHiDPI = getHighDPIScaleFactor();
     float fontScale = scaleFactorHiDPI;
     float uiScale = scaleFactorHiDPI;//*2.0f;
@@ -25,6 +25,12 @@ void ImGuiWrapper::initialize() {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
+    if (useDocking) {
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    }
+    if (useMultiViewport) {
+        io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    }
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
     //io.FontGlobalScale = scaleFactorHiDPI*2.0f;
 
@@ -43,6 +49,10 @@ void ImGuiWrapper::initialize() {
 
     ImGuiStyle &style = ImGui::GetStyle();
     style.ScaleAllSizes(uiScale); // HiDPI scaling
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        style.WindowRounding = 0.0f;
+        style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+    }
 
     // Load Fonts
     io.Fonts->AddFontFromFileTTF("Data/Fonts/DroidSans.ttf", 16.0f*fontScale);
@@ -74,6 +84,15 @@ void ImGuiWrapper::renderEnd()
 {
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    ImGuiIO &io = ImGui::GetIO();
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        SDL_Window* backupCurrentWindow = SDL_GL_GetCurrentWindow();
+        SDL_GLContext backupCurrentContext = SDL_GL_GetCurrentContext();
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+        SDL_GL_MakeCurrent(backupCurrentWindow, backupCurrentContext);
+    }
 }
 
 void ImGuiWrapper::renderDemoWindow()
