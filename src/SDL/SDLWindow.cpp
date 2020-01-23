@@ -124,6 +124,8 @@ void SDLWindow::initialize(const WindowSettings &settings)
     errorCheck();
     glContext = SDL_GL_CreateContext(sdlWindow);
     errorCheck();
+    SDL_GL_MakeCurrent(sdlWindow, glContext);
+    errorCheck();
 
     if (windowSettings.multisamples != 0) {
         glEnable(GL_MULTISAMPLE);
@@ -228,6 +230,11 @@ bool SDLWindow::processEvents(std::function<void(const SDL_Event&)> eventHandler
                 windowSettings.width = event.window.data1;
                 windowSettings.height = event.window.data2;
                 EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
+                break;
+            case SDL_WINDOWEVENT_CLOSE:
+                if (event.window.windowID == SDL_GetWindowID(sdlWindow)) {
+                    running = false;
+                }
                 break;
             }
             eventHandler(event);

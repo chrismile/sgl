@@ -36,7 +36,7 @@ void ImGuiWrapper::initialize(bool useDocking, bool useMultiViewport) {
 
     SDLWindow *window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
     SDL_GLContext context = window->getGLContext();
-    ImGui_ImplSDL2_InitForOpenGL(window->getSDLWindow(), &context);
+    ImGui_ImplSDL2_InitForOpenGL(window->getSDLWindow(), context);
     const char* glsl_version = "#version 430";
     if (!SystemGL::get()->openglVersionMinimum(4,3)) {
         glsl_version = NULL; // Use standard
@@ -46,6 +46,7 @@ void ImGuiWrapper::initialize(bool useDocking, bool useMultiViewport) {
     // Setup style
     ImGui::StyleColorsDark();
     //ImGui::StyleColorsClassic();
+    //ImGui::StyleColorsLight();
 
     ImGuiStyle &style = ImGui::GetStyle();
     style.ScaleAllSizes(uiScale); // HiDPI scaling
@@ -87,11 +88,10 @@ void ImGuiWrapper::renderEnd()
 
     ImGuiIO &io = ImGui::GetIO();
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        SDL_Window* backupCurrentWindow = SDL_GL_GetCurrentWindow();
-        SDL_GLContext backupCurrentContext = SDL_GL_GetCurrentContext();
+        SDLWindow *sdlWindow = (SDLWindow*)AppSettings::get()->getMainWindow();
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
-        SDL_GL_MakeCurrent(backupCurrentWindow, backupCurrentContext);
+        SDL_GL_MakeCurrent(sdlWindow->getSDLWindow(), sdlWindow->getGLContext());
     }
 }
 
