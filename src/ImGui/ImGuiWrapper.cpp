@@ -17,8 +17,8 @@ namespace sgl
 
 void ImGuiWrapper::initialize(bool useDocking, bool useMultiViewport) {
     float scaleFactorHiDPI = getHighDPIScaleFactor();
-    float fontScale = scaleFactorHiDPI;
-    float uiScale = scaleFactorHiDPI;//*2.0f;
+    float fontScaleFactor = scaleFactorHiDPI;
+    uiScaleFactor = scaleFactorHiDPI;
 
     // --- Code from here on partly taken from ImGui usage example ---
     // Setup Dear ImGui binding
@@ -49,14 +49,14 @@ void ImGuiWrapper::initialize(bool useDocking, bool useMultiViewport) {
     //ImGui::StyleColorsLight();
 
     ImGuiStyle &style = ImGui::GetStyle();
-    style.ScaleAllSizes(uiScale); // HiDPI scaling
+    style.ScaleAllSizes(uiScaleFactor); // HiDPI scaling
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
         style.WindowRounding = 0.0f;
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
 
     // Load Fonts
-    io.Fonts->AddFontFromFileTTF("Data/Fonts/DroidSans.ttf", 16.0f*fontScale);
+    io.Fonts->AddFontFromFileTTF("Data/Fonts/DroidSans.ttf", 16.0f*fontScaleFactor);
 }
 
 void ImGuiWrapper::shutdown()

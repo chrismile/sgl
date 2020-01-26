@@ -259,11 +259,11 @@ void FileUtils::ensureDirectoryExists(const std::string &path)
         currentDirectory = currentDirectory + directories.at(i) + "/";
         if (i == 0) {
 #ifdef WIN32
-            // Handelt es sich um einen Laufwerksbuchstaben?
+            // Do we have a drive letter?
             if (directories.at(i).size() == 2 && directories.at(i).at(1) == ':')
                 continue;
 #else
-            // Handelt es sich um das Root-Directory?
+            // Is this the root directory?
             if (directories.at(i).size() == 0)
                 continue;
 #endif

@@ -42,6 +42,22 @@ bool ImGui::ListBox(const char* label, int* current_item, std::function<bool(voi
     return value_changed;
 }
 
+// Getter for the old Combo() API: const char*[]
+static bool Items_ArrayGetterString(void* data, int idx, const char** out_text)
+{
+    const std::string* items = (const std::string*)data;
+    if (out_text)
+        *out_text = items[idx].c_str();
+    return true;
+}
+
+// Combo box helper allowing to pass an array of strings.
+bool ImGui::Combo(const char* label, int* current_item, const std::string* items, int items_count, int height_in_items)
+{
+    const bool value_changed = Combo(label, current_item, Items_ArrayGetterString, (void*)items, items_count, height_in_items);
+    return value_changed;
+}
+
 // Code adapted from ImGui's InvisibleButton
 bool ImGui::ClickArea(const char *str_id, const ImVec2 &size_arg, bool &mouseReleased)
 {

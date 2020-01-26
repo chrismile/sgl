@@ -22,8 +22,9 @@ public:
      * @param useMultiViewport Whether to enable using multiple viewport windows when the user drags ImGui windows
      * outside of the main window.
      */
-    void initialize(bool useDocking = true, bool useMultiViewport = true); // to be called by AppSettings
-    void shutdown(); // to be called by AppSettings
+    void initialize(bool useDocking = true, bool useMultiViewport = true); //< to be called by AppSettings
+    void shutdown(); //< to be called by AppSettings
+    inline float getScaleFactor() { return uiScaleFactor; } //< The UI high DPI scale factor
 
     // Insert your ImGui code between "renderStart" and "renderEnd"
     void renderStart();
@@ -32,6 +33,9 @@ public:
 
     void renderDemoWindow();
     void showHelpMarker(const char* desc);
+
+private:
+    float uiScaleFactor;
 };
 
 }
