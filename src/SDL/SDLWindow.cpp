@@ -211,9 +211,6 @@ bool SDLWindow::processEvents(std::function<void(const SDL_Event&)> eventHandler
                     free(clipboardText);
                 }
                 break;
-            default:
-                eventHandler(event);
-                break;
             }
             break;
 
@@ -221,33 +218,30 @@ bool SDLWindow::processEvents(std::function<void(const SDL_Event&)> eventHandler
             if ((SDL_GetModState() & KMOD_CTRL) == 0) {
                 Keyboard->addToKeyBuffer(event.text.text);
             }
-            eventHandler(event);
             break;
 
         case SDL_WINDOWEVENT:
-            switch (event.window.event) {
-            case SDL_WINDOWEVENT_RESIZED:
-                windowSettings.width = event.window.data1;
-                windowSettings.height = event.window.data2;
-                EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
-                break;
-            case SDL_WINDOWEVENT_CLOSE:
-                if (event.window.windowID == SDL_GetWindowID(sdlWindow)) {
-                    running = false;
+            if (event.window.windowID == SDL_GetWindowID(sdlWindow)) {
+                switch (event.window.event) {
+                    case SDL_WINDOWEVENT_RESIZED:
+                        windowSettings.width = event.window.data1;
+                        windowSettings.height = event.window.data2;
+                        EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
+                        break;
+                    case SDL_WINDOWEVENT_CLOSE:
+                        if (event.window.windowID == SDL_GetWindowID(sdlWindow)) {
+                            running = false;
+                        }
+                        break;
                 }
-                break;
             }
-            eventHandler(event);
             break;
 
         case SDL_MOUSEWHEEL:
             sdlMouse->setScrollWheelValue(event.wheel.y);
-            eventHandler(event);
             break;
-
-        default:
-            eventHandler(event);
         }
+        eventHandler(event);
     }
     return running;
 }
