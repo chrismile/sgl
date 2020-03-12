@@ -106,6 +106,10 @@ void Camera::updateCamera() {
         projMat = glm::perspective(fovy, aspect, nearDist, farDist);
     }
     if (recalcModelMat) {
+        // We don't want a flip-over at the poles of the unit sphere.
+        const float EPSILON = 0.001f;
+        pitch = sgl::clamp(pitch, -sgl::HALF_PI + EPSILON, sgl::HALF_PI - EPSILON);
+
         cameraFront.x = cos(yaw) * cos(pitch);
         cameraFront.y = sin(pitch);
         cameraFront.z = sin(yaw) * cos(pitch);
