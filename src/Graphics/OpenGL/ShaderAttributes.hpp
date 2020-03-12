@@ -21,10 +21,11 @@ class ShaderProgram;
 
 struct AttributeData {
     AttributeData(GeometryBufferPtr _geometryBuffer, const std::string &_attributeName, GLuint _attributeType,
-            GLuint _components, int _shaderLoc, int _offset, int _stride, int _instancing, bool _normalizeAttr)
+            GLuint _components, int _shaderLoc, int _offset, int _stride, int _instancing,
+            VertexAttributeConversion _attrConversion)
         : geometryBuffer(_geometryBuffer), attributeName(_attributeName), attributeType(_attributeType),
           components(_components), shaderLoc(_shaderLoc), offset(_offset), stride(_stride),
-          instancing(_instancing), normalizeAttr(_normalizeAttr) {}
+          instancing(_instancing), attrConversion(_attrConversion) {}
     GeometryBufferPtr geometryBuffer;
     std::string attributeName;
     unsigned int attributeType;
@@ -33,7 +34,7 @@ struct AttributeData {
     int offset;
     int stride;
     int instancing;
-    bool normalizeAttr;
+    VertexAttributeConversion attrConversion;
 };
 
 //! Abstract class
@@ -74,23 +75,23 @@ public:
      * \param stride is the offset in byte between two buffer elements (0 means no interleaving data)
      * \param instancing is the number by which the instance count is increased with every instance.
      *         A value of 0 means no instancing. Use Renderer->renderInstanced if this value is > 0.
-     * \param normalizeAttr should be true for e.g. uint32_t colors that are accessed as denormalized vec4's.
+     * \param attrConversion Should be changed for e.g. uint32_t colors that are accessed as denormalized vec4's.
      * \return True if geometry buffer was found, false otherwise.
      *  NOTE: Instancing is only supported if OpenGL >= 3.3 or OpenGL ES >= 3.0! */
     bool addGeometryBuffer(GeometryBufferPtr &geometryBuffer, const char *attributeName,
                            VertexAttributeFormat format, int components,
                            int offset = 0, int stride = 0, int instancing = 0,
-                           bool normalizeAttr = false);
+                           VertexAttributeConversion attrConversion = ATTRIB_CONVERSION_FLOAT);
     /// Same as "addGeometryBuffer", but no error message if attribute not existent in shader.
     bool addGeometryBufferOptional(GeometryBufferPtr &geometryBuffer, const char *attributeName,
                                    VertexAttributeFormat format, int components,
                                    int offset = 0, int stride = 0, int instancing = 0,
-                                   bool normalizeAttr = false);
+                                   VertexAttributeConversion attrConversion = ATTRIB_CONVERSION_FLOAT);
     /// Same as function above, but specifies layout binding position in vertex shader instead of attribute name.
     virtual void addGeometryBuffer(GeometryBufferPtr &geometryBuffer, int attributeLocation,
                                    VertexAttributeFormat format, int components,
                                    int offset = 0, int stride = 0, int instancing = 0,
-                                   bool normalizeAttr = false);
+                                   VertexAttributeConversion attrConversion = ATTRIB_CONVERSION_FLOAT);
     void bind();
     void bind(ShaderProgramPtr passShader);
 
@@ -109,17 +110,17 @@ public:
     bool addGeometryBuffer(GeometryBufferPtr &geometryBuffer, const char *attributeName,
                            VertexAttributeFormat format, int components,
                            int offset = 0, int stride = 0, int instancing = 0,
-                           bool normalizeAttr = false);
+                           VertexAttributeConversion attrConversion = ATTRIB_CONVERSION_FLOAT);
     /// Same as "addGeometryBuffer", but no error message if attribute not existent in shader.
     bool addGeometryBufferOptional(GeometryBufferPtr &geometryBuffer, const char *attributeName,
                                    VertexAttributeFormat format, int components,
                                    int offset = 0, int stride = 0, int instancing = 0,
-                                   bool normalizeAttr = false);
+                                   VertexAttributeConversion attrConversion = ATTRIB_CONVERSION_FLOAT);
     /// Same as function above, but specifies layout binding position in vertex shader instead of attribute name.
     virtual void addGeometryBuffer(GeometryBufferPtr &geometryBuffer, int attributeLocation,
                                    VertexAttributeFormat format, int components,
                                    int offset = 0, int stride = 0, int instancing = 0,
-                                   bool normalizeAttr = false);
+                                   VertexAttributeConversion attrConversion = ATTRIB_CONVERSION_FLOAT);
     void bind();
     void bind(ShaderProgramPtr passShader);
 };
