@@ -28,6 +28,7 @@
 
 #include <cerrno>
 #include <cstring>
+#include <cstdlib>
 #include <iostream>
 #include <thread>
 #include <GL/glew.h>
@@ -69,7 +70,11 @@ void VideoWriter::openFile(const char *filename, int framerate) {
 
 VideoWriter::~VideoWriter() {
     if (framebuffer != NULL) {
+#ifdef __USE_ISOC11
+        free(framebuffer);
+#else
         delete[] framebuffer;
+#endif
     }
     if (avfile) {
         pclose(avfile);
@@ -92,7 +97,12 @@ void VideoWriter::pushWindowFrame() {
         return;
     }
     if (framebuffer == NULL) {
+        // Use 512-bit alignment for e.g. AVX-512, as ffmpeg might want to use vector instructions on the data stream.
+#ifdef _ISOC11_SOURCE
+        framebuffer = static_cast<uint8_t*>(aligned_alloc(64, frameW * frameH * 3)); // 512-bit aligned
+#else
         framebuffer = new uint8_t[frameW * frameH * 3];
+#endif
     }
 
     /*
