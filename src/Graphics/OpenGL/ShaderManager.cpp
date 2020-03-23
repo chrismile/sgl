@@ -75,6 +75,10 @@ int ShaderManagerGL::getMaxWorkGroupInvocations()
     return maxWorkGroupInvocations;
 }
 
+void ShaderManagerGL::unbindShader() {
+    glUseProgram(0);
+}
+
 
 
 void ShaderManagerGL::bindUniformBuffer(int binding, GeometryBufferPtr &geometryBuffer)

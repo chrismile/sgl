@@ -42,6 +42,9 @@ public:
     virtual ShaderProgramPtr createShaderProgram()=0;
     virtual ShaderAttributesPtr createShaderAttributes(ShaderProgramPtr &shader)=0;
 
+    /// Make sure no shader is bound for rendering.
+    virtual void unbindShader()=0;
+
     /**
      * Used for adding preprocessor defines to all shader files before compiling.
      * This function is useful for e.g. switching at runtime between different different techniques.

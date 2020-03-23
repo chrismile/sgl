@@ -22,6 +22,9 @@ public:
     ShaderPtr createShader(ShaderType sh);
     ShaderAttributesPtr createShaderAttributes(ShaderProgramPtr &shader);
 
+    /// Make sure no shader is bound for rendering.
+    virtual void unbindShader();
+
     /**
      * Deletes all cached shaders in the ShaderManager. This is necessary e.g. when wanting to switch to a
      * different rendering technique with "addPreprocessorDefine" after already loading a certain shader.
