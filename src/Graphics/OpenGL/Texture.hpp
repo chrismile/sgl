@@ -22,6 +22,8 @@ public:
     virtual void uploadPixelData(int width, void *pixelData, PixelFormat pixelFormat = PixelFormat());
     virtual void uploadPixelData(int width, int height, void *pixelData, PixelFormat pixelFormat = PixelFormat());
     virtual void uploadPixelData(int width, int height, int depth, void *pixelData, PixelFormat pixelFormat = PixelFormat());
+    /// Do NOT access a texture view anymore after the reference count of the base texture has reached zero!
+    virtual TexturePtr createTextureView();
     inline unsigned int getTexture() const { return texture; }
 
 protected:

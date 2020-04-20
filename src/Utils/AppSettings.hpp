@@ -59,7 +59,7 @@ public:
     void release();
 
     // Called in main if GUI should be loaded
-    void setLoadGUI() { useGUI = true; }
+    void setLoadGUI(const unsigned short* fontRangeData = nullptr) { useGUI = true; this->fontRangesData = fontRangeData; }
 
     inline RenderSystem getRenderSystem() { return renderSystem; }
     inline OperatingSystem getOS() { return operatingSystem; }
@@ -73,6 +73,7 @@ private:
     OperatingSystem operatingSystem;
     Window *mainWindow;
     bool useGUI = false;
+    const unsigned short* fontRangesData = nullptr;
 };
 
 }

@@ -30,6 +30,10 @@ enum DepthTextureFormat {
     DEPTH_COMPONENT32 = 0x81A7, DEPTH_COMPONENT32F = 0x8CAC
 };
 
+enum DepthStencilTextureFormat {
+    DEPTH24_STENCIL8 = 0x88F0, DEPTH32F_STENCIL8 = 0x8CAD
+};
+
 /*! Use TextureManager the following ways:
  * - Load texture files from your hard-disk using "getAsset"
  * - Create an 32-bit RGBA texture using createTexture
@@ -46,9 +50,19 @@ public:
     virtual TexturePtr createEmptyTexture(int w, int h, int d, const TextureSettings &settings = TextureSettings())=0;
     virtual TexturePtr createTexture(void *data, int w, int h, int d, const TextureSettings &settings = TextureSettings())=0;
 
+    /**
+     * Uses glTexStorage<x>D for creating an immutable texture.
+     */
+    virtual TexturePtr createTextureStorage(int width, const TextureSettings &settings = TextureSettings())=0;
+    virtual TexturePtr createTextureStorage(int width, int height, const TextureSettings &settings = TextureSettings())=0;
+    virtual TexturePtr createTextureStorage(int width, int height, int depth, const TextureSettings &settings = TextureSettings())=0;
+
     //! Only for FBOs!
     virtual TexturePtr createMultisampledTexture(int w, int h, int numSamples)=0;
     virtual TexturePtr createDepthTexture(int w, int h, DepthTextureFormat format = DEPTH_COMPONENT16,
+            int textureMinFilter = GL_LINEAR, int textureMagFilter = GL_LINEAR)=0;
+    virtual TexturePtr createDepthStencilTexture(
+            int width, int height, DepthStencilTextureFormat format = DEPTH24_STENCIL8,
             int textureMinFilter = GL_LINEAR, int textureMagFilter = GL_LINEAR)=0;
 
 protected:

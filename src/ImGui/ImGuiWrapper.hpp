@@ -18,11 +18,15 @@ class ImGuiWrapper : public Singleton<ImGuiWrapper>
 public:
     /**
      * Initializes ImGui for use with SDL and OpenGL.
+     * @param fontRangesData The range of the font to be loaded in the texture atlas.
+     * For more details @see ImFontGlyphRangesBuilder.
      * @param useDocking Whether to enable docking windows.
      * @param useMultiViewport Whether to enable using multiple viewport windows when the user drags ImGui windows
      * outside of the main window.
+     *
+     * To be called by AppSettings.
      */
-    void initialize(bool useDocking = true, bool useMultiViewport = true); //< to be called by AppSettings
+    void initialize(const ImWchar* fontRangesData = nullptr, bool useDocking = true, bool useMultiViewport = true);
     void shutdown(); //< to be called by AppSettings
     inline float getScaleFactor() { return uiScaleFactor; } //< The UI high DPI scale factor
 

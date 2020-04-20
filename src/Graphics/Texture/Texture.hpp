@@ -97,6 +97,15 @@ struct TextureSettings {
     int pixelType; // OpenGL: Type of one pixel data, e.g. Unsigned Byte, Float, ...
 };
 
+// For binding both the depth and stencil part of a depth-stencil texture to a shader.
+enum DepthStencilMode {
+    DEPTH_STENCIL_TEXTURE_MODE_NO_MODE_SET,
+    DEPTH_STENCIL_TEXTURE_MODE_DEPTH_COMPONENT, DEPTH_STENCIL_TEXTURE_MODE_STENCIL_COMPONENT
+};
+
+class Texture;
+typedef boost::shared_ptr<Texture> TexturePtr;
+typedef boost::weak_ptr<Texture> WeakTexturePtr;
 
 class DLL_OBJECT Texture : public boost::enable_shared_from_this<Texture>
 {
@@ -111,6 +120,8 @@ public:
     virtual void uploadPixelData(int width, void *pixelData, PixelFormat pixelFormat = PixelFormat())=0;
     virtual void uploadPixelData(int width, int height, void *pixelData, PixelFormat pixelFormat = PixelFormat())=0;
     virtual void uploadPixelData(int width, int height, int depth, void *pixelData, PixelFormat pixelFormat = PixelFormat())=0;
+    /// Do NOT access a texture view anymore after the reference count of the base texture has reached zero!
+    virtual TexturePtr createTextureView()=0;
     inline int getW() const { return w; }
     inline int getH() const { return h; }
     inline int getMinificationFilter() const { return settings.textureMinFilter; }
@@ -122,6 +133,10 @@ public:
     inline TextureType getTextureType() const { return settings.type; }
     inline bool isMultisampledTexture() const { return samples > 0; }
     inline int getNumSamples() const { return samples; }
+    inline bool hasManualDepthStencilComponentMode() const { return depthStencilMode != DEPTH_STENCIL_TEXTURE_MODE_NO_MODE_SET; }
+    inline bool hasDepthComponentMode() const { return depthStencilMode == DEPTH_STENCIL_TEXTURE_MODE_DEPTH_COMPONENT; }
+    inline bool hasStencilComponentMode() const { return depthStencilMode == DEPTH_STENCIL_TEXTURE_MODE_STENCIL_COMPONENT; }
+    inline bool setDepthStencilComponentMode(DepthStencilMode _depthStencilMode) { depthStencilMode = _depthStencilMode; }
 
 protected:
     int w;
@@ -130,10 +145,8 @@ protected:
     TextureSettings settings;
     /// For MSAA
     int samples;
+    DepthStencilMode depthStencilMode = DEPTH_STENCIL_TEXTURE_MODE_NO_MODE_SET;
 };
-
-typedef boost::shared_ptr<Texture> TexturePtr;
-typedef boost::weak_ptr<Texture> WeakTexturePtr;
 
 }
 

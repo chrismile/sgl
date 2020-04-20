@@ -183,7 +183,7 @@ void AppSettings::initializeSubsystems()
     Gamepad = new SDLGamepad;
 
     if (useGUI) {
-        ImGuiWrapper::get()->initialize();
+        ImGuiWrapper::get()->initialize(fontRangesData);
     }
 
     SystemGL::get();

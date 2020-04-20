@@ -56,4 +56,11 @@ void TextureGL::uploadPixelData(int width, int height, int depth, void *pixelDat
             pixelData);
 }
 
+TexturePtr TextureGL::createTextureView() {
+    GLuint textureViewGL;
+    glGenTextures(1, &textureViewGL);
+    glTextureView(textureViewGL, GL_TEXTURE_2D, this->texture, settings.internalFormat, 0, 1, 0, 1);
+    return TexturePtr(new TextureGL(textureViewGL, w, h, d, settings, samples));
+}
+
 }

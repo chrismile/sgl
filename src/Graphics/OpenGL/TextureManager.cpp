@@ -359,7 +359,7 @@ TexturePtr TextureManagerGL::createTexture(void *data, int width, int height, in
 }
 
 
-TexturePtr TextureManagerGL::createMultisampledTexture(int w, int h, int numSamples) // Only for FBOs!
+TexturePtr TextureManagerGL::createMultisampledTexture(int width, int height, int numSamples) // Only for FBOs!
 {
     // https://www.opengl.org/sdk/docs/man3/xhtml/glTexImage2DMultisample.xml
     //   -> "glTexImage2DMultisample is available only if the GL version is 3.2 or greater."
@@ -369,7 +369,7 @@ TexturePtr TextureManagerGL::createMultisampledTexture(int w, int h, int numSamp
         Logfile::get()->write(infoString, BLUE);
 
         // Create a normal texture as a fallback
-        return createEmptyTexture(w, h);
+        return createEmptyTexture(width, height);
     }
 
     // Make sure that numSamples is supported.
@@ -387,33 +387,153 @@ TexturePtr TextureManagerGL::createMultisampledTexture(int w, int h, int numSamp
     glGenTextures(1, &oglTexture);
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, oglTexture);
 
-    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, numSamples, GL_RGBA8, w, h, false);
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, numSamples, GL_RGBA8, width, height, false);
 
     TextureSettings settings(TEXTURE_2D_MULTISAMPLE, GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
     settings.internalFormat = GL_RGBA8;
     settings.pixelFormat = GL_RGBA8;
     settings.pixelType = GL_BYTE;
-    return TexturePtr(new TextureGL(oglTexture, w, h, settings, numSamples));
+    return TexturePtr(new TextureGL(oglTexture, width, height, settings, numSamples));
 }
 
-TexturePtr TextureManagerGL::createDepthTexture(int w, int h, DepthTextureFormat format,
+TexturePtr TextureManagerGL::createDepthTexture(
+        int width, int height, DepthTextureFormat format,
         int textureMinFilter /* = GL_LINEAR */, int textureMagFilter /* = GL_LINEAR */)
 {
     GLuint oglTexture = 0;
     glGenTextures(1, &oglTexture);
     glBindTexture(GL_TEXTURE_2D, oglTexture);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, format, 1024, 1024, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, textureMagFilter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, textureMinFilter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     TextureSettings settings(GL_TEXTURE_2D, textureMinFilter, textureMagFilter, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
-    settings.internalFormat = format;
+    settings.internalFormat = int(format);
     settings.pixelFormat = GL_DEPTH_COMPONENT;
     settings.pixelType = GL_FLOAT;
-    return TexturePtr(new TextureGL(oglTexture, w, h, settings));
+    return TexturePtr(new TextureGL(oglTexture, width, height, settings));
+}
+
+TexturePtr TextureManagerGL::createDepthStencilTexture(
+        int width, int height, DepthStencilTextureFormat format, int textureMinFilter, int textureMagFilter) {
+    GLuint oglTexture = 0;
+    glGenTextures(1, &oglTexture);
+    glBindTexture(GL_TEXTURE_2D, oglTexture);
+
+    glTexStorage2D(GL_TEXTURE_2D, 1, GLenum(format), width, height);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, textureMagFilter);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, textureMinFilter);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    TextureSettings settings(GL_TEXTURE_2D, textureMinFilter, textureMagFilter, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+    settings.internalFormat = int(format);
+    settings.pixelFormat = GL_DEPTH_COMPONENT;
+    settings.pixelType = GL_FLOAT;
+    return TexturePtr(new TextureGL(oglTexture, width, height, settings));
+}
+
+
+TexturePtr TextureManagerGL::createTextureStorage(int width, const TextureSettings &settings) {
+    GLuint TEXTURE_TYPE = GL_TEXTURE_1D;
+
+    GLuint oglTexture;
+    // Create an OpenGL texture for the image
+    glGenTextures(1, &oglTexture);
+    glBindTexture(TEXTURE_TYPE, oglTexture);
+    if (width % 4 != 0) {
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    }
+
+    glTexParameteri(TEXTURE_TYPE, GL_TEXTURE_MAG_FILTER, settings.textureMagFilter);
+    glTexParameteri(TEXTURE_TYPE, GL_TEXTURE_MIN_FILTER, settings.textureMinFilter);
+    if (settings.textureMinFilter == GL_LINEAR_MIPMAP_LINEAR
+        || settings.textureMinFilter == GL_NEAREST_MIPMAP_NEAREST
+        || settings.textureMinFilter == GL_NEAREST_MIPMAP_LINEAR
+        || settings.textureMinFilter == GL_LINEAR_MIPMAP_NEAREST) {
+        glTexParameteri(TEXTURE_TYPE, GL_GENERATE_MIPMAP, GL_TRUE);
+    } else if (settings.anisotropicFilter) {
+        float maxAnisotropy = SystemGL::get()->getMaximumAnisotropy();
+        glTexParameterf(TEXTURE_TYPE, GL_TEXTURE_MAX_ANISOTROPY_EXT, maxAnisotropy);
+    }
+
+    glTexParameteri(TEXTURE_TYPE, GL_TEXTURE_WRAP_S, settings.textureWrapS);
+
+    glTexStorage1D(TEXTURE_TYPE, 1, settings.internalFormat, width);
+
+    return TexturePtr(new TextureGL(oglTexture, width, settings, 0));
+
+}
+
+TexturePtr TextureManagerGL::createTextureStorage(int width, int height, const TextureSettings &settings) {
+    GLuint TEXTURE_TYPE = (GLuint)settings.type;
+
+    GLuint oglTexture;
+    // Create an OpenGL texture for the image
+    glGenTextures(1, &oglTexture);
+    glBindTexture(TEXTURE_TYPE, oglTexture);
+    if (width % 2 != 0 || height % 2 != 0) {
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    }
+
+    glTexParameteri(TEXTURE_TYPE, GL_TEXTURE_MAG_FILTER, settings.textureMagFilter);
+    glTexParameteri(TEXTURE_TYPE, GL_TEXTURE_MIN_FILTER, settings.textureMinFilter);
+    if (settings.textureMinFilter == GL_LINEAR_MIPMAP_LINEAR
+        || settings.textureMinFilter == GL_NEAREST_MIPMAP_NEAREST
+        || settings.textureMinFilter == GL_NEAREST_MIPMAP_LINEAR
+        || settings.textureMinFilter == GL_LINEAR_MIPMAP_NEAREST) {
+        glTexParameteri(TEXTURE_TYPE, GL_GENERATE_MIPMAP, GL_TRUE);
+    } else if (settings.anisotropicFilter) {
+        float maxAnisotropy = SystemGL::get()->getMaximumAnisotropy();
+        glTexParameterf(TEXTURE_TYPE, GL_TEXTURE_MAX_ANISOTROPY_EXT, maxAnisotropy);
+    }
+
+    glTexParameteri(TEXTURE_TYPE, GL_TEXTURE_WRAP_S, settings.textureWrapS);
+    glTexParameteri(TEXTURE_TYPE, GL_TEXTURE_WRAP_T, settings.textureWrapT);
+
+    glTexStorage2D(TEXTURE_TYPE, 1, settings.internalFormat, width, height);
+
+    return TexturePtr(new TextureGL(oglTexture, width, height, settings, 0));
+}
+
+TexturePtr TextureManagerGL::createTextureStorage(int width, int height, int depth, const TextureSettings &settings) {
+    GLuint TEXTURE_TYPE = (GLuint)settings.type;
+
+    GLuint oglTexture;
+    // Create an OpenGL texture for the image
+    glGenTextures(1, &oglTexture);
+    glBindTexture(TEXTURE_TYPE, oglTexture);
+    if (width % 2 != 0 || height % 2 != 0) {
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    }
+
+    glTexParameteri(TEXTURE_TYPE, GL_TEXTURE_MAG_FILTER, settings.textureMagFilter);
+    glTexParameteri(TEXTURE_TYPE, GL_TEXTURE_MIN_FILTER, settings.textureMinFilter);
+    if (settings.textureMinFilter == GL_LINEAR_MIPMAP_LINEAR
+        || settings.textureMinFilter == GL_NEAREST_MIPMAP_NEAREST
+        || settings.textureMinFilter == GL_NEAREST_MIPMAP_LINEAR
+        || settings.textureMinFilter == GL_LINEAR_MIPMAP_NEAREST) {
+        glTexParameteri(TEXTURE_TYPE, GL_GENERATE_MIPMAP, GL_TRUE);
+    } else if (settings.anisotropicFilter) {
+        float maxAnisotropy = SystemGL::get()->getMaximumAnisotropy();
+        glTexParameterf(TEXTURE_TYPE, GL_TEXTURE_MAX_ANISOTROPY_EXT, maxAnisotropy);
+    }
+
+    glTexParameteri(TEXTURE_TYPE, GL_TEXTURE_WRAP_S, settings.textureWrapS);
+    glTexParameteri(TEXTURE_TYPE, GL_TEXTURE_WRAP_T, settings.textureWrapT);
+    if (settings.type == TEXTURE_3D || settings.type == TEXTURE_2D_ARRAY) {
+        glTexParameteri(TEXTURE_TYPE, GL_TEXTURE_WRAP_R, settings.textureWrapR);
+    }
+
+    glTexStorage3D(TEXTURE_TYPE, 1, settings.internalFormat, width, height, depth);
+
+    return TexturePtr(new TextureGL(oglTexture, width, height, settings, 0));
 }
 
 }

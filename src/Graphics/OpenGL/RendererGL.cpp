@@ -314,6 +314,14 @@ void RendererGL::bindTexture(TexturePtr &tex, unsigned int textureUnit /* = 0 */
         } else {
             glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, textureGL->getTexture());
         }
+
+        if (tex->hasManualDepthStencilComponentMode()) {
+            if (tex->hasDepthComponentMode()) {
+                glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_DEPTH_COMPONENT);
+            } else if (tex->hasStencilComponentMode()) {
+                glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_STENCIL_INDEX);
+            }
+        }
     //}
 }
 

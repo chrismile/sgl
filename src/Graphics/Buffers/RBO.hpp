@@ -14,7 +14,8 @@
 namespace sgl {
 
 enum RenderbufferType {
-    DEPTH16, DEPTH24_STENCIL8, RGBA8
+    RBO_DEPTH16 = 0x81A5, RBO_DEPTH24_STENCIL8 = 0x88F0, RBO_DEPTH32F_STENCIL8 = 0x8CAD,
+    RBO_RGBA8 = 0x8058
 };
 
 /*! RBOs can be attached to framebuffer objects (see FBO.hpp).

@@ -15,7 +15,7 @@
 namespace sgl
 {
 
-void ImGuiWrapper::initialize(bool useDocking, bool useMultiViewport) {
+void ImGuiWrapper::initialize(const ImWchar* fontRangesData, bool useDocking, bool useMultiViewport) {
     float scaleFactorHiDPI = getHighDPIScaleFactor();
     float fontScaleFactor = scaleFactorHiDPI;
     uiScaleFactor = scaleFactorHiDPI;
@@ -55,8 +55,26 @@ void ImGuiWrapper::initialize(bool useDocking, bool useMultiViewport) {
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
 
-    // Load Fonts
-    io.Fonts->AddFontFromFileTTF("Data/Fonts/DroidSans.ttf", 16.0f*fontScaleFactor);
+    // Load fonts with specified range.
+    ImVector<ImWchar> fontRanges;
+    ImFontGlyphRangesBuilder builder;
+    builder.AddRanges(io.Fonts->GetGlyphRangesDefault());
+    //builder.AddRanges(io.Fonts->GetGlyphRangesJapanese());
+    if (fontRangesData != nullptr) {
+        builder.AddRanges(fontRangesData);
+    }
+    builder.BuildRanges(&fontRanges);
+    /*for (int i = 0; i < fontRanges.size(); i++) {
+        std::cout << fontRanges[i] << std::endl;
+    }*/
+
+    ImFont *fontTest = io.Fonts->AddFontFromFileTTF(
+            "Data/Fonts/DroidSans.ttf", 16.0f*fontScaleFactor, nullptr, fontRanges.Data);
+    // For support of more Unicode characters (e.g., also Japanese).
+    //ImFont *fontTest = io.Fonts->AddFontFromFileTTF(
+    //        "Data/Fonts/DroidSansFallback.ttf", 16.0f*fontScaleFactor, nullptr, fontRanges.Data);
+    assert(fontTest != nullptr);
+    io.Fonts->Build();
 }
 
 void ImGuiWrapper::shutdown()
