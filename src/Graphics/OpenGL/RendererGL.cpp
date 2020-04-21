@@ -754,7 +754,7 @@ void RendererGL::blurTexture(TexturePtr &tex)
 TexturePtr RendererGL::getScaledTexture(TexturePtr &tex, Point2 newSize)
 {
     // Create a framebuffer and the storage for the scaled texture
-    FramebufferObjectPtr blurFramebuffer = createFBO();
+    FramebufferObjectPtr framebuffer = createFBO();
     TexturePtr scaledTexture = TextureManager->createEmptyTexture(newSize.x, newSize.y, TextureSettings(
             tex->getMinificationFilter(), tex->getMagnificationFilter(), tex->getWrapS(), tex->getWrapT()));
 
@@ -762,8 +762,8 @@ TexturePtr RendererGL::getScaledTexture(TexturePtr &tex, Point2 newSize)
     _setNormalizedViewProj();
 
     // Create a scaled copy of the texture
-    blurFramebuffer->bindTexture(scaledTexture);
-    bindFBO(blurFramebuffer);
+    framebuffer->bindTexture(scaledTexture);
+    bindFBO(framebuffer);
     blitTexture(tex, AABB2(glm::vec2(-1,-1), glm::vec2(1,1)));
 
     // Reset the matrices
