@@ -42,19 +42,19 @@
 
 namespace sgl {
 
-VideoWriter::VideoWriter(const char *filename, int frameW, int frameH, int framerate)
+VideoWriter::VideoWriter(const std::string& filename, int frameW, int frameH, int framerate)
         : frameW(frameW), frameH(frameH), framebuffer(NULL) {
     openFile(filename, framerate);
 }
 
-VideoWriter::VideoWriter(const char *filename, int framerate) : framebuffer(NULL) {
+VideoWriter::VideoWriter(const std::string& filename, int framerate) : framebuffer(NULL) {
     sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
     frameW = window->getWidth();
     frameH = window->getHeight();
     openFile(filename, framerate);
 }
 
-void VideoWriter::openFile(const char *filename, int framerate) {
+void VideoWriter::openFile(const std::string& filename, int framerate) {
     std::string command = std::string() + "ffmpeg -y -f rawvideo -s "
                           + sgl::toString(frameW) + "x" + sgl::toString(frameH)
                           + " -pix_fmt rgb24 -r " + sgl::toString(framerate)
@@ -81,7 +81,7 @@ VideoWriter::~VideoWriter() {
     }
 }
 
-void VideoWriter::pushFrame(uint8_t *pixels) {
+void VideoWriter::pushFrame(uint8_t* pixels) {
     if (avfile) {
         fwrite((const void *)pixels, frameW*frameH*3, 1, avfile);
     }

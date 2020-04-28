@@ -42,18 +42,18 @@ class VideoWriter
 {
 public:
     /// Open mp4 video file with specified frame width and height
-    VideoWriter(const char *filename, int frameW, int frameH, int framerate = 25);
+    VideoWriter(const std::string& filename, int frameW, int frameH, int framerate = 25);
     /// Open mp4 video file with frame width and height specified by application window
-    VideoWriter(const char *filename, int framerate = 25);
+    VideoWriter(const std::string& filename, int framerate = 25);
     /// Closes file automatically
     ~VideoWriter();
     /// Push a 24-bit RGB frame (with width and height specified in constructor)
-    void pushFrame(uint8_t *pixels);
+    void pushFrame(uint8_t* pixels);
     /// Retrieves frame automatically from current window
     void pushWindowFrame();
 
 private:
-    void openFile(const char *filename, int framerate = 25);
+    void openFile(const std::string& filename, int framerate = 25);
     FILE *avfile;
     int frameW;
     int frameH;
