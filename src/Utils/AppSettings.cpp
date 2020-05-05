@@ -218,4 +218,36 @@ Window *AppSettings::setMainWindow(Window *window)
     return mainWindow;
 }
 
+void AppSettings::getCurrentDisplayMode(int& width, int& height, int& refreshRate, int displayIndex)
+{
+    SDL_DisplayMode displayMode;
+    SDL_GetCurrentDisplayMode(displayIndex, &displayMode);
+    width = displayMode.w;
+    height = displayMode.h;
+    refreshRate = displayMode.refresh_rate;
+}
+
+void AppSettings::getDesktopDisplayMode(int& width, int& height, int& refreshRate, int displayIndex)
+{
+    SDL_DisplayMode displayMode;
+    SDL_GetDesktopDisplayMode(displayIndex, &displayMode);
+    width = displayMode.w;
+    height = displayMode.h;
+    refreshRate = displayMode.refresh_rate;
+}
+
+glm::ivec2 AppSettings::getCurrentDisplayModeResolution(int displayIndex)
+{
+    SDL_DisplayMode displayMode;
+    SDL_GetCurrentDisplayMode(displayIndex, &displayMode);
+    return glm::ivec2(displayMode.w, displayMode.h);
+}
+
+glm::ivec2 AppSettings::getDesktopResolution(int displayIndex)
+{
+    SDL_DisplayMode displayMode;
+    SDL_GetDesktopDisplayMode(displayIndex, &displayMode);
+    return glm::ivec2(displayMode.w, displayMode.h);
+}
+
 }

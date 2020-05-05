@@ -10,6 +10,7 @@
 
 #include <map>
 #include <string>
+#include <glm/vec2.hpp>
 #include <Defs.hpp>
 #include <Utils/Singleton.hpp>
 #include <Utils/Convert.hpp>
@@ -65,6 +66,11 @@ public:
     inline OperatingSystem getOS() { return operatingSystem; }
     Window *getMainWindow();
     Window *setMainWindow(Window *window);
+
+    void getCurrentDisplayMode(int& width, int& height, int& refreshRate, int displayIndex = 0);
+    void getDesktopDisplayMode(int& width, int& height, int& refreshRate, int displayIndex = 0);
+    glm::ivec2 getCurrentDisplayModeResolution(int displayIndex = 0);
+    glm::ivec2 getDesktopResolution(int displayIndex = 0);
 
 private:
     SettingsFile settings;

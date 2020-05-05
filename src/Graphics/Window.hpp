@@ -9,6 +9,8 @@
 #define SRC_GRAPHICS_WINDOW_HPP_
 
 #include <functional>
+#include <glm/vec2.hpp>
+
 #include <Defs.hpp>
 #include <Graphics/Color.hpp>
 
@@ -80,6 +82,7 @@ public:
     virtual bool isFullscreen()=0;
     virtual int getWidth()=0;
     virtual int getHeight()=0;
+    virtual glm::ivec2 getWindowResolution()=0;
 };
 
 }

@@ -59,7 +59,7 @@ void VideoWriter::openFile(const std::string& filename, int framerate) {
                           + sgl::toString(frameW) + "x" + sgl::toString(frameH)
                           + " -pix_fmt rgb24 -r " + sgl::toString(framerate)
                           //+ " -i - -vf vflip -an -b:v 100M \"" + filename + "\"";
-                          + " -i - -vf vflip -an -vcodec libx264 -crf 15 \"" + filename + "\"";
+                          + " -i - -vf vflip -an -vcodec libx264 -crf 5 \"" + filename + "\""; // -crf 15
     std::cout << command << std::endl;
     avfile = popen(command.c_str(), "w");
     if (avfile == NULL) {

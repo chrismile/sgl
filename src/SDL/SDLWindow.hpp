@@ -8,8 +8,8 @@
 #ifndef SRC_SDL_SDLWINDOW_HPP_
 #define SRC_SDL_SDLWINDOW_HPP_
 
-#include <Graphics/Window.hpp>
 #include <SDL2/SDL.h>
+#include <Graphics/Window.hpp>
 
 namespace sgl {
 
@@ -46,6 +46,7 @@ public:
     virtual bool isFullscreen() { return windowSettings.fullscreen; }
     virtual int getWidth() { return windowSettings.width; }
     virtual int getHeight() { return windowSettings.height; }
+    virtual glm::ivec2 getWindowResolution() { return glm::ivec2(windowSettings.width, windowSettings.height); }
 
     //! Getting SDL specific data
     inline SDL_Window *getSDLWindow() { return sdlWindow; }
