@@ -51,6 +51,7 @@ glm::mat4 Camera::getRotationMatrix()
     return glm::lookAt(glm::vec3(0.0f), cameraFront, cameraUp);
 }
 
+
 void Camera::overwriteViewMatrix(const glm::mat4 &viewMatrix)
 {
     modelMatrix = viewMatrix;
@@ -62,20 +63,15 @@ void Camera::overwriteViewMatrix(const glm::mat4 &viewMatrix)
     glm::mat3 inverseRotationMatrix = glm::transpose(rotationMatrix);
     this->transform.position = inverseRotationMatrix * glm::vec3(-viewMatrix[3][0], -viewMatrix[3][1], -viewMatrix[3][2]);
 
-    cameraRight = glm::vec3(viewMatrix[0][0], viewMatrix[0][1], viewMatrix[0][2]);
-    cameraUp =    glm::vec3(viewMatrix[1][0], viewMatrix[1][1], viewMatrix[1][2]);
-    cameraFront = -glm::vec3(viewMatrix[2][0], viewMatrix[2][1], viewMatrix[2][2]);
+    cameraRight = glm::vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
+    cameraUp =    glm::vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
+    cameraFront = -glm::vec3(viewMatrix[0][2], viewMatrix[1][2], viewMatrix[2][2]);
 
-    // TODO: This doesn't work...
     //cameraFront.x = cos(yaw) * cos(pitch);
     //cameraFront.y = sin(pitch);
     //cameraFront.z = sin(yaw) * cos(pitch);
+    yaw = std::atan2(cameraFront.z, cameraFront.x);
     pitch = std::asin(cameraFront.y);
-    yaw = std::acos(cameraFront.z / std::cos(pitch));
-
-    /*modelMatrix = //glm::mat4(this->transform.orientation) *
-            glm::lookAt(glm::vec3(0.0f), cameraFront, cameraUp) *
-            matrixTranslation(-this->transform.position);*/
 }
 
 /*void Camera::setProjectionType(ProjectionType pt) {
