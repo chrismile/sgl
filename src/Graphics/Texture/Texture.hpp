@@ -136,7 +136,7 @@ public:
     inline bool hasManualDepthStencilComponentMode() const { return depthStencilMode != DEPTH_STENCIL_TEXTURE_MODE_NO_MODE_SET; }
     inline bool hasDepthComponentMode() const { return depthStencilMode == DEPTH_STENCIL_TEXTURE_MODE_DEPTH_COMPONENT; }
     inline bool hasStencilComponentMode() const { return depthStencilMode == DEPTH_STENCIL_TEXTURE_MODE_STENCIL_COMPONENT; }
-    inline bool setDepthStencilComponentMode(DepthStencilMode _depthStencilMode) { depthStencilMode = _depthStencilMode; }
+    inline void setDepthStencilComponentMode(DepthStencilMode _depthStencilMode) { depthStencilMode = _depthStencilMode; }
 
 protected:
     int w;
