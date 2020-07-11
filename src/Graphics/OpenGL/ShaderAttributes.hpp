@@ -63,6 +63,7 @@ class ShaderAttributesGL3 : public ShaderAttributesGL
 public:
     ShaderAttributesGL3(ShaderProgramPtr &_shader);
     ~ShaderAttributesGL3();
+    void setIndexGeometryBuffer(GeometryBufferPtr &geometryBuffer, VertexAttributeFormat format);
     ShaderAttributesPtr copy(ShaderProgramPtr &_shader, bool ignoreMissingAttrs = true);
 
     /*! Adds a geometry buffer to the shader attributes.

@@ -35,9 +35,9 @@ SystemGL::SystemGL()
     // Get OpenGL version (including GLSL)
     versionString = (char*)glGetString(GL_VERSION);
     shadingLanguageVersionString = (char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
-    mayorVersionNumber = fromString<int>(std::string()+versionString.at(0));
+    majorVersionNumber = fromString<int>(std::string()+versionString.at(0));
     minorVersionNumber = fromString<int>(std::string()+versionString.at(2));
-    mayorShadingLanguageVersionNumber =  fromString<int>(std::string()+shadingLanguageVersionString.at(0));
+    majorShadingLanguageVersionNumber =  fromString<int>(std::string()+shadingLanguageVersionString.at(0));
 
     std::string tempVersionString;
     std::string::const_iterator it = shadingLanguageVersionString.begin(); ++it; ++it;
@@ -79,9 +79,9 @@ bool SystemGL::isGLExtensionAvailable(const char *extensionName)
 // Returns whether the current OpenGL context supports the features of the passed OpenGL version
 // You could for example call "openglVersionMinimum(3)" or "openglVersionMinimum(2, 1)"
 bool SystemGL::openglVersionMinimum(int major, int minor /* = 0 */) {
-    if (mayorVersionNumber < major) {
+    if (majorVersionNumber < major) {
         return false;
-    } else if (mayorVersionNumber == major && minorVersionNumber < minor) {
+    } else if (majorVersionNumber == major && minorVersionNumber < minor) {
         return false;
     }
     return true;

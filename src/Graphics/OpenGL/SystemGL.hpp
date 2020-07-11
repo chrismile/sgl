@@ -23,9 +23,9 @@ public:
 
     //! Information about version of OpenGL
     bool isGLExtensionAvailable(const char *extensionName);
-    inline int getGLMajorVersionNumber() { return mayorVersionNumber; }
+    inline int getGLMajorVersionNumber() { return majorVersionNumber; }
     inline int getGLMinorVersionNumber() { return minorVersionNumber; }
-    inline int getGLMajorShadingLanguageVersionNumber() { return mayorShadingLanguageVersionNumber; }
+    inline int getGLMajorShadingLanguageVersionNumber() { return majorShadingLanguageVersionNumber; }
     inline int getGLMinorShadingLanguageVersionNumber() { return minorShadingLanguageVersionNumber; }
     inline std::string getVendorString() { return vendorString; }
 
@@ -51,9 +51,9 @@ private:
     std::string versionString;
     std::string vendorString;
     std::string shadingLanguageVersionString;
-    int mayorVersionNumber;
+    int majorVersionNumber;
     int minorVersionNumber;
-    int mayorShadingLanguageVersionNumber;
+    int majorShadingLanguageVersionNumber;
     int minorShadingLanguageVersionNumber;
     int maximumTextureSize;
     float maximumAnisotropy;

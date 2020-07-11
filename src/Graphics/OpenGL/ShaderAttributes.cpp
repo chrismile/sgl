@@ -93,6 +93,18 @@ int vertexAttrFormatToIntSize(VertexAttributeFormat format) {
     }
 }
 
+void ShaderAttributesGL3::setIndexGeometryBuffer(GeometryBufferPtr &geometryBuffer, VertexAttributeFormat format)
+{
+    ShaderAttributesGL::setIndexGeometryBuffer(geometryBuffer, format);
+
+    RendererGL *rendererGL = static_cast<RendererGL*>(Renderer);
+    rendererGL->bindVAO(vaoID);
+    if (indexBuffer) {
+        indexBuffer->bind();
+    }
+    rendererGL->bindVAO(0);
+}
+
 ShaderAttributesPtr ShaderAttributesGL3::copy(ShaderProgramPtr &_shader, bool ignoreMissingAttrs /* = true */)
 {
     ShaderAttributesGL3 *obj = new ShaderAttributesGL3(_shader);
@@ -270,7 +282,7 @@ void ShaderAttributesGL3::addGeometryBuffer(GeometryBufferPtr &geometryBuffer,
 }
 
 
-    void ShaderAttributesGL3::bind()
+void ShaderAttributesGL3::bind()
 {
     bind(shader);
 }
@@ -280,9 +292,6 @@ void ShaderAttributesGL3::bind(ShaderProgramPtr passShader)
     passShader->bind();
     RendererGL *rendererGL = static_cast<RendererGL*>(Renderer);
     rendererGL->bindVAO(vaoID);
-    if (indexBuffer) {
-        indexBuffer->bind();
-    }
 }
 
 
