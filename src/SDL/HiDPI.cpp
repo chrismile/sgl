@@ -71,7 +71,6 @@ float getHighDPIScaleFactor() {
     SDL_SysWMinfo wminfo;
     SDL_VERSION(&wminfo.version);
     if (SDL_GetWindowWMInfo(window, &wminfo)) {
-        const char *subsystem = "Unknown Window System";
         switch (wminfo.subsystem) {
             case SDL_SYSWM_X11:
 #if defined(SDL_VIDEO_DRIVER_X11)

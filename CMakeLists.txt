@@ -9,6 +9,14 @@ file(GLOB_RECURSE SOURCES src/*.cpp src/*.c)
 add_library(sgl SHARED ${SOURCES})
 include_directories(src)
 
+if(MSVC)
+	set(CMAKE_CXX_FLAGS "-W3 /EHsc")
+elseif(CMAKE_COMPILER_IS_GNUCXX)
+	set(CMAKE_CXX_FLAGS "-Wall")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+	set(CMAKE_CXX_FLAGS "-Wall")
+endif()
+
 #make VERBOSE=1
 
 find_package(glm REQUIRED)

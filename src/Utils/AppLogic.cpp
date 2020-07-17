@@ -94,7 +94,7 @@ void AppLogic::run()
         window->clear(Color(0, 0, 0));
         render();
 
-        if (abs((long int)fpsTimer - (long int)Timer->getTicksMicroseconds()) > fpsCounterUpdateFrequency) {
+        if (uint64_t(abs((int64_t)fpsTimer - (int64_t)Timer->getTicksMicroseconds())) > fpsCounterUpdateFrequency) {
             fps = 1.0f/dt;//Timer->getElapsedSeconds();
             fpsTimer = Timer->getTicksMicroseconds();
             if (printFPS) {

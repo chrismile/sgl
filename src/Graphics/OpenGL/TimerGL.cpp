@@ -53,7 +53,6 @@ void TimerGL::startCPU(const std::string &name, float timeStamp)
     auto it = regionNameMap.find(name);
     if (it == regionNameMap.end()) {
         // Create a new query & add the data of a new region
-        GLuint queryID = 0;
         regionNameMap.insert(make_pair(name, index));
         queryIDs.push_back(0); // Just for GPU, add any value.
         isGPUQuery.push_back(false);

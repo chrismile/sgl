@@ -24,6 +24,9 @@ RenderbufferObjectGL::RenderbufferObjectGL(int _width, int _height, Renderbuffer
     case RBO_DEPTH24_STENCIL8:
         type = GL_DEPTH24_STENCIL8;
         break;
+    case RBO_DEPTH32F_STENCIL8:
+        type = GL_DEPTH32F_STENCIL8;
+        break;
     case RBO_RGBA8:
         type = GL_RGBA8;
         break;

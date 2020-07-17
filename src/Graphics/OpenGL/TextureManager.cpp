@@ -129,13 +129,12 @@ TexturePtr TextureManagerGL::loadAsset(TextureInfo &textureInfo)
     GLuint oglTexture;
     SDL_Surface *sdlTexture;
     GLint format = GL_RGBA;
-    int w = 0, h = 0, bpp = 32;
+    int w = 0, h = 0;
 
     sdlTexture = image;
 
     switch (image->format->BitsPerPixel) {
     case 24:
-        bpp = 24;
         if (textureInfo.sRGB) {
             format  = GL_SRGB;
         } else {
@@ -143,7 +142,6 @@ TexturePtr TextureManagerGL::loadAsset(TextureInfo &textureInfo)
         }
         break;
     case 32:
-        bpp = 32;
         if (textureInfo.sRGB) {
             format  = GL_SRGB_ALPHA;
         } else {
