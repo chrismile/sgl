@@ -183,7 +183,7 @@ void AppSettings::initializeSubsystems()
     Gamepad = new SDLGamepad;
 
     if (useGUI) {
-        ImGuiWrapper::get()->initialize(fontRangesData);
+        ImGuiWrapper::get()->initialize(fontRangesData, useDocking, useMultiViewport, uiScaleFactor);
     }
 
     SystemGL::get();
@@ -206,6 +206,15 @@ void AppSettings::release()
     //Mix_CloseAudio();
     //TTF_Quit();
     SDL_Quit();
+}
+
+void AppSettings::setLoadGUI(
+        const unsigned short* fontRangeData, bool useDocking, bool useMultiViewport, float uiScaleFactor) {
+    useGUI = true;
+    this->fontRangesData = fontRangeData;
+    this->useDocking = useDocking;
+    this->useMultiViewport = useMultiViewport;
+    this->uiScaleFactor = uiScaleFactor;
 }
 
 Window *AppSettings::getMainWindow()

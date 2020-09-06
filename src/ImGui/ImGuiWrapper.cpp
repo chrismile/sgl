@@ -15,10 +15,12 @@
 namespace sgl
 {
 
-void ImGuiWrapper::initialize(const ImWchar* fontRangesData, bool useDocking, bool useMultiViewport) {
+void ImGuiWrapper::initialize(
+        const ImWchar* fontRangesData, bool useDocking, bool useMultiViewport, float uiScaleFactor) {
     float scaleFactorHiDPI = getHighDPIScaleFactor();
-    float fontScaleFactor = scaleFactorHiDPI;
-    uiScaleFactor = scaleFactorHiDPI;
+    this->uiScaleFactor = uiScaleFactor;
+    uiScaleFactor = scaleFactorHiDPI * uiScaleFactor;
+    float fontScaleFactor = uiScaleFactor;
 
     // --- Code from here on partly taken from ImGui usage example ---
     // Setup Dear ImGui binding
@@ -32,7 +34,7 @@ void ImGuiWrapper::initialize(const ImWchar* fontRangesData, bool useDocking, bo
         io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     }
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
-    //io.FontGlobalScale = scaleFactorHiDPI*2.0f;
+    //io.FontGlobalScale = fontScaleFactor*2.0f;
 
     SDLWindow *window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
     SDL_GLContext context = window->getGLContext();

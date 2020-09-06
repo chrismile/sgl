@@ -23,10 +23,14 @@ public:
      * @param useDocking Whether to enable docking windows.
      * @param useMultiViewport Whether to enable using multiple viewport windows when the user drags ImGui windows
      * outside of the main window.
+     * @param uiScaleFactor A factor for scaling the UI elements. Is multiplied with a high DPI scaling factor.
+     * Use @see overwriteHighDPIScaleFactor to manually overwrite the high DPI scaling factor if necessary.
      *
      * To be called by AppSettings.
      */
-    void initialize(const ImWchar* fontRangesData = nullptr, bool useDocking = true, bool useMultiViewport = true);
+    void initialize(
+            const ImWchar* fontRangesData = nullptr, bool useDocking = true, bool useMultiViewport = true,
+            float uiScaleFactor = 1.0f);
     void shutdown(); //< to be called by AppSettings
     inline float getScaleFactor() { return uiScaleFactor; } //< The UI high DPI scale factor
 

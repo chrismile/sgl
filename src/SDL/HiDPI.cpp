@@ -28,11 +28,12 @@ float getScreenScalingX11(Display *display)
 
     XrmValue value;
     char *type = NULL;
+    float scalingFactor = 1.0f;
     if (XrmGetResource(database, "Xft.dpi", "String", &type, &value) && value.addr) {
-        float dpi = atof(value.addr);
-        return dpi/96.0f;
+        scalingFactor = atof(value.addr) / 96.0f;
     }
-    return 1.0f;
+    XrmDestroyDatabase(database);
+    return scalingFactor;
 }
 
 }
@@ -77,7 +78,7 @@ float getHighDPIScaleFactor() {
                 scaleFactorHiDPI = getScreenScalingX11(wminfo.info.x11.display);
 #endif
                 break;
-            case SDL_SYSWM_WINDOWS: // TODO
+            case SDL_SYSWM_WINDOWS:
 #if defined(SDL_VIDEO_DRIVER_WINDOWS)
                 scaleFactorHiDPI = getScreenScalingWindows();
 #endif
@@ -100,6 +101,11 @@ float getHighDPIScaleFactor() {
         Logfile::get()->writeError(std::string() + "Couldn't get window information: " + SDL_GetError());
     }
     return scaleFactorHiDPI;
+}
+
+void overwriteHighDPIScaleFactor(float scaleFactor) {
+    scaleFactorRetrieved = true;
+    scaleFactorHiDPI = scaleFactor;
 }
 
 }

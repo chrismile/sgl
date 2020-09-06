@@ -13,6 +13,11 @@ namespace sgl
  */
 float getHighDPIScaleFactor();
 
+/**
+ * @return Overwrites the scaling factor with a manually chosen value.
+ */
+void overwriteHighDPIScaleFactor(float scaleFactor);
+
 }
 
 #endif //SGL_HIDPI_HPP

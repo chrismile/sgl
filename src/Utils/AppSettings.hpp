@@ -60,7 +60,9 @@ public:
     void release();
 
     // Called in main if GUI should be loaded
-    void setLoadGUI(const unsigned short* fontRangeData = nullptr) { useGUI = true; this->fontRangesData = fontRangeData; }
+    void setLoadGUI(
+            const unsigned short* fontRangeData = nullptr, bool useDocking = true, bool useMultiViewport = true,
+            float uiScaleFactor = 1.0f);
 
     inline RenderSystem getRenderSystem() { return renderSystem; }
     inline OperatingSystem getOS() { return operatingSystem; }
@@ -78,8 +80,13 @@ private:
     RenderSystem renderSystem;
     OperatingSystem operatingSystem;
     Window *mainWindow;
+
+    // UI data.
     bool useGUI = false;
     const unsigned short* fontRangesData = nullptr;
+    bool useDocking = true;
+    bool useMultiViewport = true;
+    float uiScaleFactor = 1.0f;
 };
 
 }
