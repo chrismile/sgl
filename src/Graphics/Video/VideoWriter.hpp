@@ -31,6 +31,7 @@
 
 #include <string>
 #include <cstdio>
+#include <Graphics/OpenGL/RendererGL.hpp>
 
 namespace sgl {
 
@@ -42,9 +43,9 @@ class VideoWriter
 {
 public:
     /// Open mp4 video file with specified frame width and height
-    VideoWriter(const std::string& filename, int frameW, int frameH, int framerate = 25);
+    VideoWriter(const std::string& filename, int frameW, int frameH, int framerate = 30, bool useAsyncCopy = true);
     /// Open mp4 video file with frame width and height specified by application window
-    VideoWriter(const std::string& filename, int framerate = 25);
+    VideoWriter(const std::string& filename, int framerate = 30, bool useAsyncCopy = true);
     /// Closes file automatically
     ~VideoWriter();
     /// Push a 24-bit RGB frame (with width and height specified in constructor)
@@ -54,6 +55,26 @@ public:
 
 private:
     void openFile(const std::string& filename, int framerate = 25);
+
+    // Asynchronous CPU/GPU data transfer.
+    void initializeReadBackBuffers();
+    bool isReadBackBufferFree();
+    bool isReadBackBufferEmpty();
+    void addCurrentFrameToQueue();
+    void readBackFinishedFrames();
+    void readBackOldestFrame();
+    bool useAsyncCopy;
+    static const size_t NUM_RB_BUFFERS = 4; ///< Sufficient for up to 4 frames queued at the same time.
+    struct ReadBackBuffer {
+        GLuint pbo = 0u;
+        GLsync fence = nullptr;
+    };
+    ReadBackBuffer readBackBuffers[NUM_RB_BUFFERS];
+    size_t startPointer = 0, endPointer = 0;
+    size_t queueCapacity = NUM_RB_BUFFERS;
+    size_t queueSize = 0;
+
+    // Frame & file data.
     FILE *avfile;
     int frameW;
     int frameH;

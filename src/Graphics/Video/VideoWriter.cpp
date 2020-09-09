@@ -42,15 +42,22 @@
 
 namespace sgl {
 
-VideoWriter::VideoWriter(const std::string& filename, int frameW, int frameH, int framerate)
-        : frameW(frameW), frameH(frameH), framebuffer(NULL) {
+VideoWriter::VideoWriter(const std::string& filename, int frameW, int frameH, int framerate, bool useAsyncCopy)
+        : useAsyncCopy(useAsyncCopy), frameW(frameW), frameH(frameH), framebuffer(NULL) {
+    if (useAsyncCopy) {
+        initializeReadBackBuffers();
+    }
     openFile(filename, framerate);
 }
 
-VideoWriter::VideoWriter(const std::string& filename, int framerate) : framebuffer(NULL) {
+VideoWriter::VideoWriter(const std::string& filename, int framerate, bool useAsyncCopy)
+        : useAsyncCopy(useAsyncCopy), framebuffer(NULL) {
     sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
     frameW = window->getWidth();
     frameH = window->getHeight();
+    if (useAsyncCopy) {
+        initializeReadBackBuffers();
+    }
     openFile(filename, framerate);
 }
 
@@ -69,6 +76,12 @@ void VideoWriter::openFile(const std::string& filename, int framerate) {
 }
 
 VideoWriter::~VideoWriter() {
+    if (useAsyncCopy) {
+        while (!isReadBackBufferEmpty()) {
+            readBackOldestFrame();
+        }
+    }
+
     if (framebuffer != NULL) {
 #ifdef __USE_ISOC11
         free(framebuffer);
@@ -105,36 +118,164 @@ void VideoWriter::pushWindowFrame() {
 #endif
     }
 
-    /*
-     * For some reasons, we found manual synchronization to be necessary on NVIDIA GPUs under some circumstances.
-     */
-    GLsync fence;
-    fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-    bool renderingFinished = false;
-    while (!renderingFinished) {
-        GLenum signalType = glClientWaitSync(fence, GL_SYNC_FLUSH_COMMANDS_BIT, GL_TIMEOUT_IGNORED);
+    if (useAsyncCopy) {
+        if (!isReadBackBufferFree()) {
+            readBackOldestFrame();
+        }
+        addCurrentFrameToQueue();
+        readBackFinishedFrames();
+    } else {
+        /*
+         * For some reasons, we found manual synchronization to be necessary on NVIDIA GPUs under some circumstances.
+         */
+        GLsync fence;
+        fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+        bool renderingFinished = false;
+        while (!renderingFinished) {
+            GLenum signalType = glClientWaitSync(fence, GL_SYNC_FLUSH_COMMANDS_BIT, GL_TIMEOUT_IGNORED);
+            if (signalType == GL_ALREADY_SIGNALED || signalType == GL_CONDITION_SATISFIED) {
+                renderingFinished = true;
+            } else {
+                if (signalType == GL_WAIT_FAILED) {
+                    sgl::Logfile::get()->writeError("ERROR in VideoWriter::pushWindowFrame: Wait for sync failed.");
+                    exit(-1);
+                } else if (signalType == GL_TIMEOUT_EXPIRED) {
+                    sgl::Logfile::get()->writeError(
+                            "ERROR in VideoWriter::pushWindowFrame: Wait for sync has timed out.");
+                    continue;
+                }
+            }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+        glDeleteSync(fence);
+
+        if (frameW % 4 != 0) {
+            glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        }
+        glReadPixels(0, 0, frameW, frameH, GL_RGB, GL_UNSIGNED_BYTE, framebuffer);
+        pushFrame(framebuffer);
+    }
+}
+
+void VideoWriter::initializeReadBackBuffers() {
+    for (size_t i = 0; i < NUM_RB_BUFFERS; i++) {
+        glGenBuffers(1, &readBackBuffers[i].pbo);
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, readBackBuffers[i].pbo);
+        glBufferData(GL_PIXEL_PACK_BUFFER, frameW * frameH * 3, 0, GL_STREAM_READ);
+    }
+}
+
+bool VideoWriter::isReadBackBufferFree() {
+    return queueSize < queueCapacity;
+}
+
+bool VideoWriter::isReadBackBufferEmpty() {
+    return queueSize == 0;
+}
+
+void VideoWriter::addCurrentFrameToQueue() {
+    // 1. Query a free read back buffer.
+    assert(isReadBackBufferFree());
+    ReadBackBuffer& readBackBuffer = readBackBuffers[endPointer];
+
+    // 2. Read the framebuffer data to the PBO (asynchronously).
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, readBackBuffer.pbo);
+    //glReadBuffer(GL_BACK);
+    if (frameW % 4 != 0) {
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    }
+    glReadPixels(0, 0, frameW, frameH, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+
+    // 3. Add a fence sync to later wait on. Push the read back buffer on the queue.
+    assert(readBackBuffer.fence == nullptr);
+    readBackBuffer.fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+    endPointer = (endPointer + 1) % queueCapacity;
+    queueSize++;
+}
+
+void VideoWriter::readBackFinishedFrames() {
+    while (queueSize > 0) {
+        ReadBackBuffer& readBackBuffer = readBackBuffers[startPointer];
+        assert(readBackBuffer.fence != nullptr);
+
+        GLenum signalType = glClientWaitSync(readBackBuffer.fence, GL_SYNC_FLUSH_COMMANDS_BIT, 0);
         if (signalType == GL_ALREADY_SIGNALED || signalType == GL_CONDITION_SATISFIED) {
-            renderingFinished = true;
+            glDeleteSync(readBackBuffer.fence);
+            readBackBuffer.fence = nullptr;
+
+            glBindBuffer(GL_COPY_READ_BUFFER, readBackBuffer.pbo);
+            char *pboData = reinterpret_cast<char*>(glMapBufferRange(
+                    GL_COPY_READ_BUFFER, 0, frameW * frameH * 3, GL_MAP_READ_BIT));
+            memcpy(framebuffer, pboData, frameW * frameH * 3);
+            glUnmapBuffer(GL_COPY_READ_BUFFER);
+            pushFrame(framebuffer);
+
+            // Pop operation.
+            startPointer = (startPointer + 1) % queueCapacity;
+            queueSize--;
         } else {
             if (signalType == GL_WAIT_FAILED) {
-                sgl::Logfile::get()->writeError("ERROR in VideoWriter::pushWindowFrame: Wait for sync failed.");
-                exit(-1);
+                // Fail gracefully.
+                sgl::Logfile::get()->writeError("ERROR in VideoWriter::readBackOldestFrame: Wait for sync failed.");
+
+                glDeleteSync(readBackBuffer.fence);
+                readBackBuffer.fence = nullptr;
+
+                // Pop operation.
+                startPointer = (startPointer + 1) % queueCapacity;
+                queueSize--;
+
+                break;
+            } else if (signalType == GL_TIMEOUT_EXPIRED) {
+                // Nothing ready yet.
+                break;
+            }
+        }
+    }
+}
+
+void VideoWriter::readBackOldestFrame() {
+    ReadBackBuffer& readBackBuffer = readBackBuffers[startPointer];
+    assert(readBackBuffer.fence != nullptr);
+
+    bool renderingFinished = false;
+    while (true) {
+        GLenum signalType = glClientWaitSync(readBackBuffer.fence, GL_SYNC_FLUSH_COMMANDS_BIT, GL_TIMEOUT_IGNORED);
+        if (signalType == GL_ALREADY_SIGNALED || signalType == GL_CONDITION_SATISFIED) {
+            renderingFinished = true;
+            break;
+        } else {
+            if (signalType == GL_WAIT_FAILED) {
+                // Fail gracefully.
+                sgl::Logfile::get()->writeError("ERROR in VideoWriter::readBackOldestFrame: Wait for sync failed.");
+                //exit(-1);
+                break;
             } else if (signalType == GL_TIMEOUT_EXPIRED) {
                 sgl::Logfile::get()->writeError(
-                        "ERROR in VideoWriter::pushWindowFrame: Wait for sync has timed out.");
+                        "WARNING in VideoWriter::readBackOldestFrame: Wait for sync has timed out.");
                 continue;
             }
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
-    glDeleteSync(fence);
+    glDeleteSync(readBackBuffer.fence);
+    readBackBuffer.fence = nullptr;
 
-    if (frameW % 4 != 0) {
-        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    if (renderingFinished) {
+        glBindBuffer(GL_COPY_READ_BUFFER, readBackBuffer.pbo);
+        char *pboData = reinterpret_cast<char*>(glMapBufferRange(
+                GL_COPY_READ_BUFFER, 0, frameW * frameH * 3, GL_MAP_READ_BIT));
+        memcpy(framebuffer, pboData, frameW * frameH * 3);
+        glUnmapBuffer(GL_COPY_READ_BUFFER);
+        pushFrame(framebuffer);
     }
-    glReadPixels(0, 0, frameW, frameH, GL_RGB, GL_UNSIGNED_BYTE, framebuffer);
-    pushFrame(framebuffer);
+
+    // Pop operation.
+    startPointer = (startPointer + 1) % queueCapacity;
+    queueSize--;
 }
 
 }
