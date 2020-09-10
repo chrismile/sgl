@@ -41,7 +41,7 @@ RenderbufferObjectGL::RenderbufferObjectGL(int _width, int _height, Renderbuffer
 
 RenderbufferObjectGL::~RenderbufferObjectGL()
 {
-    glDeleteRenderbuffersEXT(1, &rbo);
+    glDeleteRenderbuffers(1, &rbo);
 }
 
 }

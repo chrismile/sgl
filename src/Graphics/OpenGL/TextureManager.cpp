@@ -357,7 +357,8 @@ TexturePtr TextureManagerGL::createTexture(void *data, int width, int height, in
 }
 
 
-TexturePtr TextureManagerGL::createMultisampledTexture(int width, int height, int numSamples) // Only for FBOs!
+TexturePtr TextureManagerGL::createMultisampledTexture(
+        int width, int height, int numSamples, int internalFormat, bool fixedSampleLocations)
 {
     // https://www.opengl.org/sdk/docs/man3/xhtml/glTexImage2DMultisample.xml
     //   -> "glTexImage2DMultisample is available only if the GL version is 3.2 or greater."
@@ -385,11 +386,11 @@ TexturePtr TextureManagerGL::createMultisampledTexture(int width, int height, in
     glGenTextures(1, &oglTexture);
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, oglTexture);
 
-    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, numSamples, GL_RGBA8, width, height, false);
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, numSamples, internalFormat, width, height, fixedSampleLocations);
 
     TextureSettings settings(TEXTURE_2D_MULTISAMPLE, GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
-    settings.internalFormat = GL_RGBA8;
-    settings.pixelFormat = GL_RGBA8;
+    settings.internalFormat = internalFormat;
+    settings.pixelFormat = internalFormat;
     settings.pixelType = GL_BYTE;
     return TexturePtr(new TextureGL(oglTexture, width, height, settings, numSamples));
 }

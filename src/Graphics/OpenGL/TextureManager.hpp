@@ -29,8 +29,13 @@ public:
     TexturePtr createTextureStorage(int width, int height, const TextureSettings &settings = TextureSettings());
     TexturePtr createTextureStorage(int width, int height, int depth, const TextureSettings &settings = TextureSettings());
 
-    //! Only for FBOs!
-    TexturePtr createMultisampledTexture(int width, int height, int numSamples);
+    /**
+     * Only for FBOs!
+     * @param fixedSampleLocations Must be true if the texture is used in combination with a renderbuffer.
+     */
+    TexturePtr createMultisampledTexture(
+            int width, int height, int numSamples,
+            int internalFormat = 0x8058 /*GL_RGBA8*/, bool fixedSampleLocations = false);
     //! bitsPerPixel must be 16, 24 or 32
     TexturePtr createDepthTexture(
             int width, int height, DepthTextureFormat format = DEPTH_COMPONENT16,

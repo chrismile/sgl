@@ -141,24 +141,41 @@ ShaderProgramPtr ShaderManagerGL::createShaderProgram(const std::list<std::strin
     for (const std::string &shaderID : shaderIDs) {
         ShaderPtr shader;
         std::string shaderID_lower = boost::algorithm::to_lower_copy(shaderID);
-        if (boost::algorithm::contains(shaderID_lower.c_str(), "vert")) {
-            shader = getShader(shaderID.c_str(), VERTEX_SHADER);
-        } else if (boost::algorithm::contains(shaderID_lower.c_str(), "frag")) {
-            shader = getShader(shaderID.c_str(), FRAGMENT_SHADER);
-        } else if (boost::algorithm::contains(shaderID_lower.c_str(), "geom")) {
-            shader = getShader(shaderID.c_str(), GEOMETRY_SHADER);
-        } else if (boost::algorithm::contains(shaderID_lower.c_str(), "tess")) {
-            if (boost::algorithm::contains(shaderID_lower.c_str(), "eval")) {
-                shader = getShader(shaderID.c_str(), TESSELATION_EVALUATION_SHADER);
-            } else if (boost::algorithm::contains(shaderID_lower.c_str(), "control")) {
-                shader = getShader(shaderID.c_str(), TESSELATION_CONTROL_SHADER);
-            }
-        } else if (boost::algorithm::contains(shaderID_lower.c_str(), "comp")) {
-            shader = getShader(shaderID.c_str(), COMPUTE_SHADER);
+        ShaderType shaderType = VERTEX_SHADER;
+        if (boost::algorithm::ends_with(shaderID_lower.c_str(), "vertex")) {
+            shaderType = VERTEX_SHADER;
+        } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "fragment")) {
+            shaderType = FRAGMENT_SHADER;
+        } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "geometry")) {
+            shaderType = GEOMETRY_SHADER;
+        } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "tesselationevaluation")) {
+            shaderType = TESSELATION_EVALUATION_SHADER;
+        } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "tesselationcontrol")) {
+            shaderType = TESSELATION_CONTROL_SHADER;
+        } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "compute")) {
+            shaderType = COMPUTE_SHADER;
         } else {
-            Logfile::get()->writeError(std::string() + "ERROR: ShaderManagerGL::createShaderProgram: "
-                    + "Unknown shader type (id: \"" + shaderID + "\")");
+            if (boost::algorithm::contains(shaderID_lower.c_str(), "vert")) {
+                shaderType = VERTEX_SHADER;
+            } else if (boost::algorithm::contains(shaderID_lower.c_str(), "frag")) {
+                shaderType = FRAGMENT_SHADER;
+            } else if (boost::algorithm::contains(shaderID_lower.c_str(), "geom")) {
+                shaderType = GEOMETRY_SHADER;
+            } else if (boost::algorithm::contains(shaderID_lower.c_str(), "tess")) {
+                if (boost::algorithm::contains(shaderID_lower.c_str(), "eval")) {
+                    shaderType = TESSELATION_EVALUATION_SHADER;
+                } else if (boost::algorithm::contains(shaderID_lower.c_str(), "control")) {
+                    shaderType = TESSELATION_CONTROL_SHADER;
+                }
+            } else if (boost::algorithm::contains(shaderID_lower.c_str(), "comp")) {
+                shaderType = COMPUTE_SHADER;
+            } else {
+                Logfile::get()->writeError(
+                        std::string() + "ERROR: ShaderManagerGL::createShaderProgram: "
+                        + "Unknown shader type (id: \"" + shaderID + "\")");
+            }
         }
+        shader = getShader(shaderID.c_str(), shaderType);
         shaderProgram->attachShader(shader);
     }
     dumpTextDebugStatic = false;

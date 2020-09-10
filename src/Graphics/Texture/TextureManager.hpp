@@ -58,7 +58,9 @@ public:
     virtual TexturePtr createTextureStorage(int width, int height, int depth, const TextureSettings &settings = TextureSettings())=0;
 
     //! Only for FBOs!
-    virtual TexturePtr createMultisampledTexture(int w, int h, int numSamples)=0;
+    virtual TexturePtr createMultisampledTexture(
+            int width, int height, int numSamples,
+            int internalFormat = 0x8058 /*GL_RGBA8*/, bool fixedSampleLocations = false)=0;
     virtual TexturePtr createDepthTexture(int w, int h, DepthTextureFormat format = DEPTH_COMPONENT16,
             int textureMinFilter = GL_LINEAR, int textureMagFilter = GL_LINEAR)=0;
     virtual TexturePtr createDepthStencilTexture(
