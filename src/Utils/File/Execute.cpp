@@ -97,7 +97,7 @@ int executeProgram(const char *appName, std::list<std::string> &args) {
 
 #ifndef _WIN32
 std::string exec(const char* command) {
-    char *buffer = new char[128];
+    char *buffer = new char[256];
     std::string output;
     FILE *pipe = popen(command, "r");
     if (!pipe)
