@@ -19,6 +19,8 @@ endif()
 
 #make VERBOSE=1
 
+cmake_policy(SET CMP0012 NEW)
+find_package(OpenMP REQUIRED)
 find_package(glm REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(TinyXML2 REQUIRED)
@@ -45,6 +47,12 @@ ELSE()
 ENDIF()
 target_link_libraries(sgl ${Boost_LIBRARIES} ${GLEW_LIBRARIES})
 include_directories(${Boost_INCLUDES} ${GLEW_INCLUDES})
+
+if(OPENMP_FOUND)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+endif()
 
 # For make install. TODO: "include/sgl/"
 install (TARGETS sgl DESTINATION lib)

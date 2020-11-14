@@ -123,6 +123,8 @@ protected:
 
 };
 
+typedef boost::shared_ptr<Camera> CameraPtr;
+
 }
 
 /*! SRC_GRAPHICS_SCENE_CAMERA_HPP_ */
