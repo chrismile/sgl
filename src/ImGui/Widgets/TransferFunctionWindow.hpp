@@ -87,13 +87,12 @@ public:
     bool loadFunctionFromFile(const std::string& filename);
     void updateAvailableFiles();
 
-    bool renderGUI();
+    bool renderGui();
     void update(float dt);
 
     void setClearColor(const sgl::Color& clearColor);
     void setShow(const bool showWindow) { showTransferFunctionWindow = showWindow; }
     inline bool& getShowTransferFunctionWindow() { return showTransferFunctionWindow; }
-    void setHistogram(const std::vector<int>& occurences);
     void computeHistogram(const std::vector<float>& attributes, float minAttr, float maxAttr);
     void setUseLinearRGB(bool useLinearRGB);
 
@@ -127,6 +126,15 @@ private:
     bool selectNearestOpacityPoint(int& currentSelectionIndex, const glm::vec2& mousePosWidget);
     bool selectNearestColorPoint(int& currentSelectionIndex, const glm::vec2& mousePosWidget);
 
+    // Histogram data.
+    void setHistogram(const std::vector<int>& occurences);
+    void recomputeHistogram();
+    int histogramResolution = 256;
+    std::vector<float> histogram;
+    float minAttr = 0.0f, maxAttr = 1.0f;
+    std::vector<float> attributes;
+
+
     // Drag-and-drop data
     SelectedPointType selectedPointType = SELECTED_POINT_TYPE_NONE;
     bool dragging = false;
@@ -147,7 +155,6 @@ private:
     std::string saveFileString = "Standard.xml";
     std::vector<std::string> availableFiles;
     int selectedFileIndex = -1;
-    std::vector<float> histogram;
     void rebuildTransferFunctionMap();
     void rebuildTransferFunctionMap_sRGB();
     void rebuildTransferFunctionMap_LinearRGB();

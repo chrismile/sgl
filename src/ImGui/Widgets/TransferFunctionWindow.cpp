@@ -196,7 +196,7 @@ void TransferFunctionWindow::setClearColor(const sgl::Color& clearColor) {
 }
 
 void TransferFunctionWindow::setHistogram(const std::vector<int>& occurences) {
-    int histogramResolution = static_cast<int>(occurences.size());
+    histogramResolution = static_cast<int>(occurences.size());
     histogram.clear();
     histogram.resize(histogramResolution);
     for (size_t i = 0; i < occurences.size(); i++) {
@@ -214,12 +214,19 @@ void TransferFunctionWindow::setHistogram(const std::vector<int>& occurences) {
 }
 
 void TransferFunctionWindow::computeHistogram(const std::vector<float>& attributes, float minAttr, float maxAttr) {
-    const int histogramResolution = 256;
+    this->attributes = attributes;
+    this->minAttr = minAttr;
+    this->maxAttr = maxAttr;
+    recomputeHistogram();
+}
+
+void TransferFunctionWindow::recomputeHistogram() {
     histogram.clear();
     histogram.resize(histogramResolution);
     for (float attr : attributes) {
-        int index = glm::clamp(static_cast<int>((attr - minAttr) / (maxAttr - minAttr) * (histogramResolution-1)),
-                0, 255);
+        int index = glm::clamp(
+                static_cast<int>((attr - minAttr) / (maxAttr - minAttr) * (histogramResolution-1)),
+                0, histogramResolution - 1);
         histogram.at(index) += 1;
     }
 
@@ -249,7 +256,7 @@ float TransferFunctionWindow::getOpacityAtAttribute(float attribute) {
 }
 
 
-bool TransferFunctionWindow::renderGUI() {
+bool TransferFunctionWindow::renderGui() {
     if (showTransferFunctionWindow) { // , ImGuiWindowFlags_AlwaysAutoResize)
         if (!ImGui::Begin("Transfer Function", &showTransferFunctionWindow)) {
             // Window collapsed
@@ -279,6 +286,10 @@ bool TransferFunctionWindow::renderGUI() {
                 COLOR_SPACE_NAMES, IM_ARRAYSIZE(COLOR_SPACE_NAMES))) {
             rebuildTransferFunctionMap();
             reRender = true;
+        }
+
+        if (ImGui::SliderInt("Histogram Res.", &histogramResolution, 1, 256)) {
+            recomputeHistogram();
         }
 
         renderFileDialog();
@@ -600,7 +611,7 @@ void TransferFunctionWindow::onOpacityGraphClick() {
             selectedPointType = SELECTED_POINT_TYPE_OPACITY;
             dragging = true;
         } else if (ImGui::GetIO().MouseClicked[1] && currentSelectionIndex != 0
-                && currentSelectionIndex != opacityPoints.size()-1) {
+                && currentSelectionIndex != int(opacityPoints.size())-1) {
             // A.2 Middle clicked? Delete point
             opacityPoints.erase(opacityPoints.begin() + currentSelectionIndex);
             selectedPointType = SELECTED_POINT_TYPE_NONE;
@@ -613,7 +624,7 @@ void TransferFunctionWindow::onOpacityGraphClick() {
             int insertPosition = 0;
             for (insertPosition = 0; insertPosition < (int)opacityPoints.size(); insertPosition++) {
                 if (normalizedPosition.x < opacityPoints.at(insertPosition).position
-                        || insertPosition == opacityPoints.size()-1) {
+                        || insertPosition == int(opacityPoints.size())-1) {
                     break;
                 }
             }
@@ -644,11 +655,11 @@ void TransferFunctionWindow::onColorBarClick() {
             // A.1 Left clicked? Select/drag-and-drop
             colorSelection = ImColor(colorPoints.at(currentSelectionIndex).color.getColorRGB());
             selectedPointType = SELECTED_POINT_TYPE_COLOR;
-            if (currentSelectionIndex != 0 && currentSelectionIndex != colorPoints.size()-1) {
+            if (currentSelectionIndex != 0 && currentSelectionIndex != int(colorPoints.size())-1) {
                 dragging = true;
             }
         } else if (ImGui::GetIO().MouseClicked[1] && currentSelectionIndex != 0
-                   && currentSelectionIndex != colorPoints.size()-1) {
+                   && currentSelectionIndex != int(colorPoints.size())-1) {
             // A.2 Middle clicked? Delete point
             colorPoints.erase(colorPoints.begin() + currentSelectionIndex);
             colorPoints_LinearRGB.erase(colorPoints_LinearRGB.begin() + currentSelectionIndex);
@@ -662,7 +673,7 @@ void TransferFunctionWindow::onColorBarClick() {
             int insertPosition = 0;
             for (insertPosition = 0; insertPosition < (int)colorPoints.size(); insertPosition++) {
                 if (normalizedPosition < colorPoints.at(insertPosition).position
-                    || insertPosition == colorPoints.size()-1) {
+                    || insertPosition == int(colorPoints.size())-1) {
                     break;
                 }
             }
@@ -720,7 +731,7 @@ void TransferFunctionWindow::dragPoint() {
         if (currentSelectionIndex == 0) {
             normalizedPosition.x = 0.0f;
         }
-        if (currentSelectionIndex == opacityPoints.size()-1) {
+        if (currentSelectionIndex == int(opacityPoints.size())-1) {
             normalizedPosition.x = 1.0f;
         }
         // Clip to neighbors!
@@ -728,7 +739,7 @@ void TransferFunctionWindow::dragPoint() {
                 && normalizedPosition.x < opacityPoints.at(currentSelectionIndex-1).position) {
             normalizedPosition.x = opacityPoints.at(currentSelectionIndex-1).position;
         }
-        if (currentSelectionIndex != opacityPoints.size()-1
+        if (currentSelectionIndex != int(opacityPoints.size())-1
                 && normalizedPosition.x > opacityPoints.at(currentSelectionIndex+1).position) {
             normalizedPosition.x = opacityPoints.at(currentSelectionIndex+1).position;
         }
@@ -745,7 +756,7 @@ void TransferFunctionWindow::dragPoint() {
                 && normalizedPosition < colorPoints.at(currentSelectionIndex-1).position) {
             normalizedPosition = colorPoints.at(currentSelectionIndex-1).position;
         }
-        if (currentSelectionIndex != colorPoints.size()-1
+        if (currentSelectionIndex != int(colorPoints.size())-1
                 && normalizedPosition > colorPoints.at(currentSelectionIndex+1).position) {
             normalizedPosition = colorPoints.at(currentSelectionIndex+1).position;
         }
