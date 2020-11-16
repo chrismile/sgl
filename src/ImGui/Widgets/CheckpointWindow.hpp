@@ -38,16 +38,18 @@
 
 namespace sgl {
 
-class Checkpoint
-{
+class Checkpoint {
 public:
     Checkpoint() {}
-    Checkpoint(const glm::vec3& position, float yaw, float pitch) : position(position), yaw(yaw), pitch(pitch) {}
-    Checkpoint(float tx, float ty, float tz, float yaw, float pitch) : position(tx, ty, tz), yaw(yaw), pitch(pitch) {}
+    Checkpoint(const glm::vec3& position, float yaw, float pitch, float fovy)
+        : position(position), yaw(yaw), pitch(pitch), fovy(fovy) {}
+    Checkpoint(float tx, float ty, float tz, float yaw, float pitch, float fovy)
+        : position(tx, ty, tz), yaw(yaw), pitch(pitch), fovy(fovy) {}
 
     glm::vec3 position;
     float yaw;
     float pitch;
+    float fovy;
 };
 
 class CheckpointWindow {
@@ -64,7 +66,12 @@ private:
     bool writeToFile(const std::string& filename);
 
     CameraPtr& camera;
-    const uint32_t CHECKPOINT_FORMAT_VERSION = 1u;
+
+    /**
+     * Changes since version 1:
+     * - Version 2: Added vertical field of view (FoV y).
+     */
+    const uint32_t CHECKPOINT_FORMAT_VERSION = 2u;
 
     const std::string saveDirectoryCheckpoints = "Data/Checkpoints/";
     const std::string checkpointsFilename = saveDirectoryCheckpoints + "checkpoints.bin";

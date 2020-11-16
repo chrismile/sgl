@@ -39,6 +39,13 @@
 
 namespace sgl {
 
+class Checkpoint_v1 {
+public:
+    glm::vec3 position;
+    float yaw;
+    float pitch;
+};
+
 CheckpointWindow::CheckpointWindow(CameraPtr& camera) : camera(camera) {
     sgl::FileUtils::get()->ensureDirectoryExists(saveDirectoryCheckpoints);
     if (sgl::FileUtils::get()->exists(checkpointsFilename)) {
@@ -98,7 +105,7 @@ bool CheckpointWindow::readFromFile(const std::string& filename) {
     sgl::BinaryReadStream stream(buffer, size);
     uint32_t version;
     stream.read(version);
-    if (version != CHECKPOINT_FORMAT_VERSION) {
+    if (version != CHECKPOINT_FORMAT_VERSION && version != 1u) {
         sgl::Logfile::get()->writeError(
                 std::string() + "Error in CheckpointWindow::readFromFile: "
                 + "Invalid version in file \"" + filename + "\".");
@@ -119,7 +126,16 @@ bool CheckpointWindow::readFromFile(const std::string& filename) {
             std::string checkpointName;
             Checkpoint checkpoint;
             stream.read(checkpointName);
-            stream.read(checkpoint);
+            if (version == 1u) {
+                Checkpoint_v1 checkpointV1;
+                stream.read(checkpointV1);
+                checkpoint.position = checkpointV1.position;
+                checkpoint.yaw = checkpointV1.yaw;
+                checkpoint.pitch = checkpointV1.pitch;
+                checkpoint.fovy = atanf(1.0f / 2.0f) * 2.0f; // Old standard FoV.
+            } else {
+                stream.read(checkpoint);
+            }
             dataSetCheckpoints.insert(std::make_pair(checkpointName, checkpoint));
         }
         dataSetCheckpointMap.insert(std::make_pair(dataSetName, dataSetCheckpoints));
@@ -208,7 +224,8 @@ bool CheckpointWindow::renderGui() {
             Checkpoint checkpoint(
                     camera->getPosition(),
                     camera->getYaw(),
-                    camera->getPitch());
+                    camera->getPitch(),
+                    camera->getFOVy());
             loadedDataSetCheckpoints.push_back(std::make_pair("New Checkpoint", checkpoint));
         }
     }
