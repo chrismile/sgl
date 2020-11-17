@@ -128,6 +128,21 @@ public:
     virtual bool setUniformArray(int location, const glm::vec3 *value, size_t num)=0;
     virtual bool setUniformArray(int location, const glm::vec4 *value, size_t num)=0;
 
+    template <class T>
+    inline bool setUniformOptional(const char *name, T value) {
+        if (hasUniform(name)) {
+            return setUniform(name, value);
+        }
+        return false;
+    }
+    template <class T>
+    inline bool setUniformArrayOptional(const char *name, T value, size_t num) {
+        if (hasUniform(name)) {
+            return setUniformArray(name, value);
+        }
+        return false;
+    }
+
 
     // Image Load and Store
 
