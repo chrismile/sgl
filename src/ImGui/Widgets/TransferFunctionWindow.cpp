@@ -346,14 +346,14 @@ void TransferFunctionWindow::renderOpacityGraph() {
     // First render the graph box
     ImVec2 startPos = ImGui::GetCursorScreenPos();
     ImVec2 cursorPosHistogram = ImGui::GetCursorPos();
-    drawList->AddRectFilled(ImVec2(startPos.x, startPos.y),
-                            ImVec2(startPos.x + regionWidth, startPos.y + graphHeight),
-                            borderColor,
-                            ImGui::GetStyle().FrameRounding);
-    drawList->AddRectFilled(ImVec2(startPos.x + border, startPos.y + border),
-                            ImVec2(startPos.x + regionWidth - border, startPos.y + graphHeight - border),
-                            backgroundColor,
-                            ImGui::GetStyle().FrameRounding);
+    drawList->AddRectFilled(
+            ImVec2(startPos.x, startPos.y),
+            ImVec2(startPos.x + regionWidth, startPos.y + graphHeight),
+            borderColor, ImGui::GetStyle().FrameRounding);
+    drawList->AddRectFilled(
+            ImVec2(startPos.x + border, startPos.y + border),
+            ImVec2(startPos.x + regionWidth - border, startPos.y + graphHeight - border),
+            backgroundColor, ImGui::GetStyle().FrameRounding);
 
     if (ImGui::ClickArea("##grapharea", ImVec2(regionWidth, graphHeight + 2), mouseReleased)) {
         onOpacityGraphClick();
