@@ -33,6 +33,8 @@
 #include <vector>
 #include <fstream>
 
+namespace sgl {
+
 class CsvWriter {
 public:
     CsvWriter();
@@ -63,5 +65,7 @@ private:
     bool writingRow = false;
     std::ofstream file;
 };
+
+}
 
 #endif //HEXVOLUMERENDERER_CSVWRITER_HPP

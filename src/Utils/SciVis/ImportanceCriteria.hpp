@@ -33,6 +33,8 @@
 #include <cstdint>
 #include <cfloat>
 
+namespace sgl {
+
 /// https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/packUnorm.xhtml
 void packUnorm16Array(const std::vector<float>& floatVector, std::vector<uint16_t>& unormVector);
 
@@ -43,5 +45,7 @@ void packUnorm16ArrayOfArrays(
 
 /// https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/unpackUnorm.xhtml
 void unpackUnorm16Array(uint16_t* unormVector, size_t vectorSize, std::vector<float> &floatVector);
+
+}
 
 #endif //LINEDENSITYCONTROL_IMPORTANCECRITERIA_HPP

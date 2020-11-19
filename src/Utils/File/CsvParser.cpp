@@ -28,6 +28,8 @@
 
 #include "CsvParser.hpp"
 
+namespace sgl {
+
 RowMap parseCsv(const std::string& filename, bool filterComments) {
     RowMap rows;
 
@@ -125,3 +127,5 @@ RowMap parseCsv(const std::string& filename, bool filterComments) {
 
     return 0;
 }*/
+
+}

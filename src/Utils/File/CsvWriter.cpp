@@ -31,6 +31,8 @@
 
 #include "CsvWriter.hpp"
 
+namespace sgl {
+
 CsvWriter::CsvWriter() {
 }
 
@@ -97,4 +99,6 @@ std::string CsvWriter::escapeString(const std::string& s) {
 
     // Replace quotes by double-quotes and return string enclosed with single quotes
     return std::string() + "\"" + boost::replace_all_copy(s, "\"", "\"\"") + "\"";
+}
+
 }

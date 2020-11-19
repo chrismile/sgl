@@ -35,6 +35,8 @@
 #include <Math/Geometry/MatrixUtil.hpp>
 #include <Math/Geometry/AABB3.hpp>
 
+namespace sgl {
+
 class ControlPoint
 {
 public:
@@ -70,5 +72,7 @@ private:
     std::vector<ControlPoint> controlPoints;
     float time = 0.0f;
 };
+
+}
 
 #endif //HEXVOLUMERENDERER_CAMERAPATH_HPP

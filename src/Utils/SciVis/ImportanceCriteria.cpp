@@ -30,6 +30,8 @@
 #include <Math/Math.hpp>
 #include "ImportanceCriteria.hpp"
 
+namespace sgl {
+
 /// https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/packUnorm.xhtml
 void packUnorm16Array(const std::vector<float>& floatVector, std::vector<uint16_t>& unormVector) {
     float minValue = FLT_MAX;
@@ -252,4 +254,6 @@ std::vector<float> computeSegmentHeightDifference(std::vector<glm::vec3>& vertex
     }
 
     return computeSegmentHeightDifferences;
+}
+
 }

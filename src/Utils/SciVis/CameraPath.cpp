@@ -46,6 +46,8 @@
 //#define ZOOMING_MODE
 #define VIDEO_MODE
 
+namespace sgl {
+
 ControlPoint::ControlPoint(float time, float tx, float ty, float tz, float yaw, float pitch) {
     this->time = time;
     this->position = glm::vec3(tx, ty, tz);
@@ -186,4 +188,6 @@ void CameraPath::resetTime() {
 
 glm::mat4x4 CameraPath::toTransform(const glm::vec3& position, const glm::quat& orientation) {
     return glm::toMat4(orientation) * sgl::matrixTranslation(-position);
+}
+
 }

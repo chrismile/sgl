@@ -409,7 +409,6 @@ void TransferFunctionWindow::renderColorBar() {
         ImU32 colorImgui = ImColor(color.getR(), color.getG(), color.getB());
         drawList->AddLine(ImVec2(pos.x, pos.y), ImVec2(pos.x, pos.y + barHeight), colorImgui, 2.0f * regionWidth / 255.0f);
         pos.x += regionWidth / 255.0f;
-
     }
 
     // Draw points

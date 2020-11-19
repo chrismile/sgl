@@ -35,6 +35,8 @@
 #include <Utils/File/Logfile.hpp>
 #include <Utils/Convert.hpp>
 
+namespace sgl {
+
 /**
  * For now, this reader uses no buffering and reads everything at once.
  * Performance-wise, this is better than std::ifstream, which causes an overhead, but using a medium-sized buffer might
@@ -135,5 +137,6 @@ private:
     std::string lineBuffer;
 };
 
+}
 
 #endif //STRESSLINEVIS_LINEREADER_HPP

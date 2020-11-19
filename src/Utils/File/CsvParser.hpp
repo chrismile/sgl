@@ -35,6 +35,8 @@
 #include <fstream>
 #include <iostream>
 
+namespace sgl {
+
 typedef std::list<std::vector<std::string>> RowMap;
 
 /** Parser for the middle_states.csv file
@@ -43,5 +45,7 @@ typedef std::list<std::vector<std::string>> RowMap;
  * @return A list of rows stored in the CSV file
  */
 RowMap parseCsv(const std::string &filename, bool filterComments = true);
+
+}
 
 #endif //HEXVOLUMERENDERER_CSVPARSER_HPP

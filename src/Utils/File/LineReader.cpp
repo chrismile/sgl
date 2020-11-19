@@ -31,16 +31,26 @@
 #include <cstdio>
 
 #include <Utils/File/Logfile.hpp>
+#include <Utils/File/FileUtils.hpp>
 
 #include "LineReader.hpp"
 
+namespace sgl {
+
 LineReader::LineReader(const std::string& filename)
         : userManagedBuffer(false), bufferData(nullptr), bufferSize(0) {
-    FILE* file = fopen64(filename.c_str(), "r");
-    if (!file) {
+    if (!sgl::FileUtils::get()->exists(filename) || sgl::FileUtils::get()->isDirectory(filename)) {
         sgl::Logfile::get()->writeError(
                 std::string() + "Error in LineReader::LineReader: File \""
                 + filename + "\" does not exist.");
+        return;
+    }
+
+    FILE* file = fopen64(filename.c_str(), "r");
+    if (!file) {
+        sgl::Logfile::get()->writeError(
+                std::string() + "Error in LineReader::LineReader: Couldn't open file \""
+                + filename + "\".");
         return;
     }
 #if defined(_WIN32) && !defined(__MINGW32__)
@@ -110,4 +120,6 @@ void LineReader::fillLineBuffer() {
             break;
         }
     }
+}
+
 }

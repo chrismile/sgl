@@ -33,6 +33,19 @@ inline std::string fromString (const std::string &stringObject) {
     return stringObject;
 }
 
+//! Conversion to and from string
+template <class T>
+std::string toString(T obj, int precision, bool fixed = true) {
+    std::ostringstream ostr;
+    ostr.precision(precision);
+    if (fixed) {
+        ostr << std::fixed << obj;
+    } else {
+        ostr << std::noshowpoint << obj;
+    }
+    return ostr.str();
+}
+
 //! Append vector2 to vector1
 template<class T>
 void appendVector(std::vector<T> &vector1, std::vector<T> &vector2) {
