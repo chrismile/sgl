@@ -26,7 +26,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <cstdlib>
 #include <cmath>
 #include <GL/glew.h>
 #include <glm/glm.hpp>
@@ -41,7 +40,6 @@
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
 #include <Math/Math.hpp>
-#include <Input/Mouse.hpp>
 #include <Graphics/Renderer.hpp>
 #include <Graphics/Texture/TextureManager.hpp>
 #include "TransferFunctionWindow.hpp"
@@ -748,7 +746,7 @@ void TransferFunctionWindow::dragPoint() {
     }
 
     if (selectedPointType == SELECTED_POINT_TYPE_COLOR) {
-        float normalizedPosition = mousePosWidget.x / opacityGraphBox.getWidth();
+        float normalizedPosition = mousePosWidget.x / colorBarBox.getWidth();
         normalizedPosition = glm::clamp(normalizedPosition, 0.0f, 1.0f);
         // Clip to neighbors!
         if (currentSelectionIndex != 0

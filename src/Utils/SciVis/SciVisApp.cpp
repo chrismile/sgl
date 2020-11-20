@@ -248,6 +248,14 @@ void SciVisApp::postRender() {
     }
 
     renderGui();
+
+    if (uiOnScreenshot && screenshot) {
+        printNow = true;
+        saveScreenshot(
+                saveDirectoryScreenshots + saveFilenameScreenshots
+                + "_" + sgl::toString(screenshotNumber++) + ".png");
+        printNow = false;
+    }
 }
 
 void SciVisApp::renderGui() {

@@ -51,22 +51,19 @@ const char* const COLOR_SPACE_NAMES[] {
 /**
  * A color point stores sRGB color values.
  */
-struct ColorPoint_sRGB
-{
+struct ColorPoint_sRGB {
     ColorPoint_sRGB(const sgl::Color& color, float position) : color(color), position(position) {}
     sgl::Color color;
     float position;
 };
 
-struct ColorPoint_LinearRGB
-{
+struct ColorPoint_LinearRGB {
     ColorPoint_LinearRGB(const glm::vec3& color, float position) : color(color), position(position) {}
     glm::vec3 color;
     float position;
 };
 
-struct OpacityPoint
-{
+struct OpacityPoint {
     OpacityPoint(float opacity, float position) : opacity(opacity), position(position) {}
     float opacity;
     float position;
