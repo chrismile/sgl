@@ -35,14 +35,16 @@ inline std::string fromString (const std::string &stringObject) {
 
 //! Conversion to and from string
 template <class T>
-std::string toString(T obj, int precision, bool fixed = true) {
+std::string toString(T obj, int precision, bool fixed = true, bool noshowpoint = false) {
     std::ostringstream ostr;
     ostr.precision(precision);
     if (fixed) {
-        ostr << std::fixed << obj;
-    } else {
-        ostr << std::noshowpoint << obj;
+        ostr << std::fixed;
     }
+    if (noshowpoint) {
+        ostr << std::noshowpoint;
+    }
+    ostr << obj;
     return ostr.str();
 }
 
