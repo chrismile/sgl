@@ -167,8 +167,6 @@ private:
     bool transferFunctionMapRebuilt = true;
 };
 
-extern TransferFunctionWindow* g_TransferFunctionWindowHandle;
-
 }
 
 #endif //PIXELSYNCOIT_TRANSFERFUNCTIONWINDOW_HPP

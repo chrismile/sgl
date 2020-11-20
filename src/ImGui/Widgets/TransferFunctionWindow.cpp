@@ -50,8 +50,6 @@ namespace sgl {
 
 const size_t TRANSFER_FUNCTION_TEXTURE_SIZE = 256;
 
-TransferFunctionWindow* g_TransferFunctionWindowHandle = NULL;
-
 TransferFunctionWindow::TransferFunctionWindow() {
     colorPoints = {
             ColorPoint_sRGB(sgl::Color(59, 76, 192), 0.0f),
@@ -73,8 +71,6 @@ TransferFunctionWindow::TransferFunctionWindow() {
     if (sgl::FileUtils::get()->exists(saveDirectory + "Standard.xml")) {
         loadFunctionFromFile(saveDirectory + "Standard.xml");
     }
-
-    g_TransferFunctionWindowHandle = this;
 }
 
 bool TransferFunctionWindow::saveFunctionToFile(const std::string& filename) {
