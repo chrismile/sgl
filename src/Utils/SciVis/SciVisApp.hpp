@@ -107,6 +107,7 @@ protected:
     float MOVE_SPEED = 0.2f;
     float MOUSE_ROT_SPEED = 0.05f;
     float fovDegree; ///< Is overwritten by constructor.
+    float standardFov;
     glm::vec3 modelRotationAxis = glm::vec3(1.0f, 0.0f, 0.0f);
     int rotateModelBy90DegreeTurns = 0;
     glm::ivec2 windowResolution;

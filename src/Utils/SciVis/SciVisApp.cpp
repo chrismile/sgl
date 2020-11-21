@@ -75,6 +75,7 @@ SciVisApp::SciVisApp(float fovy)
     camera->setFOVy(fovy);
     camera->setPosition(glm::vec3(0.0f, 0.0f, 0.8f));
     fovDegree = fovy / sgl::PI * 180.0f;
+    standardFov = fovy;
 
     clearColor = sgl::Color(255, 255, 255, 255);
     clearColorSelection = ImColor(clearColor.getColorRGBA());
@@ -293,6 +294,8 @@ void SciVisApp::renderSceneSettingsGuiPre() {
         camera->setYaw(-sgl::PI/2.0f); //< around y axis
         camera->setPitch(0.0f); //< around x axis
         camera->setPosition(glm::vec3(0.0f, 0.0f, 0.8f));
+        camera->setFOVy(standardFov);
+        fovDegree = standardFov / sgl::PI * 180.0f;
         reRender = true;
     }
     ImGui::SameLine();
