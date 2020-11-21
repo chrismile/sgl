@@ -61,7 +61,7 @@ namespace ImGui {
 
 IMGUI_API ImVec2 CalcTextSizeVertical(
         const char* text, const char* text_end = NULL, bool hide_text_after_double_hash = false,
-        float wrap_width = -1.0f);
+        float wrap_height = -1.0f);
 
 IMGUI_API void AddTextVertical(
         ImDrawList* draw_list, const ImVec2& pos, ImU32 col, const char* text_begin, const char* text_end = NULL,
@@ -69,12 +69,12 @@ IMGUI_API void AddTextVertical(
 
 IMGUI_API void AddTextVertical(
         ImDrawList* draw_list, const ImFont* font, float font_size, const ImVec2& pos, ImU32 col,
-        const char* text_begin, const char* text_end = NULL, float wrap_width = 0.0f,
+        const char* text_begin, const char* text_end = NULL, float wrap_height = 0.0f,
         const ImVec4* cpu_fine_clip_rect = NULL, bool orientation_ccw = false);
 
 IMGUI_API void RenderTextVertical(
         ImDrawList* draw_list, const ImFont* font, float size, ImVec2 pos, ImU32 col, const ImVec4& clip_rect,
-        const char* text_begin, const char* text_end, float wrap_width = 0.0f, bool cpu_fine_clip = false,
+        const char* text_begin, const char* text_end, float wrap_height = 0.0f, bool cpu_fine_clip = false,
         bool orientation_ccw = false);
 
 }
