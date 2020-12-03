@@ -135,6 +135,12 @@ public:
         }
         return false;
     }
+    inline bool setUniformOptional(const char *name, TexturePtr &value, int textureUnit) {
+        if (hasUniform(name)) {
+            return setUniform(name, value, textureUnit);
+        }
+        return false;
+    }
     template <class T>
     inline bool setUniformArrayOptional(const char *name, T value, size_t num) {
         if (hasUniform(name)) {

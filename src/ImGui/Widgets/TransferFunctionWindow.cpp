@@ -173,7 +173,6 @@ bool TransferFunctionWindow::loadFunctionFromFile(const std::string& filename) {
 void TransferFunctionWindow::updateAvailableFiles() {
     sgl::FileUtils::get()->ensureDirectoryExists(saveDirectory);
     availableFiles = sgl::FileUtils::get()->getFilesInDirectoryVector(saveDirectory);
-    availableFiles = sgl::FileUtils::get()->getFilesInDirectoryVector(saveDirectory);
 
     // Update currently selected filename
     for (size_t i = 0; i < availableFiles.size(); i++) {
