@@ -219,7 +219,7 @@ void TransferFunctionWindow::recomputeHistogram() {
     histogram.resize(histogramResolution);
     for (float attr : attributes) {
         int index = glm::clamp(
-                static_cast<int>((attr - minAttr) / (maxAttr - minAttr) * (histogramResolution-1)),
+                static_cast<int>((attr - minAttr) / (maxAttr - minAttr) * histogramResolution),
                 0, histogramResolution - 1);
         histogram.at(index) += 1;
     }

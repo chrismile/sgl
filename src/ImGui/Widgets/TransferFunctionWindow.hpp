@@ -131,7 +131,6 @@ private:
     float minAttr = 0.0f, maxAttr = 1.0f;
     std::vector<float> attributes;
 
-
     // Drag-and-drop data
     SelectedPointType selectedPointType = SELECTED_POINT_TYPE_NONE;
     bool dragging = false;
