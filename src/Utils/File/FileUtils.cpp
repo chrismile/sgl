@@ -357,4 +357,10 @@ void FileUtils::splitPath(const std::string &path, std::vector<std::string> &pat
     }
 }
 
+bool FileUtils::pathsEquivalent(const std::string &pathStr0, const std::string &pathStr1) {
+    boost::filesystem::path path0(pathStr0);
+    boost::filesystem::path path1(pathStr1);
+    return boost::filesystem::equivalent(path0, path1);
+}
+
 }

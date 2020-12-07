@@ -65,6 +65,10 @@ TransferFunctionWindow::TransferFunctionWindow() {
     tfMapTextureSettings.type = sgl::TEXTURE_1D;
     tfMapTextureSettings.internalFormat = GL_RGBA16;
     tfMapTexture = sgl::TextureManager->createEmptyTexture(TRANSFER_FUNCTION_TEXTURE_SIZE, tfMapTextureSettings);
+
+    directoryContentWatch.setPath(saveDirectory, true);
+    directoryContentWatch.initialize();
+
     updateAvailableFiles();
     rebuildTransferFunctionMap();
 
@@ -172,7 +176,16 @@ bool TransferFunctionWindow::loadFunctionFromFile(const std::string& filename) {
 
 void TransferFunctionWindow::updateAvailableFiles() {
     sgl::FileUtils::get()->ensureDirectoryExists(saveDirectory);
-    availableFiles = sgl::FileUtils::get()->getFilesInDirectoryVector(saveDirectory);
+    std::vector<std::string> availableFilesAll = sgl::FileUtils::get()->getFilesInDirectoryVector(saveDirectory);
+    availableFiles.clear();
+    availableFiles.reserve(availableFilesAll.size());
+
+    for (const std::string& filename : availableFilesAll) {
+        if (sgl::FileUtils::get()->hasExtension(filename.c_str(), ".xml")) {
+            availableFiles.push_back(filename);
+        }
+    }
+    std::sort(availableFiles.begin(), availableFiles.end());
 
     // Update currently selected filename
     for (size_t i = 0; i < availableFiles.size(); i++) {
@@ -206,19 +219,36 @@ void TransferFunctionWindow::setHistogram(const std::vector<int>& occurences) {
     }
 }
 
-void TransferFunctionWindow::computeHistogram(const std::vector<float>& attributes, float minAttr, float maxAttr) {
+void TransferFunctionWindow::computeHistogram(const std::vector<float>& attributes) {
     this->attributes = attributes;
-    this->minAttr = minAttr;
-    this->maxAttr = maxAttr;
+    float minAttr = std::numeric_limits<float>::max();
+    float maxAttr = std::numeric_limits<float>::lowest();
+    #pragma omp parallel for reduction(min: minAttr) reduction(max: maxAttr) shared(attributes) default(none)
+    for (size_t i = 0; i < attributes.size(); i++) {
+        float value = attributes.at(i);
+        minAttr = std::min(minAttr, value);
+        maxAttr = std::max(maxAttr, value);
+    }
+    this->dataRange = glm::vec2(minAttr, maxAttr);
+    this->selectedRange = glm::vec2(minAttr, maxAttr);
     recomputeHistogram();
 }
 
-void TransferFunctionWindow::recomputeHistogram() {
+void TransferFunctionWindow::computeHistogram(const std::vector<float>& attributes, float minAttr, float maxAttr) {
+    this->attributes = attributes;
+    this->dataRange = glm::vec2(minAttr, maxAttr);
+    this->selectedRange = glm::vec2(minAttr, maxAttr);
+    recomputeHistogram();
+}
+
+
+    void TransferFunctionWindow::recomputeHistogram() {
     histogram.clear();
     histogram.resize(histogramResolution);
+
     for (float attr : attributes) {
         int index = glm::clamp(
-                static_cast<int>((attr - minAttr) / (maxAttr - minAttr) * histogramResolution),
+                static_cast<int>((attr - selectedRange.x) / (selectedRange.y - selectedRange.x) * histogramResolution),
                 0, histogramResolution - 1);
         histogram.at(index) += 1;
     }
@@ -278,6 +308,17 @@ bool TransferFunctionWindow::renderGui() {
         if (ImGui::Combo("Color Space", (int*)&interpolationColorSpace,
                 COLOR_SPACE_NAMES, IM_ARRAYSIZE(COLOR_SPACE_NAMES))) {
             rebuildTransferFunctionMap();
+            reRender = true;
+        }
+
+        if (ImGui::SliderFloat2("Range", &selectedRange.x, dataRange.x, dataRange.y)) {
+            recomputeHistogram();
+            reRender = true;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Reset")) {
+            selectedRange = dataRange;
+            recomputeHistogram();
             reRender = true;
         }
 
@@ -563,6 +604,7 @@ void TransferFunctionWindow::rebuildTransferFunctionMap_sRGB() {
 
 
 void TransferFunctionWindow::update(float dt) {
+    directoryContentWatch.update([this] { this->updateAvailableFiles(); });
     dragPoint();
 }
 

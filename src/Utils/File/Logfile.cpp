@@ -10,7 +10,9 @@
 #include <iostream>
 #include <fstream>
 #include <Utils/Convert.hpp>
+#ifdef __unix__
 #include <Utils/File/Execute.hpp>
+#endif
 
 namespace sgl {
 

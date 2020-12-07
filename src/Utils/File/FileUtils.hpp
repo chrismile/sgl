@@ -66,6 +66,9 @@ public:
     void splitPath(const std::string &path, std::list<std::string> &list);
     void splitPath(const std::string &path, std::vector<std::string> &list);
 
+    // Do the two paths point to the same resource?
+    bool pathsEquivalent(const std::string &pathStr0, const std::string &pathStr1);
+
 private:
     int argc;
     char **argv;

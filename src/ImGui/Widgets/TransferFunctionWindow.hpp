@@ -35,6 +35,7 @@
 #include <glm/glm.hpp>
 
 #include <Math/Geometry/AABB2.hpp>
+#include <Utils/File/PathWatch.hpp>
 #include <Graphics/Color.hpp>
 #include <Graphics/Texture/Texture.hpp>
 #include <ImGui/ImGuiWrapper.hpp>
@@ -90,6 +91,7 @@ public:
     void setClearColor(const sgl::Color& clearColor);
     void setShow(const bool showWindow) { showTransferFunctionWindow = showWindow; }
     inline bool& getShowTransferFunctionWindow() { return showTransferFunctionWindow; }
+    void computeHistogram(const std::vector<float>& attributes);
     void computeHistogram(const std::vector<float>& attributes, float minAttr, float maxAttr);
     void setUseLinearRGB(bool useLinearRGB);
 
@@ -106,6 +108,14 @@ public:
     inline const std::vector<OpacityPoint>& getOpacityPoints() { return opacityPoints; }
     inline const std::vector<ColorPoint_sRGB>& getColorPoints_sRGB() { return colorPoints; }
     inline const std::vector<ColorPoint_LinearRGB>& getColorPoints_LinearRGB() { return colorPoints_LinearRGB; }
+
+    // Get data range.
+    inline float getDataRangeMin() const { return dataRange.x; }
+    inline float getDataRangeMax() const { return dataRange.y; }
+    inline const glm::vec2& getDataRange() const { return dataRange; }
+    inline float getSelectedRangeMin() const { return selectedRange.x; }
+    inline float getSelectedRangeMax() const { return selectedRange.y; }
+    inline const glm::vec2& getSelectedRange() const { return selectedRange; }
 
     // sRGB and linear RGB conversion
     static glm::vec3 sRGBToLinearRGB(const glm::vec3& color_LinearRGB);
@@ -126,9 +136,10 @@ private:
     // Histogram data.
     void setHistogram(const std::vector<int>& occurences);
     void recomputeHistogram();
-    int histogramResolution = 256;
+    int histogramResolution = 64;
     std::vector<float> histogram;
-    float minAttr = 0.0f, maxAttr = 1.0f;
+    glm::vec2 dataRange = glm::vec2(0.0f);
+    glm::vec2 selectedRange = glm::vec2(0.0f);
     std::vector<float> attributes;
 
     // Drag-and-drop data
@@ -146,6 +157,9 @@ private:
     ImVec4 colorSelection = ImColor(255, 255, 255, 255);
     sgl::Color clearColor;
     ColorSpace interpolationColorSpace;
+
+    // Transfer function directory watch.
+    sgl::PathWatch directoryContentWatch;
 
     std::string saveDirectory = "Data/TransferFunctions/";
     std::string saveFileString = "Standard.xml";
