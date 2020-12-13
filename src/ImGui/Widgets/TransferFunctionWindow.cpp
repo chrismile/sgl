@@ -48,6 +48,16 @@ using namespace tinyxml2;
 
 namespace sgl {
 
+ColorDataMode parseColorDataModeName(const std::string& dataModeName) {
+    for (size_t i = 0; i < NUM_COLOR_DATA_MODES; i++) {
+        if (dataModeName == COLOR_DATA_MODE_NAMES[i]) {
+            return ColorDataMode(i);
+        }
+    }
+    return COLOR_DATA_MODE_FLOAT_255;
+}
+
+
 const size_t TRANSFER_FUNCTION_TEXTURE_SIZE = 256;
 
 TransferFunctionWindow::TransferFunctionWindow() {
@@ -101,6 +111,7 @@ bool TransferFunctionWindow::saveFunctionToFile(const std::string& filename) {
     printer.CloseElement();
 
     printer.OpenElement("ColorPoints");
+    printer.PushAttribute("color_data", COLOR_DATA_MODE_NAMES[int(COLOR_DATA_MODE_UNSIGNED_SHORT)]);
     // Traverse all color points
     for (size_t i = 0; i < colorPoints.size(); i++) {
         printer.OpenElement("ColorPoint");
@@ -133,7 +144,7 @@ bool TransferFunctionWindow::loadFunctionFromFile(const std::string& filename) {
 
     interpolationColorSpace = COLOR_SPACE_SRGB; // Standard
     const char* interpolationColorSpaceName = tfNode->Attribute("colorspace_interpolation");
-    if (interpolationColorSpaceName != NULL) {
+    if (interpolationColorSpaceName != nullptr) {
         for (int i = 0; i < 2; i++) {
             if (strcmp(interpolationColorSpaceName, COLOR_SPACE_NAMES[interpolationColorSpace]) == 0) {
                 interpolationColorSpace = (ColorSpace)i;
@@ -158,13 +169,36 @@ bool TransferFunctionWindow::loadFunctionFromFile(const std::string& filename) {
     // Traverse all color points
     auto colorPointsNode = tfNode->FirstChildElement("ColorPoints");
     if (colorPointsNode != NULL) {
+        ColorDataMode colorDataMode = COLOR_DATA_MODE_UNSIGNED_BYTE;
+        const char* colorDataModeName = tfNode->Attribute("color_data");
+        if (colorDataModeName != nullptr) {
+            colorDataMode = parseColorDataModeName(colorDataModeName);
+        }
         for (sgl::XMLIterator it(colorPointsNode, sgl::XMLNameFilter("ColorPoint")); it.isValid(); ++it) {
             XMLElement* childElement = *it;
+            sgl::Color16 color;
             float position = childElement->FloatAttribute("position");
-            int red = sgl::clamp(childElement->IntAttribute("r"), 0, 255);
-            int green = sgl::clamp(childElement->IntAttribute("g"), 0, 255);
-            int blue = sgl::clamp(childElement->IntAttribute("b"), 0, 255);
-            sgl::Color color(red, green, blue);
+            if (colorDataMode == COLOR_DATA_MODE_UNSIGNED_BYTE) {
+                int red = sgl::clamp(childElement->IntAttribute("r"), 0, 255);
+                int green = sgl::clamp(childElement->IntAttribute("g"), 0, 255);
+                int blue = sgl::clamp(childElement->IntAttribute("b"), 0, 255);
+                color = sgl::Color(red, green, blue);
+            } else if (colorDataMode == COLOR_DATA_MODE_UNSIGNED_SHORT) {
+                int red = sgl::clamp(childElement->IntAttribute("r"), 0, 65535);
+                int green = sgl::clamp(childElement->IntAttribute("g"), 0, 65535);
+                int blue = sgl::clamp(childElement->IntAttribute("b"), 0, 65535);
+                color = sgl::Color16(red, green, blue);
+            } else if (colorDataMode == COLOR_DATA_MODE_FLOAT_NORMALIZED) {
+                float red = sgl::clamp(childElement->FloatAttribute("r"), 0.0f, 1.0f);
+                float green = sgl::clamp(childElement->FloatAttribute("g"), 0.0f, 1.0f);
+                float blue = sgl::clamp(childElement->FloatAttribute("b"), 0.0f, 1.0f);
+                color = sgl::Color16(glm::vec3(red, green, blue));
+            } else if (colorDataMode == COLOR_DATA_MODE_FLOAT_255) {
+                float red = sgl::clamp(childElement->FloatAttribute("r"), 0.0f, 255.0f) / 255.0f;
+                float green = sgl::clamp(childElement->FloatAttribute("g"), 0.0f, 255.0f) / 255.0f;
+                float blue = sgl::clamp(childElement->FloatAttribute("b"), 0.0f, 255.0f) / 255.0f;
+                color = sgl::Color16(glm::vec3(red, green, blue));
+            }
             colorPoints.push_back(ColorPoint_sRGB(color, position));
         }
     }
@@ -298,7 +332,7 @@ bool TransferFunctionWindow::renderGui() {
             }
         } else if (selectedPointType == SELECTED_POINT_TYPE_COLOR) {
             if (ImGui::ColorEdit3("Color", (float*)&colorSelection)) {
-                colorPoints.at(currentSelectionIndex).color = sgl::colorFromFloat(
+                colorPoints.at(currentSelectionIndex).color = sgl::color16FromFloat(
                         colorSelection.x, colorSelection.y, colorSelection.z, colorSelection.w);
                 rebuildTransferFunctionMap();
                 reRender = true;
@@ -439,8 +473,8 @@ void TransferFunctionWindow::renderColorBar() {
     ImVec2 startPos = ImGui::GetCursorScreenPos();
     ImVec2 pos = ImVec2(startPos.x + 1, startPos.y + 1);
     for (size_t i = 0; i < TRANSFER_FUNCTION_TEXTURE_SIZE; i++) {
-        sgl::Color color = transferFunctionMap_sRGB[i];
-        ImU32 colorImgui = ImColor(color.getR(), color.getG(), color.getB());
+        sgl::Color16 color = transferFunctionMap_sRGB[i];
+        ImU32 colorImgui = ImColor(color.getFloatR(), color.getFloatG(), color.getFloatB());
         drawList->AddLine(ImVec2(pos.x, pos.y), ImVec2(pos.x, pos.y + barHeight), colorImgui, 2.0f * regionWidth / 255.0f);
         pos.x += regionWidth / 255.0f;
     }
@@ -448,8 +482,8 @@ void TransferFunctionWindow::renderColorBar() {
     // Draw points
     pos = ImVec2(startPos.x + 2, startPos.y + 2);
     for (int i = 0; i < (int)colorPoints.size(); i++) {
-        sgl::Color color = colorPoints.at(i).color;
-        ImU32 colorImgui = ImColor(color.getR(), color.getG(), color.getB());
+        sgl::Color16 color = colorPoints.at(i).color;
+        ImU32 colorImgui = ImColor(color.getFloatR(), color.getFloatG(), color.getFloatB());
         ImU32 colorInvertedImgui = ImColor(1.0f - color.getFloatR(), 1.0f - color.getFloatG(), 1.0f - color.getFloatB());
         ImVec2 centerPt = ImVec2(pos.x + colorPoints.at(i).position * regionWidth, pos.y + barHeight/2);
         float radius = 4*scaleFactor;
@@ -499,10 +533,14 @@ void TransferFunctionWindow::rebuildTransferFunctionMap() {
         rebuildTransferFunctionMap_sRGB();
     }
 
+    sgl::PixelFormat pixelFormat;
+    pixelFormat.pixelType = GL_UNSIGNED_SHORT;
     if (useLinearRGB) {
-        tfMapTexture->uploadPixelData(TRANSFER_FUNCTION_TEXTURE_SIZE, &transferFunctionMap_linearRGB.front());
+        tfMapTexture->uploadPixelData(
+                TRANSFER_FUNCTION_TEXTURE_SIZE, &transferFunctionMap_linearRGB.front(), pixelFormat);
     } else {
-        tfMapTexture->uploadPixelData(TRANSFER_FUNCTION_TEXTURE_SIZE, &transferFunctionMap_sRGB.front());
+        tfMapTexture->uploadPixelData(
+                TRANSFER_FUNCTION_TEXTURE_SIZE, &transferFunctionMap_sRGB.front(), pixelFormat);
     }
 
    transferFunctionMapRebuilt = true;
@@ -548,10 +586,10 @@ void TransferFunctionWindow::rebuildTransferFunctionMap_LinearRGB() {
             float factor = 1.0 - (pos1 - currentPosition) / (pos1 - pos0);
             opacityAtIdx = sgl::interpolateLinear(opacity0, opacity1, factor);
         }
-        //colorAtIdx = sgl::Color(255, 255, 255);
 
-        transferFunctionMap_linearRGB.at(i) = sgl::Color(glm::vec4(linearRGBColorAtIdx, opacityAtIdx));
-        transferFunctionMap_sRGB.at(i) = sgl::Color(glm::vec4(linearRGBTosRGB(linearRGBColorAtIdx), opacityAtIdx));
+        transferFunctionMap_linearRGB.at(i) = sgl::Color16(glm::vec4(linearRGBColorAtIdx, opacityAtIdx));
+        transferFunctionMap_sRGB.at(i) = sgl::Color16(
+                glm::vec4(linearRGBTosRGB(linearRGBColorAtIdx), opacityAtIdx));
     }
 }
 
@@ -595,10 +633,11 @@ void TransferFunctionWindow::rebuildTransferFunctionMap_sRGB() {
             float factor = 1.0 - (pos1 - currentPosition) / (pos1 - pos0);
             opacityAtIdx = sgl::interpolateLinear(opacity0, opacity1, factor);
         }
-        //colorAtIdx = sgl::Color(255, 255, 255);
 
-        transferFunctionMap_linearRGB.at(i) = sgl::Color(glm::vec4(sRGBToLinearRGB(sRGBColorAtIdx), opacityAtIdx));
-        transferFunctionMap_sRGB.at(i) = sgl::Color(glm::vec4(sRGBColorAtIdx, opacityAtIdx));
+        transferFunctionMap_linearRGB.at(i) = sgl::Color16(
+                glm::vec4(sRGBToLinearRGB(sRGBColorAtIdx), opacityAtIdx));
+        transferFunctionMap_sRGB.at(i) = sgl::Color16(
+                glm::vec4(sRGBColorAtIdx, opacityAtIdx));
     }
 }
 
@@ -722,13 +761,13 @@ void TransferFunctionWindow::onColorBarClick() {
                         1.0 - (colorPoints_LinearRGB.at(insertPosition).position - newPosition)
                               / (colorPoints_LinearRGB.at(insertPosition).position
                                  - colorPoints_LinearRGB.at(insertPosition-1).position));
-                sgl::Color newColorsRGB(linearRGBTosRGB(newColor_linearRGB));
+                sgl::Color16 newColorsRGB(linearRGBTosRGB(newColor_linearRGB));
                 colorPoints_LinearRGB.insert(colorPoints_LinearRGB.begin()
                                              + insertPosition, ColorPoint_LinearRGB(newColor_linearRGB, newPosition));
                 colorPoints.insert(colorPoints.begin() + insertPosition, ColorPoint_sRGB(newColorsRGB, newPosition));
             } else {
                 // sRGB interpolation
-                sgl::Color newColor = sgl::colorLerp(
+                sgl::Color16 newColor = sgl::color16Lerp(
                         colorPoints.at(insertPosition-1).color,
                         colorPoints.at(insertPosition).color,
                         1.0 - (colorPoints.at(insertPosition).position - newPosition)

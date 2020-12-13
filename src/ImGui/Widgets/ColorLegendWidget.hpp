@@ -54,7 +54,7 @@ public:
     }
     inline void setAttributeMinValue(float attributeMinValue) { this->attributeMinValue = attributeMinValue; }
     inline void setAttributeMaxValue(float attributeMaxValue) { this->attributeMaxValue = attributeMaxValue; }
-    inline void setTransferFunctionColorMap(const std::vector<sgl::Color>& transferFunctionColorMap) {
+    inline void setTransferFunctionColorMap(const std::vector<sgl::Color16>& transferFunctionColorMap) {
         this->transferFunctionColorMap = transferFunctionColorMap;
     }
 
@@ -64,7 +64,7 @@ private:
     float attributeMinValue = 0.0f;
     float attributeMaxValue = 1.0f;
     std::string attributeDisplayName = "Vorticity";
-    std::vector<sgl::Color> transferFunctionColorMap; ///< Colors in sRGB color space.
+    std::vector<sgl::Color16> transferFunctionColorMap; ///< Colors in sRGB color space.
     sgl::Color clearColor = sgl::Color(255, 255, 255);
     sgl::Color textColor = sgl::Color(0, 0, 0);
 

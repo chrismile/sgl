@@ -53,8 +53,8 @@ const char* const COLOR_SPACE_NAMES[] {
  * A color point stores sRGB color values.
  */
 struct ColorPoint_sRGB {
-    ColorPoint_sRGB(const sgl::Color& color, float position) : color(color), position(position) {}
-    sgl::Color color;
+    ColorPoint_sRGB(const sgl::Color16& color, float position) : color(color), position(position) {}
+    sgl::Color16 color;
     float position;
 };
 
@@ -73,6 +73,24 @@ struct OpacityPoint {
 enum SelectedPointType {
     SELECTED_POINT_TYPE_NONE, SELECTED_POINT_TYPE_OPACITY, SELECTED_POINT_TYPE_COLOR
 };
+
+enum ColorDataMode {
+    // 0 - 255
+    COLOR_DATA_MODE_UNSIGNED_BYTE,
+    // 0 - 65535
+    COLOR_DATA_MODE_UNSIGNED_SHORT,
+    // 0.0 - 1.0
+    COLOR_DATA_MODE_FLOAT_NORMALIZED,
+    // 0.0 - 255.0
+    COLOR_DATA_MODE_FLOAT_255
+};
+
+const char* const COLOR_DATA_MODE_NAMES[] = {
+        "ubyte", "ushort", "float", "float_255"
+};
+const int NUM_COLOR_DATA_MODES = ((int)(sizeof(COLOR_DATA_MODE_NAMES) / sizeof(*COLOR_DATA_MODE_NAMES)));
+
+ColorDataMode parseColorDataModeName(const std::string& dataModeName);
 
 /**
  * Stores color and opacity points and renders the GUI.
@@ -98,7 +116,7 @@ public:
     // For querying transfer function in application
     glm::vec4 getLinearRGBColorAtAttribute(float attribute); // attribute: Between 0 and 1
     float getOpacityAtAttribute(float attribute); // attribute: Between 0 and 1
-    const std::vector<sgl::Color>& getTransferFunctionMap_sRGB() { return transferFunctionMap_sRGB; }
+    const std::vector<sgl::Color16>& getTransferFunctionMap_sRGB() { return transferFunctionMap_sRGB; }
 
     // For OpenGL: Has 256 entries. Get mapped color for normalized attribute by accessing entry at "attr*255".
     sgl::TexturePtr& getTransferFunctionMapTexture();
@@ -168,8 +186,8 @@ private:
     void rebuildTransferFunctionMap();
     void rebuildTransferFunctionMap_sRGB();
     void rebuildTransferFunctionMap_LinearRGB();
-    std::vector<sgl::Color> transferFunctionMap_sRGB;
-    std::vector<sgl::Color> transferFunctionMap_linearRGB;
+    std::vector<sgl::Color16> transferFunctionMap_sRGB;
+    std::vector<sgl::Color16> transferFunctionMap_linearRGB;
     sgl::TexturePtr tfMapTexture;
     sgl::TextureSettings tfMapTextureSettings;
 

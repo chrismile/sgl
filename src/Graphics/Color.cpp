@@ -66,6 +66,41 @@ Color colorLerp(const Color &color1, const Color &color2, float factor)
     return Color(r, g, b, a);
 }
 
+Color16 color16FromFloat(float R /*= 0.0f*/, float G /*= 0.0f*/, float B /*= 0.0f*/, float A /*= 1.0f*/)
+{
+    return Color(R*65535.0f, G*65535.0f, B*65535.0f, A*65535.0f);
+}
+
+Color16 color16FromVec3(const glm::vec3 &vecColor)
+{
+    return colorFromFloat(vecColor.x, vecColor.y, vecColor.z, 1.0f);
+}
+
+Color16 color16FromVec4(const glm::vec4 &vecColor)
+{
+    return colorFromFloat(vecColor.x, vecColor.y, vecColor.z, vecColor.w);
+}
+
+glm::vec3 color16ToVec3(const Color16 &color)
+{
+    return glm::vec3(color.getFloatR(), color.getFloatG(), color.getFloatB());
+}
+
+glm::vec4 color16ToVec4(const Color16 &color)
+{
+    return glm::vec4(color.getFloatR(), color.getFloatG(), color.getFloatB(), color.getFloatA());
+}
+
+Color16 color16Lerp(const Color16 &color1, const Color16 &color2, float factor)
+{
+    factor = clamp(factor, 0.0f, 1.0f);
+    uint16_t r = interpolateLinear(color1.getFloatR(), color2.getFloatR(), factor)*65535.0f;
+    uint16_t g = interpolateLinear(color1.getFloatG(), color2.getFloatG(), factor)*65535.0f;
+    uint16_t b = interpolateLinear(color1.getFloatB(), color2.getFloatB(), factor)*65535.0f;
+    uint16_t a = interpolateLinear(color1.getFloatA(), color2.getFloatA(), factor)*65535.0f;
+    return Color16(r, g, b, a);
+}
+
 }
 
 

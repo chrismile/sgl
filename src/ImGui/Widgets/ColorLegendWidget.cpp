@@ -127,8 +127,8 @@ void ColorLegendWidget::renderGui() {
         const float lineHeightFactor = 1.0f / (transferFunctionColorMap.size() - 1);
         const size_t numColorMapEntries = transferFunctionColorMap.size();
         for (size_t i = 0; i < transferFunctionColorMap.size(); i++) {
-            sgl::Color color = transferFunctionColorMap[numColorMapEntries - i - 1];
-            ImU32 colorImgui = ImColor(color.getR(), color.getG(), color.getB());
+            sgl::Color16 color = transferFunctionColorMap[numColorMapEntries - i - 1];
+            ImU32 colorImgui = ImColor(color.getFloatR(), color.getFloatG(), color.getFloatB());
             drawList->AddLine(
                     ImVec2(pos.x, pos.y), ImVec2(pos.x + barWidth, pos.y), colorImgui,
                     2.0f * regionHeight * lineHeightFactor);
