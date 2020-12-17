@@ -23,6 +23,11 @@
 #include <Utils/File/Logfile.hpp>
 #include <boost/algorithm/string.hpp>
 
+#ifdef USE_BOOST_LOCALE
+#include <boost/locale.hpp>
+#include <boost/locale/collator.hpp>
+#endif
+
 namespace sgl {
 
 void FileUtils::initialize(const std::string &_titleName, int _argc, char *_argv[])
@@ -361,6 +366,22 @@ bool FileUtils::pathsEquivalent(const std::string &pathStr0, const std::string &
     boost::filesystem::path path0(pathStr0);
     boost::filesystem::path path1(pathStr1);
     return boost::filesystem::equivalent(path0, path1);
+}
+
+struct CaseInsensitiveComparator {
+    bool operator() (const std::string& lhs, const std::string& rhs) const {
+        std::string lowerCaseStringLhs = boost::to_lower_copy(lhs);
+        std::string lowerCaseStringRhs = boost::to_lower_copy(rhs);
+        return lowerCaseStringLhs < lowerCaseStringRhs;
+    }
+};
+
+void FileUtils::sortPathStrings(std::vector<std::string>& pathStrings) {
+#ifdef USE_BOOST_LOCALE
+    std::sort(pathStrings.begin(), pathStrings.end(), boost::locale::comparator<char, boost::locale::collator_base::secondary>());
+#else
+    std::sort(pathStrings.begin(), pathStrings.end(), CaseInsensitiveComparator());
+#endif
 }
 
 }

@@ -363,6 +363,11 @@ void SciVisApp::renderSceneSettingsGuiPost() {
                 window->setWindowSize(recordingResolution.x, recordingResolution.y);
             }
 
+            if (videoWriter) {
+                delete videoWriter;
+                videoWriter = nullptr;
+            }
+
             recording = true;
             videoWriter = new sgl::VideoWriter(
                     saveDirectoryVideos + saveFilenameVideos
@@ -371,8 +376,10 @@ void SciVisApp::renderSceneSettingsGuiPost() {
     } else {
         if (ImGui::Button("Stop Recording Video")) {
             recording = false;
-            delete videoWriter;
-            videoWriter = nullptr;
+            if (videoWriter) {
+                delete videoWriter;
+                videoWriter = nullptr;
+            }
         }
     }
 

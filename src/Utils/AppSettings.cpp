@@ -25,6 +25,10 @@
 #include <fstream>
 #include <boost/algorithm/string/trim.hpp>
 
+#ifdef USE_BOOST_LOCALE
+#include <boost/locale.hpp>
+#endif
+
 #ifdef WIN32
 #include <windows.h>
 #include <VersionHelpers.h>
@@ -117,6 +121,12 @@ void SettingsFile::loadFromFile(const char *filename)
 
 Window *AppSettings::createWindow()
 {
+#ifdef USE_BOOST_LOCALE
+    boost::locale::generator gen;
+    std::locale l = gen("");
+    std::locale::global(l);
+#endif
+
     // Disable upscaling on Windows with High-DPI settings
     setDPIAware();
 

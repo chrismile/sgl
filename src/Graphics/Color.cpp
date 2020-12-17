@@ -68,7 +68,7 @@ Color colorLerp(const Color &color1, const Color &color2, float factor)
 
 Color16 color16FromFloat(float R /*= 0.0f*/, float G /*= 0.0f*/, float B /*= 0.0f*/, float A /*= 1.0f*/)
 {
-    return Color(R*65535.0f, G*65535.0f, B*65535.0f, A*65535.0f);
+    return Color16(R*65535.0f, G*65535.0f, B*65535.0f, A*65535.0f);
 }
 
 Color16 color16FromVec3(const glm::vec3 &vecColor)

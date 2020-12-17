@@ -57,6 +57,7 @@ public:
     CheckpointWindow(CameraPtr& camera);
     ~CheckpointWindow();
     void onLoadDataSet(const std::string& dataSetName);
+    bool getCheckpoint(const std::string& checkpointName, Checkpoint& checkpoint);
 
     /// @return true if re-rendering the scene is necessary.
     bool renderGui();

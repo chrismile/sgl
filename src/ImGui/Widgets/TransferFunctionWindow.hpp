@@ -99,6 +99,8 @@ class TransferFunctionWindow
 {
 public:
     TransferFunctionWindow();
+
+    inline const std::string& getSaveDirectory() { return saveDirectory; }
     bool saveFunctionToFile(const std::string& filename);
     bool loadFunctionFromFile(const std::string& filename);
     void updateAvailableFiles();

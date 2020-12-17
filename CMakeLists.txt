@@ -17,11 +17,16 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 	set(CMAKE_CXX_FLAGS "-Wall")
 endif()
 
-#make VERBOSE=1
+option(USE_BOOST_LOCALE "Build with Boost::Locale support" OFF)
 
 cmake_policy(SET CMP0012 NEW)
 find_package(OpenMP REQUIRED)
-find_package(Boost COMPONENTS system filesystem REQUIRED)
+if (USE_BOOST_LOCALE)
+	add_definitions(-DUSE_BOOST_LOCALE)
+	find_package(Boost COMPONENTS system filesystem locale REQUIRED)
+else()
+	find_package(Boost COMPONENTS system filesystem REQUIRED)
+endif()
 find_package(glm REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)

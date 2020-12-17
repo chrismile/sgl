@@ -69,6 +69,9 @@ public:
     // Do the two paths point to the same resource?
     bool pathsEquivalent(const std::string &pathStr0, const std::string &pathStr1);
 
+    // Sorts the array of path strings in a case insensitive way.
+    void sortPathStrings(std::vector<std::string>& pathStrings);
+
 private:
     int argc;
     char **argv;

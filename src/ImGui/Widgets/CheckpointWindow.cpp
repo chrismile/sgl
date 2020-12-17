@@ -87,6 +87,17 @@ void CheckpointWindow::onLoadDataSet(const std::string& dataSetName) {
     }
 }
 
+bool CheckpointWindow::getCheckpoint(const std::string& checkpointName, Checkpoint& checkpoint) {
+    for (size_t i = 0; i < loadedDataSetCheckpoints.size(); i++) {
+        auto& dataSetCheckpoint = loadedDataSetCheckpoints.at(i);
+        if (dataSetCheckpoint.first == checkpointName) {
+            checkpoint = dataSetCheckpoint.second;
+            return true;
+        }
+    }
+    return false;
+}
+
 bool CheckpointWindow::readFromFile(const std::string& filename) {
     std::ifstream file(filename.c_str(), std::ifstream::binary);
     if (!file.is_open()) {
@@ -113,9 +124,9 @@ bool CheckpointWindow::readFromFile(const std::string& filename) {
     }
 
     dataSetCheckpointMap.clear();
-    uint32_t numDataSetes = 0;
-    stream.read(numDataSetes);
-    for (uint32_t dataSetIdx = 0; dataSetIdx < numDataSetes; dataSetIdx++) {
+    uint32_t numDataSets = 0;
+    stream.read(numDataSets);
+    for (uint32_t dataSetIdx = 0; dataSetIdx < numDataSets; dataSetIdx++) {
         std::string dataSetName;
         uint32_t numDataSetCheckpoints = 0;
         stream.read(dataSetName);
