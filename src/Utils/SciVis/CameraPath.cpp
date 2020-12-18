@@ -160,6 +160,10 @@ void CameraPath::normalizeToTotalTime(float totalTime) {
 }
 
 void CameraPath::update(float currentTime) {
+    if (controlPoints.size() == 0) {
+        time = currentTime;
+        return;
+    }
     time = fmod(currentTime, controlPoints.back().time);
 
     // Find either exact control point or two to interpolate between

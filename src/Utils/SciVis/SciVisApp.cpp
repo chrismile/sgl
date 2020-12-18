@@ -409,7 +409,7 @@ void SciVisApp::updateCameraFlight(bool hasData, bool& usesNewState) {
     }
 
     // Already recorded full cycle?
-    if (useCameraFlight && recording && recordingTime > cameraPath.getEndTime()) {
+    if (useCameraFlight && recording && recordingTime > cameraPath.getEndTime() && hasData) {
         if (!startedCameraFlightPerUI) {
             quit();
         } else {
@@ -424,7 +424,7 @@ void SciVisApp::updateCameraFlight(bool hasData, bool& usesNewState) {
         recordingTime = 0.0f;
     }
 
-    if (useCameraFlight) {
+    if (useCameraFlight && hasData) {
         // Update camera position.
         if (usePerformanceMeasurementMode) {
             recordingTime += 1.0f;
