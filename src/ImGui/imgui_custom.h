@@ -5,6 +5,7 @@
 #ifndef SGL_IMGUI_CUSTOM_HPP
 #define SGL_IMGUI_CUSTOM_HPP
 
+#include <string>
 #include <functional>
 
 namespace ImGui

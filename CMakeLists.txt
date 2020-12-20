@@ -67,7 +67,7 @@ ENDIF()
 IF(WIN32)
 	target_compile_definitions(sgl PRIVATE DLL_BUILD)
 ENDIF()
-target_link_libraries(sgl PUBLIC ${Boost_LIBRARIES} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES})
+target_link_libraries(sgl PUBLIC ${Boost_LIBRARIES} ${OPENGL_LIBRARIES} GLEW::GLEW)
 include_directories(${Boost_INCLUDES} ${OPENGL_INCLUDE_DIRS} ${GLEW_INCLUDES})
 
 IF (NOT WIN32 AND NOT (UNIX AND NOT APPLE))
