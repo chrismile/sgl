@@ -31,57 +31,22 @@
 #include <cstdio>
 
 #include <Utils/File/Logfile.hpp>
-#include <Utils/File/FileUtils.hpp>
 
+#include "FileLoader.hpp"
 #include "LineReader.hpp"
 
 namespace sgl {
 
 LineReader::LineReader(const std::string& filename)
         : userManagedBuffer(false), bufferData(nullptr), bufferSize(0) {
-    if (!sgl::FileUtils::get()->exists(filename) || sgl::FileUtils::get()->isDirectory(filename)) {
-        sgl::Logfile::get()->writeError(
-                std::string() + "Error in LineReader::LineReader: File \""
-                + filename + "\" does not exist.");
+    uint8_t* fileBuffer = nullptr;
+    bool loaded = loadFileFromSource(filename, fileBuffer, bufferSize, false);
+    if (!loaded) {
+        sgl::Logfile::get()->writeError("ERROR in LineReader::LineReader: Couldn't load file.");
         return;
     }
 
-    FILE* file = fopen64(filename.c_str(), "r");
-    if (!file) {
-        sgl::Logfile::get()->writeError(
-                std::string() + "Error in LineReader::LineReader: Couldn't open file \""
-                + filename + "\".");
-        return;
-    }
-#if defined(_WIN32) && !defined(__MINGW32__)
-    _fseeki64(file, 0, SEEK_END);
-        size_t length = _ftelli64(file);
-        _fseeki64(file, 0, SEEK_SET);
-#else
-    fseeko(file, 0, SEEK_END);
-    size_t length = ftello(file);
-    fseeko(file, 0, SEEK_SET);
-#endif
-
-    char* fileBuffer = new char[length];
-    if (fileBuffer == nullptr) {
-        sgl::Logfile::get()->writeError(
-                std::string() + "Error in LineReader::LineReader: Couldn't reserve sufficient "
-                + "memory for reading the file \"" + filename + "\".");
-        return;
-    }
-    size_t result = fread(fileBuffer, 1, length, file);
-    fclose(file);
-    if (result != length) {
-        sgl::Logfile::get()->writeError(
-                std::string() + "Error in LineReader::LineReader: Invalid return value when "
-                + "reading the file \"" + filename + "\".");
-        delete[] fileBuffer;
-        return;
-    }
-
-    bufferData = fileBuffer;
-    bufferSize = length;
+    bufferData = reinterpret_cast<const char*>(fileBuffer);
     fillLineBuffer();
 }
 

@@ -74,7 +74,7 @@ bool loadFileFromSource(
 
     if (readBytes != bufferSize) {
         sgl::Logfile::get()->writeError(
-                std::string() + "ERROR in loadFileFromSource: File \"" + filename + "\" could not be opened.");
+                std::string() + "ERROR in loadFileFromSource: File \"" + filename + "\" could not be read.");
         delete[] buffer;
         buffer = nullptr;
         bufferSize = 0;

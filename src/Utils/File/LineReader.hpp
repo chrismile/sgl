@@ -127,6 +127,34 @@ public:
         return vec;
     }
 
+    template<typename T>
+    void readVectorLine(std::vector<T>& vec) {
+        if (!isLineLeft()) {
+            sgl::Logfile::get()->writeError("ERROR in LineReader::readVectorLine: No lines left.");
+        }
+
+        std::string tokenString;
+        vec.clear();
+
+        for (size_t linePtr = 0; linePtr < lineBuffer.size(); linePtr++) {
+            char currentChar = lineBuffer.at(linePtr);
+            bool isWhitespace = currentChar == ' ' || currentChar == '\t';
+            if (isWhitespace && tokenString.size() != 0) {
+                vec.push_back(sgl::fromString<T>(tokenString.c_str()));
+                tokenString.clear();
+            } else if (!isWhitespace) {
+                tokenString.push_back(currentChar);
+            }
+        }
+        if (tokenString.size() != 0) {
+            vec.push_back(sgl::fromString<T>(tokenString.c_str()));
+            tokenString.clear();
+        }
+
+        fillLineBuffer();
+    }
+
+
 private:
     bool userManagedBuffer;
     const char* bufferData = nullptr;
