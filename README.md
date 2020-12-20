@@ -59,10 +59,10 @@ Finally, when SGL has been cloned, it needs to be compiled and installed to, e.g
 mkdir build
 cd build
 rm -rf *
-cmake .. -G"MSYS Makefiles" -DCMAKE_INSTALL_PREFIX=/usr/local ..
+cmake -G"MSYS Makefiles" -DCMAKE_INSTALL_PREFIX=/usr/local ..
 make
 make install
-export PATH=$PATH:"/c/msys64/usr/local/lib"
+export PATH=$PATH:"/c/msys64/usr/local/bin"
 ```
 
 Please note that, when launching programs using SGL on Windows, either the library path of SGL 
@@ -74,6 +74,6 @@ variable. To permanently modify the MSYS PATH variable, /etc/profile needs to be
 
 ## License
 
-Copyright (c) 2017, Christoph Neuhauser
+Copyright (c) 2017-2020, Christoph Neuhauser
 
 BSD 3-Clause License (for more details see LICENSE file)
