@@ -216,6 +216,7 @@ bool CheckpointWindow::renderGui() {
                 camera->setPosition(dataSetCheckpoint.second.position);
                 camera->setYaw(dataSetCheckpoint.second.yaw);
                 camera->setPitch(dataSetCheckpoint.second.pitch);
+                camera->setFOVy(dataSetCheckpoint.second.fovy);
                 reRender = true;
             } ImGui::NextColumn();
             if (ImGui::Button(updateLabel.c_str())) {
