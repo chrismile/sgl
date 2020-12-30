@@ -125,6 +125,7 @@ protected:
     // For recording videos.
     bool recording = false;
     glm::ivec2 recordingResolution = glm::ivec2(2560, 1440); // 1920, 1080
+    bool useRecordingResolution = true;
     sgl::VideoWriter* videoWriter = nullptr;
     const int FRAME_RATE_VIDEOS = 30;
     float recordingTime = 0.0f;

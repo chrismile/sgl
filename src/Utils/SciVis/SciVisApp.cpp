@@ -328,6 +328,8 @@ void SciVisApp::renderSceneSettingsGuiPost() {
         startedCameraFlightPerUI = true;
         reRender = true;
     }
+    ImGui::SameLine();
+    ImGui::Checkbox("Use Recording Res.", &useRecordingResolution);
 
     ImGui::Separator();
 
@@ -359,7 +361,7 @@ void SciVisApp::renderSceneSettingsGuiPost() {
 
         if (startRecording) {
             sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
-            if (window->getWindowResolution() != recordingResolution) {
+            if (useRecordingResolution && window->getWindowResolution() != recordingResolution) {
                 window->setWindowSize(recordingResolution.x, recordingResolution.y);
             }
 
