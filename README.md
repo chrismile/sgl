@@ -14,7 +14,7 @@ If you built the doxygen documentation for this project (for more details see th
 On Ubuntu 18.04 for example, you can install all necessary packages with this command:
 
 ```
-sudo apt-get install git cmake libglm-dev libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libglew-dev libpng-dev libboost-filesystem-dev libtinyxml2-dev
+sudo apt-get install git cmake libglm-dev libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libglew-dev libpng-dev libboost-filesystem-dev libtinyxml2-dev libarchive-dev
 ```
 
 Similar packages should also be available on other distributions.
@@ -50,7 +50,7 @@ The build process was tested on Windows 10 64-bit using MSYS2 and Mingw-w64 (htt
 
 ```
 pacman -S make git wget mingw64/mingw-w64-x86_64-gcc wget mingw64/mingw-w64-x86_64-gdb
-pacman -S mingw64/mingw-w64-x86_64-glm mingw64/mingw-w64-x86_64-libpng mingw64/mingw-w64-x86_64-SDL2 mingw64/mingw-w64-x86_64-SDL2_image mingw64/mingw-w64-x86_64-SDL2_mixer mingw64/mingw-w64-x86_64-SDL2_ttf mingw64/mingw-w64-x86_64-tinyxml2 mingw64/mingw-w64-x86_64-boost mingw64/mingw-w64-x86_64-glew mingw64/mingw-w64-x86_64-cmake
+pacman -S mingw64/mingw-w64-x86_64-glm mingw64/mingw-w64-x86_64-libpng mingw64/mingw-w64-x86_64-SDL2 mingw64/mingw-w64-x86_64-SDL2_image mingw64/mingw-w64-x86_64-SDL2_mixer mingw64/mingw-w64-x86_64-SDL2_ttf mingw64/mingw-w64-x86_64-tinyxml2 mingw64/mingw-w64-x86_64-boost mingw64/mingw-w64-x86_64-glew mingw64/mingw-w64-x86_64-cmake mingw64/mingw-w64-x86_64-libarchive
 ```
 
 Finally, when sgl has been cloned, it needs to be compiled and installed to, e.g., /usr/local.

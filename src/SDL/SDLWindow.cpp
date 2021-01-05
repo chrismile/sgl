@@ -193,7 +193,7 @@ bool SDLWindow::processEvents(std::function<void(const SDL_Event&)> eventHandler
     SDLMouse *sdlMouse = (SDLMouse*)Mouse;
     sdlMouse->setScrollWheelValue(0);
     SDL_Event event;
-    while (SDL_PollEvent (&event)) {
+    while (SDL_PollEvent(&event)) {
         switch (event.type) {
         case (SDL_QUIT):
             running = false;
