@@ -24,6 +24,7 @@
 #include <ImGui/ImGuiWrapper.hpp>
 #include <fstream>
 #include <boost/algorithm/string/trim.hpp>
+#include <boost/filesystem.hpp>
 
 #ifdef USE_BOOST_LOCALE
 #include <boost/locale.hpp>
@@ -126,6 +127,12 @@ Window *AppSettings::createWindow()
     std::locale l = gen("");
     std::locale::global(l);
 #endif
+
+    // Make sure the "Data" directory exists.
+    // If not: Create a symbolic link to "Data" in the parent folder if it exists.
+    if (!sgl::FileUtils::get()->exists("Data") && sgl::FileUtils::get()->directoryExists("../Data")) {
+        boost::filesystem::create_directory_symlink("../Data", "Data");
+    }
 
     // Disable upscaling on Windows with High-DPI settings
     setDPIAware();

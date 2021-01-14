@@ -53,6 +53,7 @@ public:
     std::vector<std::string> getPathAsList(const std::string &dirPath);
     bool isDirectory(const std::string &dirPath);
     bool exists(const std::string &filePath);
+    bool directoryExists(const std::string &dirPath);
     void deleteFileEnding(std::string &path);
     void createDirectory (const std::string &path);
     void ensureDirectoryExists(const std::string &directory);

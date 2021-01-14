@@ -229,6 +229,11 @@ bool FileUtils::exists(const std::string &filePath)
     return false;
 }
 
+bool FileUtils::directoryExists(const std::string &dirPath)
+{
+    return isDirectory(dirPath) && exists(dirPath);
+}
+
 
 void FileUtils::deleteFileEnding(std::string &path)
 {
