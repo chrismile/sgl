@@ -40,8 +40,9 @@ ShaderManagerGL::ShaderManagerGL()
     if (it != shaderFileMap.end()) {
         std::ifstream file(it->second);
         if (!file.is_open()) {
-            Logfile::get()->writeError(std::string() + "ShaderManagerGL::ShaderManagerGL: Unexpected error "
-                                              "occured while loading \"GlobalDefines.glsl\".");
+            Logfile::get()->writeError(
+                    std::string() + "ShaderManagerGL::ShaderManagerGL: Unexpected error "
+                    "occured while loading \"GlobalDefines.glsl\".");
         }
         globalDefines = std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     }

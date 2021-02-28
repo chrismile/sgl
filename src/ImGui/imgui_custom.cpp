@@ -78,3 +78,37 @@ bool ImGui::ClickArea(const char *str_id, const ImVec2 &size_arg, bool &mouseRel
 
     return hovered && clicked;
 }
+
+void ImGui::ProgressSpinner(const char* str_id, float radius, float thickness, float speed, const ImVec4& color)
+{
+    ImGuiWindow* window = ImGui::GetCurrentWindow();
+    if (window->SkipItems)
+        return;
+
+    ImGuiContext& g = *GImGui;
+    const ImGuiStyle& style = g.Style;
+
+    ImVec2 pos = window->DC.CursorPos;
+    float totalRadius = radius > 0.0f ? radius + thickness : -1.0f;
+    ImVec2 size(totalRadius, totalRadius);
+    if (radius < 0.0f) {
+        size = ImVec2(g.FontSize + style.FramePadding.x*2.0f, g.FontSize + style.FramePadding.y*2.0f);
+        radius = g.FontSize * 0.5f;
+        thickness = g.FontSize * 0.2f;
+    }
+
+    ImRect bb(pos, pos + size);
+    ImVec2 center = bb.GetCenter();
+    ItemSize(size, style.FramePadding.y);
+    if (!ItemAdd(bb, 0))
+        return;
+
+    constexpr float EULER_CONSTANT = 2.71828182845904523536f;
+
+    ImDrawList* draw_list = window->DrawList;
+    float offset = std::sin(g.Time / EULER_CONSTANT * 2.0f * speed) * 1.0f + 2.0f;
+    float angleStart = g.Time * speed - offset / 2.0f;
+    float angleEnd = g.Time * speed + offset / 2.0f;
+    draw_list->PathArcTo(center, radius, angleStart, angleEnd, 12);
+    draw_list->PathStroke(ImGui::ColorConvertFloat4ToU32(color), false, thickness);
+}

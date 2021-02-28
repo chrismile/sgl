@@ -277,7 +277,7 @@ void TransferFunctionWindow::computeHistogram(const std::vector<float>& attribut
 }
 
 
-    void TransferFunctionWindow::recomputeHistogram() {
+void TransferFunctionWindow::recomputeHistogram() {
     histogram.clear();
     histogram.resize(histogramResolution);
 

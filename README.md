@@ -1,6 +1,6 @@
 ## sgl - Simple Graphics Library (using OpenGL and SDL)
 
-sgl is a collection of utility functions for developing OpenGL graphics applications for Linux & Windows with C++.
+sgl is a collection of utility functions for developing OpenGL and Vulkan graphics applications for Linux & Windows with C++.
 
 ## Usage
 
@@ -11,10 +11,26 @@ If you built the doxygen documentation for this project (for more details see th
 
 ## Compilation
 
-On Ubuntu 18.04 for example, you can install all necessary packages with this command:
+On Ubuntu 20.04 for example, you can install all necessary packages with this command:
 
 ```
-sudo apt-get install git cmake libglm-dev libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libglew-dev libpng-dev libboost-filesystem-dev libtinyxml2-dev libarchive-dev
+sudo apt-get install git cmake libglm-dev libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libpng-dev libboost-filesystem-dev libtinyxml2-dev libarchive-dev
+```
+
+For OpenGL support, you also need the following libraries.
+
+```
+sudo apt-get install libglew-dev
+```
+
+For Vulkan support, you need to install the LunarG Vulkan SDK and shaderc. Below, an example for installing release 1.2.162 on Ubuntu 20.04 is given (see https://vulkan.lunarg.com/sdk/home#linux).
+
+```
+wget -qO - https://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo apt-key add -
+sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-1.2.162-focal.list https://packages.lunarg.com/vulkan/1.2.162/lunarg-vulkan-1.2.162-focal.list
+sudo apt update
+sudo apt install vulkan-sdk
+sudo apt install shaderc
 ```
 
 Similar packages should also be available on other distributions.
@@ -53,6 +69,12 @@ pacman -S make git wget mingw64/mingw-w64-x86_64-gcc wget mingw64/mingw-w64-x86_
 pacman -S mingw64/mingw-w64-x86_64-glm mingw64/mingw-w64-x86_64-libpng mingw64/mingw-w64-x86_64-SDL2 mingw64/mingw-w64-x86_64-SDL2_image mingw64/mingw-w64-x86_64-SDL2_mixer mingw64/mingw-w64-x86_64-SDL2_ttf mingw64/mingw-w64-x86_64-tinyxml2 mingw64/mingw-w64-x86_64-boost mingw64/mingw-w64-x86_64-glew mingw64/mingw-w64-x86_64-cmake mingw64/mingw-w64-x86_64-libarchive
 ```
 
+For Vulkan support, you also need the following libraries.
+
+```
+pacman -S mingw64/mingw-w64-x86_64-vulkan-headers mingw64/mingw-w64-x86_64-vulkan-loader mingw64/mingw-w64-x86_64-vulkan-validation-layers mingw64/mingw-w64-x86_64-shaderc
+```
+
 Finally, when sgl has been cloned, it needs to be compiled and installed to, e.g., /usr/local.
 
 ```
@@ -74,6 +96,6 @@ variable. To permanently modify the MSYS PATH variable, /etc/profile needs to be
 
 ## License
 
-Copyright (c) 2017-2020, Christoph Neuhauser
+Copyright (c) 2017-2021, Christoph Neuhauser
 
 BSD 3-Clause License (for more details see LICENSE file)

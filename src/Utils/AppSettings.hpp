@@ -19,10 +19,16 @@ namespace sgl {
 
 class Window;
 
-enum RenderSystem {
-    OPENGL, OPENGLES, DIRECTX
+#ifdef SUPPORT_VULKAN
+namespace vk { class Instance; }
+#endif
+
+// At the moment, only OpenGL and Vulkan are supported.
+enum class RenderSystem {
+    OPENGL, OPENGLES, VULKAN, DIRECT3D_11, DIRECT3D_12, METAL
 };
-enum OperatingSystem {
+
+enum class OperatingSystem {
     WINDOWS, LINUX, ANDROID, MACOSX, IOS, UNKNOWN
 };
 
@@ -46,6 +52,13 @@ private:
     std::map<std::string, std::string> settings;
 };
 
+union HeadlessData {
+    Window* mainWindow;
+#ifdef SUPPORT_VULKAN
+    vk::Instance* instance;
+#endif
+};
+
 /*! AppSettings can application-specific settings on the one hand, and basic settings
  * like the screen resolution or the audio system on the other hand.
  * AppSettings will create the instances of the render system, etc. on startup.
@@ -55,19 +68,28 @@ class DLL_OBJECT AppSettings : public Singleton<AppSettings>
 public:
     void loadSettings(const char *filename);
     SettingsFile &getSettings() { return settings; }
+
+    /// setRenderSystem must be called before calling initializeSubsystems and createWindow.
+    void setRenderSystem(RenderSystem renderSystem);
     void initializeSubsystems();
-    Window *createWindow();
+    Window* createWindow();
+    /// Only Vulkan supports headless rendering (without a window) for now.
+    HeadlessData createHeadless();
     void release();
 
-    // Called in main if GUI should be loaded
+    /// Called in main if GUI should be loaded.
     void setLoadGUI(
             const unsigned short* fontRangeData = nullptr, bool useDocking = true, bool useMultiViewport = true,
             float uiScaleFactor = 1.0f);
 
     inline RenderSystem getRenderSystem() { return renderSystem; }
     inline OperatingSystem getOS() { return operatingSystem; }
-    Window *getMainWindow();
-    Window *setMainWindow(Window *window);
+    Window* getMainWindow();
+    Window* setMainWindow(Window* window);
+
+#ifdef SUPPORT_VULKAN
+    vk::Instance* getVulkanInstance() { return instance; }
+#endif
 
     void getCurrentDisplayMode(int& width, int& height, int& refreshRate, int displayIndex = 0);
     void getDesktopDisplayMode(int& width, int& height, int& refreshRate, int displayIndex = 0);
@@ -77,9 +99,13 @@ public:
 private:
     SettingsFile settings;
     std::string settingsFilename;
-    RenderSystem renderSystem;
+    RenderSystem renderSystem = RenderSystem::OPENGL;
     OperatingSystem operatingSystem;
-    Window *mainWindow;
+    Window* mainWindow = nullptr;
+
+#ifdef SUPPORT_VULKAN
+    vk::Instance* instance = nullptr;
+#endif
 
     // UI data.
     bool useGUI = false;

@@ -10,10 +10,6 @@
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
 #include <Graphics/Renderer.hpp>
-#include <Graphics/OpenGL/RendererGL.hpp>
-#include <Graphics/OpenGL/ShaderManager.hpp>
-#include <Graphics/OpenGL/TextureManager.hpp>
-#include <Graphics/OpenGL/SystemGL.hpp>
 #include <Graphics/Mesh/Material.hpp>
 #include <Utils/Timer.hpp>
 #include <SDL/SDLWindow.hpp>
@@ -28,6 +24,16 @@
 
 #ifdef USE_BOOST_LOCALE
 #include <boost/locale.hpp>
+#endif
+
+#ifdef SUPPORT_OPENGL
+#include <Graphics/OpenGL/RendererGL.hpp>
+#include <Graphics/OpenGL/ShaderManager.hpp>
+#include <Graphics/OpenGL/TextureManager.hpp>
+#include <Graphics/OpenGL/SystemGL.hpp>
+#endif
+#ifdef SUPPORT_VULKAN
+#include <Graphics/Vulkan/Utils/Instance.hpp>
 #endif
 
 #ifdef WIN32
@@ -150,36 +156,58 @@ Window *AppSettings::createWindow()
         Logfile::get()->writeError(std::string() + "SDL Error: " + SDL_GetError());
     }
 
+#ifdef SUPPORT_VULKAN
+    if (renderSystem == RenderSystem::VULKAN) {
+        instance = new vk::Instance;
+    }
+#endif
+
     SDLWindow *window = new SDLWindow;
     WindowSettings windowSettings = window->deserializeSettings(settings);
-    window->initialize(windowSettings);
+    window->initialize(windowSettings, renderSystem);
 
     mainWindow = window;
     return window;
+}
+
+HeadlessData AppSettings::createHeadless() {
+    HeadlessData headlessData;
+#ifdef SUPPORT_VULKAN
+    if (renderSystem == RenderSystem::VULKAN) {
+        bool debugContext = false;
+        settings.getValueOpt("window-debugContext", debugContext);
+        instance->createInstance({}, debugContext);
+        headlessData.instance = instance;
+    } else {
+#endif
+        headlessData.mainWindow = createWindow();
+#ifdef SUPPORT_VULKAN
+    }
+#endif
+    return headlessData;
+}
+
+void AppSettings::setRenderSystem(RenderSystem renderSystem) {
+    assert(!mainWindow);
+    this->renderSystem = renderSystem;
 }
 
 void AppSettings::initializeSubsystems()
 {
     Logfile::get()->createLogfile((FileUtils::get()->getConfigDirectory() + "Logfile.html").c_str(), "ShapeDetector");
 
-#ifndef OPENGLES
-    renderSystem = OPENGL;
-#else
-    renderSystem = OPENGLES;
-#endif
-
-    operatingSystem = UNKNOWN;
+    operatingSystem = OperatingSystem::UNKNOWN;
 #ifdef WIN32
-    operatingSystem = WINDOWS;
+    operatingSystem = OperatingSystem::WINDOWS;
 #endif
 #ifdef __linux__
-    operatingSystem = LINUX;
+    operatingSystem = OperatingSystem::LINUX;
 #endif
 #ifdef ANDROID
-    operatingSystem = ANDROID;
+    operatingSystem = OperatingSystem::ANDROID;
 #endif
 #ifdef MACOSX
-    operatingSystem = MACOSX;
+    operatingSystem = OperatingSystem::MACOSX;
 #endif
 
     /*if (TTF_Init() == -1) {
@@ -190,10 +218,21 @@ void AppSettings::initializeSubsystems()
     // Create the subsystem implementations
     Timer = new TimerInterface;
     //AudioManager = new SDLMixerAudioManager;
-    TextureManager = new TextureManagerGL;
-    ShaderManager = new ShaderManagerGL;
     MaterialManager = new MaterialManagerInterface;
-    Renderer = new RendererGL;
+
+#ifdef SUPPORT_OPENGL
+    if (renderSystem == RenderSystem::OPENGL) {
+        TextureManager = new TextureManagerGL;
+        ShaderManager = new ShaderManagerGL;
+        Renderer = new RendererGL;
+        SystemGL::get();
+    }
+#endif
+#ifdef SUPPORT_VULKAN
+    if (renderSystem == RenderSystem::VULKAN) {
+        // TODO
+    }
+#endif
 
     Mouse = new SDLMouse;
     Keyboard = new SDLKeyboard;
@@ -202,8 +241,6 @@ void AppSettings::initializeSubsystems()
     if (useGUI) {
         ImGuiWrapper::get()->initialize(fontRangesData, useDocking, useMultiViewport, uiScaleFactor);
     }
-
-    SystemGL::get();
 }
 
 void AppSettings::release()
@@ -211,14 +248,34 @@ void AppSettings::release()
     mainWindow->serializeSettings(settings);
     settings.saveToFile(settingsFilename.c_str());
 
-    ImGuiWrapper::get()->shutdown();
+    if (useGUI) {
+        ImGuiWrapper::get()->shutdown();
+    }
 
-    delete Renderer;
+    if (Renderer) {
+        delete Renderer;
+        Renderer = nullptr;
+    }
+    if (ShaderManager) {
+        delete ShaderManager;
+        ShaderManager = nullptr;
+    }
+    if (TextureManager) {
+        delete TextureManager;
+        TextureManager = nullptr;
+    }
+
     delete MaterialManager;
-    delete ShaderManager;
-    delete TextureManager;
     //delete AudioManager;
     delete Timer;
+
+    mainWindow->close();
+
+#ifdef SUPPORT_VULKAN
+    if (renderSystem == RenderSystem::VULKAN) {
+        delete instance;
+    }
+#endif
 
     //Mix_CloseAudio();
     //TTF_Quit();

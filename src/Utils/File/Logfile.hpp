@@ -13,7 +13,7 @@
 
 namespace sgl {
 
-//! Colors for the output text
+//! Colors for the output text.
 enum FONTCOLORS {
     BLACK, WHITE, RED, GREEN, BLUE, PURPLE, ORANGE
 };
@@ -26,13 +26,15 @@ public:
     void createLogfile(const char *filename, const char *appName);
     void closeLogfile();
 
-    //! Write to Logfile
+    //! Write to log file.
     void writeTopic(const std::string &text, int size);
     void write(const std::string &text);
     void write(const std::string &text, int color);
-    //! Outputs text on stderr, too
+    //! Outputs text on stderr, too.
     void writeError(const std::string &text);
-    //! Outputs text on stdout, too
+    //! Writes to log file, stderr, and throws an error.
+    void throwError(const std::string &text);
+    //! Outputs text on stdout, too.
     void writeInfo(const std::string &text);
 
 private:

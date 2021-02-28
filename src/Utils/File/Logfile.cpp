@@ -109,6 +109,12 @@ void Logfile::writeError(const std::string &text)
     write(text, RED);
 }
 
+void Logfile::throwError(const std::string &text)
+{
+    write(text, RED);
+    throw std::runtime_error(text);
+}
+
 void Logfile::writeInfo(const std::string &text)
 {
     std::cout << text << std::endl;

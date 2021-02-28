@@ -8,7 +8,12 @@
 #include <Graphics/OpenGL/SystemGL.hpp>
 
 #include "imgui.h"
+#ifdef SUPPORT_OPENGL
 #include "imgui_impl_opengl3.h"
+#endif
+#ifdef SUPPORT_OPENGL
+#include "imgui_impl_vulkan.h"
+#endif
 #include "imgui_impl_sdl.h"
 #include "ImGuiWrapper.hpp"
 
@@ -36,14 +41,29 @@ void ImGuiWrapper::initialize(
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
     //io.FontGlobalScale = fontScaleFactor*2.0f;
 
-    SDLWindow *window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
-    SDL_GLContext context = window->getGLContext();
-    ImGui_ImplSDL2_InitForOpenGL(window->getSDLWindow(), context);
-    const char* glsl_version = "#version 430";
-    if (!SystemGL::get()->openglVersionMinimum(4,3)) {
-        glsl_version = NULL; // Use standard
+    RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
+#ifdef SUPPORT_OPENGL
+    if (renderSystem == RenderSystem::OPENGL) {
+        SDLWindow *window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
+        SDL_GLContext context = window->getGLContext();
+        ImGui_ImplSDL2_InitForOpenGL(window->getSDLWindow(), context);
+        const char* glsl_version = "#version 430";
+        if (!SystemGL::get()->openglVersionMinimum(4,3)) {
+            glsl_version = NULL; // Use standard
+        }
+        ImGui_ImplOpenGL3_Init(glsl_version);
     }
-    ImGui_ImplOpenGL3_Init(glsl_version);
+#endif
+#ifdef SUPPORT_VULKAN
+    if (renderSystem == RenderSystem::VULKAN) {
+        // TODO
+        ImGui_ImplVulkan_InitInfo initInfo{};
+        //initInfo.Instance = ;
+
+        VkRenderPass renderPass;
+        ImGui_ImplVulkan_Init(&initInfo, renderPass);
+    }
+#endif
 
     // Setup style
     ImGui::StyleColorsDark();
@@ -81,6 +101,17 @@ void ImGuiWrapper::initialize(
 
 void ImGuiWrapper::shutdown()
 {
+    RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
+#ifdef SUPPORT_OPENGL
+    if (renderSystem == RenderSystem::OPENGL) {
+        ImGui_ImplOpenGL3_Shutdown();
+    }
+#endif
+#ifdef SUPPORT_VULKAN
+    if (renderSystem == RenderSystem::VULKAN) {
+        ImGui_ImplVulkan_Shutdown();
+    }
+#endif
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
@@ -94,9 +125,19 @@ void ImGuiWrapper::processSDLEvent(const SDL_Event &event)
 void ImGuiWrapper::renderStart()
 {
     SDLWindow *window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
+    RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
 
     // Start the Dear ImGui frame
-    ImGui_ImplOpenGL3_NewFrame();
+#ifdef SUPPORT_OPENGL
+    if (renderSystem == RenderSystem::OPENGL) {
+        ImGui_ImplOpenGL3_NewFrame();
+    }
+#endif
+#ifdef SUPPORT_VULKAN
+    if (renderSystem == RenderSystem::VULKAN) {
+        ImGui_ImplVulkan_NewFrame();
+    }
+#endif
     ImGui_ImplSDL2_NewFrame(window->getSDLWindow());
     ImGui::NewFrame();
 }
@@ -104,7 +145,21 @@ void ImGuiWrapper::renderStart()
 void ImGuiWrapper::renderEnd()
 {
     ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
+#ifdef SUPPORT_OPENGL
+    if (renderSystem == RenderSystem::OPENGL) {
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    }
+#endif
+#ifdef SUPPORT_VULKAN
+    if (renderSystem == RenderSystem::VULKAN) {
+        // TODO
+        VkCommandBuffer commandBuffer;
+        //commandBuffer = vk::Renderer->getFrameCommandBuffer();
+        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
+    }
+#endif
 
     ImGuiIO &io = ImGui::GetIO();
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {

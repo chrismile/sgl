@@ -22,17 +22,25 @@
 #include <ctime>
 #include <boost/algorithm/string/predicate.hpp>
 #include <SDL2/SDL.h>
+
+#ifdef SUPPORT_OPENGL
 #include <GL/glew.h>
 #ifdef __linux__
 #include <X11/Xlib.h>
 #include <GL/gl.h>
 #include <GL/glx.h>
 #endif
+#endif
 
+#ifdef SUPPORT_VULKAN
+#include <vulkan/vulkan.h>
+#include <Graphics/Vulkan/Utils/Instance.hpp>
+#include <Graphics/Vulkan/Utils/Swapchain.hpp>
+#endif
 
 namespace sgl {
 
-SDLWindow::SDLWindow() : sdlWindow(NULL), glContext(NULL)
+SDLWindow::SDLWindow()
 {
 }
 
@@ -44,18 +52,19 @@ void SDLWindow::errorCheck()
     }
 }
 
+#ifdef SUPPORT_OPENGL
 // Query the numbers of multisample samples possible (given a maximum number of desired samples)
 int getMaxSamplesGLImpl(int desiredSamples) {
 #ifdef __linux__
-    const char *displayName = ":0";
-    Display *display;
+    const char* displayName = ":0";
+    Display* display;
     if (!(display = XOpenDisplay(displayName))) {
         Logfile::get()->writeError("Couldn't open X11 display");
     }
     int defscreen = DefaultScreen(display);
 
     int nitems;
-    GLXFBConfig *fbcfg = glXChooseFBConfig(display, defscreen, NULL, &nitems);
+    GLXFBConfig* fbcfg = glXChooseFBConfig(display, defscreen, NULL, &nitems);
     if (!fbcfg)
         throw std::string("Couldn't get FB configs\n");
 
@@ -76,43 +85,54 @@ int getMaxSamplesGLImpl(int desiredSamples) {
     return desiredSamples;
 #endif
 }
+#endif
 
-void SDLWindow::initialize(const WindowSettings &settings)
+void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSystem)
 {
-    windowSettings = settings;
+    this->renderSystem = renderSystem;
+    this->windowSettings = windowSettings;
 
-    // Set the window attributes
-    SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, windowSettings.depthSize);
-    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    //SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 0);
+#ifdef SUPPORT_OPENGL
+    if (renderSystem == RenderSystem::OPENGL) {
+        // Set the window attributes
+        SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
+        SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
+        SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
+        SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
+        SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, windowSettings.depthSize);
+        SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+        SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+        //SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 0);
 
-    // Set core profile
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+        // Set core profile
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 
-    if (windowSettings.debugContext) {
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
+        if (windowSettings.debugContext) {
+            SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
+        }
+
+        if (windowSettings.multisamples != 0) {
+            // Context creation fails (at least on GLX) if multisample samples are too high, so query the maximum beforehand
+            windowSettings.multisamples = getMaxSamplesGLImpl(windowSettings.multisamples);
+        }
+        if (windowSettings.multisamples != 0) {
+            SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+            SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, windowSettings.multisamples);
+            glEnable(GL_MULTISAMPLE);
+        }
     }
-
-    if (windowSettings.multisamples != 0) {
-        // Context creation fails (at least on GLX) if multisample samples are too high, so query the maximum beforehand
-        windowSettings.multisamples = getMaxSamplesGLImpl(windowSettings.multisamples);
-    }
-    if (windowSettings.multisamples != 0) {
-        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, windowSettings.multisamples);
-        glEnable(GL_MULTISAMPLE);
-    }
+#endif
 
     errorCheck();
 
-    Uint32 flags = SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI;
+    Uint32 flags = SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI;
+    if (renderSystem == RenderSystem::OPENGL) {
+        flags = flags | SDL_WINDOW_OPENGL;
+    } else if (renderSystem == RenderSystem::VULKAN) {
+        flags = flags | SDL_WINDOW_VULKAN;
+    }
     if (windowSettings.fullscreen) flags |= SDL_WINDOW_FULLSCREEN;
     if (windowSettings.resizable) flags |= SDL_WINDOW_RESIZABLE;
 
@@ -122,39 +142,76 @@ void SDLWindow::initialize(const WindowSettings &settings)
             windowSettings.width, windowSettings.height, flags);
 
     errorCheck();
-    glContext = SDL_GL_CreateContext(sdlWindow);
-    errorCheck();
-    SDL_GL_MakeCurrent(sdlWindow, glContext);
+#ifdef SUPPORT_OPENGL
+    if (renderSystem == RenderSystem::OPENGL) {
+        glContext = SDL_GL_CreateContext(sdlWindow);
+        errorCheck();
+        SDL_GL_MakeCurrent(sdlWindow, glContext);
+    }
+#endif
+#ifdef SUPPORT_VULKAN
+    if (renderSystem == RenderSystem::VULKAN) {
+        /*
+         * The array "instanceExtensionNames" holds the name of all extensions that get requested. First, user-specified
+         * extensions are added. Then, extensions required by SDL are added using "SDL_Vulkan_GetInstanceExtensions".
+         */
+        std::vector<const char*> instanceExtensionNames = {
+        };
+        uint32_t extensionCount;
+        SDL_Vulkan_GetInstanceExtensions(sdlWindow, &extensionCount, nullptr);
+        size_t additionalExtensionCount = instanceExtensionNames.size();
+        instanceExtensionNames.resize(extensionCount + instanceExtensionNames.size());
+        SDL_Vulkan_GetInstanceExtensions(
+                sdlWindow, &extensionCount, instanceExtensionNames.data() + additionalExtensionCount);
+
+        sgl::vk::Instance* instance = sgl::AppSettings::get()->getVulkanInstance();
+        instance->createInstance(instanceExtensionNames, windowSettings.debugContext);
+
+        if (!SDL_Vulkan_CreateSurface(sdlWindow, instance->getVkInstance(), &windowSurface)) {
+            sgl::Logfile::get()->writeError(
+                    std::string() + "Error in SDLWindow::initialize: Failed to create a Vulkan surface.");
+            exit(-1);
+        }
+    }
+#endif
     errorCheck();
 
-    if (windowSettings.multisamples != 0) {
+#ifdef SUPPORT_OPENGL
+    if (renderSystem == RenderSystem::OPENGL && windowSettings.multisamples != 0) {
         glEnable(GL_MULTISAMPLE);
     }
 
-    if (windowSettings.vSync) {
-        SDL_GL_SetSwapInterval(-1);
+    if (renderSystem == RenderSystem::OPENGL && windowSettings.vSync) {
+        if (windowSettings.vSync) {
+            SDL_GL_SetSwapInterval(-1);
 
-        const char *sdlError = SDL_GetError();
-        if (boost::contains(sdlError, "Negative swap interval unsupported")) {
-            Logfile::get()->writeInfo(std::string() + "VSYNC Info: " + sdlError);
-            SDL_ClearError();
-            SDL_GL_SetSwapInterval(1);
+            const char* sdlError = SDL_GetError();
+            if (boost::contains(sdlError, "Negative swap interval unsupported")) {
+                Logfile::get()->writeInfo(std::string() + "VSYNC Info: " + sdlError);
+                SDL_ClearError();
+                SDL_GL_SetSwapInterval(1);
+            }
+        } else {
+            SDL_GL_SetSwapInterval(0);
         }
-    } else {
-        SDL_GL_SetSwapInterval(0);
     }
+#endif
 
     // Did something fail during the initialization?
     errorCheck();
 
-    // Initialize GLEW
-    glewExperimental = GL_TRUE;
-    GLenum glewError = glewInit();
-    if (glewError != GLEW_OK) {
-        Logfile::get()->writeError(std::string() + "Error: SDLWindow::initializeOpenGL: glewInit: " + (char*)glewGetErrorString(glewError));
-    }
+#ifdef SUPPORT_OPENGL
+    if (renderSystem == RenderSystem::OPENGL) {
+        // Initialize GLEW
+        glewExperimental = GL_TRUE;
+        GLenum glewError = glewInit();
+        if (glewError != GLEW_OK) {
+            Logfile::get()->writeError(std::string() + "Error: SDLWindow::initializeOpenGL: glewInit: " + (char*)glewGetErrorString(glewError));
+        }
 
-    glViewport(0, 0, windowSettings.width, windowSettings.height);
+        glViewport(0, 0, windowSettings.width, windowSettings.height);
+    }
+#endif
 }
 
 
@@ -173,11 +230,30 @@ void SDLWindow::setWindowSize(int width, int height)
     EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
 }
 
+void SDLWindow::destroySurface()
+{
+#ifdef SUPPORT_VULKAN
+    if (renderSystem == RenderSystem::VULKAN) {
+        sgl::vk::Instance* instance = sgl::AppSettings::get()->getVulkanInstance();
+        vkDestroySurfaceKHR(instance->getVkInstance(), windowSurface, nullptr);
+    }
+#endif
+}
+
 void SDLWindow::close()
 {
-    SDL_GL_DeleteContext(glContext);
+#ifdef SUPPORT_OPENGL
+    if (renderSystem == RenderSystem::OPENGL) {
+        SDL_GL_DeleteContext(glContext);
+    }
+#endif
+#ifdef SUPPORT_OPENGL
+    if (renderSystem == RenderSystem::VULKAN) {
+        sgl::vk::Instance* instance = sgl::AppSettings::get()->getVulkanInstance();
+        vkDestroySurfaceKHR(instance->getVkInstance(), windowSurface, nullptr);
+    }
+#endif
     SDL_DestroyWindow(sdlWindow);
-    AppSettings::get()->release();
     Logfile::get()->write("SDLWindow::quit()");
 }
 
@@ -190,7 +266,7 @@ bool SDLWindow::processEvents(std::function<void(const SDL_Event&)> eventHandler
     SDL_PumpEvents();
 
     bool running = true;
-    SDLMouse *sdlMouse = (SDLMouse*)Mouse;
+    SDLMouse* sdlMouse = (SDLMouse*)Mouse;
     sdlMouse->setScrollWheelValue(0);
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
@@ -206,7 +282,7 @@ bool SDLWindow::processEvents(std::function<void(const SDL_Event&)> eventHandler
                 break;
             case (SDLK_v):
                 if (SDL_GetModState() & KMOD_CTRL) {
-                    char *clipboardText = SDL_GetClipboardText();
+                    char* clipboardText = SDL_GetClipboardText();
                     Keyboard->addToKeyBuffer(clipboardText);
                     free(clipboardText);
                 }
@@ -248,14 +324,19 @@ bool SDLWindow::processEvents(std::function<void(const SDL_Event&)> eventHandler
 
 void SDLWindow::clear(const Color &color)
 {
+#ifdef SUPPORT_OPENGL
     glClearColor(color.getFloatR(), color.getFloatG(), color.getFloatB(), 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+#endif
 }
 
 void SDLWindow::flip()
 {
-    SDL_GL_SwapWindow(sdlWindow);
+    if (renderSystem == RenderSystem::OPENGL) {
+        SDL_GL_SwapWindow(sdlWindow);
+    } else {
+        throw std::runtime_error("SDLWindow::flip: Unsupported operation when using Vulkan.");
+    }
 }
 
 void SDLWindow::serializeSettings(SettingsFile &settings)
@@ -284,12 +365,22 @@ WindowSettings SDLWindow::deserializeSettings(const SettingsFile &settings)
     return windowSettings;
 }
 
-void SDLWindow::saveScreenshot(const char *filename)
+void SDLWindow::saveScreenshot(const char* filename)
 {
-    BitmapPtr bitmap(new Bitmap(windowSettings.width, windowSettings.height, 32));
-    glReadPixels(0, 0, windowSettings.width, windowSettings.height, GL_RGBA, GL_UNSIGNED_BYTE, bitmap->getPixels());
-    bitmap->savePNG(filename, true);
-    Logfile::get()->write(std::string() + "INFO: SDLWindow::saveScreenshot: Screenshot saved to \"" + filename + "\".", BLUE);
+    if (renderSystem == RenderSystem::OPENGL) {
+#ifdef SUPPORT_OPENGL
+        BitmapPtr bitmap(new Bitmap(windowSettings.width, windowSettings.height, 32));
+        glReadPixels(
+                0, 0, windowSettings.width, windowSettings.height,
+                GL_RGBA, GL_UNSIGNED_BYTE, bitmap->getPixels());
+        bitmap->savePNG(filename, true);
+        Logfile::get()->write(
+                std::string() + "INFO: SDLWindow::saveScreenshot: Screenshot saved to \""
+                + filename + "\".", BLUE);
+#endif
+    } else {
+        throw std::runtime_error("SDLWindow::saveScreenshot: Unsupported operation when using Vulkan.");
+    }
 }
 
 }
