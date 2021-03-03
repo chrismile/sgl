@@ -54,6 +54,7 @@ inline void MY_ASSERT(bool expression) {
 #define MY_ASSERT assert
 #endif
 
+#define UNUSED(x) ((void)(x))
 
 /*! SRC_DEFS_HPP_ */
 #endif

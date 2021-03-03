@@ -50,6 +50,8 @@ struct WindowSettings {
     bool vSync;
     VSyncMode vSyncMode;
     bool debugContext;
+    bool savePosition;
+    glm::ivec2 windowPosition;
 
     WindowSettings() {
         width = 1920;
@@ -65,6 +67,8 @@ struct WindowSettings {
 #else
         debugContext = false;
 #endif
+        savePosition = false;
+        windowPosition = glm::ivec2(std::numeric_limits<int>::min());
     }
 };
 
@@ -83,13 +87,14 @@ public:
     virtual bool isDebugContext()=0;
 
     //! Initialize/close the window
-    virtual void initialize(const WindowSettings&, RenderSystem renderSystem)=0;
+    virtual void initialize(const WindowSettings& windowSettings, RenderSystem renderSystem)=0;
     virtual void destroySurface()=0;
     virtual void close()=0;
 
     //! Change the window attributes
     virtual void toggleFullscreen(bool nativeFullscreen = true)=0;
     virtual void setWindowSize(int width, int height)=0;
+    virtual void setWindowPosition(int x, int y)=0;
     virtual void serializeSettings(SettingsFile &settings)=0;
     virtual WindowSettings deserializeSettings(const SettingsFile &settings)=0;
 
@@ -106,6 +111,7 @@ public:
     virtual int getWidth()=0;
     virtual int getHeight()=0;
     virtual glm::ivec2 getWindowResolution()=0;
+    virtual glm::ivec2 getWindowPosition()=0;
     virtual const WindowSettings& getWindowSettings() const=0;
 
 #ifdef SUPPORT_VULKAN

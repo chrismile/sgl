@@ -59,9 +59,9 @@ union HeadlessData {
 #endif
 };
 
-/*! AppSettings can application-specific settings on the one hand, and basic settings
- * like the screen resolution or the audio system on the other hand.
- * AppSettings will create the instances of the render system, etc. on startup.
+/**
+ * AppSettings handles application-specific settings on the one hand, and basic settings like the screen resolution or
+ * the audio system on the other hand. AppSettings will create the instances of the render system, etc., on startup.
  */
 class DLL_OBJECT AppSettings : public Singleton<AppSettings>
 {

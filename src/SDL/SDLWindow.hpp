@@ -37,6 +37,7 @@ public:
     //! Try to keep resolution
     virtual void toggleFullscreen(bool nativeFullscreen = true);
     virtual void setWindowSize(int width, int height);
+    virtual void setWindowPosition(int x, int y);
     virtual void serializeSettings(SettingsFile &settings);
     virtual WindowSettings deserializeSettings(const SettingsFile &settings);
 
@@ -53,6 +54,7 @@ public:
     virtual int getWidth() { return windowSettings.width; }
     virtual int getHeight() { return windowSettings.height; }
     virtual glm::ivec2 getWindowResolution() { return glm::ivec2(windowSettings.width, windowSettings.height); }
+    virtual glm::ivec2 getWindowPosition();
     virtual const WindowSettings& getWindowSettings() const { return windowSettings; }
 
     //! Getting SDL specific data

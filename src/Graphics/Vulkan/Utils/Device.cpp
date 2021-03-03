@@ -44,6 +44,7 @@ void Device::initializeDeviceExtensionList(VkPhysicalDevice physicalDevice) {
         res = vkEnumerateDeviceExtensionProperties(
                 physicalDevice, NULL, &deviceExtensionCount, deviceExtensions);
         assert(!res);
+        UNUSED(res);
 
         for (uint32_t i = 0; i < deviceExtensionCount; i++) {
             availableDeviceExtensionNames.insert(deviceExtensions[i].extensionName);
@@ -157,6 +158,7 @@ VkPhysicalDevice createPhysicalDeviceBinding(
     uint32_t numPhysicalDevices = 0;
     VkResult res = vkEnumeratePhysicalDevices(instance, &numPhysicalDevices, NULL);
     assert(!res && numPhysicalDevices > 0);
+    UNUSED(res);
 
     std::vector<VkPhysicalDevice> physicalDevices(numPhysicalDevices);
     res = vkEnumeratePhysicalDevices(instance, &numPhysicalDevices, physicalDevices.data());
@@ -228,6 +230,7 @@ LogicalDeviceAndQueues createLogicalDeviceAndQueues(
     VkDevice device;
     VkResult res = vkCreateDevice(physicalDevice, &deviceInfo, NULL, &device);
     assert(!res);
+    UNUSED(res);
 
     VkQueue graphicsQueue, computeQueue;
     vkGetDeviceQueue(device, queueIndex, 0, &graphicsQueue);

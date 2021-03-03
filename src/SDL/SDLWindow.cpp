@@ -90,7 +90,7 @@ int getMaxSamplesGLImpl(int desiredSamples) {
 void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSystem)
 {
     this->renderSystem = renderSystem;
-    this->windowSettings = windowSettings;
+    this->windowSettings = settings;
 
 #ifdef SUPPORT_OPENGL
     if (renderSystem == RenderSystem::OPENGL) {
@@ -140,6 +140,10 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
     sdlWindow = SDL_CreateWindow(FileUtils::get()->getTitleName().c_str(),
             SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
             windowSettings.width, windowSettings.height, flags);
+
+    if (windowSettings.savePosition && windowSettings.windowPosition.x != std::numeric_limits<int>::min()) {
+        setWindowPosition(windowSettings.windowPosition.x, windowSettings.windowPosition.y);
+    }
 
     errorCheck();
 #ifdef SUPPORT_OPENGL
@@ -228,6 +232,18 @@ void SDLWindow::setWindowSize(int width, int height)
     windowSettings.width = width;
     windowSettings.height = height;
     EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
+}
+
+glm::ivec2 SDLWindow::getWindowPosition()
+{
+    int x, y;
+    SDL_GetWindowPosition(sdlWindow, &x, &y);
+    return glm::ivec2(x, y);
+}
+
+void SDLWindow::setWindowPosition(int x, int y)
+{
+    SDL_SetWindowPosition(sdlWindow, x, y);
 }
 
 void SDLWindow::destroySurface()
@@ -348,7 +364,11 @@ void SDLWindow::serializeSettings(SettingsFile &settings)
     settings.addKeyValue("window-multisamples", windowSettings.multisamples);
     settings.addKeyValue("window-depthSize", windowSettings.depthSize);
     settings.addKeyValue("window-vSync", windowSettings.vSync);
-
+    settings.addKeyValue("window-savePosition", windowSettings.savePosition);
+    if (windowSettings.savePosition) {
+        windowSettings.windowPosition = getWindowPosition();
+        settings.addKeyValue("window-windowPosition", windowSettings.windowPosition);
+    }
 }
 
 WindowSettings SDLWindow::deserializeSettings(const SettingsFile &settings)
@@ -362,6 +382,8 @@ WindowSettings SDLWindow::deserializeSettings(const SettingsFile &settings)
     settings.getValueOpt("window-depthSize", windowSettings.depthSize);
     settings.getValueOpt("window-vSync", windowSettings.vSync);
     settings.getValueOpt("window-debugContext", windowSettings.debugContext);
+    settings.getValueOpt("window-savePosition", windowSettings.savePosition);
+    settings.getValueOpt("window-windowPosition", windowSettings.windowPosition);
     return windowSettings;
 }
 

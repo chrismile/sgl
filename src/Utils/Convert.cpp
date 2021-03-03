@@ -59,4 +59,17 @@ bool isNumeric(const std::string &stringObject)
     return true;
 }
 
+// --- Specializations of fromString ---
+
+template<>
+glm::ivec2 fromString<glm::ivec2>(const std::string &stringObject) {
+    std::stringstream strstr;
+    strstr << stringObject;
+    glm::ivec2 type;
+    for (int i = 0; i < 2; i++) {
+        strstr >> type[i];
+    }
+    return type;
+}
+
 }

@@ -6,6 +6,7 @@
  */
 
 #include "Bitmap.hpp"
+#include <Utils/File/Logfile.hpp>
 #include <Math/Math.hpp>
 #include <Math/Geometry/Rectangle.hpp>
 #include <Math/Geometry/Point2.hpp>
@@ -89,6 +90,8 @@ void Bitmap::blit(BitmapPtr &aim, const Rectangle &sourceRectangle, const Rectan
     int destY = destinationRectangle.y;
     int destW = destinationRectangle.w;
     int destH = destinationRectangle.h;
+    UNUSED(destW);
+    UNUSED(destH);
 
     assert(sourceW == destW && sourceH == destH);
     assert(sourceX >= 0 && sourceY >= 0 && destX >= 0 && destY >= 0);
@@ -209,7 +212,12 @@ void Bitmap::fromFile(const char *filename) {
     }
 
     // Read the header
-    fread(header, 1, 8, fp);
+    size_t numBytes = fread(header, 1, 8, fp);
+    if (numBytes != 8) {
+        sgl::Logfile::get()->writeError("ERROR: Bitmap::fromFile: fread failed.");
+        fclose(fp);
+        return;
+    }
 
     if (png_sig_cmp(header, 0, 8)) {
         std::cerr << "ERROR: Bitmap::fromFile: The file \"" << filename

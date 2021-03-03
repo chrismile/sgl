@@ -12,6 +12,12 @@
 #include <vector>
 #include <sstream>
 
+#ifdef USE_GLM
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
+#endif
+
 namespace sgl {
 
 //! Conversion to and from string
@@ -22,14 +28,14 @@ std::string toString(T obj) {
     return ostr.str();
 }
 template <class T>
-T fromString (const std::string &stringObject) {
+T fromString(const std::string &stringObject) {
     std::stringstream strstr;
     strstr << stringObject;
     T type;
     strstr >> type;
     return type;
 }
-inline std::string fromString (const std::string &stringObject) {
+inline std::string fromString(const std::string &stringObject) {
     return stringObject;
 }
 
@@ -67,6 +73,33 @@ bool isInteger(const std::string &stringObject);
 bool isNumeric(const std::string &stringObject);
 //! Respects whether string contains decimal or hexadecimal number
 int stringToNumber(const char *str);
+
+#ifdef USE_GLM
+template <int L, typename T, glm::qualifier Q>
+std::string toString(const glm::vec<L, T, Q>& obj) {
+    std::ostringstream ostr;
+    for (int i = 0; i < L; i++) {
+        ostr << obj[i];
+        if (i != L - 1) {
+            ostr << " ";
+        }
+    }
+    return ostr.str();
+}
+// Partial specialization not allowed :(
+/*template <int L, typename T, glm::qualifier Q>
+glm::vec<L, T, Q> fromString(const std::string &stringObject) {
+    std::stringstream strstr;
+    strstr << stringObject;
+    glm::vec<L, T, Q> type;
+    for (int i = 0; i < L; i++) {
+        strstr >> type[i];
+    }
+    return type;
+}*/
+template<>
+glm::ivec2 fromString<glm::ivec2>(const std::string &stringObject);
+#endif
 
 }
 
