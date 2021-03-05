@@ -141,10 +141,6 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
             SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
             windowSettings.width, windowSettings.height, flags);
 
-    if (windowSettings.savePosition && windowSettings.windowPosition.x != std::numeric_limits<int>::min()) {
-        setWindowPosition(windowSettings.windowPosition.x, windowSettings.windowPosition.y);
-    }
-
     errorCheck();
 #ifdef SUPPORT_OPENGL
     if (renderSystem == RenderSystem::OPENGL) {
@@ -335,6 +331,14 @@ bool SDLWindow::processEvents(std::function<void(const SDL_Event&)> eventHandler
         }
         eventHandler(event);
     }
+
+    if (isFirstFrame) {
+        if (windowSettings.savePosition && windowSettings.windowPosition.x != std::numeric_limits<int>::min()) {
+            setWindowPosition(windowSettings.windowPosition.x, windowSettings.windowPosition.y);
+        }
+        isFirstFrame = false;
+    }
+
     return running;
 }
 

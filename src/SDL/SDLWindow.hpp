@@ -72,6 +72,7 @@ private:
 
     //! For toggle fullscreen: Resolution before going fullscreen
     SDL_DisplayMode oldDisplayMode;
+    bool isFirstFrame = true;
 
     SDL_Window *sdlWindow = nullptr;
 
