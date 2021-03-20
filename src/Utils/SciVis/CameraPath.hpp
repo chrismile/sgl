@@ -62,7 +62,7 @@ public:
     void update(float currentTime);
     void resetTime();
     inline const glm::mat4x4& getViewMatrix() const { return currentTransform; }
-    inline float getEndTime() const { return controlPoints.back().time; }
+    inline float getEndTime() const { return controlPoints.empty() ? 0.0f : controlPoints.back().time; }
     inline bool empty() const { return controlPoints.empty(); }
 
 private:

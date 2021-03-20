@@ -378,6 +378,7 @@ void SciVisApp::renderSceneSettingsGuiPost() {
     } else {
         if (ImGui::Button("Stop Recording Video")) {
             recording = false;
+            customEndTime = 0.0f;
             if (videoWriter) {
                 delete videoWriter;
                 videoWriter = nullptr;
@@ -411,7 +412,8 @@ void SciVisApp::updateCameraFlight(bool hasData, bool& usesNewState) {
     }
 
     // Already recorded full cycle?
-    if (useCameraFlight && recording && recordingTime > cameraPath.getEndTime() && hasData) {
+    int endTime = customEndTime > 0.0f ? customEndTime : cameraPath.getEndTime();
+    if (useCameraFlight && recording && recordingTime > endTime && hasData) {
         if (!startedCameraFlightPerUI) {
             quit();
         } else {
