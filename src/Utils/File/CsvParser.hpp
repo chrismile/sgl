@@ -26,8 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef HEXVOLUMERENDERER_CSVPARSER_HPP
-#define HEXVOLUMERENDERER_CSVPARSER_HPP
+#ifndef CSVPARSER_HPP
+#define CSVPARSER_HPP
 
 #include <string>
 #include <vector>
@@ -35,17 +35,19 @@
 #include <fstream>
 #include <iostream>
 
-namespace sgl {
+namespace sgl
+{
 
-typedef std::list<std::vector<std::string>> RowMap;
+typedef std::vector<std::vector<std::string>> RowMap;
 
-/** Parser for the middle_states.csv file
- * @param filename: The filename of the CSV file
- * @param filterComments: Filers lines starting with a hashtag (#)
+/** Parser for the CSV files.
+ * @param filename The filename of the CSV file.
+ * @param filterComments Whether to filter lines starting with a hashtag (#).
+ * @param separator The character separating two cells
  * @return A list of rows stored in the CSV file
  */
-RowMap parseCsv(const std::string &filename, bool filterComments = true);
+RowMap parseCsv(const std::string &filename, bool filterComments = true, char separator = ',');
 
 }
 
-#endif //HEXVOLUMERENDERER_CSVPARSER_HPP
+#endif //CSVPARSER_HPP

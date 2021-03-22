@@ -17,7 +17,7 @@
 namespace sgl {
 
 void Bitmap::allocate(int width, int height, int _bpp /* = 32 */) {
-    if (bitmap != NULL) {
+    if (bitmap != nullptr) {
         freeData();
     }
 
@@ -43,7 +43,7 @@ void Bitmap::memset(uint8_t data) {
 }
 
 void Bitmap::fromMemory(void *data, int width, int height, int _bpp /* = 32 */) {
-    if (bitmap != NULL) {
+    if (bitmap != nullptr) {
         freeData();
     }
 
@@ -114,7 +114,7 @@ BitmapPtr Bitmap::resizeBiCubic(int destW, int destH)
 
     const float tx = float(w) / destW;
     const float ty = float(h) / destH;
-    const int channels = bpp/8;
+    const int channels = bpp / 8;
     const size_t row_stride = destW * channels;
 
     unsigned char C[5] = {0, 0, 0, 0, 0};
@@ -134,18 +134,18 @@ BitmapPtr Bitmap::resizeBiCubic(int destW, int destH)
                     unsigned char d0 = *(getPixel(z, x - 1) + k) - a0;
                     unsigned char d2 = *(getPixel(z, x + 1) + k) - a0;
                     unsigned char d3 = *(getPixel(z, x + 2) + k) - a0;
-                    unsigned char a1 = -1.0 / 3 * d0 + d2 - 1.0 / 6 * d3;
-                    unsigned char a2 = 1.0 / 2 * d0 + 1.0 / 2 * d2;
-                    unsigned char a3 = -1.0 / 6 * d0 - 1.0 / 2 * d2 + 1.0 / 6 * d3;
+                    unsigned char a1 = -1.0 / 3.0 * d0 + d2 - 1.0 / 6.0 * d3;
+                    unsigned char a2 = 1.0 / 2.0 * d0 + 1.0 / 2.0 * d2;
+                    unsigned char a3 = -1.0 / 6.0 * d0 - 1.0 / 2.0 * d2 + 1.0 / 6.0 * d3;
                     C[jj] = a0 + a1 * dx + a2 * dx * dx + a3 * dx * dx * dx;
 
                     d0 = C[0] - C[1];
                     d2 = C[2] - C[1];
                     d3 = C[3] - C[1];
                     a0 = C[1];
-                    a1 = -1.0 / 3 * d0 + d2 -1.0 / 6 * d3;
-                    a2 = 1.0 / 2 * d0 + 1.0 / 2 * d2;
-                    a3 = -1.0 / 6 * d0 - 1.0 / 2 * d2 + 1.0 / 6 * d3;
+                    a1 = -1.0 / 3.0 * d0 + d2 -1.0 / 6.0 * d3;
+                    a2 = 1.0 / 2.0 * d0 + 1.0 / 2.0 * d2;
+                    a3 = -1.0 / 6.0 * d0 - 1.0 / 2.0 * d2 + 1.0 / 6.0 * d3;
                     out[i * row_stride + j * channels + k] = a0 + a1 * dy + a2 * dy * dy + a3 * dy * dy * dy;
                 }
             }
@@ -206,8 +206,8 @@ void Bitmap::fromFile(const char *filename) {
 
     FILE *fp = fopen(filename, "rb");
     if (fp == 0) {
-        std::cerr << "ERROR: Bitmap::fromFile: Cannot load file \"" << filename
-                  << "\"." << std::endl;
+        sgl::Logfile::get()->writeError(
+                std::string() + "ERROR: Bitmap::fromFile: Cannot load file \"" + filename + "\".");
         return;
     }
 
@@ -220,17 +220,16 @@ void Bitmap::fromFile(const char *filename) {
     }
 
     if (png_sig_cmp(header, 0, 8)) {
-        std::cerr << "ERROR: Bitmap::fromFile: The file \"" << filename
-                  << "\" is not a PNG file." << std::endl;
+        sgl::Logfile::get()->writeError(
+                std::string() + "ERROR: Bitmap::fromFile: The file \"" + filename + "\" is not a PNG file.");
         fclose(fp);
         return;
     }
 
-    png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL,
-                                                 NULL, NULL);
+    png_structp png_ptr = png_create_read_struct(
+            PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
     if (!png_ptr) {
-        std::cerr << "ERROR: Bitmap::fromFile: png_create_read_struct returned 0."
-                  << std::endl;
+        sgl::Logfile::get()->writeError("ERROR: Bitmap::fromFile: png_create_read_struct returned 0.");
         fclose(fp);
         return;
     }
@@ -238,9 +237,8 @@ void Bitmap::fromFile(const char *filename) {
     // Create png_infop struct
     png_infop info_ptr = png_create_info_struct(png_ptr);
     if (!info_ptr) {
-        std::cerr << "ERROR: Bitmap::fromFile: png_create_info_struct returned 0."
-                  << std::endl;
-        png_destroy_read_struct(&png_ptr, (png_infopp) NULL, (png_infopp) NULL);
+        sgl::Logfile::get()->writeError("ERROR: Bitmap::fromFile: png_create_info_struct returned 0.");
+        png_destroy_read_struct(&png_ptr, (png_infopp)nullptr, (png_infopp)nullptr);
         fclose(fp);
         return;
     }
@@ -248,17 +246,15 @@ void Bitmap::fromFile(const char *filename) {
     // Create png info struct
     png_infop end_info = png_create_info_struct(png_ptr);
     if (!end_info) {
-        std::cerr
-                << "ERROR: Bitmap::fromFile: png_create_info_struct returned 0. (2)"
-                << std::endl;
-        png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp) NULL);
+        sgl::Logfile::get()->writeError("ERROR: Bitmap::fromFile: png_create_info_struct returned 0. (2)");
+        png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)nullptr);
         fclose(fp);
         return;
     }
 
     // This code gets called if libpng encounters an error
     if (setjmp(png_jmpbuf(png_ptr))) {
-        std::cerr << "ERROR: Bitmap::fromFile: Error in libpng." << std::endl;
+        sgl::Logfile::get()->writeError("ERROR: Bitmap::fromFile: Error in libpng.");
         png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
         fclose(fp);
         return;
@@ -278,11 +274,13 @@ void Bitmap::fromFile(const char *filename) {
     png_uint_32 tempWidth, tempHeight;
 
     // Get the information about the PNG
-    png_get_IHDR(png_ptr, info_ptr, &tempWidth, &tempHeight, &bitDepth,
-                 &colorType, NULL, NULL, NULL);
+    png_get_IHDR(
+            png_ptr, info_ptr, &tempWidth, &tempHeight, &bitDepth,
+            &colorType, nullptr, nullptr, nullptr);
 
     if (colorType != PNG_COLOR_TYPE_RGB_ALPHA && colorType != PNG_COLOR_TYPE_RGB) {
-        std::cerr << "ERROR: Bitmap::fromFile: Only 32-bit RGBA or 24-bit RGB PNG images supported." << std::endl;
+        sgl::Logfile::get()->writeError(
+                "ERROR: Bitmap::fromFile: Only 32-bit RGBA or 24-bit RGB PNG images supported.");
         png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
         fclose(fp);
         return;
@@ -300,9 +298,9 @@ void Bitmap::fromFile(const char *filename) {
 
     // Allocate the imageData as a big block
     uint8_t *dataPointer = new uint8_t[rowbytes * tempHeight];
-    png_byte *imageData = (png_byte*) dataPointer;
-    if (imageData == NULL) {
-        std::cerr << "ERROR: Bitmap::fromFile: Could not allocate memory for PNG image data." << std::endl;
+    png_byte *imageData = (png_byte*)dataPointer;
+    if (imageData == nullptr) {
+        sgl::Logfile::get()->writeError("ERROR: Bitmap::fromFile: Could not allocate memory for PNG image data.");
         png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
         fclose(fp);
         return;
@@ -310,10 +308,10 @@ void Bitmap::fromFile(const char *filename) {
 
     // rowPointers is pointing to imageData for reading the png with libpng
     png_bytep *rowPointers = new png_bytep[tempHeight];
-    if (rowPointers == NULL) {
-        std::cerr << "ERROR: Bitmap::fromFile: Could not allocate memory for PNG row pointers." << std::endl;
+    if (rowPointers == nullptr) {
+        sgl::Logfile::get()->writeError("ERROR: Bitmap::fromFile: Could not allocate memory for PNG row pointers.");
         png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
-        free(imageData);
+        delete[] imageData;
         fclose(fp);
         return;
     }
@@ -347,7 +345,7 @@ void Bitmap::fromFile(const char *filename) {
 }
 
 bool Bitmap::savePNG(const char *filename, bool mirror /* = false */) {
-    FILE *file = NULL;
+    FILE *file = nullptr;
     file = fopen(filename, "wb");
     if (!file) {
         std::cerr << "ERROR: Bitmap::savePNG: The file couldn't be saved to \""
@@ -359,13 +357,14 @@ bool Bitmap::savePNG(const char *filename, bool mirror /* = false */) {
     if (bpp == 32)
         pngPixelDataType = PNG_COLOR_TYPE_RGBA;
 
-    png_structp pngPointer = png_create_write_struct(PNG_LIBPNG_VER_STRING,
-            NULL, NULL, NULL);
+    png_structp pngPointer = png_create_write_struct(
+            PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
     png_infop pngInfoPointer = png_create_info_struct(pngPointer);
 
     png_init_io(pngPointer, file);
 
-    png_set_IHDR(pngPointer, pngInfoPointer, w, h, 8 /* bit depth */,
+    png_set_IHDR(
+            pngPointer, pngInfoPointer, w, h, 8 /* bit depth */,
             pngPixelDataType,
             PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT,
             PNG_FILTER_TYPE_DEFAULT);
@@ -400,9 +399,9 @@ bool Bitmap::savePNG(const char *filename, bool mirror /* = false */) {
 }
 
 void Bitmap::freeData() {
-    if (bitmap != NULL) {
+    if (bitmap != nullptr) {
         delete[] bitmap;
-        bitmap = NULL;
+        bitmap = nullptr;
     }
 }
 

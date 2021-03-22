@@ -28,9 +28,10 @@
 
 #include "CsvParser.hpp"
 
-namespace sgl {
+namespace sgl
+{
 
-RowMap parseCsv(const std::string& filename, bool filterComments) {
+RowMap parseCsv(const std::string& filename, bool filterComments, char separator) {
     RowMap rows;
 
     // Open the file and load its content
@@ -78,7 +79,7 @@ RowMap parseCsv(const std::string& filename, bool filterComments) {
             currCell += cCurr;
         } else {
             // New cell
-            if (cCurr == ',') {
+            if (cCurr == separator) {
                 row.push_back(currCell);
                 currCell = "";
             }
