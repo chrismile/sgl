@@ -48,10 +48,20 @@ public:
     glm::quat orientation;
 };
 
+
+/**
+ * Callback for applications to alter camera paths for certain data sets.
+ * Arguments:
+ * const std::string& modelFilename, const glm::vec3& centerOffset, float startAngle, float pulseFactor,
+ * float standardZoom
+ */
+typedef std::function<void(const std::string&, glm::vec3&, float&, float&, float&)> ApplicationCallback;
+
 class CameraPath
 {
 public:
     CameraPath() {}
+    void setApplicationCallback(ApplicationCallback applicationCallback);
     void fromCirclePath(
             sgl::AABB3& sceneBoundingBox, const std::string& modelFilename, float totalTime,
             bool performanceMeasurementMode);
@@ -72,6 +82,9 @@ private:
     glm::mat4x4 currentTransform;
     std::vector<ControlPoint> controlPoints;
     float time = 0.0f;
+
+    bool useApplicationCallback = false;
+    ApplicationCallback applicationCallback;
 };
 
 }

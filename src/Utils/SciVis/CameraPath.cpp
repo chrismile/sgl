@@ -55,6 +55,11 @@ ControlPoint::ControlPoint(float time, float tx, float ty, float tz, float yaw, 
             * glm::angleAxis(yaw + sgl::PI / 2.0f, glm::vec3(0, 1, 0));
 }
 
+void CameraPath::setApplicationCallback(ApplicationCallback applicationCallback) {
+    useApplicationCallback = true;
+    this->applicationCallback = applicationCallback;
+}
+
 void CameraPath::fromCirclePath(
         sgl::AABB3& sceneBoundingBox, const std::string& modelFilename, float totalTime,
         bool performanceMeasurementMode) {
@@ -65,28 +70,8 @@ void CameraPath::fromCirclePath(
     float startAngle = 0.0f;
     float pulseFactor = 2.0f;
     float standardZoom = performanceMeasurementMode ? 1.4f : 1.6f;
-    if (boost::starts_with(
-            modelFilename,
-            "Data/Meshes/2011 - All-Hex Mesh Generation via Volumetric PolyCube Deformation/anc101_a1.mesh")) {
-        centerOffset = glm::vec3(0.0f, -0.02f, 0.0f);
-        pulseFactor = 3.0f;
-        standardZoom = 1.6f;
-    }
-    if (boost::starts_with(
-            modelFilename,
-            "Data/Meshes/2014 - l1-Based Construction of Polycube Maps from Complex Shapes/cognit/hex.vtk")) {
-        centerOffset = glm::vec3(0.0f, -0.02f, 0.0f);
-        pulseFactor = 3.0f;
-        standardZoom = 1.6f;
-    }
-    if (performanceMeasurementMode && boost::ends_with(modelFilename, "cubic128.vtk")) {
-        standardZoom = 1.3f;
-    }
-    if (boost::starts_with(
-            modelFilename,
-            "Data/LineDataSets/")) {
-        pulseFactor = 0.0f;
-        standardZoom = 1.9f;
+    if (useApplicationCallback) {
+        applicationCallback(modelFilename, centerOffset, startAngle, pulseFactor, standardZoom);
     }
 
     for (size_t i = 0; i <= NUM_CIRCLE_POINTS; i++) {
