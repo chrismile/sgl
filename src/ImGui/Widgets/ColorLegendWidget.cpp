@@ -33,8 +33,13 @@
 
 namespace sgl {
 
-const int regionHeightStandard = 300 - 2;
+const int ColorLegendWidget::regionHeightStandard = 300 - 2;
 int ColorLegendWidget::regionHeight = regionHeightStandard;
+const float ColorLegendWidget::fontScaleStandard = 0.75f;
+float ColorLegendWidget::fontScaleResetValue = ColorLegendWidget::fontScaleStandard;
+float ColorLegendWidget::fontScale = fontScaleStandard;
+const float ColorLegendWidget::textRegionWidthStandard = 85 * fontScale / fontScaleStandard;
+float ColorLegendWidget::textRegionWidth = textRegionWidthStandard;
 
 ColorLegendWidget::ColorLegendWidget() {
     transferFunctionColorMap.reserve(256);
@@ -92,7 +97,6 @@ std::string getNiceNumberString(float number, int digits) {
 
 void ColorLegendWidget::renderGui() {
     const int barWidth = 25;
-    const float textRegionWidth = 90;
     const int totalWidth = barWidth + textRegionWidth;
     const int numTicks = 5;
     const int tickWidth = 10;
@@ -117,7 +121,7 @@ void ColorLegendWidget::renderGui() {
             ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize/*|ImGuiWindowFlags_NoMove*/
             |ImGuiWindowFlags_NoScrollbar|ImGuiWindowFlags_NoSavedSettings/*|ImGuiWindowFlags_NoInputs*/
             |ImGuiWindowFlags_NoFocusOnAppearing)) {
-        ImGui::SetWindowFontScale(0.75f); // Make font slightly smaller.
+        ImGui::SetWindowFontScale(fontScale); // Make font slightly smaller.
         ImDrawList* drawList = ImGui::GetWindowDrawList();
         //float scaleFactor = sgl::ImGuiWrapper::get()->getScaleFactor();
 
@@ -138,7 +142,7 @@ void ColorLegendWidget::renderGui() {
         ImVec2 textSize = ImGui::CalcTextSizeVertical(attributeDisplayName.c_str());
         textHeight = textSize.y;
         ImVec2 textPos = ImVec2(
-                startPos.x + barWidth + 40,
+                startPos.x + barWidth + 35 * fontScale / fontScaleStandard,
                 //startPos.y + regionHeight / 2.0f - textSize.y / 2.0f + 1);
                 startPos.y + regionHeight / 2.0f + textSize.y / 2.0f + 1);
         ImGui::AddTextVertical(
@@ -158,6 +162,9 @@ void ColorLegendWidget::renderGui() {
                 ImVec2(startPos.x + barWidth + 10, startPos.y - textHeight/2.0f + 1),
                 textColorImgui, maxText.c_str());
 
+        ImVec2 rangeSize = ImGui::CalcTextSize(minText.c_str());
+        textRegionWidth = std::max(textRegionWidth, 30 * fontScale / fontScaleStandard + rangeSize.x);
+
         // Add ticks to the color bar.
         for (int tick = 0; tick < numTicks; tick++) {
             float xpos = startPos.x + barWidth;
@@ -173,7 +180,7 @@ void ColorLegendWidget::renderGui() {
     ImGui::PopStyleColor();
 
     // Enlarge the height of the widget if one widget needs more vertical space for the text.
-    regionHeight = std::max(regionHeight, textHeight + 18);
+    regionHeight = std::max(regionHeight, int(textHeight + 50 * fontScale / fontScaleStandard));
 }
 
 }

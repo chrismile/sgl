@@ -86,6 +86,7 @@ protected:
     // Off-screen rendering
     sgl::FramebufferObjectPtr sceneFramebuffer;
     sgl::TexturePtr sceneTexture;
+    RenderbufferType sceneDepthRBOType = sgl::RBO_DEPTH24_STENCIL8;
     sgl::RenderbufferObjectPtr sceneDepthRBO;
     sgl::ShaderProgramPtr gammaCorrectionShader;
 

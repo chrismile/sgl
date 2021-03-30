@@ -58,6 +58,18 @@ public:
         this->transferFunctionColorMap = transferFunctionColorMap;
     }
 
+    static void setFontScaleStandard(float fontScale) {
+        ColorLegendWidget::fontScaleResetValue = fontScale;
+    }
+    static void setFontScale(float fontScale) {
+        ColorLegendWidget::fontScale = fontScale;
+    }
+    static void resetStandardSize() {
+        ColorLegendWidget::regionHeight = regionHeightStandard;
+        ColorLegendWidget::fontScale = fontScaleResetValue;
+        ColorLegendWidget::textRegionWidth = textRegionWidthStandard;
+    }
+
 private:
     int positionIndex = 0; ///< When placing many widgets next to each other.
     int numPositionsTotal = 1; ///< When placing many widgets next to each other.
@@ -70,7 +82,13 @@ private:
 
     // Internal UI data.
     bool showWindow = true;
+    static const int regionHeightStandard;
     static int regionHeight;
+    static const float fontScaleStandard;
+    static float fontScaleResetValue;
+    static float fontScale;
+    static const float textRegionWidthStandard;
+    static float textRegionWidth;
 };
 
 }

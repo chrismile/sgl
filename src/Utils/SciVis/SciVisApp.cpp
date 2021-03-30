@@ -42,6 +42,7 @@
 #include <ImGui/ImGuiWrapper.hpp>
 #include <ImGui/imgui_internal.h>
 #include <ImGui/imgui_stdlib.h>
+#include <ImGui/Widgets/ColorLegendWidget.hpp>
 
 #include "SciVisApp.hpp"
 
@@ -120,7 +121,7 @@ void SciVisApp::createSceneFramebuffer() {
     textureSettings.pixelFormat = GL_RGB;
     sceneTexture = sgl::TextureManager->createEmptyTexture(width, height, textureSettings);
     sceneFramebuffer->bindTexture(sceneTexture);
-    sceneDepthRBO = sgl::Renderer->createRBO(width, height, sgl::RBO_DEPTH24_STENCIL8);
+    sceneDepthRBO = sgl::Renderer->createRBO(width, height, sceneDepthRBOType);
     sceneFramebuffer->bindRenderbuffer(sceneDepthRBO, sgl::DEPTH_STENCIL_ATTACHMENT);
 }
 
@@ -244,11 +245,15 @@ void SciVisApp::postRender() {
     }
 
     // Video recording enabled?
-    if (recording) {
+    if (!uiOnScreenshot && recording) {
         videoWriter->pushWindowFrame();
     }
 
     renderGui();
+
+    if (uiOnScreenshot && recording) {
+        videoWriter->pushWindowFrame();
+    }
 
     if (uiOnScreenshot && screenshot) {
         printNow = true;
@@ -371,6 +376,7 @@ void SciVisApp::renderSceneSettingsGuiPost() {
             }
 
             recording = true;
+            sgl::ColorLegendWidget::setFontScale(1.0f);
             videoWriter = new sgl::VideoWriter(
                     saveDirectoryVideos + saveFilenameVideos
                     + "_" + sgl::toString(videoNumber++) + ".mp4", FRAME_RATE_VIDEOS);
@@ -378,6 +384,7 @@ void SciVisApp::renderSceneSettingsGuiPost() {
     } else {
         if (ImGui::Button("Stop Recording Video")) {
             recording = false;
+            sgl::ColorLegendWidget::resetStandardSize();
             customEndTime = 0.0f;
             if (videoWriter) {
                 delete videoWriter;
@@ -419,6 +426,7 @@ void SciVisApp::updateCameraFlight(bool hasData, bool& usesNewState) {
         } else {
             if (recording) {
                 recording = false;
+                sgl::ColorLegendWidget::resetStandardSize();
                 delete videoWriter;
                 videoWriter = nullptr;
                 realTimeCameraFlight = true;

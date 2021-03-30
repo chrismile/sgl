@@ -47,6 +47,7 @@ struct WindowSettings {
     bool resizable;
     int multisamples;
     int depthSize;
+    int stencilSize;
     bool vSync;
     VSyncMode vSyncMode;
     bool debugContext;
@@ -59,7 +60,8 @@ struct WindowSettings {
         fullscreen = false;
         resizable = true;
         multisamples = 16;
-        depthSize = 16;
+        depthSize = 24;
+        stencilSize = 8;
         vSync = true;
         vSyncMode = VSYNC_MODE_FIFO_RELAXED;
 #ifdef _DEBUG

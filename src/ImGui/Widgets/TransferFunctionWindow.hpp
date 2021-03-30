@@ -136,6 +136,10 @@ public:
     inline float getSelectedRangeMin() const { return selectedRange.x; }
     inline float getSelectedRangeMax() const { return selectedRange.y; }
     inline const glm::vec2& getSelectedRange() const { return selectedRange; }
+    inline void setSelectedRange(const glm::vec2& selectedRange) {
+        this->selectedRange = selectedRange;
+        recomputeHistogram();
+    }
 
     // sRGB and linear RGB conversion
     static glm::vec3 sRGBToLinearRGB(const glm::vec3& color_LinearRGB);

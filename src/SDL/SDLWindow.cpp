@@ -14,12 +14,9 @@
 #include <Utils/AppSettings.hpp>
 #include <Utils/File/FileUtils.hpp>
 #include <Utils/File/Logfile.hpp>
-#include <Utils/AppSettings.hpp>
-#include <Utils/Timer.hpp>
 #include <Utils/Events/EventManager.hpp>
 #include <Graphics/Texture/Bitmap.hpp>
 #include <cstdlib>
-#include <ctime>
 #include <boost/algorithm/string/predicate.hpp>
 #include <SDL2/SDL.h>
 
@@ -100,7 +97,7 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
         SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
         SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
         SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, windowSettings.depthSize);
-        SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+        SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, windowSettings.stencilSize);
         SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
         //SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 0);
 
@@ -367,6 +364,7 @@ void SDLWindow::serializeSettings(SettingsFile &settings)
     settings.addKeyValue("window-resizable", windowSettings.resizable);
     settings.addKeyValue("window-multisamples", windowSettings.multisamples);
     settings.addKeyValue("window-depthSize", windowSettings.depthSize);
+    settings.addKeyValue("window-stencilSize", windowSettings.stencilSize);
     settings.addKeyValue("window-vSync", windowSettings.vSync);
     settings.addKeyValue("window-savePosition", windowSettings.savePosition);
     if (windowSettings.savePosition) {
@@ -384,6 +382,7 @@ WindowSettings SDLWindow::deserializeSettings(const SettingsFile &settings)
     settings.getValueOpt("window-resizable", windowSettings.resizable);
     settings.getValueOpt("window-multisamples", windowSettings.multisamples);
     settings.getValueOpt("window-depthSize", windowSettings.depthSize);
+    settings.getValueOpt("window-stencilSize", windowSettings.stencilSize);
     settings.getValueOpt("window-vSync", windowSettings.vSync);
     settings.getValueOpt("window-debugContext", windowSettings.debugContext);
     settings.getValueOpt("window-savePosition", windowSettings.savePosition);
