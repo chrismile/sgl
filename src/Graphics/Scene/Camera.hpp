@@ -18,6 +18,7 @@
 namespace sgl {
 
 class Ray3;
+class AppSettings;
 class RenderTarget;
 typedef boost::shared_ptr<RenderTarget> RenderTargetPtr;
 class Camera;
@@ -26,13 +27,19 @@ class Event;
 typedef boost::shared_ptr<Event> EventPtr;
 
 class Camera : public SceneNode {
-enum ProjectionType {
-    ORTHOGRAPHIC_PROJECTION, PERSPECTIVE_PROJECTION
-};
+    friend class AppSettings;
 public:
     Camera();
     virtual ~Camera() {}
     void onResolutionChanged(EventPtr event);
+
+    enum ProjectionType {
+        ORTHOGRAPHIC_PROJECTION, PERSPECTIVE_PROJECTION
+    };
+    enum DepthRange {
+        DEPTH_RANGE_MINUS_ONE_ONE, // OpenGL
+        DEPTH_RANGE_ZERO_ONE // Vulkan/DirectX
+    };
 
     //! Render target & viewport area
     void setViewport(const AABB2 &_viewport) { viewport = _viewport; }
@@ -69,10 +76,11 @@ public:
     //virtual void setOrthoWindow(float w, float h);
 
     //! View & projection matrices
-    inline glm::mat4 getViewMatrix()            { updateCamera(); return modelMatrix; }
-    inline glm::mat4 getProjectionMatrix()      { updateCamera(); return projMat; }
-    inline glm::mat4 getViewProjMatrix()        { updateCamera(); return viewProjMat; }
-    inline glm::mat4 getInverseViewProjMatrix() { updateCamera(); return inverseViewProjMat; }
+    inline const glm::mat4& getViewMatrix()            { updateCamera(); return modelMatrix; }
+    inline const glm::mat4& getProjectionMatrix()      { updateCamera(); return projMat; }
+    inline const glm::mat4& getViewProjMatrix()        { updateCamera(); return viewProjMat; }
+    inline const glm::mat4& getInverseViewProjMatrix() { updateCamera(); return inverseViewProjMat; }
+    inline DepthRange getDepthRange()            const { return depthRange; }
     glm::mat4 getRotationMatrix();
     void overwriteViewMatrix(const glm::mat4 &viewMatrix);
 
@@ -98,14 +106,14 @@ protected:
 
     RenderTargetPtr renderTarget;
 
-
     // View matrix data
     float yaw = -sgl::PI/2.0f;   //< around y axis
     float pitch = 0.0f; //< around x axis
     glm::vec3 globalUp = glm::vec3(0.0f, 1.0f, 0.0f);
     glm::vec3 cameraFront, cameraRight, cameraUp;
 
-
+    // The depth range is set by AppSettings::initializeSubsystems depending on what renderer is used.
+    static DepthRange depthRange;
     ProjectionType projType;
     float fovy;
     float nearDist;

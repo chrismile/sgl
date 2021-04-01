@@ -18,6 +18,8 @@
 
 namespace sgl {
 
+Camera::DepthRange Camera::depthRange = Camera::DEPTH_RANGE_MINUS_ONE_ONE;
+
 Camera::Camera() :  projType(Camera::PERSPECTIVE_PROJECTION),
         fovy(PI/4.0f), nearDist(0.1f), farDist(1000.0f), aspect(4.0f/3.0f),
         recalcFrustum(true) {
@@ -118,7 +120,12 @@ glm::vec2 Camera::mousePositionInPlane(float planeDistance) {
 
 void Camera::updateCamera() {
     if (recalcFrustum) {
-        projMat = glm::perspective(fovy, aspect, nearDist, farDist);
+        //projMat = glm::perspective(fovy, aspect, nearDist, farDist);
+        if (depthRange == Camera::DEPTH_RANGE_MINUS_ONE_ONE) {
+            projMat = glm::perspectiveRH_NO(fovy, aspect, nearDist, farDist);
+        } else {
+            projMat = glm::perspectiveRH_ZO(fovy, aspect, nearDist, farDist);
+        }
     }
     if (recalcModelMat) {
         // We don't want a flip-over at the poles of the unit sphere.

@@ -34,6 +34,8 @@
 #endif
 #ifdef SUPPORT_VULKAN
 #include <Graphics/Vulkan/Utils/Instance.hpp>
+#include <Graphics/Scene/Camera.hpp>
+
 #endif
 
 #ifdef WIN32
@@ -230,7 +232,7 @@ void AppSettings::initializeSubsystems()
 #endif
 #ifdef SUPPORT_VULKAN
     if (renderSystem == RenderSystem::VULKAN) {
-        // TODO
+        Camera::depthRange = Camera::DEPTH_RANGE_ZERO_ONE;
     }
 #endif
 
