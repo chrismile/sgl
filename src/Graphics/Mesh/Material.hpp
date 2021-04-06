@@ -9,6 +9,7 @@
 #define GRAPHICS_MESH_MATERIAL_HPP_
 
 #include <string>
+#include <memory>
 #include <Graphics/Color.hpp>
 #include <Graphics/Texture/Texture.hpp>
 #include <Utils/File/FileManager.hpp>
@@ -26,7 +27,7 @@ public:
     TexturePtr texture;
 };
 
-typedef boost::shared_ptr<Material> MaterialPtr;
+typedef std::shared_ptr<Material> MaterialPtr;
 
 int minificationFilterFromString(const char *filter);
 int magnificationFilterFromString(const char *filter);

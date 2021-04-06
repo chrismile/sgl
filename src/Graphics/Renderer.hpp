@@ -9,8 +9,8 @@
 #define GRAPHICS_RENDERER_HPP_
 
 #include <functional>
+#include <memory>
 
-#include <boost/shared_ptr.hpp>
 #include <glm/fwd.hpp>
 
 #include <Defs.hpp>
@@ -25,15 +25,15 @@
 namespace sgl {
 
 class FramebufferObject;
-typedef boost::shared_ptr<FramebufferObject> FramebufferObjectPtr;
+typedef std::shared_ptr<FramebufferObject> FramebufferObjectPtr;
 class RenderbufferObject;
-typedef boost::shared_ptr<RenderbufferObject> RenderbufferObjectPtr;
+typedef std::shared_ptr<RenderbufferObject> RenderbufferObjectPtr;
 class Camera;
-typedef boost::shared_ptr<Camera> CameraPtr;
+typedef std::shared_ptr<Camera> CameraPtr;
 class ShaderProgram;
-typedef boost::shared_ptr<ShaderProgram> ShaderProgramPtr;
+typedef std::shared_ptr<ShaderProgram> ShaderProgramPtr;
 class ShaderAttributes;
-typedef boost::shared_ptr<ShaderAttributes> ShaderAttributesPtr;
+typedef std::shared_ptr<ShaderAttributes> ShaderAttributesPtr;
 
 enum BlendMode {
     BLEND_OVERWRITE, BLEND_ALPHA, BLEND_ADDITIVE, BLEND_SUBTRACTIVE, BLEND_MODULATIVE

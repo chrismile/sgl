@@ -9,7 +9,7 @@
 #define STREAM_HPP_
 
 #include <cstdint>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 //! Standard size: 256 bytes
 const size_t STD_BUFFER_SIZE = 256;
@@ -20,8 +20,8 @@ namespace sgl {
 
 typedef BinaryWriteStream WriteStream;
 typedef BinaryReadStream ReadStream;
-typedef boost::shared_ptr<WriteStream> WriteStreamPtr;
-typedef boost::shared_ptr<ReadStream> ReadStreamPtr;
+typedef std::shared_ptr<WriteStream> WriteStreamPtr;
+typedef std::shared_ptr<ReadStream> ReadStreamPtr;
 
 }
 

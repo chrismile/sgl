@@ -8,15 +8,15 @@
 #ifndef SRC_GRAPHICS_SCENE_RENDERTARGET_HPP_
 #define SRC_GRAPHICS_SCENE_RENDERTARGET_HPP_
 
+#include <memory>
 #include <Graphics/Buffers/FBO.hpp>
-#include <boost/shared_ptr.hpp>
 
 namespace sgl {
 
 class FramebufferObject;
-typedef boost::shared_ptr<FramebufferObject> FramebufferObjectPtr;
+typedef std::shared_ptr<FramebufferObject> FramebufferObjectPtr;
 class RenderTarget;
-typedef boost::shared_ptr<RenderTarget> RenderTargetPtr;
+typedef std::shared_ptr<RenderTarget> RenderTargetPtr;
 
 class RenderTarget
 {

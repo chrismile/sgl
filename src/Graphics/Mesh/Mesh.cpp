@@ -160,7 +160,7 @@ bool Mesh::loadFromXML(const char *filename)
         /*XMLElement *poseAnimationsElement = subMeshElement->FirstChildElement("PoseAnimations");
         if (poseAnimationsElement)
         {
-            boost::shared_ptr<PoseAnimation> animation(new PoseAnimation);
+            std::shared_ptr<PoseAnimation> animation(new PoseAnimation);
             subMeshData->setPoseAnimation(animation);
 
             for(XMLElement* animationElement = poseAnimationsElement->FirstChildElement(); animationElement;

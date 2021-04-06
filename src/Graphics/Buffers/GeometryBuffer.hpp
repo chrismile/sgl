@@ -8,7 +8,7 @@
 #ifndef GRAPHICS_BUFFERS_GEOMETRYBUFFER_HPP_
 #define GRAPHICS_BUFFERS_GEOMETRYBUFFER_HPP_
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace sgl {
 
@@ -57,7 +57,7 @@ protected:
     BufferType bufferType;
 };
 
-typedef boost::shared_ptr<GeometryBuffer> GeometryBufferPtr;
+typedef std::shared_ptr<GeometryBuffer> GeometryBufferPtr;
 
 }
 

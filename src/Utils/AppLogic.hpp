@@ -9,7 +9,7 @@
 #define LOGIC_APPLOGIC_HPP_
 
 #include <iostream>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <SDL2/SDL.h>
 
 #include "Utils/FramerateSmoother.hpp"
@@ -17,7 +17,7 @@
 namespace sgl {
 
 class Event;
-typedef boost::shared_ptr<Event> EventPtr;
+typedef std::shared_ptr<Event> EventPtr;
 
 class AppLogic
 {

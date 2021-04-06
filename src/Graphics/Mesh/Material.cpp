@@ -126,7 +126,7 @@ MaterialPtr MaterialManagerInterface::loadAsset(MaterialInfo &info)
             material = createMaterial(info);
             info = currMat;
         }
-        assetMap[currMat] = boost::weak_ptr<Material>();
+        assetMap[currMat] = std::weak_ptr<Material>();
 
         if (materialElement->NextSibling() == 0)
             break;

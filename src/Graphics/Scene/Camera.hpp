@@ -20,11 +20,11 @@ namespace sgl {
 class Ray3;
 class AppSettings;
 class RenderTarget;
-typedef boost::shared_ptr<RenderTarget> RenderTargetPtr;
+typedef std::shared_ptr<RenderTarget> RenderTargetPtr;
 class Camera;
-typedef boost::shared_ptr<Camera> CameraPtr;
+typedef std::shared_ptr<Camera> CameraPtr;
 class Event;
-typedef boost::shared_ptr<Event> EventPtr;
+typedef std::shared_ptr<Event> EventPtr;
 
 class Camera : public SceneNode {
     friend class AppSettings;
@@ -131,7 +131,7 @@ protected:
 
 };
 
-typedef boost::shared_ptr<Camera> CameraPtr;
+typedef std::shared_ptr<Camera> CameraPtr;
 
 }
 

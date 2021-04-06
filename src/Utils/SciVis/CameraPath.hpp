@@ -30,6 +30,7 @@
 #define HEXVOLUMERENDERER_CAMERAPATH_HPP
 
 #include <vector>
+#include <functional>
 #include <glm/gtc/quaternion.hpp>
 
 #include <Math/Geometry/MatrixUtil.hpp>

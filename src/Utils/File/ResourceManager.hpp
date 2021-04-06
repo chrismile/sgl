@@ -8,12 +8,12 @@
 #ifndef UTILS_FILE_RESOURCEMANAGER_HPP_
 #define UTILS_FILE_RESOURCEMANAGER_HPP_
 
+#include <map>
+#include <memory>
+
 //#include <System/Multithreading/MultithreadedQueue.hpp>
 #include "ResourceBuffer.hpp"
 #include <Utils/Singleton.hpp>
-#include <map>
-#include <boost/shared_ptr.hpp>
-#include <boost/weak_ptr.hpp>
 
 namespace sgl {
 
@@ -37,8 +37,8 @@ private:
     //! Internes Laden der Daten
     bool loadFile(const char *filename, ResourceBufferPtr &resource);
 
-    std::map< std::string, boost::weak_ptr<ResourceBuffer> > resourceFiles;
-    //MultithreadedQueue< std::pair<std::string, boost::shared_ptr<ResourceBuffer>> > queue;
+    std::map<std::string, std::weak_ptr<ResourceBuffer>> resourceFiles;
+    //MultithreadedQueue<std::pair<std::string, std::shared_ptr<ResourceBuffer>>> queue;
 };
 
 }

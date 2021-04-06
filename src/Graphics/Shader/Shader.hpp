@@ -9,10 +9,9 @@
 #define GRAPHICS_SHADER_SHADER_HPP_
 
 #include <string>
-#include <list>
+#include <vector>
+#include <memory>
 
-#include <boost/shared_ptr.hpp>
-#include <boost/weak_ptr.hpp>
 #include <glm/fwd.hpp>
 
 #include <Defs.hpp>
@@ -26,10 +25,10 @@ enum ShaderType {
 };
 
 class ShaderAttributes;
-typedef boost::shared_ptr<ShaderAttributes> ShaderAttributesPtr;
+typedef std::shared_ptr<ShaderAttributes> ShaderAttributesPtr;
 class Color;
 class Texture;
-typedef boost::shared_ptr<Texture> TexturePtr;
+typedef std::shared_ptr<Texture> TexturePtr;
 
 //! A single shader, e.g. fragment (pixel) shader, vertex shader, geometry shader, ...
 class DLL_OBJECT Shader
@@ -48,7 +47,7 @@ protected:
     std::string fileID;
 };
 
-typedef boost::shared_ptr<Shader> ShaderPtr;
+typedef std::shared_ptr<Shader> ShaderPtr;
 
 //! The shader program is the sum of the different shaders attached and linked together
 class DLL_OBJECT ShaderProgram
@@ -56,7 +55,7 @@ class DLL_OBJECT ShaderProgram
 public:
     ShaderProgram() {}
     virtual ~ShaderProgram() {}
-    inline std::list<ShaderPtr> &getShaderList() { return shaders; }
+    inline std::vector<ShaderPtr> &getShaderList() { return shaders; }
 
     virtual void attachShader(ShaderPtr shader)=0;
     virtual void detachShader(ShaderPtr shader)=0;
@@ -201,11 +200,11 @@ public:
     virtual bool setShaderStorageBuffer(int binding, const char *name, GeometryBufferPtr &geometryBuffer)=0;
 
 protected:
-    std::list<ShaderPtr> shaders;
+    std::vector<ShaderPtr> shaders;
 };
 
-typedef boost::shared_ptr<ShaderProgram> ShaderProgramPtr;
-typedef boost::weak_ptr<ShaderProgram> WeakShaderProgramPtr;
+typedef std::shared_ptr<ShaderProgram> ShaderProgramPtr;
+typedef std::weak_ptr<ShaderProgram> WeakShaderProgramPtr;
 
 }
 

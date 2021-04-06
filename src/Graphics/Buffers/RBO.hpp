@@ -8,8 +8,9 @@
 #ifndef GRAPHICS_BUFFERS_RBO_HPP_
 #define GRAPHICS_BUFFERS_RBO_HPP_
 
+#include <memory>
+
 #include <Defs.hpp>
-#include <boost/shared_ptr.hpp>
 
 namespace sgl {
 
@@ -31,7 +32,7 @@ public:
     virtual int getSamples()=0;
 };
 
-typedef boost::shared_ptr<RenderbufferObject> RenderbufferObjectPtr;
+typedef std::shared_ptr<RenderbufferObject> RenderbufferObjectPtr;
 
 }
 

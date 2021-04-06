@@ -56,7 +56,7 @@ public:
 
 protected:
     ShaderPtr loadAsset(ShaderInfo &shaderInfo);
-    ShaderProgramPtr createShaderProgram(const std::list<std::string> &shaderIDs, bool dumpTextDebug);
+    ShaderProgramPtr createShaderProgram(const std::vector<std::string> &shaderIDs, bool dumpTextDebug);
 
     /// Internal loading
     std::string loadHeaderFileString(const std::string &shaderName, std::string &prependContent);
@@ -71,7 +71,7 @@ protected:
     void indexFiles(const std::string &file);
     std::string getShaderFileName(const std::string &pureFilename);
 
-    /// Directory in which to search for shaders (standard: Data/Shaders
+    /// Directory in which to search for shaders (standard: Data/Shaders).
     std::string pathPrefix;
 
     /// Maps shader name -> shader source, e.g. "Blur.Fragment" -> "void main() { ... }".
@@ -81,7 +81,7 @@ protected:
     /// e.g. "Blur.glsl" -> "Data/Shaders/PostProcessing/Blur.glsl".
     std::map<std::string, std::string> shaderFileMap;
 
-    // If a file named "GlobalDefines.glsl" is found: Appended to all shaders
+    // If a file named "GlobalDefines.glsl" is found: Appended to all shaders.
     std::string globalDefines;
 
 private:

@@ -8,7 +8,8 @@
 #ifndef GRAPHICS_BUFFERS_FBO_HPP_
 #define GRAPHICS_BUFFERS_FBO_HPP_
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
+
 #include <Defs.hpp>
 #include <Graphics/Buffers/RBO.hpp>
 #include <Graphics/Texture/Texture.hpp>
@@ -56,7 +57,7 @@ public:
     virtual unsigned int getID()=0;
 };
 
-typedef boost::shared_ptr<FramebufferObject> FramebufferObjectPtr;
+typedef std::shared_ptr<FramebufferObject> FramebufferObjectPtr;
 
 }
 

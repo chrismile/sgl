@@ -8,10 +8,12 @@
 #ifndef GRAPHICS_OPENGL_SHADER_HPP_
 #define GRAPHICS_OPENGL_SHADER_HPP_
 
-#include <Graphics/Shader/Shader.hpp>
-#include <GL/glew.h>
 #include <list>
 #include <map>
+
+#include <GL/glew.h>
+
+#include <Graphics/Shader/Shader.hpp>
 
 namespace sgl {
 
@@ -34,7 +36,7 @@ private:
     ShaderType shaderType;
 };
 
-typedef boost::shared_ptr<Shader> ShaderPtr;
+typedef std::shared_ptr<Shader> ShaderPtr;
 
 class DLL_OBJECT ShaderProgramGL : public ShaderProgram
 {

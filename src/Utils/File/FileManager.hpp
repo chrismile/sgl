@@ -10,8 +10,7 @@
 
 #include <string>
 #include <map>
-#include <boost/shared_ptr.hpp>
-#include <boost/weak_ptr.hpp>
+#include <memory>
 
 namespace sgl {
 
@@ -20,8 +19,8 @@ class FileManager
 {
 public:
     virtual ~FileManager() {}
-    typedef boost::shared_ptr<AssetType> AssetPtr;
-    typedef boost::weak_ptr<AssetType> WeakAssetPtr;
+    typedef std::shared_ptr<AssetType> AssetPtr;
+    typedef std::weak_ptr<AssetType> WeakAssetPtr;
     AssetPtr getAsset(AssetInfo &assetInfo);
 
 protected:
@@ -30,14 +29,14 @@ protected:
 };
 
 template <class AssetType, class AssetInfo>
-boost::shared_ptr<AssetType> FileManager<AssetType, AssetInfo>::getAsset(AssetInfo &assetInfo)
+std::shared_ptr<AssetType> FileManager<AssetType, AssetInfo>::getAsset(AssetInfo &assetInfo)
 {
     auto it = assetMap.find(assetInfo);
 
     //! Do we need to (re-)load the asset?
-    if (it == assetMap.end() || it->second._empty() || it->second.expired()) {
-        boost::shared_ptr<AssetType> asset = loadAsset(assetInfo);
-        assetMap[assetInfo] = boost::weak_ptr<AssetType>(asset);
+    if (it == assetMap.end() || it->second.expired()) {
+        std::shared_ptr<AssetType> asset = loadAsset(assetInfo);
+        assetMap[assetInfo] = std::weak_ptr<AssetType>(asset);
         return asset;
     }
 

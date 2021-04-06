@@ -9,9 +9,7 @@
 #define GRAPHICS_TEXTURE_TEXTURE_HPP_
 
 #include <Defs.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/weak_ptr.hpp>
-#include <boost/enable_shared_from_this.hpp>
+#include <memory>
 
 #if !defined(GL_NEAREST) && !defined(GL_CLAMP_TO_BORDER)
 
@@ -106,10 +104,10 @@ enum DepthStencilMode {
 };
 
 class Texture;
-typedef boost::shared_ptr<Texture> TexturePtr;
-typedef boost::weak_ptr<Texture> WeakTexturePtr;
+typedef std::shared_ptr<Texture> TexturePtr;
+typedef std::weak_ptr<Texture> WeakTexturePtr;
 
-class DLL_OBJECT Texture : public boost::enable_shared_from_this<Texture>
+class DLL_OBJECT Texture : public std::enable_shared_from_this<Texture>
 {
 public:
     Texture(int _w, TextureSettings settings, int _samples = 0) : w(_w), h(0), d(0), settings(settings),

@@ -12,15 +12,14 @@
 #include <map>
 #include <list>
 #include <functional>
-#include <boost/shared_ptr.hpp>
-#include <boost/weak_ptr.hpp>
+#include <memory>
 #include "Stream/Stream.hpp"
 #include <Utils/Singleton.hpp>
 
 namespace sgl {
 
 class Event;
-typedef boost::shared_ptr<Event> EventPtr;
+typedef std::shared_ptr<Event> EventPtr;
 typedef std::function<void(EventPtr)> EventFunc;
 typedef uint32_t ListenerToken;
 typedef std::list<std::pair<ListenerToken, EventFunc>> EventFuncList;

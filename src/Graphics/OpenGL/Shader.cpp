@@ -142,7 +142,7 @@ bool ShaderProgramGL::validateProgram()
         Logfile::get()->writeError("Error in shader program validation!");
         Logfile::get()->writeError(std::string() + "OpenGL Error: " + infoLog);
         Logfile::get()->writeError("fileIDs of the linked shaders:");
-        for (std::list<ShaderPtr>::iterator it = shaders.begin(); it != shaders.end(); ++it) {
+        for (std::vector<ShaderPtr>::iterator it = shaders.begin(); it != shaders.end(); ++it) {
             ShaderGL *shaderGL = (ShaderGL*)it->get();
             std::string type = shaderGL->getShaderDebugType();
             Logfile::get()->writeError(std::string() + "\"" + shaderGL->getFileID() + "\" (Type: " + type + ")");

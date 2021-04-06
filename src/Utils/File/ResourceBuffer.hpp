@@ -8,7 +8,7 @@
 #ifndef UTILS_FILE_RESOURCEBUFFER_HPP_
 #define UTILS_FILE_RESOURCEBUFFER_HPP_
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <atomic>
 
 namespace sgl {
@@ -30,10 +30,10 @@ private:
     //! For asynchronously loaded resources
     std::atomic<bool> loaded;
     //! optional!
-    boost::shared_ptr<ResourceBuffer> parentZipFileResource;
+    std::shared_ptr<ResourceBuffer> parentZipFileResource;
 };
 
-typedef boost::shared_ptr<ResourceBuffer> ResourceBufferPtr;
+typedef std::shared_ptr<ResourceBuffer> ResourceBufferPtr;
 
 }
 

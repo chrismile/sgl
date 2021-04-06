@@ -34,7 +34,7 @@ class DLL_OBJECT ShaderManagerInterface : public FileManager<Shader, ShaderInfo>
 public:
     /// Reference-counted loading
     /// If dumpTextDebug, the pre-processed source will be dumped on the command line.
-    ShaderProgramPtr getShaderProgram(const std::list<std::string> &shaderIDs, bool dumpTextDebug = false);
+    ShaderProgramPtr getShaderProgram(const std::vector<std::string> &shaderIDs, bool dumpTextDebug = false);
     ShaderPtr getShader(const char *shaderID, ShaderType shaderType);
 
     /// Create shader/program (manual loading)
@@ -96,7 +96,7 @@ public:
 
 protected:
     virtual ShaderPtr loadAsset(ShaderInfo &shaderInfo)=0;
-    virtual ShaderProgramPtr createShaderProgram(const std::list<std::string> &shaderIDs, bool dumpTextDebug)=0;
+    virtual ShaderProgramPtr createShaderProgram(const std::vector<std::string> &shaderIDs, bool dumpTextDebug)=0;
 
     /// A token-value map for user-provided preprocessor #define's
     std::map<std::string, std::string> preprocessorDefines;

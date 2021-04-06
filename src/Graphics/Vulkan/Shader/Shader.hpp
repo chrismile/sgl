@@ -29,13 +29,102 @@
 #ifndef SGL_SHADER_HPP
 #define SGL_SHADER_HPP
 
+#include <vector>
+#include <memory>
+#include <map>
+
 #include <vulkan/vulkan.h>
+#include <Graphics/Vulkan/libs/SPIRV-Reflect/spirv_reflect.h>
+
+#include "../Utils/Device.hpp"
 
 namespace sgl { namespace vk {
 
-class Shader {
-
+enum class ShaderModuleType {
+    VERTEX = VK_SHADER_STAGE_VERTEX_BIT,
+    TESSELATION_CONTROL = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
+    TESSELATION_EVALUATION = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
+    GEOMETRY = VK_SHADER_STAGE_GEOMETRY_BIT,
+    FRAGMENT = VK_SHADER_STAGE_FRAGMENT_BIT,
+    COMPUTE = VK_SHADER_STAGE_COMPUTE_BIT,
+    RAYGEN = VK_SHADER_STAGE_RAYGEN_BIT_KHR,
+    ANY_HIT = VK_SHADER_STAGE_ANY_HIT_BIT_KHR,
+    CLOSEST_HIT = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR,
+    MISS = VK_SHADER_STAGE_MISS_BIT_KHR,
+    INTERSECTION = VK_SHADER_STAGE_INTERSECTION_BIT_KHR,
+    CALLABLE = VK_SHADER_STAGE_CALLABLE_BIT_KHR
 };
+
+struct InterfaceVariableDescriptor {
+    int location;
+    SpvReflectFormat format; ///< SpvReflectFormat is a subset of VkFormat valid for interface variables.
+    std::string name;
+};
+
+
+class ShaderModule {
+public:
+    // Called by ShaderManager.
+    ShaderModule(
+            Device* device, const std::string& shaderModuleId, ShaderModuleType shaderModuleType,
+            const std::vector<uint32_t>& spirvCode);
+    ~ShaderModule();
+
+    /**
+     * Returns, e.g.: {InterfaceVariableDescriptor(0, SPV_REFLECT_FORMAT_R32G32B32_SFLOAT, "vertexPosition")}
+     * ... for a shader with a single interface variable "vertexPosition" defined by, e.g.,
+     * "layout(location = 0) in vec3 vertexPosition;" in GLSL.
+     *
+     * NOTE: This function is only supported for vertex shader modules!
+     *
+     * @return A list of input interface variable descriptors for this shader module.
+     */
+    std::vector<InterfaceVariableDescriptor> getInputVariableDescriptors();
+
+    inline const std::string& getShaderModuleId() const { return shaderModuleId; }
+    inline ShaderModuleType getShaderModuleType() const { return shaderModuleType; }
+
+    // Get Vulkan data.
+    inline VkShaderModule getVkShaderModule() { return vkShaderModule; }
+
+private:
+    void createReflectData(const std::vector<uint32_t>& spirvCode);
+
+    // General information.
+    Device* device;
+    std::string shaderModuleId;
+    ShaderModuleType shaderModuleType;
+
+    // Vulkan data.
+    VkShaderModule vkShaderModule;
+
+    // SPIR-V reflect data (for now only supported for vertex shader modules).
+    std::vector<InterfaceVariableDescriptor> inputVariableDescriptors;
+};
+
+typedef std::shared_ptr<ShaderModule> ShaderModulePtr;
+
+
+/**
+ * This class represents a selection of shader modules unified into a list of shader stages.
+ * It will be used in the VkGraphicsPipelineCreateInfo struct.
+ */
+class ShaderStages {
+public:
+    ShaderStages(std::vector<ShaderModulePtr> shaderModules);
+
+    /// Returns the input variable descriptors of the vertex shader. NOTE: A vertex shader must exist for this to work!
+    std::vector<InterfaceVariableDescriptor> getInputVariableDescriptors();
+
+    inline const std::vector<VkPipelineShaderStageCreateInfo>& getVkShaderStages() const { return vkShaderStages; }
+
+private:
+    std::vector<ShaderModulePtr> shaderModules;
+    ShaderModulePtr vertexShaderModule; // Optional
+    std::vector<VkPipelineShaderStageCreateInfo> vkShaderStages;
+};
+
+typedef std::shared_ptr<ShaderStages> ShaderStagesPtr;
 
 }}
 

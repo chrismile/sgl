@@ -8,9 +8,12 @@
 #ifndef GRAPHICS_SHADER_SHADERATTRIBUTES_HPP_
 #define GRAPHICS_SHADER_SHADERATTRIBUTES_HPP_
 
+#include <memory>
+
+#include <glm/glm.hpp>
+
 #include <Defs.hpp>
 #include <Graphics/Buffers/GeometryBuffer.hpp>
-#include <glm/glm.hpp>
 
 namespace sgl {
 
@@ -57,9 +60,9 @@ enum VertexAttributeConversion {
  * Finally, you can use "Renderer->render(shaderAttributes)" to render your geometry in every frame. */
 
 class ShaderAttributes;
-typedef boost::shared_ptr<ShaderAttributes> ShaderAttributesPtr;
+typedef std::shared_ptr<ShaderAttributes> ShaderAttributesPtr;
 class ShaderProgram;
-typedef boost::shared_ptr<ShaderProgram> ShaderProgramPtr;
+typedef std::shared_ptr<ShaderProgram> ShaderProgramPtr;
 
 class DLL_OBJECT ShaderAttributes
 {

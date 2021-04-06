@@ -44,7 +44,7 @@ private:
     AABB3 aabb;
 };
 
-typedef boost::shared_ptr<SubMesh> SubMeshPtr;
+typedef std::shared_ptr<SubMesh> SubMeshPtr;
 
 }
 

@@ -18,7 +18,6 @@
 #include <boost/algorithm/string.hpp>
 
 #include <GL/glew.h>
-//#include "glsw/glsw.h"
 
 #include "ShaderManager.hpp"
 #include <Utils/File/Logfile.hpp>
@@ -134,7 +133,7 @@ void ShaderManagerGL::bindShaderStorageBuffer(int binding, GeometryBufferPtr &ge
 
 
 static bool dumpTextDebugStatic = false;
-ShaderProgramPtr ShaderManagerGL::createShaderProgram(const std::list<std::string> &shaderIDs, bool dumpTextDebug)
+ShaderProgramPtr ShaderManagerGL::createShaderProgram(const std::vector<std::string> &shaderIDs, bool dumpTextDebug)
 {
     ShaderProgramPtr shaderProgram = createShaderProgram();
     dumpTextDebugStatic = dumpTextDebug;

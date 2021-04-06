@@ -8,7 +8,7 @@
 #ifndef SRC_GRAPHICS_SCENE_RENDERABLE_HPP_
 #define SRC_GRAPHICS_SCENE_RENDERABLE_HPP_
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace sgl {
 
@@ -18,7 +18,7 @@ public:
     virtual void render();
 };
 
-typedef boost::shared_ptr<Renderable> RenderablePtr;
+typedef std::shared_ptr<Renderable> RenderablePtr;
 
 }
 

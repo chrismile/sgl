@@ -30,7 +30,7 @@ private:
     AABB3 aabb;
 };
 
-typedef boost::shared_ptr<Mesh> MeshPtr;
+typedef std::shared_ptr<Mesh> MeshPtr;
 
 }
 

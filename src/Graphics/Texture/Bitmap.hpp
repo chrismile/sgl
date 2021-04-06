@@ -10,8 +10,7 @@
 
 #include <string>
 #include <cstdint>
-#include <boost/shared_ptr.hpp>
-#include <boost/weak_ptr.hpp>
+#include <memory>
 #include "../Color.hpp"
 
 namespace sgl {
@@ -19,7 +18,7 @@ namespace sgl {
 class Point2;
 class Rectangle;
 class Bitmap;
-typedef boost::shared_ptr<Bitmap> BitmapPtr;
+typedef std::shared_ptr<Bitmap> BitmapPtr;
 
 //! For now only a bit-depth of 32-bit is properly supported!
 class Bitmap
