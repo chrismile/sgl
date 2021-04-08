@@ -69,7 +69,7 @@ pacman -S make git wget mingw64/mingw-w64-x86_64-gcc wget mingw64/mingw-w64-x86_
 pacman -S mingw64/mingw-w64-x86_64-glm mingw64/mingw-w64-x86_64-libpng mingw64/mingw-w64-x86_64-SDL2 mingw64/mingw-w64-x86_64-SDL2_image mingw64/mingw-w64-x86_64-SDL2_mixer mingw64/mingw-w64-x86_64-SDL2_ttf mingw64/mingw-w64-x86_64-tinyxml2 mingw64/mingw-w64-x86_64-boost mingw64/mingw-w64-x86_64-glew mingw64/mingw-w64-x86_64-cmake mingw64/mingw-w64-x86_64-libarchive
 ```
 
-For Vulkan support, you also need the following libraries.
+For Vulkan support, you also need the following libraries additionally to the Vulkan SDK (https://www.lunarg.com/vulkan-sdk/).
 
 ```
 pacman -S mingw64/mingw-w64-x86_64-vulkan-headers mingw64/mingw-w64-x86_64-vulkan-loader mingw64/mingw-w64-x86_64-vulkan-validation-layers mingw64/mingw-w64-x86_64-shaderc
@@ -81,7 +81,7 @@ Finally, when sgl has been cloned, it needs to be compiled and installed to, e.g
 mkdir build
 cd build
 rm -rf *
-cmake -G"MSYS Makefiles" -DCMAKE_INSTALL_PREFIX=/usr/local ..
+cmake -G "MSYS Makefiles" -DCMAKE_INSTALL_PREFIX=/usr/local ..
 make
 make install
 export PATH=$PATH:"/c/msys64/usr/local/bin"
