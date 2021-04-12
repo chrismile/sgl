@@ -44,9 +44,7 @@ ShaderModule::ShaderModule(
         exit(1);
     }
 
-    if (shaderModuleType == ShaderModuleType::VERTEX) {
-        createReflectData(spirvCode);
-    }
+    createReflectData(spirvCode);
 }
 
 ShaderModule::~ShaderModule() {
@@ -83,7 +81,7 @@ void ShaderModule::createReflectData(const std::vector<uint32_t>& spirvCode) {
     }
 
     // Get reflection information on the descriptor sets (TODO).
-    /*uint32_t numDescriptorSets = 0;
+    uint32_t numDescriptorSets = 0;
     result = spvReflectEnumerateDescriptorSets(&module, &numDescriptorSets, nullptr);
     if (result != SPV_REFLECT_RESULT_SUCCESS) {
         throw std::runtime_error("spvReflectEnumerateDescriptorSets failed!");
@@ -94,44 +92,118 @@ void ShaderModule::createReflectData(const std::vector<uint32_t>& spirvCode) {
         throw std::runtime_error("spvReflectEnumerateDescriptorSets failed!");
     }
 
-    std::cout << "#Descriptor Sets: " << numDescriptorSets << std::endl;
-    for (size_t descSetIdx = 0; descSetIdx < numDescriptorSets; ++descSetIdx) {
+    //descriptorSetsInfo.resize(numDescriptorSets);
+    for (uint32_t descSetIdx = 0; descSetIdx < numDescriptorSets; ++descSetIdx) {
         auto p_set = descriptorSets.at(descSetIdx);
 
-        std::cout << "  " << descSetIdx << ":" << std::endl;
-        printDescriptorSet(std::cout, *p_set, "  ");
-        std::cout << std::endl << std::endl;
-    }*/
+        std::vector<DescriptorInfo> descriptorsInfo;
+        descriptorsInfo.reserve(p_set->binding_count);
+        for (uint32_t bindingIdx = 0; bindingIdx < p_set->binding_count; bindingIdx++) {
+            DescriptorInfo descriptorInfo;
+            descriptorInfo.binding = p_set->bindings[bindingIdx]->binding;
+            descriptorInfo.type = VkDescriptorType(p_set->bindings[bindingIdx]->descriptor_type);
+            descriptorInfo.name = p_set->bindings[bindingIdx]->name;
+            descriptorsInfo.push_back(descriptorInfo);
+        }
+
+        descriptorSetsInfo.insert(std::make_pair(p_set->set, descriptorsInfo));
+    }
 
     spvReflectDestroyShaderModule(&module);
 }
 
-std::vector<InterfaceVariableDescriptor> ShaderModule::getInputVariableDescriptors() {
-    if (shaderModuleType != ShaderModuleType::VERTEX) {
-        sgl::Logfile::get()->writeError(
-                "Error in ShaderModule::getInputVariableDescriptors: "
-                "Reflection only supported for vertex shaders!");
-        return {};
-    }
-
+const std::vector<InterfaceVariableDescriptor>& ShaderModule::getInputVariableDescriptors() const {
     return inputVariableDescriptors;
 }
+
+const std::map<int, std::vector<DescriptorInfo>>& ShaderModule::getDescriptorSetsInfo() const {
+    return descriptorSetsInfo;
+}
+
+
 
 ShaderStages::ShaderStages(std::vector<ShaderModulePtr> shaderModules) : shaderModules(shaderModules) {
     vkShaderStages.reserve(shaderModules.size());
     for (ShaderModulePtr& shaderModule : shaderModules) {
-        VkPipelineShaderStageCreateInfo vertexShaderStageInfo = {};
-        vertexShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        vertexShaderStageInfo.stage = VkShaderStageFlagBits(shaderModule->getShaderModuleType());
-        vertexShaderStageInfo.module = shaderModule->getVkShaderModule();
-        vertexShaderStageInfo.pName = "main";
-        vertexShaderStageInfo.pSpecializationInfo = nullptr;
-        vkShaderStages.push_back(vertexShaderStageInfo);
+        VkPipelineShaderStageCreateInfo shaderStageCreateInfo = {};
+        shaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        shaderStageCreateInfo.stage = VkShaderStageFlagBits(shaderModule->getShaderModuleType());
+        shaderStageCreateInfo.module = shaderModule->getVkShaderModule();
+        shaderStageCreateInfo.pName = "main";
+        shaderStageCreateInfo.pSpecializationInfo = nullptr;
+        vkShaderStages.push_back(shaderStageCreateInfo);
+
+        if (shaderModule->getShaderModuleType() == ShaderModuleType::VERTEX) {
+            vertexShaderModule = shaderModule;
+            for (const InterfaceVariableDescriptor& varDesc : vertexShaderModule->getInputVariableDescriptors()) {
+                inputVariableNameMap.insert(std::make_pair(varDesc.name, varDesc.location));
+            }
+        }
+
+        mergeDescriptorSetsInfo(shaderModule->getDescriptorSetsInfo());
     }
 }
 
-std::vector<InterfaceVariableDescriptor> ShaderStages::getInputVariableDescriptors() {
+void ShaderStages::mergeDescriptorSetsInfo(const std::map<int, std::vector<DescriptorInfo>>& newDescriptorSetsInfo) {
+    for (auto& it : newDescriptorSetsInfo) {
+        const std::vector<DescriptorInfo>& descriptorsInfoNew = it.second;
+        std::vector<DescriptorInfo>& descriptorsInfo = descriptorSetsInfo[it.first];
+
+        // Merge the descriptors in a map object.
+        std::map<int, DescriptorInfo> descriptorsInfoMap;
+        for (DescriptorInfo& descInfo : descriptorsInfo) {
+            descriptorsInfoMap.insert(std::make_pair(descInfo.binding, descInfo));
+        }
+        for (const DescriptorInfo& descInfo : descriptorsInfoNew) {
+            auto it = descriptorsInfoMap.find(descInfo.binding);
+            if (it == descriptorsInfoMap.end()) {
+                descriptorsInfoMap.insert(std::make_pair(descInfo.binding, descInfo));
+            } else {
+                if (it->second.type != descInfo.type) {
+                    throw std::runtime_error(
+                            std::string() + "Error in ShaderStages::mergeDescriptorSetsInfo: Attempted to merge "
+                            + "incompatible descriptors \"" + it->second.name + "\" and \"" + descInfo.name + "\"!");
+                }
+            }
+        }
+
+        // Then, convert the merged descriptors back into a list.
+        descriptorsInfo.clear();
+        for (const auto& it : descriptorsInfoMap) {
+            descriptorsInfo.push_back(it.second);
+        }
+    }
+}
+
+const std::vector<InterfaceVariableDescriptor>& ShaderStages::getInputVariableDescriptors() const {
+    if (!vertexShaderModule) {
+        sgl::Logfile::get()->writeError(
+                "Error in ShaderStages::getInputVariableDescriptors: No vertex shader exists!");
+        return emptySet;
+    }
+
     return vertexShaderModule->getInputVariableDescriptors();
+}
+
+int ShaderStages::getInputVariableLocation(const std::string& varName) const {
+    if (!vertexShaderModule) {
+        sgl::Logfile::get()->writeError(
+                "Error in ShaderStages::getInputVariableLocation: No vertex shader exists!");
+        return -1;
+    }
+
+    auto it = inputVariableNameMap.find(varName);
+    if (it == inputVariableNameMap.end()) {
+        sgl::Logfile::get()->writeError(
+                "Error in ShaderStages::getInputVariableLocation: Unknown variable name \"" + varName + "\"!");
+        return -1;
+    }
+
+    return it->second;
+}
+
+const std::map<int, std::vector<DescriptorInfo>>& ShaderStages::getDescriptorSetsInfo() const {
+    return descriptorSetsInfo;
 }
 
 }}

@@ -55,11 +55,15 @@
 #include <sstream>
 #include <Graphics/Vulkan/libs/SPIRV-Reflect/spirv_reflect.h>
 
+namespace sgl { namespace vk {
+
 std::string spirvFormatToString(SpvReflectFormat format);
 
 void printModuleInfo(std::ostream& os, const SpvReflectShaderModule& obj, const char* /*indent*/);
 void printDescriptorSet(std::ostream& os, const SpvReflectDescriptorSet& obj, const char* indent);
 void printDescriptorBinding(
         std::ostream& os, const SpvReflectDescriptorBinding& obj, bool write_set, const char* indent);
+
+}}
 
 #endif //SGL_REFLECTHELPERS_HPP

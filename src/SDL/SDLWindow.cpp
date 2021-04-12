@@ -256,7 +256,7 @@ void SDLWindow::close()
         SDL_GL_DeleteContext(glContext);
     }
 #endif
-#ifdef SUPPORT_OPENGL
+#ifdef SUPPORT_VULKAN
     if (renderSystem == RenderSystem::VULKAN) {
         sgl::vk::Instance* instance = sgl::AppSettings::get()->getVulkanInstance();
         vkDestroySurfaceKHR(instance->getVkInstance(), windowSurface, nullptr);
