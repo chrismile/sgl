@@ -93,7 +93,7 @@ std::string FileUtils::filenameWithoutExtension(const std::string &filename)
 // /home/user/Info.txt -> Info.txt
 std::string FileUtils::getPureFilename(const std::string &path)
 {
-    for (int i = path.size()-2; i >= 0; --i) {
+    for (int i = (int)path.size() - 2; i >= 0; --i) {
         if (path.at(i) == '/' || path.at(i) == '\\') {
             return path.substr(i+1, path.size()-i-1);
         }
@@ -104,7 +104,7 @@ std::string FileUtils::getPureFilename(const std::string &path)
 // Info.txt -> Info
 std::string FileUtils::removeExtension(const std::string &path)
 {
-    for (int i = path.size()-1; i >= 0; --i) {
+    for (int i = (int)path.size() - 1; i >= 0; --i) {
         if (path.at(i) == '.') {
             return path.substr(0, i);
         }
