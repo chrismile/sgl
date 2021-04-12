@@ -27,12 +27,15 @@
  */
 
 #include <cstring>
+#include <iostream>
+#include <fstream>
 #include "../ShaderManager.hpp"
 #include "IncluderInterface.hpp"
 
 namespace sgl { namespace vk {
 
-/*std::string loadFileContent(const std::string &filename) {
+// TODO: Replace
+std::string loadFileContent(const std::string &filename) {
     std::ifstream file(filename.c_str());
     if (!file.is_open()) {
         std::cerr << "ERROR in loadFileContent: Couldn't open the file \"" << filename + "\"." << std::endl;
@@ -46,7 +49,7 @@ namespace sgl { namespace vk {
     file.close();
 
     return fileContent;
-}*/
+}
 
 std::string IncluderInterface::getDirectoryFromFilename(const std::string &filename) {
     return filename.substr(0, filename.find_last_of('/') + 1);

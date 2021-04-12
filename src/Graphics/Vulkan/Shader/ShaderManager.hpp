@@ -31,6 +31,8 @@
 
 #include <string>
 #include <vector>
+#include <map>
+
 #include <vulkan/vulkan.h>
 
 #include <Utils/File/FileManager.hpp>
@@ -89,9 +91,39 @@ public:
      */
     virtual void invalidateShaderCache()=0;
 
+    // For use by IncluderInterface.
+    const std::map<std::string, std::string>& getShaderFileMap() const { return shaderFileMap; }
+    const std::string& getShaderPathPrefix() const { return pathPrefix; }
+
 protected:
-    virtual ShaderModulePtr loadAsset(ShaderModuleInfo &shaderInfo)=0;
-    //virtual ShaderProgramPtr createShaderProgram(const std::vector<std::string> &shaderIDs, bool dumpTextDebug)=0;
+    ShaderModulePtr loadAsset(ShaderModuleInfo &shaderModuleInfo);
+    ShaderStagesPtr createShaderStages(const std::vector<std::string> &shaderIds, bool dumpTextDebug);
+
+    /// Internal loading
+    std::string loadHeaderFileString(const std::string &shaderName, std::string &prependContent);
+    std::string getHeaderName(const std::string &lineString);
+    std::string getShaderString(const std::string &globalShaderName);
+    std::string getPreprocessorDefines();
+
+    /**
+     * Indexes all ".glsl" files in the directory pathPrefix (and its sub-directories recursively) to create
+     * "shaderFileMap". Therefore, the application can easily include files with relative paths.
+     */
+    void indexFiles(const std::string &file);
+    std::string getShaderFileName(const std::string &pureFilename);
+
+    /// Directory in which to search for shaders (standard: Data/Shaders).
+    std::string pathPrefix;
+
+    /// Maps shader name -> shader source, e.g. "Blur.Fragment" -> "void main() { ... }".
+    std::map<std::string, std::string> effectSources;
+
+    /// Maps file names without path to full file paths for "*.glsl" shader files,
+    /// e.g. "Blur.glsl" -> "Data/Shaders/PostProcessing/Blur.glsl".
+    std::map<std::string, std::string> shaderFileMap;
+
+    // If a file named "GlobalDefines.glsl" is found: Appended to all shaders.
+    std::string globalDefines;
 
     /// A token-value map for user-provided preprocessor #define's
     std::map<std::string, std::string> preprocessorDefines;
