@@ -123,15 +123,12 @@ void Camera::updateCamera() {
     if (recalcFrustum) {
         //projMat = glm::perspective(fovy, aspect, nearDist, farDist);
 #if GLM_VERSION < 980
-        if (depthRange == Camera::DEPTH_RANGE_MINUS_ONE_ONE) {
-            projMat = glm::perspectiveRH_NO(fovy, aspect, nearDist, farDist);
-        }
-        projMat = glm::perspective(fovy, aspect, nearDist, farDist);
-#else
         if (depthRange != Camera::DEPTH_RANGE_MINUS_ONE_ONE) {
             sgl::Logfile::get()->writeError(
                     "Error in Camera::updateCamera: Clip control not supported in GLM versions prior to 0.9.8.0.");
         }
+        projMat = glm::perspective(fovy, aspect, nearDist, farDist);
+#else
         if (depthRange == Camera::DEPTH_RANGE_MINUS_ONE_ONE) {
             projMat = glm::perspectiveRH_NO(fovy, aspect, nearDist, farDist);
         } else {
