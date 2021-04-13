@@ -11,7 +11,7 @@
 #ifdef SUPPORT_OPENGL
 #include "imgui_impl_opengl3.h"
 #endif
-#ifdef SUPPORT_OPENGL
+#ifdef SUPPORT_VULKAN
 #include "imgui_impl_vulkan.h"
 #endif
 #include "imgui_impl_sdl.h"
