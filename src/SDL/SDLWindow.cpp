@@ -125,11 +125,16 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
     errorCheck();
 
     Uint32 flags = SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI;
+#ifdef SUPPORT_OPENGL
     if (renderSystem == RenderSystem::OPENGL) {
         flags = flags | SDL_WINDOW_OPENGL;
-    } else if (renderSystem == RenderSystem::VULKAN) {
+    }
+#endif
+#ifdef SUPPORT_VULKAN
+    if (renderSystem == RenderSystem::VULKAN) {
         flags = flags | SDL_WINDOW_VULKAN;
     }
+#endif
     if (windowSettings.fullscreen) flags |= SDL_WINDOW_FULLSCREEN;
     if (windowSettings.resizable) flags |= SDL_WINDOW_RESIZABLE;
 
