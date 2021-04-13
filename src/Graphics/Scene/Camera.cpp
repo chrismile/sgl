@@ -13,6 +13,7 @@
 #include <Math/Geometry/Plane.hpp>
 #include <Input/Mouse.hpp>
 #include <Utils/AppSettings.hpp>
+#include <Utils/File/Logfile.hpp>
 #include <Graphics/Window.hpp>
 #include <Graphics/Renderer.hpp>
 
@@ -121,11 +122,22 @@ glm::vec2 Camera::mousePositionInPlane(float planeDistance) {
 void Camera::updateCamera() {
     if (recalcFrustum) {
         //projMat = glm::perspective(fovy, aspect, nearDist, farDist);
+#if GLM_VERSION < 980
+        if (depthRange == Camera::DEPTH_RANGE_MINUS_ONE_ONE) {
+            projMat = glm::perspectiveRH_NO(fovy, aspect, nearDist, farDist);
+        }
+        projMat = glm::perspective(fovy, aspect, nearDist, farDist);
+#else
+        if (depthRange != Camera::DEPTH_RANGE_MINUS_ONE_ONE) {
+            sgl::Logfile::get()->writeError(
+                    "Error in Camera::updateCamera: Clip control not supported in GLM versions prior to 0.9.8.0.");
+        }
         if (depthRange == Camera::DEPTH_RANGE_MINUS_ONE_ONE) {
             projMat = glm::perspectiveRH_NO(fovy, aspect, nearDist, farDist);
         } else {
             projMat = glm::perspectiveRH_ZO(fovy, aspect, nearDist, farDist);
         }
+#endif
     }
     if (recalcModelMat) {
         // We don't want a flip-over at the poles of the unit sphere.
