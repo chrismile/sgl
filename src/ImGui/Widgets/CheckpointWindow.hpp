@@ -58,6 +58,8 @@ public:
     ~CheckpointWindow();
     void onLoadDataSet(const std::string& dataSetName);
     bool getCheckpoint(const std::string& checkpointName, Checkpoint& checkpoint);
+    inline void setStandardWindowSize(int width, int height) { standardWidth = width; standardHeight = height; }
+    inline void setStandardWindowPosition(int x, int y) { standardPositionX = x; standardPositionY = y; }
 
     /// @return true if re-rendering the scene is necessary.
     bool renderGui();
@@ -81,6 +83,10 @@ private:
     std::vector<std::pair<std::string, Checkpoint>> loadedDataSetCheckpoints;
 
     bool showWindow = true;
+    int standardWidth = 1254;
+    int standardHeight = 390;
+    int standardPositionX = 1289;
+    int standardPositionY = 62;
 };
 
 }

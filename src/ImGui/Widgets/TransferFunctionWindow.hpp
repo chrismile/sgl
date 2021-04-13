@@ -145,6 +145,9 @@ public:
     static glm::vec3 sRGBToLinearRGB(const glm::vec3& color_LinearRGB);
     static glm::vec3 linearRGBTosRGB(const glm::vec3& color_sRGB);
 
+    inline void setStandardWindowSize(int width, int height) { standardWidth = width; standardHeight = height; }
+    inline void setStandardWindowPosition(int x, int y) { standardPositionX = x; standardPositionY = y; }
+
 private:
     void renderFileDialog();
     void renderOpacityGraph();
@@ -177,6 +180,10 @@ private:
     // GUI
     bool reRender = false;
     bool showTransferFunctionWindow = true;
+    int standardWidth = 612;
+    int standardHeight = 774;
+    int standardPositionX = 0;
+    int standardPositionY = 1334;
     float opacitySelection = 1.0f;
     ImVec4 colorSelection = ImColor(255, 255, 255, 255);
     sgl::Color clearColor;
