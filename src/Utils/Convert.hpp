@@ -75,6 +75,42 @@ bool isNumeric(const std::string &stringObject);
 int stringToNumber(const char *str);
 
 #ifdef USE_GLM
+
+#if GLM_VERSION < 980
+template <typename T, glm::precision P>
+std::string toString(const glm::tvec2<T, P>& obj) {
+    std::ostringstream ostr;
+    for (int i = 0; i < 2; i++) {
+        ostr << obj[i];
+        if (i != 1) {
+            ostr << " ";
+        }
+    }
+    return ostr.str();
+}
+template <typename T, glm::precision P>
+std::string toString(const glm::tvec3<T, P>& obj) {
+    std::ostringstream ostr;
+    for (int i = 0; i < 3; i++) {
+        ostr << obj[i];
+        if (i != 2) {
+            ostr << " ";
+        }
+    }
+    return ostr.str();
+}
+template <typename T, glm::precision P>
+std::string toString(const glm::tvec4<T, P>& obj) {
+    std::ostringstream ostr;
+    for (int i = 0; i < 4; i++) {
+        ostr << obj[i];
+        if (i != 3) {
+            ostr << " ";
+        }
+    }
+    return ostr.str();
+}
+#else
 template <int L, typename T, glm::qualifier Q>
 std::string toString(const glm::vec<L, T, Q>& obj) {
     std::ostringstream ostr;
@@ -97,6 +133,8 @@ glm::vec<L, T, Q> fromString(const std::string &stringObject) {
     }
     return type;
 }*/
+#endif
+
 template<>
 glm::ivec2 fromString<glm::ivec2>(const std::string &stringObject);
 #endif
