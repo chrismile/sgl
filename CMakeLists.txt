@@ -13,7 +13,7 @@ if (NOT ${SUPPORT_OPENGL})
 endif()
 
 find_package(Vulkan QUIET)
-if (NOT ${SUPPORT_VULKAN} OR NOT ${Vulkan_FOUND})
+if ((NOT ${SUPPORT_VULKAN}) OR (NOT ${Vulkan_FOUND}))
 	file(GLOB_RECURSE VULKAN_SOURCES src/Graphics/Vulkan/*.cpp src/Graphics/Vulkan/*.c src/Graphics/Vulkan/*.h src/Graphics/Vulkan/*.hpp)
 	foreach(source ${VULKAN_SOURCES})
 		list(REMOVE_ITEM SOURCES ${source})
