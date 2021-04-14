@@ -19,19 +19,20 @@
 
 #include <GL/glew.h>
 
-#include "ShaderManager.hpp"
-#include <Utils/File/Logfile.hpp>
 #include <Utils/Convert.hpp>
+#include <Utils/AppSettings.hpp>
+#include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
 #include "Shader.hpp"
 #include "SystemGL.hpp"
 #include "ShaderAttributes.hpp"
+#include "ShaderManager.hpp"
 
 namespace sgl {
 
 ShaderManagerGL::ShaderManagerGL()
 {
-    pathPrefix = "./Data/Shaders/";
+    pathPrefix = sgl::AppSettings::get()->getDataDirectory() + "Shaders/";
     indexFiles(pathPrefix);
 
     // Was a file called "GlobalDefines.glsl" found? If yes, store its content in "globalDefines".

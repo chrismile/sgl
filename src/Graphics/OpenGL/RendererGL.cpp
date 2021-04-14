@@ -101,9 +101,9 @@ RendererGL::RendererGL()
 
     createMatrixBlock();
 
-    if (FileUtils::get()->exists("Data/Shaders/FXAA.glsl"))
+    if (FileUtils::get()->exists(sgl::AppSettings::get()->getDataDirectory()  + "Shaders/FXAA.glsl"))
         fxaaShader = ShaderManager->getShaderProgram({"FXAA.Vertex", "FXAA.Fragment"});
-    if (FileUtils::get()->exists("Data/Shaders/GaussianBlur.glsl"))
+    if (FileUtils::get()->exists(sgl::AppSettings::get()->getDataDirectory()  + "Shaders/GaussianBlur.glsl"))
         blurShader = ShaderManager->getShaderProgram({"GaussianBlur.Vertex", "GaussianBlur.Fragment"});
     blitShader = ShaderManager->getShaderProgram({"Blit.Vertex", "Blit.Fragment"});
     resolveMSAAShader = ShaderManager->getShaderProgram({"ResolveMSAA.Vertex", "ResolveMSAA.Fragment"});

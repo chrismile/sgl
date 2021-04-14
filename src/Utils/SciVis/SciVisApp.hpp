@@ -95,14 +95,14 @@ protected:
     sgl::Color clearColor;
     ImVec4 clearColorSelection = ImColor(255, 255, 255, 255);
     bool useLinearRGB = true;
-    std::string saveDirectoryScreenshots = "Data/Screenshots/";
+    std::string saveDirectoryScreenshots;
     std::string saveFilenameScreenshots = "Screenshot";
     std::vector<float> fpsArray;
     size_t fpsArrayOffset = 0;
     bool uiOnScreenshot = false;
     bool printNow = false;
     int screenshotNumber = 0;
-    std::string saveDirectoryVideos = "Data/Videos/";
+    std::string saveDirectoryVideos;
     std::string saveFilenameVideos = "Video";
     int videoNumber = 0;
     float MOVE_SPEED = 0.2f;
@@ -138,7 +138,7 @@ protected:
     bool useCameraFlight = false;
     bool startedCameraFlightPerUI = false;
     bool realTimeCameraFlight = true; // Move camera in real elapsed time or camera frame rate?
-    const std::string saveDirectoryCameraPaths = "Data/CameraPaths/";
+    std::string saveDirectoryCameraPaths;
     float FRAME_TIME_CAMERA_PATH = 1.0f / FRAME_RATE_VIDEOS; ///< Simulate constant frame rate.
     float CAMERA_PATH_TIME_RECORDING = 30.0f;
     float CAMERA_PATH_TIME_PERFORMANCE_MEASUREMENT = 128.0f; ///< Change if desired.

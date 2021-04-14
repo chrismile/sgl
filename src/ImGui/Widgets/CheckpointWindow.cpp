@@ -27,7 +27,9 @@
  */
 
 #include <fstream>
+#include <boost/algorithm/string/predicate.hpp>
 
+#include <Utils/AppSettings.hpp>
 #include <Utils/Events/Stream/Stream.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
@@ -47,6 +49,8 @@ public:
 };
 
 CheckpointWindow::CheckpointWindow(CameraPtr& camera) : camera(camera) {
+    saveDirectoryCheckpoints = sgl::AppSettings::get()->getDataDirectory() + "Checkpoints/";
+    checkpointsFilename = saveDirectoryCheckpoints + "checkpoints.bin";
     sgl::FileUtils::get()->ensureDirectoryExists(saveDirectoryCheckpoints);
     if (sgl::FileUtils::get()->exists(checkpointsFilename)) {
         readFromFile(checkpointsFilename);
@@ -67,6 +71,17 @@ CheckpointWindow::~CheckpointWindow() {
 }
 
 void CheckpointWindow::onLoadDataSet(const std::string& dataSetName) {
+    std::string dataSetIdentifier;
+    if (sgl::AppSettings::get()->getHasCustomDataDirectory()) {
+        if (boost::starts_with(dataSetName, sgl::AppSettings::get()->getDataDirectory())) {
+            dataSetIdentifier = "Data/" + dataSetName.substr(sgl::AppSettings::get()->getDataDirectory().size());
+        } else {
+            dataSetIdentifier = dataSetName;
+        }
+    } else {
+        dataSetIdentifier = dataSetName;
+    }
+
     // Save previous data set checkpoints in data set map.
     if (!loadedDataSetName.empty() && !loadedDataSetCheckpoints.empty()) {
         std::map<std::string, Checkpoint> loadedDataSetCheckpointsMap;
@@ -78,8 +93,8 @@ void CheckpointWindow::onLoadDataSet(const std::string& dataSetName) {
     loadedDataSetCheckpoints.clear();
 
     // Load checkpoints if they exist already for this data set.
-    loadedDataSetName = dataSetName;
-    auto it = dataSetCheckpointMap.find(dataSetName);
+    loadedDataSetName = dataSetIdentifier;
+    auto it = dataSetCheckpointMap.find(dataSetIdentifier);
     if (it != dataSetCheckpointMap.end()) {
         for (auto& dataSetCheckpoint : it->second) {
             loadedDataSetCheckpoints.push_back(dataSetCheckpoint);

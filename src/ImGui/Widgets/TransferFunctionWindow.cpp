@@ -36,6 +36,7 @@
 #include <ImGui/imgui_custom.h>
 #include <ImGui/imgui_stdlib.h>
 
+#include <Utils/AppSettings.hpp>
 #include <Utils/XML.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
@@ -76,6 +77,7 @@ TransferFunctionWindow::TransferFunctionWindow() {
     tfMapTextureSettings.internalFormat = GL_RGBA16;
     tfMapTexture = sgl::TextureManager->createEmptyTexture(TRANSFER_FUNCTION_TEXTURE_SIZE, tfMapTextureSettings);
 
+    saveDirectory = sgl::AppSettings::get()->getDataDirectory() + "TransferFunctions/";
     directoryContentWatch.setPath(saveDirectory, true);
     directoryContentWatch.initialize();
 

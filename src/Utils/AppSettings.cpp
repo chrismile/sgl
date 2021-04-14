@@ -18,6 +18,7 @@
 #include <SDL/Input/SDLGamepad.hpp>
 //#include <SDL2/SDL_ttf.h>
 #include <ImGui/ImGuiWrapper.hpp>
+#include <iostream>
 #include <fstream>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/filesystem.hpp>
@@ -139,7 +140,13 @@ Window *AppSettings::createWindow()
     // Make sure the "Data" directory exists.
     // If not: Create a symbolic link to "Data" in the parent folder if it exists.
     if (!sgl::FileUtils::get()->exists("Data") && sgl::FileUtils::get()->directoryExists("../Data")) {
-        boost::filesystem::create_directory_symlink("../Data", "Data");
+        boost::system::error_code errorCode;
+        boost::filesystem::create_directory_symlink("../Data", "Data", errorCode);
+        if (errorCode.failed()) {
+            sgl::Logfile::get()->writeInfo("Couldn't create symlink to 'Data' directory.");
+            dataDirectory = "../Data/";
+            hasCustomDataDirectory = true;
+        }
     }
 
     // Disable upscaling on Windows with High-DPI settings

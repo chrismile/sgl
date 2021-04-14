@@ -96,6 +96,10 @@ public:
     glm::ivec2 getCurrentDisplayModeResolution(int displayIndex = 0);
     glm::ivec2 getDesktopResolution(int displayIndex = 0);
 
+    // Get the directory where the application data is stored.
+    inline const std::string& getDataDirectory() const { return dataDirectory; }
+    inline bool getHasCustomDataDirectory() const { return hasCustomDataDirectory; }
+
 private:
     SettingsFile settings;
     std::string settingsFilename;
@@ -106,6 +110,10 @@ private:
 #ifdef SUPPORT_VULKAN
     vk::Instance* instance = nullptr;
 #endif
+
+    // Where the application data is stored.
+    std::string dataDirectory = "Data/";
+    bool hasCustomDataDirectory = false;
 
     // UI data.
     bool useGUI = false;

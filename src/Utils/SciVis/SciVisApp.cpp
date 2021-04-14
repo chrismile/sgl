@@ -50,6 +50,10 @@ namespace sgl {
 
 SciVisApp::SciVisApp(float fovy)
         : camera(new sgl::Camera()), checkpointWindow(camera), videoWriter(NULL) {
+    saveDirectoryScreenshots = sgl::AppSettings::get()->getDataDirectory() + "Screenshots/";
+    saveDirectoryVideos = sgl::AppSettings::get()->getDataDirectory() + "Videos/";
+    saveDirectoryCameraPaths = sgl::AppSettings::get()->getDataDirectory() + "CameraPaths/";
+
     // https://www.khronos.org/registry/OpenGL/extensions/NVX/NVX_gpu_memory_info.txt
     GLint gpuInitialFreeMemKilobytes = 0;
     if (usePerformanceMeasurementMode

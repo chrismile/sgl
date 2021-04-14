@@ -76,8 +76,8 @@ private:
      */
     const uint32_t CHECKPOINT_FORMAT_VERSION = 2u;
 
-    const std::string saveDirectoryCheckpoints = "Data/Checkpoints/";
-    const std::string checkpointsFilename = saveDirectoryCheckpoints + "checkpoints.bin";
+    std::string saveDirectoryCheckpoints;
+    std::string checkpointsFilename;
     std::map<std::string, std::map<std::string, Checkpoint>> dataSetCheckpointMap;
     std::string loadedDataSetName;
     std::vector<std::pair<std::string, Checkpoint>> loadedDataSetCheckpoints;

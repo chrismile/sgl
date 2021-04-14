@@ -90,11 +90,11 @@ void ImGuiWrapper::initialize(
         std::cout << fontRanges[i] << std::endl;
     }*/
 
-    ImFont *fontTest = io.Fonts->AddFontFromFileTTF(
-            "Data/Fonts/DroidSans.ttf", 16.0f*fontScaleFactor, nullptr, fontRanges.Data);
+    std::string fontFilename = sgl::AppSettings::get()->getDataDirectory() + "Fonts/DroidSans.ttf";
     // For support of more Unicode characters (e.g., also Japanese).
-    //ImFont *fontTest = io.Fonts->AddFontFromFileTTF(
-    //        "Data/Fonts/DroidSansFallback.ttf", 16.0f*fontScaleFactor, nullptr, fontRanges.Data);
+    //std::string fontFilename = sgl::AppSettings::get()->getDataDirectory() + "Fonts/DroidSansFallback.ttf";
+    ImFont *fontTest = io.Fonts->AddFontFromFileTTF(
+            fontFilename.c_str(), 16.0f*fontScaleFactor, nullptr, fontRanges.Data);
     assert(fontTest != nullptr);
     io.Fonts->Build();
 }

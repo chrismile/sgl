@@ -192,7 +192,7 @@ private:
     // Transfer function directory watch.
     sgl::PathWatch directoryContentWatch;
 
-    std::string saveDirectory = "Data/TransferFunctions/";
+    std::string saveDirectory;
     std::string saveFileString = "Standard.xml";
     std::vector<std::string> availableFiles;
     int selectedFileIndex = -1;
