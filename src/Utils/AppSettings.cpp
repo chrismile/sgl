@@ -142,7 +142,12 @@ Window *AppSettings::createWindow()
     if (!sgl::FileUtils::get()->exists("Data") && sgl::FileUtils::get()->directoryExists("../Data")) {
         boost::system::error_code errorCode;
         boost::filesystem::create_directory_symlink("../Data", "Data", errorCode);
+
+#if BOOST_VERSION < 106900
+        if (errorCode.value() != 0) {
+#else
         if (errorCode.failed()) {
+#endif
             sgl::Logfile::get()->writeInfo("Couldn't create symlink to 'Data' directory.");
             dataDirectory = "../Data/";
             hasCustomDataDirectory = true;
