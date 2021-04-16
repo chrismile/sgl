@@ -23,7 +23,11 @@ if ((NOT ${SUPPORT_VULKAN}) OR (NOT ${Vulkan_FOUND}))
 endif()
 
 add_library(sgl SHARED ${SOURCES})
-include_directories(src)
+#include_directories(src)
+target_include_directories(sgl PUBLIC
+		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+		$<INSTALL_INTERFACE:include/sgl> # <prefix>/include/sgl
+)
 
 if(MSVC)
 	set(CMAKE_CXX_FLAGS "-W3 /EHsc")
