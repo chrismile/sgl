@@ -2,6 +2,7 @@
 // Created by christoph on 13.09.18.
 //
 
+#include <iostream>
 #include <Utils/AppSettings.hpp>
 #include <SDL/SDLWindow.hpp>
 #include <SDL/HiDPI.hpp>
@@ -25,6 +26,7 @@ void ImGuiWrapper::initialize(
     float scaleFactorHiDPI = getHighDPIScaleFactor();
     this->uiScaleFactor = uiScaleFactor;
     uiScaleFactor = scaleFactorHiDPI * uiScaleFactor;
+    sizeScale = uiScaleFactor / defaultUiScaleFactor;
     float fontScaleFactor = uiScaleFactor;
 
     // --- Code from here on partly taken from ImGui usage example ---
@@ -99,8 +101,7 @@ void ImGuiWrapper::initialize(
     io.Fonts->Build();
 }
 
-void ImGuiWrapper::shutdown()
-{
+void ImGuiWrapper::shutdown() {
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
 #ifdef SUPPORT_OPENGL
     if (renderSystem == RenderSystem::OPENGL) {
@@ -117,13 +118,11 @@ void ImGuiWrapper::shutdown()
     ImGui::DestroyContext();
 }
 
-void ImGuiWrapper::processSDLEvent(const SDL_Event &event)
-{
+void ImGuiWrapper::processSDLEvent(const SDL_Event &event) {
     ImGui_ImplSDL2_ProcessEvent(&event);
 }
 
-void ImGuiWrapper::renderStart()
-{
+void ImGuiWrapper::renderStart() {
     SDLWindow *window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
 
@@ -142,8 +141,7 @@ void ImGuiWrapper::renderStart()
     ImGui::NewFrame();
 }
 
-void ImGuiWrapper::renderEnd()
-{
+void ImGuiWrapper::renderEnd() {
     ImGui::Render();
 
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
@@ -170,15 +168,26 @@ void ImGuiWrapper::renderEnd()
     }
 }
 
-void ImGuiWrapper::renderDemoWindow()
-{
+void ImGuiWrapper::setNextWindowStandardPos(int x, int y) {
+    ImGui::SetNextWindowPos(ImVec2(x * sizeScale, y * sizeScale), ImGuiCond_FirstUseEver);
+}
+
+void ImGuiWrapper::setNextWindowStandardSize(int width, int height) {
+    ImGui::SetNextWindowSize(ImVec2(width * sizeScale, height * sizeScale), ImGuiCond_FirstUseEver);
+}
+
+void ImGuiWrapper::setNextWindowStandardPosSize(int x, int y, int width, int height) {
+    ImGui::SetNextWindowPos(ImVec2(x * sizeScale, y * sizeScale), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(width * sizeScale, height * sizeScale), ImGuiCond_FirstUseEver);
+}
+
+void ImGuiWrapper::renderDemoWindow() {
     static bool show_demo_window = true;
     if (show_demo_window)
         ImGui::ShowDemoWindow(&show_demo_window);
 }
 
-void ImGuiWrapper::showHelpMarker(const char* desc)
-{
+void ImGuiWrapper::showHelpMarker(const char* desc) {
     ImGui::TextDisabled("(?)");
     if (ImGui::IsItemHovered())
     {

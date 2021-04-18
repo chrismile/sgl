@@ -318,8 +318,8 @@ float TransferFunctionWindow::getOpacityAtAttribute(float attribute) {
 
 bool TransferFunctionWindow::renderGui() {
     if (showTransferFunctionWindow) { // , ImGuiWindowFlags_AlwaysAutoResize)
-        ImGui::SetNextWindowSize(ImVec2(standardWidth, standardHeight), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowPos(ImVec2(standardPositionX, standardPositionY), ImGuiCond_FirstUseEver);
+        sgl::ImGuiWrapper::get()->setNextWindowStandardPosSize(
+                standardPositionX, standardPositionY, standardWidth, standardHeight);
         if (!ImGui::Begin("Transfer Function", &showTransferFunctionWindow)) {
             // Window collapsed
             ImGui::End();

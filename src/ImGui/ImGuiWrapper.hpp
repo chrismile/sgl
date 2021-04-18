@@ -34,6 +34,17 @@ public:
     void shutdown(); //< to be called by AppSettings
     inline float getScaleFactor() { return uiScaleFactor; } //< The UI high DPI scale factor
 
+    // Sets the default scale factor.
+    inline void setDefaultScaleFactor(float factor) {
+        defaultUiScaleFactor = factor;
+        sizeScale = uiScaleFactor / defaultUiScaleFactor;
+    }
+
+    // Takes into account that defaultUiScaleFactor is used for the sizes.
+    void setNextWindowStandardPos(int x, int y);
+    void setNextWindowStandardSize(int width, int height);
+    void setNextWindowStandardPosSize(int x, int y, int width, int height);
+
     // Insert your ImGui code between "renderStart" and "renderEnd"
     void renderStart();
     void renderEnd();
@@ -44,6 +55,8 @@ public:
 
 private:
     float uiScaleFactor;
+    float defaultUiScaleFactor = 1.875f;
+    float sizeScale = 1.0f;
 };
 
 }

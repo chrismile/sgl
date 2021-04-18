@@ -206,8 +206,8 @@ bool CheckpointWindow::renderGui() {
     bool shallDeleteElement = false;
     size_t deleteElementId = 0;
 
-    ImGui::SetNextWindowSize(ImVec2(standardWidth, standardHeight), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowPos(ImVec2(standardPositionX, standardPositionY), ImGuiCond_FirstUseEver);
+    sgl::ImGuiWrapper::get()->setNextWindowStandardPosSize(
+            standardPositionX, standardPositionY, standardWidth, standardHeight);
     if (ImGui::Begin("Camera Checkpoints", &showWindow)) {
         ImGui::Columns(4, "CheckpointsColumns");
         ImGui::Separator();
