@@ -48,6 +48,10 @@ bool loadFileFromSource(
     }
 #endif
 
+#ifdef __MINGW32__
+    // Carriage return was not counted in text mode when using MinGW.
+    isBinaryFile = true;
+#endif
     FILE* file = fopen64(filename.c_str(), isBinaryFile ? "rb" : "r");
     if (!file) {
         sgl::Logfile::get()->writeError(
