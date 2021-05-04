@@ -4,17 +4,25 @@ sgl is a collection of utility functions for developing OpenGL and Vulkan graphi
 
 ## Usage
 
-The most recommended way of learning to use this library is reading and understanding the sample code in the directory 'samples' (still work in progress).
+The most recommended way of learning to use this library is reading and understanding the sample code in the directory
+'samples' (still work in progress).
 
-If you built the doxygen documentation for this project (for more details see the next section), you can also look there for more information on classes and interfaces.
+If you built the doxygen documentation for this project (for more details see the next section), you can also look there
+for more information on classes and interfaces.
 
 
 ## Compilation
 
-On Ubuntu 20.04 for example, you can install all necessary packages with this command:
+On Ubuntu (tested on 16.04 and 20.04), all necessary packages can be installed with this command:
 
 ```
 sudo apt-get install git cmake libglm-dev libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libpng-dev libboost-filesystem-dev libtinyxml2-dev libarchive-dev
+```
+
+Similarly, the following command can be used on Arch Linux.
+
+```
+sudo pacman -S git cmake glew boost glm tinyxml2 sdl2 sdl2_image
 ```
 
 For OpenGL support, you also need the following libraries.
@@ -62,7 +70,8 @@ in the main directory to generate the documentation for this project.
 
 ## Compilation on Windows
 
-The build process was tested on Windows 10 64-bit using MSYS2 and Mingw-w64 (http://www.msys2.org/). Using MSYS2 and Pacman, the following packages need to be installed.
+The build process was tested on Windows 10 64-bit using MSYS2 and Mingw-w64 (http://www.msys2.org/).
+Using MSYS2 and Pacman, the following packages need to be installed.
 
 ```
 pacman -S make git wget mingw64/mingw-w64-x86_64-gcc wget mingw64/mingw-w64-x86_64-gdb
