@@ -137,21 +137,16 @@ Window *AppSettings::createWindow()
     std::locale::global(l);
 #endif
 
-    // Make sure the "Data" directory exists.
-    // If not: Create a symbolic link to "Data" in the parent folder if it exists.
-    if (!sgl::FileUtils::get()->exists("Data") && sgl::FileUtils::get()->directoryExists("../Data")) {
-        boost::system::error_code errorCode;
-        boost::filesystem::create_directory_symlink("../Data", "Data", errorCode);
-
-#if BOOST_VERSION < 106900
-        if (errorCode.value() != 0) {
-#else
-        if (errorCode.failed()) {
-#endif
-            sgl::Logfile::get()->writeInfo("Couldn't create symlink to 'Data' directory.");
-            dataDirectory = "../Data/";
-            hasCustomDataDirectory = true;
-        }
+    // Make sure the "Data" directory exists. If not: Us the "Data" directory in the parent folder if it exists.
+    if (!hasCustomDataDirectory && !sgl::FileUtils::get()->exists("Data")
+            && sgl::FileUtils::get()->directoryExists("../Data")) {
+        dataDirectory = "../Data/";
+        hasCustomDataDirectory = true;
+    }
+    if (!sgl::FileUtils::get()->directoryExists(dataDirectory)) {
+        sgl::Logfile::get()->writeError(
+                "Error: AppSettings::createWindow: Data directory \"" + dataDirectory + "\" does not exist.");
+        exit(1);
     }
 
     // Disable upscaling on Windows with High-DPI settings
@@ -200,6 +195,16 @@ HeadlessData AppSettings::createHeadless() {
 #endif
     return headlessData;
 }
+
+void AppSettings::setDataDirectory(const std::string& dataDirectory) {
+        char lastChar = dataDirectory.empty() ? '\0' : dataDirectory.at(dataDirectory.size() - 1);
+        if (lastChar != '/' && lastChar != '\\') {
+            this->dataDirectory = dataDirectory + "/";
+        } else {
+            this->dataDirectory = dataDirectory;
+        }
+        hasCustomDataDirectory = true;
+    }
 
 void AppSettings::setRenderSystem(RenderSystem renderSystem) {
     assert(!mainWindow);

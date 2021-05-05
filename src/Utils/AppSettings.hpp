@@ -99,6 +99,7 @@ public:
     // Get the directory where the application data is stored.
     inline const std::string& getDataDirectory() const { return dataDirectory; }
     inline bool getHasCustomDataDirectory() const { return hasCustomDataDirectory; }
+    void setDataDirectory(const std::string& dataDirectory);
 
 private:
     SettingsFile settings;
