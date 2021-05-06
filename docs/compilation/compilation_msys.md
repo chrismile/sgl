@@ -25,7 +25,7 @@ mkdir build
 cd build
 rm -rf *
 cmake -G "MSYS Makefiles" -DCMAKE_INSTALL_PREFIX=/usr/local ..
-make
+make -j
 make install
 export PATH=$PATH:"/c/msys64/usr/local/bin"
 ```

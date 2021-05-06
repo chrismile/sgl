@@ -15,20 +15,19 @@ for more information on classes and interfaces.
 ## Compilation
 
 Currently, sgl supports three main ways to compile the library:
-- Linux: Using your package manager to install all dependencies (tested: apt on Ubuntu, pacman on Arch Linux).
+- Linux: Using the system package manager to install all dependencies (tested: apt on Ubuntu, pacman on Arch Linux).
 - Linux & Windows: Installing all dependencies using [vcpkg](https://github.com/microsoft/vcpkg).
-- Windows: Using msys2 to install all dependencies.
+- Windows: Using MSYS2 to install all dependencies.
 
 On Windows, we recommend to use vcpkg if you need to use Microsoft Visual Studio.
 Guides for the different build types can be found in the directory `docs/compilation`.
 
-If doxygen is installed on your system, you can call ...
+If doxygen is installed on your system, you can call the following command in the main directory to generate the API
+documentation for this project.
 
 ```
 doxygen doxygen.conf
 ```
-
-... in the main directory to generate the documentation for this project.
 
 
 ## License

@@ -54,7 +54,7 @@ In case you wish to install the library to any other directory, specify `-DCMAKE
 The following command can be used to install all dependencies on Arch Linux (last tested in May 2021).
 
 ```
-sudo pacman -S git cmake boost glm tinyxml2 sdl2 sdl2_image glew vulkan-devel shaderc
+sudo pacman -S git cmake boost libarchive glm tinyxml2 sdl2 sdl2_image glew vulkan-devel shaderc
 ```
 
 Vulkan support on Arch Linux was not yet thoroughly tested. Please open a bug report in the issue tracker in case you

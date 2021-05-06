@@ -45,11 +45,13 @@ As the first step, please call the following command in the directory which vcpk
 
 ```
 export VCPKG_HOME=${PWD}
-./bootstrap-vcpkg.sh -disableMetrics
+./bootstrap-vcpkg.bat -disableMetrics
 ```
 
 If the user wants to compile sgl with Vulkan support, the Vulkan SDK needs to be installed from:
 https://vulkan.lunarg.com/sdk/home#windows
+
+The installation process of the Vulkan SDK should set the environment variable `VULKAN_SDK` for vcpkg.
 
 
 ### Installing all Packages (All Systems)
@@ -59,7 +61,7 @@ On Windows `--triplet=x64-windows` needs to be added if the 64-bit version of th
 
 ```
 ./vcpkg install boost-core boost-algorithm boost-filesystem boost-locale libpng sdl2[vulkan] sdl2-image \
-tinyxml2 glew glm libarchive vulkan vulkan-headers shaderc
+tinyxml2 glew glm libarchive[bzip2,core,lz4,lzma,zstd] vulkan vulkan-headers shaderc
 ```
 
 If Vulkan support should be disabled, remove `vulkan`, `vulkan-headers` and `shaderc` from the command above.
@@ -67,13 +69,14 @@ If Vulkan support should be disabled, remove `vulkan`, `vulkan-headers` and `sha
 
 ### Compilation on Linux
 
-To invoke CMake, please. Adapt `CMAKE_INSTALL_PREFIX` depending on which path sgl should be installed to.
+To invoke the build process using CMake, the following commands can be used.
+Please adapt `CMAKE_INSTALL_PREFIX` depending on which path sgl should be installed to.
 
 ```
 mkdir build
 cd build
 rm -rf *
-cmake -DCMAKE_TOOLCHAIN_FILE=$VCPKG_HOME/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=<path> -DUSE_LIBARCHIVE=OFF ..
+cmake -DCMAKE_TOOLCHAIN_FILE=$VCPKG_HOME/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=<path> ..
 make -j
 make install
 ```
