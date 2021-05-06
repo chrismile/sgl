@@ -84,4 +84,10 @@ make install
 
 ### Compilation on Windows
 
-Still WIP
+```
+mkdir build
+cd build
+cmake -DCMAKE_TOOLCHAIN_FILE=$VCPKG_HOME/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=<path> ..
+cmake --build
+cmake --install
+```

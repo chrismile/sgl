@@ -64,7 +64,6 @@ endif()
 
 cmake_policy(SET CMP0012 NEW)
 find_package(OpenMP REQUIRED)
-find_package(PkgConfig REQUIRED)
 
 if (${SUPPORT_OPENGL})
 	find_package(OpenGL REQUIRED)
@@ -75,10 +74,16 @@ if (${SUPPORT_OPENGL})
 endif()
 
 if (${SUPPORT_VULKAN} AND ${Vulkan_FOUND})
-	pkg_check_modules(SHADERC shaderc)
 	target_compile_definitions(sgl PUBLIC SUPPORT_VULKAN)
-	target_link_libraries(sgl PUBLIC ${Vulkan_LIBRARIES} ${SHADERC_LIBRARIES}) #shaderc_combined
-	target_include_directories(sgl PUBLIC ${SHADERC_INCLUDES})
+	target_link_libraries(sgl PUBLIC ${Vulkan_LIBRARIES})
+	if(VCPKG_TOOLCHAIN)
+		target_link_libraries(sgl PUBLIC shaderc)
+	else()
+		find_package(PkgConfig REQUIRED)
+		pkg_check_modules(SHADERC shaderc)
+		target_link_libraries(sgl PUBLIC ${SHADERC_LIBRARIES})
+		target_include_directories(sgl PUBLIC ${SHADERC_INCLUDES})
+	endif()
 endif()
 
 if (USE_BOOST_LOCALE)
