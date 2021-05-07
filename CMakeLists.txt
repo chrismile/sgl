@@ -95,7 +95,7 @@ endif()
 
 # Because of case sensitivity bug when glm and TinyXML2 call find_package_handle_standard_args.
 set(FPHSA_NAME_MISMATCHED TRUE)
-find_package(SDL2 REQUIRED)
+find_package(SDL2 CONFIG REQUIRED)
 if(VCPKG_TOOLCHAIN)
 	find_package(sdl2-image REQUIRED)
 else()
