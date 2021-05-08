@@ -84,10 +84,17 @@ make install
 
 ### Compilation on Windows
 
+On Windows, installing the Boost.Interprocess package is necessary.
+Please do not forget to add `--triplet=x64-windows` if the 64-bit version of the package should be installed.
+
+```
+./vcpkg install boost-interprocess
+```
+
 ```
 mkdir build
 cd build
 cmake -DCMAKE_TOOLCHAIN_FILE=$VCPKG_HOME/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=<path> ..
-cmake --build
-cmake --install
+cmake --build .
+cmake --install .
 ```
