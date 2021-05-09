@@ -42,7 +42,7 @@ if ((NOT ${SUPPORT_VULKAN}) OR (NOT ${Vulkan_FOUND}))
 endif()
 
 if (${USE_LIBARCHIVE})
-	find_package(LibArchive CONFIG QUIET)
+	find_package(LibArchive QUIET)
 	if(${LibArchive_FOUND})
 		MESSAGE(STATUS "Found libarchive. Enabling archive file loading support.")
 	else()
