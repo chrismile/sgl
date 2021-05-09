@@ -98,3 +98,6 @@ cmake -DCMAKE_TOOLCHAIN_FILE=$VCPKG_HOME/scripts/buildsystems/vcpkg.cmake -DCMAK
 cmake --build .
 cmake --install .
 ```
+
+Hint: To change the language of warnings and error messages to English even if your system uses another language,
+consider setting the environment variable `set VSLANG=1033`.
