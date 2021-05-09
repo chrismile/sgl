@@ -98,7 +98,7 @@ mkdir build
 cd build
 cmake -DCMAKE_TOOLCHAIN_FILE=$VCPKG_HOME/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=<path> ..
 cmake --build .
-cmake --install .
+cmake --build . --target install
 ```
 
 Hint: To change the language of warnings and error messages to English even if your system uses another language,
