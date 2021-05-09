@@ -46,15 +46,15 @@
 
 namespace sgl {
 
-RendererInterface *Renderer = NULL;
-TimerInterface *Timer = NULL;
-ShaderManagerInterface *ShaderManager = NULL;
-TextureManagerInterface *TextureManager = NULL;
-MaterialManagerInterface *MaterialManager = NULL;
+DLL_OBJECT RendererInterface *Renderer = NULL;
+DLL_OBJECT TimerInterface *Timer = NULL;
+DLL_OBJECT ShaderManagerInterface *ShaderManager = NULL;
+DLL_OBJECT TextureManagerInterface *TextureManager = NULL;
+DLL_OBJECT MaterialManagerInterface *MaterialManager = NULL;
 
-MouseInterface *Mouse = NULL;
-KeyboardInterface *Keyboard = NULL;
-GamepadInterface *Gamepad = NULL;
+DLL_OBJECT MouseInterface *Mouse = NULL;
+DLL_OBJECT KeyboardInterface *Keyboard = NULL;
+DLL_OBJECT GamepadInterface *Gamepad = NULL;
 
 #ifdef WIN32
 // Don't upscale window content on Windows with High-DPI settings

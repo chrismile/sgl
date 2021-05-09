@@ -18,7 +18,7 @@ namespace sgl { namespace vk { class Swapchain; } }
 
 namespace sgl {
 
-class SDLWindow : public Window
+class DLL_OBJECT SDLWindow : public Window
 {
 public:
     SDLWindow();

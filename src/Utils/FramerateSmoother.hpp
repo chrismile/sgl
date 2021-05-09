@@ -7,7 +7,7 @@
 
 #include <vector>
 
-class FramerateSmoother
+class DLL_OBJECT FramerateSmoother
 {
 public:
     FramerateSmoother(int numSamples);

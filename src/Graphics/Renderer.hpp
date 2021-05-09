@@ -133,7 +133,7 @@ public:
     virtual std::vector<VertexTextured> createTexturedQuad(const AABB2 &renderRect, bool mirrored = false)=0;
 };
 
-extern RendererInterface *Renderer;
+DLL_OBJECT extern RendererInterface *Renderer;
 
 }
 

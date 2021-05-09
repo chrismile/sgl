@@ -38,7 +38,7 @@ namespace sgl {
 /**
  * A color legend widget for multi-variable data.
  */
-class ColorLegendWidget {
+class DLL_OBJECT ColorLegendWidget {
 public:
     ColorLegendWidget();
     void renderGui();

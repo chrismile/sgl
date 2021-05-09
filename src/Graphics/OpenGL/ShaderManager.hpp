@@ -12,7 +12,7 @@
 
 namespace sgl {
 
-class ShaderManagerGL : public ShaderManagerInterface
+class DLL_OBJECT ShaderManagerGL : public ShaderManagerInterface
 {
 public:
     ShaderManagerGL();

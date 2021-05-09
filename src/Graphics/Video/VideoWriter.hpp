@@ -39,7 +39,7 @@ namespace sgl {
  * Please install the necessary dependencies for this writer to work:
  * https://wiki.ubuntuusers.de/avconv/
  */
-class VideoWriter
+class DLL_OBJECT VideoWriter
 {
 public:
     /// Open mp4 video file with specified frame width and height

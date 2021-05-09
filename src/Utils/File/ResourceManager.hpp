@@ -20,7 +20,7 @@ namespace sgl {
 const uint32_t RESOURCE_LOADED_ASYNC_EVENT = 1041457103U;
 
 class ResourceLoadingProcess;
-class ResourceManager : public Singleton<ResourceManager>
+class DLL_OBJECT ResourceManager : public Singleton<ResourceManager>
 {
 friend class ResourceLoadingProcess;
 public:

@@ -49,7 +49,7 @@ enum MessageSeverity {
 /**
  * Encapsulation of VkInstance.
  */
-class Instance {
+class DLL_OBJECT Instance {
 public:
     Instance();
     ~Instance();

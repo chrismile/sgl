@@ -30,7 +30,7 @@ enum BufferMapping {
     BUFFER_MAP_READ_ONLY = 0x88B8, BUFFER_MAP_WRITE_ONLY = 0x88B9, BUFFER_MAP_READ_WRITE = 0x88BA
 };
 
-class GeometryBuffer
+class DLL_OBJECT GeometryBuffer
 {
 public:
     GeometryBuffer(size_t size, BufferType type = VERTEX_BUFFER, BufferUse bufferUse = BUFFER_STATIC)

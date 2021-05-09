@@ -33,7 +33,7 @@
 
 namespace sgl { namespace vk {
 
-class ShaderAttributes {
+class DLL_OBJECT ShaderAttributes {
 
 };
 

@@ -20,7 +20,7 @@ class XMLElement;
 
 namespace sgl {
 
-class Material
+class DLL_OBJECT Material
 {
 public:
     Color color;
@@ -29,11 +29,11 @@ public:
 
 typedef std::shared_ptr<Material> MaterialPtr;
 
-int minificationFilterFromString(const char *filter);
-int magnificationFilterFromString(const char *filter);
-int textureWrapFromString(const char *filter);
+DLL_OBJECT int minificationFilterFromString(const char *filter);
+DLL_OBJECT int magnificationFilterFromString(const char *filter);
+DLL_OBJECT int textureWrapFromString(const char *filter);
 
-struct MaterialInfo {
+struct DLL_OBJECT MaterialInfo {
     MaterialInfo() : loaded(false), minificationFilter(0), magnificationFilter(0),
             textureWrapS(0), textureWrapT(0), anisotropicFilter(false) {}
 
@@ -81,7 +81,7 @@ protected:
     //! Create a material from the info
     MaterialPtr createMaterial(const MaterialInfo &info);
 };
-extern MaterialManagerInterface *MaterialManager;
+DLL_OBJECT extern MaterialManagerInterface *MaterialManager;
 
 }
 

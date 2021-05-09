@@ -15,14 +15,14 @@ namespace sgl {
 class AABB3;
 class Plane;
 
-struct RaycastResult {
+struct DLL_OBJECT RaycastResult {
     RaycastResult(bool hit, float t) : hit(hit), t(t) {}
     bool hit;
     float t;
 };
 
 //! Plane in 3D, ax + by + cz + d = 0
-class Ray3 {
+class DLL_OBJECT Ray3 {
 public:
     Ray3(const glm::vec3 &origin, const glm::vec3 &direction) : origin(origin), direction(direction) {}
 

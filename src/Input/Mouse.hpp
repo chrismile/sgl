@@ -39,7 +39,7 @@ public:
     virtual float getScrollWheel()=0;
 };
 
-extern MouseInterface *Mouse;
+DLL_OBJECT extern MouseInterface *Mouse;
 
 }
 

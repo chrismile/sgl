@@ -15,10 +15,10 @@
 
 namespace sgl {
 
-glm::vec3 transformPoint(const glm::mat4 &mat, const glm::vec3 &vec);
-glm::vec3 transformDirection(const glm::mat4 &mat, const glm::vec3 &vec);
-glm::vec2 transformPoint(const glm::mat4 &mat, const glm::vec2 &vec);
-glm::vec2 transformDirection(const glm::mat4 &mat, const glm::vec2 &vec);
+DLL_OBJECT glm::vec3 transformPoint(const glm::mat4 &mat, const glm::vec3 &vec);
+DLL_OBJECT glm::vec3 transformDirection(const glm::mat4 &mat, const glm::vec3 &vec);
+DLL_OBJECT glm::vec2 transformPoint(const glm::mat4 &mat, const glm::vec2 &vec);
+DLL_OBJECT glm::vec2 transformDirection(const glm::mat4 &mat, const glm::vec2 &vec);
 
 //! Special types of matrices
 inline     glm::mat4 matrixIdentity() {return glm::mat4(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);}

@@ -13,7 +13,7 @@ union SDL_Event;
 namespace sgl
 {
 
-class ImGuiWrapper : public Singleton<ImGuiWrapper>
+class DLL_OBJECT ImGuiWrapper : public Singleton<ImGuiWrapper>
 {
 public:
     /**

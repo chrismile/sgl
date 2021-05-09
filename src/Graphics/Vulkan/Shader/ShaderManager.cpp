@@ -32,6 +32,11 @@
 
 namespace sgl { namespace vk {
 
+ShaderModulePtr ShaderManager::loadAsset(ShaderModuleInfo &shaderModuleInfo)
+{
+    return ShaderModulePtr();
+}
+
 /*ShaderProgramPtr ShaderManagerInterface::getShaderProgram(const std::vector<std::string> &shaderIDs, bool dumpTextDebug)
 {
     return createShaderProgram(shaderIDs, dumpTextDebug);

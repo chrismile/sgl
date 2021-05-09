@@ -65,14 +65,14 @@ void appendVector(std::vector<T> &vector1, std::vector<T> &vector2) {
 }
 
 //! Special string conversion functions
-std::string floatToString(float f, int decimalPrecision = -1);
-uint32_t hexadecimalStringToUint32(const std::string &stringObject);
-int fromHexString(const std::string &stringObject);
-bool isInteger(const std::string &stringObject);
+DLL_OBJECT std::string floatToString(float f, int decimalPrecision = -1);
+DLL_OBJECT uint32_t hexadecimalStringToUint32(const std::string &stringObject);
+DLL_OBJECT int fromHexString(const std::string &stringObject);
+DLL_OBJECT bool isInteger(const std::string &stringObject);
 //! Integer or floating-point number?
-bool isNumeric(const std::string &stringObject);
+DLL_OBJECT bool isNumeric(const std::string &stringObject);
 //! Respects whether string contains decimal or hexadecimal number
-int stringToNumber(const char *str);
+DLL_OBJECT int stringToNumber(const char *str);
 
 #ifdef USE_GLM
 

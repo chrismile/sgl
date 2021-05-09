@@ -14,24 +14,23 @@
 #define SDL2
 #endif
 
-//#define _DEBUG
-
 #ifdef _WIN32
 #ifndef WIN32
 #define WIN32
 #endif
 #endif
 
-#ifdef WIN32
-# ifdef DLL_BUILD
-//#  define DLL_OBJECT __declspec(dllexport)
-#  define DLL_OBJECT
-# else
-//#  define DLL_OBJECT __declspec(dllimport)
-#  define DLL_OBJECT
-# endif
-#else
-# define DLL_OBJECT
+//#if defined(_WIN32 ) && !defined(__MINGW32__)
+//#ifdef DLL_BUILD
+//#define DLL_OBJECT __declspec(dllexport)
+//#else
+//#define DLL_OBJECT __declspec(dllimport)
+//#endif
+//#else
+//#define DLL_OBJECT
+//#endif
+#ifndef DLL_OBJECT
+#define DLL_OBJECT
 #endif
 
 //! The MinGW version of GDB doesn't break on the standard assert.

@@ -46,7 +46,7 @@ typedef std::vector<std::vector<std::string>> RowMap;
  * @param separator The character separating two cells
  * @return A list of rows stored in the CSV file
  */
-RowMap parseCsv(const std::string &filename, bool filterComments = true, char separator = ',');
+DLL_OBJECT RowMap parseCsv(const std::string &filename, bool filterComments = true, char separator = ',');
 
 }
 

@@ -53,7 +53,7 @@ namespace sgl {
  *     buffer = nullptr;
  * }
  */
-bool loadFileFromSource(
+DLL_OBJECT bool loadFileFromSource(
         const std::string& filename, uint8_t*& buffer, size_t& bufferSize, bool isBinaryFile);
 
 }

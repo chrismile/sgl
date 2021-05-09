@@ -67,7 +67,7 @@ enum ArchiveFileLoadReturnType {
  *     buffer = nullptr;
  * }
  */
-ArchiveFileLoadReturnType loadFileFromArchive(
+DLL_OBJECT ArchiveFileLoadReturnType loadFileFromArchive(
         const std::string& filename, uint8_t*& buffer, size_t& bufferSize, bool verbose);
 
 }

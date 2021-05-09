@@ -52,19 +52,19 @@ const char* const COLOR_SPACE_NAMES[] {
 /**
  * A color point stores sRGB color values.
  */
-struct ColorPoint_sRGB {
+struct DLL_OBJECT ColorPoint_sRGB {
     ColorPoint_sRGB(const sgl::Color16& color, float position) : color(color), position(position) {}
     sgl::Color16 color;
     float position;
 };
 
-struct ColorPoint_LinearRGB {
+struct DLL_OBJECT ColorPoint_LinearRGB {
     ColorPoint_LinearRGB(const glm::vec3& color, float position) : color(color), position(position) {}
     glm::vec3 color;
     float position;
 };
 
-struct OpacityPoint {
+struct DLL_OBJECT OpacityPoint {
     OpacityPoint(float opacity, float position) : opacity(opacity), position(position) {}
     float opacity;
     float position;
@@ -90,12 +90,12 @@ const char* const COLOR_DATA_MODE_NAMES[] = {
 };
 const int NUM_COLOR_DATA_MODES = ((int)(sizeof(COLOR_DATA_MODE_NAMES) / sizeof(*COLOR_DATA_MODE_NAMES)));
 
-ColorDataMode parseColorDataModeName(const std::string& dataModeName);
+DLL_OBJECT ColorDataMode parseColorDataModeName(const std::string& dataModeName);
 
 /**
  * Stores color and opacity points and renders the GUI.
  */
-class TransferFunctionWindow
+class DLL_OBJECT TransferFunctionWindow
 {
 public:
     TransferFunctionWindow();

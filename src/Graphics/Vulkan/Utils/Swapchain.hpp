@@ -39,14 +39,14 @@ namespace sgl { namespace vk {
 
 class Device;
 
-struct SwapchainSupportInfo {
+struct DLL_OBJECT SwapchainSupportInfo {
     VkSurfaceCapabilitiesKHR capabilities;
     std::vector<VkSurfaceFormatKHR> formats;
     std::vector<VkPresentModeKHR> presentModes;
 };
 SwapchainSupportInfo querySwapchainSupportInfo(VkPhysicalDevice device, VkSurfaceKHR surface);
 
-class Swapchain {
+class DLL_OBJECT Swapchain {
 public:
     /**
      * @param device The device object.

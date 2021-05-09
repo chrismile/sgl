@@ -24,7 +24,7 @@ typedef std::function<void(EventPtr)> EventFunc;
 typedef uint32_t ListenerToken;
 typedef std::list<std::pair<ListenerToken, EventFunc>> EventFuncList;
 
-class Event {
+class DLL_OBJECT Event {
 public:
     Event(uint32_t eventType) : eventType(eventType) {}
     virtual ~Event() {}

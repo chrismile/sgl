@@ -35,7 +35,7 @@
 
 namespace sgl {
 
-class CsvWriter {
+class DLL_OBJECT CsvWriter {
 public:
     CsvWriter();
     CsvWriter(const std::string& filename);

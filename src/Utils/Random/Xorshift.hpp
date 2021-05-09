@@ -12,7 +12,7 @@
 
 namespace sgl {
 
-class XorshiftRandomGenerator : public RandomGenerator
+class DLL_OBJECT XorshiftRandomGenerator : public RandomGenerator
 {
 public:
     XorshiftRandomGenerator() : RandomGenerator() { initialize(); }

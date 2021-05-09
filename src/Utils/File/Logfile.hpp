@@ -18,7 +18,7 @@ enum FONTCOLORS {
     BLACK, WHITE, RED, GREEN, BLUE, PURPLE, ORANGE
 };
 
-class Logfile : public Singleton<Logfile>
+class DLL_OBJECT Logfile : public Singleton<Logfile>
 {
 public:
     Logfile();

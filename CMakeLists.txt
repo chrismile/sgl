@@ -51,6 +51,17 @@ else()
 endif()
 
 add_library(sgl SHARED ${SOURCES})
+if (MSVC)
+	set(DLLIMPORT "__declspec(dllimport)")
+	set(DLLEXPORT "__declspec(dllexport)")
+	target_compile_definitions(sgl INTERFACE DLL_OBJECT=${DLLIMPORT})
+	target_compile_definitions(sgl PRIVATE DLL_OBJECT=${DLLEXPORT})
+	target_compile_definitions(sgl INTERFACE IMGUI_API=${DLLIMPORT})
+	target_compile_definitions(sgl PRIVATE IMGUI_API=${DLLEXPORT})
+else()
+	target_compile_definitions(sgl PUBLIC DLL_OBJECT)
+endif()
+
 #include_directories(src)
 target_include_directories(sgl PUBLIC
 		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
@@ -126,6 +137,8 @@ else()
 endif()
 
 target_link_libraries(sgl PUBLIC ${TINYXML2_LIBRARIES})
+target_include_directories(sgl PUBLIC ${TINYXML2_INCLUDE_DIR})
+
 IF (NOT WIN32 AND NOT (UNIX AND NOT APPLE))
 	find_package(efsw QUIET)
 	if(${efsw_FOUND})
@@ -150,10 +163,6 @@ endif()
 
 if(UNIX AND NOT APPLE)
 	target_link_libraries(sgl PUBLIC X11)
-endif()
-
-if(WIN32)
-	target_compile_definitions(sgl PRIVATE DLL_BUILD)
 endif()
 
 target_link_libraries(sgl PUBLIC ${Boost_LIBRARIES})

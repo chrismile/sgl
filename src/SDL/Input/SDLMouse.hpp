@@ -13,7 +13,7 @@
 
 namespace sgl {
 
-struct MouseState {
+struct DLL_OBJECT MouseState {
     MouseState() : buttonState(0), scrollWheel(0) {}
     int buttonState;
     Point2 pos;

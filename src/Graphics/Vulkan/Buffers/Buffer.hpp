@@ -37,7 +37,7 @@ namespace sgl { namespace vk {
 
 class Device;
 
-class Buffer {
+class DLL_OBJECT Buffer {
 public:
     /**
      *

@@ -42,7 +42,7 @@ namespace sgl {
  * Performance-wise, this is better than std::ifstream, which causes an overhead, but using a medium-sized buffer might
  * be better for a future version.
  */
-class LineReader {
+class DLL_OBJECT LineReader {
 public:
     LineReader(const std::string& filename);
     LineReader(const char* bufferData, const size_t bufferSize);

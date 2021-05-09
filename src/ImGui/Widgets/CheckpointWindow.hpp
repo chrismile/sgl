@@ -38,7 +38,7 @@
 
 namespace sgl {
 
-class Checkpoint {
+class DLL_OBJECT Checkpoint {
 public:
     Checkpoint() {}
     Checkpoint(const glm::vec3& position, float yaw, float pitch, float fovy)
@@ -52,7 +52,7 @@ public:
     float fovy;
 };
 
-class CheckpointWindow {
+class DLL_OBJECT CheckpointWindow {
 public:
     CheckpointWindow(CameraPtr& camera);
     ~CheckpointWindow();

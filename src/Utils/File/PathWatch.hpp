@@ -43,7 +43,7 @@ struct PathWatchImplData;
 /**
  * Watches a file or directory inside some parent directory for changes.
  */
-class PathWatch {
+class DLL_OBJECT PathWatch {
 public:
     ~PathWatch();
 

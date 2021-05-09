@@ -19,7 +19,7 @@ namespace sgl {
 class ShaderProgramGL;
 class ShaderProgram;
 
-struct AttributeData {
+struct DLL_OBJECT AttributeData {
     AttributeData(GeometryBufferPtr _geometryBuffer, const std::string &_attributeName, GLuint _attributeType,
             GLuint _components, int _shaderLoc, int _offset, int _stride, int _instancing,
             VertexAttributeConversion _attrConversion)
@@ -38,7 +38,7 @@ struct AttributeData {
 };
 
 //! Abstract class
-class ShaderAttributesGL : public ShaderAttributes
+class DLL_OBJECT ShaderAttributesGL : public ShaderAttributes
 {
 friend class ShaderAttributesGL2;
 friend class ShaderAttributesGL3;
@@ -58,7 +58,7 @@ protected:
 
 /*! The OpenGL 3 implementation of shader attributes.
  * Vertex Array Objects are used to minimize the number of API calls. */
-class ShaderAttributesGL3 : public ShaderAttributesGL
+class DLL_OBJECT ShaderAttributesGL3 : public ShaderAttributesGL
 {
 public:
     ShaderAttributesGL3(ShaderProgramPtr &_shader);
@@ -101,7 +101,7 @@ protected:
 };
 
 //! The old OpenGL 2 implementation binds the attributes manually.
-class ShaderAttributesGL2 : public ShaderAttributesGL
+class DLL_OBJECT ShaderAttributesGL2 : public ShaderAttributesGL
 {
 public:
     ShaderAttributesGL2(ShaderProgramPtr &_shader);

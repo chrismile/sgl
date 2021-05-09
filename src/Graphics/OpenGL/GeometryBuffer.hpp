@@ -12,7 +12,7 @@
 
 namespace sgl {
 
-class GeometryBufferGL : public GeometryBuffer
+class DLL_OBJECT GeometryBufferGL : public GeometryBuffer
 {
 public:
     GeometryBufferGL(size_t size, BufferType type = VERTEX_BUFFER, BufferUse bufferUse = BUFFER_STATIC);

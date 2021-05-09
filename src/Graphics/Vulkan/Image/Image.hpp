@@ -37,7 +37,7 @@ namespace sgl { namespace vk {
 
 class Device;
 
-struct ImageSettings {
+struct DLL_OBJECT ImageSettings {
     ImageSettings() {}
     uint32_t width = 1;
     uint32_t height = 1;
@@ -53,7 +53,7 @@ struct ImageSettings {
     VkSharingMode sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 };
 
-class Image {
+class DLL_OBJECT Image {
 public:
     Image(Device* device, ImageSettings imageSettings);
     Image(Device* device, ImageSettings imageSettings, VkImage image, bool takeImageOwnership = true);
@@ -76,7 +76,7 @@ private:
 
 typedef std::shared_ptr<Image> ImagePtr;
 
-class ImageView {
+class DLL_OBJECT ImageView {
 public:
     ImageView(Device* device, ImagePtr image, VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
     ImageView(
@@ -92,7 +92,7 @@ private:
 
 typedef std::shared_ptr<ImageView> ImageViewPtr;
 
-struct ImageSamplerSettings {
+struct DLL_OBJECT ImageSamplerSettings {
     ImageSamplerSettings() {}
     VkFilter magFilter = VK_FILTER_LINEAR;
     VkFilter minFilter = VK_FILTER_LINEAR;
@@ -120,7 +120,7 @@ struct ImageSamplerSettings {
 /**
  * A texture sampler wrapper that lets images be used for sampling in a shader.
  */
-class ImageSampler {
+class DLL_OBJECT ImageSampler {
 public:
     ImageSampler(Device* device, ImageSamplerSettings samplerSettings, uint32_t maxLod = 0);
     ImageSampler(Device* device, ImageSamplerSettings samplerSettings, ImagePtr image);
@@ -133,7 +133,7 @@ private:
 
 typedef std::shared_ptr<ImageSampler> ImageSamplerPtr;
 
-class Texture {
+class DLL_OBJECT Texture {
 public:
     Texture(ImagePtr image, ImageViewPtr imageView, ImageSampler imageSampler);
 

@@ -40,7 +40,7 @@ public:
     virtual void addToKeyBuffer(const char *str)=0;
 };
 
-extern KeyboardInterface *Keyboard;
+DLL_OBJECT extern KeyboardInterface *Keyboard;
 
 }
 

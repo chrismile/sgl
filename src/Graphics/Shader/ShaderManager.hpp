@@ -21,7 +21,7 @@
 
 namespace sgl {
 
-struct ShaderInfo {
+struct DLL_OBJECT ShaderInfo {
     std::string filename;
     ShaderType shaderType;
     bool operator <(const ShaderInfo &rhs) const {
@@ -102,7 +102,7 @@ protected:
     std::map<std::string, std::string> preprocessorDefines;
 };
 
-extern ShaderManagerInterface *ShaderManager;
+DLL_OBJECT extern ShaderManagerInterface *ShaderManager;
 
 }
 

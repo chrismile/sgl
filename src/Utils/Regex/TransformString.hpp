@@ -50,6 +50,6 @@
  * @param transformString Transform string.
  * @return Parsed 4x4 transform matrix.
  */
-glm::mat4 parseTransformString(std::string transformString);
+DLL_OBJECT glm::mat4 parseTransformString(std::string transformString);
 
 #endif //STRESSLINEVIS_TRANSFORMSTRING_HPP

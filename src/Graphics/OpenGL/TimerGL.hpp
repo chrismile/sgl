@@ -25,7 +25,7 @@ namespace sgl
  * TimerGL has functions for profiling OpenGL API calls.
  * The time for an event can be measured multiple frames to get the average time returned by "getTimeMS".
  */
-class TimerGL
+class DLL_OBJECT TimerGL
 {
 public:
     /// Calls deleteAll

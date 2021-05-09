@@ -40,7 +40,7 @@ enum VSyncMode {
     VSYNC_MODE_MAILBOX // vsync, replace oldest image
 };
 
-struct WindowSettings {
+struct DLL_OBJECT WindowSettings {
     int width;
     int height;
     bool fullscreen;
@@ -78,7 +78,7 @@ class SettingsFile;
 
 //! Use AppSettings (Utils/AppSettings.hpp) to create a window using the user's preferred settings
 
-class Window
+class DLL_OBJECT Window
 {
 public:
     virtual ~Window() {}

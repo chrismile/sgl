@@ -21,7 +21,7 @@ namespace sgl {
 class ShaderProgramGL;
 
 // Bound in all shaders to binding 0
-struct MatrixBlock
+struct DLL_OBJECT MatrixBlock
 {
     glm::mat4 mMatrix; // Model matrix
     glm::mat4 vMatrix; // View matrix
@@ -29,7 +29,7 @@ struct MatrixBlock
     glm::mat4 mvpMatrix; // Model-view-projection matrix
 };
 
-class RendererGL : public RendererInterface
+class DLL_OBJECT RendererGL : public RendererInterface
 {
 public:
     RendererGL();

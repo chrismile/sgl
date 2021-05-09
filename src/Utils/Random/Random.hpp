@@ -19,7 +19,7 @@ using namespace std;
 
 namespace sgl {
 
-class RandomGenerator
+class DLL_OBJECT RandomGenerator
 {
 public:
     RandomGenerator() { seed = (uint32_t)time(NULL); }

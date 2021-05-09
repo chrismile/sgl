@@ -33,7 +33,7 @@
 
 namespace sgl { namespace vk {
 
-class GraphicsPipeline {
+class DLL_OBJECT GraphicsPipeline {
 
 };
 

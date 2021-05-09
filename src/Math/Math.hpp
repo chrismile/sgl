@@ -116,7 +116,7 @@ template <typename T> T interpolateBilinear(const T &a, const T &b, const T &c, 
     return p + factory * (q - p);
 }
 
-float vectorAngle(const glm::vec2 &u, const glm::vec2& v);
+DLL_OBJECT float vectorAngle(const glm::vec2 &u, const glm::vec2& v);
 
 }
 

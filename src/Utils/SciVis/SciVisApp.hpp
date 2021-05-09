@@ -40,7 +40,7 @@ namespace sgl {
 /**
  * Derived from AppLogic, but has some helper functions for scientific visualization.
  */
-class SciVisApp : public sgl::AppLogic {
+class DLL_OBJECT SciVisApp : public sgl::AppLogic {
 public:
     SciVisApp(float fovy = atanf(1.0f / 2.0f) * 2.0f);
     ~SciVisApp();

@@ -19,7 +19,7 @@ namespace sgl {
 class Event;
 typedef std::shared_ptr<Event> EventPtr;
 
-class AppLogic
+class DLL_OBJECT AppLogic
 {
 public:
     AppLogic();

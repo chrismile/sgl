@@ -19,13 +19,13 @@ namespace sgl {
 
 /*! Copys and pastes "element" including all of its child elements to "parentAim"
  * Returns the copied element. */
-XMLElement *insertElementCopy(XMLElement *element, XMLElement *parentAim);
+DLL_OBJECT XMLElement *insertElementCopy(XMLElement *element, XMLElement *parentAim);
 
 //! Returns the first child element of parent with the matching attribute "id"
-XMLElement *getChildWithID(XMLElement *parent, const char *id);
+DLL_OBJECT XMLElement *getChildWithID(XMLElement *parent, const char *id);
 
 //! Returns the first child element of parent with the matching attribute "attributeName"
-XMLElement *firstChildWithAttribute(XMLElement *parent, const char *attributeName, const char *attributeValue);
+DLL_OBJECT XMLElement *firstChildWithAttribute(XMLElement *parent, const char *attributeName, const char *attributeValue);
 
 /*! Pushes the "key" with the desired value on the XMLPrinter stack if "value" doesn't equal "standard"
  * Example: pushAttributeNotEqual(printer, "damping", damping, 0.0f); */
@@ -36,15 +36,17 @@ void pushAttributeNotEqual(XMLPrinter *printer, const char *key, const T &value,
         printer->PushAttribute(key, value);
     }
 }
-void pushAttributeNotEqual(XMLPrinter *printer, const char *key, const std::string &value, const std::string &standard);
-void pushAttributeNotEqual(XMLPrinter *printer, const char *key, const float &value, const float &standard);
+DLL_OBJECT void pushAttributeNotEqual(
+        XMLPrinter *printer, const char *key, const std::string &value, const std::string &standard);
+DLL_OBJECT void pushAttributeNotEqual(
+        XMLPrinter *printer, const char *key, const float &value, const float &standard);
 
 
 
 //! Classes for easily iterating over XMLElements
 
 typedef std::function<bool(tinyxml2::XMLElement*)> XMLItFilterFunc;
-struct XMLItFilter {
+struct DLL_OBJECT XMLItFilter {
 public:
     XMLItFilter(std::function<bool(tinyxml2::XMLElement*)> f) { filterFunc = f; }
     XMLItFilter() : XMLItFilter([](tinyxml2::XMLElement* e) { return true; }) {}
@@ -59,14 +61,18 @@ inline XMLItFilter XMLNameFilter(const std::string& name) {
     return XMLItFilter([name](tinyxml2::XMLElement* e) -> bool { return name == e->Name(); });
 }
 inline XMLItFilter XMLAttributeFilter(const std::string& attrName, const std::string& attrVal) {
-    return XMLItFilter([attrName,attrVal](tinyxml2::XMLElement* e) -> bool { return attrVal == e->Attribute(attrName.c_str()); });
+    return XMLItFilter([attrName,attrVal](tinyxml2::XMLElement* e) -> bool {
+        return attrVal == e->Attribute(attrName.c_str());
+    });
 }
 inline XMLItFilter XMLAttributePresenceFilter(const std::string& attrName) {
-    return XMLItFilter([attrName](tinyxml2::XMLElement* e) -> bool { return e->Attribute(attrName.c_str()) != NULL; });
+    return XMLItFilter([attrName](tinyxml2::XMLElement* e) -> bool {
+        return e->Attribute(attrName.c_str()) != NULL;
+    });
 }
 
 
-class XMLIterator : public std::iterator<std::input_iterator_tag, tinyxml2::XMLElement> {
+class DLL_OBJECT XMLIterator : public std::iterator<std::input_iterator_tag, tinyxml2::XMLElement> {
 private:
     tinyxml2::XMLElement *element;
     XMLItFilter filter;

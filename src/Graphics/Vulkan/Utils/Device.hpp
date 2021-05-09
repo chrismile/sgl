@@ -41,7 +41,7 @@ namespace sgl { namespace vk {
 
 class Instance;
 
-class Device {
+class DLL_OBJECT Device {
 public:
     /// For rendering using a window surface and a swapchain.
     void createDeviceSwapchain(

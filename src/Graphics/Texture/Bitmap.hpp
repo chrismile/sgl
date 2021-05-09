@@ -21,7 +21,7 @@ class Bitmap;
 typedef std::shared_ptr<Bitmap> BitmapPtr;
 
 //! For now only a bit-depth of 32-bit is properly supported!
-class Bitmap
+class DLL_OBJECT Bitmap
 {
 public:
     Bitmap() : bitmap(NULL), w(0), h(0), bpp(32) {}

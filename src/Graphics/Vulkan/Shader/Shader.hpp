@@ -55,13 +55,13 @@ enum class ShaderModuleType {
     CALLABLE = VK_SHADER_STAGE_CALLABLE_BIT_KHR
 };
 
-struct InterfaceVariableDescriptor {
+struct DLL_OBJECT InterfaceVariableDescriptor {
     int location;
     SpvReflectFormat format; ///< SpvReflectFormat is a subset of VkFormat valid for interface variables.
     std::string name;
 };
 
-struct DescriptorInfo {
+struct DLL_OBJECT DescriptorInfo {
     int binding;
     VkDescriptorType type;
     std::string name;
@@ -72,7 +72,7 @@ struct DescriptorInfo {
 //};
 
 
-class ShaderModule {
+class DLL_OBJECT ShaderModule {
 public:
     // Called by ShaderManager.
     ShaderModule(
@@ -120,7 +120,7 @@ typedef std::shared_ptr<ShaderModule> ShaderModulePtr;
  * This class represents a selection of shader modules unified into a list of shader stages.
  * It will be used in the VkGraphicsPipelineCreateInfo struct.
  */
-class ShaderStages {
+class DLL_OBJECT ShaderStages {
 public:
     ShaderStages(std::vector<ShaderModulePtr> shaderModules);
 

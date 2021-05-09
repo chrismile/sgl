@@ -34,7 +34,7 @@
 
 namespace sgl { namespace vk {
 
-class Framebuffer {
+class DLL_OBJECT Framebuffer {
 
 };
 

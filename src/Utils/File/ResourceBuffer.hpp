@@ -13,7 +13,7 @@
 
 namespace sgl {
 
-class ResourceBuffer
+class DLL_OBJECT ResourceBuffer
 {
 public:
     ResourceBuffer(size_t size) : bufferSize(size), loaded(false) { data = new char[bufferSize]; }

@@ -34,7 +34,7 @@
 
 namespace sgl {
 
-class Color
+class DLL_OBJECT Color
 {
 public:
     Color(uint8_t R = 255, uint8_t G = 255, uint8_t B = 255, uint8_t A = 255) : r(R), g(G), b(B), a(A) {}
@@ -84,17 +84,17 @@ private:
     uint8_t a;
 };
 
-Color colorFromHex(const std::string &hexColor);
-Color colorFromFloat(float R = 0.0f, float G = 0.0f, float B = 0.0f, float A = 1.0f);
-Color colorFromVec3(const glm::vec3 &vecColor);
-Color colorFromVec4(const glm::vec4 &vecColor);
-glm::vec3 colorToVec3(const Color &color);
-glm::vec4 colorToVec4(const Color &color);
+DLL_OBJECT Color colorFromHex(const std::string &hexColor);
+DLL_OBJECT Color colorFromFloat(float R = 0.0f, float G = 0.0f, float B = 0.0f, float A = 1.0f);
+DLL_OBJECT Color colorFromVec3(const glm::vec3 &vecColor);
+DLL_OBJECT Color colorFromVec4(const glm::vec4 &vecColor);
+DLL_OBJECT glm::vec3 colorToVec3(const Color &color);
+DLL_OBJECT glm::vec4 colorToVec4(const Color &color);
 //! 0 <= factor <= 1
-Color colorLerp(const Color &color1, const Color &color2, float factor);
+DLL_OBJECT Color colorLerp(const Color &color1, const Color &color2, float factor);
 
 ///! 16-bit color
-class Color16
+class DLL_OBJECT Color16
 {
 public:
     Color16(uint16_t R = 65535, uint16_t G = 65535, uint16_t B = 65535, uint16_t A = 65535) : r(R), g(G), b(B), a(A) {}
@@ -158,13 +158,13 @@ private:
     uint16_t a;
 };
 
-Color16 color16FromFloat(float R = 0.0f, float G = 0.0f, float B = 0.0f, float A = 1.0f);
-Color16 color16FromVec3(const glm::vec3 &vecColor);
-Color16 color16FromVec4(const glm::vec4 &vecColor);
-glm::vec3 color16ToVec3(const Color16 &color);
-glm::vec4 color16ToVec4(const Color16 &color);
+DLL_OBJECT Color16 color16FromFloat(float R = 0.0f, float G = 0.0f, float B = 0.0f, float A = 1.0f);
+DLL_OBJECT Color16 color16FromVec3(const glm::vec3 &vecColor);
+DLL_OBJECT Color16 color16FromVec4(const glm::vec4 &vecColor);
+DLL_OBJECT glm::vec3 color16ToVec3(const Color16 &color);
+DLL_OBJECT glm::vec4 color16ToVec4(const Color16 &color);
 //! 0 <= factor <= 1
-Color16 color16Lerp(const Color16 &color1, const Color16 &color2, float factor);
+DLL_OBJECT Color16 color16Lerp(const Color16 &color1, const Color16 &color2, float factor);
 
 }
 

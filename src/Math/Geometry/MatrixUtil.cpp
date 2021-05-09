@@ -34,7 +34,7 @@ glm::vec2 transformDirection(const glm::mat4 &mat, const glm::vec2 &vec) {
 }
 
 
-DLL_OBJECT glm::mat4 matrixTranslation(const glm::vec3 &v) {
+glm::mat4 matrixTranslation(const glm::vec3 &v) {
     /*return glm::translate(glm::vec3(v.x, v.y, v.z));*/
     return glm::mat4(1.0f, 0.0f, 0.0f, 0.0f,
                   0.0f, 1.0f, 0.0f, 0.0f,
@@ -43,7 +43,7 @@ DLL_OBJECT glm::mat4 matrixTranslation(const glm::vec3 &v) {
 
 }
 
-DLL_OBJECT glm::mat4 matrixTranslation(const glm::vec2 &v) {
+glm::mat4 matrixTranslation(const glm::vec2 &v) {
     //return glm::translate(glm::vec3(v.x, v.y, 0.0f));
     return glm::mat4(1.0f, 0.0f, 0.0f, 0.0f,
                   0.0f, 1.0f, 0.0f, 0.0f,
@@ -51,22 +51,22 @@ DLL_OBJECT glm::mat4 matrixTranslation(const glm::vec2 &v) {
                   v.x,  v.y,  0.0f, 1.0f);
 }
 
-DLL_OBJECT glm::mat4 matrixScaling(const glm::vec3 &vec) {
+glm::mat4 matrixScaling(const glm::vec3 &vec) {
     return glm::scale(glm::vec3(vec.x, vec.y, vec.z));
 }
 
-DLL_OBJECT glm::mat4 matrixScaling(const glm::vec2 &vec) {
+glm::mat4 matrixScaling(const glm::vec2 &vec) {
     return glm::scale(glm::vec3(vec.x, vec.y, 1.0f));
 }
 
-DLL_OBJECT glm::mat4 matrixOrthogonalProjection(float left, float right, float bottom, float top, float near, float far)
+glm::mat4 matrixOrthogonalProjection(float left, float right, float bottom, float top, float near, float far)
 {
     return glm::mat4(2.0f / (right - left), 0.0f, 0.0f, - (right + left) / (right - left),
                    0.0f, 2.0f / (top - bottom), 0.0f, - (top + bottom) / (top - bottom),
                    0.0f, 0.0f, -2.0f / (far - near), - (far + near) / (far - near),
                    0.0f, 0.0f, 0.0f, 1.0f);
 }
-DLL_OBJECT glm::mat4 matrixSkewX(float f)
+glm::mat4 matrixSkewX(float f)
 {
     // Calculate scaling matrix
     return glm::mat4(1.0f, tan(f), 0.0f, 0.0f,
@@ -75,7 +75,7 @@ DLL_OBJECT glm::mat4 matrixSkewX(float f)
                     0.0f,  0.0f,   0.0f, 1.0f);
 }
 
-DLL_OBJECT glm::mat4 matrixSkewY(float f)
+glm::mat4 matrixSkewY(float f)
 {
     // Calculate scaling matrix
     return glm::mat4(1.0f,  0.0f, 0.0f, 0.0f,
@@ -85,7 +85,7 @@ DLL_OBJECT glm::mat4 matrixSkewY(float f)
 }
 
 /// Creates a matrix in row-major order (i.e. opposite from normal glm).
-DLL_OBJECT glm::mat4 matrixRowMajor(
+glm::mat4 matrixRowMajor(
         float m11, float m12, float m13, float m14,
         float m21, float m22, float m23, float m24,
         float m31, float m32, float m33, float m34,
@@ -99,7 +99,7 @@ DLL_OBJECT glm::mat4 matrixRowMajor(
 }
 
 /// Creates a matrix in row-major order (i.e. opposite from normal glm).
-DLL_OBJECT glm::mat4 matrixColumnMajor(
+glm::mat4 matrixColumnMajor(
         float m11, float m21, float m31, float m41,
         float m12, float m22, float m32, float m42,
         float m13, float m23, float m33, float m43,

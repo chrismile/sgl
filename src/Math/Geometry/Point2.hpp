@@ -10,7 +10,7 @@
 
 namespace sgl {
 
-class Point2
+class DLL_OBJECT Point2
 {
 public:
     Point2(int _x, int _y) : x(_x), y(_y) {}

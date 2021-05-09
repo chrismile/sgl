@@ -18,7 +18,7 @@ typedef std::shared_ptr<FramebufferObject> FramebufferObjectPtr;
 class RenderTarget;
 typedef std::shared_ptr<RenderTarget> RenderTargetPtr;
 
-class RenderTarget
+class DLL_OBJECT RenderTarget
 {
 public:
     void bindFramebufferObject(FramebufferObjectPtr _framebuffer);

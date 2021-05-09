@@ -12,7 +12,7 @@
 
 namespace sgl {
 
-class TextureManagerGL : public TextureManagerInterface
+class DLL_OBJECT TextureManagerGL : public TextureManagerInterface
 {
 public:
     TexturePtr createEmptyTexture(int width, const TextureSettings &settings = TextureSettings());

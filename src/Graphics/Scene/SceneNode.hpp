@@ -13,7 +13,7 @@
 
 namespace sgl {
 
-class SceneNode {
+class DLL_OBJECT SceneNode {
 public:
     SceneNode() : recalcModelMat(true) {}
     void setPosition(const glm::vec2 &pos) { recalcModelMat = true; transform.position = glm::vec3(pos.x, pos.y, 0.0f); }

@@ -33,7 +33,7 @@
 
 namespace sgl { namespace vk {
 
-class Renderer {
+class DLL_OBJECT Renderer {
 
 };
 

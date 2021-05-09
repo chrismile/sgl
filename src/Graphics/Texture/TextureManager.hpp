@@ -13,7 +13,7 @@
 
 namespace sgl {
 
-struct TextureInfo {
+struct DLL_OBJECT TextureInfo {
     TextureInfo() : minificationFilter(0), magnificationFilter(0),
             textureWrapS(0), textureWrapT(0), anisotropicFilter(false), sRGB(false) {}
     std::string filename;
@@ -39,7 +39,7 @@ enum DepthStencilTextureFormat {
  * - Create an 32-bit RGBA texture using createTexture
  * - Create an empty texture (e.g. for offscreen rendering) with "createEmptyTexture"
  * - Create an multisampled texture for offscreen rendering with "createMultisampledTexture" */
-class TextureManagerInterface : public FileManager<Texture, TextureInfo>
+class DLL_OBJECT TextureManagerInterface : public FileManager<Texture, TextureInfo>
 {
 public:
     TexturePtr getAsset(const char *filename, const TextureSettings &settings = TextureSettings(), bool sRGB = false);
@@ -71,7 +71,7 @@ protected:
     virtual TexturePtr loadAsset(TextureInfo &textureInfo)=0;
 };
 
-extern TextureManagerInterface* TextureManager;
+DLL_OBJECT extern TextureManagerInterface* TextureManager;
 
 }
 

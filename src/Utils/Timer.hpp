@@ -15,7 +15,7 @@
 
 namespace sgl {
 
-class TimerInterface
+class DLL_OBJECT TimerInterface
 {
 public:
     TimerInterface();
@@ -63,7 +63,7 @@ private:
     unsigned int physicsFPS;
 };
 
-extern TimerInterface *Timer;
+DLL_OBJECT extern TimerInterface *Timer;
 
 }
 

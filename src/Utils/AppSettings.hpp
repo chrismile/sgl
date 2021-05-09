@@ -32,7 +32,7 @@ enum class OperatingSystem {
     WINDOWS, LINUX, ANDROID, MACOSX, IOS, UNKNOWN
 };
 
-class SettingsFile {
+class DLL_OBJECT SettingsFile {
 public:
     inline std::string getValue(const char *key) const { auto it = settings.find(key); return it == settings.end() ? "" : it->second; }
     inline int getIntValue(const char *key) const { return fromString<int>(getValue(key)); }

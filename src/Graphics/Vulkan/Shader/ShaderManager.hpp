@@ -40,7 +40,7 @@
 
 namespace sgl { namespace vk {
 
-struct ShaderModuleInfo {
+struct DLL_OBJECT ShaderModuleInfo {
     std::string filename;
     ShaderModuleType shaderType;
     bool operator <(const ShaderModuleInfo &rhs) const {
@@ -48,7 +48,7 @@ struct ShaderModuleInfo {
     }
 };
 
-class ShaderManager : public FileManager<ShaderModule, ShaderModuleInfo> {
+class DLL_OBJECT ShaderManager : public FileManager<ShaderModule, ShaderModuleInfo> {
 public:
     /// Reference-counted loading
     /// If dumpTextDebug, the pre-processed source will be dumped on the command line.

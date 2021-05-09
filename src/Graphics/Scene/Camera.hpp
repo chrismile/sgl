@@ -26,7 +26,7 @@ typedef std::shared_ptr<Camera> CameraPtr;
 class Event;
 typedef std::shared_ptr<Event> EventPtr;
 
-class Camera : public SceneNode {
+class DLL_OBJECT Camera : public SceneNode {
     friend class AppSettings;
 public:
     Camera();

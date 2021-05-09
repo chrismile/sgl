@@ -38,7 +38,7 @@
 
 namespace sgl {
 
-class ControlPoint
+class DLL_OBJECT ControlPoint
 {
 public:
     ControlPoint() {}
@@ -58,7 +58,7 @@ public:
  */
 typedef std::function<void(const std::string&, glm::vec3&, float&, float&, float&)> ApplicationCallback;
 
-class CameraPath
+class DLL_OBJECT CameraPath
 {
 public:
     CameraPath() {}

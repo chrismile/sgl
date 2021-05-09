@@ -42,7 +42,7 @@ public:
     virtual void rumble(float strength, float time, int gamepadIndex = 0)=0;
 };
 
-extern GamepadInterface *Gamepad;
+DLL_OBJECT extern GamepadInterface *Gamepad;
 
 }
 

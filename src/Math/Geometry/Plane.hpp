@@ -15,7 +15,7 @@ namespace sgl {
 class AABB3;
 
 //! Plane in 3D, ax + by + cz + d = 0
-class Plane {
+class DLL_OBJECT Plane {
 public:
     Plane() : a(0.0f), b(0.0f), c(1.0f), d(0.0f) {}
     Plane(float a, float b, float c, float d) : a(a), b(b), c(c), d(d) {}

@@ -12,10 +12,10 @@
 
 namespace sgl {
 
-class Renderable {
+class DLL_OBJECT Renderable {
 public:
     virtual ~Renderable() {}
-    virtual void render();
+    virtual void render() {}
 };
 
 typedef std::shared_ptr<Renderable> RenderablePtr;

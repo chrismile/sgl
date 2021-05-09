@@ -45,6 +45,5 @@ std::shared_ptr<AssetType> FileManager<AssetType, AssetInfo>::getAsset(AssetInfo
 
 }
 
-
 /*! UTILS_FILE_FILEMANAGER_HPP_ */
 #endif

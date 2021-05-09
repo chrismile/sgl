@@ -11,12 +11,12 @@ namespace sgl
 /**
  * @return The scale factor used for scaling fonts/the UI on the system.
  */
-float getHighDPIScaleFactor();
+DLL_OBJECT float getHighDPIScaleFactor();
 
 /**
  * @return Overwrites the scaling factor with a manually chosen value.
  */
-void overwriteHighDPIScaleFactor(float scaleFactor);
+DLL_OBJECT void overwriteHighDPIScaleFactor(float scaleFactor);
 
 }
 
