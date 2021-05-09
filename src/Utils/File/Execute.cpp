@@ -48,12 +48,16 @@
 namespace sgl {
 
 char **convertStringListToArgv(std::list<std::string> &stringList) {
-    char **argv = new char*[stringList.size()+1];
+    char **argv = new char*[stringList.size() + 1];
     int i = 0;
     for (std::list<std::string>::iterator it = stringList.begin(); it != stringList.end(); ++it)
     {
-        argv[i] = new char[it->size()+1];
+        argv[i] = new char[it->size() + 1];
+#if (defined(_MSC_VER) && _MSC_VER > 1910) || defined(__STDC_LIB_EXT1__)
+        strcpy_s(argv[i], it->size() + 1, it->c_str());
+#else
         strcpy(argv[i], it->c_str());
+#endif
         ++i;
     }
     argv[stringList.size()] = NULL;
@@ -83,7 +87,11 @@ std::string convertStringListToString(std::list<std::string> &stringList) {
 int executeProgram(const char *appName, std::list<std::string> &args) {
     char **argv = convertStringListToArgv(args);
 #ifdef _WIN32
+#if defined(_MSC_VER) && _MSC_VER > 1910
+    intptr_t success = _spawnv(P_WAIT, appName, argv);
+#else
     intptr_t success = spawnv(P_WAIT, appName, argv);
+#endif
     if (success != 0) {
         std::string command = convertStringListToString(args);
         Logfile::get()->writeError(std::string() + command);

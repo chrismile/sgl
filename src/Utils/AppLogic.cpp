@@ -92,7 +92,7 @@ void AppLogic::run()
         accumulatedTimeFixed += Timer->getElapsedMicroseconds();
 
         do {
-            updateFixed(Timer->getFixedPhysicsFPS());
+            updateFixed(float(Timer->getFixedPhysicsFPS()));
             accumulatedTimeFixed -= fixedFPSInMicroSeconds;
         } while(Timer->getFixedPhysicsFPSEnabled() && accumulatedTimeFixed >= fixedFPSInMicroSeconds);
 

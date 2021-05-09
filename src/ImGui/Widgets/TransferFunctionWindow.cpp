@@ -90,7 +90,19 @@ TransferFunctionWindow::TransferFunctionWindow() {
 }
 
 bool TransferFunctionWindow::saveFunctionToFile(const std::string& filename) {
+#if (defined(_MSC_VER) && _MSC_VER > 1910) || defined(__STDC_LIB_EXT1__)
+    FILE* file = nullptr;
+    errno_t errorCode = fopen_s(&file, filename.c_str(), "w");
+    if (errorCode != 0) {
+        sgl::Logfile::get()->writeError(std::string()
+                + "ERROR: TransferFunctionWindow::saveFunctionToFile: Couldn't create file \"" + filename + "\":");
+        sgl::Logfile::get()->writeError(strerror(errorCode));
+        return false;
+    }
+#else
     FILE* file = fopen(filename.c_str(), "w");
+#endif
+
     if (file == NULL) {
         sgl::Logfile::get()->writeError(std::string()
                 + "ERROR: TransferFunctionWindow::saveFunctionToFile: Couldn't create file \"" + filename + "\"!");

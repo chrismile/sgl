@@ -175,7 +175,19 @@ BitmapPtr Bitmap::rotated(int degree)
 void Bitmap::fromFile(const char *filename) {
     png_byte header[8];
 
+#if (defined(_MSC_VER) && _MSC_VER > 1910) || defined(__STDC_LIB_EXT1__)
+    FILE* fp = nullptr;
+    errno_t errorCode = fopen_s(&fp, filename, "rb");
+    if (errorCode != 0) {
+        sgl::Logfile::get()->writeError(
+                std::string() + "ERROR: Bitmap::fromFile: Cannot load file \"" + filename + "\":");
+        sgl::Logfile::get()->writeError(strerror(errorCode));
+        return;
+    }
+#else
     FILE *fp = fopen(filename, "rb");
+#endif
+
     if (fp == 0) {
         sgl::Logfile::get()->writeError(
                 std::string() + "ERROR: Bitmap::fromFile: Cannot load file \"" + filename + "\".");

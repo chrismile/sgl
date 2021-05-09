@@ -53,7 +53,18 @@ bool loadFileFromSource(
     isBinaryFile = true;
 #endif
 #ifdef _MSC_VER
+#if (defined(_MSC_VER) && _MSC_VER > 1910) || defined(__STDC_LIB_EXT1__)
+    FILE* file = nullptr;
+    errno_t errorCode = fopen_s(&file, filename.c_str(), isBinaryFile ? "rb" : "r");
+    if (errorCode != 0) {
+        sgl::Logfile::get()->writeError(
+                std::string() + "ERROR in loadFileFromSource: File \"" + filename + "\" could not be opened:");
+        sgl::Logfile::get()->writeError(strerror(errorCode));
+        return false;
+    }
+#else
     FILE* file = fopen(filename.c_str(), isBinaryFile ? "rb" : "r");
+#endif
 #else
     FILE* file = fopen64(filename.c_str(), isBinaryFile ? "rb" : "r");
 #endif
