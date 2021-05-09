@@ -83,14 +83,14 @@ std::string convertStringListToString(std::list<std::string> &stringList) {
 int executeProgram(const char *appName, std::list<std::string> &args) {
     char **argv = convertStringListToArgv(args);
 #ifdef _WIN32
-    int success = spawnv(P_WAIT, appName, argv);
+    intptr_t success = spawnv(P_WAIT, appName, argv);
     if (success != 0) {
         std::string command = convertStringListToString(args);
         Logfile::get()->writeError(std::string() + command);
     }
     deleteArgv(argv);
 
-    return success;
+    return int(success);
 #else
     pid_t pid;
     switch (pid = fork()) {

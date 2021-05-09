@@ -290,14 +290,15 @@ std::string ShaderManagerGL::loadHeaderFileString(const std::string &shaderName,
 std::string ShaderManagerGL::getHeaderName(const std::string &lineString)
 {
     // Filename in quotes?
-    int startFilename = lineString.find("\"");
-    int endFilename = lineString.find_last_of("\"");
+    auto startFilename = lineString.find("\"");
+    auto endFilename = lineString.find_last_of("\"");
     if (startFilename > 0 && endFilename > 0) {
         return lineString.substr(startFilename+1, endFilename-startFilename-1);
     } else {
         // Filename is user-specified #define directive?
         std::vector<std::string> line;
-        boost::algorithm::split(line, lineString, boost::is_any_of("\t "), boost::token_compress_on);
+        boost::algorithm::split(
+                line, lineString, boost::is_any_of("\t "), boost::token_compress_on);
         if (line.size() < 2) {
             Logfile::get()->writeError("Error in ShaderManagerGL::getHeaderFilename: Too few tokens.");
             return "";
@@ -305,8 +306,8 @@ std::string ShaderManagerGL::getHeaderName(const std::string &lineString)
 
         auto it = preprocessorDefines.find(line.at(1));
         if (it != preprocessorDefines.end()) {
-            int startFilename = it->second.find("\"");
-            int endFilename = it->second.find_last_of("\"");
+            auto startFilename = it->second.find("\"");
+            auto endFilename = it->second.find_last_of("\"");
             return it->second.substr(startFilename+1, endFilename-startFilename-1);
         } else {
             Logfile::get()->writeError("Error in ShaderManagerGL::getHeaderFilename: Invalid include directive.");
@@ -363,7 +364,7 @@ std::string ShaderManagerGL::getShaderString(const std::string &globalShaderName
         return it->second;
     }
 
-    int filenameEnd = globalShaderName.find(".");
+    auto filenameEnd = globalShaderName.find(".");
     std::string pureFilename = globalShaderName.substr(0, filenameEnd);
     std::string shaderFilename = getShaderFileName(pureFilename + ".glsl");
     std::string shaderInternalID = globalShaderName.substr(filenameEnd+1);
@@ -374,9 +375,9 @@ std::string ShaderManagerGL::getShaderString(const std::string &globalShaderName
                 + shaderFilename + "\".");
     }
 
-    std::string shaderName = "";
+    std::string shaderName;
     std::string shaderContent = "#line 1\n";
-    std::string prependContent = "";
+    std::string prependContent;
     int lineNum = 1;
     std::string linestr;
     while (getline(file, linestr)) {

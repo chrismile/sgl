@@ -63,7 +63,6 @@ public:
     //! Operations on pixel data
     void blit(BitmapPtr &aim, const Point2 &pos);
     void blit(BitmapPtr &aim, const Rectangle &sourceRectangle, const Rectangle &destinationRectangle);
-    BitmapPtr resizeBiCubic(int destW, int destH);
     void colorize(Color color);
     //! 90, 180 or 270
     BitmapPtr rotated(int degree);

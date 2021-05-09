@@ -98,7 +98,7 @@ SciVisApp::SciVisApp(float fovy)
         sgl::Timer->setFPSLimit(false, refreshRate);
     }
 
-    fpsArray.resize(16, refreshRate);
+    fpsArray.resize(16, float(refreshRate));
     framerateSmoother = FramerateSmoother(1);
 }
 
@@ -423,7 +423,7 @@ void SciVisApp::updateCameraFlight(bool hasData, bool& usesNewState) {
     }
 
     // Already recorded full cycle?
-    int endTime = customEndTime > 0.0f ? customEndTime : cameraPath.getEndTime();
+    float endTime = customEndTime > 0.0f ? customEndTime : cameraPath.getEndTime();
     if (useCameraFlight && recording && recordingTime > endTime && hasData) {
         if (!startedCameraFlightPerUI) {
             quit();
@@ -448,7 +448,7 @@ void SciVisApp::updateCameraFlight(bool hasData, bool& usesNewState) {
             if (realTimeCameraFlight) {
                 uint64_t currentTimeStamp = sgl::Timer->getTicksMicroseconds();
                 uint64_t timeElapsedMicroSec = currentTimeStamp - recordingTimeStampStart;
-                recordingTime = timeElapsedMicroSec * 1e-6;
+                recordingTime = timeElapsedMicroSec * 1e-6f;
                 if (usesNewState) {
                     // A new state was just set. Don't recompute, as this would result in time of ca. 1-2ns
                     usesNewState = false;
@@ -542,7 +542,7 @@ void SciVisApp::moveCameraMouse(float dt) {
     if (!(sgl::Keyboard->getModifier() & (KMOD_CTRL | KMOD_SHIFT))) {
         // Zoom in/out
         if (sgl::Mouse->getScrollWheel() > 0.1 || sgl::Mouse->getScrollWheel() < -0.1) {
-            float moveAmount = sgl::Mouse->getScrollWheel()*dt*2.0;
+            float moveAmount = sgl::Mouse->getScrollWheel() * dt * 2.0f;
             camera->translate(sgl::transformPoint(invRotationMatrix, glm::vec3(0.0f, 0.0f, -moveAmount*MOVE_SPEED)));
             reRender = true;
             hasMoved();
@@ -551,8 +551,8 @@ void SciVisApp::moveCameraMouse(float dt) {
         // Mouse rotation
         if (sgl::Mouse->isButtonDown(1) && sgl::Mouse->mouseMoved()) {
             sgl::Point2 pixelMovement = sgl::Mouse->mouseMovement();
-            float yaw = dt*MOUSE_ROT_SPEED*pixelMovement.x;
-            float pitch = -dt*MOUSE_ROT_SPEED*pixelMovement.y;
+            float yaw = dt * MOUSE_ROT_SPEED * float(pixelMovement.x);
+            float pitch = -dt * MOUSE_ROT_SPEED * float(pixelMovement.y);
 
             //glm::quat rotYaw = glm::quat(glm::vec3(0.0f, yaw, 0.0f));
             //glm::quat rotPitch = glm::quat(

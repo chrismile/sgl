@@ -64,7 +64,7 @@ public:
     template<typename T>
     void writeArray(const std::vector<T> &v)
     {
-        uint32_t size = v.size();
+        uint32_t size = uint32_t(v.size());
         write(size);
         if (size > 0) {
             write((const void*)&v.front(), sizeof(T)*v.size());

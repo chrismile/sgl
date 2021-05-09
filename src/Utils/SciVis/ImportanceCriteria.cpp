@@ -49,8 +49,8 @@ void packUnorm16Array(const std::vector<float>& floatVector, std::vector<uint16_
     #pragma omp parallel for shared(floatVector, unormVector, minValue, maxValue) default(none)
 #endif
     for (size_t i = 0; i < unormVector.size(); i++) {
-        unormVector.at(i) = glm::round(glm::clamp(
-                (floatVector.at(i) - minValue) / (maxValue - minValue), 0.0f, 1.0f) * 65535.0f);
+        unormVector.at(i) = uint16_t(glm::clamp(glm::round(
+                (floatVector.at(i) - minValue) / (maxValue - minValue) * 65535.0f), 0.0f, 65535.0f));
     }
 }
 
@@ -67,13 +67,13 @@ void packUnorm16ArrayOfArrays(
 
 
 /// https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/unpackUnorm.xhtml
-void unpackUnorm16Array(uint16_t *unormVector, size_t vectorSize, std::vector<float> &floatVector) {
+void unpackUnorm16Array(const uint16_t* unormVector, size_t vectorSize, std::vector<float>& floatVector) {
     floatVector.resize(vectorSize);
 #if _OPENMP >= 200805
     #pragma omp parallel for shared(floatVector, unormVector, vectorSize) default(none)
 #endif
     for (size_t i = 0; i < vectorSize; i++) {
-        floatVector.at(i) = unormVector[i]/65535.0;
+        floatVector.at(i) = float(unormVector[i]) / 65535.0f;
     }
 }
 

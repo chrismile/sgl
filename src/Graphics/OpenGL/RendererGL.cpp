@@ -187,7 +187,8 @@ std::vector<std::string> getErrorMessages() {
     std::vector<GLenum> severities(numMessages);
     std::vector<GLsizei> lengths(numMessages);
 
-    GLuint numFound = glGetDebugMessageLog(numMessages, messageText.capacity(), &sources[0],
+    GLuint numFound = glGetDebugMessageLog(
+            numMessages, GLsizei(messageText.capacity()), &sources[0],
             &types[0], &ids[0], &severities[0], &lengths[0], &messageText[0]);
 
     sources.resize(numFound);
@@ -199,8 +200,8 @@ std::vector<std::string> getErrorMessages() {
     std::vector<std::string> messages;
     messages.reserve(numFound);
 
-    std::vector<GLchar>::iterator currPos = messageText.begin();
-    for(size_t i = 0; i < lengths.size(); ++i) {
+    auto currPos = messageText.begin();
+    for (size_t i = 0; i < lengths.size(); ++i) {
         messages.push_back(std::string(currPos, currPos + lengths[i] - 1));
         currPos = currPos + lengths[i];
     }
@@ -516,19 +517,24 @@ void RendererGL::render(ShaderAttributesPtr &shaderAttributes)
             // Indices, no instancing
             /*glDrawRangeElements((GLuint)attr->getVertexMode(), 0, attr->getNumVertices()-1,
                     attr->getNumIndices(), attr->getIndexFormat(), NULL);*/
-            glDrawElements((GLuint)attr->getVertexMode(), attr->getNumIndices(), attr->getIndexFormat(), NULL);
+            glDrawElements(
+                    GLuint(attr->getVertexMode()), GLsizei(attr->getNumIndices()), attr->getIndexFormat(),
+                    nullptr);
         } else {
             // Indices, instancing
-            glDrawElementsInstanced((GLuint)attr->getVertexMode(), attr->getNumIndices(),
-                    attr->getIndexFormat(), NULL, attr->getInstanceCount());
+            glDrawElementsInstanced((GLuint)attr->getVertexMode(), GLsizei(attr->getNumIndices()),
+                    attr->getIndexFormat(), nullptr, GLsizei(attr->getInstanceCount()));
         }
     } else {
         if (attr->getInstanceCount() == 0) {
             // No indices, no instancing
-            glDrawArrays((GLuint)attr->getVertexMode(), 0, attr->getNumVertices());
+            glDrawArrays(
+                    GLuint(attr->getVertexMode()), 0, GLsizei(attr->getNumVertices()));
         } else {
             // No indices, instancing
-            glDrawArraysInstanced((GLuint)attr->getVertexMode(), 0, attr->getNumVertices(), attr->getInstanceCount());
+            glDrawArraysInstanced(
+                    GLuint(attr->getVertexMode()), 0, GLsizei(attr->getNumVertices()),
+                    GLsizei(attr->getInstanceCount()));
         }
     }
 }
@@ -550,19 +556,24 @@ void RendererGL::render(ShaderAttributesPtr &shaderAttributes, ShaderProgramPtr 
             // Indices, no instancing
             /*glDrawRangeElements((GLuint)attr->getVertexMode(), 0, attr->getNumVertices()-1,
                     attr->getNumIndices(), attr->getIndexFormat(), NULL);*/
-            glDrawElements((GLuint)attr->getVertexMode(), attr->getNumIndices(), attr->getIndexFormat(), NULL);
+            glDrawElements(
+                    GLuint(attr->getVertexMode()), GLsizei(attr->getNumIndices()), attr->getIndexFormat(),
+                    nullptr);
         } else {
             // Indices, instancing
-            glDrawElementsInstanced((GLuint)attr->getVertexMode(), attr->getNumIndices(),
-                                    attr->getIndexFormat(), NULL, attr->getInstanceCount());
+            glDrawElementsInstanced(
+                    GLuint(attr->getVertexMode()), GLsizei(attr->getNumIndices()),
+                    attr->getIndexFormat(), nullptr, GLsizei(attr->getInstanceCount()));
         }
     } else {
         if (attr->getInstanceCount() == 0) {
             // No indices, no instancing
-            glDrawArrays((GLuint)attr->getVertexMode(), 0, attr->getNumVertices());
+            glDrawArrays(GLuint(attr->getVertexMode()), 0, GLsizei(attr->getNumVertices()));
         } else {
             // No indices, instancing
-            glDrawArraysInstanced((GLuint)attr->getVertexMode(), 0, attr->getNumVertices(), attr->getInstanceCount());
+            glDrawArraysInstanced(
+                    GLuint(attr->getVertexMode()), 0, GLsizei(attr->getNumVertices()),
+                    GLsizei(attr->getInstanceCount()));
         }
     }
 }

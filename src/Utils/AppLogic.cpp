@@ -48,7 +48,7 @@ AppLogic::AppLogic() : framerateSmoother(16)
     Timer->setFPSLimit(true, 60);
     running = true;
     screenshot = false;
-    fpsCounterUpdateFrequency = 1e6;
+    fpsCounterUpdateFrequency = uint64_t(1e6);
     printFPS = true;
     fps = 60.0f;
 }
@@ -84,7 +84,7 @@ void AppLogic::run()
     Window *window = AppSettings::get()->getMainWindow();
     // Used for only calling "updateFixed(...)" at fixed update rate
     uint64_t accumulatedTimeFixed = 0;
-    float fixedFPSInMicroSeconds = Timer->getFixedPhysicsFPS()*1000000ul;
+    uint64_t fixedFPSInMicroSeconds = Timer->getFixedPhysicsFPS()*1000000ul;
     uint64_t fpsTimer = 0;
 
     while (running) {

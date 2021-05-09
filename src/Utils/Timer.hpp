@@ -45,10 +45,10 @@ public:
     void sleepMilliseconds(unsigned int milliseconds);
     void waitForFPSLimit();
 
-    uint64_t getTicksMicroseconds();
-    float getTimeInSeconds() { return currentTime / 1e6; }
-    uint64_t getElapsedMicroseconds() { return elapsedMicroSeconds; }
-    float getElapsedSeconds() { return elapsedMicroSeconds / 1e6; }
+    uint64_t getTicksMicroseconds() const;
+    float getTimeInSeconds() const { return currentTime / 1e6f; }
+    uint64_t getElapsedMicroseconds() const { return elapsedMicroSeconds; }
+    float getElapsedSeconds() const { return elapsedMicroSeconds / 1e6f; }
 
     /**
      * In real-time applications, we usually have two main goals:

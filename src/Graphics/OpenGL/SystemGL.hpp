@@ -57,7 +57,7 @@ public:
     //! Information about hardware limitations
     inline int getMaximumTextureSize() { return maximumTextureSize; }
     inline int getMaximumTextureSamples() { return maxSamples; }
-    inline float getMaximumAnisotropy() { return maxSamples; }
+    inline float getMaximumAnisotropy() { return maximumAnisotropy; }
     inline float getMinimumLineSize() { return glLineSizeRange[0]; }
     inline float getMaximumLineSize() { return glLineSizeRange[1]; }
     inline float getLineSizeIncrementStep() { return glLineSizeIncrementStep; }

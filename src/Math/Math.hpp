@@ -97,7 +97,7 @@ inline int floorMod(int a, int b) {
 }
 
 inline int floorDiv(float a, float b) {
-    int div = a/b;
+    int div = int(a/b);
     if (a < 0 && fmod(a,b) != 0) {
         div -= 1;
     }

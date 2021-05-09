@@ -103,14 +103,14 @@ void Bitmap::blit(BitmapPtr &aim, const Point2 &pos)
 
 void Bitmap::blit(BitmapPtr &aim, const Rectangle &sourceRectangle, const Rectangle &destinationRectangle)
 {
-    int sourceX = sourceRectangle.x;
-    int sourceY = sourceRectangle.y;
-    int sourceW = sourceRectangle.w;
-    int sourceH = sourceRectangle.h;
-    int destX = destinationRectangle.x;
-    int destY = destinationRectangle.y;
-    int destW = destinationRectangle.w;
-    int destH = destinationRectangle.h;
+    int sourceY = int(sourceRectangle.y);
+    int sourceW = int(sourceRectangle.w);
+    int sourceX = int(sourceRectangle.x);
+    int sourceH = int(sourceRectangle.h);
+    int destX = int(destinationRectangle.x);
+    int destY = int(destinationRectangle.y);
+    int destW = int(destinationRectangle.w);
+    int destH = int(destinationRectangle.h);
     UNUSED(destW);
     UNUSED(destH);
 
@@ -124,56 +124,6 @@ void Bitmap::blit(BitmapPtr &aim, const Rectangle &sourceRectangle, const Rectan
         int x = 0;
         memcpy(aim->getPixel(destX+x, destY+y), this->getPixel(sourceX+x, sourceY+y), sourceW*getBPP()/8);
     }
-}
-
-// TODO
-BitmapPtr Bitmap::resizeBiCubic(int destW, int destH)
-{
-    BitmapPtr resizedBitmap(new Bitmap);
-    resizedBitmap->allocate(destW, destH, bpp);
-    uint8_t *out = resizedBitmap->getPixels();
-
-    const float tx = float(w) / destW;
-    const float ty = float(h) / destH;
-    const int channels = bpp / 8;
-    const size_t row_stride = destW * channels;
-
-    unsigned char C[5] = {0, 0, 0, 0, 0};
-
-    for (int i = 0; i < destW; ++i)  {
-        for (int j = 0; j < destH; ++j) {
-            const int x = int(tx * j);
-            const int y = int(ty * i);
-            const float dx = tx * j - x;
-            const float dy = ty * i - y;
-
-            for (int k = 0; k < channels; ++k) {
-                for (int jj = 0; jj < 4; ++jj)
-                {
-                    const int z = y - 1 + jj;
-                    unsigned char a0 = *(getPixel(z, x) + k);
-                    unsigned char d0 = *(getPixel(z, x - 1) + k) - a0;
-                    unsigned char d2 = *(getPixel(z, x + 1) + k) - a0;
-                    unsigned char d3 = *(getPixel(z, x + 2) + k) - a0;
-                    unsigned char a1 = -1.0 / 3.0 * d0 + d2 - 1.0 / 6.0 * d3;
-                    unsigned char a2 = 1.0 / 2.0 * d0 + 1.0 / 2.0 * d2;
-                    unsigned char a3 = -1.0 / 6.0 * d0 - 1.0 / 2.0 * d2 + 1.0 / 6.0 * d3;
-                    C[jj] = a0 + a1 * dx + a2 * dx * dx + a3 * dx * dx * dx;
-
-                    d0 = C[0] - C[1];
-                    d2 = C[2] - C[1];
-                    d3 = C[3] - C[1];
-                    a0 = C[1];
-                    a1 = -1.0 / 3.0 * d0 + d2 -1.0 / 6.0 * d3;
-                    a2 = 1.0 / 2.0 * d0 + 1.0 / 2.0 * d2;
-                    a3 = -1.0 / 6.0 * d0 - 1.0 / 2.0 * d2 + 1.0 / 6.0 * d3;
-                    out[i * row_stride + j * channels + k] = a0 + a1 * dy + a2 * dy * dy + a3 * dy * dy * dy;
-                }
-            }
-        }
-    }
-
-    return resizedBitmap;
 }
 
 void Bitmap::colorize(Color color)
@@ -315,7 +265,7 @@ void Bitmap::fromFile(const char *filename) {
     png_read_update_info(png_ptr, info_ptr);
 
     // Row size in bytes.
-    int rowbytes = png_get_rowbytes(png_ptr, info_ptr);
+    size_t rowbytes = png_get_rowbytes(png_ptr, info_ptr);
 
     // Allocate the imageData as a big block
     uint8_t *dataPointer = new uint8_t[rowbytes * tempHeight];

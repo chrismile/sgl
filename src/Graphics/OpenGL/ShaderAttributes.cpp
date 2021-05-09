@@ -232,7 +232,7 @@ bool ShaderAttributesGL3::addGeometryBufferOptional(GeometryBufferPtr &geometryB
 
     // Compute the number of elements/vertices
     int componentByteSize = getComponentByteSize(format);
-    int numElements = geometryBuffer->getSize();
+    int numElements = int(geometryBuffer->getSize());
     if (stride == 0) {
         numElements /= componentByteSize * components;
     } else {
@@ -287,7 +287,7 @@ void ShaderAttributesGL3::addGeometryBuffer(GeometryBufferPtr &geometryBuffer,
 
     // Compute the number of elements/vertices
     int componentByteSize = getComponentByteSize(format);
-    int numElements = geometryBuffer->getSize();
+    int numElements = int(geometryBuffer->getSize());
     if (stride == 0) {
         numElements /= componentByteSize * components;
     } else {
@@ -391,7 +391,7 @@ bool ShaderAttributesGL2::addGeometryBufferOptional(GeometryBufferPtr &geometryB
 
     // Compute the number of elements/vertices
     int componentByteSize = getComponentByteSize(format);
-    int numElements = geometryBuffer->getSize();
+    int numElements = int(geometryBuffer->getSize());
     if (stride == 0) {
         numElements /= componentByteSize * components;
     } else {
@@ -423,7 +423,7 @@ void ShaderAttributesGL2::addGeometryBuffer(GeometryBufferPtr &geometryBuffer,
 
     // Compute the number of elements/vertices
     int componentByteSize = getComponentByteSize(format);
-    int numElements = geometryBuffer->getSize();
+    int numElements = int(geometryBuffer->getSize());
     if (stride == 0) {
         numElements /= componentByteSize * components;
     } else {

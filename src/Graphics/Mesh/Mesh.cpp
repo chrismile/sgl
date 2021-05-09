@@ -95,8 +95,10 @@ bool Mesh::loadFromXML(const char *filename)
         }
 
         // Set the estimated amount of vertices and indices. It will be updated to an exact value later.
-        size_t numVertices = vertexDataElement->Attribute("numVertices") ? vertexDataElement->FloatAttribute("numVertices") : 64;
-        size_t numIndices = useIndices && indexDataElement->Attribute("numIndices") ? indexDataElement->FloatAttribute("numIndices") : 64;
+        size_t numVertices = size_t(vertexDataElement->Attribute("numVertices")
+                ? vertexDataElement->FloatAttribute("numVertices") : 64);
+        size_t numIndices = size_t(useIndices && indexDataElement->Attribute("numIndices")
+                ? indexDataElement->FloatAttribute("numIndices") : 64);
 
         // Create the SubMesh
         SubMeshPtr subMeshData(new SubMesh(textured));

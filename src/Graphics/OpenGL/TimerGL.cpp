@@ -153,7 +153,7 @@ double TimerGL::getTimeMS(const std::string &name)
         std::cerr << "Invalid name in TimerGL::getTimeMS" << std::endl;
         return 0.0;
     }
-    int index = it->second;
+    size_t index = it->second;
     if (queryHasFinished.at(index)) {
         addQueryTime(index, lastTimeStamp);
     }
@@ -172,7 +172,7 @@ void TimerGL::printTotalAvgTime()
 {
     double timeMS = 0.0;
     for (auto it = regionNameMap.begin(); it != regionNameMap.end(); it++) {
-        int index = it->second;
+        size_t index = it->second;
         timeMS += static_cast<double>(elapsedTimeNS.at(index)) / static_cast<double>(numSamples.at(index)) * 1e-6;
     }
     std::cout << "TOTAL TIME (avg): " << timeMS << "ms" << std::endl;

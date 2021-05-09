@@ -136,7 +136,7 @@ std::string FileUtils::removeExtension(const std::string &path)
 // "/home/user/Info.txt" -> "/home/user/"
 std::string FileUtils::getPathToFile(const std::string &path)
 {
-    for (int i = path.size()-1; i >= 0; --i) {
+    for (int i = int(path.size()) - 1; i >= 0; --i) {
         if (path.at(i) == '/' || path.at(i) == '\\') {
             return path.substr(0, i+1);
         }
@@ -260,7 +260,7 @@ void FileUtils::deleteFileEnding(std::string &path)
 {
     if (path.size() != 0)
     {
-        for (int i = path.size()-1; i >= 0; --i)
+        for (int i = int(path.size()) - 1; i >= 0; --i)
         {
             if (path.at(i) == '.')
             {

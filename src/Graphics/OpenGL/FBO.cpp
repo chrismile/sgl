@@ -116,7 +116,7 @@ unsigned int FramebufferObjectGL::_bindInternal()
             }
         }
         if (colorAttachments.size() > 1) {
-            glDrawBuffers(colorAttachments.size(), &colorAttachments.front());
+            glDrawBuffers(GLsizei(colorAttachments.size()), &colorAttachments.front());
         }
     }
 

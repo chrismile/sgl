@@ -82,8 +82,8 @@ private:
 
     // Internal UI data.
     bool showWindow = true;
-    static const int regionHeightStandard;
-    static int regionHeight;
+    static const float regionHeightStandard;
+    static float regionHeight;
     static const float fontScaleStandard;
     static float fontScaleResetValue;
     static float fontScale;

@@ -185,7 +185,7 @@ bool CheckpointWindow::writeToFile(const std::string& filename) {
     stream.write(numDataSetes);
     for (auto& dataSetCheckpoints : dataSetCheckpointMap) {
         std::string dataSetName;
-        uint32_t numDataSetCheckpoints = dataSetCheckpoints.second.size();
+        uint32_t numDataSetCheckpoints = uint32_t(dataSetCheckpoints.second.size());
         stream.write(dataSetCheckpoints.first);
         stream.write(numDataSetCheckpoints);
 

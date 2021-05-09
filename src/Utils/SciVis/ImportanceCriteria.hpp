@@ -44,7 +44,7 @@ DLL_OBJECT void packUnorm16ArrayOfArrays(
         std::vector<std::vector<uint16_t>>& unormVector);
 
 /// https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/unpackUnorm.xhtml
-DLL_OBJECT void unpackUnorm16Array(uint16_t* unormVector, size_t vectorSize, std::vector<float> &floatVector);
+DLL_OBJECT void unpackUnorm16Array(const uint16_t* unormVector, size_t vectorSize, std::vector<float> &floatVector);
 
 }
 

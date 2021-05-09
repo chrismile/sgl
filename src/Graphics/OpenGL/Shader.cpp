@@ -535,14 +535,14 @@ bool ShaderProgramGL::setUniform(int location, const Color &value)
 bool ShaderProgramGL::setUniformArray(int location, const int *value, size_t num)
 {
     bind();
-    glUniform1iv(location, num, value);
+    glUniform1iv(location, GLsizei(num), value);
     return true;
 }
 
 bool ShaderProgramGL::setUniformArray(int location, const unsigned int *value, size_t num)
 {
     bind();
-    glUniform1uiv(location, num, value);
+    glUniform1uiv(location, GLsizei(num), value);
     return true;
 }
 
@@ -550,35 +550,35 @@ bool ShaderProgramGL::setUniformArray(int location, const unsigned int *value, s
 bool ShaderProgramGL::setUniformArray(int location, const bool *value, size_t num)
 {
     bind();
-    glUniform1iv(location, num, (int*)value);
+    glUniform1iv(location, GLsizei(num), (int*)value);
     return true;
 }
 
 bool ShaderProgramGL::setUniformArray(int location, const float *value, size_t num)
 {
     bind();
-    glUniform1fv(location, num, value);
+    glUniform1fv(location, GLsizei(num), value);
     return true;
 }
 
 bool ShaderProgramGL::setUniformArray(int location, const glm::vec2 *value, size_t num)
 {
     bind();
-    glUniform2fv(location, num, (float*)value);
+    glUniform2fv(location, GLsizei(num), (float*)value);
     return true;
 }
 
 bool ShaderProgramGL::setUniformArray(int location, const glm::vec3 *value, size_t num)
 {
     bind();
-    glUniform3fv(location, num, (float*)value);
+    glUniform3fv(location, GLsizei(num), (float*)value);
     return true;
 }
 
 bool ShaderProgramGL::setUniformArray(int location, const glm::vec4 *value, size_t num)
 {
     bind();
-    glUniform4fv(location, num, (float*)value);
+    glUniform4fv(location, GLsizei(num), (float*)value);
     return true;
 }
 
@@ -588,7 +588,9 @@ void ShaderProgramGL::setUniformImageTexture(unsigned int unit, TexturePtr textu
                             unsigned int access /* = GL_READ_WRITE */, unsigned int level /* = 0 */,
                             bool layered /* = false */, unsigned int layer /* = 0 */)
 {
-    glBindImageTexture(unit, ((TextureGL*)texture.get())->getTexture(), level, layered, layer, access, format);
+    glBindImageTexture(
+            unit, ((TextureGL*)texture.get())->getTexture(),
+            GLint(level), layered, GLint(layer), access, format);
 }
 
 

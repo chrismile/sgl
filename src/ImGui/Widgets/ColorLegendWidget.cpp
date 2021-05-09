@@ -33,8 +33,8 @@
 
 namespace sgl {
 
-const int ColorLegendWidget::regionHeightStandard = 300 - 2;
-int ColorLegendWidget::regionHeight = regionHeightStandard;
+const float ColorLegendWidget::regionHeightStandard = 300 - 2;
+float ColorLegendWidget::regionHeight = regionHeightStandard;
 const float ColorLegendWidget::fontScaleStandard = 0.75f;
 float ColorLegendWidget::fontScaleResetValue = ColorLegendWidget::fontScaleStandard;
 float ColorLegendWidget::fontScale = fontScaleStandard;
@@ -46,13 +46,15 @@ ColorLegendWidget::ColorLegendWidget() {
     for (int i = 0; i < 256; i++) {
         float pct = float(i) / float(255);
         // Test data.
-        transferFunctionColorMap.push_back(sgl::Color(0, pct*255, (1.0f - pct) * 255));
+        auto green = uint8_t(glm::clamp(pct * 255.0f, 0.0f, 255.0f));
+        auto blue = uint8_t(glm::clamp((1.0f - pct) * 255.0f, 0.0f, 255.0f));
+        transferFunctionColorMap.emplace_back(sgl::Color(0, green, blue));
     }
     regionHeight = regionHeightStandard;
 }
 
-void ColorLegendWidget::setClearColor(const sgl::Color& clearColor) {
-    this->clearColor = clearColor;
+void ColorLegendWidget::setClearColor(const sgl::Color& _clearColor) {
+    this->clearColor = _clearColor;
     this->textColor = sgl::Color(255 - clearColor.getR(), 255 - clearColor.getG(), 255 - clearColor.getB());
 }
 
@@ -96,12 +98,12 @@ std::string getNiceNumberString(float number, int digits) {
 }
 
 void ColorLegendWidget::renderGui() {
-    const int barWidth = 25;
-    const int totalWidth = barWidth + textRegionWidth;
+    const float barWidth = 25;
+    const float totalWidth = barWidth + textRegionWidth;
     const int numTicks = 5;
-    const int tickWidth = 10;
+    const float tickWidth = 10;
 
-    int textHeight = 0;
+    float textHeight = 0;
 
     std::string windowId = std::string() + "##" + attributeDisplayName;
     ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -180,7 +182,7 @@ void ColorLegendWidget::renderGui() {
     ImGui::PopStyleColor();
 
     // Enlarge the height of the widget if one widget needs more vertical space for the text.
-    regionHeight = std::max(regionHeight, int(textHeight + 50 * fontScale / fontScaleStandard));
+    regionHeight = std::max(regionHeight, textHeight + 50 * fontScale / fontScaleStandard);
 }
 
 }

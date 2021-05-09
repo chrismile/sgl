@@ -55,7 +55,7 @@ void TimerInterface::waitForFPSLimit()
 
     uint64_t timeSinceUpdate = getTicksMicroseconds() - lastTime;
 #ifdef _WIN32
-    int64_t sleepTimeMicroSeconds = 1e6 / (fpsLimit+10) - timeSinceUpdate;
+    int64_t sleepTimeMicroSeconds = int64_t(1e6 / (fpsLimit+10) - timeSinceUpdate);
 #else
     int64_t sleepTimeMicroSeconds = 1e6 / (fpsLimit+2) - timeSinceUpdate;
 #endif
@@ -70,9 +70,9 @@ void TimerInterface::update()
         // Set elapsed time in first frame to frame limit (or 60FPS if not set otherwise)
         lastTime = getTicksMicroseconds();
         if (fpsLimitEnabled) {
-            elapsedMicroSeconds = 1.0/fpsLimit*1e6;
+            elapsedMicroSeconds = int64_t(1.0 / fpsLimit * 1e6);
         } else {
-            elapsedMicroSeconds = 1.0/60.0*1e6;
+            elapsedMicroSeconds = int64_t(1.0 / 60.0 * 1e6);
         }
     } else {
         currentTime = getTicksMicroseconds();
@@ -81,19 +81,20 @@ void TimerInterface::update()
     }
 
     // Normalize elapsed time for too big time steps, e.g. 10 seconds.
-    if (elapsedMicroSeconds >= 10e6) {
-        elapsedMicroSeconds = 10e6;
+    if (elapsedMicroSeconds >= uint64_t(10e6)) {
+        elapsedMicroSeconds = uint64_t(10e6);
     }
 }
 
-uint64_t TimerInterface::getTicksMicroseconds()
+uint64_t TimerInterface::getTicksMicroseconds() const
 {
     /*auto now = std::chrono::high_resolution_clock::now();
     auto duration = now.time_since_epoch();
     auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
     return microseconds;*/
-    uint64_t currentTime = static_cast<double>(SDL_GetPerformanceCounter() - startFrameTime) / perfFreq * 1e6;
-    return currentTime;
+    uint64_t _currentTime =
+            uint64_t(static_cast<double>(SDL_GetPerformanceCounter() - startFrameTime) / double(perfFreq) * 1e6);
+    return _currentTime;
 }
 
 }

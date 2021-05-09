@@ -157,9 +157,9 @@ void ImGui::ProgressSpinner(const char* str_id, float radius, float thickness, f
     constexpr float EULER_CONSTANT = 2.71828182845904523536f;
 
     ImDrawList* draw_list = window->DrawList;
-    float offset = std::sin(g.Time / EULER_CONSTANT * 2.0f * speed) * 1.0f + 2.0f;
-    float angleStart = g.Time * speed - offset / 2.0f;
-    float angleEnd = g.Time * speed + offset / 2.0f;
+    float offset = float(std::sin(g.Time / EULER_CONSTANT * 2.0f * speed)) * 1.0f + 2.0f;
+    float angleStart = float(g.Time * speed - offset / 2.0f);
+    float angleEnd = float(g.Time * speed + offset / 2.0f);
     draw_list->PathArcTo(center, radius, angleStart, angleEnd, 12);
     draw_list->PathStroke(ImGui::ColorConvertFloat4ToU32(color), false, thickness);
 }

@@ -243,7 +243,7 @@ void TransferFunctionWindow::setHistogram(const std::vector<int>& occurences) {
     histogram.clear();
     histogram.resize(histogramResolution);
     for (size_t i = 0; i < occurences.size(); i++) {
-        histogram.at(i) = occurences.at(i);
+        histogram.at(i) = float(occurences.at(i));
     }
 
     float maxNum = 1.0f;
@@ -385,7 +385,7 @@ void TransferFunctionWindow::renderFileDialog() {
     if (ImGui::ListBox("##availablefiles",& selectedFileIndex, [this](void* data, int idx, const char** out_text) -> bool {
         *out_text = availableFiles.at(idx).c_str();
         return true;
-    }, NULL, availableFiles.size(), 4)) {
+    }, nullptr, int(availableFiles.size()), 4)) {
         saveFileString = availableFiles.at(selectedFileIndex);
     } ImVec2 cursorPosEnd = ImGui::GetCursorPos(); ImGui::SameLine();
 
@@ -407,12 +407,13 @@ void TransferFunctionWindow::renderFileDialog() {
 void TransferFunctionWindow::renderOpacityGraph() {
     ImDrawList* drawList = ImGui::GetWindowDrawList();
     float scaleFactor = sgl::ImGuiWrapper::get()->getScaleFactor();
-    int regionWidth = ImGui::GetContentRegionAvailWidth();
-    int graphHeight = 300;
-    int border = 2*scaleFactor;
-    int areaWidth = regionWidth - 2.0f*border;
-    int areaHeight = graphHeight - 2.0f*border;
-    opacityGraphBox.min = glm::vec2(ImGui::GetCursorScreenPos().x + border, ImGui::GetCursorScreenPos().y + border);
+    float regionWidth = ImGui::GetContentRegionAvailWidth();
+    float graphHeight = 300;
+    float border = 2*scaleFactor;
+    float areaWidth = regionWidth - 2.0f * border;
+    float areaHeight = graphHeight - 2.0f * border;
+    opacityGraphBox.min = glm::vec2(
+            ImGui::GetCursorScreenPos().x + border, ImGui::GetCursorScreenPos().y + border);
     opacityGraphBox.max = opacityGraphBox.min + glm::vec2(areaWidth, areaHeight);
 
     ImColor backgroundColor(clearColor.getFloatR(), clearColor.getFloatG(), clearColor.getFloatB());
@@ -439,8 +440,8 @@ void TransferFunctionWindow::renderOpacityGraph() {
     ImVec2 oldPadding = ImGui::GetStyle().FramePadding;
     ImGui::GetStyle().FramePadding = ImVec2(1, 1);
     ImGui::PlotHistogram(
-            "##histogram", &histogram.front(), histogram.size(), 0, NULL,
-            0.0f, 1.0f, ImVec2(regionWidth, graphHeight));
+            "##histogram", &histogram.front(), int(histogram.size()), 0,
+            nullptr, 0.0f, 1.0f, ImVec2(regionWidth, graphHeight));
     ImGui::GetStyle().FramePadding = oldPadding;
 
     // Then render the graph itself
@@ -471,8 +472,8 @@ void TransferFunctionWindow::renderOpacityGraph() {
 void TransferFunctionWindow::renderColorBar() {
     ImDrawList* drawList = ImGui::GetWindowDrawList();
     float scaleFactor = sgl::ImGuiWrapper::get()->getScaleFactor();
-    int regionWidth = ImGui::GetContentRegionAvailWidth() - 2;
-    int barHeight = 30;
+    float regionWidth = ImGui::GetContentRegionAvailWidth() - 2;
+    float barHeight = 30;
     colorBarBox.min = glm::vec2(ImGui::GetCursorScreenPos().x + 1, ImGui::GetCursorScreenPos().y + 1);
     colorBarBox.max = colorBarBox.min + glm::vec2(regionWidth - 2, barHeight - 2);
 
@@ -482,7 +483,9 @@ void TransferFunctionWindow::renderColorBar() {
     for (size_t i = 0; i < TRANSFER_FUNCTION_TEXTURE_SIZE; i++) {
         sgl::Color16 color = transferFunctionMap_sRGB[i];
         ImU32 colorImgui = ImColor(color.getFloatR(), color.getFloatG(), color.getFloatB());
-        drawList->AddLine(ImVec2(pos.x, pos.y), ImVec2(pos.x, pos.y + barHeight), colorImgui, 2.0f * regionWidth / 255.0f);
+        drawList->AddLine(
+                ImVec2(pos.x, pos.y), ImVec2(pos.x, pos.y + barHeight), colorImgui,
+                2.0f * regionWidth / 255.0f);
         pos.x += regionWidth / 255.0f;
     }
 
@@ -578,7 +581,7 @@ void TransferFunctionWindow::rebuildTransferFunctionMap_LinearRGB() {
             glm::vec3 color1 = colorPoints_LinearRGB.at(colorPointsIdx).color;
             float pos0 = colorPoints_LinearRGB.at(colorPointsIdx-1).position;
             float pos1 = colorPoints_LinearRGB.at(colorPointsIdx).position;
-            float factor = 1.0 - (pos1 - currentPosition) / (pos1 - pos0);
+            float factor = 1.0f - (pos1 - currentPosition) / (pos1 - pos0);
             linearRGBColorAtIdx = glm::mix(color0, color1, factor);
         }
 
@@ -590,7 +593,7 @@ void TransferFunctionWindow::rebuildTransferFunctionMap_LinearRGB() {
             float opacity1 = opacityPoints.at(opacityPointsIdx).opacity;
             float pos0 = opacityPoints.at(opacityPointsIdx-1).position;
             float pos1 = opacityPoints.at(opacityPointsIdx).position;
-            float factor = 1.0 - (pos1 - currentPosition) / (pos1 - pos0);
+            float factor = 1.0f - (pos1 - currentPosition) / (pos1 - pos0);
             opacityAtIdx = sgl::interpolateLinear(opacity0, opacity1, factor);
         }
 
@@ -625,7 +628,7 @@ void TransferFunctionWindow::rebuildTransferFunctionMap_sRGB() {
             glm::vec3 color1 = colorPoints.at(colorPointsIdx).color.getFloatColorRGB();
             float pos0 = colorPoints.at(colorPointsIdx-1).position;
             float pos1 = colorPoints.at(colorPointsIdx).position;
-            float factor = 1.0 - (pos1 - currentPosition) / (pos1 - pos0);
+            float factor = 1.0f - (pos1 - currentPosition) / (pos1 - pos0);
             sRGBColorAtIdx = glm::mix(color0, color1, factor);
         }
 
@@ -637,7 +640,7 @@ void TransferFunctionWindow::rebuildTransferFunctionMap_sRGB() {
             float opacity1 = opacityPoints.at(opacityPointsIdx).opacity;
             float pos0 = opacityPoints.at(opacityPointsIdx-1).position;
             float pos1 = opacityPoints.at(opacityPointsIdx).position;
-            float factor = 1.0 - (pos1 - currentPosition) / (pos1 - pos0);
+            float factor = 1.0f - (pos1 - currentPosition) / (pos1 - pos0);
             opacityAtIdx = sgl::interpolateLinear(opacity0, opacity1, factor);
         }
 
@@ -778,7 +781,7 @@ void TransferFunctionWindow::onColorBarClick() {
                 sgl::Color16 newColor = sgl::color16Lerp(
                         colorPoints.at(insertPosition-1).color,
                         colorPoints.at(insertPosition).color,
-                        1.0 - (colorPoints.at(insertPosition).position - newPosition)
+                        1.0f - (colorPoints.at(insertPosition).position - newPosition)
                               / (colorPoints.at(insertPosition).position - colorPoints.at(insertPosition-1).position));
                 colorPoints.insert(colorPoints.begin() + insertPosition, ColorPoint_sRGB(newColor, newPosition));
                 // colorPoints_LinearRGB computed in @ref rebuildTransferFunctionMap

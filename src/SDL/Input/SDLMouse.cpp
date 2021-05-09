@@ -114,7 +114,7 @@ bool SDLMouse::buttonReleased(int button)
 // -1: Scroll down; 0: No scrolling; 1: Scroll up
 float SDLMouse::getScrollWheel()
 {
-    return state.scrollWheel;
+    return float(state.scrollWheel);
 }
 
 void SDLMouse::setScrollWheelValue(int val)

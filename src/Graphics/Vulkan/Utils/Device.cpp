@@ -217,11 +217,11 @@ LogicalDeviceAndQueues createLogicalDeviceAndQueues(
     deviceInfo.pNext = nullptr;
     deviceInfo.queueCreateInfoCount = 1;
     deviceInfo.pQueueCreateInfos = &queueInfo;
-    deviceInfo.enabledExtensionCount = deviceExtensions.size();
+    deviceInfo.enabledExtensionCount = uint32_t(deviceExtensions.size());
     deviceInfo.ppEnabledExtensionNames = deviceExtensions.data();
     deviceInfo.pEnabledFeatures = &physicalDeviceFeatures;
     if (useValidationLayer) {
-        deviceInfo.enabledLayerCount = layerNames.size();
+        deviceInfo.enabledLayerCount = uint32_t(layerNames.size());
         deviceInfo.ppEnabledLayerNames = layerNames.data();
     } else {
         deviceInfo.enabledLayerCount = 0;

@@ -289,7 +289,7 @@ Uint8 SDLGamepad::getDirectionPadPressed(int dirPadIndex /* = 0 */, int gamepadI
 void SDLGamepad::rumble(float strength, float time, int gamepadIndex /* = 0 */) // time in seconds
 {
     if (rumbleInited.at(gamepadIndex)) {
-        SDL_HapticRumblePlay(hapticList.at(gamepadIndex), strength, time*1000);
+        SDL_HapticRumblePlay(hapticList.at(gamepadIndex), strength, uint32_t(time*1000));
     }
 }
 

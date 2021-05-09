@@ -130,8 +130,8 @@ TexturePtr TextureManagerGL::loadAsset(TextureInfo &textureInfo)
     }
 
     SDL_Surface *image = 0;
-    SDL_RWops *rwops = SDL_RWFromMem(resource->getBuffer(), resource->getBufferSize());
-    if (rwops == NULL) {
+    SDL_RWops *rwops = SDL_RWFromMem(resource->getBuffer(), int(resource->getBufferSize()));
+    if (rwops == nullptr) {
         Logfile::get()->writeError(std::string() + "TextureManagerGL::loadFromFile: SDL_RWFromMem failed (file: \""
                 + textureInfo.filename + "\")! SDL Error: " + "\"" + SDL_GetError() + "\"");
         return TexturePtr();
@@ -141,7 +141,7 @@ TexturePtr TextureManagerGL::loadAsset(TextureInfo &textureInfo)
     rwops->close(rwops);
 
     // Was loading the file with SDL_image successful?
-    if (image == NULL) {
+    if (image == nullptr) {
         Logfile::get()->writeError(std::string() + "TextureManagerGL::loadFromFile: IMG_Load_RW failed (file: \""
                 + textureInfo.filename + "\")! SDL Error: " + "\"" + SDL_GetError() + "\"");
         return TexturePtr();
