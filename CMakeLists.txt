@@ -16,8 +16,10 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 	set(CMAKE_CXX_FLAGS "-Wall")
 endif()
 
-# Disable "[...] needs to have dll-interface to be used by clients of class [...]".
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /w44251")
+if(MSVC)
+	# Disable "[...] needs to have dll-interface to be used by clients of class [...]".
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /w44251")
+endif()
 
 option(SUPPORT_OPENGL "Build with OpenGL support" ON)
 option(SUPPORT_VULKAN "Build with Vulkan support" ON)
