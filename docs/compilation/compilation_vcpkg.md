@@ -91,6 +91,8 @@ Please do not forget to add `--triplet=x64-windows` if the 64-bit version of the
 ./vcpkg install boost-interprocess
 ```
 
+Then, the program can be built using the following commands. Please adapt the paths where necessary.
+
 ```
 mkdir build
 cd build
