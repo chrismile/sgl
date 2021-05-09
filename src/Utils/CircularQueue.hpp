@@ -33,7 +33,7 @@
 #include <cassert>
 
 template<class T>
-class DLL_OBJECT CircularQueue
+class CircularQueue
 {
 public:
     CircularQueue(size_t maxCapacity = 32) {

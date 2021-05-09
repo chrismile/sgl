@@ -59,7 +59,7 @@ if (MSVC)
 	target_compile_definitions(sgl INTERFACE IMGUI_API=${DLLIMPORT})
 	target_compile_definitions(sgl PRIVATE IMGUI_API=${DLLEXPORT})
 else()
-	target_compile_definitions(sgl PUBLIC DLL_OBJECT)
+	target_compile_definitions(sgl PUBLIC DLL_OBJECT=)
 endif()
 
 #include_directories(src)
