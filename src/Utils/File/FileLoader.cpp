@@ -52,7 +52,11 @@ bool loadFileFromSource(
     // Carriage return was not counted in text mode when using MinGW.
     isBinaryFile = true;
 #endif
+#ifdef _MSC_VER
+    FILE* file = fopen(filename.c_str(), isBinaryFile ? "rb" : "r");
+#else
     FILE* file = fopen64(filename.c_str(), isBinaryFile ? "rb" : "r");
+#endif
     if (!file) {
         sgl::Logfile::get()->writeError(
                 std::string() + "ERROR in loadFileFromSource: File \"" + filename + "\" could not be opened.");

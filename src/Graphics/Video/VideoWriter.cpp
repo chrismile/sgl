@@ -68,11 +68,15 @@ void VideoWriter::openFile(const std::string& filename, int framerate) {
                           //+ " -i - -vf vflip -an -b:v 100M \"" + filename + "\"";
                           + " -i - -vf vflip -an -vcodec libx264 -crf 5 \"" + filename + "\""; // -crf 15
     std::cout << command << std::endl;
+#if defined(__linux__) ||defined(__MINGW32__)
     avfile = popen(command.c_str(), "w");
     if (avfile == NULL) {
         sgl::Logfile::get()->writeError("ERROR in VideoWriter::VideoWriter: Couldn't open file.");
         sgl::Logfile::get()->writeError(std::string() + "Error in errno: " + strerror(errno));
     }
+#else
+    sgl::Logfile::get()->writeInfo("Warning: Video writer is currently not supported on MSVC.");
+#endif
 }
 
 VideoWriter::~VideoWriter() {
@@ -89,9 +93,11 @@ VideoWriter::~VideoWriter() {
         delete[] framebuffer;
 #endif
     }
+#if defined(__linux__) ||defined(__MINGW32__)
     if (avfile) {
         pclose(avfile);
     }
+#endif
 }
 
 void VideoWriter::pushFrame(uint8_t* pixels) {

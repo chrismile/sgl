@@ -13,7 +13,7 @@
 
 #ifdef SUPPORT_VULKAN
 #include <SDL2/SDL_vulkan.h>
-namespace sgl::vk { class Swapchain; }
+namespace sgl { namespace vk { class Swapchain; } }
 #endif
 
 #include <Defs.hpp>

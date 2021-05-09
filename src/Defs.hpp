@@ -14,7 +14,7 @@
 #define SDL2
 #endif
 
-#define _DEBUG
+//#define _DEBUG
 
 #ifdef _WIN32
 #ifndef WIN32

@@ -36,14 +36,18 @@ namespace sgl {
 void packUnorm16Array(const std::vector<float>& floatVector, std::vector<uint16_t>& unormVector) {
     float minValue = FLT_MAX;
     float maxValue = -FLT_MAX;
+#if _OPENMP >= 201107
     #pragma omp parallel for reduction(min:minValue) reduction(max:maxValue) shared(floatVector) default(none)
+#endif
     for (size_t i = 0; i < floatVector.size(); i++) {
         minValue = std::min(minValue, floatVector.at(i));
         maxValue = std::max(maxValue, floatVector.at(i));
     }
 
     unormVector.resize(floatVector.size());
+#if _OPENMP >= 200805
     #pragma omp parallel for shared(floatVector, unormVector, minValue, maxValue) default(none)
+#endif
     for (size_t i = 0; i < unormVector.size(); i++) {
         unormVector.at(i) = glm::round(glm::clamp(
                 (floatVector.at(i) - minValue) / (maxValue - minValue), 0.0f, 1.0f) * 65535.0f);
@@ -65,7 +69,9 @@ void packUnorm16ArrayOfArrays(
 /// https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/unpackUnorm.xhtml
 void unpackUnorm16Array(uint16_t *unormVector, size_t vectorSize, std::vector<float> &floatVector) {
     floatVector.resize(vectorSize);
+#if _OPENMP >= 200805
     #pragma omp parallel for shared(floatVector, unormVector, vectorSize) default(none)
+#endif
     for (size_t i = 0; i < vectorSize; i++) {
         floatVector.at(i) = unormVector[i]/65535.0;
     }
@@ -178,7 +184,10 @@ std::vector<float> computeTotalAttributeDifference(
 
     float minAttribute = FLT_MAX;
     float maxAttribute = -FLT_MAX;
-    #pragma omp parallel for shared(vertexAttributes, n) reduction(min:minAttribute) reduction(max:maxAttribute) default(none)
+#if _OPENMP >= 201107
+    #pragma omp parallel for shared(vertexAttributes, n) reduction(min:minAttribute) reduction(max:maxAttribute) \
+    default(none)
+#endif
     for (int i = 0; i < n; i++) {
         minAttribute = std::min(minAttribute, vertexAttributes.at(i));
         maxAttribute = std::max(maxAttribute, vertexAttributes.at(i));

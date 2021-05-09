@@ -19,8 +19,7 @@ const float PI = 3.1415926535897932f;
 const float TWO_PI = PI * 2.0f;
 const float HALF_PI = PI / 2.0f;
 
-inline float abs(float a) { return a > 0 ? a : -a; }
-inline float abs(int a) { return a > 0 ? a : -a; }
+template <typename T> inline T abs(T a) { return a > T(0) ? a : -a; }
 inline bool floatEquals(float a, float b) { return sgl::abs(a - b) < 0.0001f; }
 inline bool floatEquals(float a, float b, float dt) { return sgl::abs(a - b) < dt; }
 inline bool floatLess(float a, float b) { return a < b + 0.0001f; }

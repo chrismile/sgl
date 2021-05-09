@@ -75,10 +75,10 @@ private:
     size_t queueSize = 0;
 
     // Frame & file data.
-    FILE *avfile;
-    int frameW;
-    int frameH;
-    uint8_t *framebuffer; ///< Used for pushWindowFrame
+    FILE *avfile = nullptr;
+    int frameW = 0;
+    int frameH = 0;
+    uint8_t *framebuffer = nullptr; ///< Used for pushWindowFrame
 };
 
 }

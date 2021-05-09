@@ -143,6 +143,10 @@ void PathWatch::update(std::function<void()> pathChangedCallback) {
 
 namespace sgl {
 
+#ifndef PATH_MAX
+#define PATH_MAX MAX_PATH
+#endif
+
 const size_t MAX_NOTIFY_BUFFER_SIZE = (PATH_MAX + sizeof(_FILE_NOTIFY_INFORMATION)) * 4;
 
 struct PathWatchImplData {
