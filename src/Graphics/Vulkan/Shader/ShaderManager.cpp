@@ -291,7 +291,7 @@ std::string ShaderManagerGL::getHeaderName(const std::string &lineString)
     // Filename in quotes?
     int startFilename = lineString.find("\"");
     int endFilename = lineString.find_last_of("\"");
-    if (startFilename > 0 && endFilename > 0) {
+    if (startFilename != std::string::npos && endFilename != std::string::npos) {
         return lineString.substr(startFilename+1, endFilename-startFilename-1);
     } else {
         // Filename is user-specified #define directive?

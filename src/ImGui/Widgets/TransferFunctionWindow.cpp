@@ -439,8 +439,9 @@ void TransferFunctionWindow::renderOpacityGraph() {
 
     ImVec2 oldPadding = ImGui::GetStyle().FramePadding;
     ImGui::GetStyle().FramePadding = ImVec2(1, 1);
+    float* histogramData = histogram.empty() ? nullptr : &histogram.front();
     ImGui::PlotHistogram(
-            "##histogram", &histogram.front(), int(histogram.size()), 0,
+            "##histogram", histogramData, int(histogram.size()), 0,
             nullptr, 0.0f, 1.0f, ImVec2(regionWidth, graphHeight));
     ImGui::GetStyle().FramePadding = oldPadding;
 

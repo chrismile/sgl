@@ -152,8 +152,8 @@ const size_t MAX_NOTIFY_BUFFER_SIZE = (PATH_MAX + sizeof(_FILE_NOTIFY_INFORMATIO
 struct PathWatchImplData {
     uint8_t parentBuffer[MAX_NOTIFY_BUFFER_SIZE];
     uint8_t pathBuffer[MAX_NOTIFY_BUFFER_SIZE];
-    HANDLE parentHandle = nullptr;
-    HANDLE pathHandle = nullptr;
+    HANDLE parentHandle = INVALID_HANDLE_VALUE;
+    HANDLE pathHandle = INVALID_HANDLE_VALUE;
     OVERLAPPED parentOvl = { 0 };
     OVERLAPPED pathOvl = { 0 };
 };
@@ -164,10 +164,11 @@ void PathWatch::initialize() {
             parentDirectoryPath.c_str(), FILE_LIST_DIRECTORY,
             FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr,
             OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, nullptr);
-    data->pathHandle = ::CreateFileA(
-            path.c_str(), FILE_LIST_DIRECTORY,
-            FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr,
-            OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, nullptr);
+
+    if (data->parentHandle == INVALID_HANDLE_VALUE) {
+        sgl::Logfile::get()->writeError("ERROR in PathWatch::initialize: Invalid parent handle.");
+        exit(GetLastError());
+    }
 
     data->parentOvl = { 0 };
     if ((data->parentOvl.hEvent = ::CreateEvent(NULL, TRUE, FALSE, NULL)) == nullptr) {
@@ -187,23 +188,36 @@ void PathWatch::initialize() {
         sgl::Logfile::get()->writeError("ERROR in PathWatch::initialize: CreateEvent failed.");
         exit(GetLastError());
     }
-    if (ReadDirectoryChangesW(
-            data->pathHandle, data->pathBuffer, MAX_NOTIFY_BUFFER_SIZE, FALSE,
-            FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_LAST_WRITE,
-            nullptr, &data->pathOvl, nullptr) == FALSE) {
-        sgl::Logfile::get()->writeError("ERROR in PathWatch::initialize: ReadDirectoryChangesW failed.");
-        exit(GetLastError());
+
+    if (sgl::FileUtils::get()->exists(path)) {
+        data->pathHandle = ::CreateFileA(
+                path.c_str(), FILE_LIST_DIRECTORY,
+                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr,
+                OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, nullptr);
+
+        if (data->pathHandle == INVALID_HANDLE_VALUE) {
+            sgl::Logfile::get()->writeError("ERROR in PathWatch::initialize: Invalid path handle.");
+            exit(GetLastError());
+        }
+
+        if (ReadDirectoryChangesW(
+                data->pathHandle, data->pathBuffer, MAX_NOTIFY_BUFFER_SIZE, FALSE,
+                FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_LAST_WRITE,
+                nullptr, &data->pathOvl, nullptr) == FALSE) {
+            sgl::Logfile::get()->writeError("ERROR in PathWatch::initialize: ReadDirectoryChangesW failed.");
+            exit(GetLastError());
+        }
     }
 }
 
 PathWatch::~PathWatch() {
-    if (data->parentHandle) {
+    if (data->parentHandle != INVALID_HANDLE_VALUE) {
         CloseHandle(data->parentHandle);
-        data->parentHandle = nullptr;
+        data->parentHandle = INVALID_HANDLE_VALUE;
     }
-    if (data->pathHandle) {
+    if (data->pathHandle != INVALID_HANDLE_VALUE) {
         CloseHandle(data->pathHandle);
-        data->pathHandle = nullptr;
+        data->pathHandle = INVALID_HANDLE_VALUE;
     }
     delete data;
     data = nullptr;
@@ -212,8 +226,8 @@ PathWatch::~PathWatch() {
 void PathWatch::update(std::function<void()> pathChangedCallback) {
     bool shallUseCallback = false;
 
-    if (data->parentHandle == nullptr) {
-        sgl::Logfile::get()->writeError("ERROR in PathWatch::update: Unexpected nullptr handle.");
+    if (data->parentHandle == INVALID_HANDLE_VALUE) {
+        sgl::Logfile::get()->writeError("ERROR in PathWatch::update: Unexpected invalid handle.");
         exit(GetLastError());
     }
 
@@ -246,9 +260,9 @@ void PathWatch::update(std::function<void()> pathChangedCallback) {
                             &stringUtf8[0], stringSizeUtf8, nullptr, nullptr);
 
                     if (boost::to_lower_copy(stringUtf8) == boost::to_lower_copy(watchedNodeName)) {
-                        if (data->pathHandle) {
+                        if (data->pathHandle != INVALID_HANDLE_VALUE) {
                             CloseHandle(data->pathHandle);
-                            data->pathHandle = nullptr;
+                            data->pathHandle = INVALID_HANDLE_VALUE;
                             ResetEvent(data->pathOvl.hEvent);
                         }
                         if (sgl::FileUtils::get()->exists(path)) {
@@ -300,6 +314,9 @@ void PathWatch::update(std::function<void()> pathChangedCallback) {
     }
 
     while (true) {
+        if (data->pathHandle == INVALID_HANDLE_VALUE) {
+            break;
+        }
         DWORD dwWaitStatus = WaitForMultipleObjects(1, &data->pathOvl.hEvent, FALSE, 0);
         if (dwWaitStatus == WAIT_OBJECT_0) {
             DWORD lpBytesReturned = 0;

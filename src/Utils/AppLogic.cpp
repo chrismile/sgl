@@ -84,7 +84,7 @@ void AppLogic::run()
     Window *window = AppSettings::get()->getMainWindow();
     // Used for only calling "updateFixed(...)" at fixed update rate
     uint64_t accumulatedTimeFixed = 0;
-    uint64_t fixedFPSInMicroSeconds = Timer->getFixedPhysicsFPS()*1000000ul;
+    int64_t fixedFPSInMicroSeconds = int64_t(1000000) / Timer->getFixedPhysicsFPS();
     uint64_t fpsTimer = 0;
 
     while (running) {
@@ -94,7 +94,7 @@ void AppLogic::run()
         do {
             updateFixed(float(Timer->getFixedPhysicsFPS()));
             accumulatedTimeFixed -= fixedFPSInMicroSeconds;
-        } while(Timer->getFixedPhysicsFPSEnabled() && accumulatedTimeFixed >= fixedFPSInMicroSeconds);
+        } while(Timer->getFixedPhysicsFPSEnabled() && int64_t(accumulatedTimeFixed) >= fixedFPSInMicroSeconds);
 
         running = window->processEvents([this](const SDL_Event &event) { this->processSDLEvent(event); });
 
