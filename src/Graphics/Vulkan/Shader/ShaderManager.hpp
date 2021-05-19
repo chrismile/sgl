@@ -38,27 +38,32 @@
 #include <Utils/File/FileManager.hpp>
 #include "Shader.hpp"
 
+namespace shaderc { class Compiler; }
+
 namespace sgl { namespace vk {
 
 struct DLL_OBJECT ShaderModuleInfo {
     std::string filename;
     ShaderModuleType shaderType;
-    bool operator <(const ShaderModuleInfo &rhs) const {
+    bool operator <(const ShaderModuleInfo& rhs) const {
         return filename < rhs.filename;
     }
 };
 
 class DLL_OBJECT ShaderManager : public FileManager<ShaderModule, ShaderModuleInfo> {
 public:
+    ShaderManager(Device* device);
+    ~ShaderManager();
+
     /// Reference-counted loading
     /// If dumpTextDebug, the pre-processed source will be dumped on the command line.
-    ShaderStagesPtr getShaderStages(const std::vector<std::string> &shaderIds, bool dumpTextDebug = false);
+    ShaderStagesPtr getShaderStages(const std::vector<std::string>& shaderIds, bool dumpTextDebug = false);
     ShaderModulePtr getShaderModule(const std::string& shaderId, ShaderModuleType shaderModuleType);
 
     /// Create shader/program (manual loading)
-    virtual ShaderModulePtr createShader(ShaderModuleType shaderModuleType)=0;
-    virtual ShaderStagesPtr createShaderStages()=0;
-    //virtual ShaderAttributesPtr createShaderAttributes(ShaderStagesPtr &shader)=0;
+    virtual ShaderModulePtr createShader(ShaderModuleType shaderModuleType);
+    virtual ShaderStagesPtr createShaderStages();
+    //virtual ShaderAttributesPtr createShaderAttributes(ShaderStagesPtr& shader)=0;
 
     /**
      * Used for adding preprocessor defines to all shader files before compiling.
@@ -66,27 +71,27 @@ public:
      * The generated preprocessor statements are of the form "#define <token> <value>".
      */
     template<typename T>
-    void addPreprocessorDefine(const std::string &token, const T &value)
-    {
+    void addPreprocessorDefine(const std::string& token, const T& value) {
         preprocessorDefines[token] = toString(value);
     }
-    std::string getPreprocessorDefine(const std::string &token)
-    {
+    void addPreprocessorDefine(const std::string& token) {
+        preprocessorDefines[token] = "";
+    }
+    std::string getPreprocessorDefine(const std::string& token) {
         return preprocessorDefines[token];
     }
 
-    /// Removes a preprocessor #define token set by "addPreprocessorDefine"
-    void removePreprocessorDefine(const std::string &token) {
+    /// Removes a preprocessor #define token set by "addPreprocessorDefine".
+    void removePreprocessorDefine(const std::string& token) {
         auto it = preprocessorDefines.find(token);
         if (it != preprocessorDefines.end()) {
             preprocessorDefines.erase(it);
         }
     }
 
-
     /**
-     * Deletes all cached shaders in the ShaderManager. This is necessary e.g. when wanting to switch to a
-     * different rendering technique with "addPreprocessorDefine" after already loading a certain shader.
+     * Deletes all cached shaders in the ShaderManager. This is necessary, e.g., when wanting to switch to a
+     * different rendering technique with "addPreprocessorDefine" after already having loaded a certain shader.
      * Already loaded shaders will stay intact thanks to reference counting.
      */
     virtual void invalidateShaderCache()=0;
@@ -96,21 +101,21 @@ public:
     const std::string& getShaderPathPrefix() const { return pathPrefix; }
 
 protected:
-    ShaderModulePtr loadAsset(ShaderModuleInfo &shaderModuleInfo);
-    ShaderStagesPtr createShaderStages(const std::vector<std::string> &shaderIds, bool dumpTextDebug);
+    ShaderModulePtr loadAsset(ShaderModuleInfo& shaderModuleInfo);
+    ShaderStagesPtr createShaderStages(const std::vector<std::string>& shaderIds, bool dumpTextDebug);
 
     /// Internal loading
-    std::string loadHeaderFileString(const std::string &shaderName, std::string &prependContent);
-    std::string getHeaderName(const std::string &lineString);
-    std::string getShaderString(const std::string &globalShaderName);
+    std::string loadHeaderFileString(const std::string& shaderName, std::string& prependContent);
+    std::string getHeaderName(const std::string& lineString);
+    std::string getShaderString(const std::string& globalShaderName);
     std::string getPreprocessorDefines();
 
     /**
      * Indexes all ".glsl" files in the directory pathPrefix (and its sub-directories recursively) to create
      * "shaderFileMap". Therefore, the application can easily include files with relative paths.
      */
-    void indexFiles(const std::string &file);
-    std::string getShaderFileName(const std::string &pureFilename);
+    void indexFiles(const std::string& file);
+    std::string getShaderFileName(const std::string& pureFilename);
 
     /// Directory in which to search for shaders (standard: Data/Shaders).
     std::string pathPrefix;
@@ -127,6 +132,12 @@ protected:
 
     /// A token-value map for user-provided preprocessor #define's
     std::map<std::string, std::string> preprocessorDefines;
+
+    // Vulkan device.
+    Device* device = nullptr;
+
+    // Shader module compiler.
+    shaderc::Compiler* shaderCompiler = nullptr;
 };
 
 }}

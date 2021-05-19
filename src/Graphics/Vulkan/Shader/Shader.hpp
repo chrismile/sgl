@@ -52,7 +52,9 @@ enum class ShaderModuleType {
     CLOSEST_HIT = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR,
     MISS = VK_SHADER_STAGE_MISS_BIT_KHR,
     INTERSECTION = VK_SHADER_STAGE_INTERSECTION_BIT_KHR,
-    CALLABLE = VK_SHADER_STAGE_CALLABLE_BIT_KHR
+    CALLABLE = VK_SHADER_STAGE_CALLABLE_BIT_KHR,
+    TASK = VK_SHADER_STAGE_TASK_BIT_NV,
+    MESH = VK_SHADER_STAGE_MESH_BIT_NV
 };
 
 struct DLL_OBJECT InterfaceVariableDescriptor {
@@ -122,7 +124,7 @@ typedef std::shared_ptr<ShaderModule> ShaderModulePtr;
  */
 class DLL_OBJECT ShaderStages {
 public:
-    ShaderStages(std::vector<ShaderModulePtr> shaderModules);
+    ShaderStages(std::vector<ShaderModulePtr>& shaderModules);
 
     /// Returns the input variable descriptors of the vertex shader. NOTE: A vertex shader must exist for this to work!
     const std::vector<InterfaceVariableDescriptor>& getInputVariableDescriptors() const;

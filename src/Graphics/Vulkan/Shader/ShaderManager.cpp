@@ -26,32 +26,26 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ShaderManager.hpp"
+#include <iostream>
+#include <unordered_map>
+
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <vulkan/vulkan.h>
 
+#include <Utils/Convert.hpp>
+#include <Utils/File/Logfile.hpp>
+#include <Utils/File/FileUtils.hpp>
+
+#include "Internal/IncluderInterface.hpp"
+#include "ShaderManager.hpp"
+
 namespace sgl { namespace vk {
 
-ShaderModulePtr ShaderManager::loadAsset(ShaderModuleInfo &shaderModuleInfo)
+ShaderManager::ShaderManager(Device* device) : device(device)
 {
-    return ShaderModulePtr();
-}
-
-/*ShaderProgramPtr ShaderManagerInterface::getShaderProgram(const std::vector<std::string> &shaderIDs, bool dumpTextDebug)
-{
-    return createShaderProgram(shaderIDs, dumpTextDebug);
-}
-
-ShaderPtr ShaderManagerInterface::getShader(const char *shaderFilename, ShaderType shaderType)
-{
-    ShaderInfo info;
-    info.filename = shaderFilename;
-    info.shaderType = shaderType;
-    return FileManager<Shader, ShaderInfo>::getAsset(info);
-}
-
-ShaderManagerGL::ShaderManagerGL()
-{
+    shaderCompiler = new shaderc::Compiler;
     pathPrefix = "./Data/Shaders/";
     indexFiles(pathPrefix);
 
@@ -61,150 +55,111 @@ ShaderManagerGL::ShaderManagerGL()
         std::ifstream file(it->second);
         if (!file.is_open()) {
             Logfile::get()->writeError(
-                    std::string() + "ShaderManagerGL::ShaderManagerGL: Unexpected error "
+                    std::string() + "ShaderManager::ShaderManager: Unexpected error "
                                     "occured while loading \"GlobalDefines.glsl\".");
         }
         globalDefines = std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     }
+}
 
-    // Query compute shader capabilities
-    maxComputeWorkGroupCount.resize(3);
-    maxComputeWorkGroupSize.resize(3);
-    for (int i = 0; i < 3; i++) {
-        glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, i, (&maxComputeWorkGroupCount.front()) + i);
-        glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, i, (&maxComputeWorkGroupSize.front()) + i);
+ShaderManager::~ShaderManager()
+{
+    if (shaderCompiler) {
+        delete shaderCompiler;
+        shaderCompiler = nullptr;
     }
-    glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &maxWorkGroupInvocations);
 }
 
-ShaderManagerGL::~ShaderManagerGL()
+
+ShaderStagesPtr ShaderManager::getShaderStages(const std::vector<std::string> &shaderIDs, bool dumpTextDebug)
 {
+    return createShaderStages(shaderIDs, dumpTextDebug);
 }
 
-const std::vector<int> &ShaderManagerGL::getMaxComputeWorkGroupCount()
+ShaderModulePtr ShaderManager::getShaderModule(const std::string& shaderId, ShaderModuleType shaderType)
 {
-    return maxComputeWorkGroupCount;
+    ShaderModuleInfo info;
+    info.filename = shaderId;
+    info.shaderType = shaderType;
+    return FileManager<ShaderModule, ShaderModuleInfo>::getAsset(info);
 }
-
-const std::vector<int> &ShaderManagerGL::getMaxComputeWorkGroupSize()
-{
-    return maxComputeWorkGroupSize;
-}
-
-int ShaderManagerGL::getMaxWorkGroupInvocations()
-{
-    return maxWorkGroupInvocations;
-}
-
-void ShaderManagerGL::unbindShader() {
-    glUseProgram(0);
-}
-
-
-
-void ShaderManagerGL::bindUniformBuffer(int binding, GeometryBufferPtr &geometryBuffer)
-{
-    GLuint bufferID = static_cast<GeometryBufferGL*>(geometryBuffer.get())->getBuffer();
-
-    auto it = uniformBuffers.find(binding);
-    if (uniformBuffers.find(binding) != uniformBuffers.end()
-        && static_cast<GeometryBufferGL*>(it->second.get())->getBuffer() == bufferID
-        && geometryBuffer.get() == it->second.get()) {
-        // Already bound
-        return;
-    }
-
-    glBindBufferBase(GL_UNIFORM_BUFFER, binding, bufferID);
-    uniformBuffers[binding] = geometryBuffer;
-}
-
-void ShaderManagerGL::bindAtomicCounterBuffer(int binding, GeometryBufferPtr &geometryBuffer)
-{
-    GLuint bufferID = static_cast<GeometryBufferGL*>(geometryBuffer.get())->getBuffer();
-
-    auto it = atomicCounterBuffers.find(binding);
-    if (atomicCounterBuffers.find(binding) != atomicCounterBuffers.end()
-        && static_cast<GeometryBufferGL*>(it->second.get())->getBuffer() == bufferID
-        && geometryBuffer.get() == it->second.get()) {
-        // Already bound
-        return;
-    }
-
-    glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, binding, bufferID);
-    atomicCounterBuffers[binding] = geometryBuffer;
-}
-
-void ShaderManagerGL::bindShaderStorageBuffer(int binding, GeometryBufferPtr &geometryBuffer)
-{
-    GLuint bufferID = static_cast<GeometryBufferGL*>(geometryBuffer.get())->getBuffer();
-
-    auto it = shaderStorageBuffers.find(binding);
-    if (shaderStorageBuffers.find(binding) != shaderStorageBuffers.end()
-        && static_cast<GeometryBufferGL*>(it->second.get())->getBuffer() == bufferID
-        && geometryBuffer.get() == it->second.get()) {
-        // Already bound
-        return;
-    }
-
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, bufferID);
-    shaderStorageBuffers[binding] = geometryBuffer;
-}
-
-
 
 
 static bool dumpTextDebugStatic = false;
-ShaderProgramPtr ShaderManagerGL::createShaderProgram(const std::list<std::string> &shaderIDs, bool dumpTextDebug)
+ShaderStagesPtr ShaderManager::createShaderStages(const std::vector<std::string>& shaderIDs, bool dumpTextDebug)
 {
-    ShaderProgramPtr shaderProgram = createShaderProgram();
     dumpTextDebugStatic = dumpTextDebug;
 
+    std::vector<ShaderModulePtr> shaderModules;
     for (const std::string &shaderID : shaderIDs) {
-        ShaderPtr shader;
         std::string shaderID_lower = boost::algorithm::to_lower_copy(shaderID);
-        ShaderType shaderType = VERTEX_SHADER;
+        ShaderModuleType shaderType = ShaderModuleType::VERTEX;
         if (boost::algorithm::ends_with(shaderID_lower.c_str(), "vertex")) {
-            shaderType = VERTEX_SHADER;
+            shaderType = ShaderModuleType::VERTEX;
         } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "fragment")) {
-            shaderType = FRAGMENT_SHADER;
+            shaderType = ShaderModuleType::FRAGMENT;
         } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "geometry")) {
-            shaderType = GEOMETRY_SHADER;
+            shaderType = ShaderModuleType::GEOMETRY;
         } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "tesselationevaluation")) {
-            shaderType = TESSELATION_EVALUATION_SHADER;
+            shaderType = ShaderModuleType::TESSELATION_EVALUATION;
         } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "tesselationcontrol")) {
-            shaderType = TESSELATION_CONTROL_SHADER;
+            shaderType = ShaderModuleType::TESSELATION_CONTROL;
         } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "compute")) {
-            shaderType = COMPUTE_SHADER;
+            shaderType = ShaderModuleType::COMPUTE;
+        } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "raygen")) {
+            shaderType = ShaderModuleType::RAYGEN;
+        } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "anyhit")) {
+            shaderType = ShaderModuleType::ANY_HIT;
+        } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "closesthit")) {
+            shaderType = ShaderModuleType::CLOSEST_HIT;
+        } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "miss")) {
+            shaderType = ShaderModuleType::MISS;
+        } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "intersection")) {
+            shaderType = ShaderModuleType::INTERSECTION;
+        } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "callable")) {
+            shaderType = ShaderModuleType::CALLABLE;
         } else {
             if (boost::algorithm::contains(shaderID_lower.c_str(), "vert")) {
-                shaderType = VERTEX_SHADER;
+                shaderType = ShaderModuleType::VERTEX;
             } else if (boost::algorithm::contains(shaderID_lower.c_str(), "frag")) {
-                shaderType = FRAGMENT_SHADER;
+                shaderType = ShaderModuleType::FRAGMENT;
             } else if (boost::algorithm::contains(shaderID_lower.c_str(), "geom")) {
-                shaderType = GEOMETRY_SHADER;
+                shaderType = ShaderModuleType::GEOMETRY;
             } else if (boost::algorithm::contains(shaderID_lower.c_str(), "tess")) {
                 if (boost::algorithm::contains(shaderID_lower.c_str(), "eval")) {
-                    shaderType = TESSELATION_EVALUATION_SHADER;
+                    shaderType = ShaderModuleType::TESSELATION_EVALUATION;
                 } else if (boost::algorithm::contains(shaderID_lower.c_str(), "control")) {
-                    shaderType = TESSELATION_CONTROL_SHADER;
+                    shaderType = ShaderModuleType::TESSELATION_CONTROL;
                 }
             } else if (boost::algorithm::contains(shaderID_lower.c_str(), "comp")) {
-                shaderType = COMPUTE_SHADER;
+                shaderType = ShaderModuleType::COMPUTE;
+            } else if (boost::algorithm::contains(shaderID_lower.c_str(), "raygen")) {
+                shaderType = ShaderModuleType::RAYGEN;
+            } else if (boost::algorithm::contains(shaderID_lower.c_str(), "anyhit")) {
+                shaderType = ShaderModuleType::ANY_HIT;
+            } else if (boost::algorithm::contains(shaderID_lower.c_str(), "closesthit")) {
+                shaderType = ShaderModuleType::CLOSEST_HIT;
+            } else if (boost::algorithm::contains(shaderID_lower.c_str(), "miss")) {
+                shaderType = ShaderModuleType::MISS;
+            } else if (boost::algorithm::contains(shaderID_lower.c_str(), "intersection")) {
+                shaderType = ShaderModuleType::INTERSECTION;
+            } else if (boost::algorithm::contains(shaderID_lower.c_str(), "callable")) {
+                shaderType = ShaderModuleType::CALLABLE;
             } else {
                 Logfile::get()->writeError(
-                        std::string() + "ERROR: ShaderManagerGL::createShaderProgram: "
+                        std::string() + "ERROR: ShaderManager::createShaderProgram: "
                         + "Unknown shader type (id: \"" + shaderID + "\")");
             }
         }
-        shader = getShader(shaderID.c_str(), shaderType);
-        shaderProgram->attachShader(shader);
+        shaderModules.push_back(getShaderModule(shaderID, shaderType));
     }
     dumpTextDebugStatic = false;
-    shaderProgram->linkProgram();
+
+    ShaderStagesPtr shaderProgram(new ShaderStages(shaderModules));
     return shaderProgram;
 }
 
-ShaderPtr ShaderManagerGL::loadAsset(ShaderInfo &shaderInfo)
+ShaderModulePtr ShaderManager::loadAsset(ShaderModuleInfo &shaderInfo)
 {
     std::string id = shaderInfo.filename;
     std::string shaderString = getShaderString(id);
@@ -215,37 +170,51 @@ ShaderPtr ShaderManagerGL::loadAsset(ShaderInfo &shaderInfo)
         std::cout << shaderString << std::endl << std::endl;
     }
 
-    ShaderGL *shaderGL = new ShaderGL(shaderInfo.shaderType);
-    ShaderPtr shader(shaderGL);
-    shaderGL->setShaderText(shaderString);
-    shaderGL->setFileID(shaderInfo.filename.c_str());
-    shaderGL->compile();
-    return shader;
-}
+    shaderc::CompileOptions compileOptions;
+    //compileOptions.AddMacroDefinition(a, b);
+    IncluderInterface* includerInterface = new IncluderInterface();
+    compileOptions.SetIncluder(std::unique_ptr<shaderc::CompileOptions::IncluderInterface>(includerInterface));
 
-ShaderPtr ShaderManagerGL::createShader(ShaderType sh)
-{
-    ShaderPtr shader(new ShaderGL(sh));
-    return shader;
-}
-
-ShaderProgramPtr ShaderManagerGL::createShaderProgram()
-{
-    ShaderProgramPtr shaderProg(new ShaderProgramGL());
-    return shaderProg;
-}
-
-ShaderAttributesPtr ShaderManagerGL::createShaderAttributes(ShaderProgramPtr &shader)
-{
-    if (SystemGL::get()->openglVersionMinimum(3,0)) {
-        return ShaderAttributesPtr(new ShaderAttributesGL3(shader));
+    const std::unordered_map<ShaderModuleType, shaderc_shader_kind> shaderKindLookupTable = {
+            { ShaderModuleType::VERTEX,                 shaderc_vertex_shader },
+            { ShaderModuleType::FRAGMENT,               shaderc_fragment_shader },
+            { ShaderModuleType::COMPUTE,                shaderc_compute_shader },
+            { ShaderModuleType::GEOMETRY,               shaderc_geometry_shader },
+            { ShaderModuleType::TESSELATION_CONTROL,    shaderc_tess_control_shader },
+            { ShaderModuleType::TESSELATION_EVALUATION, shaderc_tess_evaluation_shader },
+            { ShaderModuleType::RAYGEN,                 shaderc_raygen_shader },
+            { ShaderModuleType::ANY_HIT,                shaderc_anyhit_shader },
+            { ShaderModuleType::CLOSEST_HIT,            shaderc_closesthit_shader },
+            { ShaderModuleType::MISS,                   shaderc_miss_shader },
+            { ShaderModuleType::INTERSECTION,           shaderc_intersection_shader },
+            { ShaderModuleType::CALLABLE,               shaderc_callable_shader },
+            { ShaderModuleType::TASK,                   shaderc_task_shader },
+            { ShaderModuleType::MESH,                   shaderc_mesh_shader },
+    };
+    auto it = shaderKindLookupTable.find(shaderInfo.shaderType);
+    if (it == shaderKindLookupTable.end()) {
+        sgl::Logfile::get()->writeError("Error in ShaderManager::loadAsset: Invalid shader type.");
+        return ShaderModulePtr();
     }
-    return ShaderAttributesPtr(new ShaderAttributesGL2(shader));
+    shaderc_shader_kind shaderKind = it->second;
+    shaderc::SpvCompilationResult compilationResult = shaderCompiler->CompileGlslToSpv(
+            shaderString.c_str(), shaderString.size(), shaderKind, id.c_str(), compileOptions);
+
+    if (compilationResult.GetNumErrors() != 0 || compilationResult.GetNumWarnings() != 0) {
+        sgl::Logfile::get()->writeError(compilationResult.GetErrorMessage());
+        if (compilationResult.GetNumErrors() != 0) {
+            return ShaderModulePtr();
+        }
+    }
+
+    std::vector<uint32_t> compilationResultWords(compilationResult.cbegin(), compilationResult.cend());
+    ShaderModulePtr shaderModule(new ShaderModule(
+            device, shaderInfo.filename, shaderInfo.shaderType, compilationResultWords));
+    return shaderModule;
 }
 
 
-
-std::string ShaderManagerGL::loadHeaderFileString(const std::string &shaderName, std::string &prependContent) {
+std::string ShaderManager::loadHeaderFileString(const std::string &shaderName, std::string &prependContent) {
     std::ifstream file(shaderName.c_str());
     if (!file.is_open()) {
         Logfile::get()->writeError(std::string() + "Error in loadHeaderFileString: Couldn't open the file \""
@@ -286,7 +255,7 @@ std::string ShaderManagerGL::loadHeaderFileString(const std::string &shaderName,
 }
 
 
-std::string ShaderManagerGL::getHeaderName(const std::string &lineString)
+std::string ShaderManager::getHeaderName(const std::string &lineString)
 {
     // Filename in quotes?
     int startFilename = lineString.find("\"");
@@ -298,7 +267,7 @@ std::string ShaderManagerGL::getHeaderName(const std::string &lineString)
         std::vector<std::string> line;
         boost::algorithm::split(line, lineString, boost::is_any_of("\t "), boost::token_compress_on);
         if (line.size() < 2) {
-            Logfile::get()->writeError("Error in ShaderManagerGL::getHeaderFilename: Too few tokens.");
+            Logfile::get()->writeError("Error in ShaderManager::getHeaderFilename: Too few tokens.");
             return "";
         }
 
@@ -308,7 +277,7 @@ std::string ShaderManagerGL::getHeaderName(const std::string &lineString)
             int endFilename = it->second.find_last_of("\"");
             return it->second.substr(startFilename+1, endFilename-startFilename-1);
         } else {
-            Logfile::get()->writeError("Error in ShaderManagerGL::getHeaderFilename: Invalid include directive.");
+            Logfile::get()->writeError("Error in ShaderManager::getHeaderFilename: Invalid include directive.");
             Logfile::get()->writeError(std::string() + "Line string: " + lineString);
             return "";
         }
@@ -319,7 +288,7 @@ std::string ShaderManagerGL::getHeaderName(const std::string &lineString)
 
 
 
-void ShaderManagerGL::indexFiles(const std::string &file) {
+void ShaderManager::indexFiles(const std::string &file) {
     if (FileUtils::get()->isDirectory(file)) {
         // Scan content of directory
         std::vector<std::string> elements = FileUtils::get()->getFilesInDirectoryVector(file);
@@ -334,11 +303,11 @@ void ShaderManagerGL::indexFiles(const std::string &file) {
 }
 
 
-std::string ShaderManagerGL::getShaderFileName(const std::string &pureFilename)
+std::string ShaderManager::getShaderFileName(const std::string &pureFilename)
 {
     auto it = shaderFileMap.find(pureFilename);
     if (it == shaderFileMap.end()) {
-        sgl::Logfile::get()->writeError("Error in ShaderManagerGL::getShaderFileName: Unknown file name \""
+        sgl::Logfile::get()->writeError("Error in ShaderManager::getShaderFileName: Unknown file name \""
                                         + pureFilename + "\".");
         return "";
     }
@@ -346,7 +315,7 @@ std::string ShaderManagerGL::getShaderFileName(const std::string &pureFilename)
 }
 
 
-std::string ShaderManagerGL::getPreprocessorDefines()
+std::string ShaderManager::getPreprocessorDefines()
 {
     std::string preprocessorStatements;
     for (auto it = preprocessorDefines.begin(); it != preprocessorDefines.end(); it++) {
@@ -356,7 +325,7 @@ std::string ShaderManagerGL::getPreprocessorDefines()
 }
 
 
-std::string ShaderManagerGL::getShaderString(const std::string &globalShaderName) {
+std::string ShaderManager::getShaderString(const std::string &globalShaderName) {
     auto it = effectSources.find(globalShaderName);
     if (it != effectSources.end()) {
         return it->second;
@@ -425,5 +394,5 @@ std::string ShaderManagerGL::getShaderString(const std::string &globalShaderName
                                + globalShaderName + "\".");
     return "";
 }
-*/
+
 }}

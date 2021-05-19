@@ -122,7 +122,7 @@ const std::map<int, std::vector<DescriptorInfo>>& ShaderModule::getDescriptorSet
 
 
 
-ShaderStages::ShaderStages(std::vector<ShaderModulePtr> shaderModules) : shaderModules(shaderModules) {
+ShaderStages::ShaderStages(std::vector<ShaderModulePtr>& shaderModules) : shaderModules(shaderModules) {
     vkShaderStages.reserve(shaderModules.size());
     for (ShaderModulePtr& shaderModule : shaderModules) {
         VkPipelineShaderStageCreateInfo shaderStageCreateInfo = {};
