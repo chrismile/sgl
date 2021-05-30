@@ -60,9 +60,6 @@ public:
     ShaderStagesPtr getShaderStages(const std::vector<std::string>& shaderIds, bool dumpTextDebug = false);
     ShaderModulePtr getShaderModule(const std::string& shaderId, ShaderModuleType shaderModuleType);
 
-    /// Create shader/program (manual loading)
-    virtual ShaderModulePtr createShader(ShaderModuleType shaderModuleType);
-    virtual ShaderStagesPtr createShaderStages();
     //virtual ShaderAttributesPtr createShaderAttributes(ShaderStagesPtr& shader)=0;
 
     /**

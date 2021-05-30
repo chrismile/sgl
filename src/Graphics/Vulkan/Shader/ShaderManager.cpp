@@ -171,7 +171,9 @@ ShaderModulePtr ShaderManager::loadAsset(ShaderModuleInfo &shaderInfo)
     }
 
     shaderc::CompileOptions compileOptions;
-    //compileOptions.AddMacroDefinition(a, b);
+    for (auto& it : preprocessorDefines) {
+        compileOptions.AddMacroDefinition(it.first, it.second);
+    }
     IncluderInterface* includerInterface = new IncluderInterface();
     compileOptions.SetIncluder(std::unique_ptr<shaderc::CompileOptions::IncluderInterface>(includerInterface));
 
@@ -258,8 +260,8 @@ std::string ShaderManager::loadHeaderFileString(const std::string &shaderName, s
 std::string ShaderManager::getHeaderName(const std::string &lineString)
 {
     // Filename in quotes?
-    int startFilename = lineString.find("\"");
-    int endFilename = lineString.find_last_of("\"");
+    auto startFilename = lineString.find("\"");
+    auto endFilename = lineString.find_last_of("\"");
     if (startFilename != std::string::npos && endFilename != std::string::npos) {
         return lineString.substr(startFilename+1, endFilename-startFilename-1);
     } else {
