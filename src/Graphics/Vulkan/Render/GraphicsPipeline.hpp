@@ -29,13 +29,184 @@
 #ifndef SGL_GRAPHICSPIPELINE_HPP
 #define SGL_GRAPHICSPIPELINE_HPP
 
+#include <vector>
+#include <memory>
 #include <vulkan/vulkan.h>
 
 namespace sgl { namespace vk {
 
-class DLL_OBJECT GraphicsPipeline {
-
+/// Cf. VkPrimitiveTopology
+enum class InputAssemblyTopology {
+    POINT_LIST = 0,
+    LINE_LIST = 1,
+    LINE_STRIP = 2,
+    TRIANGLE_LIST = 3,
+    TRIANGLE_STRIP = 4,
+    TRIANGLE_FAN = 5,
+    LINE_LIST_WITH_ADJACENCY = 6,
+    LINE_STRIP_WITH_ADJACENCY = 7,
+    TRIANGLE_LIST_WITH_ADJACENCY = 8,
+    TRIANGLE_STRIP_WITH_ADJACENCY = 9,
+    PATCH_LIST = 10,
 };
+
+class Device;
+class ShaderStages;
+typedef std::shared_ptr<ShaderStages> ShaderStagesPtr;
+class Framebuffer;
+typedef std::shared_ptr<Framebuffer> FramebufferPtr;
+
+enum BlendMode {
+    // No blending
+    BLENDING_MODE_OVERWRITE,
+    // Alpha blending
+    BLENDING_MODE_BACK_TO_FRONT_STRAIGHT_ALPHA, BLENDING_MODE_BACK_TO_FRONT_PREMUL_ALPHA,
+    BLENDING_MODE_FRONT_TO_BACK_PREMUL_ALPHA,
+    // Additive blending modes & multiplicative blending
+    BLENDING_MODE_BACK_ADDITIVE,
+    BLENDING_MODE_BACK_SUBTRACTIVE,
+    BLENDING_MODE_BACK_MULTIPLICATIVE
+};
+
+/// @see VkPrimitiveTopology
+enum class PrimitiveTopology {
+    POINT_LIST = 0,
+    LINE_LIST = 1,
+    LINE_STRIP = 2,
+    TRIANGLE_LIST = 3,
+    TRIANGLE_STRIP = 4,
+    TRIANGLE_FAN = 5,
+    LINE_LIST_WITH_ADJACENCY = 6,
+    LINE_STRIP_WITH_ADJACENCY = 7,
+    TRIANGLE_LIST_WITH_ADJACENCY = 8,
+    TRIANGLE_STRIP_WITH_ADJACENCY = 9,
+    PATCH_LIST = 10
+};
+
+/// @see VkCullModeFlagBits
+enum class CullMode {
+    CULL_NONE = 0,
+    CULL_FRONT = 0x00000001,
+    CULL_BACK = 0x00000002,
+    CULL_FRONT_AND_BACK = 0x00000003,
+};
+
+class DLL_OBJECT GraphicsPipelineInfo {
+    friend class GraphicsPipeline;
+
+public:
+    GraphicsPipelineInfo();
+
+    /// Resets to standard settings.
+    void reset();
+
+    /// Sets the specified framebuffer (REQUIRED).
+    void setFramebuffer(FramebufferPtr framebuffer);
+
+    void setBlendMode(BlendMode blendMode);
+    void setInputAssemblyTopology(PrimitiveTopology primitiveTopology, bool primitiveRestartEnable = false);
+    void setViewportState();
+    void setCullMode(CullMode cullMode);
+    void setIsFrontFaceCcw(bool isFrontFaceCcw);
+    // Depth-stencil info.
+    void setEnableDepthTest(bool enableDepthTest);
+    void setEnableDepthWrite(bool enableDepthTest);
+    void setEnableStencilTest(bool enableDepthTest);
+
+    /**
+     * E.g., if we have struct Vertex { vec3 vertexPosition; float vertexAttribute; };
+     * - addVertexBufferBinding(0, sizeof(Vertex));
+     * @param binding The binding point of the vertex buffer.
+     * @param stride The stride of one vertex in bytes.
+     * @param inputRate The input rate (either 'vertex' or 'instance').
+     */
+    void setVertexBufferBinding(
+            uint32_t binding, uint32_t stride, VkVertexInputRate inputRate = VK_VERTEX_INPUT_RATE_VERTEX);
+
+    /**
+     * Specifies that an attribute should be read from an vertex buffer with the specified binding point.
+     * The offset specifies the element offset in byte used for reading from the buffer.
+     * Example for "layout(location = 1) in float vertexAttribute;" (for same vertex data as above):
+     * - setInputAttributeDescription(0, offsetof(Vertex, vertexAttribute), 1);
+     * @param bufferBinding The binding point of the vertex buffer (@see setVertexBufferBinding).
+     * @param bufferOffset The element offset in byte used for reading from the buffer.
+     * @param attributeLocation The shader location of the input attribute.
+     */
+    void setInputAttributeDescription(uint32_t bufferBinding, uint32_t bufferOffset, uint32_t attributeLocation);
+    /**
+     * Specifies that an attribute should be read from an vertex buffer with the specified binding point.
+     * The offset specifies the element offset in byte used for reading from the buffer.
+     * Example for "layout(location = 1) in float vertexAttribute;" (for same vertex data as above):
+     * - setInputAttributeDescription(0, offsetof(Vertex, vertexAttribute), "vertexAttribute");
+     * @param bufferBinding The binding point of the vertex buffer (@see setVertexBufferBinding).
+     * @param bufferOffset The element offset in byte used for reading from the buffer.
+     * @param attributeName The name of the input attribute in the shader.
+     */
+    void setInputAttributeDescription(uint32_t bufferBinding, uint32_t bufferOffset, const std::string& attributeName);
+
+    // Getters for VkPipeline*StateCreateInfo data.
+    VkPipelineViewportStateCreateInfo& getViewportStateCreateInfo() { return viewportStateInfo; }
+
+protected:
+    ShaderStagesPtr shaderStages;
+    VkRenderPassCreateInfo renderPassInfo = {};
+
+    std::vector<VkVertexInputBindingDescription> vertexInputBindingDescriptions;
+    std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions;
+
+    VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
+    VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo = {};
+    VkPipelineViewportStateCreateInfo viewportStateInfo = {};
+    VkPipelineRasterizationStateCreateInfo rasterizerInfo = {};
+    VkPipelineMultisampleStateCreateInfo multisamplingInfo = {};
+    VkPipelineDepthStencilStateCreateInfo depthStencilInfo = {};
+    VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
+    VkPipelineColorBlendStateCreateInfo colorBlendingInfo = {};
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+};
+
+class DLL_OBJECT Pipeline {
+public:
+    Pipeline(Device* device) : device(device) {}
+    virtual ~Pipeline();
+
+    inline VkPipelineLayout getVkPipelineLayout() { return pipelineLayout; }
+    inline VkPipeline getVkPipeline() { return pipeline; }
+
+protected:
+    Device* device;
+    VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
+    VkPipeline pipeline = VK_NULL_HANDLE;
+};
+
+typedef std::shared_ptr<Pipeline> PipelinePtr;
+
+class DLL_OBJECT GraphicsPipeline : public Pipeline {
+public:
+    GraphicsPipeline(Device* device, const GraphicsPipelineInfo& pipelineInfo);
+    ~GraphicsPipeline();
+
+    inline const ShaderStagesPtr& getShaderStages() const { return shaderStages; }
+    inline const FramebufferPtr& getFramebuffer() const { return framebuffer; }
+
+    // Used by RasterData to make deduce number of vertices from buffer byte size.
+    inline const std::vector<VkVertexInputBindingDescription>& getVertexInputBindingDescriptions() const {
+        return vertexInputBindingDescriptions;
+    }
+    inline const std::vector<VkVertexInputAttributeDescription>& getVertexBindingAttributeDescriptions() const {
+        return vertexInputAttributeDescriptions;
+    }
+
+protected:
+    ShaderStagesPtr shaderStages;
+    FramebufferPtr framebuffer;
+
+    // Used by RasterData to make deduce number of vertices from buffer byte size.
+    std::vector<VkVertexInputBindingDescription> vertexInputBindingDescriptions;
+    std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions;
+};
+
+typedef std::shared_ptr<GraphicsPipeline> GraphicsPipelinePtr;
 
 }}
 

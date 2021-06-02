@@ -27,6 +27,8 @@
  */
 
 #include <Utils/File/Logfile.hpp>
+
+#include "../Utils/Device.hpp"
 #include "Shader.hpp"
 
 namespace sgl { namespace vk {
@@ -103,6 +105,8 @@ void ShaderModule::createReflectData(const std::vector<uint32_t>& spirvCode) {
             descriptorInfo.binding = p_set->bindings[bindingIdx]->binding;
             descriptorInfo.type = VkDescriptorType(p_set->bindings[bindingIdx]->descriptor_type);
             descriptorInfo.name = p_set->bindings[bindingIdx]->name;
+            descriptorInfo.count = p_set->bindings[bindingIdx]->count;
+            descriptorInfo.shaderStageFlags = uint32_t(shaderModuleType);
             descriptorsInfo.push_back(descriptorInfo);
         }
 
@@ -122,7 +126,8 @@ const std::map<int, std::vector<DescriptorInfo>>& ShaderModule::getDescriptorSet
 
 
 
-ShaderStages::ShaderStages(std::vector<ShaderModulePtr>& shaderModules) : shaderModules(shaderModules) {
+ShaderStages::ShaderStages(
+        Device* device, std::vector<ShaderModulePtr>& shaderModules) : device(device), shaderModules(shaderModules) {
     vkShaderStages.reserve(shaderModules.size());
     for (ShaderModulePtr& shaderModule : shaderModules) {
         VkPipelineShaderStageCreateInfo shaderStageCreateInfo = {};
@@ -142,6 +147,39 @@ ShaderStages::ShaderStages(std::vector<ShaderModulePtr>& shaderModules) : shader
 
         mergeDescriptorSetsInfo(shaderModule->getDescriptorSetsInfo());
     }
+}
+
+ShaderStages::ShaderStages(
+        Device* device, std::vector<ShaderModulePtr>& shaderModules, const std::vector<std::string>& functionNames)
+        : device(device), shaderModules(shaderModules) {
+    vkShaderStages.reserve(shaderModules.size());
+    for (size_t i = 0; i < shaderModules.size(); i++) {
+        ShaderModulePtr& shaderModule = shaderModules.at(i);
+        VkPipelineShaderStageCreateInfo shaderStageCreateInfo = {};
+        shaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        shaderStageCreateInfo.stage = VkShaderStageFlagBits(shaderModule->getShaderModuleType());
+        shaderStageCreateInfo.module = shaderModule->getVkShaderModule();
+        shaderStageCreateInfo.pName = functionNames.at(i).c_str();
+        shaderStageCreateInfo.pSpecializationInfo = nullptr;
+        vkShaderStages.push_back(shaderStageCreateInfo);
+
+        if (shaderModule->getShaderModuleType() == ShaderModuleType::VERTEX) {
+            vertexShaderModule = shaderModule;
+            for (const InterfaceVariableDescriptor& varDesc : vertexShaderModule->getInputVariableDescriptors()) {
+                inputVariableNameMap.insert(std::make_pair(varDesc.name, varDesc.location));
+            }
+        }
+
+        mergeDescriptorSetsInfo(shaderModule->getDescriptorSetsInfo());
+    }
+    createDescriptorSetLayouts();
+}
+
+ShaderStages::~ShaderStages() {
+    for (VkDescriptorSetLayout& descriptorSetLayout : descriptorSetLayouts) {
+        vkDestroyDescriptorSetLayout(device->getVkDevice(), descriptorSetLayout, nullptr);
+    }
+    descriptorSetLayouts.clear();
 }
 
 void ShaderStages::mergeDescriptorSetsInfo(const std::map<int, std::vector<DescriptorInfo>>& newDescriptorSetsInfo) {
@@ -164,6 +202,7 @@ void ShaderStages::mergeDescriptorSetsInfo(const std::map<int, std::vector<Descr
                             std::string() + "Error in ShaderStages::mergeDescriptorSetsInfo: Attempted to merge "
                             + "incompatible descriptors \"" + it->second.name + "\" and \"" + descInfo.name + "\"!");
                 }
+                it->second.shaderStageFlags |= descInfo.shaderStageFlags;
             }
         }
 
@@ -172,6 +211,41 @@ void ShaderStages::mergeDescriptorSetsInfo(const std::map<int, std::vector<Descr
         for (const auto& it : descriptorsInfoMap) {
             descriptorsInfo.push_back(it.second);
         }
+    }
+    createDescriptorSetLayouts();
+}
+
+void ShaderStages::createDescriptorSetLayouts() {
+    descriptorSetLayouts.resize(descriptorSetsInfo.size());
+
+    size_t i = 0;
+    for (auto& entry : descriptorSetsInfo) {
+        VkDescriptorSetLayout& descriptorSetLayout = descriptorSetLayouts.at(i);
+
+        std::vector<VkDescriptorSetLayoutBinding> bindings(entry.second.size());
+        for (size_t j = 0; j < entry.second.size(); j++) {
+            VkDescriptorSetLayoutBinding& binding = bindings.at(j);
+            DescriptorInfo& descriptorInfo = entry.second.at(j);
+            binding.binding = descriptorInfo.binding;
+            binding.descriptorCount = descriptorInfo.count;
+            binding.descriptorType = descriptorInfo.type;
+            binding.pImmutableSamplers = nullptr;
+            binding.stageFlags = descriptorInfo.shaderStageFlags;
+        }
+
+        VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo{};
+        descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        descriptorSetLayoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+        descriptorSetLayoutInfo.pBindings = bindings.data();
+
+        if (vkCreateDescriptorSetLayout(
+                device->getVkDevice(), &descriptorSetLayoutInfo, nullptr,
+                &descriptorSetLayout) != VK_SUCCESS) {
+            Logfile::get()->throwError(
+                    "Error in GraphicsPipeline::GraphicsPipeline: Failed to create descriptor set layout!");
+        }
+
+        i++;
     }
 }
 
@@ -200,6 +274,36 @@ int ShaderStages::getInputVariableLocation(const std::string& varName) const {
     }
 
     return it->second;
+}
+
+const InterfaceVariableDescriptor& ShaderStages::getInputVariableDescriptorFromLocation(uint32_t location) {
+    if (!vertexShaderModule) {
+        sgl::Logfile::get()->throwError(
+                "Error in ShaderStages::getInputVariableDescriptorFromLocation: No vertex shader exists!");
+    }
+
+    for (const InterfaceVariableDescriptor& descriptor : vertexShaderModule->getInputVariableDescriptors()) {
+        if (location == descriptor.location) {
+            return descriptor;
+        }
+    }
+    sgl::Logfile::get()->throwError(
+            "Error in ShaderStages::getInputVariableDescriptorFromLocation: Location not found!");
+}
+
+const InterfaceVariableDescriptor& ShaderStages::getInputVariableDescriptorFromName(const std::string& name) {
+    if (!vertexShaderModule) {
+        sgl::Logfile::get()->throwError(
+                "Error in ShaderStages::getInputVariableDescriptorFromName: No vertex shader exists!");
+    }
+
+    for (const InterfaceVariableDescriptor& descriptor : vertexShaderModule->getInputVariableDescriptors()) {
+        if (name == descriptor.name) {
+            return descriptor;
+        }
+    }
+    sgl::Logfile::get()->throwError(
+            "Error in ShaderStages::getInputVariableDescriptorFromName: Location not found!");
 }
 
 const std::map<int, std::vector<DescriptorInfo>>& ShaderStages::getDescriptorSetsInfo() const {

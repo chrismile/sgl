@@ -55,12 +55,16 @@ SciVisApp::SciVisApp(float fovy)
     saveDirectoryCameraPaths = sgl::AppSettings::get()->getDataDirectory() + "CameraPaths/";
 
     // https://www.khronos.org/registry/OpenGL/extensions/NVX/NVX_gpu_memory_info.txt
-    GLint gpuInitialFreeMemKilobytes = 0;
-    if (usePerformanceMeasurementMode
-        && sgl::SystemGL::get()->isGLExtensionAvailable("GL_NVX_gpu_memory_info")) {
-        glGetIntegerv(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &gpuInitialFreeMemKilobytes);
+#ifdef SUPPORT_OPENGL
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
+        GLint gpuInitialFreeMemKilobytes = 0;
+        if (usePerformanceMeasurementMode
+            && sgl::SystemGL::get()->isGLExtensionAvailable("GL_NVX_gpu_memory_info")) {
+            glGetIntegerv(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &gpuInitialFreeMemKilobytes);
+        }
+        glEnable(GL_CULL_FACE);
     }
-    glEnable(GL_CULL_FACE);
+#endif
 
     sgl::FileUtils::get()->ensureDirectoryExists(saveDirectoryScreenshots);
     sgl::FileUtils::get()->ensureDirectoryExists(saveDirectoryVideos);
@@ -113,31 +117,42 @@ void SciVisApp::createSceneFramebuffer() {
     int width = window->getWidth();
     int height = window->getHeight();
 
+#ifdef SUPPORT_OPENGL
     // Buffers for off-screen rendering
-    sceneFramebuffer = sgl::Renderer->createFBO();
-    sgl::TextureSettings textureSettings;
-    if (useLinearRGB) {
-        textureSettings.internalFormat = GL_RGBA16;
-    } else {
-        textureSettings.internalFormat = GL_RGBA8; // GL_RGBA8 For i965 driver to accept image load/store (legacy)
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
+        sceneFramebuffer = sgl::Renderer->createFBO();
+        sgl::TextureSettings textureSettings;
+        if (useLinearRGB) {
+            textureSettings.internalFormat = GL_RGBA16;
+        } else {
+            textureSettings.internalFormat = GL_RGBA8; // GL_RGBA8 For i965 driver to accept image load/store (legacy)
+        }
+        textureSettings.pixelType = GL_UNSIGNED_BYTE;
+        textureSettings.pixelFormat = GL_RGB;
+        sceneTexture = sgl::TextureManager->createEmptyTexture(width, height, textureSettings);
+        sceneFramebuffer->bindTexture(sceneTexture);
+        sceneDepthRBO = sgl::Renderer->createRBO(width, height, sceneDepthRBOType);
+        sceneFramebuffer->bindRenderbuffer(sceneDepthRBO, sgl::DEPTH_STENCIL_ATTACHMENT);
     }
-    textureSettings.pixelType = GL_UNSIGNED_BYTE;
-    textureSettings.pixelFormat = GL_RGB;
-    sceneTexture = sgl::TextureManager->createEmptyTexture(width, height, textureSettings);
-    sceneFramebuffer->bindTexture(sceneTexture);
-    sceneDepthRBO = sgl::Renderer->createRBO(width, height, sceneDepthRBOType);
-    sceneFramebuffer->bindRenderbuffer(sceneDepthRBO, sgl::DEPTH_STENCIL_ATTACHMENT);
+#endif
 }
 
 void SciVisApp::resolutionChanged(sgl::EventPtr event) {
-    sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
-    int width = window->getWidth();
-    int height = window->getHeight();
-    glViewport(0, 0, width, height);
-    windowResolution = glm::ivec2(width, height);
+#ifdef SUPPORT_OPENGL
+    // Buffers for off-screen rendering
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
+        sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
+        int width = window->getWidth();
+        int height = window->getHeight();
+        glViewport(0, 0, width, height);
+        windowResolution = glm::ivec2(width, height);
+    }
+#endif
 
     // Buffers for off-screen rendering
     createSceneFramebuffer();
+
+    sgl::ImGuiWrapper::get()->onResolutionChanged();
 
     camera->onResolutionChanged(event);
     reRender = true;
@@ -149,7 +164,13 @@ void SciVisApp::saveScreenshot(const std::string &filename) {
     int height = window->getHeight();
 
     sgl::BitmapPtr bitmap(new sgl::Bitmap(width, height, 32));
-    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, bitmap->getPixels());
+
+#ifdef SUPPORT_OPENGL
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
+        glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, bitmap->getPixels());
+    }
+#endif
+
     bitmap->savePNG(filename.c_str(), true);
     screenshot = false;
 }
@@ -171,40 +192,80 @@ void SciVisApp::preRender() {
     sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
     int width = window->getWidth();
     int height = window->getHeight();
-    glViewport(0, 0, width, height);
+#ifdef SUPPORT_OPENGL
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
+        glViewport(0, 0, width, height);
+    }
+#endif
 
     // Set appropriate background alpha value.
     if (screenshot && screenshotTransparentBackground) {
         reRender = true;
         clearColor.setA(0);
-        glDisable(GL_BLEND);
+#ifdef SUPPORT_OPENGL
+        if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
+            glDisable(GL_BLEND);
+        }
+#endif
     }
 }
 
 void SciVisApp::prepareReRender() {
-    sgl::Renderer->bindFBO(sceneFramebuffer);
-    sgl::Renderer->clearFramebuffer(
-            GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT, clearColor);
+#ifdef SUPPORT_OPENGL
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
+        sgl::Renderer->bindFBO(sceneFramebuffer);
+        sgl::Renderer->clearFramebuffer(
+                GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT, clearColor);
 
-    sgl::Renderer->setProjectionMatrix(camera->getProjectionMatrix());
-    sgl::Renderer->setViewMatrix(camera->getViewMatrix());
-    sgl::Renderer->setModelMatrix(sgl::matrixIdentity());
+        sgl::Renderer->setProjectionMatrix(camera->getProjectionMatrix());
+        sgl::Renderer->setViewMatrix(camera->getViewMatrix());
+        sgl::Renderer->setModelMatrix(sgl::matrixIdentity());
 
-    glEnable(GL_DEPTH_TEST);
-    if (!screenshotTransparentBackground) {
-        glBlendEquation(GL_FUNC_ADD);
-        glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
+        glEnable(GL_DEPTH_TEST);
+        if (!screenshotTransparentBackground) {
+            glBlendEquation(GL_FUNC_ADD);
+            glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
+        }
     }
+#endif
 }
 
 void SciVisApp::postRender() {
-    // Render to screen
-    sgl::Renderer->unbindFBO();
-    sgl::Renderer->setProjectionMatrix(sgl::matrixIdentity());
-    sgl::Renderer->setViewMatrix(sgl::matrixIdentity());
-    sgl::Renderer->setModelMatrix(sgl::matrixIdentity());
+#ifdef SUPPORT_OPENGL
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
+        // Render to screen
+        sgl::Renderer->unbindFBO();
+        sgl::Renderer->setProjectionMatrix(sgl::matrixIdentity());
+        sgl::Renderer->setViewMatrix(sgl::matrixIdentity());
+        sgl::Renderer->setModelMatrix(sgl::matrixIdentity());
 
-    if (screenshot && screenshotTransparentBackground) {
+        if (screenshot && screenshotTransparentBackground) {
+            if (useLinearRGB) {
+                sgl::Renderer->blitTexture(
+                        sceneTexture, sgl::AABB2(glm::vec2(-1.0f, -1.0f), glm::vec2(1.0f, 1.0f)),
+                        gammaCorrectionShader);
+            } else {
+                sgl::Renderer->blitTexture(
+                        sceneTexture, sgl::AABB2(glm::vec2(-1.0f, -1.0f), glm::vec2(1.0f, 1.0f)));
+            }
+
+            if (!uiOnScreenshot) {
+                printNow = true;
+                saveScreenshot(
+                        saveDirectoryScreenshots + saveFilenameScreenshots
+                        + "_" + sgl::toString(screenshotNumber++) + ".png");
+                printNow = false;
+            }
+
+            clearColor.setA(255);
+            glEnable(GL_BLEND);
+            glBlendEquation(GL_FUNC_ADD);
+            glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
+            reRender = true;
+        }
+        sgl::Renderer->clearFramebuffer(
+                GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT, clearColor);
+
         if (useLinearRGB) {
             sgl::Renderer->blitTexture(
                     sceneTexture, sgl::AABB2(glm::vec2(-1.0f, -1.0f), glm::vec2(1.0f, 1.0f)),
@@ -213,32 +274,8 @@ void SciVisApp::postRender() {
             sgl::Renderer->blitTexture(
                     sceneTexture, sgl::AABB2(glm::vec2(-1.0f, -1.0f), glm::vec2(1.0f, 1.0f)));
         }
-
-        if (!uiOnScreenshot) {
-            printNow = true;
-            saveScreenshot(
-                    saveDirectoryScreenshots + saveFilenameScreenshots
-                    + "_" + sgl::toString(screenshotNumber++) + ".png");
-            printNow = false;
-        }
-
-        clearColor.setA(255);
-        glEnable(GL_BLEND);
-        glBlendEquation(GL_FUNC_ADD);
-        glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
-        reRender = true;
     }
-    sgl::Renderer->clearFramebuffer(
-            GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT, clearColor);
-
-    if (useLinearRGB) {
-        sgl::Renderer->blitTexture(
-                sceneTexture, sgl::AABB2(glm::vec2(-1.0f, -1.0f), glm::vec2(1.0f, 1.0f)),
-                gammaCorrectionShader);
-    } else {
-        sgl::Renderer->blitTexture(
-                sceneTexture, sgl::AABB2(glm::vec2(-1.0f, -1.0f), glm::vec2(1.0f, 1.0f)));
-    }
+#endif
 
     if (!screenshotTransparentBackground && !uiOnScreenshot && screenshot) {
         printNow = true;

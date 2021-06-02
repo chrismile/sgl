@@ -30,6 +30,8 @@
 #define SGL_IMAGE_HPP
 
 #include <memory>
+#include <cmath>
+
 #include <vulkan/vulkan.h>
 #include "../libs/VMA/vk_mem_alloc.h"
 
@@ -53,6 +55,10 @@ struct DLL_OBJECT ImageSettings {
     VkSharingMode sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 };
 
+inline bool hasStencilComponent(VkFormat format) {
+    return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+}
+
 class DLL_OBJECT Image {
 public:
     Image(Device* device, ImageSettings imageSettings);
@@ -62,10 +68,32 @@ public:
             VmaAllocation imageAllocation, VmaAllocationInfo imageAllocationInfo);
     ~Image();
 
+    // Computes the recommended number of mip levels for a 2D texture of the specified size.
+    static uint32_t computeMipLevels(uint32_t width, uint32_t height) {
+        return static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
+    }
+
     inline VkImage getVkImage() { return image; }
     inline const ImageSettings& getImageSettings() { return imageSettings; }
 
+    /**
+     * Uploads the data to the GPU memory of the texture using a stating buffer.
+     * @param sizeInBytes The size of the data to upload in bytes.
+     * @param data A pointer to the data on the CPU.
+     * @param generateMipmaps Whether to generate mipmaps (if imageSettings.mipLevels > 1).
+     * NOTE: If generateMipmaps is true, VK_IMAGE_USAGE_TRANSFER_SRC_BIT must be specified in ImageSettings::usage.
+     * Please also note that using this command only really makes sense if the texture was created with the mode
+     * VMA_MEMORY_USAGE_GPU_ONLY.
+     */
+    void uploadData(VkDeviceSize sizeInBytes, void* data, bool generateMipmaps = true);
+
+    /// Transitions the image layout from the old
+    void transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout);
+
 private:
+    void _generateMipmaps();
+    void _copyBufferToImage(VkBuffer buffer);
+
     Device* device = nullptr;
     bool hasImageOwnership = true;
     ImageSettings imageSettings;
@@ -83,6 +111,9 @@ public:
             Device* device, ImagePtr image, VkImageView imageView,
             VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
     ~ImageView();
+
+    inline ImagePtr& getImage() { return image; }
+    inline VkImageView getVkImageView() { return imageView; }
 
 private:
     Device* device = nullptr;

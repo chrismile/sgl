@@ -29,12 +29,70 @@
 #ifndef SGL_RENDERER_HPP
 #define SGL_RENDERER_HPP
 
+#include <vector>
+#include <glm/mat4x4.hpp>
 #include <vulkan/vulkan.h>
+#include <Utils/CircularQueue.hpp>
+#include <Math/Geometry/MatrixUtil.hpp>
 
 namespace sgl { namespace vk {
 
-class DLL_OBJECT Renderer {
+class Buffer;
+typedef std::shared_ptr<Buffer> BufferPtr;
+class RasterData;
+typedef std::shared_ptr<RasterData> RasterDataPtr;
+class GraphicsPipeline;
+typedef std::shared_ptr<GraphicsPipeline> GraphicsPipelinePtr;
 
+class DLL_OBJECT Renderer {
+public:
+    Renderer(Device* device);
+    ~Renderer();
+
+    // Graphics pipeline.
+    void beginCommandBuffer();
+    VkCommandBuffer endCommandBuffer();
+    void render(RasterDataPtr rasterData);
+    void setModelMatrix(const glm::mat4 &matrix);
+    void setViewMatrix(const glm::mat4 &matrix);
+    void setProjectionMatrix(const glm::mat4 &matrix);
+
+    // Compute pipeline.
+    void dispatch(uint32_t x, uint32_t y, uint32_t z);
+
+    // Ray tracing pipeline.
+    // TODO
+
+private:
+    // TODO
+    Device* device;
+    VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
+
+    // Rasterizer state.
+    GraphicsPipelinePtr graphicsPipeline;
+    VkClearColorValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+    VkClearDepthStencilValue clearDepthStencil = { 1.0f, 0 };
+
+    // Global state.
+    void updateMatrixBlock();
+    struct MatrixBlock {
+        glm::mat4 mMatrix = matrixIdentity(); // Model matrix
+        glm::mat4 vMatrix = matrixIdentity(); // View matrix
+        glm::mat4 pMatrix = matrixIdentity(); // Projection matrix
+        glm::mat4 mvpMatrix = matrixIdentity(); // Model-view-projection matrix
+    };
+    bool matrixBlockNeedsUpdate = true;
+    MatrixBlock matrixBlock;
+    BufferPtr currentMatrixBlockBuffer;
+    VkDescriptorSet matrixBlockDescriptorSet;
+
+    // Some data needs to be stored per swapchain image.
+    struct FrameCache {
+        CircularQueue<BufferPtr> freeCameraMatrixBuffers;
+        CircularQueue<BufferPtr> allCameraMatrixBuffers;
+    };
+    std::vector<FrameCache> frameCaches;
+    size_t frameIndex = 0;
 };
 
 }}

@@ -41,7 +41,7 @@ namespace sgl {
 class Window;
 
 #ifdef SUPPORT_VULKAN
-namespace vk { class Instance; }
+namespace vk { class Instance; class Device; class Swapchain; }
 #endif
 
 // At the moment, only OpenGL and Vulkan are supported.
@@ -96,12 +96,21 @@ public:
     Window* createWindow();
     /// Only Vulkan supports headless rendering (without a window) for now.
     HeadlessData createHeadless();
+#ifdef SUPPORT_VULKAN
+    /// Set the primary device (used for, e.g., GUI rendering for ImGui).
+    inline void setPrimaryDevice(vk::Device* device) { primaryDevice = device; }
+    inline vk::Device* getPrimaryDevice() { return primaryDevice; }
+    /// Set the used swapchain.
+    inline void setSwapchain(vk::Swapchain* swapchain) { this->swapchain = swapchain; }
+    inline vk::Swapchain* getSwapchain() { return swapchain; }
+#endif
     void release();
 
     /// Called in main if GUI should be loaded.
     void setLoadGUI(
             const unsigned short* fontRangeData = nullptr, bool useDocking = true, bool useMultiViewport = true,
             float uiScaleFactor = 1.0f);
+    inline bool getUseGUI() const { return useGUI; }
 
     inline RenderSystem getRenderSystem() { return renderSystem; }
     inline OperatingSystem getOS() { return operatingSystem; }
@@ -131,6 +140,8 @@ private:
 
 #ifdef SUPPORT_VULKAN
     vk::Instance* instance = nullptr;
+    vk::Device* primaryDevice = nullptr;
+    vk::Swapchain* swapchain = nullptr;
 #endif
 
     // Where the application data is stored.

@@ -29,8 +29,20 @@
 #ifndef SGL_IMGUIWRAPPER_HPP
 #define SGL_IMGUIWRAPPER_HPP
 
+#include <vector>
 #include <Utils/Singleton.hpp>
 #include "imgui.h"
+
+#ifdef SUPPORT_VULKAN
+#include <vulkan/vulkan.h>
+
+namespace sgl { namespace vk {
+class ImageView;
+typedef std::shared_ptr<ImageView> ImageViewPtr;
+class Framebuffer;
+typedef std::shared_ptr<Framebuffer> FramebufferPtr;
+}}
+#endif
 
 union SDL_Event;
 
@@ -73,14 +85,28 @@ public:
     void renderStart();
     void renderEnd();
     void processSDLEvent(const SDL_Event &event);
+    void onResolutionChanged();
 
     void renderDemoWindow();
     void showHelpMarker(const char* desc);
+
+#ifdef SUPPORT_VULKAN
+    void setVkRenderTarget(vk::ImageViewPtr imageView);
+    std::vector<VkCommandBuffer>& getVkCommandBuffers() { return imguiCommandBuffers; }
+#endif
 
 private:
     float uiScaleFactor;
     float defaultUiScaleFactor = 1.875f;
     float sizeScale = 1.0f;
+
+#ifdef SUPPORT_VULKAN
+    VkDescriptorPool imguiDescriptorPool = VK_NULL_HANDLE;
+    VkCommandPool commandPool;
+    std::vector<VkCommandBuffer> imguiCommandBuffers;
+    vk::FramebufferPtr framebuffer;
+    vk::ImageViewPtr imageView;
+#endif
 };
 
 }

@@ -47,11 +47,39 @@ public:
             queueData = nullptr;
         }
     }
+
+    CircularQueue(const CircularQueue& other) {
+        this->startPointer = other.startPointer;
+        this->endPointer = other.endPointer;
+        this->queueCapacity = other.queueCapacity;
+        this->queueSize = other.queueSize;
+
+        this->queueData = new T[this->queueCapacity];
+        for (size_t i = 0; i < queueSize; i++) {
+            size_t arrayPos = (i + startPointer) % queueCapacity;
+            this->queueData[arrayPos] = other.queueData[arrayPos];
+        }
+    }
+
     ~CircularQueue() {
         delete[] queueData;
     }
 
-    void enqueue(const T& data) {
+    void operator=(const CircularQueue& other) {
+        this->startPointer = other.startPointer;
+        this->endPointer = other.endPointer;
+        this->queueCapacity = other.queueCapacity;
+        this->queueSize = other.queueSize;
+
+        // Create a shallow copy.
+        this->queueData = new T[this->queueCapacity];
+        for (size_t i = 0; i < queueSize; i++) {
+            size_t arrayPos = (i + startPointer) % queueCapacity;
+            this->queueData[arrayPos] = other.queueData[arrayPos];
+        }
+    }
+
+    void push_back(const T& data) {
         if (queueSize == queueCapacity) {
             resize(queueCapacity == 0 ? 4 : queueCapacity * 2);
         }
@@ -60,7 +88,7 @@ public:
         endPointer = (endPointer + 1) % queueCapacity;
         queueSize++;
     }
-    T popFront() {
+    T pop_front() {
         assert(queueSize > 0);
         T data = queueData[startPointer];
         startPointer = (startPointer + 1) % queueCapacity;
@@ -68,16 +96,16 @@ public:
         return data;
     }
 
-    inline size_t isEmpty() { return queueSize == 0; }
-    inline size_t getSize() { return queueSize; }
-    inline size_t getCapacity() { return queueCapacity; }
+    inline size_t is_empty() { return queueSize == 0; }
+    inline size_t size() { return queueSize; }
+    inline size_t capacity() { return queueCapacity; }
 
     void resize(size_t newCapacity) {
         // Copy data to larger array.
         T *newData = new T[newCapacity];
         int readIdx = startPointer;
         int writeIdx = 0;
-        for (int i = 0; i < queueSize; i++) {
+        for (size_t i = 0; i < queueSize; i++) {
             newData[writeIdx] = queueData[readIdx];
             readIdx = (readIdx + 1) % queueCapacity;
             writeIdx++;

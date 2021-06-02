@@ -26,10 +26,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "AppLogic.hpp"
 #include <Utils/File/Logfile.hpp>
 #include <Utils/Timer.hpp>
 #include <Graphics/Window.hpp>
+#include <ImGui/ImGuiWrapper.hpp>
 #include <Utils/AppSettings.hpp>
 #include <Utils/Events/EventManager.hpp>
 #include <Input/Mouse.hpp>
@@ -39,6 +39,12 @@
 #include <Utils/File/FileUtils.hpp>
 #include <Graphics/Renderer.hpp>
 #include <string>
+
+#ifdef SUPPORT_VULKAN
+#include "Graphics/Vulkan/Utils/Swapchain.hpp"
+#endif
+
+#include "AppLogic.hpp"
 
 namespace sgl {
 
@@ -51,6 +57,9 @@ AppLogic::AppLogic() : framerateSmoother(16)
     fpsCounterUpdateFrequency = uint64_t(1e6);
     printFPS = true;
     fps = 60.0f;
+
+    Window *window = AppSettings::get()->getMainWindow();
+    window->setEventHandler([this](const SDL_Event &event) { this->processSDLEvent(event); });
 }
 
 AppLogic::~AppLogic()
@@ -96,7 +105,7 @@ void AppLogic::run()
             accumulatedTimeFixed -= fixedFPSInMicroSeconds;
         } while(Timer->getFixedPhysicsFPSEnabled() && int64_t(accumulatedTimeFixed) >= fixedFPSInMicroSeconds);
 
-        running = window->processEvents([this](const SDL_Event &event) { this->processSDLEvent(event); });
+        running = window->processEvents();
 
         //float dt = Timer->getElapsedSeconds();
         framerateSmoother.addSample(1.0f/Timer->getElapsedSeconds());
@@ -112,8 +121,30 @@ void AppLogic::run()
             break;
         }
 
-        window->clear(Color(0, 0, 0));
+        if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
+            window->clear(Color(0, 0, 0));
+        }
+#ifdef SUPPORT_VULKAN
+        if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+            sgl::vk::Swapchain* swapchain = sgl::AppSettings::get()->getSwapchain();
+            if (swapchain) {
+                sgl::AppSettings::get()->getSwapchain()->beginFrame();
+            }
+        }
+#endif
+        if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+            commandBuffers.clear();
+        }
         render();
+        if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+            sgl::vk::Swapchain* swapchain = sgl::AppSettings::get()->getSwapchain();
+            if (swapchain) {
+                if (AppSettings::get()->getUseGUI()) {
+                    commandBuffers.push_back(ImGuiWrapper::get()->getVkCommandBuffers().at(swapchain->getImageIndex()));
+                }
+                sgl::AppSettings::get()->getSwapchain()->renderFrame(commandBuffers);
+            }
+        }
 
         if (uint64_t(abs((int64_t)fpsTimer - (int64_t)Timer->getTicksMicroseconds())) > fpsCounterUpdateFrequency) {
             fps = 1.0f/dt;//Timer->getElapsedSeconds();
@@ -124,15 +155,19 @@ void AppLogic::run()
         }
 
         // Check for errors
-        Renderer->errorCheck();
+        if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
+            Renderer->errorCheck();
+        }
         window->errorCheck();
 
-        // Save a screenshot before flipping the backbuffer surfaces if necessary
-        if (screenshot) {
-            makeScreenshot();
+        if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
+            // Save a screenshot before flipping the backbuffer surfaces if necessary
+            if (screenshot) {
+                makeScreenshot();
+            }
+            Timer->waitForFPSLimit();
+            window->flip();
         }
-        Timer->waitForFPSLimit();
-        window->flip();
     }
 
     Logfile::get()->write("INFO: End of main loop.", BLUE);

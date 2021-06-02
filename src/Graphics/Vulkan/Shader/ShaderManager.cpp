@@ -155,7 +155,7 @@ ShaderStagesPtr ShaderManager::createShaderStages(const std::vector<std::string>
     }
     dumpTextDebugStatic = false;
 
-    ShaderStagesPtr shaderProgram(new ShaderStages(shaderModules));
+    ShaderStagesPtr shaderProgram(new ShaderStages(device, shaderModules));
     return shaderProgram;
 }
 

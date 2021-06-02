@@ -64,13 +64,17 @@ public:
     void renderFrame(std::vector<VkCommandBuffer>& commandBuffers);
 
     inline size_t getNumImages() { return swapchainImageViews.size(); }
+    inline uint32_t getMinImageCount() { return minImageCount; }
     inline std::vector<ImageViewPtr>& getSwapchainImageViews() { return swapchainImageViews; }
+    inline const VkExtent2D& getSwapchainExtent() const { return swapchainExtent; }
+    inline size_t getCurrentFrame() const { return currentFrame; }
+    inline uint32_t getImageIndex() const { return imageIndex; }
 
 private:
     void recreateSwapchain();
-    void createSyncObjects();
     void createSwapchainImages();
     void createSwapchainImageViews();
+    void createSyncObjects();
 
     /// Only cleans up resources that are reallocated by @see recreate.
     void cleanupRecreate();
@@ -94,7 +98,11 @@ private:
     const int MAX_FRAMES_IN_FLIGHT = 2;
     size_t currentFrame = 0;
     uint32_t imageIndex = 0;
+    uint32_t minImageCount = 0;
     bool framebufferResized = false;
+
+    // Only call @see createSyncObjects the first time the swapchain is created.
+    bool createFirstTime = true;
 
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;

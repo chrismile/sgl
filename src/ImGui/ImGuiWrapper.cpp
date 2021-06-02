@@ -28,6 +28,7 @@
 
 #include <iostream>
 #include <Utils/AppSettings.hpp>
+#include <Utils/File/Logfile.hpp>
 #include <SDL/SDLWindow.hpp>
 #include <SDL/HiDPI.hpp>
 #include <Graphics/OpenGL/SystemGL.hpp>
@@ -38,12 +39,22 @@
 #endif
 #ifdef SUPPORT_VULKAN
 #include "imgui_impl_vulkan.h"
+#include "Graphics/Vulkan/Utils/Instance.hpp"
+#include "Graphics/Vulkan/Utils/Device.hpp"
+#include "Graphics/Vulkan/Utils/Swapchain.hpp"
+#include "Graphics/Vulkan/Image/Image.hpp"
 #endif
 #include "imgui_impl_sdl.h"
 #include "ImGuiWrapper.hpp"
 
 namespace sgl
 {
+
+static void checkImGuiVkResult(VkResult result) {
+    if (result != VK_SUCCESS) {
+        Logfile::get()->throwError("Error in checkImGuiVkResult: result = " + std::to_string(result));
+    }
+}
 
 void ImGuiWrapper::initialize(
         const ImWchar* fontRangesData, bool useDocking, bool useMultiViewport, float uiScaleFactor) {
@@ -73,21 +84,73 @@ void ImGuiWrapper::initialize(
         SDLWindow *window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
         SDL_GLContext context = window->getGLContext();
         ImGui_ImplSDL2_InitForOpenGL(window->getSDLWindow(), context);
-        const char* glsl_version = "#version 430";
+        const char* glslVersion = "#version 430";
         if (!SystemGL::get()->openglVersionMinimum(4,3)) {
-            glsl_version = NULL; // Use standard
+            glslVersion = nullptr; // Use standard
         }
-        ImGui_ImplOpenGL3_Init(glsl_version);
+        ImGui_ImplOpenGL3_Init(glslVersion);
     }
 #endif
 #ifdef SUPPORT_VULKAN
     if (renderSystem == RenderSystem::VULKAN) {
-        // TODO
-        ImGui_ImplVulkan_InitInfo initInfo{};
-        //initInfo.Instance = ;
+        SDLWindow *window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
+        vk::Instance* instance = AppSettings::get()->getVulkanInstance();
+        vk::Device* device = AppSettings::get()->getPrimaryDevice();
+        vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
 
-        VkRenderPass renderPass;
-        ImGui_ImplVulkan_Init(&initInfo, renderPass);
+        VkDescriptorPoolSize poolSizes[] = {
+                { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+                { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+                { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+                { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+                { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+                { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+                { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+                { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+                { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+                { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+                { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+        };
+        VkDescriptorPoolCreateInfo poolInfo = {};
+        poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+        poolInfo.maxSets = 1000 * IM_ARRAYSIZE(poolSizes);
+        poolInfo.poolSizeCount = (uint32_t)IM_ARRAYSIZE(poolSizes);
+        poolInfo.pPoolSizes = poolSizes;
+        VkResult result = vkCreateDescriptorPool(
+                device->getVkDevice(), &poolInfo, nullptr, &imguiDescriptorPool);
+        if (result != VK_SUCCESS) {
+            Logfile::get()->throwError("Error in ImGuiWrapper::initialize: vkCreateDescriptorPool failed.");
+        }
+
+        ImGui_ImplSDL2_InitForVulkan(window->getSDLWindow());
+
+        ImGui_ImplVulkan_InitInfo initInfo{};
+        initInfo.Instance = instance->getVkInstance();
+        initInfo.Device = device->getVkDevice();
+        initInfo.PhysicalDevice = device->getVkPhysicalDevice();
+        initInfo.QueueFamily = device->getGraphicsQueueIndex();
+        initInfo.Queue = device->getGraphicsQueue();
+        initInfo.PipelineCache = VK_NULL_HANDLE;
+        initInfo.DescriptorPool = imguiDescriptorPool;
+        initInfo.MinImageCount = swapchain->getMinImageCount();
+        initInfo.ImageCount = swapchain->getNumImages();
+        initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+        initInfo.Allocator = nullptr;
+        initInfo.CheckVkResultFn = checkImGuiVkResult;
+
+        onResolutionChanged();
+        ImGui_ImplVulkan_Init(&initInfo, framebuffer->getVkRenderPass());
+
+        VkCommandBuffer commandBuffer = device->beginSingleTimeCommands();
+        ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
+        device->endSingleTimeCommands(commandBuffer);
+        ImGui_ImplVulkan_DestroyFontUploadObjects();
+
+        vk::CommandPoolType commandPoolType;
+        commandPoolType.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        imguiCommandBuffers = device->allocateCommandBuffers(
+                commandPoolType, &commandPool, uint32_t(swapchain->getNumImages()));
     }
 #endif
 
@@ -121,7 +184,10 @@ void ImGuiWrapper::initialize(
     //std::string fontFilename = sgl::AppSettings::get()->getDataDirectory() + "Fonts/DroidSansFallback.ttf";
     ImFont *fontTest = io.Fonts->AddFontFromFileTTF(
             fontFilename.c_str(), 16.0f*fontScaleFactor, nullptr, fontRanges.Data);
-    assert(fontTest != nullptr);
+    if (fontTest == nullptr) {
+        Logfile::get()->throwError(
+                "Error in ImGuiWrapper::initialize: Could not load font from file \"" + fontFilename + "\".");
+    }
     io.Fonts->Build();
 }
 
@@ -134,16 +200,32 @@ void ImGuiWrapper::shutdown() {
 #endif
 #ifdef SUPPORT_VULKAN
     if (renderSystem == RenderSystem::VULKAN) {
+        vk::Device* device = AppSettings::get()->getPrimaryDevice();
+        vkDestroyDescriptorPool(device->getVkDevice(), imguiDescriptorPool, nullptr);
         ImGui_ImplVulkan_Shutdown();
+        vkFreeCommandBuffers(
+                device->getVkDevice(), commandPool,
+                imguiCommandBuffers.size(), imguiCommandBuffers.data());
     }
 #endif
-    ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
 }
 
 void ImGuiWrapper::processSDLEvent(const SDL_Event &event) {
     ImGui_ImplSDL2_ProcessEvent(&event);
+
+}
+
+void ImGuiWrapper::onResolutionChanged() {
+#ifdef SUPPORT_VULKAN
+    vk::Device* device = AppSettings::get()->getPrimaryDevice();
+    Window* window = AppSettings::get()->getMainWindow();
+    framebuffer = vk::FramebufferPtr(new vk::Framebuffer(device, window->getWidth(), window->getHeight()));
+    vk::AttachmentState attachmentState;
+    attachmentState.initialLayout = attachmentState.finalLayout;
+    framebuffer->setColorAttachment(imageView, 0, attachmentState);
+#endif
 }
 
 void ImGuiWrapper::renderStart() {
@@ -176,10 +258,22 @@ void ImGuiWrapper::renderEnd() {
 #endif
 #ifdef SUPPORT_VULKAN
     if (renderSystem == RenderSystem::VULKAN) {
-        // TODO
-        VkCommandBuffer commandBuffer;
-        //commandBuffer = vk::Renderer->getFrameCommandBuffer();
+        vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
+        VkCommandBuffer commandBuffer = imguiCommandBuffers.at(swapchain->getImageIndex());
+
+        VkRenderPassBeginInfo renderPassBeginInfo = {};
+        renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        renderPassBeginInfo.renderPass = framebuffer->getVkRenderPass();
+        renderPassBeginInfo.framebuffer = framebuffer->getVkFramebuffer();
+        renderPassBeginInfo.renderArea.extent = framebuffer->getExtent2D();
+        renderPassBeginInfo.clearValueCount = 0;
+        renderPassBeginInfo.pClearValues = nullptr;
+        vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
+
+        vkCmdEndRenderPass(commandBuffer);
+        vkEndCommandBuffer(commandBuffer);
     }
 #endif
 

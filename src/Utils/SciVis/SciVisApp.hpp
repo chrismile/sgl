@@ -83,12 +83,14 @@ protected:
     sgl::CameraPtr camera;
     bool screenshotTransparentBackground = false;
 
+#ifdef SUPPORT_OPENGL
     // Off-screen rendering
     sgl::FramebufferObjectPtr sceneFramebuffer;
     sgl::TexturePtr sceneTexture;
     RenderbufferType sceneDepthRBOType = sgl::RBO_DEPTH24_STENCIL8;
     sgl::RenderbufferObjectPtr sceneDepthRBO;
     sgl::ShaderProgramPtr gammaCorrectionShader;
+#endif
 
     /// Scene data used in user interface.
     bool showSettingsWindow = true;

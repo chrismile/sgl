@@ -295,7 +295,13 @@ void SDLWindow::update()
 {
 }
 
-bool SDLWindow::processEvents(std::function<void(const SDL_Event&)> eventHandler)
+void SDLWindow::setEventHandler(std::function<void(const SDL_Event&)> eventHandler)
+{
+    this->eventHandler = eventHandler;
+    eventHandlerSet = true;
+}
+
+bool SDLWindow::processEvents()
 {
     SDL_PumpEvents();
 
@@ -351,7 +357,9 @@ bool SDLWindow::processEvents(std::function<void(const SDL_Event&)> eventHandler
             sdlMouse->setScrollWheelValue(event.wheel.y);
             break;
         }
-        eventHandler(event);
+        if (eventHandlerSet) {
+            eventHandler(event);
+        }
     }
 
     if (isFirstFrame) {

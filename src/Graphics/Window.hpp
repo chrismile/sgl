@@ -46,6 +46,7 @@ union SDL_Event;
 namespace sgl {
 
 const uint32_t RESOLUTION_CHANGED_EVENT = 74561634U;
+const uint32_t SWAPCHAIN_RECREATED_EVENT = 74561635U;
 
 /**
  * If one of the modes is not available, the next lower one is used.
@@ -123,8 +124,9 @@ public:
 
     //! Update the window
     virtual void update()=0;
+    virtual void setEventHandler(std::function<void(const SDL_Event&)> eventHandler)=0;
     //! Returns false if the game should quit
-    virtual bool processEvents(std::function<void(const SDL_Event&)> eventHandler)=0;
+    virtual bool processEvents()=0;
     virtual void clear(const Color &color = Color(0, 0, 0))=0;
     virtual void flip()=0;
 

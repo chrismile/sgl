@@ -53,8 +53,15 @@ public:
             bool queueExclusive = true);
     ~Buffer();
 
+    inline VkBuffer getVkBuffer() { return buffer; }
+    inline size_t getSizeInBytes() const { return sizeInBytes; }
+
+    void* mapMemory();
+    void unmapMemory();
+
 private:
     Device* device = nullptr;
+    size_t sizeInBytes = 0;
     VkBuffer buffer;
     VmaAllocation bufferAllocation;
     VmaAllocationInfo bufferAllocationInfo;

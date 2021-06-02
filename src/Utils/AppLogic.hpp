@@ -33,6 +33,10 @@
 #include <memory>
 #include <SDL2/SDL.h>
 
+#ifdef SUPPORT_VULKAN
+#include <vulkan/vulkan.h>
+#endif
+
 #include "Utils/FramerateSmoother.hpp"
 
 namespace sgl {
@@ -66,11 +70,14 @@ protected:
     float fps;
     FramerateSmoother framerateSmoother;
 
+#ifdef SUPPORT_VULKAN
+    std::vector<VkCommandBuffer> commandBuffers;
+#endif
+
 private:
     bool running;
     uint64_t fpsCounterUpdateFrequency;
     bool printFPS;
-
 };
 
 }

@@ -34,7 +34,6 @@
 
 #ifdef SUPPORT_VULKAN
 #include <SDL2/SDL_vulkan.h>
-namespace sgl { namespace vk { class Swapchain; } }
 #endif
 
 namespace sgl {
@@ -64,8 +63,9 @@ public:
 
     //! Update the window
     virtual void update();
+    virtual void setEventHandler(std::function<void(const SDL_Event&)> eventHandler);
     //! Returns false if the game should quit
-    virtual bool processEvents(std::function<void(const SDL_Event&)> eventHandler);
+    virtual bool processEvents();
     virtual void clear(const Color &color = Color(0, 0, 0));
     virtual void flip();
 
@@ -91,6 +91,9 @@ private:
     RenderSystem renderSystem;
     WindowSettings windowSettings;
 
+    bool eventHandlerSet = false;
+    std::function<void(const SDL_Event&)> eventHandler;
+
     //! For toggle fullscreen: Resolution before going fullscreen
     SDL_DisplayMode oldDisplayMode;
     bool isFirstFrame = true;
@@ -103,7 +106,6 @@ private:
 
 #ifdef SUPPORT_VULKAN
     VkSurfaceKHR windowSurface;
-    vk::Swapchain* swapchain;
 #endif
 };
 

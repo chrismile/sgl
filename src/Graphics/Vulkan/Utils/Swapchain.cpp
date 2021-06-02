@@ -26,10 +26,14 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <set>
+
+#include <Utils/File/Logfile.hpp>
+#include <Utils/Events/EventManager.hpp>
+
 #include <Graphics/Window.hpp>
 #include <SDL/SDLWindow.hpp>
-#include <Utils/File/Logfile.hpp>
-#include <set>
+
 #include "Device.hpp"
 #include "Swapchain.hpp"
 
@@ -73,6 +77,7 @@ void Swapchain::create(Window* window) {
     if (maxImageCount > 0 && imageCount > maxImageCount) {
         imageCount = swapchainSupportInfo.capabilities.maxImageCount;
     }
+    minImageCount = swapchainSupportInfo.capabilities.minImageCount;
 
     VkSwapchainCreateInfoKHR createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -100,6 +105,10 @@ void Swapchain::create(Window* window) {
 
     createSwapchainImages();
     createSwapchainImageViews();
+    if (createFirstTime) {
+        createSyncObjects();
+        createFirstTime = false;
+    }
 }
 
 void Swapchain::createSyncObjects() {
@@ -168,14 +177,15 @@ void Swapchain::recreateSwapchain() {
     SDL_Window* sdlWindowData = sdlWindow->getSDLWindow();
     while (windowWidth == 0 || windowHeight == 0) {
         SDL_Vulkan_GetDrawableSize(sdlWindowData, &windowWidth, &windowHeight);
-        // TODO -> use real callback
-        window->processEvents([](const SDL_Event&) {});
+        window->processEvents();
     }
 
     cleanupRecreate();
     create(window);
 
-    // TODO: Recreate framebuffer, pipeline, ...
+    // Recreate framebuffer, pipeline, ...
+    // For the moment, a resolution changed event is triggered to be compatible with OpenGL.
+    EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT))); // SWAPCHAIN_RECREATED_EVENT?
 }
 
 void Swapchain::beginFrame() {
@@ -212,7 +222,7 @@ void Swapchain::renderFrame(std::vector<VkCommandBuffer>& commandBuffers) {
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = waitSemaphores;
     submitInfo.pWaitDstStageMask = waitStages;
-    submitInfo.commandBufferCount = 1;
+    submitInfo.commandBufferCount = uint32_t(commandBuffers.size());
     submitInfo.pCommandBuffers = &commandBuffers[imageIndex];
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;

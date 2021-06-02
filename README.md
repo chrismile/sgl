@@ -36,3 +36,5 @@ Copyright (c) 2017-2021, Christoph Neuhauser
 
 BSD 3-Clause License (for more details see LICENSE file)
 
+Parts of the Vulkan code were created with the help of https://vulkan-tutorial.com/, who released their code under
+public domain.

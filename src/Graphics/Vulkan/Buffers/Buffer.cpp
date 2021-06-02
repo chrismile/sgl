@@ -28,6 +28,7 @@
 
 #include <stdexcept>
 
+#include <Utils/File/Logfile.hpp>
 #include "../Utils/Device.hpp"
 #include "Buffer.hpp"
 
@@ -35,7 +36,7 @@ namespace sgl { namespace vk {
 
 Buffer::Buffer(
         Device* device, size_t sizeInBytes, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
-        bool queueExclusive) : device(device) {
+        bool queueExclusive) : device(device), sizeInBytes(sizeInBytes) {
     VkBufferCreateInfo bufferCreateInfo{};
     bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferCreateInfo.size = sizeInBytes;
@@ -48,12 +49,22 @@ Buffer::Buffer(
     if (vmaCreateBuffer(
             device->getAllocator(), &bufferCreateInfo, &allocCreateInfo,
             &buffer, &bufferAllocation, &bufferAllocationInfo) != VK_SUCCESS) {
-        throw std::runtime_error("Error in Buffer::Buffer: Failed to create a buffer of the specified size!");
+        Logfile::get()->throwError("Error in Buffer::Buffer: Failed to create a buffer of the specified size!");
     }
 }
 
 Buffer::~Buffer() {
     vmaDestroyBuffer(device->getAllocator(), buffer, bufferAllocation);
+}
+
+void* Buffer::mapMemory() {
+    void* dataPointer = nullptr;
+    vmaMapMemory(device->getAllocator(), bufferAllocation, &dataPointer);
+    return dataPointer;
+}
+
+void Buffer::unmapMemory() {
+    vmaUnmapMemory(device->getAllocator(), bufferAllocation);
 }
 
 }}
