@@ -38,6 +38,8 @@
 namespace sgl { namespace vk {
 
 class Device;
+class Buffer;
+typedef std::shared_ptr<Buffer> BufferPtr;
 
 struct DLL_OBJECT ImageSettings {
     ImageSettings() {}
@@ -59,12 +61,15 @@ inline bool hasStencilComponent(VkFormat format) {
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
+class Image;
+typedef std::shared_ptr<Image> ImagePtr;
+
 class DLL_OBJECT Image {
 public:
-    Image(Device* device, ImageSettings imageSettings);
-    Image(Device* device, ImageSettings imageSettings, VkImage image, bool takeImageOwnership = true);
+    Image(Device* device, const ImageSettings& imageSettings);
+    Image(Device* device, const ImageSettings& imageSettings, VkImage image, bool takeImageOwnership = true);
     Image(
-            Device* device, ImageSettings imageSettings, VkImage image,
+            Device* device, const ImageSettings& imageSettings, VkImage image,
             VmaAllocation imageAllocation, VmaAllocationInfo imageAllocationInfo);
     ~Image();
 
@@ -87,22 +92,53 @@ public:
      */
     void uploadData(VkDeviceSize sizeInBytes, void* data, bool generateMipmaps = true);
 
-    /// Transitions the image layout from the old
+    /**
+     * Copies the content of a buffer to this image.
+     * @param buffer The copy source.
+     * @param commandBuffer The command buffer. If VK_NULL_HANDLE is specified, a transient command buffer is used and
+     * the function will wait with vkQueueWaitIdle for the command to finish on the GPU.
+     */
+    void copyBufferToImage(BufferPtr& buffer, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
+
+    /**
+     * Copies the content of the image to the specified buffer.
+     * @param buffer The copy destination.
+     * @param commandBuffer The command buffer. If VK_NULL_HANDLE is specified, a transient command buffer is used and
+     * the function will wait with vkQueueWaitIdle for the command to finish on the GPU.
+     */
+    void copyToBuffer(BufferPtr& buffer, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
+
+    /**
+     * Blits the content of this image to a destination image and performs format conversion if necessary.
+     * @param destImage The destination image.
+     * @param commandBuffer The command buffer. If VK_NULL_HANDLE is specified, a transient command buffer is used and
+     * the function will wait with vkQueueWaitIdle for the command to finish on the GPU.
+     */
+    void blit(ImagePtr& destImage, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
+
+    /// Transitions the image layout from the current layout to the new layout.
+    void transitionImageLayout(VkImageLayout newLayout);
+
+    /// Transitions the image layout from the old layout to the new layout.
     void transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout);
+
+    /// Transitions the image layout from the old layout to the new layout.
+    inline VkImageLayout getVkImageLayout() const { return imageLayout; }
+
+    void* mapMemory();
+    void unmapMemory();
 
 private:
     void _generateMipmaps();
-    void _copyBufferToImage(VkBuffer buffer);
 
     Device* device = nullptr;
     bool hasImageOwnership = true;
     ImageSettings imageSettings;
     VkImage image = nullptr;
+    VkImageLayout imageLayout;
     VmaAllocation imageAllocation = nullptr;
     VmaAllocationInfo imageAllocationInfo = {};
 };
-
-typedef std::shared_ptr<Image> ImagePtr;
 
 class DLL_OBJECT ImageView {
 public:

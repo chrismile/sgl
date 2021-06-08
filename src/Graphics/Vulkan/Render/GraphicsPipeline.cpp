@@ -189,11 +189,6 @@ void GraphicsPipelineInfo::reset() {
     inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
 }
 
-Pipeline::~Pipeline() {
-    vkDestroyPipeline(device->getVkDevice(), pipeline, nullptr);
-    vkDestroyPipelineLayout(device->getVkDevice(), pipelineLayout, nullptr);
-}
-
 GraphicsPipeline::GraphicsPipeline(Device* device, const GraphicsPipelineInfo& pipelineInfo) : Pipeline(device) {
     const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts =
             pipelineInfo.shaderStages->getVkDescriptorSetLayouts();

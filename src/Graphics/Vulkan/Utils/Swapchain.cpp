@@ -184,8 +184,9 @@ void Swapchain::recreateSwapchain() {
     create(window);
 
     // Recreate framebuffer, pipeline, ...
-    // For the moment, a resolution changed event is triggered to be compatible with OpenGL.
-    EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT))); // SWAPCHAIN_RECREATED_EVENT?
+    // For the moment, a resolution changed event is additionally triggered to be compatible with OpenGL.
+    EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
+    EventManager::get()->queueEvent(EventPtr(new Event(SWAPCHAIN_RECREATED_EVENT)));
 }
 
 void Swapchain::beginFrame() {

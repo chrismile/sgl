@@ -31,7 +31,18 @@
 
 #include <string>
 #include <cstdio>
+
+#ifdef SUPPORT_OPENGL
 #include <Graphics/OpenGL/RendererGL.hpp>
+#endif
+
+#ifdef SUPPORT_VULKAN
+namespace sgl { namespace vk {
+class Image;
+typedef std::shared_ptr<Image> ImagePtr;
+class Renderer;
+}}
+#endif
 
 namespace sgl {
 
@@ -50,12 +61,26 @@ public:
     ~VideoWriter();
     /// Push a 24-bit RGB frame (with width and height specified in constructor)
     void pushFrame(uint8_t* pixels);
+
+#ifdef SUPPORT_OPENGL
     /// Retrieves frame automatically from current window
     void pushWindowFrame();
+#endif
+
+#ifdef SUPPORT_VULKAN
+    inline void setRenderer(vk::Renderer* renderer) { this->renderer = renderer; }
+    /**
+     * Retrieves frame from the passed framebuffer image. The flag VK_BUFFER_USAGE_TRANSFER_SRC_BIT needs to be set!
+     * @param framebuffer
+     */
+    void pushFramebufferImage(vk::ImagePtr& image);
+    void onSwapchainRecreated();
+#endif
 
 private:
     void openFile(const std::string& filename, int framerate = 25);
 
+#ifdef SUPPORT_OPENGL
     // Asynchronous CPU/GPU data transfer.
     void initializeReadBackBuffers();
     bool isReadBackBufferFree();
@@ -73,6 +98,15 @@ private:
     size_t startPointer = 0, endPointer = 0;
     size_t queueCapacity = NUM_RB_BUFFERS;
     size_t queueSize = 0;
+#endif
+
+#ifdef SUPPORT_VULKAN
+    void readBackOldestFrameVulkan();
+    uint32_t numSwapchainImages = 1;
+    vk::Renderer* renderer = nullptr;
+    //std::vector<vk::BufferPtr> readBackBuffersVk;
+    std::vector<vk::ImagePtr> readBackImages;
+#endif
 
     // Frame & file data.
     FILE *avfile = nullptr;

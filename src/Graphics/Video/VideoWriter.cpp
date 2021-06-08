@@ -38,6 +38,12 @@
 #include <Utils/Convert.hpp>
 #include <Utils/File/Logfile.hpp>
 
+#ifdef SUPPORT_VULKAN
+#include <Graphics/Vulkan/Utils/Device.hpp>
+#include <Graphics/Vulkan/Utils/Swapchain.hpp>
+#include <Graphics/Vulkan/Render/Renderer.hpp>
+#endif
+
 #include "VideoWriter.hpp"
 
 namespace sgl {
@@ -162,6 +168,65 @@ void VideoWriter::pushWindowFrame() {
         glReadPixels(0, 0, frameW, frameH, GL_RGB, GL_UNSIGNED_BYTE, framebuffer);
         pushFrame(framebuffer);
     }
+}
+
+void VideoWriter::onSwapchainRecreated() {
+    while (queueSize > 0) {
+        readBackOldestFrameVulkan();
+    }
+
+    vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
+    numSwapchainImages = swapchain ? swapchain->getNumImages() : 1;
+
+    vk::Device* device = renderer->getDevice();
+    while (numSwapchainImages > readBackImages.size()) {
+        vk::ImageSettings imageSettings;
+        imageSettings.width = frameW;
+        imageSettings.width = frameH;
+        imageSettings.format = VK_FORMAT_R8G8B8A8_UINT;
+        imageSettings.tiling = VK_IMAGE_TILING_LINEAR;
+        imageSettings.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        imageSettings.memoryUsage = VMA_MEMORY_USAGE_GPU_TO_CPU;
+        readBackImages.push_back(vk::ImagePtr(new vk::Image(device, imageSettings)));
+    }
+    queueCapacity = numSwapchainImages;
+}
+
+void VideoWriter::readBackOldestFrameVulkan() {
+    // Pop operation.
+    vk::ImagePtr readBackImage = readBackImages.at(startPointer);
+    startPointer = (startPointer + 1) % queueCapacity;
+    queueSize--;
+
+    uint8_t* mappedData = reinterpret_cast<uint8_t*>(readBackImage->mapMemory());
+    int imageSize = frameW * frameH;
+    for (int i = 0; i < imageSize; i++) {
+        framebuffer[i * 3] = mappedData[i * 4];
+        framebuffer[i * 3 + 1] = mappedData[i * 4 + 1];
+        framebuffer[i * 3 + 2] = mappedData[i * 4 + 2];
+    }
+    readBackImage->unmapMemory();
+    pushFrame(framebuffer);
+}
+
+void VideoWriter::pushFramebufferImage(vk::ImagePtr& image) {
+    vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
+    uint32_t imageIndex = swapchain ? swapchain->getImageIndex() : 0;
+
+    if (imageIndex != endPointer) {
+        Logfile::get()->throwError("Error in VideoWriter::pushFramebufferImage: imageIndex != endPointer");
+    }
+
+    // Queue full?
+    if (queueCapacity == queueSize) {
+        readBackOldestFrameVulkan();
+    }
+
+    // Copy the image data to the GPU -> CPU read-back image.
+    vk::ImagePtr& readBackImage = readBackImages.at(imageIndex);
+    image->blit(readBackImage, renderer->getVkCommandBuffer());
+    endPointer = (endPointer + 1) % queueCapacity;
+    queueSize++;
 }
 
 void VideoWriter::initializeReadBackBuffers() {

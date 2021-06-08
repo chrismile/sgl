@@ -39,10 +39,18 @@ namespace sgl { namespace vk {
 
 class Buffer;
 typedef std::shared_ptr<Buffer> BufferPtr;
+class ComputeData;
+typedef std::shared_ptr<ComputeData> ComputeDataPtr;
 class RasterData;
 typedef std::shared_ptr<RasterData> RasterDataPtr;
+class RayTracingData;
+typedef std::shared_ptr<RayTracingData> RayTracingDataPtr;
 class GraphicsPipeline;
 typedef std::shared_ptr<GraphicsPipeline> GraphicsPipelinePtr;
+class ComputePipeline;
+typedef std::shared_ptr<ComputePipeline> ComputePipelinePtr;
+class RayTracingPipeline;
+typedef std::shared_ptr<RayTracingPipeline> RayTracingPipelinePtr;
 
 class DLL_OBJECT Renderer {
 public:
@@ -58,13 +66,16 @@ public:
     void setProjectionMatrix(const glm::mat4 &matrix);
 
     // Compute pipeline.
-    void dispatch(uint32_t x, uint32_t y, uint32_t z);
+    void dispatch(ComputeDataPtr computeData, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
 
     // Ray tracing pipeline.
-    // TODO
+    void traceRays(RayTracingDataPtr rayTracingData);
+
+    // Access to internal state.
+    inline Device* getDevice() { return device; }
+    inline VkCommandBuffer getVkCommandBuffer() { return commandBuffer; }
 
 private:
-    // TODO
     Device* device;
     VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
 
@@ -73,8 +84,14 @@ private:
     VkClearColorValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
     VkClearDepthStencilValue clearDepthStencil = { 1.0f, 0 };
 
+    // Compute state.
+    ComputePipelinePtr computePipeline;
+
+    // Ray tracing state.
+    RayTracingPipelinePtr rayTracingPipeline;
+
     // Global state.
-    void updateMatrixBlock();
+    bool updateMatrixBlock();
     struct MatrixBlock {
         glm::mat4 mMatrix = matrixIdentity(); // Model matrix
         glm::mat4 vMatrix = matrixIdentity(); // View matrix
@@ -85,14 +102,20 @@ private:
     MatrixBlock matrixBlock;
     BufferPtr currentMatrixBlockBuffer;
     VkDescriptorSet matrixBlockDescriptorSet;
+    bool recordingCommandBufferStarted = true;
 
     // Some data needs to be stored per swapchain image.
     struct FrameCache {
         CircularQueue<BufferPtr> freeCameraMatrixBuffers;
+        CircularQueue<VkDescriptorSet> freeMatrixBlockDescriptorSets;
         CircularQueue<BufferPtr> allCameraMatrixBuffers;
+        CircularQueue<VkDescriptorSet> allMatrixBlockDescriptorSets;
     };
+    const uint32_t maxFrameCacheSize = 1000;
     std::vector<FrameCache> frameCaches;
     size_t frameIndex = 0;
+    VkDescriptorPool matrixBufferDescriptorPool;
+    VkDescriptorSetLayout matrixBufferDesciptorSetLayout;
 };
 
 }}

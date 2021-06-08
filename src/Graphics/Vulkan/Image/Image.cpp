@@ -35,7 +35,7 @@
 
 namespace sgl { namespace vk {
 
-Image::Image(Device* device, ImageSettings imageSettings) : device(device), imageSettings(imageSettings) {
+Image::Image(Device* device, const ImageSettings& imageSettings) : device(device), imageSettings(imageSettings) {
     VkImageCreateInfo imageCreateInfo{};
     imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageCreateInfo.extent.width = imageSettings.width;
@@ -63,12 +63,12 @@ Image::Image(Device* device, ImageSettings imageSettings) : device(device), imag
     }
 }
 
-Image::Image(Device* device, ImageSettings imageSettings, VkImage image, bool takeImageOwnership)
+Image::Image(Device* device, const ImageSettings& imageSettings, VkImage image, bool takeImageOwnership)
     : device(device), hasImageOwnership(takeImageOwnership), imageSettings(imageSettings), image(image) {
 }
 
 Image::Image(
-        Device* device, ImageSettings imageSettings, VkImage image,
+        Device* device, const ImageSettings& imageSettings, VkImage image,
         VmaAllocation imageAllocation, VmaAllocationInfo imageAllocationInfo)
         : device(device), imageSettings(imageSettings), image(image), imageAllocation(imageAllocation),
         imageAllocationInfo(imageAllocationInfo) {
@@ -76,6 +76,7 @@ Image::Image(
     this->image = image;
     this->imageAllocation = imageAllocation;
     this->imageAllocationInfo = imageAllocationInfo;
+    this->imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 }
 
 Image::~Image() {
@@ -98,18 +99,22 @@ void Image::uploadData(VkDeviceSize sizeInBytes, void* data, bool generateMipmap
                 "is not set.");
     }
 
-    transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    _copyBufferToImage(stagingBuffer->getVkBuffer());
+    copyBufferToImage(stagingBuffer);
 
     if (generateMipmaps) {
         _generateMipmaps();
     } else {
-        transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        transitionImageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
 }
 
-void Image::_copyBufferToImage(VkBuffer buffer) {
-    VkCommandBuffer commandBuffer = device->beginSingleTimeCommands();
+void Image::copyBufferToImage(BufferPtr& buffer, VkCommandBuffer commandBuffer) {
+    transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    bool transientCommandBuffer = commandBuffer == VK_NULL_HANDLE;
+    if (transientCommandBuffer) {
+        commandBuffer = device->beginSingleTimeCommands();
+    }
 
     VkBufferImageCopy region{};
     region.bufferOffset = 0;
@@ -126,14 +131,107 @@ void Image::_copyBufferToImage(VkBuffer buffer) {
 
     vkCmdCopyBufferToImage(
             commandBuffer,
-            buffer,
+            buffer->getVkBuffer(),
             image,
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             1,
             &region
     );
 
-    device->endSingleTimeCommands(commandBuffer);
+    if (transientCommandBuffer) {
+        device->endSingleTimeCommands(commandBuffer);
+    }
+}
+
+void Image::copyToBuffer(BufferPtr& buffer, VkCommandBuffer commandBuffer) {
+    transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+
+    bool transientCommandBuffer = commandBuffer == VK_NULL_HANDLE;
+    if (transientCommandBuffer) {
+        commandBuffer = device->beginSingleTimeCommands();
+    }
+
+    VkBufferImageCopy region{};
+    region.bufferOffset = 0;
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
+
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.mipLevel = 0;
+    region.imageSubresource.baseArrayLayer = 0;
+    region.imageSubresource.layerCount = 1;
+
+    region.imageOffset = {0, 0, 0};
+    region.imageExtent = { imageSettings.width, imageSettings.height, imageSettings.depth };
+
+    vkCmdCopyImageToBuffer(
+            commandBuffer,
+            image,
+            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            buffer->getVkBuffer(),
+            1,
+            &region
+    );
+
+    if (transientCommandBuffer) {
+        device->endSingleTimeCommands(commandBuffer);
+    }
+}
+
+void Image::blit(ImagePtr& destImage, VkCommandBuffer commandBuffer) {
+    // Does the device support linear filtering for blit operations?
+    VkFormatProperties formatProperties;
+    vkGetPhysicalDeviceFormatProperties(
+            device->getVkPhysicalDevice(), imageSettings.format, &formatProperties);
+    if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
+        Logfile::get()->throwError(
+                "Error in Image::_generateMipmaps: Texture image format does not support linear blitting!");
+    }
+
+    bool transientCommandBuffer = commandBuffer == VK_NULL_HANDLE;
+    if (transientCommandBuffer) {
+        commandBuffer = device->beginSingleTimeCommands();
+    }
+
+    destImage->transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    VkImageBlit blit{};
+    blit.srcOffsets[0] = { 0, 0, 0 };
+    blit.srcOffsets[1] = {
+            int32_t(imageSettings.width), int32_t(imageSettings.height), int32_t(imageSettings.depth)
+    };
+    blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    blit.srcSubresource.mipLevel = 0;
+    blit.srcSubresource.baseArrayLayer = 0;
+    blit.srcSubresource.layerCount = imageSettings.arrayLayers;
+    blit.dstOffsets[0] = { 0, 0, 0 };
+    blit.dstOffsets[1] = {
+            int32_t(destImage->getImageSettings().width),
+            int32_t(destImage->getImageSettings().height),
+            int32_t(destImage->getImageSettings().depth)
+    };
+    blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    blit.dstSubresource.mipLevel = 0;
+    blit.dstSubresource.baseArrayLayer = 0;
+    blit.dstSubresource.layerCount = destImage->getImageSettings().arrayLayers;
+
+    vkCmdBlitImage(commandBuffer,
+                   image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                   destImage->getVkImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                   1, &blit,
+                   VK_FILTER_LINEAR);
+
+    destImage->transitionImageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    this->transitionImageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    if (transientCommandBuffer) {
+        device->endSingleTimeCommands(commandBuffer);
+    }
+}
+
+void Image::transitionImageLayout(VkImageLayout newLayout) {
+    transitionImageLayout(imageLayout, newLayout);
 }
 
 void Image::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout) {
@@ -146,11 +244,10 @@ void Image::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayo
     barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.image = image;
-    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     barrier.subresourceRange.baseMipLevel = 0;
     barrier.subresourceRange.levelCount = imageSettings.mipLevels;
     barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount = 1;
+    barrier.subresourceRange.layerCount = imageSettings.arrayLayers;
     if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
@@ -162,29 +259,36 @@ void Image::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayo
     }
 
     // https://www.khronos.org/registry/vulkan/specs/1.0/html/vkspec.html#synchronization-access-types-supported
-    VkPipelineStageFlags sourceStage;
-    VkPipelineStageFlags destinationStage;
+    VkPipelineStageFlags sourceStage = 0;
+    VkPipelineStageFlags destinationStage = 0;
 
-    if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+    if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
         barrier.srcAccessMask = 0;
-        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
         sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-    } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
+    } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
         sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-        destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    } else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
-        barrier.srcAccessMask = 0;
-        barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    } else {
+        Logfile::get()->throwError("Error in Image::transitionImageLayout: Unsupported old layout!");
+    }
 
-        sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    if (newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    } else if (newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+        destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    } else if (newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    } else if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+        barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
         destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
     } else {
-        throw std::invalid_argument("Unsupported layout transition!");
+        Logfile::get()->throwError("Error in Image::transitionImageLayout: Unsupported new layout!");
     }
 
     vkCmdPipelineBarrier(
@@ -205,7 +309,8 @@ void Image::_generateMipmaps() {
     vkGetPhysicalDeviceFormatProperties(
             device->getVkPhysicalDevice(), imageSettings.format, &formatProperties);
     if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
-        throw std::runtime_error("Texture image format does not support linear blitting!");
+        Logfile::get()->throwError(
+                "Error in Image::_generateMipmaps: Texture image format does not support linear blitting!");
     }
 
     VkCommandBuffer commandBuffer = device->beginSingleTimeCommands();
@@ -281,6 +386,8 @@ void Image::_generateMipmaps() {
     barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
+    this->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
     vkCmdPipelineBarrier(commandBuffer,
                          VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                          0,
@@ -289,6 +396,20 @@ void Image::_generateMipmaps() {
                          1, &barrier);
 
     device->endSingleTimeCommands(commandBuffer);
+}
+
+void* Image::mapMemory() {
+    //if (imageSettings.tiling != VK_IMAGE_TILING_LINEAR) {
+    //    Logfile::get()->throwError("Error in Image::mapMemory: Invalid tiling format for mapping.");
+    //}
+
+    void* dataPointer = nullptr;
+    vmaMapMemory(device->getAllocator(), imageAllocation, &dataPointer);
+    return dataPointer;
+}
+
+void Image::unmapMemory() {
+    vmaUnmapMemory(device->getAllocator(), imageAllocation);
 }
 
 

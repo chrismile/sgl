@@ -33,6 +33,8 @@
 #include <memory>
 #include <vulkan/vulkan.h>
 
+#include "Pipeline.hpp"
+
 namespace sgl { namespace vk {
 
 /// Cf. VkPrimitiveTopology
@@ -50,7 +52,6 @@ enum class InputAssemblyTopology {
     PATCH_LIST = 10,
 };
 
-class Device;
 class ShaderStages;
 typedef std::shared_ptr<ShaderStages> ShaderStagesPtr;
 class Framebuffer;
@@ -165,28 +166,11 @@ protected:
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
 };
 
-class DLL_OBJECT Pipeline {
-public:
-    Pipeline(Device* device) : device(device) {}
-    virtual ~Pipeline();
-
-    inline VkPipelineLayout getVkPipelineLayout() { return pipelineLayout; }
-    inline VkPipeline getVkPipeline() { return pipeline; }
-
-protected:
-    Device* device;
-    VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
-    VkPipeline pipeline = VK_NULL_HANDLE;
-};
-
-typedef std::shared_ptr<Pipeline> PipelinePtr;
-
 class DLL_OBJECT GraphicsPipeline : public Pipeline {
 public:
     GraphicsPipeline(Device* device, const GraphicsPipelineInfo& pipelineInfo);
     ~GraphicsPipeline();
 
-    inline const ShaderStagesPtr& getShaderStages() const { return shaderStages; }
     inline const FramebufferPtr& getFramebuffer() const { return framebuffer; }
 
     // Used by RasterData to make deduce number of vertices from buffer byte size.
@@ -198,7 +182,6 @@ public:
     }
 
 protected:
-    ShaderStagesPtr shaderStages;
     FramebufferPtr framebuffer;
 
     // Used by RasterData to make deduce number of vertices from buffer byte size.

@@ -27,10 +27,42 @@
  */
 
 #include <Utils/File/Logfile.hpp>
+#include <Utils/Events/EventManager.hpp>
 #include "GraphicsPipeline.hpp"
+#include "RayTracingPipeline.hpp"
 #include "Data.hpp"
 
 namespace sgl { namespace vk {
+
+ComputeData::ComputeData(ComputePipelinePtr& computePipeline) : computePipeline(computePipeline) {
+}
+
+
+RenderData::RenderData(Device* device, ShaderStagesPtr& shaderStages) : device(device), shaderStages(shaderStages) {
+    EventManager::get()->addListener(SWAPCHAIN_RECREATED_EVENT, [this](EventPtr){ this->onSwapchainRecreated(); });
+}
+
+void RenderData::onSwapchainRecreated() {
+    Swapchain* swapchain = AppSettings::get()->getSwapchain();
+    size_t numImages = swapchain ? swapchain->getNumImages() : 1;
+    if (dynamicBuffers.size() > numImages) {
+        dynamicBuffers.resize(numImages);
+    } else if (dynamicBuffers.size() < numImages) {
+        size_t sizeDifference = numImages - dynamicBuffers.size();
+        for (size_t i = 0; i < sizeDifference; i++) {
+            std::vector<BufferPtr> buffers;
+            for (size_t binding = 0; binding < dynamicBuffersSettings.size(); binding++) {
+                BufferSettings& dynamicBufferSettings = dynamicBuffersSettings.at(binding);
+                BufferPtr buffer(new Buffer(
+                        device, dynamicBufferSettings.sizeInBytes, dynamicBufferSettings.bufferUsageFlags,
+                        VMA_MEMORY_USAGE_CPU_TO_GPU));
+                buffers.push_back(buffer);
+            }
+            dynamicBuffers.push_back(buffers);
+        }
+    }
+}
+
 
 inline size_t getIndexTypeByteSize(VkIndexType indexType) {
     if (indexType == VK_INDEX_TYPE_UINT32) {
@@ -45,8 +77,9 @@ inline size_t getIndexTypeByteSize(VkIndexType indexType) {
     }
 }
 
-RasterData::RasterData(GraphicsPipelinePtr& graphicsPipeline) : graphicsPipeline(graphicsPipeline) {
-    ;
+RasterData::RasterData(GraphicsPipelinePtr& graphicsPipeline)
+        : RenderData(graphicsPipeline->getDevice(), graphicsPipeline->getShaderStages()),
+        graphicsPipeline(graphicsPipeline) {
 }
 
 void RasterData::setIndexBuffer(BufferPtr& buffer, VkIndexType indexType) {
@@ -85,6 +118,12 @@ void RasterData::setVertexBuffer(BufferPtr& buffer, uint32_t binding) {
 void RasterData::setVertexBuffer(BufferPtr& buffer, const std::string& name) {
     uint32_t location = graphicsPipeline->getShaderStages()->getInputVariableLocation(name);
     setVertexBuffer(buffer, location);
+}
+
+
+RayTracingData::RayTracingData(RayTracingPipelinePtr& rayTracingPipeline)
+        : RenderData(rayTracingPipeline->getDevice(), rayTracingPipeline->getShaderStages()),
+        rayTracingPipeline(rayTracingPipeline) {
 }
 
 }}

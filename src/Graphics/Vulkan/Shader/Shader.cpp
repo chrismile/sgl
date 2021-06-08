@@ -120,7 +120,7 @@ const std::vector<InterfaceVariableDescriptor>& ShaderModule::getInputVariableDe
     return inputVariableDescriptors;
 }
 
-const std::map<int, std::vector<DescriptorInfo>>& ShaderModule::getDescriptorSetsInfo() const {
+const std::map<uint32_t, std::vector<DescriptorInfo>>& ShaderModule::getDescriptorSetsInfo() const {
     return descriptorSetsInfo;
 }
 
@@ -182,7 +182,7 @@ ShaderStages::~ShaderStages() {
     descriptorSetLayouts.clear();
 }
 
-void ShaderStages::mergeDescriptorSetsInfo(const std::map<int, std::vector<DescriptorInfo>>& newDescriptorSetsInfo) {
+void ShaderStages::mergeDescriptorSetsInfo(const std::map<uint32_t, std::vector<DescriptorInfo>>& newDescriptorSetsInfo) {
     for (auto& it : newDescriptorSetsInfo) {
         const std::vector<DescriptorInfo>& descriptorsInfoNew = it.second;
         std::vector<DescriptorInfo>& descriptorsInfo = descriptorSetsInfo[it.first];
@@ -259,7 +259,7 @@ const std::vector<InterfaceVariableDescriptor>& ShaderStages::getInputVariableDe
     return vertexShaderModule->getInputVariableDescriptors();
 }
 
-int ShaderStages::getInputVariableLocation(const std::string& varName) const {
+uint32_t ShaderStages::getInputVariableLocation(const std::string& varName) const {
     if (!vertexShaderModule) {
         sgl::Logfile::get()->writeError(
                 "Error in ShaderStages::getInputVariableLocation: No vertex shader exists!");
@@ -289,6 +289,7 @@ const InterfaceVariableDescriptor& ShaderStages::getInputVariableDescriptorFromL
     }
     sgl::Logfile::get()->throwError(
             "Error in ShaderStages::getInputVariableDescriptorFromLocation: Location not found!");
+    return vertexShaderModule->getInputVariableDescriptors().front(); // To get rid of warning...
 }
 
 const InterfaceVariableDescriptor& ShaderStages::getInputVariableDescriptorFromName(const std::string& name) {
@@ -304,10 +305,37 @@ const InterfaceVariableDescriptor& ShaderStages::getInputVariableDescriptorFromN
     }
     sgl::Logfile::get()->throwError(
             "Error in ShaderStages::getInputVariableDescriptorFromName: Location not found!");
+    return vertexShaderModule->getInputVariableDescriptors().front(); // To get rid of warning...
 }
 
-const std::map<int, std::vector<DescriptorInfo>>& ShaderStages::getDescriptorSetsInfo() const {
+const std::map<uint32_t, std::vector<DescriptorInfo>>& ShaderStages::getDescriptorSetsInfo() const {
     return descriptorSetsInfo;
+}
+
+const DescriptorInfo& ShaderStages::getDescriptorInfoByName(uint32_t setIdx, const std::string& descName) const {
+    const std::vector<DescriptorInfo>& descriptorSetInfo = descriptorSetsInfo.at(setIdx);
+    for (const DescriptorInfo& descriptorInfo : descriptorSetInfo) {
+        if (descriptorInfo.name == descName) {
+            return descriptorInfo;
+        }
+    }
+    Logfile::get()->throwError(
+            "Error in ShaderStages::getDescriptorInfoByName: Couldn't find descriptor with name \"" + descName
+            + "\" for descriptor set index " + std::to_string(setIdx) + ".");
+    return descriptorSetInfo.front(); // To get rid of warning...
+}
+
+const DescriptorInfo& ShaderStages::getDescriptorInfoByBinding(uint32_t setIdx, uint32_t binding) const {
+    const std::vector<DescriptorInfo>& descriptorSetInfo = descriptorSetsInfo.at(setIdx);
+    for (const DescriptorInfo& descriptorInfo : descriptorSetInfo) {
+        if (descriptorInfo.binding == binding) {
+            return descriptorInfo;
+        }
+    }
+    Logfile::get()->throwError(
+            "Error in ShaderStages::getDescriptorInfoByBinding: Couldn't find descriptor with binding \""
+            + std::to_string(binding) + "\" for descriptor set index " + std::to_string(setIdx) + ".");
+    return descriptorSetInfo.front(); // To get rid of warning...
 }
 
 }}

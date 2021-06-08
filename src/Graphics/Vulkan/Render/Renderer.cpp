@@ -30,6 +30,8 @@
 #include "../Utils/Device.hpp"
 #include "../Utils/Swapchain.hpp"
 #include "../Render/GraphicsPipeline.hpp"
+#include "../Render/ComputePipeline.hpp"
+#include "../Render/RayTracingPipeline.hpp"
 #include "../Buffers/Buffer.hpp"
 #include "Data.hpp"
 #include "Renderer.hpp"
@@ -37,9 +39,51 @@
 namespace sgl { namespace vk {
 
 Renderer::Renderer(Device* device) : device(device) {
+    VkDescriptorSetLayoutBinding uboLayoutBinding{};
+    uboLayoutBinding.binding = 0;
+    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uboLayoutBinding.descriptorCount = 1;
+    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT; // VK_SHADER_STAGE_ALL_GRAPHICS
+
+    VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo{};
+    descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    descriptorSetLayoutInfo.bindingCount = 1;
+    descriptorSetLayoutInfo.pBindings = &uboLayoutBinding;
+
+    if (vkCreateDescriptorSetLayout(
+            device->getVkDevice(), &descriptorSetLayoutInfo, nullptr,
+            &matrixBufferDesciptorSetLayout) != VK_SUCCESS) {
+        Logfile::get()->throwError("Error in Renderer::Renderer: Failed to create descriptor set layout!");
+    }
+
+
+    VkDescriptorPoolSize poolSize;
+    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSize.descriptorCount = maxFrameCacheSize;
+
+    VkDescriptorPoolCreateInfo poolInfo = {};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = &poolSize;
+    poolInfo.maxSets = maxFrameCacheSize;
+
+    if (vkCreateDescriptorPool(
+            device->getVkDevice(), &poolInfo, nullptr, &matrixBufferDescriptorPool) != VK_SUCCESS) {
+        Logfile::get()->throwError("Error in Renderer::Renderer: Failed to create descriptor pool!");
+    }
 }
 
 Renderer::~Renderer() {
+    for (FrameCache& frameCache : frameCaches) {
+        while (!frameCache.allMatrixBlockDescriptorSets.is_empty()) {
+            VkDescriptorSet descriptorSet = frameCache.allMatrixBlockDescriptorSets.pop_front();
+            vkFreeDescriptorSets(
+                    device->getVkDevice(), matrixBufferDescriptorPool, 1, &descriptorSet);
+        }
+    }
+
+    vkDestroyDescriptorSetLayout(device->getVkDevice(), matrixBufferDesciptorSetLayout, nullptr);
+    vkDestroyDescriptorPool(device->getVkDevice(), matrixBufferDescriptorPool, nullptr);
 }
 
 void Renderer::beginCommandBuffer() {
@@ -49,6 +93,7 @@ void Renderer::beginCommandBuffer() {
         frameCaches.resize(swapchain->getNumImages());
     }
     frameCaches.at(frameIndex).freeCameraMatrixBuffers = frameCaches.at(frameIndex).allCameraMatrixBuffers;
+    frameCaches.at(frameIndex).freeMatrixBlockDescriptorSets = frameCaches.at(frameIndex).allMatrixBlockDescriptorSets;
 
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -59,6 +104,8 @@ void Renderer::beginCommandBuffer() {
         Logfile::get()->throwError(
                 "Error in Renderer::beginCommandBuffer: Could not begin recording a command buffer.");
     }
+
+    recordingCommandBufferStarted = true;
 }
 
 VkCommandBuffer Renderer::endCommandBuffer() {
@@ -72,15 +119,19 @@ VkCommandBuffer Renderer::endCommandBuffer() {
 
 void Renderer::render(RasterDataPtr rasterData) {
     bool isNewPipeline = false;
-    GraphicsPipelinePtr rasterDataGraphicsPipeline = rasterData->getGraphicsPipeline();
-    if (graphicsPipeline != rasterDataGraphicsPipeline) {
-        graphicsPipeline = rasterDataGraphicsPipeline;
+    GraphicsPipelinePtr newGraphicsPipeline = rasterData->getGraphicsPipeline();
+    if (graphicsPipeline != newGraphicsPipeline) {
+        graphicsPipeline = newGraphicsPipeline;
         isNewPipeline = true;
     }
 
     const FramebufferPtr& framebuffer = graphicsPipeline->getFramebuffer();
 
-    updateMatrixBlock();
+    if (updateMatrixBlock() || recordingCommandBufferStarted) {
+        vkCmdBindDescriptorSets(
+                commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline->getVkPipelineLayout(),
+                7, 1, &matrixBlockDescriptorSet, 0, nullptr);
+    }
     // Use: currentMatrixBlockBuffer
 
 
@@ -114,14 +165,11 @@ void Renderer::render(RasterDataPtr rasterData) {
     }
     vkCmdBindVertexBuffers(commandBuffer, 0, uint32_t(vertexBuffers.size()), vertexBuffers.data(), offsets);
 
-    vkCmdBindDescriptorSets(
-            commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline->getVkPipelineLayout(),
-            0, 1, &matrixBlockDescriptorSet, 0, nullptr);
 
     //std::vector<VkDescriptorSet>& dataDescriptorSets = rasterData->getVkDescriptorSets();
     //vkCmdBindDescriptorSets(
     //        commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline->getVkPipelineLayout(),
-    //        1, uint32_t(dataDescriptorSets.size()), dataDescriptorSets.data(), 0, nullptr);
+    //        0, uint32_t(dataDescriptorSets.size()), dataDescriptorSets.data(), 0, nullptr);
 
     if (rasterData->hasIndexBuffer()) {
         vkCmdDrawIndexed(
@@ -151,7 +199,7 @@ void Renderer::setProjectionMatrix(const glm::mat4 &matrix) {
     matrixBlockNeedsUpdate = true;
 }
 
-void Renderer::updateMatrixBlock() {
+bool Renderer::updateMatrixBlock() {
     if (matrixBlockNeedsUpdate) {
         matrixBlock.mvpMatrix = matrixBlock.pMatrix * matrixBlock.vMatrix * matrixBlock.mMatrix;
         if (frameCaches.at(frameIndex).freeCameraMatrixBuffers.is_empty()) {
@@ -160,33 +208,97 @@ void Renderer::updateMatrixBlock() {
                     VMA_MEMORY_USAGE_CPU_TO_GPU));
             frameCaches.at(frameIndex).allCameraMatrixBuffers.push_back(buffer);
             frameCaches.at(frameIndex).freeCameraMatrixBuffers.push_back(buffer);
+
+            VkDescriptorSet descriptorSet;
+            VkDescriptorSetAllocateInfo allocInfo{};
+            allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+            allocInfo.descriptorPool = matrixBufferDescriptorPool;
+            allocInfo.descriptorSetCount = 1;
+            allocInfo.pSetLayouts = &matrixBufferDesciptorSetLayout;
+
+            if (vkAllocateDescriptorSets(device->getVkDevice(), &allocInfo, &descriptorSet) != VK_SUCCESS) {
+                Logfile::get()->throwError(
+                        "Error in Renderer::updateMatrixBlock: Failed to allocate descriptor sets!");
+            }
+
+            VkDescriptorBufferInfo bufferInfo = {};
+            bufferInfo.buffer = buffer->getVkBuffer();
+            bufferInfo.offset = 0;
+            bufferInfo.range = sizeof(MatrixBlock);
+
+            VkWriteDescriptorSet descriptorWrite = {};
+            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrite.dstSet = descriptorSet;
+            descriptorWrite.dstBinding = 0;
+            descriptorWrite.dstArrayElement = 0;
+            descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptorWrite.descriptorCount = 1;
+            descriptorWrite.pBufferInfo = &bufferInfo;
+
+            vkUpdateDescriptorSets(
+                    device->getVkDevice(), 1, &descriptorWrite,
+                    0, nullptr);
+
+            frameCaches.at(frameIndex).allMatrixBlockDescriptorSets.push_back(descriptorSet);
+            frameCaches.at(frameIndex).freeMatrixBlockDescriptorSets.push_back(descriptorSet);
         }
         currentMatrixBlockBuffer = frameCaches.at(frameIndex).freeCameraMatrixBuffers.pop_front();
+        matrixBlockDescriptorSet = frameCaches.at(frameIndex).freeMatrixBlockDescriptorSets.pop_front();
 
         void* bufferMemory = currentMatrixBlockBuffer->mapMemory();
         memcpy(bufferMemory, &matrixBlock, sizeof(MatrixBlock));
         currentMatrixBlockBuffer->unmapMemory();
 
-        VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = currentMatrixBlockBuffer->getVkBuffer();
-        bufferInfo.offset = 0;
-        bufferInfo.range = sizeof(MatrixBlock);
-
-        VkWriteDescriptorSet descriptorWrite;
-        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrite.dstSet = matrixBlockDescriptorSet;
-        descriptorWrite.dstBinding = 0;
-        descriptorWrite.dstArrayElement = 0;
-        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrite.descriptorCount = 1;
-        descriptorWrite.pBufferInfo = &bufferInfo;
-
-        vkUpdateDescriptorSets(
-                device->getVkDevice(), 1, &descriptorWrite,
-                0, nullptr);
-
         matrixBlockNeedsUpdate = false;
+        return true;
     }
+    return false;
+}
+
+void Renderer::dispatch(ComputeDataPtr computeData, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
+    bool isNewPipeline = false;
+    ComputePipelinePtr newComputePipeline = computeData->getComputePipeline();
+    if (computePipeline != newComputePipeline) {
+        computePipeline = newComputePipeline;
+        isNewPipeline = true;
+    }
+
+    if (isNewPipeline) {
+        vkCmdBindPipeline(
+                commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                computePipeline->getVkPipeline());
+    }
+
+    //std::vector<VkDescriptorSet>& dataDescriptorSets = rasterData->getVkDescriptorSets();
+    //vkCmdBindDescriptorSets(
+    //        commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, graphicsPipeline->getVkPipelineLayout(),
+    //        1, uint32_t(dataDescriptorSets.size()), dataDescriptorSets.data(), 0, nullptr);
+
+    vkCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
+}
+
+void Renderer::traceRays(RayTracingDataPtr rayTracingData) {
+    bool isNewPipeline = false;
+    RayTracingPipelinePtr newRayTracingPipeline = rayTracingData->getRayTracingPipeline();
+    if (rayTracingPipeline != newRayTracingPipeline) {
+        rayTracingPipeline = newRayTracingPipeline;
+        isNewPipeline = true;
+    }
+
+    const FramebufferPtr& framebuffer = graphicsPipeline->getFramebuffer();
+
+    updateMatrixBlock();
+
+    if (isNewPipeline) {
+        vkCmdBindPipeline(
+                commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+                rayTracingPipeline->getVkPipeline());
+    }
+
+    //vkCmdTraceRaysKHR(
+    //        commandBuffer,
+    //        &raygenShaderSbtEntry, &missShaderSbtEntry, &hitShaderSbtEntry, &callableShaderSbtEntry,
+    //        framebuffer->getWidth(), framebuffer->getHeight(), framebuffer->getLayers());
 }
 
 }}

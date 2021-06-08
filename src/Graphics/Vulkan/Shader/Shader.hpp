@@ -92,7 +92,7 @@ public:
      */
     const std::vector<InterfaceVariableDescriptor>& getInputVariableDescriptors() const;
 
-    const std::map<int, std::vector<DescriptorInfo>>& getDescriptorSetsInfo() const;
+    const std::map<uint32_t, std::vector<DescriptorInfo>>& getDescriptorSetsInfo() const;
 
     inline const std::string& getShaderModuleId() const { return shaderModuleId; }
     inline ShaderModuleType getShaderModuleType() const { return shaderModuleType; }
@@ -113,7 +113,7 @@ private:
 
     // SPIR-V reflection data.
     std::vector<InterfaceVariableDescriptor> inputVariableDescriptors;
-    std::map<int, std::vector<DescriptorInfo>> descriptorSetsInfo; ///< set index -> descriptor set info
+    std::map<uint32_t, std::vector<DescriptorInfo>> descriptorSetsInfo; ///< set index -> descriptor set info
 };
 
 typedef std::shared_ptr<ShaderModule> ShaderModulePtr;
@@ -133,23 +133,28 @@ public:
 
     /// Returns the input variable descriptors of the vertex shader. NOTE: A vertex shader must exist for this to work!
     const std::vector<InterfaceVariableDescriptor>& getInputVariableDescriptors() const;
-    int getInputVariableLocation(const std::string& varName) const;
+    uint32_t getInputVariableLocation(const std::string& varName) const;
     const InterfaceVariableDescriptor& getInputVariableDescriptorFromLocation(uint32_t location);
     const InterfaceVariableDescriptor& getInputVariableDescriptorFromName(const std::string& name);
-    const std::map<int, std::vector<DescriptorInfo>>& getDescriptorSetsInfo() const;
+    const std::map<uint32_t, std::vector<DescriptorInfo>>& getDescriptorSetsInfo() const;
+    const DescriptorInfo& getDescriptorInfoByName(uint32_t setIdx, const std::string& descName) const;
+    const DescriptorInfo& getDescriptorInfoByBinding(uint32_t setIdx, uint32_t binding) const;
+
+    inline std::vector<ShaderModulePtr>& getShaderModules() { return shaderModules; }
 
     inline const std::vector<VkPipelineShaderStageCreateInfo>& getVkShaderStages() const { return vkShaderStages; }
     inline const std::vector<VkDescriptorSetLayout>& getVkDescriptorSetLayouts() const { return descriptorSetLayouts; }
 
 private:
-    void mergeDescriptorSetsInfo(const std::map<int, std::vector<DescriptorInfo>>& newDescriptorSetsInfo);
+    void mergeDescriptorSetsInfo(const std::map<uint32_t, std::vector<DescriptorInfo>>& newDescriptorSetsInfo);
     void createDescriptorSetLayouts();
 
     Device* device;
     std::vector<ShaderModulePtr> shaderModules;
     ShaderModulePtr vertexShaderModule; // Optional
-    std::map<int, std::vector<DescriptorInfo>> descriptorSetsInfo; ///< set index -> descriptor set info
-    std::map<std::string, int> inputVariableNameMap; ///< input interface variable name -> location
+    std::map<uint32_t, std::vector<DescriptorInfo>> descriptorSetsInfo; ///< set index -> descriptor set info
+    std::map<std::string, std::vector<DescriptorInfo>> descriptorSetNameBindingMap; ///< name -> binding
+    std::map<std::string, uint32_t> inputVariableNameMap; ///< input interface variable name -> location
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts; ///< created from descriptorSetsInfo for use in Vulkan
     std::vector<VkPipelineShaderStageCreateInfo> vkShaderStages;
 

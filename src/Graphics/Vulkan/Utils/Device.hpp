@@ -113,6 +113,8 @@ public:
     VkCommandBuffer beginSingleTimeCommands(uint32_t queueIndex = 0xFFFFFFFF);
     void endSingleTimeCommands(VkCommandBuffer commandBuffer, uint32_t queueIndex = 0xFFFFFFFF);
 
+    inline Instance* getInstance() { return instance; }
+
     // Get the standard descriptor pool.
     VkDescriptorPool getDefaultVkDescriptorPool() { return descriptorPool; }
 
