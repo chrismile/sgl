@@ -35,8 +35,9 @@
 namespace sgl { namespace vk {
 
 Buffer::Buffer(
-        Device* device, size_t sizeInBytes, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
-        bool queueExclusive) : device(device), sizeInBytes(sizeInBytes) {
+        Device* device, size_t sizeInBytes, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, bool queueExclusive)
+        : device(device), sizeInBytes(sizeInBytes), bufferUsageFlags(usage), memoryUsage(memoryUsage),
+        queueExclusive(queueExclusive) {
     VkBufferCreateInfo bufferCreateInfo{};
     bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferCreateInfo.size = sizeInBytes;
@@ -57,6 +58,20 @@ Buffer::~Buffer() {
     vmaDestroyBuffer(device->getAllocator(), buffer, bufferAllocation);
 }
 
+BufferPtr Buffer::copy(bool copyContent) {
+    BufferPtr newBuffer(new Buffer(device, sizeInBytes, bufferUsageFlags, memoryUsage, queueExclusive));
+    if (copyContent) {
+        VkCommandBuffer commandBuffer = device->beginSingleTimeCommands();
+        VkBufferCopy bufferCopy{};
+        bufferCopy.size = sizeInBytes;
+        bufferCopy.srcOffset = 0;
+        bufferCopy.dstOffset = 0;
+        vkCmdCopyBuffer(commandBuffer, this->buffer, newBuffer->buffer, 1, &bufferCopy);
+        device->endSingleTimeCommands(commandBuffer);
+    }
+    return newBuffer;
+}
+
 void* Buffer::mapMemory() {
     void* dataPointer = nullptr;
     vmaMapMemory(device->getAllocator(), bufferAllocation, &dataPointer);
@@ -65,6 +80,41 @@ void* Buffer::mapMemory() {
 
 void Buffer::unmapMemory() {
     vmaUnmapMemory(device->getAllocator(), bufferAllocation);
+}
+
+
+BufferView::BufferView(BufferPtr& buffer, VkFormat format, VkDeviceSize offset, VkDeviceSize range)
+        : format(format), offset(offset), range(range) {
+    VkBufferViewCreateInfo bufferViewCreateInfo{};
+    bufferViewCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO;
+    bufferViewCreateInfo.buffer = buffer->getVkBuffer();
+    bufferViewCreateInfo.format = format;
+    bufferViewCreateInfo.offset = offset;
+    if (range == std::numeric_limits<VkDeviceSize>::max()) {
+        bufferViewCreateInfo.range = buffer->getSizeInBytes();
+    } else {
+        bufferViewCreateInfo.range = range;
+    }
+
+    if (vkCreateBufferView(
+            device->getVkDevice(), &bufferViewCreateInfo, nullptr, &bufferView) != VK_SUCCESS) {
+        Logfile::get()->throwError("Error in BufferView::BufferView: Failed to create a buffer view!");
+    }
+}
+
+BufferView::~BufferView() {
+    vkDestroyBufferView(device->getVkDevice(), bufferView, nullptr);
+}
+
+BufferViewPtr BufferView::copy(bool copyBuffer, bool copyContent) {
+    BufferPtr newBuffer;
+    if (copyBuffer) {
+        newBuffer = buffer->copy(copyContent);
+    } else {
+        newBuffer = buffer;
+    }
+    BufferViewPtr newBufferView(new BufferView(newBuffer, format, offset, range));
+    return newBufferView;
 }
 
 }}

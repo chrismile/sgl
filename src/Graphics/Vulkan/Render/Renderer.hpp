@@ -37,6 +37,7 @@
 
 namespace sgl { namespace vk {
 
+class Device;
 class Buffer;
 typedef std::shared_ptr<Buffer> BufferPtr;
 class ComputeData;
@@ -54,7 +55,7 @@ typedef std::shared_ptr<RayTracingPipeline> RayTracingPipelinePtr;
 
 class DLL_OBJECT Renderer {
 public:
-    Renderer(Device* device);
+    Renderer(Device* device, uint32_t numDescriptors = 1000);
     ~Renderer();
 
     // Graphics pipeline.
@@ -74,10 +75,14 @@ public:
     // Access to internal state.
     inline Device* getDevice() { return device; }
     inline VkCommandBuffer getVkCommandBuffer() { return commandBuffer; }
+    inline VkDescriptorPool getVkDescriptorPool() { return globalDescriptorPool; }
 
 private:
     Device* device;
     VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
+
+    // Global descriptor pool that can be used by ComputeData, RasterData and RayTracingData.
+    VkDescriptorPool globalDescriptorPool;
 
     // Rasterizer state.
     GraphicsPipelinePtr graphicsPipeline;

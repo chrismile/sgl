@@ -31,7 +31,6 @@
 
 #include <memory>
 #include <vulkan/vulkan.h>
-#include <Graphics/Vulkan/Utils/Swapchain.hpp>
 
 #include "../Shader/Shader.hpp"
 #include "../Buffers/Buffer.hpp"
@@ -44,6 +43,7 @@ class ComputePipeline;
 typedef std::shared_ptr<ComputePipeline> ComputePipelinePtr;
 class RayTracingPipeline;
 typedef std::shared_ptr<RayTracingPipeline> RayTracingPipelinePtr;
+class Renderer;
 
 class Data {
 public:
@@ -60,82 +60,91 @@ protected:
     ComputePipelinePtr computePipeline;
 };
 
+class RenderData;
+typedef std::shared_ptr<RenderData> RenderDataPtr;
+typedef uint32_t ListenerToken;
+
 class RenderData : public Data {
+    friend class Renderer;
 public:
-    RenderData(Device* device, ShaderStagesPtr& shaderStages);
+    RenderData(Renderer* renderer, ShaderStagesPtr& shaderStages);
+    ~RenderData();
+
+    /**
+     * Creates a shallow copy of the render data using the passed shader stages.
+     * NOTE: The descriptor layouts of the new shaders have to match!
+     * @param shaderStages The shader stages to use in the copy.
+     */
+    RenderDataPtr copy(ShaderStagesPtr& shaderStages);
 
     void onSwapchainRecreated();
 
     /*
-     * The content of static buffers can, if at all, only be updated on the CPU when vkQueueWaitIdle was called on the
-     * queue. They should be used, e.g., for look-up tables or when they are only used exclusively by the GPU.
+     * The content of static data can only be updated on the CPU when vkQueueWaitIdle was called on the command queue.
+     * They should be used, e.g., for look-up tables or for objects only used exclusively by the GPU.
+     * It is recommended to create the objects using the memory usage VMA_MEMORY_USAGE_GPU_ONLY.
      */
-    BufferPtr addStaticBuffer(size_t sizeInBytes, VkBufferUsageFlags bufferUsageFlags, uint32_t binding) {
-        BufferPtr buffer(new Buffer(device, sizeInBytes, bufferUsageFlags, VMA_MEMORY_USAGE_GPU_ONLY));
-        if (staticBuffers.size() <= binding) {
-            staticBuffers.resize(binding + 1);
-        }
-        staticBuffers.at(binding) = buffer;
-    }
-    BufferPtr addStaticBuffer(size_t sizeInBytes, void* data, VkBufferUsageFlags bufferUsageFlags, uint32_t binding) {
-        BufferPtr buffer(new Buffer(device, sizeInBytes, bufferUsageFlags, VMA_MEMORY_USAGE_GPU_ONLY));
-        if (staticBuffers.size() <= binding) {
-            staticBuffers.resize(binding + 1);
-        }
-        staticBuffers.at(binding) = buffer;
-    }
+    void addStaticBuffer(BufferPtr& buffer, uint32_t binding);
+    void addStaticBuffer(BufferPtr& buffer, const std::string& descName);
+
+    void addStaticBufferView(BufferViewPtr& bufferView, uint32_t binding);
+    void addStaticBufferView(BufferViewPtr& bufferView, const std::string& descName);
+
+    void addStaticImageView(ImageViewPtr& imageView, uint32_t binding);
+    void addImageSampler(ImageSamplerPtr& imageSampler, uint32_t binding);
+    void addStaticTexture(TexturePtr& texture, uint32_t binding) ;
+
+    void addStaticImageView(ImageViewPtr& imageView, const std::string& descName);
+    void addImageSampler(ImageSamplerPtr& imageSampler, const std::string& descName);
+    void addStaticTexture(TexturePtr& texture, const std::string& descName);
 
     /*
-     * Dynamic buffers change per frame. After adding the buffer, the per-frame buffer needs to be retrieved by calling
-     * getDynamicBuffer.
+     * Dynamic data changes per frame. After adding the buffer, the per-frame buffer needs to be retrieved by calling
+     * getBuffer.
      */
-    void addDynamicBuffer(size_t sizeInBytes, VkBufferUsageFlags bufferUsageFlags, uint32_t binding) {
-        Swapchain* swapchain = AppSettings::get()->getSwapchain();
-        size_t numImages = swapchain ? swapchain->getNumImages() : 1;
-        const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByBinding(0, binding);
-        for (size_t i = 0; i < numImages; i++) {
-            if (dynamicBuffers.at(i).size() <= binding) {
-                dynamicBuffers.at(i).resize(binding + 1);
-                dynamicBuffersSettings.resize(binding + 1);
-            }
-            BufferPtr buffer(new Buffer(
-                    device, sizeInBytes, descriptorInfo.type, VMA_MEMORY_USAGE_CPU_TO_GPU));
-            dynamicBuffers.at(i).at(binding) = buffer;
-        }
-    }
+    void addDynamicBuffer(BufferPtr& buffer, uint32_t binding);
+    void addDynamicBuffer(BufferPtr& buffer, const std::string& descName);
 
-    BufferPtr getDynamicBuffer(uint32_t binding) {
-        Swapchain* swapchain = AppSettings::get()->getSwapchain();
-        return dynamicBuffers.at(swapchain ? swapchain->getImageIndex() : 0).at(binding);
-    }
-    BufferPtr getDynamicBuffer(const std::string& name) {
-        Swapchain* swapchain = AppSettings::get()->getSwapchain();
-        const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, name);
-        return dynamicBuffers.at(swapchain ? swapchain->getImageIndex() : 0).at(descriptorInfo.binding);
-    }
+    void addDynamicBufferView(BufferViewPtr& bufferView, uint32_t binding);
+    void addDynamicBufferView(BufferViewPtr& bufferView, const std::string& descName);
+
+    void addDynamicImageView(ImageViewPtr& imageView, uint32_t binding);
+    void addDynamicImageView(ImageViewPtr& imageView, const std::string& descName);
+
+    BufferPtr getBuffer(uint32_t binding);
+    BufferPtr getBuffer(const std::string& name);
+
+    inline VkDescriptorSet getVkDescriptorSet(uint32_t frameIdx) { return frameDataList.at(frameIdx).descriptorSet; }
+    VkDescriptorSet getVkDescriptorSet();
 
 private:
+    void _updateDescriptorSets();
+    ListenerToken swapchainRecreatedEventListenerToken;
+    bool isDirty = false;
+
+    Renderer* renderer;
     Device* device;
     ShaderStagesPtr shaderStages;
 
-    std::vector<BufferPtr> staticBuffers;
-    std::vector<std::vector<BufferPtr>> dynamicBuffers;
+    std::map<uint32_t, bool> buffersStatic;
+    std::map<uint32_t, bool> bufferViewsStatic;
+    std::map<uint32_t, bool> imageViewsStatic;
+    std::map<uint32_t, bool> accelerationStructuresStatic;
 
-    struct BufferSettings {
-        size_t sizeInBytes;
-        VkBufferUsageFlags bufferUsageFlags;
+    struct FrameData {
+        std::map<uint32_t, BufferPtr> buffers;
+        std::map<uint32_t, BufferViewPtr> bufferViews;
+        std::map<uint32_t, ImageViewPtr> imageViews;
+        std::map<uint32_t, ImageSamplerPtr> imageSamplers;
+        std::map<uint32_t, VkAccelerationStructureKHR> accelerationStructures; // TODO
+        VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
     };
-    std::vector<BufferSettings> dynamicBuffersSettings;
-
-    // Descriptor set for buffers changing, if at all, only when vkQueueWaitIdle was called on the queue.
-    VkDescriptorSet staticDescriptorSet;
-    // Descriptor sets for buffers changing per frame (one decriptor set per frame).
-    std::vector<VkDescriptorSet> dynamicDescriptorSet;
+    std::vector<FrameData> frameDataList;
 };
 
 class RasterData : public RenderData {
 public:
-    RasterData(GraphicsPipelinePtr& graphicsPipeline);
+    RasterData(Renderer* renderer, GraphicsPipelinePtr& graphicsPipeline);
     void setIndexBuffer(BufferPtr& buffer, VkIndexType indexType = VK_INDEX_TYPE_UINT32);
     void setVertexBuffer(BufferPtr& buffer, uint32_t binding);
     void setVertexBuffer(BufferPtr& buffer, const std::string& name);
@@ -169,7 +178,7 @@ protected:
 
 class RayTracingData : public RenderData {
 public:
-    RayTracingData(RayTracingPipelinePtr& rayTracingPipeline);
+    RayTracingData(Renderer* renderer, RayTracingPipelinePtr& rayTracingPipeline);
 
     inline RayTracingPipelinePtr getRayTracingPipeline() { return rayTracingPipeline; }
 

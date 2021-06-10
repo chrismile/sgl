@@ -85,6 +85,30 @@ Image::~Image() {
     }
 }
 
+ImagePtr Image::copy(bool copyContent, VkImageAspectFlags aspectFlags) {
+    ImagePtr newImage(new Image(device, imageSettings));
+    if (copyContent) {
+        VkCommandBuffer commandBuffer = device->beginSingleTimeCommands();
+        VkImageSubresourceLayers subresource{};
+        subresource.aspectMask = aspectFlags;
+        subresource.mipLevel = 0;
+        subresource.baseArrayLayer = 0;
+        subresource.layerCount = imageSettings.arrayLayers;
+
+        VkImageCopy imageCopy{};
+        imageCopy.srcSubresource = subresource;
+        imageCopy.srcOffset = { 0, 0, 0 };
+        imageCopy.dstSubresource = subresource;
+        imageCopy.dstOffset = { 0, 0, 0 };
+        imageCopy.extent = { imageSettings.width, imageSettings.height, imageSettings.depth };
+        vkCmdCopyImage(
+                commandBuffer, this->image, this->imageLayout, newImage->image, newImage->imageLayout,
+                1, &imageCopy);
+        device->endSingleTimeCommands(commandBuffer);
+    }
+    return newImage;
+}
+
 void Image::uploadData(VkDeviceSize sizeInBytes, void* data, bool generateMipmaps) {
     BufferPtr stagingBuffer(new Buffer(
             device, sizeInBytes, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY));
@@ -414,7 +438,8 @@ void Image::unmapMemory() {
 
 
 
-ImageView::ImageView(Device* device, ImagePtr image, VkImageAspectFlags aspectFlags) : device(device), image(image) {
+ImageView::ImageView(Device* device, ImagePtr& image, VkImageAspectFlags aspectFlags)
+        : device(device), image(image), aspectFlags(aspectFlags) {
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewInfo.image = image->getVkImage();
@@ -435,8 +460,8 @@ ImageView::ImageView(Device* device, ImagePtr image, VkImageAspectFlags aspectFl
     }
 }
 
-ImageView::ImageView(Device* device, ImagePtr image, VkImageView imageView, VkImageAspectFlags aspectFlags)
-        : device(device), image(image) {
+ImageView::ImageView(Device* device, ImagePtr& image, VkImageView imageView, VkImageAspectFlags aspectFlags)
+        : device(device), image(image), aspectFlags(aspectFlags) {
     this->imageView = imageView;
 }
 
@@ -444,7 +469,18 @@ ImageView::~ImageView() {
     vkDestroyImageView(device->getVkDevice(), imageView, nullptr);
 }
 
-ImageSampler::ImageSampler(Device* device, ImageSamplerSettings samplerSettings, uint32_t maxLod)
+ImageViewPtr ImageView::copy(bool copyImage, bool copyContent) {
+    ImagePtr newImage;
+    if (copyImage) {
+        newImage = image->copy(copyContent, aspectFlags);
+    } else {
+        newImage = image;
+    }
+    ImageViewPtr newImageView(new ImageView(device, newImage, aspectFlags));
+    return newImageView;
+}
+
+ImageSampler::ImageSampler(Device* device, const ImageSamplerSettings& samplerSettings, uint32_t maxLod)
         : device(device) {
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -486,15 +522,15 @@ ImageSampler::ImageSampler(Device* device, ImageSamplerSettings samplerSettings,
     }
 }
 
-ImageSampler::ImageSampler(Device* device, ImageSamplerSettings samplerSettings, ImagePtr image)
+ImageSampler::ImageSampler(Device* device, const ImageSamplerSettings& samplerSettings, ImagePtr image)
         : ImageSampler(device, samplerSettings, image->getImageSettings().mipLevels) {}
 
 ImageSampler::~ImageSampler() {
     vkDestroySampler(device->getVkDevice(), sampler, nullptr);
 }
 
-Texture::Texture(ImagePtr image, ImageViewPtr imageView, ImageSampler imageSampler)
-        : image(image), imageView(imageView), imageSampler(imageSampler) {
+Texture::Texture(ImageViewPtr& imageView, ImageSamplerPtr& imageSampler)
+        : imageView(imageView), imageSampler(imageSampler) {
 }
 
 }}

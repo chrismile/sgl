@@ -36,11 +36,14 @@
 namespace sgl { namespace vk {
 
 class Device;
+class Buffer;
+typedef std::shared_ptr<Buffer> BufferPtr;
+class BufferView;
+typedef std::shared_ptr<BufferView> BufferViewPtr;
 
 class DLL_OBJECT Buffer {
 public:
     /**
-     *
      * @param device The device to allocate the buffer for.
      * @param sizeInBytes The size of the buffer in bytes.
      * @param usage A combination of flags how the buffer is used. E.g., VK_BUFFER_USAGE_TRANSFER_SRC_BIT, ...
@@ -53,8 +56,17 @@ public:
             bool queueExclusive = true);
     ~Buffer();
 
+    /**
+     * Creates a copy of the buffer.
+     * @param copyContent Whether to copy the content, too, or only create a buffer with the same settings.
+     * @return The new buffer.
+     */
+    BufferPtr copy(bool copyContent);
+
     inline VkBuffer getVkBuffer() { return buffer; }
     inline size_t getSizeInBytes() const { return sizeInBytes; }
+    inline VkBufferUsageFlags getVkBufferUsageFlags() const { return sizeInBytes; }
+    inline VmaMemoryUsage getVmaMemoryUsage() const { return memoryUsage; }
 
     void* mapMemory();
     void unmapMemory();
@@ -65,9 +77,47 @@ private:
     VkBuffer buffer;
     VmaAllocation bufferAllocation;
     VmaAllocationInfo bufferAllocationInfo;
+    VkBufferUsageFlags bufferUsageFlags;
+    VmaMemoryUsage memoryUsage;
+    bool queueExclusive;
 };
 
-typedef std::shared_ptr<Buffer> BufferPtr;
+class DLL_OBJECT BufferView {
+public:
+    /**
+     *
+     * @param device The device to allocate the buffer for.
+     * @param sizeInBytes The size of the buffer in bytes.
+     * @param usage A combination of flags how the buffer is used. E.g., VK_BUFFER_USAGE_TRANSFER_SRC_BIT, ...
+     * @param memoryUsage VMA_MEMORY_USAGE_GPU_ONLY, VMA_MEMORY_USAGE_CPU_ONLY, VMA_MEMORY_USAGE_CPU_TO_GPU,
+     * VMA_MEMORY_USAGE_GPU_TO_CPU, VMA_MEMORY_USAGE_CPU_COPY or VMA_MEMORY_USAGE_GPU_LAZILY_ALLOCATED.
+     * @param queueExclusive Is the buffer owned by a specific queue family exclusively or shared?
+     */
+    BufferView(
+            BufferPtr& buffer, VkFormat format, VkDeviceSize offset = 0,
+            VkDeviceSize range = std::numeric_limits<VkDeviceSize>::max());
+    ~BufferView();
+
+    /**
+     * Creates a copy of the buffer view.
+     * @param copyBuffer Whether to create a deep copy (with the underlying buffer also being copied) or to create a
+     * shallow copy that shares the buffer object with the original buffer view.
+     * @param copyContent If copyBuffer is true: Whether to also copy the content of the underlying buffer.
+     * @return The new buffer view.
+     */
+    BufferViewPtr copy(bool copyBuffer, bool copyContent);
+
+    inline BufferPtr getBuffer() { return buffer; }
+    inline VkBufferView getVkBufferView() { return bufferView; }
+
+private:
+    Device* device = nullptr;
+    BufferPtr buffer;
+    VkBufferView bufferView;
+    VkFormat format;
+    VkDeviceSize offset;
+    VkDeviceSize range;
+};
 
 }}
 

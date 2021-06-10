@@ -28,6 +28,9 @@
 
 #include <Utils/File/Logfile.hpp>
 #include <Utils/Events/EventManager.hpp>
+#include "../Utils/Device.hpp"
+#include "../Utils/Swapchain.hpp"
+#include "Renderer.hpp"
 #include "GraphicsPipeline.hpp"
 #include "RayTracingPipeline.hpp"
 #include "Data.hpp"
@@ -38,27 +41,355 @@ ComputeData::ComputeData(ComputePipelinePtr& computePipeline) : computePipeline(
 }
 
 
-RenderData::RenderData(Device* device, ShaderStagesPtr& shaderStages) : device(device), shaderStages(shaderStages) {
-    EventManager::get()->addListener(SWAPCHAIN_RECREATED_EVENT, [this](EventPtr){ this->onSwapchainRecreated(); });
+RenderData::RenderData(Renderer* renderer, ShaderStagesPtr& shaderStages)
+        : renderer(renderer), device(renderer->getDevice()), shaderStages(shaderStages) {
+    swapchainRecreatedEventListenerToken = EventManager::get()->addListener(
+            SWAPCHAIN_RECREATED_EVENT, [this](EventPtr){ this->onSwapchainRecreated(); });
+    onSwapchainRecreated();
+}
+
+RenderData::~RenderData() {
+    EventManager::get()->removeListener(SWAPCHAIN_RECREATED_EVENT, swapchainRecreatedEventListenerToken);
+
+    for (FrameData& frameData : frameDataList) {
+        vkFreeDescriptorSets(
+                device->getVkDevice(), renderer->getVkDescriptorPool(),
+                1, &frameData.descriptorSet);
+    }
+    frameDataList.clear();
+}
+
+RenderDataPtr RenderData::copy(ShaderStagesPtr& shaderStages) {
+    RenderDataPtr renderDataCopy(new RenderData(this->renderer, shaderStages));
+    renderDataCopy->frameDataList = this->frameDataList;
+    for (FrameData& frameData : renderDataCopy->frameDataList) {
+        frameData.descriptorSet = VK_NULL_HANDLE;
+    }
+    renderDataCopy->buffersStatic = buffersStatic;
+    renderDataCopy->bufferViewsStatic = bufferViewsStatic;
+    renderDataCopy->imageViewsStatic = imageViewsStatic;
+    renderDataCopy->accelerationStructuresStatic = accelerationStructuresStatic;
+    return renderDataCopy;
+}
+
+
+void RenderData::addStaticBuffer(BufferPtr& buffer, uint32_t binding) {
+    for (FrameData& frameData : frameDataList) {
+        frameData.buffers[binding] = buffer;
+    }
+    buffersStatic[binding] = true;
+    isDirty = true;
+}
+void RenderData::addStaticBuffer(BufferPtr& buffer, const std::string& descName) {
+    const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, descName);
+    addStaticBuffer(buffer, descriptorInfo.binding);
+}
+
+void RenderData::addStaticBufferView(BufferViewPtr& bufferView, uint32_t binding) {
+    for (FrameData& frameData : frameDataList) {
+        frameData.bufferViews[binding] = bufferView;
+    }
+    bufferViewsStatic[binding] = true;
+    isDirty = true;
+}
+void RenderData::addStaticBufferView(BufferViewPtr& bufferView, const std::string& descName) {
+    const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, descName);
+    addStaticBufferView(bufferView, descriptorInfo.binding);
+}
+
+void RenderData::addStaticImageView(ImageViewPtr& imageView, uint32_t binding) {
+    for (FrameData& frameData : frameDataList) {
+        frameData.imageViews[binding] = imageView;
+    }
+    imageViewsStatic[binding] = true;
+    isDirty = true;
+}
+void RenderData::addImageSampler(ImageSamplerPtr& imageSampler, uint32_t binding) {
+    for (FrameData& frameData : frameDataList) {
+        frameData.imageSamplers[binding] = imageSampler;
+    }
+    isDirty = true;
+}
+void RenderData::addStaticTexture(TexturePtr& texture, uint32_t binding) {
+    addStaticImageView(texture->getImageView(), binding);
+    addImageSampler(texture->getImageSampler(), binding);
+}
+
+void RenderData::addStaticImageView(ImageViewPtr& imageView, const std::string& descName) {
+    const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, descName);
+    addStaticImageView(imageView, descriptorInfo.binding);
+}
+void RenderData::addImageSampler(ImageSamplerPtr& imageSampler, const std::string& descName) {
+    const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, descName);
+    addImageSampler(imageSampler, descriptorInfo.binding);
+}
+void RenderData::addStaticTexture(TexturePtr& texture, const std::string& descName) {
+    const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, descName);
+    addStaticImageView(texture->getImageView(), descriptorInfo.binding);
+    addImageSampler(texture->getImageSampler(), descriptorInfo.binding);
+}
+
+
+void RenderData::addDynamicBuffer(BufferPtr& buffer, uint32_t binding) {
+    frameDataList.front().buffers[binding] = buffer;
+    for (size_t i = 1; i < frameDataList.size(); i++) {
+        FrameData& frameData = frameDataList.at(i);
+        frameData.buffers[binding] = buffer->copy(false);
+    }
+    buffersStatic[binding] = true;
+    isDirty = true;
+}
+void RenderData::addDynamicBuffer(BufferPtr& buffer, const std::string& descName) {
+    const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, descName);
+    addDynamicBuffer(buffer, descriptorInfo.binding);
+}
+
+void RenderData::addDynamicBufferView(BufferViewPtr& bufferView, uint32_t binding) {
+    frameDataList.front().bufferViews[binding] = bufferView;
+    for (size_t i = 1; i < frameDataList.size(); i++) {
+        FrameData& frameData = frameDataList.at(i);
+        frameData.bufferViews[binding] = bufferView->copy(true, false);
+    }
+    bufferViewsStatic[binding] = true;
+    isDirty = true;
+}
+void RenderData::addDynamicBufferView(BufferViewPtr& bufferView, const std::string& descName) {
+    const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, descName);
+    addDynamicBufferView(bufferView, descriptorInfo.binding);
+}
+
+void RenderData::addDynamicImageView(ImageViewPtr& imageView, uint32_t binding) {
+    frameDataList.front().imageViews[binding] = imageView;
+    for (size_t i = 1; i < frameDataList.size(); i++) {
+        FrameData& frameData = frameDataList.at(i);
+        frameData.imageViews[binding] = imageView->copy(true, false);
+    }
+    imageViewsStatic[binding] = true;
+    isDirty = true;
+}
+void RenderData::addDynamicImageView(ImageViewPtr& imageView, const std::string& descName) {
+    const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, descName);
+    addDynamicImageView(imageView, descriptorInfo.binding);
+}
+
+BufferPtr RenderData::getBuffer(uint32_t binding) {
+    Swapchain* swapchain = AppSettings::get()->getSwapchain();
+    return frameDataList.at(swapchain ? swapchain->getImageIndex() : 0).buffers.at(binding);
+}
+BufferPtr RenderData::getBuffer(const std::string& name) {
+    Swapchain* swapchain = AppSettings::get()->getSwapchain();
+    const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, name);
+    return frameDataList.at(swapchain ? swapchain->getImageIndex() : 0).buffers.at(descriptorInfo.binding);
+}
+
+VkDescriptorSet RenderData::getVkDescriptorSet() {
+    Swapchain* swapchain = AppSettings::get()->getSwapchain();
+    return frameDataList.at(swapchain ? swapchain->getImageIndex() : 0).descriptorSet;
+}
+
+
+void RenderData::_updateDescriptorSets() {
+    if (!isDirty) {
+        return;
+    }
+    isDirty = false;
+
+    const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts = shaderStages->getVkDescriptorSetLayouts();
+
+    if (descriptorSetLayouts.size() > 2) {
+        Logfile::get()->writeInfo(
+                "Warning in RenderData::RenderData: More than two descriptor sets used by the shaders."
+                "So far, sgl only supports one user-defined set (0) and one transformation matrix set (1).");
+    }
+    if (descriptorSetLayouts.size() < 2) {
+        Logfile::get()->throwError(
+                "Expected exactly two descriptor sets - one user-defined set (0) and one transformation matrix "
+                "set (1).");
+    }
+
+    const VkDescriptorSetLayout& descriptorSetLayout = descriptorSetLayouts.at(0);
+    const std::vector<DescriptorInfo>& descriptorSetInfo = shaderStages->getDescriptorSetsInfo().find(0)->second;
+
+    for (FrameData& frameData : frameDataList) {
+        if (frameData.descriptorSet == VK_NULL_HANDLE) {
+            VkDescriptorSetAllocateInfo allocInfo{};
+            allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+            allocInfo.descriptorPool = renderer->getVkDescriptorPool();
+            allocInfo.descriptorSetCount = 1;
+            allocInfo.pSetLayouts = &descriptorSetLayout;
+
+            if (vkAllocateDescriptorSets(
+                    device->getVkDevice(), &allocInfo, &frameData.descriptorSet) != VK_SUCCESS) {
+                Logfile::get()->throwError(
+                        "Error in Renderer::updateMatrixBlock: Failed to allocate descriptor sets!");
+            }
+        }
+
+        std::vector<VkWriteDescriptorSet> descriptorWrites;
+        descriptorWrites.reserve(descriptorSetInfo.size());
+        for (size_t i = 0; i < descriptorSetInfo.size(); i++) {
+            const DescriptorInfo& descriptorInfo = descriptorSetInfo.at(i);
+            VkWriteDescriptorSet& descriptorWrite = descriptorWrites.at(i);
+            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrite.dstSet = frameData.descriptorSet;
+            descriptorWrite.dstBinding = descriptorInfo.binding;
+            descriptorWrite.dstArrayElement = 0;
+            descriptorWrite.descriptorType = descriptorInfo.type;
+            descriptorWrite.descriptorCount = 1;
+
+            VkDescriptorImageInfo imageInfo = {};
+            VkBufferView bufferView = VK_NULL_HANDLE;
+            VkDescriptorBufferInfo bufferInfo = {};
+            VkWriteDescriptorSetAccelerationStructureKHR accelerationStructureInfo = {};
+            if (descriptorInfo.type == VK_DESCRIPTOR_TYPE_SAMPLER
+                        || descriptorInfo.type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+                        || descriptorInfo.type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+                        || descriptorInfo.type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+                        || descriptorInfo.type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+                        || descriptorInfo.type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+                if (descriptorInfo.type == VK_DESCRIPTOR_TYPE_SAMPLER
+                            || descriptorInfo.type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+                    auto it = frameData.imageSamplers.find(descriptorInfo.binding);
+                    if (it == frameData.imageSamplers.end()) {
+                        Logfile::get()->throwError(
+                                "Error in RenderData::_updateDescriptorSets: Couldn't find sampler with binding "
+                                + std::to_string(descriptorInfo.binding) + ".");
+                    }
+                    imageInfo.sampler = it->second->getVkSampler();
+                }
+                if (descriptorInfo.type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+                            || descriptorInfo.type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+                            || descriptorInfo.type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+                            || descriptorInfo.type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
+                    auto it = frameData.imageViews.find(descriptorInfo.binding);
+                    if (it == frameData.imageViews.end()) {
+                        Logfile::get()->throwError(
+                                "Error in RenderData::_updateDescriptorSets: Couldn't find image view with binding "
+                                + std::to_string(descriptorInfo.binding) + ".");
+                    }
+                    imageInfo.imageView = it->second->getVkImageView();
+                    VkImageLayout imageLayout;
+                    if (descriptorInfo.type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
+                        imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+                    } else {
+                        imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                    }
+                    imageInfo.imageLayout = imageLayout;
+                }
+                descriptorWrite.pImageInfo = &imageInfo;
+            } else if (descriptorInfo.type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER
+                       || descriptorInfo.type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) {
+                auto it = frameData.bufferViews.find(descriptorInfo.binding);
+                if (it == frameData.bufferViews.end()) {
+                    Logfile::get()->throwError(
+                            "Error in RenderData::_updateDescriptorSets: Couldn't find buffer view with binding "
+                            + std::to_string(descriptorInfo.binding) + ".");
+                }
+                bufferView = it->second->getVkBufferView();
+                descriptorWrite.pTexelBufferView = &bufferView;
+            } else if (descriptorInfo.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+                       || descriptorInfo.type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+                       || descriptorInfo.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC
+                       || descriptorInfo.type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) {
+                auto it = frameData.buffers.find(descriptorInfo.binding);
+                if (it == frameData.buffers.end()) {
+                    Logfile::get()->throwError(
+                            "Error in RenderData::_updateDescriptorSets: Couldn't find buffer with binding "
+                            + std::to_string(descriptorInfo.binding) + ".");
+                }
+                bufferInfo.buffer = it->second->getVkBuffer();
+                bufferInfo.offset = 0;
+                bufferInfo.range = it->second->getSizeInBytes();
+                descriptorWrite.pBufferInfo = &bufferInfo;
+            } else if (descriptorInfo.type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
+                auto it = frameData.accelerationStructures.find(descriptorInfo.binding);
+                if (it == frameData.accelerationStructures.end()) {
+                    Logfile::get()->throwError(
+                            "Error in RenderData::_updateDescriptorSets: Couldn't find acceleration structure with "
+                            "binding " + std::to_string(descriptorInfo.binding) + ".");
+                }
+                accelerationStructureInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+                accelerationStructureInfo.accelerationStructureCount = 1;
+                accelerationStructureInfo.pAccelerationStructures = &it->second;
+                descriptorWrite.pNext = &accelerationStructureInfo;
+            }
+        }
+
+        if (!descriptorWrites.empty()) {
+            vkUpdateDescriptorSets(
+                    device->getVkDevice(), descriptorWrites.size(), descriptorWrites.data(),
+                    0, nullptr);
+        }
+    }
 }
 
 void RenderData::onSwapchainRecreated() {
     Swapchain* swapchain = AppSettings::get()->getSwapchain();
     size_t numImages = swapchain ? swapchain->getNumImages() : 1;
-    if (dynamicBuffers.size() > numImages) {
-        dynamicBuffers.resize(numImages);
-    } else if (dynamicBuffers.size() < numImages) {
-        size_t sizeDifference = numImages - dynamicBuffers.size();
-        for (size_t i = 0; i < sizeDifference; i++) {
-            std::vector<BufferPtr> buffers;
-            for (size_t binding = 0; binding < dynamicBuffersSettings.size(); binding++) {
-                BufferSettings& dynamicBufferSettings = dynamicBuffersSettings.at(binding);
-                BufferPtr buffer(new Buffer(
-                        device, dynamicBufferSettings.sizeInBytes, dynamicBufferSettings.bufferUsageFlags,
-                        VMA_MEMORY_USAGE_CPU_TO_GPU));
-                buffers.push_back(buffer);
+    if (frameDataList.size() > numImages) {
+        // Free the now unused frame data.
+        for (size_t i = numImages; i < frameDataList.size(); i++) {
+            FrameData& frameData = frameDataList.at(i);
+            vkFreeDescriptorSets(
+                    device->getVkDevice(), renderer->getVkDescriptorPool(),
+                    1, &frameData.descriptorSet);
+        }
+        frameDataList.resize(numImages);
+    } else if (frameDataList.size() < numImages) {
+        if (frameDataList.empty()) {
+            frameDataList.resize(numImages);
+        } else {
+            // Add frame data for the newly added swapchain images.
+            FrameData& firstFrameData = frameDataList.front();
+            size_t sizeDifference = numImages - frameDataList.size();
+            for (size_t i = 0; i < sizeDifference; i++) {
+                FrameData frameData;
+                for (auto& it : firstFrameData.buffers) {
+                    if (buffersStatic[it.first]) {
+                        frameData.buffers.insert(it);
+                    } else {
+                        BufferPtr& firstBuffer = it.second;
+                        BufferPtr newBuffer = firstBuffer->copy(false);
+                        frameData.buffers.insert(std::make_pair(it.first, newBuffer));
+                    }
+                }
+                for (auto& it : firstFrameData.bufferViews) {
+                    if (bufferViewsStatic[it.first]) {
+                        frameData.bufferViews.insert(it);
+                    } else {
+                        BufferViewPtr& firstBufferView = it.second;
+                        BufferViewPtr newBufferView = firstBufferView->copy(true, false);
+                        frameData.bufferViews.insert(std::make_pair(it.first, newBufferView));
+                    }
+                }
+                for (auto& it : firstFrameData.imageViews) {
+                    if (imageViewsStatic[it.first]) {
+                        frameData.imageViews.insert(it);
+                    } else {
+                        ImageViewPtr& firstImageView = it.second;
+                        ImageViewPtr newImageView = firstImageView->copy(true, false);
+                        frameData.imageViews.insert(std::make_pair(it.first, newImageView));
+                    }
+                }
+                for (auto& it : firstFrameData.imageSamplers) {
+                    if (buffersStatic[it.first]) {
+                        frameData.imageSamplers.insert(it);
+                    } else {
+                        Logfile::get()->throwError(
+                                "Error in RenderData::onSwapchainRecreated: Dynamic samplers are not supported.");
+                    }
+                }
+                for (auto& it : firstFrameData.accelerationStructures) {
+                    if (buffersStatic[it.first]) {
+                        frameData.accelerationStructures.insert(it);
+                    } else {
+                        Logfile::get()->throwError(
+                                "Error in RenderData::onSwapchainRecreated: Dynamic acceleration structures are "
+                                "not supported.");
+                    }
+                }
+                frameDataList.push_back(frameData);
             }
-            dynamicBuffers.push_back(buffers);
         }
     }
 }
@@ -77,8 +408,8 @@ inline size_t getIndexTypeByteSize(VkIndexType indexType) {
     }
 }
 
-RasterData::RasterData(GraphicsPipelinePtr& graphicsPipeline)
-        : RenderData(graphicsPipeline->getDevice(), graphicsPipeline->getShaderStages()),
+RasterData::RasterData(Renderer* renderer, GraphicsPipelinePtr& graphicsPipeline)
+        : RenderData(renderer, graphicsPipeline->getShaderStages()),
         graphicsPipeline(graphicsPipeline) {
 }
 
@@ -121,8 +452,8 @@ void RasterData::setVertexBuffer(BufferPtr& buffer, const std::string& name) {
 }
 
 
-RayTracingData::RayTracingData(RayTracingPipelinePtr& rayTracingPipeline)
-        : RenderData(rayTracingPipeline->getDevice(), rayTracingPipeline->getShaderStages()),
+RayTracingData::RayTracingData(Renderer* renderer, RayTracingPipelinePtr& rayTracingPipeline)
+        : RenderData(renderer, rayTracingPipeline->getShaderStages()),
         rayTracingPipeline(rayTracingPipeline) {
 }
 

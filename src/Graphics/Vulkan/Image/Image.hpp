@@ -41,6 +41,15 @@ class Device;
 class Buffer;
 typedef std::shared_ptr<Buffer> BufferPtr;
 
+class Image;
+typedef std::shared_ptr<Image> ImagePtr;
+class ImageView;
+typedef std::shared_ptr<ImageView> ImageViewPtr;
+class ImageSampler;
+typedef std::shared_ptr<ImageSampler> ImageSamplerPtr;
+class Texture;
+typedef std::shared_ptr<Texture> TexturePtr;
+
 struct DLL_OBJECT ImageSettings {
     ImageSettings() {}
     uint32_t width = 1;
@@ -61,9 +70,6 @@ inline bool hasStencilComponent(VkFormat format) {
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
-class Image;
-typedef std::shared_ptr<Image> ImagePtr;
-
 class DLL_OBJECT Image {
 public:
     Image(Device* device, const ImageSettings& imageSettings);
@@ -72,6 +78,14 @@ public:
             Device* device, const ImageSettings& imageSettings, VkImage image,
             VmaAllocation imageAllocation, VmaAllocationInfo imageAllocationInfo);
     ~Image();
+
+    /**
+     * Creates a copy of the buffer.
+     * @param copyContent Whether to copy the content, too, or only create a buffer with the same settings.
+     * @param aspectFlags The image aspect flags.
+     * @return The new buffer.
+     */
+    ImagePtr copy(bool copyContent, VkImageAspectFlags aspectFlags);
 
     // Computes the recommended number of mip levels for a 2D texture of the specified size.
     static uint32_t computeMipLevels(uint32_t width, uint32_t height) {
@@ -142,22 +156,31 @@ private:
 
 class DLL_OBJECT ImageView {
 public:
-    ImageView(Device* device, ImagePtr image, VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
+    ImageView(Device* device, ImagePtr& image, VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
     ImageView(
-            Device* device, ImagePtr image, VkImageView imageView,
+            Device* device, ImagePtr& image, VkImageView imageView,
             VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
     ~ImageView();
 
+    /**
+     * Creates a copy of the image view.
+     * @param copyImage Whether to create a deep copy (with the underlying image also being copied) or to create a
+     * shallow copy that shares the image object with the original image view.
+     * @param copyContent If copyImage is true: Whether to also copy the content of the underlying image.
+     * @return The new image view.
+     */
+    ImageViewPtr copy(bool copyImage, bool copyContent);
+
     inline ImagePtr& getImage() { return image; }
     inline VkImageView getVkImageView() { return imageView; }
+    inline VkImageAspectFlags getVkImageAspectFlags() { return aspectFlags; }
 
 private:
     Device* device = nullptr;
     ImagePtr image;
     VkImageView imageView = nullptr;
+    VkImageAspectFlags aspectFlags;
 };
-
-typedef std::shared_ptr<ImageView> ImageViewPtr;
 
 struct DLL_OBJECT ImageSamplerSettings {
     ImageSamplerSettings() {}
@@ -189,28 +212,29 @@ struct DLL_OBJECT ImageSamplerSettings {
  */
 class DLL_OBJECT ImageSampler {
 public:
-    ImageSampler(Device* device, ImageSamplerSettings samplerSettings, uint32_t maxLod = 0);
-    ImageSampler(Device* device, ImageSamplerSettings samplerSettings, ImagePtr image);
+    ImageSampler(Device* device, const ImageSamplerSettings& samplerSettings, uint32_t maxLod = 0);
+    ImageSampler(Device* device, const ImageSamplerSettings& samplerSettings, ImagePtr image);
     ~ImageSampler();
+
+    inline VkSampler getVkSampler() { return sampler; }
 
 private:
     Device* device = nullptr;
     VkSampler sampler = nullptr;
 };
 
-typedef std::shared_ptr<ImageSampler> ImageSamplerPtr;
-
 class DLL_OBJECT Texture {
 public:
-    Texture(ImagePtr image, ImageViewPtr imageView, ImageSampler imageSampler);
+    Texture(ImageViewPtr& imageView, ImageSamplerPtr& imageSampler);
+
+    inline ImagePtr& getImage () { return imageView->getImage(); }
+    inline ImageViewPtr& getImageView () { return imageView; }
+    inline ImageSamplerPtr& getImageSampler () { return imageSampler; }
 
 private:
-    ImagePtr image;
     ImageViewPtr imageView;
-    ImageSampler imageSampler;
+    ImageSamplerPtr imageSampler;
 };
-
-typedef std::shared_ptr<Texture> TexturePtr;
 
 }}
 

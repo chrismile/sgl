@@ -38,7 +38,37 @@
 
 namespace sgl { namespace vk {
 
-Renderer::Renderer(Device* device) : device(device) {
+Renderer::Renderer(Device* device, uint32_t numDescriptors) : device(device) {
+    std::vector<VkDescriptorPoolSize> globalPoolSizes = {
+            { VK_DESCRIPTOR_TYPE_SAMPLER, numDescriptors },
+            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, numDescriptors },
+            { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, numDescriptors },
+            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, numDescriptors },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, numDescriptors },
+            { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, numDescriptors },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, numDescriptors },
+            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, numDescriptors },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, numDescriptors },
+            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, numDescriptors },
+            { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, numDescriptors }
+    };
+
+    if (device->isDeviceExtensionSupported(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)) {
+        globalPoolSizes.push_back({ VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, numDescriptors });
+    }
+
+    VkDescriptorPoolCreateInfo globalPoolInfo = {};
+    globalPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    globalPoolInfo.poolSizeCount = uint32_t(globalPoolSizes.size());
+    globalPoolInfo.pPoolSizes = globalPoolSizes.data();
+    globalPoolInfo.maxSets = numDescriptors;
+
+    if (vkCreateDescriptorPool(
+            device->getVkDevice(), &globalPoolInfo, nullptr, &globalDescriptorPool) != VK_SUCCESS) {
+        Logfile::get()->throwError("Error in Renderer::Renderer: Failed to create global descriptor pool!");
+    }
+
+
     VkDescriptorSetLayoutBinding uboLayoutBinding{};
     uboLayoutBinding.binding = 0;
     uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -69,7 +99,7 @@ Renderer::Renderer(Device* device) : device(device) {
 
     if (vkCreateDescriptorPool(
             device->getVkDevice(), &poolInfo, nullptr, &matrixBufferDescriptorPool) != VK_SUCCESS) {
-        Logfile::get()->throwError("Error in Renderer::Renderer: Failed to create descriptor pool!");
+        Logfile::get()->throwError("Error in Renderer::Renderer: Failed to create matrix block descriptor pool!");
     }
 }
 
@@ -84,6 +114,8 @@ Renderer::~Renderer() {
 
     vkDestroyDescriptorSetLayout(device->getVkDevice(), matrixBufferDesciptorSetLayout, nullptr);
     vkDestroyDescriptorPool(device->getVkDevice(), matrixBufferDescriptorPool, nullptr);
+
+    vkDestroyDescriptorPool(device->getVkDevice(), globalDescriptorPool, nullptr);
 }
 
 void Renderer::beginCommandBuffer() {
@@ -130,10 +162,8 @@ void Renderer::render(RasterDataPtr rasterData) {
     if (updateMatrixBlock() || recordingCommandBufferStarted) {
         vkCmdBindDescriptorSets(
                 commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline->getVkPipelineLayout(),
-                7, 1, &matrixBlockDescriptorSet, 0, nullptr);
+                1, 1, &matrixBlockDescriptorSet, 0, nullptr);
     }
-    // Use: currentMatrixBlockBuffer
-
 
     VkRenderPassBeginInfo renderPassBeginInfo = {};
     renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -160,16 +190,18 @@ void Renderer::render(RasterDataPtr rasterData) {
     VkDeviceSize offsets[] = { 0 };
     if (rasterData->hasIndexBuffer()) {
         VkBuffer indexBuffer = rasterData->getVkIndexBuffer();
-        // VK_INDEX_TYPE_UINT32
         vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, rasterData->getIndexType());
     }
     vkCmdBindVertexBuffers(commandBuffer, 0, uint32_t(vertexBuffers.size()), vertexBuffers.data(), offsets);
 
-
-    //std::vector<VkDescriptorSet>& dataDescriptorSets = rasterData->getVkDescriptorSets();
-    //vkCmdBindDescriptorSets(
-    //        commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline->getVkPipelineLayout(),
-    //        0, uint32_t(dataDescriptorSets.size()), dataDescriptorSets.data(), 0, nullptr);
+    rasterData->_updateDescriptorSets();
+    VkDescriptorSet descriptorSet = rasterData->getVkDescriptorSet();
+    if (descriptorSet != VK_NULL_HANDLE) {
+        vkCmdBindDescriptorSets(
+                commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                graphicsPipeline->getVkPipelineLayout(),
+                0, 1, &descriptorSet, 0, nullptr);
+    }
 
     if (rasterData->hasIndexBuffer()) {
         vkCmdDrawIndexed(
@@ -285,8 +317,6 @@ void Renderer::traceRays(RayTracingDataPtr rayTracingData) {
         isNewPipeline = true;
     }
 
-    const FramebufferPtr& framebuffer = graphicsPipeline->getFramebuffer();
-
     updateMatrixBlock();
 
     if (isNewPipeline) {
@@ -294,6 +324,8 @@ void Renderer::traceRays(RayTracingDataPtr rayTracingData) {
                 commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
                 rayTracingPipeline->getVkPipeline());
     }
+
+    //const FramebufferPtr& framebuffer = graphicsPipeline->getFramebuffer();
 
     //vkCmdTraceRaysKHR(
     //        commandBuffer,
