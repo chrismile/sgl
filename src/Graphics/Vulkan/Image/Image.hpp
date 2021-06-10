@@ -139,6 +139,8 @@ public:
     /// Transitions the image layout from the old layout to the new layout.
     inline VkImageLayout getVkImageLayout() const { return imageLayout; }
 
+    inline Device* getDevice() { return device; }
+
     void* mapMemory();
     void unmapMemory();
 
@@ -149,16 +151,19 @@ private:
     bool hasImageOwnership = true;
     ImageSettings imageSettings;
     VkImage image = nullptr;
-    VkImageLayout imageLayout;
+    VkImageLayout imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     VmaAllocation imageAllocation = nullptr;
     VmaAllocationInfo imageAllocationInfo = {};
 };
 
 class DLL_OBJECT ImageView {
 public:
-    ImageView(Device* device, ImagePtr& image, VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
     ImageView(
-            Device* device, ImagePtr& image, VkImageView imageView,
+            ImagePtr& image, VkImageViewType imageViewType, VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
+    explicit ImageView(
+            ImagePtr& image, VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
+    ImageView(
+            ImagePtr& image, VkImageView imageView, VkImageViewType imageViewType,
             VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
     ~ImageView();
 
@@ -171,6 +176,7 @@ public:
      */
     ImageViewPtr copy(bool copyImage, bool copyContent);
 
+    inline Device* getDevice() { return device; }
     inline ImagePtr& getImage() { return image; }
     inline VkImageView getVkImageView() { return imageView; }
     inline VkImageAspectFlags getVkImageAspectFlags() { return aspectFlags; }
@@ -179,6 +185,7 @@ private:
     Device* device = nullptr;
     ImagePtr image;
     VkImageView imageView = nullptr;
+    VkImageViewType imageViewType;
     VkImageAspectFlags aspectFlags;
 };
 
@@ -201,7 +208,7 @@ struct DLL_OBJECT ImageSamplerSettings {
     VkBool32 compareEnable = VK_FALSE; // VK_TRUE, e.g., for percentage-closer filtering
     VkCompareOp compareOp = VK_COMPARE_OP_ALWAYS;
     float minLod = 0.0f;
-    float maxLod = -1.0f; // Negative value means max. LoD.
+    float maxLod = VK_LOD_CLAMP_NONE;
     VkBorderColor borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
     // [0, 1) range vs. [0, size) range.
     VkBool32 unnormalizedCoordinates = VK_FALSE;
@@ -212,7 +219,7 @@ struct DLL_OBJECT ImageSamplerSettings {
  */
 class DLL_OBJECT ImageSampler {
 public:
-    ImageSampler(Device* device, const ImageSamplerSettings& samplerSettings, uint32_t maxLod = 0);
+    ImageSampler(Device* device, const ImageSamplerSettings& samplerSettings, float maxLodOverwrite = -1.0f);
     ImageSampler(Device* device, const ImageSamplerSettings& samplerSettings, ImagePtr image);
     ~ImageSampler();
 
@@ -226,10 +233,14 @@ private:
 class DLL_OBJECT Texture {
 public:
     Texture(ImageViewPtr& imageView, ImageSamplerPtr& imageSampler);
+    Texture(
+            Device* device, const ImageSettings& imageSettings,
+            const ImageSamplerSettings& samplerSettings = ImageSamplerSettings(),
+            VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
 
-    inline ImagePtr& getImage () { return imageView->getImage(); }
-    inline ImageViewPtr& getImageView () { return imageView; }
-    inline ImageSamplerPtr& getImageSampler () { return imageSampler; }
+    inline ImagePtr& getImage() { return imageView->getImage(); }
+    inline ImageViewPtr& getImageView() { return imageView; }
+    inline ImageSamplerPtr& getImageSampler() { return imageSampler; }
 
 private:
     ImageViewPtr imageView;

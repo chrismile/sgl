@@ -41,8 +41,12 @@
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
 #include <Math/Math.hpp>
+#ifdef SUPPORT_OPENGL
 #include <Graphics/Renderer.hpp>
 #include <Graphics/Texture/TextureManager.hpp>
+#endif
+#ifdef SUPPORT_VULKAN
+#endif
 #include "TransferFunctionWindow.hpp"
 
 using namespace tinyxml2;
@@ -73,9 +77,22 @@ TransferFunctionWindow::TransferFunctionWindow() {
     opacityPoints = { OpacityPoint(1.0f, 0.0f), OpacityPoint(1.0f, 1.0f) };
     transferFunctionMap_sRGB.resize(TRANSFER_FUNCTION_TEXTURE_SIZE);
     transferFunctionMap_linearRGB.resize(TRANSFER_FUNCTION_TEXTURE_SIZE);
-    tfMapTextureSettings.type = sgl::TEXTURE_1D;
-    tfMapTextureSettings.internalFormat = GL_RGBA16;
-    tfMapTexture = sgl::TextureManager->createEmptyTexture(TRANSFER_FUNCTION_TEXTURE_SIZE, tfMapTextureSettings);
+#ifdef SUPPORT_OPENGL
+    if (AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
+        tfMapTextureSettings.type = sgl::TEXTURE_1D;
+        tfMapTextureSettings.internalFormat = GL_RGBA16;
+        tfMapTexture = sgl::TextureManager->createEmptyTexture(TRANSFER_FUNCTION_TEXTURE_SIZE, tfMapTextureSettings);
+    }
+#endif
+#ifdef SUPPORT_VULKAN
+    if (AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+        tfMapImageSettingsVulkan.imageType = VK_IMAGE_TYPE_1D;
+        tfMapImageSettingsVulkan.format = VK_FORMAT_R16G16B16A16_UNORM;
+        tfMapImageSettingsVulkan.width = TRANSFER_FUNCTION_TEXTURE_SIZE;
+        tfMapTextureVulkan = sgl::vk::TexturePtr(new sgl::vk::Texture(
+                AppSettings::get()->getPrimaryDevice(), tfMapImageSettingsVulkan));
+    }
+#endif
 
     saveDirectory = sgl::AppSettings::get()->getDataDirectory() + "TransferFunctions/";
     directoryContentWatch.setPath(saveDirectory, true);
@@ -516,9 +533,16 @@ void TransferFunctionWindow::renderColorBar() {
     return transferFunctionMap;
 }*/
 
+#ifdef SUPPORT_OPENGL
 sgl::TexturePtr& TransferFunctionWindow::getTransferFunctionMapTexture() {
     return tfMapTexture;
 }
+#endif
+#ifdef SUPPORT_VULKAN
+sgl::vk::TexturePtr& TransferFunctionWindow::getTransferFunctionMapTextureVulkan() {
+    return tfMapTextureVulkan;
+}
+#endif
 
 bool TransferFunctionWindow::getTransferFunctionMapRebuilt() {
     if (transferFunctionMapRebuilt) {
@@ -544,15 +568,30 @@ void TransferFunctionWindow::rebuildTransferFunctionMap() {
         rebuildTransferFunctionMap_sRGB();
     }
 
-    sgl::PixelFormat pixelFormat;
-    pixelFormat.pixelType = GL_UNSIGNED_SHORT;
-    if (useLinearRGB) {
-        tfMapTexture->uploadPixelData(
-                TRANSFER_FUNCTION_TEXTURE_SIZE, &transferFunctionMap_linearRGB.front(), pixelFormat);
-    } else {
-        tfMapTexture->uploadPixelData(
-                TRANSFER_FUNCTION_TEXTURE_SIZE, &transferFunctionMap_sRGB.front(), pixelFormat);
+#ifdef SUPPORT_OPENGL
+    if (AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
+        sgl::PixelFormat pixelFormat;
+        pixelFormat.pixelType = GL_UNSIGNED_SHORT;
+        if (useLinearRGB) {
+            tfMapTexture->uploadPixelData(
+                    TRANSFER_FUNCTION_TEXTURE_SIZE, transferFunctionMap_linearRGB.data(), pixelFormat);
+        } else {
+            tfMapTexture->uploadPixelData(
+                    TRANSFER_FUNCTION_TEXTURE_SIZE, transferFunctionMap_sRGB.data(), pixelFormat);
+        }
     }
+#endif
+#ifdef SUPPORT_VULKAN
+    if (AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+        if (useLinearRGB) {
+            tfMapTextureVulkan->getImage()->uploadData(
+                    TRANSFER_FUNCTION_TEXTURE_SIZE * 8, transferFunctionMap_linearRGB.data());
+        } else {
+            tfMapTextureVulkan->getImage()->uploadData(
+                    TRANSFER_FUNCTION_TEXTURE_SIZE * 8, transferFunctionMap_sRGB.data());
+        }
+    }
+#endif
 
    transferFunctionMapRebuilt = true;
 }

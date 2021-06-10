@@ -94,9 +94,7 @@ void ImGuiWrapper::initialize(
 #ifdef SUPPORT_VULKAN
     if (renderSystem == RenderSystem::VULKAN) {
         SDLWindow *window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
-        vk::Instance* instance = AppSettings::get()->getVulkanInstance();
         vk::Device* device = AppSettings::get()->getPrimaryDevice();
-        vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
 
         VkDescriptorPoolSize poolSizes[] = {
                 { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
@@ -124,33 +122,6 @@ void ImGuiWrapper::initialize(
         }
 
         ImGui_ImplSDL2_InitForVulkan(window->getSDLWindow());
-
-        ImGui_ImplVulkan_InitInfo initInfo{};
-        initInfo.Instance = instance->getVkInstance();
-        initInfo.Device = device->getVkDevice();
-        initInfo.PhysicalDevice = device->getVkPhysicalDevice();
-        initInfo.QueueFamily = device->getGraphicsQueueIndex();
-        initInfo.Queue = device->getGraphicsQueue();
-        initInfo.PipelineCache = VK_NULL_HANDLE;
-        initInfo.DescriptorPool = imguiDescriptorPool;
-        initInfo.MinImageCount = swapchain->getMinImageCount();
-        initInfo.ImageCount = swapchain->getNumImages();
-        initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-        initInfo.Allocator = nullptr;
-        initInfo.CheckVkResultFn = checkImGuiVkResult;
-
-        onResolutionChanged();
-        ImGui_ImplVulkan_Init(&initInfo, framebuffer->getVkRenderPass());
-
-        VkCommandBuffer commandBuffer = device->beginSingleTimeCommands();
-        ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
-        device->endSingleTimeCommands(commandBuffer);
-        ImGui_ImplVulkan_DestroyFontUploadObjects();
-
-        vk::CommandPoolType commandPoolType;
-        commandPoolType.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        imguiCommandBuffers = device->allocateCommandBuffers(
-                commandPoolType, &commandPool, uint32_t(swapchain->getNumImages()));
     }
 #endif
 
@@ -214,23 +185,79 @@ void ImGuiWrapper::shutdown() {
 
 void ImGuiWrapper::processSDLEvent(const SDL_Event &event) {
     ImGui_ImplSDL2_ProcessEvent(&event);
-
 }
 
-void ImGuiWrapper::onResolutionChanged() {
 #ifdef SUPPORT_VULKAN
+void ImGuiWrapper::setVkRenderTarget(vk::ImageViewPtr imageView) {
+    this->imageView = imageView;
     vk::Device* device = AppSettings::get()->getPrimaryDevice();
     Window* window = AppSettings::get()->getMainWindow();
     framebuffer = vk::FramebufferPtr(new vk::Framebuffer(device, window->getWidth(), window->getHeight()));
     vk::AttachmentState attachmentState;
     attachmentState.initialLayout = attachmentState.finalLayout;
     framebuffer->setColorAttachment(imageView, 0, attachmentState);
+}
+#endif
+
+void ImGuiWrapper::onResolutionChanged() {
+#ifdef SUPPORT_VULKAN
+    if (AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+        // TODO
+        //vk::Device* device = AppSettings::get()->getPrimaryDevice();
+        //Window* window = AppSettings::get()->getMainWindow();
+        //framebuffer = vk::FramebufferPtr(new vk::Framebuffer(device, window->getWidth(), window->getHeight()));
+        //vk::AttachmentState attachmentState;
+        //attachmentState.initialLayout = attachmentState.finalLayout;
+        //framebuffer->setColorAttachment(imageView, 0, attachmentState);
+        vk::Device* device = AppSettings::get()->getPrimaryDevice();
+        vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
+        vk::CommandPoolType commandPoolType;
+        commandPoolType.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        imguiCommandBuffers = device->allocateCommandBuffers(
+                commandPoolType, &commandPool, swapchain ? uint32_t(swapchain->getNumImages()) : 0);
+    }
 #endif
 }
 
 void ImGuiWrapper::renderStart() {
     SDLWindow *window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
+
+#ifdef SUPPORT_VULKAN
+    if (renderSystem == RenderSystem::VULKAN && !initialized) {
+        initialized = true;
+        vk::Instance* instance = AppSettings::get()->getVulkanInstance();
+        vk::Device* device = AppSettings::get()->getPrimaryDevice();
+        vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
+
+        ImGui_ImplVulkan_InitInfo initInfo{};
+        initInfo.Instance = instance->getVkInstance();
+        initInfo.Device = device->getVkDevice();
+        initInfo.PhysicalDevice = device->getVkPhysicalDevice();
+        initInfo.QueueFamily = device->getGraphicsQueueIndex();
+        initInfo.Queue = device->getGraphicsQueue();
+        initInfo.PipelineCache = VK_NULL_HANDLE;
+        initInfo.DescriptorPool = imguiDescriptorPool;
+        initInfo.MinImageCount = swapchain->getMinImageCount();
+        initInfo.ImageCount = swapchain->getNumImages();
+        initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+        initInfo.Allocator = nullptr;
+        initInfo.CheckVkResultFn = checkImGuiVkResult;
+
+        onResolutionChanged();
+        ImGui_ImplVulkan_Init(&initInfo, framebuffer->getVkRenderPass());
+
+        VkCommandBuffer commandBuffer = device->beginSingleTimeCommands();
+        ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
+        device->endSingleTimeCommands(commandBuffer);
+        ImGui_ImplVulkan_DestroyFontUploadObjects();
+
+        vk::CommandPoolType commandPoolType;
+        commandPoolType.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        imguiCommandBuffers = device->allocateCommandBuffers(
+                commandPoolType, &commandPool, uint32_t(swapchain->getNumImages()));
+    }
+#endif
 
     // Start the Dear ImGui frame
 #ifdef SUPPORT_OPENGL

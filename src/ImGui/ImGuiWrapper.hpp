@@ -101,6 +101,7 @@ private:
     float sizeScale = 1.0f;
 
 #ifdef SUPPORT_VULKAN
+    bool initialized = false;
     VkDescriptorPool imguiDescriptorPool = VK_NULL_HANDLE;
     VkCommandPool commandPool;
     std::vector<VkCommandBuffer> imguiCommandBuffers;

@@ -61,6 +61,23 @@ SDLWindow::SDLWindow()
 {
 }
 
+SDLWindow::~SDLWindow()
+{
+#ifdef SUPPORT_OPENGL
+    if (renderSystem == RenderSystem::OPENGL) {
+        SDL_GL_DeleteContext(glContext);
+    }
+#endif
+#ifdef SUPPORT_VULKAN
+    if (renderSystem == RenderSystem::VULKAN) {
+        sgl::vk::Instance* instance = sgl::AppSettings::get()->getVulkanInstance();
+        vkDestroySurfaceKHR(instance->getVkInstance(), windowSurface, nullptr);
+    }
+#endif
+    SDL_DestroyWindow(sdlWindow);
+    Logfile::get()->write("Closing SDL window.");
+}
+
 void SDLWindow::errorCheck()
 {
     while (SDL_GetError()[0] != '\0') {
@@ -262,33 +279,6 @@ glm::ivec2 SDLWindow::getWindowPosition()
 void SDLWindow::setWindowPosition(int x, int y)
 {
     SDL_SetWindowPosition(sdlWindow, x, y);
-}
-
-void SDLWindow::destroySurface()
-{
-#ifdef SUPPORT_VULKAN
-    if (renderSystem == RenderSystem::VULKAN) {
-        sgl::vk::Instance* instance = sgl::AppSettings::get()->getVulkanInstance();
-        vkDestroySurfaceKHR(instance->getVkInstance(), windowSurface, nullptr);
-    }
-#endif
-}
-
-void SDLWindow::close()
-{
-#ifdef SUPPORT_OPENGL
-    if (renderSystem == RenderSystem::OPENGL) {
-        SDL_GL_DeleteContext(glContext);
-    }
-#endif
-#ifdef SUPPORT_VULKAN
-    if (renderSystem == RenderSystem::VULKAN) {
-        sgl::vk::Instance* instance = sgl::AppSettings::get()->getVulkanInstance();
-        vkDestroySurfaceKHR(instance->getVkInstance(), windowSurface, nullptr);
-    }
-#endif
-    SDL_DestroyWindow(sdlWindow);
-    Logfile::get()->write("SDLWindow::quit()");
 }
 
 void SDLWindow::update()

@@ -110,6 +110,10 @@ ImagePtr Image::copy(bool copyContent, VkImageAspectFlags aspectFlags) {
 }
 
 void Image::uploadData(VkDeviceSize sizeInBytes, void* data, bool generateMipmaps) {
+    if (imageSettings.mipLevels <= 1) {
+        generateMipmaps = false;
+    }
+
     BufferPtr stagingBuffer(new Buffer(
             device, sizeInBytes, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY));
 
@@ -209,7 +213,7 @@ void Image::blit(ImagePtr& destImage, VkCommandBuffer commandBuffer) {
             device->getVkPhysicalDevice(), imageSettings.format, &formatProperties);
     if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
         Logfile::get()->throwError(
-                "Error in Image::_generateMipmaps: Texture image format does not support linear blitting!");
+                "Error in Image::blit: Texture image format does not support linear blitting!");
     }
 
     bool transientCommandBuffer = commandBuffer == VK_NULL_HANDLE;
@@ -438,12 +442,12 @@ void Image::unmapMemory() {
 
 
 
-ImageView::ImageView(Device* device, ImagePtr& image, VkImageAspectFlags aspectFlags)
-        : device(device), image(image), aspectFlags(aspectFlags) {
+ImageView::ImageView(ImagePtr& image, VkImageViewType imageViewType, VkImageAspectFlags aspectFlags)
+        : device(image->getDevice()), image(image), imageViewType(imageViewType), aspectFlags(aspectFlags) {
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewInfo.image = image->getVkImage();
-    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.viewType = imageViewType;
     viewInfo.format = image->getImageSettings().format;
     //viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
     //viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -460,8 +464,13 @@ ImageView::ImageView(Device* device, ImagePtr& image, VkImageAspectFlags aspectF
     }
 }
 
-ImageView::ImageView(Device* device, ImagePtr& image, VkImageView imageView, VkImageAspectFlags aspectFlags)
-        : device(device), image(image), aspectFlags(aspectFlags) {
+ImageView::ImageView(ImagePtr& image, VkImageAspectFlags aspectFlags)
+        : ImageView(image, VkImageViewType(image->getImageSettings().imageType), aspectFlags) {
+}
+
+ImageView::ImageView(
+        ImagePtr& image, VkImageView imageView, VkImageViewType imageViewType, VkImageAspectFlags aspectFlags)
+        : device(image->getDevice()), image(image), imageViewType(imageViewType), aspectFlags(aspectFlags) {
     this->imageView = imageView;
 }
 
@@ -476,11 +485,11 @@ ImageViewPtr ImageView::copy(bool copyImage, bool copyContent) {
     } else {
         newImage = image;
     }
-    ImageViewPtr newImageView(new ImageView(device, newImage, aspectFlags));
+    ImageViewPtr newImageView(new ImageView(newImage, imageViewType, aspectFlags));
     return newImageView;
 }
 
-ImageSampler::ImageSampler(Device* device, const ImageSamplerSettings& samplerSettings, uint32_t maxLod)
+ImageSampler::ImageSampler(Device* device, const ImageSamplerSettings& samplerSettings, float maxLodOverwrite)
         : device(device) {
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -511,8 +520,8 @@ ImageSampler::ImageSampler(Device* device, const ImageSamplerSettings& samplerSe
     samplerInfo.mipmapMode = samplerSettings.mipmapMode;
     samplerInfo.mipLodBias = samplerSettings.mipLodBias;
     samplerInfo.minLod = samplerSettings.minLod;
-    if (samplerInfo.maxLod < 0.0f) {
-        samplerInfo.maxLod = static_cast<float>(maxLod);
+    if (maxLodOverwrite < 0.0f) {
+        samplerInfo.maxLod = maxLodOverwrite;
     } else {
         samplerInfo.maxLod = samplerSettings.maxLod;
     }
@@ -523,7 +532,10 @@ ImageSampler::ImageSampler(Device* device, const ImageSamplerSettings& samplerSe
 }
 
 ImageSampler::ImageSampler(Device* device, const ImageSamplerSettings& samplerSettings, ImagePtr image)
-        : ImageSampler(device, samplerSettings, image->getImageSettings().mipLevels) {}
+        : ImageSampler(
+                device, samplerSettings,
+                image->getImageSettings().mipLevels <= 1 ? 0 : image->getImageSettings().mipLevels) {
+}
 
 ImageSampler::~ImageSampler() {
     vkDestroySampler(device->getVkDevice(), sampler, nullptr);
@@ -531,6 +543,14 @@ ImageSampler::~ImageSampler() {
 
 Texture::Texture(ImageViewPtr& imageView, ImageSamplerPtr& imageSampler)
         : imageView(imageView), imageSampler(imageSampler) {
+}
+
+Texture::Texture(
+        Device* device, const ImageSettings& imageSettings, const ImageSamplerSettings& samplerSettings,
+        VkImageAspectFlags aspectFlags) {
+    vk::ImagePtr image(new Image(device, imageSettings));
+    imageView = vk::ImageViewPtr(new ImageView(image, aspectFlags));
+    imageSampler = vk::ImageSamplerPtr(new ImageSampler(device, samplerSettings, image));
 }
 
 }}

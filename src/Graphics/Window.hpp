@@ -98,39 +98,37 @@ struct DLL_OBJECT WindowSettings {
 
 class SettingsFile;
 
-//! Use AppSettings (Utils/AppSettings.hpp) to create a window using the user's preferred settings
+/// Use AppSettings (Utils/AppSettings.hpp) to create a window using the user's preferred settings
 
 class DLL_OBJECT Window
 {
 public:
     virtual ~Window() {}
-    //! Outputs e.g. "SDL_GetError"
+    /// Outputs e.g. "SDL_GetError"
     virtual void errorCheck() {}
 
     /// Returns whether this window uses
     virtual bool isDebugContext()=0;
 
-    //! Initialize/close the window
+    /// Initialize the window
     virtual void initialize(const WindowSettings& windowSettings, RenderSystem renderSystem)=0;
-    virtual void destroySurface()=0;
-    virtual void close()=0;
 
-    //! Change the window attributes
+    /// Change the window attributes
     virtual void toggleFullscreen(bool nativeFullscreen = true)=0;
     virtual void setWindowSize(int width, int height)=0;
     virtual void setWindowPosition(int x, int y)=0;
     virtual void serializeSettings(SettingsFile &settings)=0;
     virtual WindowSettings deserializeSettings(const SettingsFile &settings)=0;
 
-    //! Update the window
+    /// Update the window
     virtual void update()=0;
     virtual void setEventHandler(std::function<void(const SDL_Event&)> eventHandler)=0;
-    //! Returns false if the game should quit
+    /// Returns false if the game should quit
     virtual bool processEvents()=0;
     virtual void clear(const Color &color = Color(0, 0, 0))=0;
     virtual void flip()=0;
 
-    //! Utility functions and getters for the main window attributes
+    /// Utility functions and getters for the main window attributes
     virtual void saveScreenshot(const char *filename)=0;
     virtual bool isFullscreen()=0;
     virtual int getWidth()=0;

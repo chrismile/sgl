@@ -161,7 +161,7 @@ void Swapchain::createSwapchainImageViews() {
     swapchainImageViews.reserve(swapchainImages.size());
     for (size_t i = 0; i < swapchainImages.size(); i++) {
         swapchainImageViews.push_back(ImageViewPtr(new ImageView(
-                device, swapchainImages.at(i), VK_IMAGE_ASPECT_COLOR_BIT)));
+                swapchainImages.at(i), VK_IMAGE_ASPECT_COLOR_BIT)));
     }
 }
 

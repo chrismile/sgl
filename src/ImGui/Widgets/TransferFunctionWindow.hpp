@@ -37,7 +37,12 @@
 #include <Math/Geometry/AABB2.hpp>
 #include <Utils/File/PathWatch.hpp>
 #include <Graphics/Color.hpp>
+#ifdef SUPPORT_OPENGL
 #include <Graphics/Texture/Texture.hpp>
+#endif
+#ifdef SUPPORT_VULKAN
+#include <Graphics/Vulkan/Image/Image.hpp>
+#endif
 #include <ImGui/ImGuiWrapper.hpp>
 
 namespace sgl {
@@ -121,7 +126,12 @@ public:
     const std::vector<sgl::Color16>& getTransferFunctionMap_sRGB() { return transferFunctionMap_sRGB; }
 
     // For OpenGL: Has 256 entries. Get mapped color for normalized attribute by accessing entry at "attr*255".
+#ifdef SUPPORT_OPENGL
     sgl::TexturePtr& getTransferFunctionMapTexture();
+#endif
+#ifdef SUPPORT_VULKAN
+    sgl::vk::TexturePtr& getTransferFunctionMapTextureVulkan();
+#endif
     bool getTransferFunctionMapRebuilt();
 
     // For ray tracing interface
@@ -201,8 +211,14 @@ private:
     void rebuildTransferFunctionMap_LinearRGB();
     std::vector<sgl::Color16> transferFunctionMap_sRGB;
     std::vector<sgl::Color16> transferFunctionMap_linearRGB;
+#ifdef SUPPORT_OPENGL
     sgl::TexturePtr tfMapTexture;
     sgl::TextureSettings tfMapTextureSettings;
+#endif
+#ifdef SUPPORT_VULKAN
+    sgl::vk::TexturePtr tfMapTextureVulkan;
+    sgl::vk::ImageSettings tfMapImageSettingsVulkan;
+#endif
 
     std::vector<OpacityPoint> opacityPoints;
     std::vector<ColorPoint_sRGB> colorPoints;

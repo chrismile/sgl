@@ -34,10 +34,12 @@
 #include <Input/Keyboard.hpp>
 #include <Input/Mouse.hpp>
 #include <Graphics/Window.hpp>
+#ifdef SUPPORT_OPENGL
 #include <Graphics/Shader/ShaderManager.hpp>
 #include <Graphics/Texture/TextureManager.hpp>
 #include <Graphics/Texture/Bitmap.hpp>
 #include <Graphics/OpenGL/SystemGL.hpp>
+#endif
 
 #include <ImGui/ImGuiWrapper.hpp>
 #include <ImGui/imgui_internal.h>
@@ -71,8 +73,12 @@ SciVisApp::SciVisApp(float fovy)
     sgl::FileUtils::get()->ensureDirectoryExists(saveDirectoryCameraPaths);
     setPrintFPS(false);
 
-    gammaCorrectionShader = sgl::ShaderManager->getShaderProgram(
-            {"GammaCorrection.Vertex", "GammaCorrection.Fragment"});
+#ifdef SUPPORT_OPENGL
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
+        gammaCorrectionShader = sgl::ShaderManager->getShaderProgram(
+                {"GammaCorrection.Vertex", "GammaCorrection.Fragment"});
+    }
+#endif
 
     sgl::EventManager::get()->addListener(
             sgl::RESOLUTION_CHANGED_EVENT,

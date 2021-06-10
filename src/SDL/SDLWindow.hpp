@@ -42,34 +42,34 @@ class DLL_OBJECT SDLWindow : public Window
 {
 public:
     SDLWindow();
-    //! Outputs e.g. "SDL_GetError"
+    ~SDLWindow();
+
+    /// Outputs e.g. "SDL_GetError"
     virtual void errorCheck();
 
     /// Returns whether this window uses
     virtual bool isDebugContext() { return windowSettings.debugContext; }
 
-    //! Initialize/close the window
+    /// Initialize the window
     virtual void initialize(const WindowSettings &settings, RenderSystem renderSystem);
-    virtual void destroySurface();
-    virtual void close();
 
-    //! Change the window attributes
-    //! Try to keep resolution
+    /// Change the window attributes
+    /// Try to keep resolution
     virtual void toggleFullscreen(bool nativeFullscreen = true);
     virtual void setWindowSize(int width, int height);
     virtual void setWindowPosition(int x, int y);
     virtual void serializeSettings(SettingsFile &settings);
     virtual WindowSettings deserializeSettings(const SettingsFile &settings);
 
-    //! Update the window
+    /// Update the window
     virtual void update();
     virtual void setEventHandler(std::function<void(const SDL_Event&)> eventHandler);
-    //! Returns false if the game should quit
+    /// Returns false if the game should quit
     virtual bool processEvents();
     virtual void clear(const Color &color = Color(0, 0, 0));
     virtual void flip();
 
-    //! Utility functions/getters for the main window attributes
+    /// Utility functions/getters for the main window attributes
     virtual void saveScreenshot(const char *filename);
     virtual bool isFullscreen() { return windowSettings.fullscreen; }
     virtual int getWidth() { return windowSettings.width; }
@@ -78,7 +78,7 @@ public:
     virtual glm::ivec2 getWindowPosition();
     virtual const WindowSettings& getWindowSettings() const { return windowSettings; }
 
-    //! Getting SDL specific data
+    /// Getting SDL specific data
     inline SDL_Window *getSDLWindow() { return sdlWindow; }
 #ifdef SUPPORT_OPENGL
     inline SDL_GLContext getGLContext() { return glContext; }
@@ -94,7 +94,7 @@ private:
     bool eventHandlerSet = false;
     std::function<void(const SDL_Event&)> eventHandler;
 
-    //! For toggle fullscreen: Resolution before going fullscreen
+    /// For toggle fullscreen: Resolution before going fullscreen
     SDL_DisplayMode oldDisplayMode;
     bool isFirstFrame = true;
 

@@ -99,7 +99,7 @@ bool isDeviceSuitable(
         const std::vector<const char*>& optionalDeviceExtensions,
         std::set<std::string>& deviceExtensionsSet, std::vector<const char*>& deviceExtensions,
         VkPhysicalDeviceFeatures requestedPhysicalDeviceFeatures) {
-    // TODO: Use compute-only queue.
+    // TODO: Use compute-only queue?
     int graphicsQueueIndex = findQueueFamilies(
             device, static_cast<VkQueueFlagBits>(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT));
     if (graphicsQueueIndex < 0) {
@@ -391,8 +391,11 @@ std::vector<VkCommandBuffer> Device::allocateCommandBuffers(
 void Device::_allocateCommandBuffers(
         CommandPoolType commandPoolType, VkCommandPool* pool, VkCommandBuffer* commandBuffers, uint32_t count,
         VkCommandBufferLevel commandBufferLevel) {
-    VkCommandPool commandPool;
+    if (commandPoolType.queueFamilyIndex == 0xFFFFFFFF) {
+        commandPoolType.queueFamilyIndex = getGraphicsQueueIndex();
+    }
 
+    VkCommandPool commandPool;
     auto it = commandPools.find(commandPoolType);
     if (it != commandPools.end()) {
         commandPool = it->second;
@@ -420,6 +423,10 @@ void Device::_allocateCommandBuffers(
 }
 
 VkCommandBuffer Device::beginSingleTimeCommands(uint32_t queueIndex) {
+    if (queueIndex == 0xFFFFFFFF) {
+        queueIndex = getGraphicsQueueIndex();
+    }
+
     CommandPoolType commandPoolType;
     commandPoolType.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
     commandPoolType.queueFamilyIndex = queueIndex;
@@ -436,6 +443,10 @@ VkCommandBuffer Device::beginSingleTimeCommands(uint32_t queueIndex) {
 }
 
 void Device::endSingleTimeCommands(VkCommandBuffer commandBuffer, uint32_t queueIndex) {
+    if (queueIndex == 0xFFFFFFFF) {
+        queueIndex = getGraphicsQueueIndex();
+    }
+
     vkEndCommandBuffer(commandBuffer);
 
     VkSubmitInfo submitInfo{};

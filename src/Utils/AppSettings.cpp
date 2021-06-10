@@ -56,6 +56,8 @@
 #endif
 #ifdef SUPPORT_VULKAN
 #include <Graphics/Vulkan/Utils/Instance.hpp>
+#include <Graphics/Vulkan/Utils/Swapchain.hpp>
+#include <Graphics/Vulkan/Utils/Device.hpp>
 #include <Graphics/Scene/Camera.hpp>
 
 #endif
@@ -67,11 +69,13 @@
 
 namespace sgl {
 
+#ifdef SUPPORT_OPENGL
 DLL_OBJECT RendererInterface *Renderer = NULL;
 DLL_OBJECT TimerInterface *Timer = NULL;
 DLL_OBJECT ShaderManagerInterface *ShaderManager = NULL;
 DLL_OBJECT TextureManagerInterface *TextureManager = NULL;
 DLL_OBJECT MaterialManagerInterface *MaterialManager = NULL;
+#endif
 
 DLL_OBJECT MouseInterface *Mouse = NULL;
 DLL_OBJECT KeyboardInterface *Keyboard = NULL;
@@ -258,13 +262,13 @@ void AppSettings::initializeSubsystems()
     // Create the subsystem implementations
     Timer = new TimerInterface;
     //AudioManager = new SDLMixerAudioManager;
-    MaterialManager = new MaterialManagerInterface;
 
 #ifdef SUPPORT_OPENGL
     if (renderSystem == RenderSystem::OPENGL) {
         TextureManager = new TextureManagerGL;
         ShaderManager = new ShaderManagerGL;
         Renderer = new RendererGL;
+        MaterialManager = new MaterialManagerInterface;
         SystemGL::get();
     }
 #endif
@@ -292,28 +296,52 @@ void AppSettings::release()
         ImGuiWrapper::get()->shutdown();
     }
 
-    if (Renderer) {
-        delete Renderer;
-        Renderer = nullptr;
+#ifdef SUPPORT_OPENGL
+    if (renderSystem == RenderSystem::OPENGL) {
+        if (Renderer) {
+            delete Renderer;
+            Renderer = nullptr;
+        }
+        if (ShaderManager) {
+            delete ShaderManager;
+            ShaderManager = nullptr;
+        }
+        if (TextureManager) {
+            delete TextureManager;
+            TextureManager = nullptr;
+        }
+        delete MaterialManager;
     }
-    if (ShaderManager) {
-        delete ShaderManager;
-        ShaderManager = nullptr;
-    }
-    if (TextureManager) {
-        delete TextureManager;
-        TextureManager = nullptr;
-    }
+#endif
 
-    delete MaterialManager;
     //delete AudioManager;
     delete Timer;
 
-    mainWindow->close();
+#ifdef SUPPORT_VULKAN
+    if (renderSystem == RenderSystem::VULKAN) {
+        if (swapchain) {
+            delete swapchain;
+            swapchain = nullptr;
+        }
+    }
+#endif
+
+    if (mainWindow) {
+        delete mainWindow;
+        mainWindow = nullptr;
+    }
+
 
 #ifdef SUPPORT_VULKAN
     if (renderSystem == RenderSystem::VULKAN) {
-        delete instance;
+        if (primaryDevice) {
+            delete primaryDevice;
+            primaryDevice = nullptr;
+        }
+        if (instance) {
+            delete instance;
+            instance = nullptr;
+        }
     }
 #endif
 
