@@ -33,15 +33,21 @@
 
 namespace sgl {
 
-const float ColorLegendWidget::regionHeightStandard = 300 - 2;
+float ColorLegendWidget::regionHeightStandard = -1;
 float ColorLegendWidget::regionHeight = regionHeightStandard;
 const float ColorLegendWidget::fontScaleStandard = 0.75f;
 float ColorLegendWidget::fontScaleResetValue = ColorLegendWidget::fontScaleStandard;
 float ColorLegendWidget::fontScale = fontScaleStandard;
-const float ColorLegendWidget::textRegionWidthStandard = 85 * fontScale / fontScaleStandard;
+float ColorLegendWidget::textRegionWidthStandard = -1;
 float ColorLegendWidget::textRegionWidth = textRegionWidthStandard;
 
 ColorLegendWidget::ColorLegendWidget() {
+    if (regionHeightStandard == -1) {
+        float scaleFactor = sgl::ImGuiWrapper::get()->getScaleFactor() / 1.875f;
+        regionHeightStandard = (300.0f - 2.0f) * scaleFactor;
+        textRegionWidthStandard = 85 * fontScale / fontScaleStandard * scaleFactor;
+    }
+
     transferFunctionColorMap.reserve(256);
     for (int i = 0; i < 256; i++) {
         float pct = float(i) / float(255);
@@ -98,7 +104,9 @@ std::string getNiceNumberString(float number, int digits) {
 }
 
 void ColorLegendWidget::renderGui() {
-    const float barWidth = 25;
+    float scaleFactor = sgl::ImGuiWrapper::get()->getScaleFactor() / 1.875f;
+
+    const float barWidth = 25 * scaleFactor;
     const float totalWidth = barWidth + textRegionWidth;
     const int numTicks = 5;
     const float tickWidth = 10;
@@ -107,11 +115,11 @@ void ColorLegendWidget::renderGui() {
 
     std::string windowId = std::string() + "##" + attributeDisplayName;
     ImGuiViewport* viewport = ImGui::GetMainViewport();
-    ImVec2 windowSize = ImVec2(totalWidth + 3, regionHeight + 30);
+    ImVec2 windowSize = ImVec2(totalWidth + 3, regionHeight + 30 * scaleFactor);
     float windowOffset = (windowSize.x + 8) * (numPositionsTotal - positionIndex - 1);
     ImVec2 windowPos = ImVec2(
             viewport->Pos.x + viewport->Size.x - totalWidth - 12 - windowOffset,
-            viewport->Pos.y + viewport->Size.y - regionHeight - 40);
+            viewport->Pos.y + viewport->Size.y - regionHeight - 40 * scaleFactor);
     ImGui::SetNextWindowPos(windowPos);
     ImGui::SetNextWindowSize(windowSize);
     glm::vec3 clearColorFlt(clearColor.getFloatR(), clearColor.getFloatG(), clearColor.getFloatB());
@@ -144,7 +152,7 @@ void ColorLegendWidget::renderGui() {
         ImVec2 textSize = ImGui::CalcTextSizeVertical(attributeDisplayName.c_str());
         textHeight = textSize.y;
         ImVec2 textPos = ImVec2(
-                startPos.x + barWidth + 35 * fontScale / fontScaleStandard,
+                startPos.x + barWidth + 33 * fontScale / fontScaleStandard * scaleFactor,
                 //startPos.y + regionHeight / 2.0f - textSize.y / 2.0f + 1);
                 startPos.y + regionHeight / 2.0f + textSize.y / 2.0f + 1);
         ImGui::AddTextVertical(
@@ -165,7 +173,7 @@ void ColorLegendWidget::renderGui() {
                 textColorImgui, maxText.c_str());
 
         ImVec2 rangeSize = ImGui::CalcTextSize(minText.c_str());
-        textRegionWidth = std::max(textRegionWidth, 30 * fontScale / fontScaleStandard + rangeSize.x);
+        textRegionWidth = std::max(textRegionWidth, 30 * fontScale / fontScaleStandard * scaleFactor + rangeSize.x);
 
         // Add ticks to the color bar.
         for (int tick = 0; tick < numTicks; tick++) {
