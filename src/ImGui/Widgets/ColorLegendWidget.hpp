@@ -82,12 +82,12 @@ private:
 
     // Internal UI data.
     bool showWindow = true;
-    static const float regionHeightStandard;
+    static float regionHeightStandard;
     static float regionHeight;
     static const float fontScaleStandard;
     static float fontScaleResetValue;
     static float fontScale;
-    static const float textRegionWidthStandard;
+    static float textRegionWidthStandard;
     static float textRegionWidth;
 };
 
