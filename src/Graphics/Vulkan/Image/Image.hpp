@@ -35,6 +35,10 @@
 #include <vulkan/vulkan.h>
 #include "../libs/VMA/vk_mem_alloc.h"
 
+#ifdef SUPPORT_OPENGL
+#include <GL/glew.h>
+#endif
+
 namespace sgl { namespace vk {
 
 class Device;
@@ -64,6 +68,7 @@ struct DLL_OBJECT ImageSettings {
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     VkSharingMode sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    bool exportMemory = false; // Whether to export the memory for external use, e.g., in OpenGL.
 };
 
 inline bool hasStencilComponent(VkFormat format) {
@@ -144,6 +149,16 @@ public:
     void* mapMemory();
     void unmapMemory();
 
+#ifdef SUPPORT_OPENGL
+    /**
+     * Creates an OpenGL memory object from the external Vulkan memory.
+     * NOTE: The image must have been created with exportMemory set to true.
+     * @param memoryObjectGl The OpenGL memory object.
+     * @return Whether the OpenGL memory object could be created successfully.
+     */
+    bool createGlMemoryObject(GLuint& memoryObjectGl);
+#endif
+
 private:
     void _generateMipmaps();
 
@@ -152,8 +167,14 @@ private:
     ImageSettings imageSettings;
     VkImage image = nullptr;
     VkImageLayout imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    // Memory not exported, used only in Vulkan.
     VmaAllocation imageAllocation = nullptr;
     VmaAllocationInfo imageAllocationInfo = {};
+
+    // Exported memory for external use.
+    VkDeviceMemory deviceMemory = VK_NULL_HANDLE;
+    VkDeviceSize deviceMemorySizeInBytes = 0;
 };
 
 class DLL_OBJECT ImageView {
@@ -179,7 +200,8 @@ public:
     inline Device* getDevice() { return device; }
     inline ImagePtr& getImage() { return image; }
     inline VkImageView getVkImageView() { return imageView; }
-    inline VkImageAspectFlags getVkImageAspectFlags() { return aspectFlags; }
+    inline VkImageViewType getVkImageViewType() const { return imageViewType; }
+    inline VkImageAspectFlags getVkImageAspectFlags() const { return aspectFlags; }
 
 private:
     Device* device = nullptr;
@@ -223,10 +245,12 @@ public:
     ImageSampler(Device* device, const ImageSamplerSettings& samplerSettings, ImagePtr image);
     ~ImageSampler();
 
+    inline const ImageSamplerSettings& getImageSamplerSettings() const { return imageSamplerSettings; }
     inline VkSampler getVkSampler() { return sampler; }
 
 private:
     Device* device = nullptr;
+    ImageSamplerSettings imageSamplerSettings;
     VkSampler sampler = nullptr;
 };
 

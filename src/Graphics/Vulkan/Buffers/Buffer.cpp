@@ -27,35 +27,92 @@
  */
 
 #include <stdexcept>
+#include <cstring>
 
 #include <Utils/File/Logfile.hpp>
 #include "../Utils/Device.hpp"
+#include "../Utils/Interop.hpp"
 #include "Buffer.hpp"
 
 namespace sgl { namespace vk {
 
 Buffer::Buffer(
-        Device* device, size_t sizeInBytes, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, bool queueExclusive)
+        Device* device, size_t sizeInBytes, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, bool queueExclusive,
+        bool exportMemory)
         : device(device), sizeInBytes(sizeInBytes), bufferUsageFlags(usage), memoryUsage(memoryUsage),
-        queueExclusive(queueExclusive) {
+          queueExclusive(queueExclusive), exportMemory(exportMemory) {
     VkBufferCreateInfo bufferCreateInfo{};
     bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferCreateInfo.size = sizeInBytes;
     bufferCreateInfo.usage = usage;
     bufferCreateInfo.sharingMode = queueExclusive ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
 
-    VmaAllocationCreateInfo allocCreateInfo = {};
-    allocCreateInfo.usage = memoryUsage;
+    if (!exportMemory) {
+        // When the memory does not need to be exported, we can use the library VMA for allocations.
+        VmaAllocationCreateInfo allocCreateInfo = {};
+        allocCreateInfo.usage = memoryUsage;
 
-    if (vmaCreateBuffer(
-            device->getAllocator(), &bufferCreateInfo, &allocCreateInfo,
-            &buffer, &bufferAllocation, &bufferAllocationInfo) != VK_SUCCESS) {
-        Logfile::get()->throwError("Error in Buffer::Buffer: Failed to create a buffer of the specified size!");
+        if (vmaCreateBuffer(
+                device->getAllocator(), &bufferCreateInfo, &allocCreateInfo,
+                &buffer, &bufferAllocation, &bufferAllocationInfo) != VK_SUCCESS) {
+            Logfile::get()->throwError("Error in Buffer::Buffer: Failed to create a buffer of the specified size!");
+        }
+    } else {
+        // If the memory should be exported for external use, we need to allocate the memory manually.
+        if (vkCreateBuffer(device->getVkDevice(), &bufferCreateInfo, nullptr, &buffer) != VK_SUCCESS) {
+            Logfile::get()->throwError("Error in Buffer::Buffer: Failed to create a buffer!");
+        }
+
+        VkMemoryRequirements memoryRequirements;
+        vkGetBufferMemoryRequirements(device->getVkDevice(), buffer, &memoryRequirements);
+
+        VkExportMemoryAllocateInfo exportMemoryAllocateInfo = {};
+        exportMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;
+#if defined(_WIN32)
+        exportMemoryAllocateInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+#elif defined(__linux__)
+        exportMemoryAllocateInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+#else
+        Logfile::get()->throwError(
+                "Error in Buffer::Buffer: External memory is only supported on Linux, Android and Windows systems!");
+#endif
+
+        VkMemoryPropertyFlags memoryPropertyFlags = convertVmaMemoryUsageToVkMemoryPropertyFlags(memoryUsage);
+
+        VkMemoryAllocateInfo memoryAllocateInfo = {};
+        memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        memoryAllocateInfo.allocationSize = memoryRequirements.size;
+        memoryAllocateInfo.memoryTypeIndex = device->findMemoryTypeIndex(
+                memoryRequirements.memoryTypeBits, memoryPropertyFlags);
+        memoryAllocateInfo.pNext = &exportMemoryAllocateInfo;
+
+        if (memoryAllocateInfo.memoryTypeIndex == std::numeric_limits<uint32_t>::max()) {
+            Logfile::get()->throwError("Error in Buffer::Buffer: No suitable memory type index found!");
+        }
+
+        if (vkAllocateMemory(device->getVkDevice(), &memoryAllocateInfo, 0, &deviceMemory) != VK_SUCCESS) {
+            Logfile::get()->throwError("Error in Buffer::Buffer: Could not allocate memory!");
+        }
+
+        vkBindBufferMemory(device->getVkDevice(), buffer, deviceMemory, 0);
     }
 }
 
+Buffer::Buffer(
+        Device* device, size_t sizeInBytes, void* dataPtr, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
+        bool queueExclusive, bool exportMemory)
+        : Buffer(device, sizeInBytes, usage, memoryUsage, queueExclusive, exportMemory) {
+    uploadData(sizeInBytes, dataPtr);
+}
+
 Buffer::~Buffer() {
-    vmaDestroyBuffer(device->getAllocator(), buffer, bufferAllocation);
+    if (bufferAllocation) {
+        vmaDestroyBuffer(device->getAllocator(), buffer, bufferAllocation);
+    }
+    if (deviceMemory) {
+        vkDestroyBuffer(device->getVkDevice(), buffer, nullptr);
+        vkFreeMemory(device->getVkDevice(), deviceMemory, nullptr);
+    }
 }
 
 BufferPtr Buffer::copy(bool copyContent) {
@@ -72,7 +129,49 @@ BufferPtr Buffer::copy(bool copyContent) {
     return newBuffer;
 }
 
+void Buffer::uploadData(size_t sizeInBytesData, void* dataPtr) {
+    if (sizeInBytesData > sizeInBytes) {
+        sgl::Logfile::get()->throwError(
+                "Error in Buffer::uploadData: sizeInBytesData > sizeInBytes");
+    }
+
+    if (memoryUsage == VMA_MEMORY_USAGE_CPU_ONLY || memoryUsage == VMA_MEMORY_USAGE_CPU_TO_GPU
+            || memoryUsage == VMA_MEMORY_USAGE_CPU_COPY) {
+        void* mappedData = mapMemory();
+        memcpy(mappedData, dataPtr, sizeInBytesData);
+        unmapMemory();
+    } else {
+        if ((bufferUsageFlags & VK_BUFFER_USAGE_TRANSFER_DST_BIT) == 0) {
+            sgl::Logfile::get()->throwError(
+                    "Error in Buffer::uploadData: Buffer usage flag VK_BUFFER_USAGE_TRANSFER_DST_BIT not set!");
+        }
+
+        BufferPtr stagingBuffer(new Buffer(
+                device, sizeInBytesData, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY,
+                queueExclusive));
+        void* mappedData = stagingBuffer->mapMemory();
+        memcpy(mappedData, dataPtr, sizeInBytesData);
+        stagingBuffer->unmapMemory();
+
+        VkCommandBuffer commandBuffer = device->beginSingleTimeCommands();
+        VkBufferCopy bufferCopy{};
+        bufferCopy.size = sizeInBytesData;
+        bufferCopy.srcOffset = 0;
+        bufferCopy.dstOffset = 0;
+        vkCmdCopyBuffer(
+                commandBuffer, stagingBuffer->getVkBuffer(), this->getVkBuffer(), 1, &bufferCopy);
+        device->endSingleTimeCommands(commandBuffer);
+    }
+}
+
 void* Buffer::mapMemory() {
+    if (memoryUsage != VMA_MEMORY_USAGE_CPU_ONLY && memoryUsage != VMA_MEMORY_USAGE_CPU_TO_GPU
+            && memoryUsage != VMA_MEMORY_USAGE_GPU_TO_CPU && memoryUsage != VMA_MEMORY_USAGE_CPU_COPY) {
+        sgl::Logfile::get()->throwError(
+                "Error in Buffer::mapMemory: The memory is not mappable to a host-accessible address!");
+        return nullptr;
+    }
+
     void* dataPointer = nullptr;
     vmaMapMemory(device->getAllocator(), bufferAllocation, &dataPointer);
     return dataPointer;
@@ -81,6 +180,19 @@ void* Buffer::mapMemory() {
 void Buffer::unmapMemory() {
     vmaUnmapMemory(device->getAllocator(), bufferAllocation);
 }
+
+#ifdef SUPPORT_OPENGL
+bool Buffer::createGlMemoryObject(GLuint& memoryObjectGl) {
+    if (!exportMemory) {
+        Logfile::get()->throwError(
+                "Error in Buffer::createGlMemoryObject: An external memory object can only be created if the "
+                "export memory flag was set on creation!");
+        return false;
+    }
+    return createGlMemoryObjectFromVkDeviceMemory(
+            memoryObjectGl, device->getVkDevice(), deviceMemory, sizeInBytes);
+}
+#endif
 
 
 BufferView::BufferView(BufferPtr& buffer, VkFormat format, VkDeviceSize offset, VkDeviceSize range)

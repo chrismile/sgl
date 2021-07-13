@@ -36,19 +36,28 @@ namespace sgl {
 class DLL_OBJECT TextureManagerGL : public TextureManagerInterface
 {
 public:
-    TexturePtr createEmptyTexture(int width, const TextureSettings &settings = TextureSettings());
-    TexturePtr createTexture(void *data, int width, const TextureSettings &settings = TextureSettings());
-    TexturePtr createEmptyTexture(int width, int height, const TextureSettings &settings = TextureSettings());
-    TexturePtr createTexture(void *data, int width, int height, const TextureSettings &settings = TextureSettings());
-    TexturePtr createEmptyTexture(int width, int height, int depth, const TextureSettings &settings = TextureSettings());
-    TexturePtr createTexture(void *data, int width, int height, int depth, const TextureSettings &settings = TextureSettings());
+    TexturePtr createEmptyTexture(
+            int width, const TextureSettings& settings = TextureSettings()) override;
+    TexturePtr createTexture(
+            void* data, int width, const PixelFormat& pixelFormat,
+            const TextureSettings& settings = TextureSettings()) override;
+    TexturePtr createEmptyTexture(
+            int width, int height, const TextureSettings& settings = TextureSettings()) override;
+    TexturePtr createTexture(
+            void* data, int width, int height, const PixelFormat& pixelFormat,
+            const TextureSettings& settings = TextureSettings()) override;
+    TexturePtr createEmptyTexture(
+            int width, int height, int depth, const TextureSettings& settings = TextureSettings()) override;
+    TexturePtr createTexture(
+            void* data, int width, int height, int depth, const PixelFormat& pixelFormat,
+            const TextureSettings& settings = TextureSettings()) override;
 
     /**
      * Uses glTexStorage<x>D for creating an immutable texture.
      */
-    TexturePtr createTextureStorage(int width, const TextureSettings &settings = TextureSettings());
-    TexturePtr createTextureStorage(int width, int height, const TextureSettings &settings = TextureSettings());
-    TexturePtr createTextureStorage(int width, int height, int depth, const TextureSettings &settings = TextureSettings());
+    TexturePtr createTextureStorage(int width, const TextureSettings& settings = TextureSettings());
+    TexturePtr createTextureStorage(int width, int height, const TextureSettings& settings = TextureSettings());
+    TexturePtr createTextureStorage(int width, int height, int depth, const TextureSettings& settings = TextureSettings());
 
     /**
      * Only for FBOs!
@@ -56,7 +65,7 @@ public:
      */
     TexturePtr createMultisampledTexture(
             int width, int height, int numSamples,
-            int internalFormat = 0x8058 /*GL_RGBA8*/, bool fixedSampleLocations = false);
+            int internalFormat = 0x8058 /*GL_RGBA8*/, bool fixedSampleLocations = true);
     //! bitsPerPixel must be 16, 24 or 32
     TexturePtr createDepthTexture(
             int width, int height, DepthTextureFormat format = DEPTH_COMPONENT16,
@@ -66,7 +75,7 @@ public:
             int textureMinFilter = GL_LINEAR, int textureMagFilter = GL_LINEAR);
 
 protected:
-    virtual TexturePtr loadAsset(TextureInfo &textureInfo);
+    virtual TexturePtr loadAsset(TextureInfo& textureInfo);
     void createTextureInternal();
 };
 

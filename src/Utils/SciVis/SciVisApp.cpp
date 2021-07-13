@@ -40,11 +40,17 @@
 #include <Graphics/Texture/Bitmap.hpp>
 #include <Graphics/OpenGL/SystemGL.hpp>
 #endif
+#ifdef SUPPORT_VULKAN
+#include <Graphics/Vulkan/Utils/Swapchain.hpp>
+#include <Graphics/Vulkan/Image/Image.hpp>
+#include <Graphics/Vulkan/Render/Renderer.hpp>
+#endif
 
 #include <ImGui/ImGuiWrapper.hpp>
 #include <ImGui/imgui_internal.h>
 #include <ImGui/imgui_stdlib.h>
 #include <ImGui/Widgets/ColorLegendWidget.hpp>
+#include <memory>
 
 #include "SciVisApp.hpp"
 
@@ -65,6 +71,11 @@ SciVisApp::SciVisApp(float fovy)
             glGetIntegerv(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &gpuInitialFreeMemKilobytes);
         }
         glEnable(GL_CULL_FACE);
+    }
+#endif
+#ifdef SUPPORT_VULKAN
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+        device = sgl::AppSettings::get()->getPrimaryDevice();
     }
 #endif
 
@@ -131,34 +142,57 @@ void SciVisApp::createSceneFramebuffer() {
         if (useLinearRGB) {
             textureSettings.internalFormat = GL_RGBA16;
         } else {
-            textureSettings.internalFormat = GL_RGBA8; // GL_RGBA8 For i965 driver to accept image load/store (legacy)
+            textureSettings.internalFormat = GL_RGBA8;
         }
-        textureSettings.pixelType = GL_UNSIGNED_BYTE;
-        textureSettings.pixelFormat = GL_RGB;
         sceneTexture = sgl::TextureManager->createEmptyTexture(width, height, textureSettings);
         sceneFramebuffer->bindTexture(sceneTexture);
         sceneDepthRBO = sgl::Renderer->createRBO(width, height, sceneDepthRBOType);
         sceneFramebuffer->bindRenderbuffer(sceneDepthRBO, sgl::DEPTH_STENCIL_ATTACHMENT);
     }
 #endif
+#ifdef SUPPORT_VULKAN
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+        sgl::vk::ImageSettings imageSettings;
+        imageSettings.width = width;
+        imageSettings.height = height;
+        imageSettings.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+        if (useLinearRGB) {
+            imageSettings.format = VK_FORMAT_R16G16B16A16_UNORM;
+        } else {
+            imageSettings.format = VK_FORMAT_R8G8B8A8_UNORM;
+        }
+        sceneTextureVk = std::make_shared<sgl::vk::Texture>(
+                device, imageSettings, sgl::vk::ImageSamplerSettings(),
+                VK_IMAGE_ASPECT_COLOR_BIT);
+        imageSettings.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        imageSettings.format = VK_FORMAT_D32_SFLOAT;
+        sceneDepthTextureVk = std::make_shared<sgl::vk::Texture>(
+                device, imageSettings, sgl::vk::ImageSamplerSettings(),
+                VK_IMAGE_ASPECT_DEPTH_BIT);
+    }
+#endif
 }
 
 void SciVisApp::resolutionChanged(sgl::EventPtr event) {
+    sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
+    int width = window->getWidth();
+    int height = window->getHeight();
+    windowResolution = glm::ivec2(width, height);
 #ifdef SUPPORT_OPENGL
     // Buffers for off-screen rendering
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
-        sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
-        int width = window->getWidth();
-        int height = window->getHeight();
         glViewport(0, 0, width, height);
-        windowResolution = glm::ivec2(width, height);
     }
 #endif
 
     // Buffers for off-screen rendering
     createSceneFramebuffer();
 
-    sgl::ImGuiWrapper::get()->onResolutionChanged();
+    sgl::vk::Swapchain* swapchain = sgl::AppSettings::get()->getSwapchain();
+    if (swapchain && AppSettings::get()->getUseGUI()) {
+        sgl::ImGuiWrapper::get()->setVkRenderTargets(swapchain->getSwapchainImageViews());
+        sgl::ImGuiWrapper::get()->onResolutionChanged();
+    }
 
     camera->onResolutionChanged(event);
     reRender = true;
@@ -191,7 +225,7 @@ void SciVisApp::processSDLEvent(const SDL_Event &event) {
 
 /// Call pre-render in derived classes before the rendering logic, and post-render afterwards.
 void SciVisApp::preRender() {
-    if (videoWriter == NULL && recording) {
+    if (videoWriter == nullptr && recording) {
         videoWriter = new sgl::VideoWriter(saveFilenameVideos + ".mp4", FRAME_RATE_VIDEOS);
     }
 
@@ -232,6 +266,14 @@ void SciVisApp::prepareReRender() {
             glBlendEquation(GL_FUNC_ADD);
             glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
         }
+    }
+#endif
+
+#ifdef SUPPORT_VULKAN
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+        rendererVk->setProjectionMatrix(camera->getProjectionMatrix());
+        rendererVk->setViewMatrix(camera->getViewMatrix());
+        rendererVk->setModelMatrix(sgl::matrixIdentity());
     }
 #endif
 }

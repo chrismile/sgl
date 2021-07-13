@@ -66,8 +66,8 @@ struct PixelFormat {
 };
 
 enum TextureType {
-    TEXTURE_1D = 0x0DE0, TEXTURE_2D = 0x0DE1, TEXTURE_3D = 0x806F,
-    TEXTURE_1D_ARRAY = 0x8C18, TEXTURE_2D_ARRAY = 0x8C1A,
+    TEXTURE_1D = 0x0DE0, TEXTURE_2D = 0x0DE1, TEXTURE_3D = 0x806F, TEXTURE_CUBE_MAP = 0x8513,
+    TEXTURE_1D_ARRAY = 0x8C18, TEXTURE_2D_ARRAY = 0x8C1A, TEXTURE_CUBE_MAP_ARRAY = 0x9009,
     TEXTURE_2D_MULTISAMPLE = 0x9100
 };
 
@@ -81,10 +81,7 @@ struct TextureSettings {
         textureWrapT = GL_CLAMP_TO_EDGE;
         textureWrapR = GL_CLAMP_TO_EDGE;
         anisotropicFilter = false;
-
         internalFormat = 0x1908; // GL_RGBA
-        pixelFormat = 0x1908; // GL_RGBA
-        pixelType = 0x1401; // GL_UNSIGNED_BYTE
     }
     TextureSettings(TextureType _type, int _textureMinFilter, int _textureMagFilter,
                     int _textureWrapS, int _textureWrapT, int _textureWrapR = GL_CLAMP_TO_EDGE) : TextureSettings() {
@@ -114,8 +111,6 @@ struct TextureSettings {
     bool anisotropicFilter;
 
     int internalFormat; // OpenGL: Format of data on GPU
-    int pixelFormat; // OpenGL: Format of pixel data, e.g. RGB, RGBA, BGRA, Depth, Stencil, ...
-    int pixelType; // OpenGL: Type of one pixel data, e.g. Unsigned Byte, Float, ...
 };
 
 // For binding both the depth and stencil part of a depth-stencil texture to a shader.

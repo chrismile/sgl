@@ -118,7 +118,7 @@ void ImGuiWrapper::initialize(
         VkResult result = vkCreateDescriptorPool(
                 device->getVkDevice(), &poolInfo, nullptr, &imguiDescriptorPool);
         if (result != VK_SUCCESS) {
-            Logfile::get()->throwError("Error in ImGuiWrapper::initialize: vkCreateDescriptorPool failed.");
+            sgl::Logfile::get()->throwError("Error in ImGuiWrapper::initialize: vkCreateDescriptorPool failed.");
         }
 
         ImGui_ImplSDL2_InitForVulkan(window->getSDLWindow());
@@ -172,6 +172,11 @@ void ImGuiWrapper::shutdown() {
 #ifdef SUPPORT_VULKAN
     if (renderSystem == RenderSystem::VULKAN) {
         vk::Device* device = AppSettings::get()->getPrimaryDevice();
+
+        imguiCommandBuffers.clear();
+        framebuffers.clear();
+        imageViews.clear();
+
         vkDestroyDescriptorPool(device->getVkDevice(), imguiDescriptorPool, nullptr);
         ImGui_ImplVulkan_Shutdown();
         vkFreeCommandBuffers(
@@ -188,33 +193,47 @@ void ImGuiWrapper::processSDLEvent(const SDL_Event &event) {
 }
 
 #ifdef SUPPORT_VULKAN
-void ImGuiWrapper::setVkRenderTarget(vk::ImageViewPtr imageView) {
-    this->imageView = imageView;
+void ImGuiWrapper::setVkRenderTargets(std::vector<vk::ImageViewPtr> &imageViews) {
     vk::Device* device = AppSettings::get()->getPrimaryDevice();
     Window* window = AppSettings::get()->getMainWindow();
-    framebuffer = vk::FramebufferPtr(new vk::Framebuffer(device, window->getWidth(), window->getHeight()));
-    vk::AttachmentState attachmentState;
-    attachmentState.initialLayout = attachmentState.finalLayout;
-    framebuffer->setColorAttachment(imageView, 0, attachmentState);
+
+    this->imageViews = imageViews;
+    framebuffers.clear();
+
+    for (vk::ImageViewPtr& imageView : imageViews) {
+        vk::AttachmentState attachmentState;
+        //attachmentState.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachmentState.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+        attachmentState.initialLayout = imageView->getImage()->getVkImageLayout();
+        // TODO
+        //attachmentState.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; // VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL or VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+        attachmentState.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+        vk::FramebufferPtr framebuffer = vk::FramebufferPtr(new vk::Framebuffer(
+                device, window->getWidth(), window->getHeight()));
+        framebuffer->setColorAttachment(imageView, 0, attachmentState);
+        framebuffers.push_back(framebuffer);
+    }
 }
 #endif
 
 void ImGuiWrapper::onResolutionChanged() {
 #ifdef SUPPORT_VULKAN
-    if (AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
-        // TODO
-        //vk::Device* device = AppSettings::get()->getPrimaryDevice();
-        //Window* window = AppSettings::get()->getMainWindow();
-        //framebuffer = vk::FramebufferPtr(new vk::Framebuffer(device, window->getWidth(), window->getHeight()));
-        //vk::AttachmentState attachmentState;
-        //attachmentState.initialLayout = attachmentState.finalLayout;
-        //framebuffer->setColorAttachment(imageView, 0, attachmentState);
+    if (AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN && initialized) {
         vk::Device* device = AppSettings::get()->getPrimaryDevice();
         vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
+
+        ImGui_ImplVulkan_SetMinImageCount(swapchain->getMinImageCount());
+
+        if (!imguiCommandBuffers.empty()) {
+            vkFreeCommandBuffers(
+                    device->getVkDevice(), commandPool,
+                    imguiCommandBuffers.size(), imguiCommandBuffers.data());
+        }
         vk::CommandPoolType commandPoolType;
         commandPoolType.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
         imguiCommandBuffers = device->allocateCommandBuffers(
-                commandPoolType, &commandPool, swapchain ? uint32_t(swapchain->getNumImages()) : 0);
+                commandPoolType, &commandPool, swapchain ? uint32_t(swapchain->getNumImages()) : 1);
     }
 #endif
 }
@@ -244,18 +263,14 @@ void ImGuiWrapper::renderStart() {
         initInfo.Allocator = nullptr;
         initInfo.CheckVkResultFn = checkImGuiVkResult;
 
-        onResolutionChanged();
-        ImGui_ImplVulkan_Init(&initInfo, framebuffer->getVkRenderPass());
+        ImGui_ImplVulkan_Init(&initInfo, framebuffers.front()->getVkRenderPass());
 
         VkCommandBuffer commandBuffer = device->beginSingleTimeCommands();
         ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
         device->endSingleTimeCommands(commandBuffer);
         ImGui_ImplVulkan_DestroyFontUploadObjects();
 
-        vk::CommandPoolType commandPoolType;
-        commandPoolType.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        imguiCommandBuffers = device->allocateCommandBuffers(
-                commandPoolType, &commandPool, uint32_t(swapchain->getNumImages()));
+        onResolutionChanged();
     }
 #endif
 
@@ -287,14 +302,29 @@ void ImGuiWrapper::renderEnd() {
     if (renderSystem == RenderSystem::VULKAN) {
         vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
         VkCommandBuffer commandBuffer = imguiCommandBuffers.at(swapchain->getImageIndex());
+        vk::FramebufferPtr framebuffer = framebuffers.at(swapchain->getImageIndex());
+
+        VkCommandBufferBeginInfo beginInfo = {};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        beginInfo.pInheritanceInfo = nullptr;
+
+        if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+            Logfile::get()->throwError(
+                    "Error in ImGuiWrapper::renderEnd: Could not begin recording a command buffer.");
+        }
 
         VkRenderPassBeginInfo renderPassBeginInfo = {};
         renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassBeginInfo.renderPass = framebuffer->getVkRenderPass();
         renderPassBeginInfo.framebuffer = framebuffer->getVkFramebuffer();
         renderPassBeginInfo.renderArea.extent = framebuffer->getExtent2D();
-        renderPassBeginInfo.clearValueCount = 0;
-        renderPassBeginInfo.pClearValues = nullptr;
+        // TODO
+        VkClearValue clearValue = { 0.0f, 0.0f, 0.0f, 1.0f };
+        //renderPassBeginInfo.clearValueCount = 0;
+        //renderPassBeginInfo.pClearValues = nullptr;
+        renderPassBeginInfo.clearValueCount = 1;
+        renderPassBeginInfo.pClearValues = &clearValue;
         vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
@@ -309,27 +339,35 @@ void ImGuiWrapper::renderEnd() {
         SDLWindow *sdlWindow = (SDLWindow*)AppSettings::get()->getMainWindow();
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
-        SDL_GL_MakeCurrent(sdlWindow->getSDLWindow(), sdlWindow->getGLContext());
+#ifdef SUPPORT_OPENGL
+        if (renderSystem == RenderSystem::OPENGL) {
+            SDL_GL_MakeCurrent(sdlWindow->getSDLWindow(), sdlWindow->getGLContext());
+        }
+#endif
     }
 }
 
 void ImGuiWrapper::setNextWindowStandardPos(int x, int y) {
-    ImGui::SetNextWindowPos(ImVec2(x * sizeScale, y * sizeScale), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(ImVec2(
+            float(x) * sizeScale, float(y) * sizeScale), ImGuiCond_FirstUseEver);
 }
 
 void ImGuiWrapper::setNextWindowStandardSize(int width, int height) {
-    ImGui::SetNextWindowSize(ImVec2(width * sizeScale, height * sizeScale), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(
+            float(width) * sizeScale, float(height) * sizeScale), ImGuiCond_FirstUseEver);
 }
 
 void ImGuiWrapper::setNextWindowStandardPosSize(int x, int y, int width, int height) {
-    ImGui::SetNextWindowPos(ImVec2(x * sizeScale, y * sizeScale), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(width * sizeScale, height * sizeScale), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(ImVec2(
+            float(x) * sizeScale, float(y) * sizeScale), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(
+            float(width) * sizeScale, float(height) * sizeScale), ImGuiCond_FirstUseEver);
 }
 
 void ImGuiWrapper::renderDemoWindow() {
-    static bool show_demo_window = true;
-    if (show_demo_window)
-        ImGui::ShowDemoWindow(&show_demo_window);
+    static bool showDemoWindow = true;
+    if (showDemoWindow)
+        ImGui::ShowDemoWindow(&showDemoWindow);
 }
 
 void ImGuiWrapper::showHelpMarker(const char* desc) {

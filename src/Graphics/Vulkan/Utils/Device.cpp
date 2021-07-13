@@ -33,6 +33,10 @@
 #include "Swapchain.hpp"
 #include "Device.hpp"
 
+#ifdef SUPPORT_OPENGL
+#include "Interop.hpp"
+#endif
+
 namespace sgl { namespace vk {
 
 void Device::initializeDeviceExtensionList(VkPhysicalDevice physicalDevice) {
@@ -94,29 +98,35 @@ uint32_t findQueueFamilies(VkPhysicalDevice device, VkQueueFlagBits queueFlags) 
 }
 
 bool isDeviceSuitable(
-        VkPhysicalDevice device, VkSurfaceKHR surface,
+        VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, bool openGlInteropEnabled,
         const std::vector<const char*>& requiredDeviceExtensions,
         const std::vector<const char*>& optionalDeviceExtensions,
         std::set<std::string>& deviceExtensionsSet, std::vector<const char*>& deviceExtensions,
         VkPhysicalDeviceFeatures requestedPhysicalDeviceFeatures) {
-    // TODO: Use compute-only queue?
+    // TODO: Support compute-only devices?
     int graphicsQueueIndex = findQueueFamilies(
-            device, static_cast<VkQueueFlagBits>(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT));
+            physicalDevice, static_cast<VkQueueFlagBits>(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT));
     if (graphicsQueueIndex < 0) {
         return false;
     }
 
     if (surface) {
-        SwapchainSupportInfo swapchainSupportInfo = querySwapchainSupportInfo(device, surface);
+        SwapchainSupportInfo swapchainSupportInfo = querySwapchainSupportInfo(physicalDevice, surface);
         if (swapchainSupportInfo.formats.empty() && !swapchainSupportInfo.presentModes.empty()) {
             return false;
         }
     }
 
+#ifdef SUPPORT_OPENGL
+    if (openGlInteropEnabled && !isDeviceCompatibleWithOpenGl(physicalDevice)) {
+        return false;
+    }
+#endif
+
     uint32_t numExtensions;
-    vkEnumerateDeviceExtensionProperties(device, nullptr, &numExtensions, nullptr);
+    vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &numExtensions, nullptr);
     std::vector<VkExtensionProperties> availableExtensions(numExtensions);
-    vkEnumerateDeviceExtensionProperties(device, nullptr, &numExtensions, availableExtensions.data());
+    vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &numExtensions, availableExtensions.data());
     std::set<std::string> requiredExtensions(requiredDeviceExtensions.begin(), requiredDeviceExtensions.end());
 
     // Remove extensions that are available. The device is suitable if it has no missing extensions.
@@ -128,13 +138,13 @@ bool isDeviceSuitable(
 
     VkBool32 presentSupport = false;
     if (surface) {
-        vkGetPhysicalDeviceSurfaceSupportKHR(device, graphicsQueueIndex, surface, &presentSupport);
+        vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, graphicsQueueIndex, surface, &presentSupport);
     } else {
         presentSupport = true;
     }
 
     VkPhysicalDeviceFeatures physicalDeviceFeatures;
-    vkGetPhysicalDeviceFeatures(device, &physicalDeviceFeatures);
+    vkGetPhysicalDeviceFeatures(physicalDevice, &physicalDeviceFeatures);
 
     // Check if all requested features are available.
     bool requestedFeaturesAvailable = true;
@@ -163,7 +173,7 @@ bool isDeviceSuitable(
 }
 
 VkPhysicalDevice createPhysicalDeviceBinding(
-        VkInstance instance, VkSurfaceKHR surface,
+        VkInstance instance, VkSurfaceKHR surface, bool openGlInteropEnabled,
         const std::vector<const char*>& requiredDeviceExtensions,
         const std::vector<const char*>& optionalDeviceExtensions,
         std::set<std::string>& deviceExtensionsSet, std::vector<const char*>& deviceExtensions,
@@ -183,7 +193,7 @@ VkPhysicalDevice createPhysicalDeviceBinding(
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     for (const auto &device : physicalDevices) {
         if (isDeviceSuitable(
-                device, surface, requiredDeviceExtensions, optionalDeviceExtensions,
+                device, surface, openGlInteropEnabled, requiredDeviceExtensions, optionalDeviceExtensions,
                 deviceExtensionsSet, deviceExtensions, requestedPhysicalDeviceFeatures)) {
             physicalDevice = device;
             break;
@@ -282,12 +292,13 @@ void Device::createDeviceSwapchain(
     VkSurfaceKHR surface = window->getVkSurface();
     std::vector<const char*> deviceExtensions;
     physicalDevice = createPhysicalDeviceBinding(
-            instance->getVkInstance(), surface, requiredDeviceExtensions, optionalDeviceExtensions,
-            deviceExtensionsSet, deviceExtensions, requestedPhysicalDeviceFeatures);
+            instance->getVkInstance(), surface, openGlInteropEnabled, requiredDeviceExtensions,
+            optionalDeviceExtensions, deviceExtensionsSet, deviceExtensions, requestedPhysicalDeviceFeatures);
     initializeDeviceExtensionList(physicalDevice);
     printAvailableDeviceExtensionList();
 
     vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
+    vkGetPhysicalDeviceMemoryProperties(physicalDevice, &physicalDeviceMemoryProperties);
     vkGetPhysicalDeviceFeatures(physicalDevice, &physicalDeviceFeatures);
 
     auto deviceQueuePair = createLogicalDeviceAndQueues(
@@ -322,8 +333,8 @@ void Device::createDeviceHeadless(
 
     std::vector<const char*> deviceExtensions;
     physicalDevice = createPhysicalDeviceBinding(
-            instance->getVkInstance(), nullptr, requiredDeviceExtensions, optionalDeviceExtensions,
-            deviceExtensionsSet, deviceExtensions, requestedPhysicalDeviceFeatures);
+            instance->getVkInstance(), nullptr, openGlInteropEnabled, requiredDeviceExtensions,
+            optionalDeviceExtensions, deviceExtensionsSet, deviceExtensions, requestedPhysicalDeviceFeatures);
     initializeDeviceExtensionList(physicalDevice);
     printAvailableDeviceExtensionList();
 
@@ -361,6 +372,10 @@ Device::~Device() {
     vkDestroyDevice(device, nullptr);
 }
 
+void Device::waitIdle() {
+    vkDeviceWaitIdle(device);
+}
+
 VkSampleCountFlagBits Device::getMaxUsableSampleCount() {
     VkSampleCountFlags counts =
             physicalDeviceProperties.limits.framebufferColorSampleCounts
@@ -373,6 +388,18 @@ VkSampleCountFlagBits Device::getMaxUsableSampleCount() {
     if (counts & VK_SAMPLE_COUNT_2_BIT) { return VK_SAMPLE_COUNT_2_BIT; }
 
     return VK_SAMPLE_COUNT_1_BIT;
+}
+
+uint32_t Device::findMemoryTypeIndex(uint32_t memoryTypeBits, VkMemoryPropertyFlags memoryPropertyFlags) {
+    for (uint32_t memoryTypeIndex = 0; memoryTypeIndex < physicalDeviceMemoryProperties.memoryTypeCount; memoryTypeIndex++) {
+        if (((physicalDeviceMemoryProperties.memoryTypes[memoryTypeIndex].propertyFlags & memoryPropertyFlags) == memoryPropertyFlags
+                && memoryTypeBits & (1 << memoryTypeIndex))) {
+            return memoryTypeIndex;
+        }
+    }
+
+    Logfile::get()->throwError("Error in Device::findMemoryTypeIndex: Could find suitable memory!");
+    return std::numeric_limits<uint32_t>::max();
 }
 
 VkCommandBuffer Device::allocateCommandBuffer(

@@ -35,6 +35,9 @@
 
 #ifdef SUPPORT_VULKAN
 #include <vulkan/vulkan.h>
+namespace sgl { namespace vk {
+class Renderer;
+}}
 #endif
 
 #include "Utils/FramerateSmoother.hpp"
@@ -71,6 +74,7 @@ protected:
     FramerateSmoother framerateSmoother;
 
 #ifdef SUPPORT_VULKAN
+    sgl::vk::Renderer* rendererVk = nullptr;
     std::vector<VkCommandBuffer> commandBuffers;
 #endif
 

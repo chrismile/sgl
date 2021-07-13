@@ -37,6 +37,20 @@
 
 namespace sgl { namespace vk {
 
+class Buffer;
+typedef std::shared_ptr<Buffer> BufferPtr;
+class BufferView;
+typedef std::shared_ptr<BufferView> BufferViewPtr;
+
+class Image;
+typedef std::shared_ptr<Image> ImagePtr;
+class ImageView;
+typedef std::shared_ptr<ImageView> ImageViewPtr;
+class ImageSampler;
+typedef std::shared_ptr<ImageSampler> ImageSamplerPtr;
+class Texture;
+typedef std::shared_ptr<Texture> TexturePtr;
+
 class GraphicsPipeline;
 typedef std::shared_ptr<GraphicsPipeline> GraphicsPipelinePtr;
 class ComputePipeline;

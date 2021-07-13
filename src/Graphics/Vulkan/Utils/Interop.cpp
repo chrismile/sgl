@@ -1,0 +1,163 @@
+/*
+ * BSD 2-Clause License
+ *
+ * Copyright (c) 2021, Christoph Neuhauser
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * * Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ *
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#include <Utils/File/Logfile.hpp>
+
+#ifdef _WIN32
+#include <vulkan/vulkan_win32.h>
+#endif
+
+#ifdef SUPPORT_OPENGL
+#include <Graphics/Renderer.hpp>
+#endif
+
+#include "Interop.hpp"
+
+namespace sgl {
+
+VkMemoryPropertyFlags convertVmaMemoryUsageToVkMemoryPropertyFlags(VmaMemoryUsage memoryUsage) {
+    VkMemoryPropertyFlags memoryPropertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+    if (memoryUsage == VMA_MEMORY_USAGE_GPU_ONLY) {
+        memoryPropertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    } else if (memoryUsage == VMA_MEMORY_USAGE_CPU_ONLY) {
+        memoryPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    } else if (memoryUsage == VMA_MEMORY_USAGE_CPU_TO_GPU) {
+        memoryPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    } else if (memoryUsage == VMA_MEMORY_USAGE_GPU_TO_CPU) {
+        memoryPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    } else if (memoryUsage == VMA_MEMORY_USAGE_CPU_COPY) {
+        memoryPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    } else if (memoryUsage == VMA_MEMORY_USAGE_GPU_LAZILY_ALLOCATED) {
+        memoryPropertyFlags = VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
+    }
+
+    return memoryPropertyFlags;
+}
+
+#ifdef SUPPORT_OPENGL
+bool isDeviceCompatibleWithOpenGl(VkPhysicalDevice physicalDevice) {
+    assert(VK_UUID_SIZE == GL_UUID_SIZE_EXT);
+    const size_t UUID_SIZE = std::min(VK_UUID_SIZE, GL_UUID_SIZE_EXT);
+
+    // Get the Vulkan UUID data for the driver and device.
+    VkPhysicalDeviceIDProperties physicalDeviceIdProperties = {};
+    physicalDeviceIdProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES;
+    VkPhysicalDeviceProperties2 physicalDeviceProperties2 = {};
+    physicalDeviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+    physicalDeviceProperties2.pNext = &physicalDeviceIdProperties;
+    vkGetPhysicalDeviceProperties2(physicalDevice, &physicalDeviceProperties2);
+
+    // Get the OpenGL UUID of the driver, and compare all associated device UUIDs with the Vulkan device UUID.
+    GLubyte deviceUuid[GL_UUID_SIZE_EXT];
+    GLubyte driverUuid[GL_UUID_SIZE_EXT];
+    glGetUnsignedBytevEXT(GL_DRIVER_UUID_EXT, driverUuid);
+
+    if (strncmp((const char*)driverUuid, (const char*)physicalDeviceIdProperties.driverUUID, UUID_SIZE) != 0) {
+        return false;
+    }
+
+    GLint numDevices = 0;
+    glGetIntegerv(GL_NUM_DEVICE_UUIDS_EXT, &numDevices);
+    for (int deviceIdx = 0; deviceIdx < numDevices; deviceIdx++) {
+        glGetUnsignedBytei_vEXT(GL_DEVICE_UUID_EXT, deviceIdx, deviceUuid);
+        if (strncmp((const char*)deviceUuid, (const char*)physicalDeviceIdProperties.deviceUUID, UUID_SIZE) == 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool createGlMemoryObjectFromVkDeviceMemory(
+        GLuint& memoryObjectGl, VkDevice device, VkDeviceMemory deviceMemory, size_t sizeInBytes) {
+#if defined(_WIN32)
+    auto _vkGetMemoryWin32HandleKHR = (PFN_vkGetMemoryWin32HandleKHR)vkGetDeviceProcAddr(
+            device, "vkGetMemoryWin32HandleKHR");
+    if (!_vkGetMemoryWin32HandleKHR) {
+        Logfile::get()->throwError(
+                "Error in Buffer::createGlMemoryObject: vkGetMemoryWin32HandleKHR was not found!");
+        return false;
+    }
+    VkMemoryGetWin32HandleInfoKHR memoryGetWin32HandleInfo = {};
+    memoryGetWin32HandleInfo.sType = VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR;
+    memoryGetWin32HandleInfo.memory = deviceMemory;
+    memoryGetWin32HandleInfo.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+
+    HANDLE handle = nullptr;
+    if (_vkGetMemoryWin32HandleKHR(device, &memoryGetWin32HandleInfo, &handle) != VK_SUCCESS) {
+        Logfile::get()->throwError(
+                "Error in createGlMemoryObjectFromVkDeviceMemory: Could not retrieve the file descriptor from the "
+                "Vulkan  device memory!");
+        return false;
+    }
+
+    glCreateMemoryObjectsEXT(1, &memoryObjectGl);
+    glImportMemoryWin32HandleEXT(memoryObjectGl, sizeInBytes, GL_HANDLE_TYPE_OPAQUE_WIN32_EXT, handle);
+#elif defined(__linux__)
+    auto _vkGetMemoryFdKHR = (PFN_vkGetMemoryFdKHR)vkGetDeviceProcAddr(device, "vkGetMemoryFdKHR");
+    if (!_vkGetMemoryFdKHR) {
+        Logfile::get()->throwError(
+                "Error in Buffer::createGlMemoryObject: vkGetMemoryFdKHR was not found!");
+        return false;
+    }
+
+    VkMemoryGetFdInfoKHR memoryGetFdInfoKhr = {};
+    memoryGetFdInfoKhr.sType = VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR;
+    memoryGetFdInfoKhr.memory = deviceMemory;
+    memoryGetFdInfoKhr.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+
+    int fileDescriptor = 0;
+    if (_vkGetMemoryFdKHR(device, &memoryGetFdInfoKhr, &fileDescriptor) != VK_SUCCESS) {
+        Logfile::get()->throwError(
+                "Error in createGlMemoryObjectFromVkDeviceMemory: Could not retrieve the file descriptor from the "
+                "Vulkan device memory!");
+        return false;
+    }
+
+    glCreateMemoryObjectsEXT(1, &memoryObjectGl);
+    glImportMemoryFdEXT(memoryObjectGl, sizeInBytes, GL_HANDLE_TYPE_OPAQUE_FD_EXT, fileDescriptor);
+
+    if (!glIsMemoryObjectEXT(memoryObjectGl)) {
+        Logfile::get()->throwError(
+                "Error in createGlMemoryObjectFromVkDeviceMemory: Failed to create an OpenGL memory object!");
+        return false;
+    }
+
+    sgl::Renderer->errorCheck();
+    return glGetError() != GL_NO_ERROR;
+#else
+    Logfile::get()->throwError(
+            "Error in createGlMemoryObjectFromVkDeviceMemory: External memory is only supported on Linux, Android "
+            "and Windows systems!");
+    return false;
+#endif
+}
+#endif
+
+}

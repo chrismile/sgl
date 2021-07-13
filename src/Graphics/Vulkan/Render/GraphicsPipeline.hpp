@@ -96,9 +96,12 @@ class DLL_OBJECT GraphicsPipelineInfo {
     friend class GraphicsPipeline;
 
 public:
-    GraphicsPipelineInfo();
+    GraphicsPipelineInfo(const ShaderStagesPtr& shaderStages);
 
-    /// Resets to standard settings.
+    /**
+     * Resets to standard settings.
+     * - Primitive data: Triangle list.
+     */
     void reset();
 
     /// Sets the specified framebuffer (REQUIRED).
@@ -106,13 +109,14 @@ public:
 
     void setBlendMode(BlendMode blendMode);
     void setInputAssemblyTopology(PrimitiveTopology primitiveTopology, bool primitiveRestartEnable = false);
-    void setViewportState();
     void setCullMode(CullMode cullMode);
     void setIsFrontFaceCcw(bool isFrontFaceCcw);
+    void setEnableMinSampleShading(bool enableMinSampleShading, float minSampleShading = 1.0f);
+
     // Depth-stencil info.
     void setEnableDepthTest(bool enableDepthTest);
-    void setEnableDepthWrite(bool enableDepthTest);
-    void setEnableStencilTest(bool enableDepthTest);
+    void setEnableDepthWrite(bool enableDepthWrite);
+    void setEnableStencilTest(bool enableStencilTest);
 
     /**
      * E.g., if we have struct Vertex { vec3 vertexPosition; float vertexAttribute; };
@@ -150,10 +154,14 @@ public:
 
 protected:
     ShaderStagesPtr shaderStages;
+    FramebufferPtr framebuffer;
     VkRenderPassCreateInfo renderPassInfo = {};
 
     std::vector<VkVertexInputBindingDescription> vertexInputBindingDescriptions;
     std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions;
+
+    VkViewport viewport = {};
+    VkRect2D scissor = {};
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo = {};
@@ -162,14 +170,13 @@ protected:
     VkPipelineMultisampleStateCreateInfo multisamplingInfo = {};
     VkPipelineDepthStencilStateCreateInfo depthStencilInfo = {};
     VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
-    VkPipelineColorBlendStateCreateInfo colorBlendingInfo = {};
+    VkPipelineColorBlendStateCreateInfo colorBlendInfo = {};
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
 };
 
 class DLL_OBJECT GraphicsPipeline : public Pipeline {
 public:
     GraphicsPipeline(Device* device, const GraphicsPipelineInfo& pipelineInfo);
-    ~GraphicsPipeline();
 
     inline const FramebufferPtr& getFramebuffer() const { return framebuffer; }
 

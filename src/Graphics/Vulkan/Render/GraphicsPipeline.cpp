@@ -35,7 +35,103 @@
 
 namespace sgl { namespace vk {
 
-void createColorBlendInfo(BlendMode blendMode) {
+GraphicsPipelineInfo::GraphicsPipelineInfo(const ShaderStagesPtr& shaderStages) : shaderStages(shaderStages) {
+    assert(shaderStages.get() != nullptr);
+    reset();
+}
+
+void GraphicsPipelineInfo::reset() {
+    inputAssemblyInfo = {};
+    inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
+
+    vertexInputInfo = {};
+    vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+
+    colorBlendInfo = {};
+    colorBlendInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    colorBlendInfo.logicOpEnable = VK_FALSE;
+    colorBlendInfo.logicOp = VK_LOGIC_OP_COPY;
+    colorBlendInfo.attachmentCount = 1;
+    colorBlendInfo.pAttachments = &colorBlendAttachment;
+    colorBlendInfo.blendConstants[0] = 0.0f;
+    colorBlendInfo.blendConstants[1] = 0.0f;
+    colorBlendInfo.blendConstants[2] = 0.0f;
+    colorBlendInfo.blendConstants[3] = 0.0f;
+
+    rasterizerInfo = {};
+    rasterizerInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasterizerInfo.depthClampEnable = VK_FALSE;
+    rasterizerInfo.rasterizerDiscardEnable = VK_FALSE;
+    rasterizerInfo.polygonMode = VK_POLYGON_MODE_FILL;
+    rasterizerInfo.lineWidth = 1.0f;
+    rasterizerInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+    rasterizerInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    rasterizerInfo.depthBiasEnable = VK_FALSE;
+    rasterizerInfo.depthBiasConstantFactor = 0.0f;
+    rasterizerInfo.depthBiasClamp = 0.0f;
+    rasterizerInfo.depthBiasSlopeFactor = 0.0f;
+
+    multisamplingInfo = {};
+    multisamplingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    multisamplingInfo.sampleShadingEnable = VK_FALSE;
+    multisamplingInfo.minSampleShading = 1.0f;
+    multisamplingInfo.rasterizationSamples = framebuffer ? framebuffer->getSampleCount() : VK_SAMPLE_COUNT_1_BIT;
+    multisamplingInfo.pSampleMask = nullptr;
+    multisamplingInfo.alphaToCoverageEnable = VK_FALSE;
+    multisamplingInfo.alphaToOneEnable = VK_FALSE;
+
+    depthStencilInfo = {};
+    depthStencilInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencilInfo.depthTestEnable = VK_TRUE;
+    depthStencilInfo.depthWriteEnable = VK_TRUE;
+    depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS;
+    depthStencilInfo.depthBoundsTestEnable = VK_FALSE;
+    depthStencilInfo.minDepthBounds = 0.0f;
+    depthStencilInfo.maxDepthBounds = 1.0f;
+    depthStencilInfo.stencilTestEnable = VK_FALSE;
+    depthStencilInfo.front = {};
+    depthStencilInfo.back = {};
+
+    colorBlendInfo = {};
+    colorBlendInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    colorBlendInfo.logicOpEnable = VK_FALSE;
+    colorBlendInfo.logicOp = VK_LOGIC_OP_COPY;
+    colorBlendInfo.attachmentCount = 1;
+    colorBlendInfo.pAttachments = &colorBlendAttachment;
+    colorBlendInfo.blendConstants[0] = 0.0f;
+    colorBlendInfo.blendConstants[1] = 0.0f;
+    colorBlendInfo.blendConstants[2] = 0.0f;
+    colorBlendInfo.blendConstants[3] = 0.0f;
+}
+
+void GraphicsPipelineInfo::setFramebuffer(FramebufferPtr framebuffer) {
+    this->framebuffer = framebuffer;
+
+    multisamplingInfo.rasterizationSamples = framebuffer->getSampleCount();
+
+    viewport = {};
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = float(framebuffer->getWidth());
+    viewport.height = float(framebuffer->getHeight());
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+
+    scissor = {};
+    scissor.offset = { 0, 0 };
+    scissor.extent = { uint32_t(framebuffer->getWidth()), uint32_t(framebuffer->getHeight()) };
+
+    viewportStateInfo = {};
+    viewportStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewportStateInfo.viewportCount = 1;
+    viewportStateInfo.pViewports = &viewport;
+    viewportStateInfo.scissorCount = 1;
+    viewportStateInfo.pScissors = &scissor;
+}
+
+void GraphicsPipelineInfo::setBlendMode(BlendMode blendMode) {
     VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
     colorBlendAttachment.colorWriteMask =
             VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
@@ -110,7 +206,6 @@ void createColorBlendInfo(BlendMode blendMode) {
         colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
     }
 
-    VkPipelineColorBlendStateCreateInfo colorBlendInfo = {};
     colorBlendInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlendInfo.logicOpEnable = VK_FALSE;
     colorBlendInfo.logicOp = VK_LOGIC_OP_COPY;
@@ -122,10 +217,34 @@ void createColorBlendInfo(BlendMode blendMode) {
     colorBlendInfo.blendConstants[3] = 0.0f;
 }
 
+void GraphicsPipelineInfo::setInputAssemblyTopology(PrimitiveTopology primitiveTopology, bool primitiveRestartEnable) {
+    inputAssemblyInfo.topology = VkPrimitiveTopology(primitiveTopology);
+    inputAssemblyInfo.primitiveRestartEnable = primitiveRestartEnable;
+}
 
+void GraphicsPipelineInfo::setCullMode(CullMode cullMode) {
+    rasterizerInfo.cullMode = VkCullModeFlagBits(cullMode);
+}
 
+void GraphicsPipelineInfo::setIsFrontFaceCcw(bool isFrontFaceCcw) {
+    rasterizerInfo.frontFace = isFrontFaceCcw ? VK_FRONT_FACE_COUNTER_CLOCKWISE : VK_FRONT_FACE_CLOCKWISE;
+}
 
-GraphicsPipelineInfo::GraphicsPipelineInfo() {
+void GraphicsPipelineInfo::setEnableMinSampleShading(bool enableMinSampleShading, float minSampleShading) {
+    multisamplingInfo.sampleShadingEnable = enableMinSampleShading;
+    multisamplingInfo.minSampleShading = minSampleShading;
+}
+
+void GraphicsPipelineInfo::setEnableDepthTest(bool enableDepthTest) {
+    depthStencilInfo.depthTestEnable = enableDepthTest;
+}
+
+void GraphicsPipelineInfo::setEnableDepthWrite(bool enableDepthWrite) {
+    depthStencilInfo.depthWriteEnable = enableDepthWrite;
+}
+
+void GraphicsPipelineInfo::setEnableStencilTest(bool enableStencilTest) {
+    depthStencilInfo.stencilTestEnable = enableStencilTest;
 }
 
 void GraphicsPipelineInfo::setVertexBufferBinding(
@@ -138,6 +257,9 @@ void GraphicsPipelineInfo::setVertexBufferBinding(
     bindingDescription.stride = stride;
     bindingDescription.inputRate = inputRate;
     vertexInputBindingDescriptions.at(binding) = bindingDescription;
+
+    vertexInputInfo.vertexBindingDescriptionCount = uint32_t(vertexInputBindingDescriptions.size());
+    vertexInputInfo.pVertexBindingDescriptions = vertexInputBindingDescriptions.data();
 }
 
 void GraphicsPipelineInfo::setInputAttributeDescription(
@@ -173,23 +295,18 @@ void GraphicsPipelineInfo::setInputAttributeDescription(
     attributeDescription.format = VkFormat(inputVariableDescriptor.format);
     attributeDescription.offset = bufferOffset;
     vertexInputAttributeDescriptions.at(attributeLocation) = attributeDescription;
-}
 
-void GraphicsPipelineInfo::reset() {
-    vertexInputInfo = {};
-    vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = uint32_t(vertexInputBindingDescriptions.size());
-    vertexInputInfo.pVertexBindingDescriptions = vertexInputBindingDescriptions.data();
     vertexInputInfo.vertexAttributeDescriptionCount = uint32_t(vertexInputAttributeDescriptions.size());
     vertexInputInfo.pVertexAttributeDescriptions = vertexInputAttributeDescriptions.data();
-
-    inputAssemblyInfo = {};
-    inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
 }
 
-GraphicsPipeline::GraphicsPipeline(Device* device, const GraphicsPipelineInfo& pipelineInfo) : Pipeline(device) {
+
+
+
+GraphicsPipeline::GraphicsPipeline(Device* device, const GraphicsPipelineInfo& pipelineInfo)
+        : Pipeline(device, pipelineInfo.shaderStages), framebuffer(pipelineInfo.framebuffer),
+          vertexInputBindingDescriptions(pipelineInfo.vertexInputBindingDescriptions),
+          vertexInputAttributeDescriptions(pipelineInfo.vertexInputAttributeDescriptions) {
     const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts =
             pipelineInfo.shaderStages->getVkDescriptorSetLayouts();
 
@@ -206,19 +323,20 @@ GraphicsPipeline::GraphicsPipeline(Device* device, const GraphicsPipelineInfo& p
                 "Error in GraphicsPipeline::GraphicsPipeline: Could not create a pipeline layout.");
     }
 
-    const std::vector<VkPipelineShaderStageCreateInfo>& shaderStages = pipelineInfo.shaderStages->getVkShaderStages();
+    const std::vector<VkPipelineShaderStageCreateInfo>& shaderStagesCreateInfo =
+            pipelineInfo.shaderStages->getVkShaderStages();
 
     VkGraphicsPipelineCreateInfo pipelineCreateInfo = {};
     pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    pipelineCreateInfo.stageCount = shaderStages.size();
-    pipelineCreateInfo.pStages = shaderStages.data();
+    pipelineCreateInfo.stageCount = shaderStagesCreateInfo.size();
+    pipelineCreateInfo.pStages = shaderStagesCreateInfo.data();
     pipelineCreateInfo.pVertexInputState = &pipelineInfo.vertexInputInfo;
     pipelineCreateInfo.pInputAssemblyState = &pipelineInfo.inputAssemblyInfo;
     pipelineCreateInfo.pViewportState = &pipelineInfo.viewportStateInfo;
     pipelineCreateInfo.pRasterizationState = &pipelineInfo.rasterizerInfo;
     pipelineCreateInfo.pMultisampleState = &pipelineInfo.multisamplingInfo;
     pipelineCreateInfo.pDepthStencilState = &pipelineInfo.depthStencilInfo;
-    pipelineCreateInfo.pColorBlendState = &pipelineInfo.colorBlendingInfo;
+    pipelineCreateInfo.pColorBlendState = &pipelineInfo.colorBlendInfo;
     pipelineCreateInfo.pDynamicState = nullptr;
     pipelineCreateInfo.layout = pipelineLayout;
     pipelineCreateInfo.renderPass = framebuffer->getVkRenderPass();
@@ -232,9 +350,6 @@ GraphicsPipeline::GraphicsPipeline(Device* device, const GraphicsPipelineInfo& p
         Logfile::get()->throwError(
                 "Error in GraphicsPipeline::GraphicsPipeline: Could not create a graphics pipeline.");
     }
-}
-
-GraphicsPipeline::~GraphicsPipeline() {
 }
 
 }}

@@ -156,6 +156,7 @@ private:
     std::map<std::string, std::vector<DescriptorInfo>> descriptorSetNameBindingMap; ///< name -> binding
     std::map<std::string, uint32_t> inputVariableNameMap; ///< input interface variable name -> location
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts; ///< created from descriptorSetsInfo for use in Vulkan
+    uint32_t numDescriptorSets = 0;
     std::vector<VkPipelineShaderStageCreateInfo> vkShaderStages;
 
     // for getInputVariableDescriptors.

@@ -30,6 +30,7 @@
 
 #include <Utils/File/Logfile.hpp>
 #include "../Utils/Device.hpp"
+#include "../Utils/Interop.hpp"
 #include "../Buffers/Buffer.hpp"
 #include "Image.hpp"
 
@@ -52,14 +53,56 @@ Image::Image(Device* device, const ImageSettings& imageSettings) : device(device
     imageCreateInfo.samples = imageSettings.numSamples;
     imageCreateInfo.flags = 0;
 
-    VmaAllocationCreateInfo allocCreateInfo = {};
-    allocCreateInfo.usage = imageSettings.memoryUsage;
+    if (!imageSettings.exportMemory) {
+        VmaAllocationCreateInfo allocCreateInfo = {};
+        allocCreateInfo.usage = imageSettings.memoryUsage;
 
-    VmaAllocationInfo textureImageAllocationInfo;
-    if (vmaCreateImage(
-            device->getAllocator(), &imageCreateInfo, &allocCreateInfo, &image,
-            &imageAllocation, &textureImageAllocationInfo) != VK_SUCCESS) {
-        sgl::Logfile::get()->throwError("Image::Image: vmaCreateImage failed!");
+        VmaAllocationInfo textureImageAllocationInfo;
+        if (vmaCreateImage(
+                device->getAllocator(), &imageCreateInfo, &allocCreateInfo, &image,
+                &imageAllocation, &textureImageAllocationInfo) != VK_SUCCESS) {
+            sgl::Logfile::get()->throwError("Image::Image: vmaCreateImage failed!");
+        }
+    } else {
+        // If the memory should be exported for external use, we need to allocate the memory manually.
+        if (vkCreateImage(device->getVkDevice(), &imageCreateInfo, nullptr, &image) != VK_SUCCESS) {
+            Logfile::get()->throwError("Error in Image::Image: Failed to create an image!");
+        }
+
+        VkMemoryRequirements memoryRequirements;
+        vkGetImageMemoryRequirements(device->getVkDevice(), image, &memoryRequirements);
+        deviceMemorySizeInBytes = memoryRequirements.size;
+
+        VkExportMemoryAllocateInfo exportMemoryAllocateInfo = {};
+        exportMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;
+#if defined(_WIN32)
+        exportMemoryAllocateInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+#elif defined(__linux__)
+        exportMemoryAllocateInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+#else
+        Logfile::get()->throwError(
+                "Error in Image::Image: External memory is only supported on Linux, Android and Windows systems!");
+#endif
+
+        VkMemoryPropertyFlags memoryPropertyFlags = convertVmaMemoryUsageToVkMemoryPropertyFlags(
+                imageSettings.memoryUsage);
+
+        VkMemoryAllocateInfo memoryAllocateInfo = {};
+        memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        memoryAllocateInfo.allocationSize = memoryRequirements.size;
+        memoryAllocateInfo.memoryTypeIndex = device->findMemoryTypeIndex(
+                memoryRequirements.memoryTypeBits, memoryPropertyFlags);
+        memoryAllocateInfo.pNext = &exportMemoryAllocateInfo;
+
+        if (memoryAllocateInfo.memoryTypeIndex == std::numeric_limits<uint32_t>::max()) {
+            Logfile::get()->throwError("Error in Image::Image: No suitable memory type index found!");
+        }
+
+        if (vkAllocateMemory(device->getVkDevice(), &memoryAllocateInfo, 0, &deviceMemory) != VK_SUCCESS) {
+            Logfile::get()->throwError("Error in Image::Image: Could not allocate memory!");
+        }
+
+        vkBindImageMemory(device->getVkDevice(), image, deviceMemory, 0);
     }
 }
 
@@ -80,8 +123,14 @@ Image::Image(
 }
 
 Image::~Image() {
-    if (hasImageOwnership) {
-        vmaDestroyImage(device->getAllocator(), image, imageAllocation);
+    if (hasImageOwnership && imageAllocation) {
+        if (imageAllocation) {
+            vmaDestroyImage(device->getAllocator(), image, imageAllocation);
+        }
+        if (deviceMemory) {
+            vkDestroyImage(device->getVkDevice(), image, nullptr);
+            vkFreeMemory(device->getVkDevice(), deviceMemory, nullptr);
+        }
     }
 }
 
@@ -440,6 +489,19 @@ void Image::unmapMemory() {
     vmaUnmapMemory(device->getAllocator(), imageAllocation);
 }
 
+#ifdef SUPPORT_OPENGL
+bool Image::createGlMemoryObject(GLuint& memoryObjectGl) {
+    if (!imageSettings.exportMemory) {
+        Logfile::get()->throwError(
+                "Error in Buffer::createGlMemoryObject: An external memory object can only be created if the "
+                "export memory flag was set on creation!");
+        return false;
+    }
+    return createGlMemoryObjectFromVkDeviceMemory(
+            memoryObjectGl, device->getVkDevice(), deviceMemory, deviceMemorySizeInBytes);
+}
+#endif
+
 
 
 ImageView::ImageView(ImagePtr& image, VkImageViewType imageViewType, VkImageAspectFlags aspectFlags)
@@ -490,7 +552,7 @@ ImageViewPtr ImageView::copy(bool copyImage, bool copyContent) {
 }
 
 ImageSampler::ImageSampler(Device* device, const ImageSamplerSettings& samplerSettings, float maxLodOverwrite)
-        : device(device) {
+        : device(device), imageSamplerSettings(samplerSettings) {
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     samplerInfo.magFilter = samplerSettings.magFilter;

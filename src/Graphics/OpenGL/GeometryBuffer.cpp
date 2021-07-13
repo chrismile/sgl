@@ -52,6 +52,13 @@ GeometryBufferGL::GeometryBufferGL(size_t size, void *data, BufferType type /* =
     glBufferData(oglBufferType, size, data, oglBufferUsage);
 }
 
+GeometryBufferGL::GeometryBufferGL(BufferType type) : GeometryBuffer(0, type, BUFFER_STATIC)
+{
+    initialize(type, BUFFER_STATIC);
+}
+
+
+
 void GeometryBufferGL::initialize(BufferType type, BufferUse bufferUse)
 {
     oglBufferUsage = GL_STATIC_DRAW;
@@ -128,5 +135,24 @@ void GeometryBufferGL::unbind()
 {
     glBindBuffer(oglBufferType, 0);
 }
+
+
+#ifdef SUPPORT_VULKAN
+GeometryBufferGLExternalMemoryVk::GeometryBufferGLExternalMemoryVk(vk::BufferPtr &vulkanBuffer, BufferType type)
+        : GeometryBufferGL(type), vulkanBuffer(vulkanBuffer) {
+    if (!vulkanBuffer->createGlMemoryObject(memoryObject)) {
+        Logfile::get()->throwError(
+                "GeometryBufferVkExternalMemoryGL::GeometryBufferVkExternalMemoryGL: createGlMemoryObject failed.");
+    }
+
+    bufferSize = vulkanBuffer->getSizeInBytes();
+    glCreateBuffers(1, &buffer);
+    glNamedBufferStorageMemEXT(buffer, GLsizeiptr(bufferSize), memoryObject, 0);
+}
+
+GeometryBufferGLExternalMemoryVk::~GeometryBufferGLExternalMemoryVk() {
+    glDeleteMemoryObjectsEXT(1, &memoryObject);
+}
+#endif
 
 }

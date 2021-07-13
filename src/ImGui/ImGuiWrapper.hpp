@@ -35,6 +35,7 @@
 
 #ifdef SUPPORT_VULKAN
 #include <vulkan/vulkan.h>
+#include "imgui_impl_vulkan.h"
 
 namespace sgl { namespace vk {
 class ImageView;
@@ -91,7 +92,7 @@ public:
     void showHelpMarker(const char* desc);
 
 #ifdef SUPPORT_VULKAN
-    void setVkRenderTarget(vk::ImageViewPtr imageView);
+    void setVkRenderTargets(std::vector<vk::ImageViewPtr>& imageViews);
     std::vector<VkCommandBuffer>& getVkCommandBuffers() { return imguiCommandBuffers; }
 #endif
 
@@ -103,10 +104,11 @@ private:
 #ifdef SUPPORT_VULKAN
     bool initialized = false;
     VkDescriptorPool imguiDescriptorPool = VK_NULL_HANDLE;
-    VkCommandPool commandPool;
+    VkCommandPool commandPool = VK_NULL_HANDLE;
     std::vector<VkCommandBuffer> imguiCommandBuffers;
-    vk::FramebufferPtr framebuffer;
-    vk::ImageViewPtr imageView;
+    std::vector<vk::FramebufferPtr> framebuffers;
+    std::vector<vk::ImageViewPtr> imageViews;
+    ImGui_ImplVulkanH_Window mainWindowData;
 #endif
 };
 

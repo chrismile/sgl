@@ -59,6 +59,7 @@ Renderer::Renderer(Device* device, uint32_t numDescriptors) : device(device) {
 
     VkDescriptorPoolCreateInfo globalPoolInfo = {};
     globalPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    globalPoolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     globalPoolInfo.poolSizeCount = uint32_t(globalPoolSizes.size());
     globalPoolInfo.pPoolSizes = globalPoolSizes.data();
     globalPoolInfo.maxSets = numDescriptors;
@@ -73,7 +74,7 @@ Renderer::Renderer(Device* device, uint32_t numDescriptors) : device(device) {
     uboLayoutBinding.binding = 0;
     uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     uboLayoutBinding.descriptorCount = 1;
-    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT; // VK_SHADER_STAGE_ALL_GRAPHICS
+    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT;
 
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo{};
     descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -93,6 +94,7 @@ Renderer::Renderer(Device* device, uint32_t numDescriptors) : device(device) {
 
     VkDescriptorPoolCreateInfo poolInfo = {};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     poolInfo.poolSizeCount = 1;
     poolInfo.pPoolSizes = &poolSize;
     poolInfo.maxSets = maxFrameCacheSize;
@@ -104,6 +106,8 @@ Renderer::Renderer(Device* device, uint32_t numDescriptors) : device(device) {
 }
 
 Renderer::~Renderer() {
+    device->waitIdle();
+
     for (FrameCache& frameCache : frameCaches) {
         while (!frameCache.allMatrixBlockDescriptorSets.is_empty()) {
             VkDescriptorSet descriptorSet = frameCache.allMatrixBlockDescriptorSets.pop_front();
@@ -111,18 +115,36 @@ Renderer::~Renderer() {
                     device->getVkDevice(), matrixBufferDescriptorPool, 1, &descriptorSet);
         }
     }
+    frameCaches.clear();
+    frameCaches.shrink_to_fit();
 
     vkDestroyDescriptorSetLayout(device->getVkDevice(), matrixBufferDesciptorSetLayout, nullptr);
     vkDestroyDescriptorPool(device->getVkDevice(), matrixBufferDescriptorPool, nullptr);
-
     vkDestroyDescriptorPool(device->getVkDevice(), globalDescriptorPool, nullptr);
+
+    if (!commandBuffers.empty()) {
+        vkFreeCommandBuffers(
+                device->getVkDevice(), commandPool,
+                commandBuffers.size(), commandBuffers.data());
+    }
+    commandBuffers.clear();
 }
 
 void Renderer::beginCommandBuffer() {
     Swapchain* swapchain = AppSettings::get()->getSwapchain();
-    frameIndex = swapchain->getImageIndex();
+    frameIndex = swapchain ? swapchain->getImageIndex() : 0;
     if (frameCaches.size() != swapchain->getNumImages()) {
         frameCaches.resize(swapchain->getNumImages());
+
+        if (!commandBuffers.empty()) {
+            vkFreeCommandBuffers(
+                    device->getVkDevice(), commandPool,
+                    commandBuffers.size(), commandBuffers.data());
+        }
+        vk::CommandPoolType commandPoolType;
+        commandPoolType.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        commandBuffers = device->allocateCommandBuffers(
+                commandPoolType, &commandPool, swapchain ? uint32_t(swapchain->getNumImages()) : 1);
     }
     frameCaches.at(frameIndex).freeCameraMatrixBuffers = frameCaches.at(frameIndex).allCameraMatrixBuffers;
     frameCaches.at(frameIndex).freeMatrixBlockDescriptorSets = frameCaches.at(frameIndex).allMatrixBlockDescriptorSets;
@@ -132,6 +154,7 @@ void Renderer::beginCommandBuffer() {
     beginInfo.flags = 0;
     beginInfo.pInheritanceInfo = nullptr;
 
+    commandBuffer = commandBuffers.at(frameIndex);
     if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
         Logfile::get()->throwError(
                 "Error in Renderer::beginCommandBuffer: Could not begin recording a command buffer.");
@@ -145,6 +168,7 @@ VkCommandBuffer Renderer::endCommandBuffer() {
         Logfile::get()->throwError(
                 "Error in Renderer::beginCommandBuffer: Could not record a command buffer.");
     }
+    graphicsPipeline = GraphicsPipelinePtr();
 
     return commandBuffer;
 }
@@ -171,12 +195,11 @@ void Renderer::render(RasterDataPtr rasterData) {
     renderPassBeginInfo.framebuffer = framebuffer->getVkFramebuffer();
     renderPassBeginInfo.renderArea.offset = {0, 0};
     renderPassBeginInfo.renderArea.extent = framebuffer->getExtent2D();
-
-    std::array<VkClearValue, 2> clearValues{};
-    clearValues[0].color = clearColor;
-    clearValues[1].depthStencil = clearDepthStencil;
-    renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-    renderPassBeginInfo.pClearValues = clearValues.data();
+    if (framebuffer->getUseClear()) {
+        const std::vector<VkClearValue>& clearValues = framebuffer->getVkClearValues();
+        renderPassBeginInfo.clearValueCount = clearValues.size();
+        renderPassBeginInfo.pClearValues = clearValues.data();
+    }
 
     // VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS
     vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);

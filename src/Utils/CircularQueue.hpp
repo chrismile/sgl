@@ -36,7 +36,7 @@ template<class T>
 class CircularQueue
 {
 public:
-    CircularQueue(size_t maxCapacity = 32) {
+    explicit CircularQueue(size_t maxCapacity = 32) {
         startPointer = 0;
         endPointer = 0;
         queueCapacity = maxCapacity;
@@ -49,34 +49,57 @@ public:
     }
 
     CircularQueue(const CircularQueue& other) {
-        this->startPointer = other.startPointer;
-        this->endPointer = other.endPointer;
-        this->queueCapacity = other.queueCapacity;
-        this->queueSize = other.queueSize;
+        startPointer = other.startPointer;
+        endPointer = other.endPointer;
+        queueCapacity = other.queueCapacity;
+        queueSize = other.queueSize;
 
-        this->queueData = new T[this->queueCapacity];
-        for (size_t i = 0; i < queueSize; i++) {
-            size_t arrayPos = (i + startPointer) % queueCapacity;
-            this->queueData[arrayPos] = other.queueData[arrayPos];
+        if (queueCapacity == 0) {
+            this->queueData = nullptr;
+        } else {
+            this->queueData = new T[queueCapacity];
+            for (size_t i = 0; i < queueSize; i++) {
+                size_t arrayPos = (i + startPointer) % queueCapacity;
+                this->queueData[arrayPos] = other.queueData[arrayPos];
+            }
         }
     }
 
     ~CircularQueue() {
-        delete[] queueData;
+        if (queueData) {
+            delete[] queueData;
+            queueData = nullptr;
+        }
     }
 
-    void operator=(const CircularQueue& other) {
-        this->startPointer = other.startPointer;
-        this->endPointer = other.endPointer;
-        this->queueCapacity = other.queueCapacity;
-        this->queueSize = other.queueSize;
-
-        // Create a shallow copy.
-        this->queueData = new T[this->queueCapacity];
-        for (size_t i = 0; i < queueSize; i++) {
-            size_t arrayPos = (i + startPointer) % queueCapacity;
-            this->queueData[arrayPos] = other.queueData[arrayPos];
+    CircularQueue<T>& operator=(const CircularQueue& other) {
+        if (this == &other) {
+            return *this;
         }
+
+        // Delete the old data.
+        if (queueData) {
+            delete[] queueData;
+            queueData = nullptr;
+        }
+
+        startPointer = other.startPointer;
+        endPointer = other.endPointer;
+        queueCapacity = other.queueCapacity;
+        queueSize = other.queueSize;
+
+        if (queueCapacity == 0) {
+            this->queueData = nullptr;
+        } else {
+            // Create a shallow copy.
+            this->queueData = new T[this->queueCapacity];
+            for (size_t i = 0; i < queueSize; i++) {
+                size_t arrayPos = (i + startPointer) % queueCapacity;
+                this->queueData[arrayPos] = other.queueData[arrayPos];
+            }
+        }
+
+        return *this;
     }
 
     void push_back(const T& data) {
@@ -88,6 +111,7 @@ public:
         endPointer = (endPointer + 1) % queueCapacity;
         queueSize++;
     }
+
     T pop_front() {
         assert(queueSize > 0);
         T data = queueData[startPointer];
@@ -102,7 +126,7 @@ public:
 
     void resize(size_t newCapacity) {
         // Copy data to larger array.
-        T *newData = new T[newCapacity];
+        T* newData = new T[newCapacity];
         int readIdx = startPointer;
         int writeIdx = 0;
         for (size_t i = 0; i < queueSize; i++) {
@@ -119,6 +143,7 @@ public:
         // Delete the old data and copy the new data.
         if (queueData) {
             delete[] queueData;
+            queueData = nullptr;
         }
         queueData = newData;
     }

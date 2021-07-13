@@ -36,7 +36,8 @@
 
 namespace sgl { namespace vk {
 
-RayTracingPipeline::RayTracingPipeline(Device* device, const RayTracingPipelineInfo& pipelineInfo) : Pipeline(device) {
+RayTracingPipeline::RayTracingPipeline(Device* device, const RayTracingPipelineInfo& pipelineInfo)
+        : Pipeline(device, pipelineInfo.shaderStages) {
     const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts =
             pipelineInfo.shaderStages->getVkDescriptorSetLayouts();
 

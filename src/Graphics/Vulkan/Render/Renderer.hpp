@@ -79,6 +79,8 @@ public:
 
 private:
     Device* device;
+    VkCommandPool commandPool = VK_NULL_HANDLE;
+    std::vector<VkCommandBuffer> commandBuffers;
     VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
 
     // Global descriptor pool that can be used by ComputeData, RasterData and RayTracingData.

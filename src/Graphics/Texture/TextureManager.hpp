@@ -41,7 +41,7 @@ struct DLL_OBJECT TextureInfo {
     int minificationFilter, magnificationFilter, textureWrapS, textureWrapT;
     bool anisotropicFilter;
     bool sRGB;
-    bool operator <(const TextureInfo &rhs) const {
+    bool operator <(const TextureInfo& rhs) const {
         return filename < rhs.filename;
     }
 };
@@ -63,25 +63,31 @@ enum DepthStencilTextureFormat {
 class DLL_OBJECT TextureManagerInterface : public FileManager<Texture, TextureInfo>
 {
 public:
-    TexturePtr getAsset(const char *filename, const TextureSettings &settings = TextureSettings(), bool sRGB = false);
-    virtual TexturePtr createEmptyTexture(int w, const TextureSettings &settings = TextureSettings())=0;
-    virtual TexturePtr createTexture(void *data, int w, const TextureSettings &settings = TextureSettings())=0;
-    virtual TexturePtr createEmptyTexture(int w, int h, const TextureSettings &settings = TextureSettings())=0;
-    virtual TexturePtr createTexture(void *data, int w, int h, const TextureSettings &settings = TextureSettings())=0;
-    virtual TexturePtr createEmptyTexture(int w, int h, int d, const TextureSettings &settings = TextureSettings())=0;
-    virtual TexturePtr createTexture(void *data, int w, int h, int d, const TextureSettings &settings = TextureSettings())=0;
+    TexturePtr getAsset(const char* filename, const TextureSettings& settings = TextureSettings(), bool sRGB = false);
+    virtual TexturePtr createEmptyTexture(int w, const TextureSettings& settings = TextureSettings())=0;
+    virtual TexturePtr createTexture(
+            void* data, int w, const PixelFormat& pixelFormat,
+            const TextureSettings& settings = TextureSettings())=0;
+    virtual TexturePtr createEmptyTexture(int w, int h, const TextureSettings& settings = TextureSettings())=0;
+    virtual TexturePtr createTexture(
+            void* data, int w, int h, const PixelFormat& pixelFormat,
+            const TextureSettings& settings = TextureSettings())=0;
+    virtual TexturePtr createEmptyTexture(int w, int h, int d, const TextureSettings& settings = TextureSettings())=0;
+    virtual TexturePtr createTexture(
+            void* data, int w, int h, int d, const PixelFormat& pixelFormat,
+            const TextureSettings& settings = TextureSettings())=0;
 
     /**
      * Uses glTexStorage<x>D for creating an immutable texture.
      */
-    virtual TexturePtr createTextureStorage(int width, const TextureSettings &settings = TextureSettings())=0;
-    virtual TexturePtr createTextureStorage(int width, int height, const TextureSettings &settings = TextureSettings())=0;
-    virtual TexturePtr createTextureStorage(int width, int height, int depth, const TextureSettings &settings = TextureSettings())=0;
+    virtual TexturePtr createTextureStorage(int width, const TextureSettings& settings = TextureSettings())=0;
+    virtual TexturePtr createTextureStorage(int width, int height, const TextureSettings& settings = TextureSettings())=0;
+    virtual TexturePtr createTextureStorage(int width, int height, int depth, const TextureSettings& settings = TextureSettings())=0;
 
     //! Only for FBOs!
     virtual TexturePtr createMultisampledTexture(
             int width, int height, int numSamples,
-            int internalFormat = 0x8058 /*GL_RGBA8*/, bool fixedSampleLocations = false)=0;
+            int internalFormat = 0x8058 /*GL_RGBA8*/, bool fixedSampleLocations = true)=0;
     virtual TexturePtr createDepthTexture(int w, int h, DepthTextureFormat format = DEPTH_COMPONENT16,
             int textureMinFilter = GL_LINEAR, int textureMagFilter = GL_LINEAR)=0;
     virtual TexturePtr createDepthStencilTexture(
@@ -89,7 +95,7 @@ public:
             int textureMinFilter = GL_LINEAR, int textureMagFilter = GL_LINEAR)=0;
 
 protected:
-    virtual TexturePtr loadAsset(TextureInfo &textureInfo)=0;
+    virtual TexturePtr loadAsset(TextureInfo& textureInfo)=0;
 };
 
 DLL_OBJECT extern TextureManagerInterface* TextureManager;

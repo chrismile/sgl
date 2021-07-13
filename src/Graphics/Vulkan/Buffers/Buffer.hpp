@@ -29,9 +29,14 @@
 #ifndef SGL_BUFFER_HPP
 #define SGL_BUFFER_HPP
 
-#include <vulkan/vulkan.h>
 #include <memory>
+#include <limits>
+#include <vulkan/vulkan.h>
 #include "../libs/VMA/vk_mem_alloc.h"
+
+#ifdef SUPPORT_OPENGL
+#include <GL/glew.h>
+#endif
 
 namespace sgl { namespace vk {
 
@@ -53,7 +58,22 @@ public:
      */
     Buffer(
             Device* device, size_t sizeInBytes, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
-            bool queueExclusive = true);
+            bool queueExclusive = true, bool exportMemory = false);
+    /**
+     * @param device The device to allocate the buffer for.
+     * @param sizeInBytes The size of the buffer in bytes.
+     * @param dataPtr Data that is directly uploaded to the GPU.
+     * @param usage A combination of flags how the buffer is used. E.g., VK_BUFFER_USAGE_TRANSFER_SRC_BIT, ...
+     * @param memoryUsage VMA_MEMORY_USAGE_GPU_ONLY, VMA_MEMORY_USAGE_CPU_ONLY, VMA_MEMORY_USAGE_CPU_TO_GPU,
+     * VMA_MEMORY_USAGE_GPU_TO_CPU, VMA_MEMORY_USAGE_CPU_COPY or VMA_MEMORY_USAGE_GPU_LAZILY_ALLOCATED.
+     * @param queueExclusive Is the buffer owned by a specific queue family exclusively or shared?
+     * @param exportMemory Should the memory be exported for use, e.g., in OpenGL? This is currently only supported on
+     * Linux, Android and Windows systems.
+     */
+    Buffer(
+            Device* device, size_t sizeInBytes, void* dataPtr, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
+            bool queueExclusive = true, bool exportMemory = false);
+
     ~Buffer();
 
     /**
@@ -63,23 +83,54 @@ public:
      */
     BufferPtr copy(bool copyContent);
 
+    /**
+     * Uploads memory to the GPU. If memoryUsage is not VMA_MEMORY_USAGE_CPU_ONLY, VMA_MEMORY_USAGE_CPU_TO_GPU or
+     * VMA_MEMORY_USAGE_CPU_COPY, a staging buffer is used for uploading.
+     * @param sizeInBytesData The size of the data to upload in bytes.
+     * @param dataPtr Data that is uploaded to the GPU.
+     */
+    void uploadData(size_t sizeInBytesData, void* dataPtr);
+
+    /**
+     * Maps the memory to a host-accessible address.
+     * memoryUsage must be VMA_MEMORY_USAGE_CPU_ONLY, VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_MEMORY_USAGE_GPU_TO_CPU or
+     * VMA_MEMORY_USAGE_CPU_COPY.
+     * @return A host-accessible memory pointer.
+     */
+    void* mapMemory();
+    void unmapMemory();
+
     inline VkBuffer getVkBuffer() { return buffer; }
     inline size_t getSizeInBytes() const { return sizeInBytes; }
     inline VkBufferUsageFlags getVkBufferUsageFlags() const { return sizeInBytes; }
     inline VmaMemoryUsage getVmaMemoryUsage() const { return memoryUsage; }
 
-    void* mapMemory();
-    void unmapMemory();
+#ifdef SUPPORT_OPENGL
+    /**
+     * Creates an OpenGL memory object from the external Vulkan memory.
+     * NOTE: The buffer must have been created with exportMemory set to true.
+     * @param memoryObjectGl The OpenGL memory object.
+     * @return Whether the OpenGL memory object could be created successfully.
+     */
+    bool createGlMemoryObject(GLuint& memoryObjectGl);
+#endif
 
 private:
     Device* device = nullptr;
     size_t sizeInBytes = 0;
-    VkBuffer buffer;
-    VmaAllocation bufferAllocation;
-    VmaAllocationInfo bufferAllocationInfo;
+    VkBuffer buffer = VK_NULL_HANDLE;
+
+    // Memory not exported, used only in Vulkan.
+    VmaAllocation bufferAllocation = VK_NULL_HANDLE;
+    VmaAllocationInfo bufferAllocationInfo = {};
+
+    // Exported memory for external use.
+    VkDeviceMemory deviceMemory = VK_NULL_HANDLE;
+
     VkBufferUsageFlags bufferUsageFlags;
     VmaMemoryUsage memoryUsage;
     bool queueExclusive;
+    bool exportMemory;
 };
 
 class DLL_OBJECT BufferView {

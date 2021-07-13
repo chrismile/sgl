@@ -47,6 +47,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugCallback(
 }
 
 Instance::Instance() {
+    initializeInstanceExtensionList();
 }
 
 Instance::~Instance() {
@@ -63,7 +64,6 @@ Instance::~Instance() {
 
 void Instance::createInstance(std::vector<const char*> instanceExtensionNames, bool _useValidationLayer) {
     useValidationLayer = _useValidationLayer;
-    initializeInstanceExtensionList();
     printAvailableInstanceExtensionList();
 
     std::string instanceExtensionString;
@@ -165,6 +165,15 @@ bool Instance::checkRequestedLayersAvailable(const std::vector<const char*> &req
         }
     }
 
+    return true;
+}
+
+bool Instance::getInstanceExtensionsAvailable(const std::vector<const char*>& instanceExtensionNames) {
+    for (const char* extensionName : instanceExtensionNames) {
+        if (availableInstanceExtensionNames.find(extensionName) == availableInstanceExtensionNames.end()) {
+            return false;
+        }
+    }
     return true;
 }
 

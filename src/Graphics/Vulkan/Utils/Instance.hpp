@@ -55,6 +55,9 @@ public:
     ~Instance();
     void createInstance(std::vector<const char*> instanceExtensionNames, bool useValidationLayer);
 
+    /// Returns whether the passed instance extensions are available.
+    bool getInstanceExtensionsAvailable(const std::vector<const char*>& instanceExtensionNames);
+
     // Access to internal data.
     inline VkInstance getVkInstance() { return instance; }
     inline bool getUseValidationLayer() { return useValidationLayer; }
@@ -71,8 +74,8 @@ private:
     void printAvailableInstanceExtensionList();
     bool isInstanceExtensionAvailable(const std::string &extensionName);
 
-    VkInstance instance;
-    VkDebugUtilsMessengerEXT debugMessenger;
+    VkInstance instance = VK_NULL_HANDLE;
+    VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
 
     bool useValidationLayer = false;
     MessageSeverity messageSeverityLevel = MESSAGE_SEVERITY_WARNING;

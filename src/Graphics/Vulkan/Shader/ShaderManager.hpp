@@ -44,18 +44,18 @@ namespace sgl { namespace vk {
 
 struct DLL_OBJECT ShaderModuleInfo {
     std::string filename;
-    ShaderModuleType shaderType;
+    ShaderModuleType shaderModuleType;
     bool operator <(const ShaderModuleInfo& rhs) const {
         return filename < rhs.filename;
     }
 };
 
-class DLL_OBJECT ShaderManager : public FileManager<ShaderModule, ShaderModuleInfo> {
+class DLL_OBJECT ShaderManagerVk : public FileManager<ShaderModule, ShaderModuleInfo> {
 public:
-    ShaderManager(Device* device);
-    ~ShaderManager();
+    ShaderManagerVk(Device* device);
+    ~ShaderManagerVk();
 
-    /// Reference-counted loading
+    /// Reference-counted loading.
     /// If dumpTextDebug, the pre-processed source will be dumped on the command line.
     ShaderStagesPtr getShaderStages(const std::vector<std::string>& shaderIds, bool dumpTextDebug = false);
     ShaderModulePtr getShaderModule(const std::string& shaderId, ShaderModuleType shaderModuleType);
@@ -91,21 +91,21 @@ public:
      * different rendering technique with "addPreprocessorDefine" after already having loaded a certain shader.
      * Already loaded shaders will stay intact thanks to reference counting.
      */
-    virtual void invalidateShaderCache()=0;
+    virtual void invalidateShaderCache();
 
     // For use by IncluderInterface.
     const std::map<std::string, std::string>& getShaderFileMap() const { return shaderFileMap; }
     const std::string& getShaderPathPrefix() const { return pathPrefix; }
 
 protected:
-    ShaderModulePtr loadAsset(ShaderModuleInfo& shaderModuleInfo);
+    ShaderModulePtr loadAsset(ShaderModuleInfo& shaderModuleInfo) override;
     ShaderStagesPtr createShaderStages(const std::vector<std::string>& shaderIds, bool dumpTextDebug);
 
     /// Internal loading
     std::string loadHeaderFileString(const std::string& shaderName, std::string& prependContent);
     std::string getHeaderName(const std::string& lineString);
     std::string getShaderString(const std::string& globalShaderName);
-    std::string getPreprocessorDefines();
+    std::string getPreprocessorDefines(ShaderModuleType shaderModuleType);
 
     /**
      * Indexes all ".glsl" files in the directory pathPrefix (and its sub-directories recursively) to create
@@ -124,8 +124,10 @@ protected:
     /// e.g. "Blur.glsl" -> "Data/Shaders/PostProcessing/Blur.glsl".
     std::map<std::string, std::string> shaderFileMap;
 
-    // If a file named "GlobalDefines.glsl" is found: Appended to all shaders.
+    // If a file named "GlobalDefinesVulkan.glsl" is found: Appended to all shaders.
     std::string globalDefines;
+    // Global defines for vertex and geometry shaders.
+    std::string globalDefinesMvpMatrices;
 
     /// A token-value map for user-provided preprocessor #define's
     std::map<std::string, std::string> preprocessorDefines;
@@ -136,6 +138,8 @@ protected:
     // Shader module compiler.
     shaderc::Compiler* shaderCompiler = nullptr;
 };
+
+DLL_OBJECT extern ShaderManagerVk* ShaderManager;
 
 }}
 

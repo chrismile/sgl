@@ -54,11 +54,11 @@ enum BufferMapping {
 class DLL_OBJECT GeometryBuffer
 {
 public:
-    GeometryBuffer(size_t size, BufferType type = VERTEX_BUFFER, BufferUse bufferUse = BUFFER_STATIC)
-        : bufferSize(size), bufferType(type) {}
+    explicit GeometryBuffer(size_t size, BufferType type = VERTEX_BUFFER, BufferUse bufferUse = BUFFER_STATIC)
+            : bufferSize(size), bufferType(type) {}
     GeometryBuffer(size_t size, void *data, BufferType type = VERTEX_BUFFER, BufferUse bufferUse = BUFFER_STATIC)
-        : bufferSize(size), bufferType(type) {}
-    virtual ~GeometryBuffer() {}
+            : bufferSize(size), bufferType(type) {}
+    virtual ~GeometryBuffer() = default;
 
     /*! Upload data to sub-region of buffer */
     virtual void subData(int offset, size_t size, void *data)=0;
@@ -70,7 +70,7 @@ public:
     //! Mainly for internal use
     virtual void bind()=0;
     virtual void unbind()=0;
-    inline size_t getSize() { return bufferSize; }
+    inline size_t getSize() const { return bufferSize; }
     inline BufferType getBufferType() { return bufferType; }
 
 protected:

@@ -34,12 +34,12 @@
 
 namespace sgl { namespace vk {
 
-class ShaderManager;
+class ShaderManagerVk;
 
 class IncluderInterface : public shaderc::CompileOptions::IncluderInterface {
 public:
     // Called by ShaderManager.
-    inline void setShaderManager(ShaderManager* shaderManager) { this->shaderManager = shaderManager; }
+    inline void setShaderManager(ShaderManagerVk* shaderManager) { this->shaderManager = shaderManager; }
 
     virtual shaderc_include_result *GetInclude(
             const char *requestedSource, shaderc_include_type type,
@@ -48,7 +48,7 @@ public:
 
 private:
     std::string getDirectoryFromFilename(const std::string &filename);
-    ShaderManager* shaderManager = nullptr;
+    ShaderManagerVk* shaderManager = nullptr;
 };
 
 }}

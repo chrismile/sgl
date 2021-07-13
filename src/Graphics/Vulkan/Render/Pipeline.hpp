@@ -30,6 +30,7 @@
 #define SGL_PIPELINE_HPP
 
 #include <memory>
+#include <utility>
 #include <vulkan/vulkan.h>
 
 namespace sgl { namespace vk {
@@ -40,7 +41,7 @@ typedef std::shared_ptr<ShaderStages> ShaderStagesPtr;
 
 class DLL_OBJECT Pipeline {
 public:
-    Pipeline(Device* device) : device(device) {}
+    Pipeline(Device* device, ShaderStagesPtr shaderStages) : device(device), shaderStages(std::move(shaderStages)) {}
     virtual ~Pipeline();
 
     inline Device* getDevice() { return device; }

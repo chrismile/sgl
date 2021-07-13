@@ -31,6 +31,7 @@
 
 #include <memory>
 #include <vulkan/vulkan.h>
+#include <glm/vec4.hpp>
 
 namespace sgl { namespace vk {
 
@@ -79,14 +80,19 @@ public:
      */
     void setColorAttachment(
             ImageViewPtr& attachmentImageView, int index,
-            const AttachmentState& attachmentState = AttachmentState::standardColorAttachment()) {
+            const AttachmentState& attachmentState = AttachmentState::standardColorAttachment(),
+            const glm::vec4& clearColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)) {
         if (int(colorAttachments.size()) <= index) {
             colorAttachments.resize(index + 1);
             colorAttachmentStates.resize(index + 1);
+            colorAttachmentClearValues.resize(index + 1);
         }
         colorAttachments.at(index) = attachmentImageView;
         colorAttachmentStates.at(index) = attachmentState;
+        colorAttachmentClearValues.at(index).color = { {
+            clearColor.x, clearColor.y, clearColor.z, clearColor.w } };
     }
+
     /**
      * Sets the depth-stencil attachment.
      * This function may only be called before a call to @see build or @see getVkFramebuffer.
@@ -94,9 +100,11 @@ public:
      */
     inline void setDepthStencilAttachment(
             ImageViewPtr& attachmentImageView,
-            const AttachmentState& attachmentState = AttachmentState::standardDepthStencilAttachment()) {
+            const AttachmentState& attachmentState = AttachmentState::standardDepthStencilAttachment(),
+            float clearDepth = 1.0f, uint32_t clearStencil = 0) {
         depthStencilAttachment = attachmentImageView;
         depthStencilAttachmentState = attachmentState;
+        depthStencilAttachmentClearValue.depthStencil = { clearDepth, clearStencil };
     }
     /**
      * Sets the resolve attachment.
@@ -136,23 +144,33 @@ public:
     inline uint32_t getLayers() const { return layers; }
     inline VkExtent2D getExtent2D() const { return { width, height }; }
 
+    /// Returns the number of multisamples used by the attachments.
+    inline VkSampleCountFlagBits getSampleCount() { if (framebuffer == VK_NULL_HANDLE) build(); return sampleCount; }
+
     inline VkFramebuffer getVkFramebuffer() { if (framebuffer == VK_NULL_HANDLE) build(); return framebuffer; }
     inline VkRenderPass getVkRenderPass() { if (renderPass == VK_NULL_HANDLE) build(); return renderPass; }
+    inline bool getUseClear() { if (renderPass == VK_NULL_HANDLE) build(); return useClear; }
+    inline const std::vector<VkClearValue>& getVkClearValues() const { return clearValues; }
 
 private:
     Device* device;
     uint32_t width, height, layers;
     VkFramebuffer framebuffer = VK_NULL_HANDLE;
     VkRenderPass renderPass = VK_NULL_HANDLE;
+    VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT;
 
     std::vector<ImageViewPtr> colorAttachments;
     std::vector<AttachmentState> colorAttachmentStates;
+    std::vector<VkClearValue> colorAttachmentClearValues;
     ImageViewPtr depthStencilAttachment;
     AttachmentState depthStencilAttachmentState;
+    VkClearValue depthStencilAttachmentClearValue;
     ImageViewPtr resolveAttachment;
     AttachmentState resolveAttachmentState;
     std::vector<ImageViewPtr> inputAttachments;
     std::vector<AttachmentState> inputAttachmentStates;
+    std::vector<VkClearValue> clearValues;
+    bool useClear = false;
 };
 
 typedef std::shared_ptr<Framebuffer> FramebufferPtr;

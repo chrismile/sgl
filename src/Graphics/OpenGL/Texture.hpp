@@ -31,6 +31,10 @@
 
 #include <Graphics/Texture/Texture.hpp>
 
+#ifdef SUPPORT_VULKAN
+#include <Graphics/Vulkan/Image/Image.hpp>
+#endif
+
 namespace sgl {
 
 class DLL_OBJECT TextureGL : public Texture
@@ -39,17 +43,33 @@ public:
     TextureGL(unsigned int _texture, int _w, TextureSettings settings, int _samples = 0);
     TextureGL(unsigned int _texture, int _w, int _h, TextureSettings settings, int _samples = 0);
     TextureGL(unsigned int _texture, int _w, int _h, int _d, TextureSettings settings, int _samples = 0);
-    virtual ~TextureGL();
-    virtual void uploadPixelData(int width, void *pixelData, PixelFormat pixelFormat = PixelFormat());
-    virtual void uploadPixelData(int width, int height, void *pixelData, PixelFormat pixelFormat = PixelFormat());
-    virtual void uploadPixelData(int width, int height, int depth, void *pixelData, PixelFormat pixelFormat = PixelFormat());
+    ~TextureGL() override;
+    void uploadPixelData(int width, void *pixelData, PixelFormat pixelFormat = PixelFormat()) override;
+    void uploadPixelData(int width, int height, void *pixelData, PixelFormat pixelFormat = PixelFormat()) override;
+    void uploadPixelData(int width, int height, int depth, void *pixelData, PixelFormat pixelFormat = PixelFormat()) override;
     /// Do NOT access a texture view anymore after the reference count of the base texture has reached zero!
-    virtual TexturePtr createTextureView();
+    TexturePtr createTextureView() override;
     inline unsigned int getTexture() const { return texture; }
 
 protected:
     unsigned int texture;
 };
+
+#ifdef SUPPORT_VULKAN
+/**
+ * An OpenGL texture object created from external Vulkan memory.
+ */
+class DLL_OBJECT TextureGLExternalMemoryVk : public TextureGL
+{
+public:
+    explicit TextureGLExternalMemoryVk(vk::TexturePtr& vulkanTexture);
+    ~TextureGLExternalMemoryVk() override;
+
+protected:
+    vk::ImagePtr vulkanImage;
+    GLuint memoryObject = 0;
+};
+#endif
 
 }
 

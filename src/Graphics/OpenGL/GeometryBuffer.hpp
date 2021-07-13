@@ -31,16 +31,20 @@
 
 #include <Graphics/Buffers/GeometryBuffer.hpp>
 
+#ifdef SUPPORT_VULKAN
+#include <Graphics/Vulkan/Buffers/Buffer.hpp>
+#endif
+
 namespace sgl {
 
 class DLL_OBJECT GeometryBufferGL : public GeometryBuffer
 {
 public:
-    GeometryBufferGL(size_t size, BufferType type = VERTEX_BUFFER, BufferUse bufferUse = BUFFER_STATIC);
+    explicit GeometryBufferGL(size_t size, BufferType type = VERTEX_BUFFER, BufferUse bufferUse = BUFFER_STATIC);
     GeometryBufferGL(size_t size, void *data, BufferType type = VERTEX_BUFFER, BufferUse bufferUse = BUFFER_STATIC);
-    ~GeometryBufferGL();
-    void subData(int offset, size_t size, void *data);
-    void *mapBuffer(BufferMapping accessType);
+    ~GeometryBufferGL() override;
+    void subData(int offset, size_t size, void *data) override;
+    void *mapBuffer(BufferMapping accessType) override;
     void *mapBufferRange(int offset, size_t size, BufferMapping accessType);
     void unmapBuffer();
     void bind();
@@ -48,12 +52,29 @@ public:
     inline unsigned int getBuffer() { return buffer; }
     inline unsigned int getGLBufferType() { return oglBufferType; }
 
-private:
+protected:
+    GeometryBufferGL(BufferType type);
     void initialize(BufferType type, BufferUse bufferUse);
     unsigned int buffer;
     unsigned int oglBufferType;
     unsigned int oglBufferUsage;
 };
+
+#ifdef SUPPORT_VULKAN
+/**
+ * An OpenGL geometry buffer object created from external Vulkan memory.
+ */
+class DLL_OBJECT GeometryBufferGLExternalMemoryVk : public GeometryBufferGL
+{
+public:
+    explicit GeometryBufferGLExternalMemoryVk(vk::BufferPtr& vulkanBuffer, BufferType type = VERTEX_BUFFER);
+    ~GeometryBufferGLExternalMemoryVk() override;
+
+protected:
+    vk::BufferPtr vulkanBuffer;
+    GLuint memoryObject = 0;
+};
+#endif
 
 }
 

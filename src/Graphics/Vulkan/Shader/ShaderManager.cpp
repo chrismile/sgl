@@ -43,27 +43,32 @@
 
 namespace sgl { namespace vk {
 
-ShaderManager::ShaderManager(Device* device) : device(device)
-{
+ShaderManagerVk::ShaderManagerVk(Device* device) : device(device) {
     shaderCompiler = new shaderc::Compiler;
     pathPrefix = "./Data/Shaders/";
     indexFiles(pathPrefix);
 
-    // Was a file called "GlobalDefines.glsl" found? If yes, store its content in "globalDefines".
-    auto it = shaderFileMap.find("GlobalDefines.glsl");
+    // Was a file called "GlobalDefinesVulkan.glsl" found? If yes, store its content in the variable globalDefines.
+    auto it = shaderFileMap.find("GlobalDefinesVulkan.glsl");
     if (it != shaderFileMap.end()) {
         std::ifstream file(it->second);
         if (!file.is_open()) {
             Logfile::get()->writeError(
-                    std::string() + "ShaderManager::ShaderManager: Unexpected error "
-                                    "occured while loading \"GlobalDefines.glsl\".");
+                    "ShaderManagerVk::ShaderManagerVk: Unexpected error occured while loading "
+                    "\"GlobalDefinesVulkan.glsl\".");
         }
         globalDefines = std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     }
+    globalDefinesMvpMatrices =
+            "layout (set = 1, binding = 0) uniform MatrixBlock {\n"
+            "    mat4 mMatrix; // Model matrix\n"
+            "    mat4 vMatrix; // View matrix\n"
+            "    mat4 pMatrix; // Projection matrix\n"
+            "    mat4 mvpMatrix; // Model-view-projection matrix\n"
+            "};\n\n";
 }
 
-ShaderManager::~ShaderManager()
-{
+ShaderManagerVk::~ShaderManagerVk() {
     if (shaderCompiler) {
         delete shaderCompiler;
         shaderCompiler = nullptr;
@@ -71,87 +76,94 @@ ShaderManager::~ShaderManager()
 }
 
 
-ShaderStagesPtr ShaderManager::getShaderStages(const std::vector<std::string> &shaderIDs, bool dumpTextDebug)
-{
-    return createShaderStages(shaderIDs, dumpTextDebug);
+ShaderStagesPtr ShaderManagerVk::getShaderStages(const std::vector<std::string> &shaderIds, bool dumpTextDebug) {
+    return createShaderStages(shaderIds, dumpTextDebug);
 }
 
-ShaderModulePtr ShaderManager::getShaderModule(const std::string& shaderId, ShaderModuleType shaderType)
-{
+ShaderModulePtr ShaderManagerVk::getShaderModule(const std::string& shaderId, ShaderModuleType shaderModuleType) {
     ShaderModuleInfo info;
     info.filename = shaderId;
-    info.shaderType = shaderType;
+    info.shaderModuleType = shaderModuleType;
     return FileManager<ShaderModule, ShaderModuleInfo>::getAsset(info);
 }
 
 
+ShaderModuleType getShaderModuleTypeFromString(const std::string& shaderId) {
+    std::string shaderIdLower = boost::algorithm::to_lower_copy(shaderId);
+    ShaderModuleType shaderModuleType = ShaderModuleType::VERTEX;
+    if (boost::algorithm::ends_with(shaderIdLower.c_str(), "vertex")) {
+        shaderModuleType = ShaderModuleType::VERTEX;
+    } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "fragment")) {
+        shaderModuleType = ShaderModuleType::FRAGMENT;
+    } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "geometry")) {
+        shaderModuleType = ShaderModuleType::GEOMETRY;
+    } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "tesselationevaluation")) {
+        shaderModuleType = ShaderModuleType::TESSELATION_EVALUATION;
+    } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "tesselationcontrol")) {
+        shaderModuleType = ShaderModuleType::TESSELATION_CONTROL;
+    } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "compute")) {
+        shaderModuleType = ShaderModuleType::COMPUTE;
+    } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "raygen")) {
+        shaderModuleType = ShaderModuleType::RAYGEN;
+    } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "anyhit")) {
+        shaderModuleType = ShaderModuleType::ANY_HIT;
+    } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "closesthit")) {
+        shaderModuleType = ShaderModuleType::CLOSEST_HIT;
+    } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "miss")) {
+        shaderModuleType = ShaderModuleType::MISS;
+    } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "intersection")) {
+        shaderModuleType = ShaderModuleType::INTERSECTION;
+    } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "callable")) {
+        shaderModuleType = ShaderModuleType::CALLABLE;
+    } else {
+        if (boost::algorithm::contains(shaderIdLower.c_str(), "vert")) {
+            shaderModuleType = ShaderModuleType::VERTEX;
+        } else if (boost::algorithm::contains(shaderIdLower.c_str(), "frag")) {
+            shaderModuleType = ShaderModuleType::FRAGMENT;
+        } else if (boost::algorithm::contains(shaderIdLower.c_str(), "geom")) {
+            shaderModuleType = ShaderModuleType::GEOMETRY;
+        } else if (boost::algorithm::contains(shaderIdLower.c_str(), "tess")) {
+            if (boost::algorithm::contains(shaderIdLower.c_str(), "eval")) {
+                shaderModuleType = ShaderModuleType::TESSELATION_EVALUATION;
+            } else if (boost::algorithm::contains(shaderIdLower.c_str(), "control")) {
+                shaderModuleType = ShaderModuleType::TESSELATION_CONTROL;
+            }
+        } else if (boost::algorithm::contains(shaderIdLower.c_str(), "comp")) {
+            shaderModuleType = ShaderModuleType::COMPUTE;
+        } else if (boost::algorithm::contains(shaderIdLower.c_str(), "raygen")) {
+            shaderModuleType = ShaderModuleType::RAYGEN;
+        } else if (boost::algorithm::contains(shaderIdLower.c_str(), "anyhit")) {
+            shaderModuleType = ShaderModuleType::ANY_HIT;
+        } else if (boost::algorithm::contains(shaderIdLower.c_str(), "closesthit")) {
+            shaderModuleType = ShaderModuleType::CLOSEST_HIT;
+        } else if (boost::algorithm::contains(shaderIdLower.c_str(), "miss")) {
+            shaderModuleType = ShaderModuleType::MISS;
+        } else if (boost::algorithm::contains(shaderIdLower.c_str(), "intersection")) {
+            shaderModuleType = ShaderModuleType::INTERSECTION;
+        } else if (boost::algorithm::contains(shaderIdLower.c_str(), "callable")) {
+            shaderModuleType = ShaderModuleType::CALLABLE;
+        } else {
+            Logfile::get()->throwError(
+                    std::string() + "ERROR: ShaderManagerVk::createShaderProgram: "
+                    + "Unknown shader type (id: \"" + shaderId + "\")");
+            return ShaderModuleType(0);
+        }
+    }
+    return shaderModuleType;
+}
+
 static bool dumpTextDebugStatic = false;
-ShaderStagesPtr ShaderManager::createShaderStages(const std::vector<std::string>& shaderIDs, bool dumpTextDebug)
-{
+ShaderStagesPtr ShaderManagerVk::createShaderStages(const std::vector<std::string>& shaderIds, bool dumpTextDebug) {
     dumpTextDebugStatic = dumpTextDebug;
 
     std::vector<ShaderModulePtr> shaderModules;
-    for (const std::string &shaderID : shaderIDs) {
-        std::string shaderID_lower = boost::algorithm::to_lower_copy(shaderID);
-        ShaderModuleType shaderType = ShaderModuleType::VERTEX;
-        if (boost::algorithm::ends_with(shaderID_lower.c_str(), "vertex")) {
-            shaderType = ShaderModuleType::VERTEX;
-        } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "fragment")) {
-            shaderType = ShaderModuleType::FRAGMENT;
-        } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "geometry")) {
-            shaderType = ShaderModuleType::GEOMETRY;
-        } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "tesselationevaluation")) {
-            shaderType = ShaderModuleType::TESSELATION_EVALUATION;
-        } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "tesselationcontrol")) {
-            shaderType = ShaderModuleType::TESSELATION_CONTROL;
-        } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "compute")) {
-            shaderType = ShaderModuleType::COMPUTE;
-        } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "raygen")) {
-            shaderType = ShaderModuleType::RAYGEN;
-        } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "anyhit")) {
-            shaderType = ShaderModuleType::ANY_HIT;
-        } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "closesthit")) {
-            shaderType = ShaderModuleType::CLOSEST_HIT;
-        } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "miss")) {
-            shaderType = ShaderModuleType::MISS;
-        } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "intersection")) {
-            shaderType = ShaderModuleType::INTERSECTION;
-        } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "callable")) {
-            shaderType = ShaderModuleType::CALLABLE;
-        } else {
-            if (boost::algorithm::contains(shaderID_lower.c_str(), "vert")) {
-                shaderType = ShaderModuleType::VERTEX;
-            } else if (boost::algorithm::contains(shaderID_lower.c_str(), "frag")) {
-                shaderType = ShaderModuleType::FRAGMENT;
-            } else if (boost::algorithm::contains(shaderID_lower.c_str(), "geom")) {
-                shaderType = ShaderModuleType::GEOMETRY;
-            } else if (boost::algorithm::contains(shaderID_lower.c_str(), "tess")) {
-                if (boost::algorithm::contains(shaderID_lower.c_str(), "eval")) {
-                    shaderType = ShaderModuleType::TESSELATION_EVALUATION;
-                } else if (boost::algorithm::contains(shaderID_lower.c_str(), "control")) {
-                    shaderType = ShaderModuleType::TESSELATION_CONTROL;
-                }
-            } else if (boost::algorithm::contains(shaderID_lower.c_str(), "comp")) {
-                shaderType = ShaderModuleType::COMPUTE;
-            } else if (boost::algorithm::contains(shaderID_lower.c_str(), "raygen")) {
-                shaderType = ShaderModuleType::RAYGEN;
-            } else if (boost::algorithm::contains(shaderID_lower.c_str(), "anyhit")) {
-                shaderType = ShaderModuleType::ANY_HIT;
-            } else if (boost::algorithm::contains(shaderID_lower.c_str(), "closesthit")) {
-                shaderType = ShaderModuleType::CLOSEST_HIT;
-            } else if (boost::algorithm::contains(shaderID_lower.c_str(), "miss")) {
-                shaderType = ShaderModuleType::MISS;
-            } else if (boost::algorithm::contains(shaderID_lower.c_str(), "intersection")) {
-                shaderType = ShaderModuleType::INTERSECTION;
-            } else if (boost::algorithm::contains(shaderID_lower.c_str(), "callable")) {
-                shaderType = ShaderModuleType::CALLABLE;
-            } else {
-                Logfile::get()->writeError(
-                        std::string() + "ERROR: ShaderManager::createShaderProgram: "
-                        + "Unknown shader type (id: \"" + shaderID + "\")");
-            }
+    for (const std::string &shaderId : shaderIds) {
+        ShaderModuleType shaderModuleType = getShaderModuleTypeFromString(shaderId);
+        ShaderModulePtr shaderModule = getShaderModule(shaderId, shaderModuleType);
+        if (!shaderModule) {
+            return ShaderStagesPtr();
         }
-        shaderModules.push_back(getShaderModule(shaderID, shaderType));
+        shaderModules.push_back(shaderModule);
     }
     dumpTextDebugStatic = false;
 
@@ -159,8 +171,7 @@ ShaderStagesPtr ShaderManager::createShaderStages(const std::vector<std::string>
     return shaderProgram;
 }
 
-ShaderModulePtr ShaderManager::loadAsset(ShaderModuleInfo &shaderInfo)
-{
+ShaderModulePtr ShaderManagerVk::loadAsset(ShaderModuleInfo& shaderInfo) {
     std::string id = shaderInfo.filename;
     std::string shaderString = getShaderString(id);
 
@@ -193,9 +204,9 @@ ShaderModulePtr ShaderManager::loadAsset(ShaderModuleInfo &shaderInfo)
             { ShaderModuleType::TASK,                   shaderc_task_shader },
             { ShaderModuleType::MESH,                   shaderc_mesh_shader },
     };
-    auto it = shaderKindLookupTable.find(shaderInfo.shaderType);
+    auto it = shaderKindLookupTable.find(shaderInfo.shaderModuleType);
     if (it == shaderKindLookupTable.end()) {
-        sgl::Logfile::get()->writeError("Error in ShaderManager::loadAsset: Invalid shader type.");
+        sgl::Logfile::get()->writeError("Error in ShaderManagerVk::loadAsset: Invalid shader type.");
         return ShaderModulePtr();
     }
     shaderc_shader_kind shaderKind = it->second;
@@ -211,12 +222,12 @@ ShaderModulePtr ShaderManager::loadAsset(ShaderModuleInfo &shaderInfo)
 
     std::vector<uint32_t> compilationResultWords(compilationResult.cbegin(), compilationResult.cend());
     ShaderModulePtr shaderModule(new ShaderModule(
-            device, shaderInfo.filename, shaderInfo.shaderType, compilationResultWords));
+            device, shaderInfo.filename, shaderInfo.shaderModuleType, compilationResultWords));
     return shaderModule;
 }
 
 
-std::string ShaderManager::loadHeaderFileString(const std::string &shaderName, std::string &prependContent) {
+std::string ShaderManagerVk::loadHeaderFileString(const std::string &shaderName, std::string &prependContent) {
     std::ifstream file(shaderName.c_str());
     if (!file.is_open()) {
         Logfile::get()->writeError(std::string() + "Error in loadHeaderFileString: Couldn't open the file \""
@@ -257,8 +268,7 @@ std::string ShaderManager::loadHeaderFileString(const std::string &shaderName, s
 }
 
 
-std::string ShaderManager::getHeaderName(const std::string &lineString)
-{
+std::string ShaderManagerVk::getHeaderName(const std::string &lineString) {
     // Filename in quotes?
     auto startFilename = lineString.find("\"");
     auto endFilename = lineString.find_last_of("\"");
@@ -269,17 +279,17 @@ std::string ShaderManager::getHeaderName(const std::string &lineString)
         std::vector<std::string> line;
         boost::algorithm::split(line, lineString, boost::is_any_of("\t "), boost::token_compress_on);
         if (line.size() < 2) {
-            Logfile::get()->writeError("Error in ShaderManager::getHeaderFilename: Too few tokens.");
+            Logfile::get()->writeError("Error in ShaderManagerVk::getHeaderFilename: Too few tokens.");
             return "";
         }
 
         auto it = preprocessorDefines.find(line.at(1));
         if (it != preprocessorDefines.end()) {
-            int startFilename = it->second.find("\"");
-            int endFilename = it->second.find_last_of("\"");
+            std::string::size_type startFilename = it->second.find('\"');
+            std::string::size_type endFilename = it->second.find_last_of('\"');
             return it->second.substr(startFilename+1, endFilename-startFilename-1);
         } else {
-            Logfile::get()->writeError("Error in ShaderManager::getHeaderFilename: Invalid include directive.");
+            Logfile::get()->writeError("Error in ShaderManagerVk::getHeaderFilename: Invalid include directive.");
             Logfile::get()->writeError(std::string() + "Line string: " + lineString);
             return "";
         }
@@ -290,7 +300,7 @@ std::string ShaderManager::getHeaderName(const std::string &lineString)
 
 
 
-void ShaderManager::indexFiles(const std::string &file) {
+void ShaderManagerVk::indexFiles(const std::string &file) {
     if (FileUtils::get()->isDirectory(file)) {
         // Scan content of directory
         std::vector<std::string> elements = FileUtils::get()->getFilesInDirectoryVector(file);
@@ -305,38 +315,40 @@ void ShaderManager::indexFiles(const std::string &file) {
 }
 
 
-std::string ShaderManager::getShaderFileName(const std::string &pureFilename)
-{
+std::string ShaderManagerVk::getShaderFileName(const std::string &pureFilename) {
     auto it = shaderFileMap.find(pureFilename);
     if (it == shaderFileMap.end()) {
-        sgl::Logfile::get()->writeError("Error in ShaderManager::getShaderFileName: Unknown file name \""
-                                        + pureFilename + "\".");
+        sgl::Logfile::get()->writeError(
+                "Error in ShaderManagerVk::getShaderFileName: Unknown file name \"" + pureFilename + "\".");
         return "";
     }
     return it->second;
 }
 
 
-std::string ShaderManager::getPreprocessorDefines()
-{
+std::string ShaderManagerVk::getPreprocessorDefines(ShaderModuleType shaderModuleType) {
     std::string preprocessorStatements;
     for (auto it = preprocessorDefines.begin(); it != preprocessorDefines.end(); it++) {
         preprocessorStatements += std::string() + "#define " + it->first + " " + it->second + "\n";
     }
-    return preprocessorStatements + globalDefines;
+    if (shaderModuleType == ShaderModuleType::VERTEX || shaderModuleType == ShaderModuleType::GEOMETRY) {
+        preprocessorStatements += globalDefinesMvpMatrices;
+    }
+    preprocessorStatements += globalDefines;
+    return preprocessorStatements;
 }
 
 
-std::string ShaderManager::getShaderString(const std::string &globalShaderName) {
+std::string ShaderManagerVk::getShaderString(const std::string &globalShaderName) {
     auto it = effectSources.find(globalShaderName);
     if (it != effectSources.end()) {
         return it->second;
     }
 
-    int filenameEnd = globalShaderName.find(".");
+    std::string::size_type filenameEnd = globalShaderName.find('.');
     std::string pureFilename = globalShaderName.substr(0, filenameEnd);
     std::string shaderFilename = getShaderFileName(pureFilename + ".glsl");
-    std::string shaderInternalID = globalShaderName.substr(filenameEnd+1);
+    std::string shaderInternalId = globalShaderName.substr(filenameEnd + 1);
 
     std::ifstream file(shaderFilename.c_str());
     if (!file.is_open()) {
@@ -344,31 +356,33 @@ std::string ShaderManager::getShaderString(const std::string &globalShaderName) 
                                    + shaderFilename + "\".");
     }
 
-    std::string shaderName = "";
+    std::string shaderName;
     std::string shaderContent = "#line 1\n";
-    std::string prependContent = "";
+    std::string prependContent;
     int lineNum = 1;
     std::string linestr;
     while (getline(file, linestr)) {
         // Remove \r if line ending is \r\n
-        if (linestr.size() > 0 && linestr.at(linestr.size()-1) == '\r') {
+        if (!linestr.empty() && linestr.at(linestr.size()-1) == '\r') {
             linestr = linestr.substr(0, linestr.size()-1);
         }
 
         lineNum++;
 
         if (boost::starts_with(linestr, "-- ")) {
-            if (shaderContent.size() > 0 && shaderName.size() > 0) {
+            if (!shaderContent.empty() && !shaderName.empty()) {
                 shaderContent = prependContent + shaderContent;
                 effectSources.insert(make_pair(shaderName, shaderContent));
             }
 
             shaderName = pureFilename + "." + linestr.substr(3);
-            shaderContent = std::string() + getPreprocessorDefines() + "#line " + toString(lineNum) + "\n";
+            ShaderModuleType shaderModuleType = getShaderModuleTypeFromString(shaderName);
+            shaderContent =
+                    std::string() + getPreprocessorDefines(shaderModuleType) + "#line " + toString(lineNum) + "\n";
             prependContent = "";
         } else if (boost::starts_with(linestr, "#version") || boost::starts_with(linestr, "#extension")) {
             prependContent += linestr + "\n";
-            shaderContent = std::string() + shaderContent + "#line " + toString(lineNum) + "\n";
+            shaderContent += "#line " + toString(lineNum) + "\n";
         } else if (boost::starts_with(linestr, "#include")) {
             std::string includedFileName = getShaderFileName(getHeaderName(linestr));
             std::string includedFileContent = loadHeaderFileString(includedFileName, prependContent);
@@ -381,7 +395,7 @@ std::string ShaderManager::getShaderString(const std::string &globalShaderName) 
     shaderContent = prependContent + shaderContent;
     file.close();
 
-    if (shaderName.size() > 0) {
+    if (!shaderName.empty()) {
         effectSources.insert(make_pair(shaderName, shaderContent));
     } else {
         effectSources.insert(make_pair(pureFilename + ".glsl", shaderContent));
@@ -395,6 +409,11 @@ std::string ShaderManager::getShaderString(const std::string &globalShaderName) 
     Logfile::get()->writeError(std::string() + "Error in getShader: Couldn't find the shader \""
                                + globalShaderName + "\".");
     return "";
+}
+
+void ShaderManagerVk::invalidateShaderCache() {
+    assetMap.clear();
+    effectSources.clear();
 }
 
 }}

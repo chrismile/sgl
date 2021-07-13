@@ -33,7 +33,8 @@
 
 namespace sgl { namespace vk {
 
-ComputePipeline::ComputePipeline(Device* device, const ComputePipelineInfo& pipelineInfo) : Pipeline(device) {
+ComputePipeline::ComputePipeline(Device* device, const ComputePipelineInfo& pipelineInfo)
+        : Pipeline(device, pipelineInfo.shaderStages) {
     const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts =
             pipelineInfo.shaderStages->getVkDescriptorSetLayouts();
 

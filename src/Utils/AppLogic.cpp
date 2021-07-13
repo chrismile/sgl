@@ -42,6 +42,7 @@
 
 #ifdef SUPPORT_VULKAN
 #include "Graphics/Vulkan/Utils/Swapchain.hpp"
+#include "Graphics/Vulkan/Render/Renderer.hpp"
 #endif
 
 #include "AppLogic.hpp"
@@ -60,10 +61,18 @@ AppLogic::AppLogic() : framerateSmoother(16)
 
     Window *window = AppSettings::get()->getMainWindow();
     window->setEventHandler([this](const SDL_Event &event) { this->processSDLEvent(event); });
+
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+        rendererVk = new sgl::vk::Renderer(sgl::AppSettings::get()->getPrimaryDevice());
+    }
 }
 
 AppLogic::~AppLogic()
 {
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+        delete rendererVk;
+        rendererVk = nullptr;
+    }
 }
 
 void AppLogic::saveScreenshot(const std::string &filename)
@@ -131,12 +140,17 @@ void AppLogic::run()
                 sgl::AppSettings::get()->getSwapchain()->beginFrame();
             }
         }
-#endif
         if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
             commandBuffers.clear();
+            rendererVk->beginCommandBuffer();
         }
+#endif
+
         render();
+
+#ifdef SUPPORT_VULKAN
         if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+            commandBuffers.push_back(rendererVk->endCommandBuffer());
             sgl::vk::Swapchain* swapchain = sgl::AppSettings::get()->getSwapchain();
             if (swapchain) {
                 if (AppSettings::get()->getUseGUI()) {
@@ -145,6 +159,7 @@ void AppLogic::run()
                 sgl::AppSettings::get()->getSwapchain()->renderFrame(commandBuffers);
             }
         }
+#endif
 
         if (uint64_t(abs((int64_t)fpsTimer - (int64_t)Timer->getTicksMicroseconds())) > fpsCounterUpdateFrequency) {
             fps = 1.0f/dt;//Timer->getElapsedSeconds();

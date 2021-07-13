@@ -78,13 +78,15 @@ public:
             std::vector<const char*> requiredDeviceExtensions = {},
             const std::vector<const char*>& optionalDeviceExtensions = {},
             VkPhysicalDeviceFeatures requestedPhysicalDeviceFeatures = {});
-    /// For headless rendering without a window.
+    /// For headless rendering without a window (or when coupled with an OpenGL context in interoperability mode).
     void createDeviceHeadless(
             Instance* instance,
             const std::vector<const char*>& requiredDeviceExtensions = {},
             const std::vector<const char*>& optionalDeviceExtensions = {},
             VkPhysicalDeviceFeatures requestedPhysicalDeviceFeatures = {});
     ~Device();
+
+    void waitIdle();
 
     bool isDeviceExtensionSupported(const std::string& name);
 
@@ -100,6 +102,13 @@ public:
     inline VkPhysicalDeviceProperties getPhysicalDeviceProperties() { return physicalDeviceProperties; }
     inline VkPhysicalDeviceFeatures getPhysicalDeviceFeatures() { return physicalDeviceFeatures; }
     VkSampleCountFlagBits getMaxUsableSampleCount();
+
+    /**
+     * @param memoryTypeBits
+     * @param memoryPropertyFlags
+     * @return The memoryTypeIndex
+     */
+    uint32_t findMemoryTypeIndex(uint32_t memoryTypeBits, VkMemoryPropertyFlags memoryPropertyFlags);
 
     // Create command buffers. Remember to call vkFreeCommandBuffers (specifying the pool is necessary for this).
     VkCommandBuffer allocateCommandBuffer(
@@ -117,6 +126,11 @@ public:
 
     // Get the standard descriptor pool.
     VkDescriptorPool getDefaultVkDescriptorPool() { return descriptorPool; }
+
+#ifdef SUPPORT_OPENGL
+    /// This function must be called before the device is created.
+    void setOpenGlInteropEnabled(bool enabled) { openGlInteropEnabled = true; }
+#endif
 
 private:
     void initializeDeviceExtensionList(VkPhysicalDevice physicalDevice);
@@ -137,11 +151,13 @@ private:
     // Theoretically available (but not necessarily enabled) device extensions.
     std::set<std::string> availableDeviceExtensionNames;
 
-    VkPhysicalDevice physicalDevice;
-    VkPhysicalDeviceProperties physicalDeviceProperties;
-    VkPhysicalDeviceFeatures physicalDeviceFeatures;
-    VkDevice device;
+    VkDevice device = VK_NULL_HANDLE;
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VmaAllocator allocator;
+
+    VkPhysicalDeviceProperties physicalDeviceProperties;
+    VkPhysicalDeviceMemoryProperties physicalDeviceMemoryProperties;
+    VkPhysicalDeviceFeatures physicalDeviceFeatures;
 
     // Queues for the logical device.
     uint32_t graphicsQueueIndex;
@@ -154,6 +170,9 @@ private:
 
     // Default descriptor pool.
     VkDescriptorPool descriptorPool;
+
+    // Vulkan-OpenGL interoperability enabled?
+    bool openGlInteropEnabled = false;
 };
 
 }}

@@ -73,6 +73,16 @@ private:
     std::map<std::string, std::string> settings;
 };
 
+/// State of OpenGL-Vulkan interoperability capabilities.
+enum class VulkanInteropCapabilities {
+    // Vulkan is not loaded, can't be used.
+    NOT_LOADED,
+    // No OpenGL-Vulkan interoperability. Data exchange must be done via the CPU.
+    NO_INTEROP,
+    // OpenGL-Vulkan interoperability is supported via external memory sharing.
+    EXTERNAL_MEMORY
+};
+
 union HeadlessData {
     Window* mainWindow;
 #ifdef SUPPORT_VULKAN
@@ -87,6 +97,7 @@ union HeadlessData {
 class DLL_OBJECT AppSettings : public Singleton<AppSettings>
 {
 public:
+    AppSettings();
     void loadSettings(const char *filename);
     SettingsFile &getSettings() { return settings; }
 
@@ -103,6 +114,13 @@ public:
     /// Set the used swapchain.
     inline void setSwapchain(vk::Swapchain* swapchain) { this->swapchain = swapchain; }
     inline vk::Swapchain* getSwapchain() { return swapchain; }
+    /// Initialize instance and device for OpenGL-Vulkan interoperability. Must be called before initializeSubsystems.
+#if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
+    void initializeVulkanInteropSupport(
+            const std::vector<const char*>& requiredDeviceExtensionNames = {},
+            const std::vector<const char*>& optionalDeviceExtensionNames = {});
+    inline VulkanInteropCapabilities getVulkanInteropCapabilities() { return vulkanInteropCapabilities; }
+#endif
 #endif
     void release();
 
@@ -118,7 +136,7 @@ public:
     Window* setMainWindow(Window* window);
 
 #ifdef SUPPORT_VULKAN
-    vk::Instance* getVulkanInstance() { return instance; }
+    inline vk::Instance* getVulkanInstance() { return instance; }
 #endif
 
     void getCurrentDisplayMode(int& width, int& height, int& refreshRate, int displayIndex = 0);
@@ -142,6 +160,7 @@ private:
     vk::Instance* instance = nullptr;
     vk::Device* primaryDevice = nullptr;
     vk::Swapchain* swapchain = nullptr;
+    VulkanInteropCapabilities vulkanInteropCapabilities = VulkanInteropCapabilities::NOT_LOADED;
 #endif
 
     // Where the application data is stored.

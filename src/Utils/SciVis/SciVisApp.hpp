@@ -35,6 +35,19 @@
 #include <ImGui/Widgets/CheckpointWindow.hpp>
 #include <ImGui/imgui.h>
 
+#ifdef SUPPORT_VULKAN
+namespace sgl { namespace vk {
+class Image;
+typedef std::shared_ptr<Image> ImagePtr;
+class ImageView;
+typedef std::shared_ptr<ImageView> ImageViewPtr;
+class ImageSampler;
+typedef std::shared_ptr<ImageSampler> ImageSamplerPtr;
+class Texture;
+typedef std::shared_ptr<Texture> TexturePtr;
+}}
+#endif
+
 namespace sgl {
 
 /**
@@ -90,6 +103,12 @@ protected:
     RenderbufferType sceneDepthRBOType = sgl::RBO_DEPTH24_STENCIL8;
     sgl::RenderbufferObjectPtr sceneDepthRBO;
     sgl::ShaderProgramPtr gammaCorrectionShader;
+#endif
+#ifdef SUPPORT_VULKAN
+    // Off-screen rendering
+    sgl::vk::TexturePtr sceneTextureVk;
+    sgl::vk::TexturePtr sceneDepthTextureVk;
+    sgl::vk::Device* device = nullptr;
 #endif
 
     /// Scene data used in user interface.

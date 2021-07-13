@@ -27,21 +27,155 @@
  */
 
 #include <iostream>
+#include <unordered_map>
 #include <GL/glew.h>
-#include "TextureManager.hpp"
-#include "SystemGL.hpp"
-#include "Texture.hpp"
+#include <SDL2/SDL_image.h>
+
 #include <Utils/File/ResourceManager.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/Convert.hpp>
 #include <Math/Math.hpp>
 #include <Graphics/Texture/TextureManager.hpp>
 #include <Graphics/Texture/Bitmap.hpp>
-#include <SDL2/SDL_image.h>
+
+#include "SystemGL.hpp"
+#include "Texture.hpp"
+#include "TextureManager.hpp"
 
 namespace sgl {
 
-TexturePtr TextureManagerGL::createEmptyTexture(int width, const TextureSettings &settings)
+static const std::unordered_map<int, int> pixelFormatMap = {
+        { GL_RED, GL_RED },
+        { GL_R8, GL_RED },
+        { GL_R8_SNORM, GL_RED },
+        { GL_R8UI, GL_RED },
+        { GL_R8I, GL_RED },
+        { GL_R16, GL_RED },
+        { GL_R16_SNORM, GL_RED },
+        { GL_R16F, GL_RED },
+        { GL_R16UI, GL_RED },
+        { GL_R16I, GL_RED },
+        { GL_R32F, GL_RED },
+        { GL_R32UI, GL_RED },
+        { GL_R32I, GL_RED },
+
+        { GL_RG, GL_RG },
+        { GL_RG8, GL_RG },
+        { GL_RG8_SNORM, GL_RG },
+        { GL_RG8UI, GL_RG },
+        { GL_RG8I, GL_RG },
+        { GL_RG16, GL_RG },
+        { GL_RG16_SNORM, GL_RG },
+        { GL_RG16F, GL_RG },
+        { GL_RG16UI, GL_RG },
+        { GL_RG16I, GL_RG },
+        { GL_RG32F, GL_RG },
+        { GL_RG32UI, GL_RG },
+        { GL_RG32I, GL_RG },
+
+        { GL_RGB, GL_RGB },
+        { GL_RGB8, GL_RGB },
+        { GL_RGB8_SNORM, GL_RGB },
+        { GL_RGB8UI, GL_RGB },
+        { GL_RGB8I, GL_RGB },
+        { GL_RGB16, GL_RGB },
+        { GL_RGB16_SNORM, GL_RGB },
+        { GL_RGB16F, GL_RGB },
+        { GL_RGB16UI, GL_RGB },
+        { GL_RGB16I, GL_RGB },
+        { GL_RGB32F, GL_RGB },
+        { GL_RGB32UI, GL_RGB },
+        { GL_RGB32I, GL_RGB },
+
+        { GL_RGBA, GL_RGBA },
+        { GL_RGBA8, GL_RGBA },
+        { GL_RGBA8_SNORM, GL_RGBA },
+        { GL_RGBA8UI, GL_RGBA },
+        { GL_RGBA8I, GL_RGBA },
+        { GL_RGBA16, GL_RGBA },
+        { GL_RGBA16_SNORM, GL_RGBA },
+        { GL_RGBA16F, GL_RGBA },
+        { GL_RGBA16UI, GL_RGBA },
+        { GL_RGBA16I, GL_RGBA },
+        { GL_RGBA32F, GL_RGBA },
+        { GL_RGBA32UI, GL_RGBA },
+        { GL_RGBA32I, GL_RGBA },
+
+        { GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT },
+        { GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT },
+        { GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT },
+        { GL_DEPTH24_STENCIL8, GL_DEPTH_COMPONENT },
+        { GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT },
+        { GL_DEPTH32F_STENCIL8, GL_DEPTH_COMPONENT },
+};
+
+// Some formats (e.g. GL_R8_SNORM -> GL_BYTE) have multiple valid types. This just maps the first suitable type.
+static const std::unordered_map<int, int> pixelTypeMap = {
+        { GL_RED, GL_UNSIGNED_BYTE },
+        { GL_R8, GL_UNSIGNED_BYTE },
+        { GL_R8_SNORM, GL_BYTE },
+        { GL_R8UI, GL_UNSIGNED_BYTE },
+        { GL_R8I, GL_BYTE },
+        { GL_R16, GL_FLOAT },
+        { GL_R16_SNORM, GL_FLOAT },
+        { GL_R16F, GL_FLOAT },
+        { GL_R16UI, GL_UNSIGNED_SHORT },
+        { GL_R16I, GL_SHORT },
+        { GL_R32F, GL_FLOAT },
+        { GL_R32UI, GL_UNSIGNED_INT },
+        { GL_R32I, GL_INT },
+
+        { GL_RG, GL_UNSIGNED_BYTE },
+        { GL_RG8, GL_UNSIGNED_BYTE },
+        { GL_RG8_SNORM, GL_BYTE },
+        { GL_RG8UI, GL_UNSIGNED_BYTE },
+        { GL_RG8I, GL_BYTE },
+        { GL_RG16, GL_FLOAT },
+        { GL_RG16_SNORM, GL_FLOAT },
+        { GL_RG16F, GL_FLOAT },
+        { GL_RG16UI, GL_UNSIGNED_SHORT },
+        { GL_RG16I, GL_SHORT },
+        { GL_RG32F, GL_FLOAT },
+        { GL_RG32UI, GL_UNSIGNED_INT },
+        { GL_RG32I, GL_INT },
+
+        { GL_RGB, GL_UNSIGNED_BYTE },
+        { GL_RGB8, GL_UNSIGNED_BYTE },
+        { GL_RGB8_SNORM, GL_BYTE },
+        { GL_RGB8UI, GL_UNSIGNED_BYTE },
+        { GL_RGB8I, GL_BYTE },
+        { GL_RGB16, GL_FLOAT },
+        { GL_RGB16_SNORM, GL_FLOAT },
+        { GL_RGB16F, GL_FLOAT },
+        { GL_RGB16UI, GL_UNSIGNED_SHORT },
+        { GL_RGB16I, GL_SHORT },
+        { GL_RGB32F, GL_FLOAT },
+        { GL_RGB32UI, GL_UNSIGNED_INT },
+        { GL_RGB32I, GL_INT },
+
+        { GL_RGBA, GL_UNSIGNED_BYTE },
+        { GL_RGBA8, GL_UNSIGNED_BYTE },
+        { GL_RGBA8_SNORM, GL_BYTE },
+        { GL_RGBA8UI, GL_UNSIGNED_BYTE },
+        { GL_RGBA8I, GL_BYTE },
+        { GL_RGBA16, GL_FLOAT },
+        { GL_RGBA16_SNORM, GL_FLOAT },
+        { GL_RGBA16F, GL_FLOAT },
+        { GL_RGBA16UI, GL_UNSIGNED_SHORT },
+        { GL_RGBA16I, GL_SHORT },
+        { GL_RGBA32F, GL_FLOAT },
+        { GL_RGBA32UI, GL_UNSIGNED_INT },
+        { GL_RGBA32I, GL_INT },
+
+        { GL_DEPTH_COMPONENT16, GL_FLOAT },
+        { GL_DEPTH_COMPONENT24, GL_FLOAT },
+        { GL_DEPTH_COMPONENT32, GL_FLOAT },
+        { GL_DEPTH24_STENCIL8, GL_FLOAT },
+        { GL_DEPTH_COMPONENT32F, GL_FLOAT },
+        { GL_DEPTH32F_STENCIL8, GL_FLOAT },
+};
+
+TexturePtr TextureManagerGL::createEmptyTexture(int width, const TextureSettings& settings)
 {
     GLuint TEXTURE_TYPE = GL_TEXTURE_1D;
 
@@ -68,19 +202,16 @@ TexturePtr TextureManagerGL::createEmptyTexture(int width, const TextureSettings
 
     glTexParameteri(TEXTURE_TYPE, GL_TEXTURE_WRAP_S, settings.textureWrapS);
 
-    glTexImage1D(TEXTURE_TYPE,
-                 0,
-                 settings.internalFormat,
-                 width,
-                 0,
-                 settings.pixelFormat,
-                 settings.pixelType,
-                 NULL);
+    glTexImage1D(
+            TEXTURE_TYPE, 0, settings.internalFormat, width, 0,
+            pixelFormatMap.find(settings.internalFormat)->second,
+            pixelTypeMap.find(settings.internalFormat)->second, nullptr);
 
     return TexturePtr(new TextureGL(oglTexture, width, settings, 0));
 }
 
-TexturePtr TextureManagerGL::createTexture(void *data, int width, const TextureSettings &settings)
+TexturePtr TextureManagerGL::createTexture(
+        void* data, int width, const PixelFormat& pixelFormat, const TextureSettings& settings)
 {
     GLuint TEXTURE_TYPE = GL_TEXTURE_1D;
 
@@ -107,20 +238,15 @@ TexturePtr TextureManagerGL::createTexture(void *data, int width, const TextureS
 
     glTexParameteri(TEXTURE_TYPE, GL_TEXTURE_WRAP_S, settings.textureWrapS);
 
-    glTexImage1D(TEXTURE_TYPE,
-                 0,
-                 settings.internalFormat,
-                 width,
-                 0,
-                 settings.pixelFormat,
-                 settings.pixelType,
-                 data);
+    glTexImage1D(
+            TEXTURE_TYPE, 0, settings.internalFormat, width, 0,
+            pixelFormat.pixelFormat, pixelFormat.pixelType, data);
 
     return TexturePtr(new TextureGL(oglTexture, width, settings, 0));
 }
 
 
-TexturePtr TextureManagerGL::loadAsset(TextureInfo &textureInfo)
+TexturePtr TextureManagerGL::loadAsset(TextureInfo& textureInfo)
 {
     ResourceBufferPtr resource = ResourceManager::get()->getFileSync(textureInfo.filename.c_str());
     if (!resource) {
@@ -129,8 +255,8 @@ TexturePtr TextureManagerGL::loadAsset(TextureInfo &textureInfo)
         return TexturePtr();
     }
 
-    SDL_Surface *image = 0;
-    SDL_RWops *rwops = SDL_RWFromMem(resource->getBuffer(), int(resource->getBufferSize()));
+    SDL_Surface* image = 0;
+    SDL_RWops* rwops = SDL_RWFromMem(resource->getBuffer(), int(resource->getBufferSize()));
     if (rwops == nullptr) {
         Logfile::get()->writeError(std::string() + "TextureManagerGL::loadFromFile: SDL_RWFromMem failed (file: \""
                 + textureInfo.filename + "\")! SDL Error: " + "\"" + SDL_GetError() + "\"");
@@ -148,7 +274,7 @@ TexturePtr TextureManagerGL::loadAsset(TextureInfo &textureInfo)
     }
 
     GLuint oglTexture;
-    SDL_Surface *sdlTexture;
+    SDL_Surface* sdlTexture;
     GLint format = GL_RGBA;
     int w = 0, h = 0;
 
@@ -157,16 +283,16 @@ TexturePtr TextureManagerGL::loadAsset(TextureInfo &textureInfo)
     switch (image->format->BitsPerPixel) {
     case 24:
         if (textureInfo.sRGB) {
-            format  = GL_SRGB;
+            format = GL_SRGB;
         } else {
-            format  = GL_RGB;
+            format = GL_RGB;
         }
         break;
     case 32:
         if (textureInfo.sRGB) {
-            format  = GL_SRGB_ALPHA;
+            format = GL_SRGB_ALPHA;
         } else {
-            format  = GL_RGBA;
+            format = GL_RGBA;
         }
         break;
     default:
@@ -200,7 +326,7 @@ TexturePtr TextureManagerGL::loadAsset(TextureInfo &textureInfo)
 
     // Premultiplied alpha
     if (SystemGL::get()->isPremulAphaEnabled() && sdlTexture->format->BitsPerPixel == 32) {
-        uint8_t *pixels = (uint8_t*)sdlTexture->pixels;
+        uint8_t* pixels = (uint8_t*)sdlTexture->pixels;
         for (int y = 0; y < sdlTexture->h; ++y) {
             for (int x = 0; x < sdlTexture->w; ++x) {
                 int alpha = pixels[(x+y*sdlTexture->w)*4+3];
@@ -258,18 +384,19 @@ TexturePtr TextureManagerGL::loadAsset(TextureInfo &textureInfo)
 
 
 
-TexturePtr TextureManagerGL::createEmptyTexture(int width, int height, const TextureSettings &settings)
+TexturePtr TextureManagerGL::createEmptyTexture(int width, int height, const TextureSettings& settings)
 {
     return createEmptyTexture(width, height, 0, settings);
 }
 
-TexturePtr TextureManagerGL::createTexture(void *data, int width, int height, const TextureSettings &settings)
+TexturePtr TextureManagerGL::createTexture(
+        void* data, int width, int height, const PixelFormat& pixelFormat, const TextureSettings& settings)
 {
-    return createTexture(data, width, height, 0, settings);
+    return createTexture(data, width, height, 0, pixelFormat, settings);
 }
 
 
-TexturePtr TextureManagerGL::createEmptyTexture(int width, int height, int depth, const TextureSettings &settings)
+TexturePtr TextureManagerGL::createEmptyTexture(int width, int height, int depth, const TextureSettings& settings)
 {
     GLuint TEXTURE_TYPE = (GLuint)settings.type;
 
@@ -301,29 +428,22 @@ TexturePtr TextureManagerGL::createEmptyTexture(int width, int height, int depth
     }
 
     if (depth < 1) {
-        glTexImage2D(TEXTURE_TYPE,
-                     0,
-                     settings.internalFormat,
-                     width, height,
-                     0,
-                     settings.pixelFormat,
-                     settings.pixelType,
-                     NULL);
+        glTexImage2D(
+                TEXTURE_TYPE, 0, settings.internalFormat, width, height, 0,
+                pixelFormatMap.find(settings.internalFormat)->second,
+                pixelTypeMap.find(settings.internalFormat)->second, nullptr);
     } else {
-        glTexImage3D(TEXTURE_TYPE,
-                     0,
-                     settings.internalFormat,
-                     width, height, depth,
-                     0,
-                     settings.pixelFormat,
-                     settings.pixelType,
-                     NULL);
+        glTexImage3D(
+                TEXTURE_TYPE, 0, settings.internalFormat, width, height, depth, 0,
+                pixelFormatMap.find(settings.internalFormat)->second,
+                pixelTypeMap.find(settings.internalFormat)->second, nullptr);
     }
 
     return TexturePtr(new TextureGL(oglTexture, width, height, settings, 0));
 }
 
-TexturePtr TextureManagerGL::createTexture(void *data, int width, int height, int depth, const TextureSettings &settings)
+TexturePtr TextureManagerGL::createTexture(
+        void* data, int width, int height, int depth, const PixelFormat& pixelFormat, const TextureSettings& settings)
 {
     GLuint TEXTURE_TYPE = (GLuint)settings.type;
 
@@ -355,23 +475,13 @@ TexturePtr TextureManagerGL::createTexture(void *data, int width, int height, in
     }
 
     if (depth < 1) {
-        glTexImage2D(TEXTURE_TYPE,
-                     0,
-                     settings.internalFormat,
-                     width, height,
-                     0,
-                     settings.pixelFormat,
-                     settings.pixelType,
-                     data);
+        glTexImage2D(
+                TEXTURE_TYPE, 0, settings.internalFormat, width, height, 0,
+                pixelFormat.pixelFormat, pixelFormat.pixelType, data);
     } else {
-        glTexImage3D(TEXTURE_TYPE,
-                     0,
-                     settings.internalFormat,
-                     width, height, depth,
-                     0,
-                     settings.pixelFormat,
-                     settings.pixelType,
-                     data);
+        glTexImage3D(
+                TEXTURE_TYPE, 0, settings.internalFormat, width, height, depth, 0,
+                pixelFormat.pixelFormat, pixelFormat.pixelType, data);
     }
 
     return TexturePtr(new TextureGL(oglTexture, width, height, settings, 0));
@@ -411,8 +521,6 @@ TexturePtr TextureManagerGL::createMultisampledTexture(
 
     TextureSettings settings(TEXTURE_2D_MULTISAMPLE, GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
     settings.internalFormat = internalFormat;
-    settings.pixelFormat = internalFormat;
-    settings.pixelType = GL_BYTE;
     return TexturePtr(new TextureGL(oglTexture, width, height, settings, numSamples));
 }
 
@@ -432,8 +540,6 @@ TexturePtr TextureManagerGL::createDepthTexture(
 
     TextureSettings settings(GL_TEXTURE_2D, textureMinFilter, textureMagFilter, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
     settings.internalFormat = int(format);
-    settings.pixelFormat = GL_DEPTH_COMPONENT;
-    settings.pixelType = GL_FLOAT;
     return TexturePtr(new TextureGL(oglTexture, width, height, settings));
 }
 
@@ -451,13 +557,11 @@ TexturePtr TextureManagerGL::createDepthStencilTexture(
 
     TextureSettings settings(GL_TEXTURE_2D, textureMinFilter, textureMagFilter, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
     settings.internalFormat = int(format);
-    settings.pixelFormat = GL_DEPTH_COMPONENT;
-    settings.pixelType = GL_FLOAT;
     return TexturePtr(new TextureGL(oglTexture, width, height, settings));
 }
 
 
-TexturePtr TextureManagerGL::createTextureStorage(int width, const TextureSettings &settings) {
+TexturePtr TextureManagerGL::createTextureStorage(int width, const TextureSettings& settings) {
     GLuint TEXTURE_TYPE = GL_TEXTURE_1D;
 
     GLuint oglTexture;
@@ -489,7 +593,7 @@ TexturePtr TextureManagerGL::createTextureStorage(int width, const TextureSettin
 
 }
 
-TexturePtr TextureManagerGL::createTextureStorage(int width, int height, const TextureSettings &settings) {
+TexturePtr TextureManagerGL::createTextureStorage(int width, int height, const TextureSettings& settings) {
     GLuint TEXTURE_TYPE = (GLuint)settings.type;
 
     GLuint oglTexture;
@@ -521,7 +625,7 @@ TexturePtr TextureManagerGL::createTextureStorage(int width, int height, const T
     return TexturePtr(new TextureGL(oglTexture, width, height, settings, 0));
 }
 
-TexturePtr TextureManagerGL::createTextureStorage(int width, int height, int depth, const TextureSettings &settings) {
+TexturePtr TextureManagerGL::createTextureStorage(int width, int height, int depth, const TextureSettings& settings) {
     GLuint TEXTURE_TYPE = (GLuint)settings.type;
 
     GLuint oglTexture;

@@ -183,12 +183,13 @@ ShaderStages::~ShaderStages() {
 }
 
 void ShaderStages::mergeDescriptorSetsInfo(const std::map<uint32_t, std::vector<DescriptorInfo>>& newDescriptorSetsInfo) {
-    for (auto& it : newDescriptorSetsInfo) {
-        const std::vector<DescriptorInfo>& descriptorsInfoNew = it.second;
-        std::vector<DescriptorInfo>& descriptorsInfo = descriptorSetsInfo[it.first];
+    for (auto& itNew : newDescriptorSetsInfo) {
+        numDescriptorSets = std::max(numDescriptorSets, itNew.first + 1);
+        const std::vector<DescriptorInfo>& descriptorsInfoNew = itNew.second;
+        std::vector<DescriptorInfo>& descriptorsInfo = descriptorSetsInfo[itNew.first];
 
         // Merge the descriptors in a map object.
-        std::map<int, DescriptorInfo> descriptorsInfoMap;
+        std::map<uint32_t, DescriptorInfo> descriptorsInfoMap;
         for (DescriptorInfo& descInfo : descriptorsInfo) {
             descriptorsInfoMap.insert(std::make_pair(descInfo.binding, descInfo));
         }
@@ -196,6 +197,7 @@ void ShaderStages::mergeDescriptorSetsInfo(const std::map<uint32_t, std::vector<
             auto it = descriptorsInfoMap.find(descInfo.binding);
             if (it == descriptorsInfoMap.end()) {
                 descriptorsInfoMap.insert(std::make_pair(descInfo.binding, descInfo));
+                it = descriptorsInfoMap.find(descInfo.binding);
             } else {
                 if (it->second.type != descInfo.type) {
                     throw std::runtime_error(
@@ -203,6 +205,10 @@ void ShaderStages::mergeDescriptorSetsInfo(const std::map<uint32_t, std::vector<
                             + "incompatible descriptors \"" + it->second.name + "\" and \"" + descInfo.name + "\"!");
                 }
                 it->second.shaderStageFlags |= descInfo.shaderStageFlags;
+            }
+            if (itNew.first == 1 && descInfo.binding == 0 && descInfo.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+                // Hard-coded: MVP matrix block.
+                it->second.shaderStageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT;
             }
         }
 
@@ -216,27 +222,35 @@ void ShaderStages::mergeDescriptorSetsInfo(const std::map<uint32_t, std::vector<
 }
 
 void ShaderStages::createDescriptorSetLayouts() {
-    descriptorSetLayouts.resize(descriptorSetsInfo.size());
+    for (VkDescriptorSetLayout& descriptorSetLayout : descriptorSetLayouts) {
+        vkDestroyDescriptorSetLayout(device->getVkDevice(), descriptorSetLayout, nullptr);
+    }
+    descriptorSetLayouts.resize(numDescriptorSets);
 
-    size_t i = 0;
-    for (auto& entry : descriptorSetsInfo) {
-        VkDescriptorSetLayout& descriptorSetLayout = descriptorSetLayouts.at(i);
-
-        std::vector<VkDescriptorSetLayoutBinding> bindings(entry.second.size());
-        for (size_t j = 0; j < entry.second.size(); j++) {
-            VkDescriptorSetLayoutBinding& binding = bindings.at(j);
-            DescriptorInfo& descriptorInfo = entry.second.at(j);
-            binding.binding = descriptorInfo.binding;
-            binding.descriptorCount = descriptorInfo.count;
-            binding.descriptorType = descriptorInfo.type;
-            binding.pImmutableSamplers = nullptr;
-            binding.stageFlags = descriptorInfo.shaderStageFlags;
-        }
-
+    for (uint32_t setIdx = 0; setIdx < numDescriptorSets; setIdx++) {
+        VkDescriptorSetLayout& descriptorSetLayout = descriptorSetLayouts.at(setIdx);
         VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo{};
         descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        descriptorSetLayoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-        descriptorSetLayoutInfo.pBindings = bindings.data();
+        std::vector<VkDescriptorSetLayoutBinding> bindings;
+
+        auto it = descriptorSetsInfo.find(setIdx);
+        if (it != descriptorSetsInfo.end()) {
+            bindings.resize(it->second.size());
+            for (size_t j = 0; j < it->second.size(); j++) {
+                VkDescriptorSetLayoutBinding& binding = bindings.at(j);
+                DescriptorInfo& descriptorInfo = it->second.at(j);
+                binding.binding = descriptorInfo.binding;
+                binding.descriptorCount = descriptorInfo.count;
+                binding.descriptorType = descriptorInfo.type;
+                binding.pImmutableSamplers = nullptr;
+                binding.stageFlags = descriptorInfo.shaderStageFlags;
+            }
+            descriptorSetLayoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+            descriptorSetLayoutInfo.pBindings = bindings.data();
+        } else {
+            descriptorSetLayoutInfo.bindingCount = 0;
+            descriptorSetLayoutInfo.pBindings = nullptr;
+        }
 
         if (vkCreateDescriptorSetLayout(
                 device->getVkDevice(), &descriptorSetLayoutInfo, nullptr,
@@ -244,8 +258,6 @@ void ShaderStages::createDescriptorSetLayouts() {
             Logfile::get()->throwError(
                     "Error in GraphicsPipeline::GraphicsPipeline: Failed to create descriptor set layout!");
         }
-
-        i++;
     }
 }
 

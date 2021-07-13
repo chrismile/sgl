@@ -38,6 +38,7 @@ Framebuffer::Framebuffer(Device* device, uint32_t width, uint32_t height, uint32
 }
 
 void Framebuffer::build() {
+    std::vector<VkImageView> attachments;
     size_t attachmentCounter = 0;
 
     std::vector<VkAttachmentDescription> attachmentDescriptions;
@@ -64,6 +65,13 @@ void Framebuffer::build() {
         attachmentReference.attachment = attachmentCounter;
         attachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         colorAttachmentReferences.push_back(attachmentReference);
+        attachments.push_back(imageView->getVkImageView());
+
+        sampleCount = std::max(sampleCount, imageView->getImage()->getImageSettings().numSamples);
+        clearValues.push_back(colorAttachmentClearValues.at(i));
+        if (colorAttachmentStates.at(i).loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
+            useClear = true;
+        }
 
         attachmentCounter++;
     }
@@ -88,6 +96,8 @@ void Framebuffer::build() {
         attachmentReference.attachment = attachmentCounter;
         attachmentReference.layout = attachmentDescription.finalLayout;
         inputAttachmentReferences.push_back(attachmentReference);
+        attachments.push_back(imageView->getVkImageView());
+        clearValues.push_back({});
 
         attachmentCounter++;
     }
@@ -107,6 +117,14 @@ void Framebuffer::build() {
 
         depthStencilAttachmentReference.attachment = attachmentCounter;
         depthStencilAttachmentReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        attachments.push_back(depthStencilAttachment->getVkImageView());
+
+        sampleCount = std::max(sampleCount, depthStencilAttachment->getImage()->getImageSettings().numSamples);
+        clearValues.push_back(depthStencilAttachmentClearValue);
+        if (depthStencilAttachmentState.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
+            useClear = true;
+        }
+
         attachmentCounter++;
     }
 
@@ -125,6 +143,9 @@ void Framebuffer::build() {
 
         resolveAttachmentReference.attachment = attachmentCounter;
         resolveAttachmentReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        attachments.push_back(resolveAttachment->getVkImageView());
+        clearValues.push_back({});
+
         attachmentCounter++;
     }
 
@@ -134,22 +155,26 @@ void Framebuffer::build() {
 
     subpass.colorAttachmentCount = uint32_t(colorAttachmentReferences.size());
     subpass.pColorAttachments = colorAttachmentReferences.empty() ? nullptr : colorAttachmentReferences.data();
-    subpass.inputAttachmentCount = uint32_t(colorAttachmentReferences.size());
-    subpass.pInputAttachments = colorAttachmentReferences.empty() ? nullptr : colorAttachmentReferences.data();
+    subpass.inputAttachmentCount = uint32_t(inputAttachmentReferences.size());
+    subpass.pInputAttachments = inputAttachmentReferences.empty() ? nullptr : inputAttachmentReferences.data();
     subpass.pDepthStencilAttachment = depthStencilAttachment ? &depthStencilAttachmentReference : nullptr;
     subpass.pResolveAttachments = resolveAttachment ? &resolveAttachmentReference : nullptr;
 
     VkSubpassDependency dependency = {};
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
     dependency.dstSubpass = 0;
-    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dependency.srcStageMask = 0;
     dependency.srcAccessMask = 0;
-    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dependency.dstStageMask = 0;
     dependency.dstAccessMask = 0;
     if (!colorAttachments.empty()) {
+        dependency.srcStageMask |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.dstStageMask |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
         dependency.dstAccessMask |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     }
     if (depthStencilAttachment) {
+        dependency.srcStageMask |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        dependency.dstStageMask |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
         dependency.dstAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
     }
 
@@ -166,7 +191,6 @@ void Framebuffer::build() {
         Logfile::get()->throwError("Error in Framebuffer::build: Could not create a render pass.");
     }
 
-    std::vector<VkImageView> attachments;
     VkFramebufferCreateInfo framebufferInfo = {};
     framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     framebufferInfo.renderPass = renderPass;
