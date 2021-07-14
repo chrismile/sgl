@@ -257,10 +257,10 @@ TextureGLExternalMemoryVk::TextureGLExternalMemoryVk(vk::TexturePtr& vulkanTextu
     }
 
     settings.type = TextureType(target);
-    settings.textureMinFilter = convertFilterVkToFilterGl(
-            imageSamplerSettings.minFilter, imageSettings.mipLevels, imageSamplerSettings.mipmapMode);
-    settings.textureMagFilter = convertFilterVkToFilterGl(
-            imageSamplerSettings.magFilter, imageSettings.mipLevels, imageSamplerSettings.mipmapMode);
+    settings.textureMinFilter = int(convertFilterVkToFilterGl(
+            imageSamplerSettings.minFilter, imageSettings.mipLevels, imageSamplerSettings.mipmapMode));
+    settings.textureMagFilter = int(convertFilterVkToFilterGl(
+            imageSamplerSettings.magFilter, imageSettings.mipLevels, imageSamplerSettings.mipmapMode));
     settings.textureWrapS = samplerAddressModeVkToTextureWrapGlMap.find(imageSamplerSettings.addressModeU)->second;
     settings.textureWrapT = samplerAddressModeVkToTextureWrapGlMap.find(imageSamplerSettings.addressModeV)->second;
     settings.textureWrapR = samplerAddressModeVkToTextureWrapGlMap.find(imageSamplerSettings.addressModeW)->second;

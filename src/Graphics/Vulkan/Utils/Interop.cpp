@@ -40,6 +40,83 @@
 
 namespace sgl {
 
+SemaphoreVkGlInterop::SemaphoreVkGlInterop(sgl::vk::Device* device) {
+    VkExportSemaphoreCreateInfo exportSemaphoreCreateInfo = {};
+    exportSemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO;
+#if defined(_WIN32)
+    exportSemaphoreCreateInfo.handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+#elif defined(__linux__)
+    exportSemaphoreCreateInfo.handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;
+#else
+    Logfile::get()->throwError(
+                "Error in SemaphoreVkGlInterop::SemaphoreVkGlInterop: External semaphores are only supported on "
+                "Linux, Android and Windows systems!");
+#endif
+    _initialize(device, 0, &exportSemaphoreCreateInfo);
+
+    glGenSemaphoresEXT(1, &semaphoreGl);
+#if defined(_WIN32)
+    auto _vkGetSemaphoreWin32HandleKHR = (PFN_vkGetSemaphoreWin32HandleKHR)vkGetDeviceProcAddr(
+                device->getVkDevice(), "vkGetSemaphoreWin32HandleKHR");
+        if (!_vkGetSemaphoreWin32HandleKHR) {
+            Logfile::get()->throwError(
+                    "Error in Buffer::createGlMemoryObject: vkGetSemaphoreWin32HandleKHR was not found!");
+        }
+
+        VkSemaphoreGetWin32HandleInfoKHR semaphoreGetWin32HandleInfo = {};
+        semaphoreGetWin32HandleInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR;
+        semaphoreGetWin32HandleInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+        semaphoreGetWin32HandleInfo.semaphore = semaphoreVk;
+        HANDLE semaphoreHandle = nullptr;
+        if (_vkGetSemaphoreWin32HandleKHR(
+                device->getVkDevice(), &semaphoreGetWin32HandleInfo, &semaphoreHandle) != VK_SUCCESS) {
+            Logfile::get()->throwError(
+                    "Error in SemaphoreVkGlInterop::SemaphoreVkGlInterop: vkGetSemaphoreFdKHR failed!");
+        }
+
+        glImportSemaphoreWin32HandleEXT(semaphoreGl, GL_HANDLE_TYPE_OPAQUE_WIN32_EXT, semaphoreHandle);
+#elif defined(__linux__)
+    auto _vkGetSemaphoreFdKHR = (PFN_vkGetSemaphoreFdKHR)vkGetDeviceProcAddr(
+            device->getVkDevice(), "vkGetSemaphoreFdKHR");
+    if (!_vkGetSemaphoreFdKHR) {
+        Logfile::get()->throwError(
+                "Error in Buffer::createGlMemoryObject: vkGetSemaphoreFdKHR was not found!");
+    }
+
+    VkSemaphoreGetFdInfoKHR semaphoreGetFdInfo = {};
+    semaphoreGetFdInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_FD_INFO_KHR;
+    semaphoreGetFdInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;
+    semaphoreGetFdInfo.semaphore = semaphoreVk;
+    int fileDescriptor = 0;
+    if (_vkGetSemaphoreFdKHR(device->getVkDevice(), &semaphoreGetFdInfo, &fileDescriptor) != VK_SUCCESS) {
+        Logfile::get()->throwError(
+                "Error in SemaphoreVkGlInterop::SemaphoreVkGlInterop: vkGetSemaphoreFdKHR failed!");
+    }
+
+    glImportSemaphoreFdEXT(semaphoreGl, GL_HANDLE_TYPE_OPAQUE_FD_EXT, fileDescriptor);
+
+#ifndef NDEBUG
+    if (!glIsSemaphoreEXT(semaphoreGl)) {
+        Logfile::get()->throwError(
+                "Error in SemaphoreVkGlInterop::SemaphoreVkGlInterop: glIsSemaphoreEXT failed!");
+    }
+#endif
+#endif
+}
+
+SemaphoreVkGlInterop::~SemaphoreVkGlInterop() {
+    glDeleteSemaphoresEXT(1, &semaphoreGl);
+}
+
+void SemaphoreVkGlInterop::signalSemaphoreGl(GLenum dstLayout) {
+    //glSignalSemaphoreEXT(semaphoreGl, numBufferBarriers, &buffers, numTextureBarriers, &textures, dstLayout);
+}
+
+void SemaphoreVkGlInterop::waitSemaphoreGl(GLenum srcLayout) {
+    //glWaitSemaphoreEXT(semaphoreGl, numBufferBarriers, &buffers, numTextureBarriers, &textures, srcLayout);
+}
+
+
 VkMemoryPropertyFlags convertVmaMemoryUsageToVkMemoryPropertyFlags(VmaMemoryUsage memoryUsage) {
     VkMemoryPropertyFlags memoryPropertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 

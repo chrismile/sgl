@@ -32,12 +32,17 @@
 #include <vector>
 #include <glm/mat4x4.hpp>
 #include <vulkan/vulkan.h>
+
 #include <Utils/CircularQueue.hpp>
 #include <Math/Geometry/MatrixUtil.hpp>
 
 namespace sgl { namespace vk {
 
 class Device;
+class Semaphore;
+typedef std::shared_ptr<Semaphore> SemaphorePtr;
+class Fence;
+typedef std::shared_ptr<Fence> FencePtr;
 class Buffer;
 typedef std::shared_ptr<Buffer> BufferPtr;
 class ComputeData;
@@ -71,6 +76,27 @@ public:
 
     // Ray tracing pipeline.
     void traceRays(RayTracingDataPtr rayTracingData);
+
+    /**
+     * For headless rendering without a swapchain
+     * @param waitSemaphores Semaphore to wait on before executing the submitted work.
+     * @param signalSemaphores Semaphore to signal after executing the submitted work.
+     * @param fence Fence to check on the CPU whether the execution is still in-flight.
+     * @param waitStage The pipeline stages to wait on.
+     */
+    void submitToQueue(
+            SemaphorePtr& waitSemaphore, SemaphorePtr& signalSemaphore, FencePtr& fence,
+            VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+    /**
+     * For headless rendering without a swapchain
+     * @param waitSemaphores Semaphores to wait on before executing the submitted work.
+     * @param signalSemaphores Semaphores to signal after executing the submitted work.
+     * @param fence Fence to check on the CPU whether the execution is still in-flight.
+     * @param waitStages An array of pipeline stages to wait on.
+     */
+    void submitToQueue(
+            std::vector<SemaphorePtr>& waitSemaphores, std::vector<SemaphorePtr>& signalSemaphores, FencePtr& fence,
+            const std::vector<VkPipelineStageFlags>& waitStages = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT });
 
     // Access to internal state.
     inline Device* getDevice() { return device; }

@@ -29,6 +29,7 @@
 #include <Utils/File/Logfile.hpp>
 #include "../Utils/Device.hpp"
 #include "../Utils/Swapchain.hpp"
+#include "../Utils/SyncObjects.hpp"
 #include "../Render/GraphicsPipeline.hpp"
 #include "../Render/ComputePipeline.hpp"
 #include "../Render/RayTracingPipeline.hpp"
@@ -354,6 +355,56 @@ void Renderer::traceRays(RayTracingDataPtr rayTracingData) {
     //        commandBuffer,
     //        &raygenShaderSbtEntry, &missShaderSbtEntry, &hitShaderSbtEntry, &callableShaderSbtEntry,
     //        framebuffer->getWidth(), framebuffer->getHeight(), framebuffer->getLayers());
+}
+
+void Renderer::submitToQueue(
+        SemaphorePtr& waitSemaphore, SemaphorePtr& signalSemaphore, FencePtr& fence, VkPipelineStageFlags waitStage) {
+    VkSemaphore waitSemaphoreVk = waitSemaphore->getVkSemaphore();
+    VkSemaphore signalSemaphoreVk = signalSemaphore->getVkSemaphore();
+
+    VkSubmitInfo submitInfo = {};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = &waitSemaphoreVk;
+    submitInfo.pWaitDstStageMask = &waitStage;
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = &signalSemaphoreVk;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
+    if (vkQueueSubmit(device->getGraphicsQueue(), 1, &submitInfo, fence->getVkFence()) != VK_SUCCESS) {
+        sgl::Logfile::get()->throwError(
+                "Error in Renderer::submitToQueue: Could not submit to the graphics queue.");
+    }
+}
+
+void Renderer::submitToQueue(
+        std::vector<SemaphorePtr>& waitSemaphores, std::vector<SemaphorePtr>& signalSemaphores, FencePtr& fence,
+        const std::vector<VkPipelineStageFlags>& waitStages) {
+    std::vector<VkSemaphore> waitSemaphoresVk;
+    waitSemaphoresVk.reserve(waitSemaphores.size());
+    for (SemaphorePtr& semaphore : waitSemaphores) {
+        waitSemaphoresVk.push_back(semaphore->getVkSemaphore());
+    }
+
+    std::vector<VkSemaphore> signalSemaphoresVk;
+    signalSemaphoresVk.reserve(signalSemaphores.size());
+    for (SemaphorePtr& semaphore : signalSemaphores) {
+        signalSemaphoresVk.push_back(semaphore->getVkSemaphore());
+    }
+
+    VkSubmitInfo submitInfo = {};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.waitSemaphoreCount = waitSemaphoresVk.size();
+    submitInfo.pWaitSemaphores = waitSemaphoresVk.data();
+    submitInfo.pWaitDstStageMask = waitStages.data();
+    submitInfo.signalSemaphoreCount = signalSemaphoresVk.size();
+    submitInfo.pSignalSemaphores = signalSemaphoresVk.data();
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
+    if (vkQueueSubmit(device->getGraphicsQueue(), 1, &submitInfo, fence->getVkFence()) != VK_SUCCESS) {
+        sgl::Logfile::get()->throwError(
+                "Error in Renderer::submitToQueue: Could not submit to the graphics queue.");
+    }
 }
 
 }}

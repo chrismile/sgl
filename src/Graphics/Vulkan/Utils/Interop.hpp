@@ -43,6 +43,7 @@
 #include <GL/glew.h>
 #endif
 
+#include "SyncObjects.hpp"
 #include "Device.hpp"
 
 /*
@@ -51,72 +52,9 @@
 
 namespace sgl {
 
-class SemaphoreVkGlInterop {
-    SemaphoreVkGlInterop(sgl::vk::Device* device) : device(device) {
-        VkExportSemaphoreCreateInfo exportSemaphoreCreateInfo = {};
-        exportSemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO;
-#if defined(_WIN32)
-        exportSemaphoreCreateInfo.handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
-#elif defined(__linux__)
-        exportSemaphoreCreateInfo.handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;
-#else
-        Logfile::get()->throwError(
-                "Error in SemaphoreVkGlInterop::SemaphoreVkGlInterop: External semaphores are only supported on "
-                "Linux, Android and Windows systems!");
-#endif
-
-        VkSemaphoreCreateInfo semaphoreCreateInfo = {};
-        semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-        semaphoreCreateInfo.pNext = &exportSemaphoreCreateInfo;
-
-        if (vkCreateSemaphore(
-                device->getVkDevice(), &semaphoreCreateInfo, nullptr, &semaphoreVk) != VK_SUCCESS) {
-            Logfile::get()->throwError(
-                    "Error in SemaphoreVkGlInterop::SemaphoreVkGlInterop: Failed to create a Vulkan semaphore!");
-        }
-
-        glGenSemaphoresEXT(1, &semaphoreGl);
-#if defined(_WIN32)
-        auto _vkGetSemaphoreWin32HandleKHR = (PFN_vkGetSemaphoreWin32HandleKHR)vkGetDeviceProcAddr(
-                device->getVkDevice(), "vkGetSemaphoreWin32HandleKHR");
-        if (!_vkGetSemaphoreWin32HandleKHR) {
-            Logfile::get()->throwError(
-                    "Error in Buffer::createGlMemoryObject: vkGetSemaphoreWin32HandleKHR was not found!");
-        }
-
-        VkSemaphoreGetWin32HandleInfoKHR semaphoreGetWin32HandleInfo = {};
-        semaphoreGetWin32HandleInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR;
-        semaphoreGetWin32HandleInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
-        semaphoreGetWin32HandleInfo.semaphore = semaphoreVk;
-        HANDLE semaphoreHandle = nullptr;
-        if (_vkGetSemaphoreWin32HandleKHR(
-                device->getVkDevice(), &semaphoreGetWin32HandleInfo, &semaphoreHandle) != VK_SUCCESS) {
-            Logfile::get()->throwError(
-                    "Error in SemaphoreVkGlInterop::SemaphoreVkGlInterop: vkGetSemaphoreFdKHR failed!");
-        }
-
-        glImportSemaphoreWin32HandleEXT(semaphoreGl, GL_HANDLE_TYPE_OPAQUE_WIN32_EXT, semaphoreHandle);
-#elif defined(__linux__)
-        auto _vkGetSemaphoreFdKHR = (PFN_vkGetSemaphoreFdKHR)vkGetDeviceProcAddr(
-                device->getVkDevice(), "vkGetSemaphoreFdKHR");
-        if (!_vkGetSemaphoreFdKHR) {
-            Logfile::get()->throwError(
-                    "Error in Buffer::createGlMemoryObject: vkGetSemaphoreFdKHR was not found!");
-        }
-
-        VkSemaphoreGetFdInfoKHR semaphoreGetFdInfo = {};
-        semaphoreGetFdInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_FD_INFO_KHR;
-        semaphoreGetFdInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;
-        semaphoreGetFdInfo.semaphore = semaphoreVk;
-        int fileDescriptor = 0;
-        if (_vkGetSemaphoreFdKHR(device->getVkDevice(), &semaphoreGetFdInfo, &fileDescriptor) != VK_SUCCESS) {
-            Logfile::get()->throwError(
-                    "Error in SemaphoreVkGlInterop::SemaphoreVkGlInterop: vkGetSemaphoreFdKHR failed!");
-        }
-
-        glImportSemaphoreFdEXT(semaphoreGl, GL_HANDLE_TYPE_OPAQUE_FD_EXT, fileDescriptor);
-#endif
-    }
+class SemaphoreVkGlInterop : public vk::Semaphore {
+    explicit SemaphoreVkGlInterop(sgl::vk::Device* device);
+    ~SemaphoreVkGlInterop();
 
     /**
      * @param dstLayout One value out of:
@@ -130,9 +68,7 @@ class SemaphoreVkGlInterop {
      * LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_EXT 0x9530
      * LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_EXT 0x9531
      */
-    void signalSemaphoreGl(GLenum dstLayout) {
-        //glSignalSemaphoreEXT(semaphoreGl, numBufferBarriers, &buffers, numTextureBarriers, &textures, dstLayout);
-    }
+    void signalSemaphoreGl(GLenum dstLayout);
 
     /**
      * @param srcLayout One value out of:
@@ -146,35 +82,10 @@ class SemaphoreVkGlInterop {
      * LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_EXT 0x9530
      * LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_EXT 0x9531
      */
-    void waitSemaphoreGl(GLenum srcLayout) {
-        //glWaitSemaphoreEXT(semaphoreGl, numBufferBarriers, &buffers, numTextureBarriers, &textures, srcLayout);
-    }
-
-    void signalSemaphoreVk() {
-        VkSemaphoreSignalInfo semaphoreSignalInfo = {};
-        semaphoreSignalInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO;
-        semaphoreSignalInfo.semaphore = semaphoreVk;
-        semaphoreSignalInfo.value = 0;
-        vkSignalSemaphore(device->getVkDevice(), &semaphoreSignalInfo);
-    }
-
-    void waitSemaphoreVk() {
-        VkSemaphoreWaitInfo semaphoreWaitInfo = {};
-        semaphoreWaitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
-        semaphoreWaitInfo.semaphoreCount = 1;
-        semaphoreWaitInfo.pSemaphores = &semaphoreVk;
-        semaphoreWaitInfo.pValues = nullptr;
-        vkWaitSemaphores(device->getVkDevice(), &semaphoreWaitInfo, 0);
-    }
-
-    ~SemaphoreVkGlInterop() {
-        glDeleteSemaphoresEXT(1, &semaphoreGl);
-        vkDestroySemaphore(device->getVkDevice(), semaphoreVk, nullptr);
-    }
+    void waitSemaphoreGl(GLenum srcLayout);
 
 private:
     sgl::vk::Device* device = nullptr;
-    VkSemaphore semaphoreVk = VK_NULL_HANDLE;
     GLuint semaphoreGl = 0;
 };
 
