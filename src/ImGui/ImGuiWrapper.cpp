@@ -204,7 +204,8 @@ void ImGuiWrapper::setVkRenderTargets(std::vector<vk::ImageViewPtr> &imageViews)
         vk::AttachmentState attachmentState;
         //attachmentState.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         attachmentState.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-        attachmentState.initialLayout = imageView->getImage()->getVkImageLayout();
+        //attachmentState.initialLayout = imageView->getImage()->getVkImageLayout();
+        attachmentState.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         // TODO
         //attachmentState.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; // VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL or VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
         attachmentState.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;

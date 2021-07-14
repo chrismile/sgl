@@ -49,6 +49,12 @@ void GraphicsPipelineInfo::reset() {
     vertexInputInfo = {};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
+    colorBlendAttachment = {};
+    // TODO: Let the user disable the color write mask.
+    colorBlendAttachment.colorWriteMask =
+            VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    setBlendMode(BLENDING_MODE_OVERWRITE);
+
     colorBlendInfo = {};
     colorBlendInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlendInfo.logicOpEnable = VK_FALSE;
@@ -132,17 +138,6 @@ void GraphicsPipelineInfo::setFramebuffer(FramebufferPtr framebuffer) {
 }
 
 void GraphicsPipelineInfo::setBlendMode(BlendMode blendMode) {
-    VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
-    colorBlendAttachment.colorWriteMask =
-            VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    colorBlendAttachment.blendEnable = VK_FALSE;
-    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
-    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
-    colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
-    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-    colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
-
     if (blendMode == BLENDING_MODE_OVERWRITE) {
         colorBlendAttachment.blendEnable = VK_FALSE;
     } else {
@@ -205,16 +200,6 @@ void GraphicsPipelineInfo::setBlendMode(BlendMode blendMode) {
         colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
         colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
     }
-
-    colorBlendInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    colorBlendInfo.logicOpEnable = VK_FALSE;
-    colorBlendInfo.logicOp = VK_LOGIC_OP_COPY;
-    colorBlendInfo.attachmentCount = 1;
-    colorBlendInfo.pAttachments = &colorBlendAttachment;
-    colorBlendInfo.blendConstants[0] = 0.0f;
-    colorBlendInfo.blendConstants[1] = 0.0f;
-    colorBlendInfo.blendConstants[2] = 0.0f;
-    colorBlendInfo.blendConstants[3] = 0.0f;
 }
 
 void GraphicsPipelineInfo::setInputAssemblyTopology(PrimitiveTopology primitiveTopology, bool primitiveRestartEnable) {
@@ -335,7 +320,9 @@ GraphicsPipeline::GraphicsPipeline(Device* device, const GraphicsPipelineInfo& p
     pipelineCreateInfo.pViewportState = &pipelineInfo.viewportStateInfo;
     pipelineCreateInfo.pRasterizationState = &pipelineInfo.rasterizerInfo;
     pipelineCreateInfo.pMultisampleState = &pipelineInfo.multisamplingInfo;
-    pipelineCreateInfo.pDepthStencilState = &pipelineInfo.depthStencilInfo;
+    if (framebuffer->getHasDepthStencilAttachment()) {
+        pipelineCreateInfo.pDepthStencilState = &pipelineInfo.depthStencilInfo;
+    }
     pipelineCreateInfo.pColorBlendState = &pipelineInfo.colorBlendInfo;
     pipelineCreateInfo.pDynamicState = nullptr;
     pipelineCreateInfo.layout = pipelineLayout;

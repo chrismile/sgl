@@ -67,7 +67,7 @@ public:
     inline void quit() { running = false; }
 
 protected:
-    void makeScreenshot();
+    virtual void makeScreenshot();
     virtual void saveScreenshot(const std::string &filename);
     bool screenshot;
     float fps;

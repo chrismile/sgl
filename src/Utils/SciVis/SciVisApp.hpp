@@ -45,6 +45,8 @@ class ImageSampler;
 typedef std::shared_ptr<ImageSampler> ImageSamplerPtr;
 class Texture;
 typedef std::shared_ptr<Texture> TexturePtr;
+class RasterData;
+typedef std::shared_ptr<RasterData> RasterDataPtr;
 }}
 #endif
 
@@ -55,16 +57,16 @@ namespace sgl {
  */
 class DLL_OBJECT SciVisApp : public sgl::AppLogic {
 public:
-    SciVisApp(float fovy = atanf(1.0f / 2.0f) * 2.0f);
-    ~SciVisApp();
+    explicit SciVisApp(float fovy = atanf(1.0f / 2.0f) * 2.0f);
+    ~SciVisApp() override;
     //void render();
-    virtual void update(float dt);
-    virtual void resolutionChanged(sgl::EventPtr event);
-    virtual void processSDLEvent(const SDL_Event &event);
+    void update(float dt) override;
+    void resolutionChanged(sgl::EventPtr event) override;
+    void processSDLEvent(const SDL_Event &event) override;
 
     /// Override screenshot function to exclude GUI (if wanted by the user)
-    void saveScreenshot(const std::string &filename);
-    void makeScreenshot() {}
+    void saveScreenshot(const std::string &filename) override;
+    void makeScreenshot() override {}
 
 protected:
     /// Call pre-render in derived classes before the rendering logic, and post-render afterwards.
@@ -108,6 +110,8 @@ protected:
     // Off-screen rendering
     sgl::vk::TexturePtr sceneTextureVk;
     sgl::vk::TexturePtr sceneDepthTextureVk;
+    sgl::vk::RasterDataPtr sceneTextureBlitRenderData;
+    sgl::vk::RasterDataPtr sceneTextureGammaCorrectionRenderData;
     sgl::vk::Device* device = nullptr;
 #endif
 

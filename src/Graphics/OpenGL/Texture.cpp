@@ -183,7 +183,7 @@ static std::unordered_map<VkSamplerAddressMode, int> samplerAddressModeVkToTextu
 };
 
 GLenum convertFilterVkToFilterGl(VkFilter filterVk, uint32_t mipLevels, VkSamplerMipmapMode samplerMipmapModeVk) {
-    if (mipLevels == 0) {
+    if (mipLevels <= 1) {
         if (filterVk == VK_FILTER_NEAREST) {
             return GL_NEAREST;
         } else if (filterVk == VK_FILTER_LINEAR) {
@@ -270,33 +270,34 @@ TextureGLExternalMemoryVk::TextureGLExternalMemoryVk(vk::TexturePtr& vulkanTextu
     GLint textureTiling = imageSettings.tiling == VK_IMAGE_TILING_LINEAR ? GL_LINEAR_TILING_EXT : GL_OPTIMAL_TILING_EXT;
 
     glCreateTextures(target, 1, &texture);
+    glBindTexture(target, texture);
 
-    glTextureParameteri(texture, GL_TEXTURE_TILING_EXT, textureTiling);
+    glTexParameteri(target, GL_TEXTURE_TILING_EXT, textureTiling);
 
-    glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, settings.textureMagFilter);
-    glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, settings.textureMinFilter);
+    glTexParameteri(target, GL_TEXTURE_MAG_FILTER, settings.textureMagFilter);
+    glTexParameteri(target, GL_TEXTURE_MIN_FILTER, settings.textureMinFilter);
 
     if (settings.anisotropicFilter) {
-        glTextureParameterf(texture, GL_TEXTURE_MAX_ANISOTROPY_EXT, imageSamplerSettings.maxAnisotropy);
+        glTexParameterf(target, GL_TEXTURE_MAX_ANISOTROPY_EXT, imageSamplerSettings.maxAnisotropy);
     }
 
-    glTextureParameteri(texture, GL_TEXTURE_WRAP_S, settings.textureWrapS);
+    glTexParameteri(target, GL_TEXTURE_WRAP_S, settings.textureWrapS);
     if (imageSettings.imageType == VK_IMAGE_TYPE_2D || imageSettings.imageType == VK_IMAGE_TYPE_3D) {
-        glTextureParameteri(texture, GL_TEXTURE_WRAP_T, settings.textureWrapT);
+        glTexParameteri(target, GL_TEXTURE_WRAP_T, settings.textureWrapT);
     }
     if (imageSettings.imageType == VK_IMAGE_TYPE_3D) {
-        glTextureParameteri(texture, GL_TEXTURE_WRAP_R, settings.textureWrapR);
+        glTexParameteri(target, GL_TEXTURE_WRAP_R, settings.textureWrapR);
     }
 
     vulkanImage->createGlMemoryObject(memoryObject);
     if (imageSettings.imageType == VK_IMAGE_TYPE_1D && imageSettings.numSamples == VK_SAMPLE_COUNT_1_BIT) {
-        glTextureStorageMem1DEXT(texture, GLsizei(imageSettings.mipLevels), format, w, memoryObject, 0);
+        glTexStorageMem1DEXT(target, GLsizei(imageSettings.mipLevels), format, w, memoryObject, 0);
     } else if (imageSettings.imageType == VK_IMAGE_TYPE_2D && imageSettings.numSamples == VK_SAMPLE_COUNT_1_BIT) {
-        glTextureStorageMem2DEXT(texture, GLsizei(imageSettings.mipLevels), format, w, h, memoryObject, 0);
+        glTexStorageMem2DEXT(target, GLsizei(imageSettings.mipLevels), format, w, h, memoryObject, 0);
     } else if (imageSettings.imageType == VK_IMAGE_TYPE_2D && imageSettings.numSamples != VK_SAMPLE_COUNT_1_BIT) {
-        glTextureStorageMem2DMultisampleEXT(texture, imageSettings.numSamples, format, w, h, true, memoryObject, 0);
+        glTexStorageMem2DMultisampleEXT(target, imageSettings.numSamples, format, w, h, true, memoryObject, 0);
     } else if (imageSettings.imageType == VK_IMAGE_TYPE_3D && imageSettings.numSamples == VK_SAMPLE_COUNT_1_BIT) {
-        glTextureStorageMem3DEXT(texture, GLsizei(imageSettings.mipLevels), format, w, h, d, memoryObject, 0);
+        glTexStorageMem3DEXT(target, GLsizei(imageSettings.mipLevels), format, w, h, d, memoryObject, 0);
     }
 }
 

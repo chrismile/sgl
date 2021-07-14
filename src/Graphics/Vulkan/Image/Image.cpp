@@ -64,6 +64,20 @@ Image::Image(Device* device, const ImageSettings& imageSettings) : device(device
             sgl::Logfile::get()->throwError("Image::Image: vmaCreateImage failed!");
         }
     } else {
+#if defined(_WIN32)
+        VkExternalMemoryHandleTypeFlags handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+#elif defined(__linux__)
+        VkExternalMemoryHandleTypeFlags handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+#else
+        Logfile::get()->throwError(
+                "Error in Image::Image: External memory is only supported on Linux, Android and Windows systems!");
+#endif
+
+        VkExternalMemoryImageCreateInfo externalMemoryImageCreateInfo = {};
+        externalMemoryImageCreateInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;
+        externalMemoryImageCreateInfo.handleTypes = handleTypes;
+        imageCreateInfo.pNext = &externalMemoryImageCreateInfo;
+
         // If the memory should be exported for external use, we need to allocate the memory manually.
         if (vkCreateImage(device->getVkDevice(), &imageCreateInfo, nullptr, &image) != VK_SUCCESS) {
             Logfile::get()->throwError("Error in Image::Image: Failed to create an image!");
@@ -75,14 +89,7 @@ Image::Image(Device* device, const ImageSettings& imageSettings) : device(device
 
         VkExportMemoryAllocateInfo exportMemoryAllocateInfo = {};
         exportMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;
-#if defined(_WIN32)
-        exportMemoryAllocateInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
-#elif defined(__linux__)
-        exportMemoryAllocateInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
-#else
-        Logfile::get()->throwError(
-                "Error in Image::Image: External memory is only supported on Linux, Android and Windows systems!");
-#endif
+        exportMemoryAllocateInfo.handleTypes = handleTypes;
 
         VkMemoryPropertyFlags memoryPropertyFlags = convertVmaMemoryUsageToVkMemoryPropertyFlags(
                 imageSettings.memoryUsage);
@@ -123,7 +130,7 @@ Image::Image(
 }
 
 Image::~Image() {
-    if (hasImageOwnership && imageAllocation) {
+    if (hasImageOwnership) {
         if (imageAllocation) {
             vmaDestroyImage(device->getAllocator(), image, imageAllocation);
         }

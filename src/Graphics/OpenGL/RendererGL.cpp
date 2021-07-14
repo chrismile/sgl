@@ -333,7 +333,7 @@ void RendererGL::bindTexture(TexturePtr &tex, unsigned int textureUnit /* = 0 */
             glBindTexture(GL_TEXTURE_1D_ARRAY, textureGL->getTexture());
         } else if (tex->getTextureType() == TEXTURE_1D) {
             glBindTexture(GL_TEXTURE_1D, textureGL->getTexture());
-        } else if (tex->getNumSamples() == 0) {
+        } else if (tex->getNumSamples() <= 1) {
             glBindTexture(GL_TEXTURE_2D, textureGL->getTexture());
         } else {
             glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, textureGL->getTexture());
@@ -626,7 +626,7 @@ void RendererGL::disableWireframeMode()
 // Utility functions
 void RendererGL::blitTexture(TexturePtr &tex, const AABB2 &renderRect, bool mirrored)
 {
-    if (tex->getNumSamples() > 0) {
+    if (tex->getNumSamples() > 1) {
         blitTexture(tex, renderRect, resolveMSAAShader, mirrored);
     } else {
         blitTexture(tex, renderRect, blitShader, mirrored);
@@ -668,7 +668,7 @@ void RendererGL::blitTexture(TexturePtr &tex, const AABB2 &renderRect, ShaderPro
     shaderAttributes->addGeometryBuffer(geomBuffer, "position", ATTRIB_FLOAT, 3, 0, stride);
     shaderAttributes->addGeometryBuffer(geomBuffer, "texcoord", ATTRIB_FLOAT, 2, sizeof(glm::vec3), stride);
     shaderAttributes->getShaderProgram()->setUniform("texture", tex);
-    if (tex->getNumSamples() > 0) {
+    if (tex->getNumSamples() > 1) {
         shaderAttributes->getShaderProgram()->setUniform("numSamples", tex->getNumSamples());
     }
     render(shaderAttributes);
@@ -699,7 +699,7 @@ void RendererGL::_restoreViewProj() {
 //#define RESOLVE_BLIT_FBO
 TexturePtr RendererGL::resolveMultisampledTexture(TexturePtr &tex) // Just returns tex if not multisampled
 {
-    if (tex->getNumSamples() <= 0) {
+    if (tex->getNumSamples() <= 1) {
         return tex;
     }
 

@@ -339,6 +339,8 @@ void Device::createDeviceHeadless(
     printAvailableDeviceExtensionList();
 
     vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
+    vkGetPhysicalDeviceMemoryProperties(physicalDevice, &physicalDeviceMemoryProperties);
+    vkGetPhysicalDeviceFeatures(physicalDevice, &physicalDeviceFeatures);
 
     auto deviceQueuePair = createLogicalDeviceAndQueues(
             physicalDevice, instance->getUseValidationLayer(), instance->getInstanceLayerNames(), deviceExtensions,

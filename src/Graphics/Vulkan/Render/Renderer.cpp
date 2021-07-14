@@ -133,9 +133,10 @@ Renderer::~Renderer() {
 
 void Renderer::beginCommandBuffer() {
     Swapchain* swapchain = AppSettings::get()->getSwapchain();
+    size_t numImages = swapchain ? swapchain->getNumImages() : 1;
     frameIndex = swapchain ? swapchain->getImageIndex() : 0;
-    if (frameCaches.size() != swapchain->getNumImages()) {
-        frameCaches.resize(swapchain->getNumImages());
+    if (frameCaches.size() != numImages) {
+        frameCaches.resize(numImages);
 
         if (!commandBuffers.empty()) {
             vkFreeCommandBuffers(
@@ -144,8 +145,7 @@ void Renderer::beginCommandBuffer() {
         }
         vk::CommandPoolType commandPoolType;
         commandPoolType.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        commandBuffers = device->allocateCommandBuffers(
-                commandPoolType, &commandPool, swapchain ? uint32_t(swapchain->getNumImages()) : 1);
+        commandBuffers = device->allocateCommandBuffers(commandPoolType, &commandPool, numImages);
     }
     frameCaches.at(frameIndex).freeCameraMatrixBuffers = frameCaches.at(frameIndex).allCameraMatrixBuffers;
     frameCaches.at(frameIndex).freeMatrixBlockDescriptorSets = frameCaches.at(frameIndex).allMatrixBlockDescriptorSets;
@@ -361,6 +361,7 @@ void Renderer::submitToQueue(
         SemaphorePtr& waitSemaphore, SemaphorePtr& signalSemaphore, FencePtr& fence, VkPipelineStageFlags waitStage) {
     VkSemaphore waitSemaphoreVk = waitSemaphore->getVkSemaphore();
     VkSemaphore signalSemaphoreVk = signalSemaphore->getVkSemaphore();
+    VkFence fenceVk = fence ? fence->getVkFence() : VK_NULL_HANDLE;
 
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -371,7 +372,7 @@ void Renderer::submitToQueue(
     submitInfo.pSignalSemaphores = &signalSemaphoreVk;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
-    if (vkQueueSubmit(device->getGraphicsQueue(), 1, &submitInfo, fence->getVkFence()) != VK_SUCCESS) {
+    if (vkQueueSubmit(device->getGraphicsQueue(), 1, &submitInfo, fenceVk) != VK_SUCCESS) {
         sgl::Logfile::get()->throwError(
                 "Error in Renderer::submitToQueue: Could not submit to the graphics queue.");
     }
@@ -392,6 +393,8 @@ void Renderer::submitToQueue(
         signalSemaphoresVk.push_back(semaphore->getVkSemaphore());
     }
 
+    VkFence fenceVk = fence ? fence->getVkFence() : VK_NULL_HANDLE;
+
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.waitSemaphoreCount = waitSemaphoresVk.size();
@@ -401,9 +404,24 @@ void Renderer::submitToQueue(
     submitInfo.pSignalSemaphores = signalSemaphoresVk.data();
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
-    if (vkQueueSubmit(device->getGraphicsQueue(), 1, &submitInfo, fence->getVkFence()) != VK_SUCCESS) {
+    if (vkQueueSubmit(device->getGraphicsQueue(), 1, &submitInfo, fenceVk) != VK_SUCCESS) {
         sgl::Logfile::get()->throwError(
                 "Error in Renderer::submitToQueue: Could not submit to the graphics queue.");
+    }
+}
+
+void Renderer::submitToQueueImmediate() {
+    VkSubmitInfo submitInfo = {};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
+    if (vkQueueSubmit(device->getGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+        sgl::Logfile::get()->throwError(
+                "Error in Renderer::submitToQueueImmediate: Could not submit to the graphics queue.");
+    }
+    if (vkQueueWaitIdle(device->getGraphicsQueue()) != VK_SUCCESS) {
+        sgl::Logfile::get()->throwError(
+                "Error in Renderer::submitToQueueImmediate: vkQueueWaitIdle failed.");
     }
 }
 

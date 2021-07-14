@@ -101,6 +101,7 @@ static const std::unordered_map<int, int> pixelFormatMap = {
         { GL_RGBA32UI, GL_RGBA },
         { GL_RGBA32I, GL_RGBA },
 
+        { GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT },
         { GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT },
         { GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT },
         { GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT },
@@ -167,6 +168,7 @@ static const std::unordered_map<int, int> pixelTypeMap = {
         { GL_RGBA32UI, GL_UNSIGNED_INT },
         { GL_RGBA32I, GL_INT },
 
+        { GL_DEPTH_COMPONENT, GL_FLOAT },
         { GL_DEPTH_COMPONENT16, GL_FLOAT },
         { GL_DEPTH_COMPONENT24, GL_FLOAT },
         { GL_DEPTH_COMPONENT32, GL_FLOAT },

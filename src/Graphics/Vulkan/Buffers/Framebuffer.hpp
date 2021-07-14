@@ -144,6 +144,9 @@ public:
     inline uint32_t getLayers() const { return layers; }
     inline VkExtent2D getExtent2D() const { return { width, height }; }
 
+    /// Returns whether this framebuffer has a depth-stencil attachment.
+    inline bool getHasDepthStencilAttachment() const { return depthStencilAttachment.get() != nullptr; }
+
     /// Returns the number of multisamples used by the attachments.
     inline VkSampleCountFlagBits getSampleCount() { if (framebuffer == VK_NULL_HANDLE) build(); return sampleCount; }
 

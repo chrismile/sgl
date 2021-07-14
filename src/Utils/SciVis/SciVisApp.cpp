@@ -325,6 +325,47 @@ void SciVisApp::postRender() {
     }
 #endif
 
+#ifdef SUPPORT_VULKAN
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+        rendererVk->setProjectionMatrix(sgl::matrixIdentity());
+        rendererVk->setViewMatrix(sgl::matrixIdentity());
+        rendererVk->setModelMatrix(sgl::matrixIdentity());
+
+        if (screenshot && screenshotTransparentBackground) {
+            if (useLinearRGB) {
+                sgl::Renderer->blitTexture(
+                        sceneTexture, sgl::AABB2(glm::vec2(-1.0f, -1.0f), glm::vec2(1.0f, 1.0f)),
+                        gammaCorrectionShader);
+            } else {
+                sgl::Renderer->blitTexture(
+                        sceneTexture, sgl::AABB2(glm::vec2(-1.0f, -1.0f), glm::vec2(1.0f, 1.0f)));
+            }
+
+            if (!uiOnScreenshot) {
+                printNow = true;
+                saveScreenshot(
+                        saveDirectoryScreenshots + saveFilenameScreenshots
+                        + "_" + sgl::toString(screenshotNumber++) + ".png");
+                printNow = false;
+            }
+
+            clearColor.setA(255);
+            glEnable(GL_BLEND);
+            glBlendEquation(GL_FUNC_ADD);
+            glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
+            reRender = true;
+        }
+
+        if (useLinearRGB) {
+            // TODO
+            //rendererVk->blitTexture(sceneTexture, gammaCorrectionShader);
+        } else {
+            sgl::Renderer->blitTexture(
+                    sceneTexture, sgl::AABB2(glm::vec2(-1.0f, -1.0f), glm::vec2(1.0f, 1.0f)));
+        }
+    }
+#endif
+
     if (!screenshotTransparentBackground && !uiOnScreenshot && screenshot) {
         printNow = true;
         saveScreenshot(

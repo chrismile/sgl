@@ -62,17 +62,21 @@ AppLogic::AppLogic() : framerateSmoother(16)
     Window *window = AppSettings::get()->getMainWindow();
     window->setEventHandler([this](const SDL_Event &event) { this->processSDLEvent(event); });
 
-    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+#ifdef SUPPORT_VULKAN
+    if (sgl::AppSettings::get()->getPrimaryDevice()) {
         rendererVk = new sgl::vk::Renderer(sgl::AppSettings::get()->getPrimaryDevice());
     }
+#endif
 }
 
 AppLogic::~AppLogic()
 {
-    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+#ifdef SUPPORT_VULKAN
+    if (sgl::AppSettings::get()->getPrimaryDevice()) {
         delete rendererVk;
         rendererVk = nullptr;
     }
+#endif
 }
 
 void AppLogic::saveScreenshot(const std::string &filename)

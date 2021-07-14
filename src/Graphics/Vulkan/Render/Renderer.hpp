@@ -78,7 +78,7 @@ public:
     void traceRays(RayTracingDataPtr rayTracingData);
 
     /**
-     * For headless rendering without a swapchain
+     * For headless rendering without a swapchain.
      * @param waitSemaphores Semaphore to wait on before executing the submitted work.
      * @param signalSemaphores Semaphore to signal after executing the submitted work.
      * @param fence Fence to check on the CPU whether the execution is still in-flight.
@@ -88,7 +88,7 @@ public:
             SemaphorePtr& waitSemaphore, SemaphorePtr& signalSemaphore, FencePtr& fence,
             VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
     /**
-     * For headless rendering without a swapchain
+     * For headless rendering without a swapchain.
      * @param waitSemaphores Semaphores to wait on before executing the submitted work.
      * @param signalSemaphores Semaphores to signal after executing the submitted work.
      * @param fence Fence to check on the CPU whether the execution is still in-flight.
@@ -97,6 +97,10 @@ public:
     void submitToQueue(
             std::vector<SemaphorePtr>& waitSemaphores, std::vector<SemaphorePtr>& signalSemaphores, FencePtr& fence,
             const std::vector<VkPipelineStageFlags>& waitStages = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT });
+    /**
+     * For headless rendering without a swapchain. This command waits for the queue to become idle manually.
+     */
+    void submitToQueueImmediate();
 
     // Access to internal state.
     inline Device* getDevice() { return device; }

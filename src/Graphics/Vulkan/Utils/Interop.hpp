@@ -52,42 +52,65 @@
 
 namespace sgl {
 
+class GeometryBuffer;
+typedef std::shared_ptr<GeometryBuffer> GeometryBufferPtr;
+class Texture;
+typedef std::shared_ptr<Texture> TexturePtr;
+
 class SemaphoreVkGlInterop : public vk::Semaphore {
+public:
     explicit SemaphoreVkGlInterop(sgl::vk::Device* device);
     ~SemaphoreVkGlInterop();
 
-    /**
-     * @param dstLayout One value out of:
-     * LAYOUT_GENERAL_EXT                            0x958D
-     * LAYOUT_COLOR_ATTACHMENT_EXT                   0x958E
-     * LAYOUT_DEPTH_STENCIL_ATTACHMENT_EXT           0x958F
-     * LAYOUT_DEPTH_STENCIL_READ_ONLY_EXT            0x9590
-     * LAYOUT_SHADER_READ_ONLY_EXT                   0x9591
-     * LAYOUT_TRANSFER_SRC_EXT                       0x9592
-     * LAYOUT_TRANSFER_DST_EXT                       0x9593
-     * LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_EXT 0x9530
-     * LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_EXT 0x9531
+    /*
+     * @param srcLayout and dstLayout One value out of:
+     *  GL_NONE                                          | VK_IMAGE_LAYOUT_UNDEFINED
+     *  GL_LAYOUT_GENERAL_EXT                            | VK_IMAGE_LAYOUT_GENERAL
+     *  GL_LAYOUT_COLOR_ATTACHMENT_EXT                   | VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+     *  GL_LAYOUT_DEPTH_STENCIL_ATTACHMENT_EXT           | VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT
+     *  GL_LAYOUT_DEPTH_STENCIL_READ_ONLY_EXT            | VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
+     *  GL_LAYOUT_SHADER_READ_ONLY_EXT                   | VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+     *  GL_LAYOUT_TRANSFER_SRC_EXT                       | VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+     *  GL_LAYOUT_TRANSFER_DST_EXT                       | VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+     *  GL_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_EXT | VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL_KHR
+     *  GL_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_EXT | VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL_KHR
      */
-    void signalSemaphoreGl(GLenum dstLayout);
 
-    /**
-     * @param srcLayout One value out of:
-     * LAYOUT_GENERAL_EXT                            0x958D
-     * LAYOUT_COLOR_ATTACHMENT_EXT                   0x958E
-     * LAYOUT_DEPTH_STENCIL_ATTACHMENT_EXT           0x958F
-     * LAYOUT_DEPTH_STENCIL_READ_ONLY_EXT            0x9590
-     * LAYOUT_SHADER_READ_ONLY_EXT                   0x9591
-     * LAYOUT_TRANSFER_SRC_EXT                       0x9592
-     * LAYOUT_TRANSFER_DST_EXT                       0x9593
-     * LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_EXT 0x9530
-     * LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_EXT 0x9531
-     */
-    void waitSemaphoreGl(GLenum srcLayout);
+    /// Signal semaphore without any barriers.
+    void signalSemaphoreGl();
+    /// Signal semaphore with one buffer barrier.
+    void signalSemaphoreGl(sgl::GeometryBufferPtr& buffer);
+    /// Signal semaphore with multiple buffer barriers.
+    void signalSemaphoreGl(std::vector<sgl::GeometryBufferPtr>& buffers);
+    /// Signal semaphore with one texture barrier.
+    void signalSemaphoreGl(sgl::TexturePtr& texture, GLenum dstLayout);
+    /// Signal semaphore with multiple texture barriers.
+    void signalSemaphoreGl(std::vector<sgl::TexturePtr>& textures, const std::vector<GLenum>& dstLayouts);
+    /// Signal semaphore with multiple buffer and texture barriers.
+    void signalSemaphoreGl(
+            std::vector<sgl::GeometryBufferPtr>& buffers,
+            std::vector<sgl::TexturePtr>& textures, const std::vector<GLenum>& dstLayouts);
+
+    /// Wait on semaphore without any memory barriers.
+    void waitSemaphoreGl();
+    /// Wait on semaphore with one buffer barrier.
+    void waitSemaphoreGl(sgl::GeometryBufferPtr& buffer);
+    /// Wait on semaphore with multiple buffer barriers.
+    void waitSemaphoreGl(std::vector<sgl::GeometryBufferPtr>& buffers);
+    /// Wait on semaphore with one texture barrier.
+    void waitSemaphoreGl(sgl::TexturePtr& texture, GLenum srcLayout);
+    /// Wait on semaphore with multiple texture barriers.
+    void waitSemaphoreGl(std::vector<sgl::TexturePtr>& textures, const std::vector<GLenum>& srcLayouts);
+    /// Wait on semaphore with multiple buffer and texture barriers.
+    void waitSemaphoreGl(
+            std::vector<sgl::GeometryBufferPtr>& buffers,
+            std::vector<sgl::TexturePtr>& textures, const std::vector<GLenum>& srcLayouts);
 
 private:
     sgl::vk::Device* device = nullptr;
     GLuint semaphoreGl = 0;
 };
+typedef std::shared_ptr<SemaphoreVkGlInterop> SemaphoreVkGlInteropPtr;
 
 /**
  * Converts VmaMemoryUsage to VkMemoryPropertyFlags.
