@@ -37,32 +37,55 @@
 
 #if defined(__linux__)
 #include <X11/Xlib.h>
-#include <X11/Xatom.h>
 #include <X11/Xresource.h>
+#include <dlfcn.h>
 
 namespace sgl
 {
 
 // Inspired by https://github.com/glfw/glfw/issues/1019
-float getScreenScalingX11(Display *display)
-{
-    char *resourceString = XResourceManagerString(display);
-    XrmInitialize();
-    XrmDatabase database = XrmGetStringDatabase(resourceString);
+float getScreenScalingX11(Display *display) {
+    typedef char* (*PFN_XResourceManagerString)(Display*);
+    typedef void (*PFN_XrmInitialize)();
+    typedef XrmDatabase (*PFN_XrmGetStringDatabase)(_Xconst char*);
+    typedef Bool (*PFN_XrmGetResource)(XrmDatabase, _Xconst char*, _Xconst char*, char**, XrmValue*);
+    typedef void (*PFN_XrmDestroyDatabase)(XrmDatabase);
+
+    void* libX11so = dlopen("libX11.so", RTLD_NOW | RTLD_LOCAL);
+    if (!libX11so) {
+        sgl::Logfile::get()->throwError("Error in getScreenScalingX11: Could not load libX11.so!");
+    }
+
+    auto _XResourceManagerString = PFN_XResourceManagerString(dlsym(libX11so, "XResourceManagerString"));
+    auto _XrmInitialize = PFN_XrmInitialize(dlsym(libX11so, "XrmInitialize"));
+    auto _XrmGetStringDatabase = PFN_XrmGetStringDatabase(dlsym(libX11so, "XrmGetStringDatabase"));
+    auto _XrmGetResource = PFN_XrmGetResource(dlsym(libX11so, "XrmGetResource"));
+    auto _XrmDestroyDatabase = PFN_XrmDestroyDatabase(dlsym(libX11so, "XrmDestroyDatabase"));
+
+    if (!_XResourceManagerString || !_XrmInitialize || !_XrmGetStringDatabase || !_XrmGetResource
+            || !_XrmDestroyDatabase) {
+        sgl::Logfile::get()->throwError("Error in getScreenScalingX11: Could not load all required functions!");
+    }
+
+    char* resourceString = _XResourceManagerString(display);
+    _XrmInitialize();
+    XrmDatabase database = _XrmGetStringDatabase(resourceString);
 
     XrmValue value;
-    char *type = NULL;
+    char* type = nullptr;
     float scalingFactor = 1.0f;
-    if (XrmGetResource(database, "Xft.dpi", "String", &type, &value) && value.addr) {
+    if (_XrmGetResource(database, "Xft.dpi", "String", &type, &value) && value.addr) {
         scalingFactor = atof(value.addr) / 96.0f;
     }
-    XrmDestroyDatabase(database);
+    _XrmDestroyDatabase(database);
+
+    dlclose(libX11so);
+
     return scalingFactor;
 }
 
 }
-
-#elif defined(WIN32) // TODO: _WIN32?
+#elif defined(_WIN32)
 #include <windows.h>
 
 namespace sgl
@@ -77,7 +100,6 @@ float getScreenScalingWindows()
 }
 
 }
-
 #endif
 
 namespace sgl

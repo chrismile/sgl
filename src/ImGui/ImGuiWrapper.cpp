@@ -59,9 +59,9 @@ static void checkImGuiVkResult(VkResult result) {
 void ImGuiWrapper::initialize(
         const ImWchar* fontRangesData, bool useDocking, bool useMultiViewport, float uiScaleFactor) {
     float scaleFactorHiDPI = getHighDPIScaleFactor();
-    this->uiScaleFactor = uiScaleFactor;
     uiScaleFactor = scaleFactorHiDPI * uiScaleFactor;
     sizeScale = uiScaleFactor / defaultUiScaleFactor;
+    this->uiScaleFactor = uiScaleFactor;
     float fontScaleFactor = uiScaleFactor;
 
     // --- Code from here on partly taken from ImGui usage example ---

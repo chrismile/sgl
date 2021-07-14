@@ -240,7 +240,7 @@ VkMemoryPropertyFlags convertVmaMemoryUsageToVkMemoryPropertyFlags(VmaMemoryUsag
 #ifdef SUPPORT_OPENGL
 bool isDeviceCompatibleWithOpenGl(VkPhysicalDevice physicalDevice) {
     assert(VK_UUID_SIZE == GL_UUID_SIZE_EXT);
-    const size_t UUID_SIZE = std::min(VK_UUID_SIZE, GL_UUID_SIZE_EXT);
+    const size_t UUID_SIZE = std::min(size_t(VK_UUID_SIZE), size_t(GL_UUID_SIZE_EXT));
 
     // Get the Vulkan UUID data for the driver and device.
     VkPhysicalDeviceIDProperties physicalDeviceIdProperties = {};

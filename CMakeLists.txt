@@ -178,10 +178,6 @@ if (${USE_LIBARCHIVE})
 	endif()
 endif()
 
-if(UNIX AND NOT APPLE)
-	target_link_libraries(sgl PUBLIC X11)
-endif()
-
 target_link_libraries(sgl PRIVATE ${Boost_LIBRARIES})
 target_include_directories(sgl PRIVATE ${Boost_INCLUDE_DIR} ${GLM_INCLUDE_DIR})
 

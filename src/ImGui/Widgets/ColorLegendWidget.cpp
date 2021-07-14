@@ -138,7 +138,7 @@ void ColorLegendWidget::renderGui() {
         // Draw color bar.
         ImVec2 startPos = ImGui::GetCursorScreenPos();
         ImVec2 pos = ImVec2(startPos.x + 1, startPos.y + 1);
-        const float lineHeightFactor = 1.0f / (transferFunctionColorMap.size() - 1);
+        const float lineHeightFactor = 1.0f / float(transferFunctionColorMap.size() - 1);
         const size_t numColorMapEntries = transferFunctionColorMap.size();
         for (size_t i = 0; i < transferFunctionColorMap.size(); i++) {
             sgl::Color16 color = transferFunctionColorMap[numColorMapEntries - i - 1];
@@ -152,7 +152,7 @@ void ColorLegendWidget::renderGui() {
         ImVec2 textSize = ImGui::CalcTextSizeVertical(attributeDisplayName.c_str());
         textHeight = textSize.y;
         ImVec2 textPos = ImVec2(
-                startPos.x + barWidth + 33 * fontScale / fontScaleStandard * scaleFactor,
+                startPos.x + barWidth + 31 * fontScale / fontScaleStandard * scaleFactor,
                 //startPos.y + regionHeight / 2.0f - textSize.y / 2.0f + 1);
                 startPos.y + regionHeight / 2.0f + textSize.y / 2.0f + 1);
         ImGui::AddTextVertical(
