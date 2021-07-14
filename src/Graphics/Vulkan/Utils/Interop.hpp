@@ -35,10 +35,6 @@
 #include <vulkan/vulkan.h>
 #include <Graphics/Vulkan/libs/VMA/vk_mem_alloc.h>
 
-#ifdef _WIN32
-#include <vulkan/vulkan_win32.h>
-#endif
-
 #ifdef SUPPORT_OPENGL
 #include <GL/glew.h>
 #endif

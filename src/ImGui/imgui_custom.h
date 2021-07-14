@@ -65,7 +65,7 @@ IMGUI_API bool Combo(const char* label, int* current_item, const std::string* it
 IMGUI_API bool ClickArea(const char *str_id, const ImVec2 &size_arg, bool &mouseReleased);
 IMGUI_API void ProgressSpinner(const char* str_id, float radius, float thickness, float speed, const ImVec4& color);
 
-IMGUI_API bool SliderFloatActive(const char* label, float* v, float v_min, float v_max, bool is_active, const char* format = "%.3f", float power = 1.0f);
+IMGUI_API bool SliderFloatActive(const char* label, float* v, float v_min, float v_max, bool is_active, const char* format = "%.3f", ImGuiSliderFlags flags = 0);
 IMGUI_API bool SliderIntActive(const char* label, int* v, int v_min, int v_max, bool is_active, const char* format = "%d");
 IMGUI_API bool SliderScalarActive(const char* label, ImGuiDataType data_type, void* p_data, const void* p_min, const void* p_max, bool is_active, const char* format = NULL, ImGuiSliderFlags flags = 0);
 

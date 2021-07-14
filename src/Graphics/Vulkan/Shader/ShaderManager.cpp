@@ -195,6 +195,7 @@ ShaderModulePtr ShaderManagerVk::loadAsset(ShaderModuleInfo& shaderInfo) {
             { ShaderModuleType::GEOMETRY,               shaderc_geometry_shader },
             { ShaderModuleType::TESSELATION_CONTROL,    shaderc_tess_control_shader },
             { ShaderModuleType::TESSELATION_EVALUATION, shaderc_tess_evaluation_shader },
+#if VK_VERSION_1_2 && VK_HEADER_VERSION >= 162
             { ShaderModuleType::RAYGEN,                 shaderc_raygen_shader },
             { ShaderModuleType::ANY_HIT,                shaderc_anyhit_shader },
             { ShaderModuleType::CLOSEST_HIT,            shaderc_closesthit_shader },
@@ -203,6 +204,7 @@ ShaderModulePtr ShaderManagerVk::loadAsset(ShaderModuleInfo& shaderInfo) {
             { ShaderModuleType::CALLABLE,               shaderc_callable_shader },
             { ShaderModuleType::TASK,                   shaderc_task_shader },
             { ShaderModuleType::MESH,                   shaderc_mesh_shader },
+#endif
     };
     auto it = shaderKindLookupTable.find(shaderInfo.shaderModuleType);
     if (it == shaderKindLookupTable.end()) {

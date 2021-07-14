@@ -150,7 +150,7 @@ void TimerVk::finishGPU() {
         FrameData& currentFrameData = frameData.at(frameIdx);
 
         if (currentFrameData.numQueries != 0) {
-            addTimesForFrame(frameIdx);
+            addTimesForFrame(uint32_t(frameIdx));
         }
 
         currentFrameData.queryStartIndices.clear();

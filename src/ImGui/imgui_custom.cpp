@@ -288,9 +288,9 @@ bool ImGui::SliderScalarActive(const char* label, ImGuiDataType data_type, void*
     return value_changed;
 }
 
-bool ImGui::SliderFloatActive(const char* label, float* v, float v_min, float v_max, bool is_active, const char* format, float power)
+bool ImGui::SliderFloatActive(const char* label, float* v, float v_min, float v_max, bool is_active, const char* format, ImGuiSliderFlags flags)
 {
-    return SliderScalarActive(label, ImGuiDataType_Float, v, &v_min, &v_max, is_active, format, power);
+    return SliderScalarActive(label, ImGuiDataType_Float, v, &v_min, &v_max, is_active, format, flags);
 }
 
 bool ImGui::SliderIntActive(const char* label, int* v, int v_min, int v_max, bool is_active, const char* format)

@@ -297,7 +297,7 @@ GraphicsPipeline::GraphicsPipeline(Device* device, const GraphicsPipelineInfo& p
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = descriptorSetLayouts.size();
+    pipelineLayoutInfo.setLayoutCount = uint32_t(descriptorSetLayouts.size());
     pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
     pipelineLayoutInfo.pushConstantRangeCount = 0;
     pipelineLayoutInfo.pPushConstantRanges = nullptr;
@@ -313,7 +313,7 @@ GraphicsPipeline::GraphicsPipeline(Device* device, const GraphicsPipelineInfo& p
 
     VkGraphicsPipelineCreateInfo pipelineCreateInfo = {};
     pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    pipelineCreateInfo.stageCount = shaderStagesCreateInfo.size();
+    pipelineCreateInfo.stageCount = uint32_t(shaderStagesCreateInfo.size());
     pipelineCreateInfo.pStages = shaderStagesCreateInfo.data();
     pipelineCreateInfo.pVertexInputState = &pipelineInfo.vertexInputInfo;
     pipelineCreateInfo.pInputAssemblyState = &pipelineInfo.inputAssemblyInfo;

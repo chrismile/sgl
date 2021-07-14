@@ -602,8 +602,8 @@ ImageSampler::ImageSampler(Device* device, const ImageSamplerSettings& samplerSe
 
 ImageSampler::ImageSampler(Device* device, const ImageSamplerSettings& samplerSettings, ImagePtr image)
         : ImageSampler(
-                device, samplerSettings,
-                image->getImageSettings().mipLevels <= 1 ? 0 : image->getImageSettings().mipLevels) {
+                device, samplerSettings, float(
+                image->getImageSettings().mipLevels <= 1 ? 0 : image->getImageSettings().mipLevels)) {
 }
 
 ImageSampler::~ImageSampler() {

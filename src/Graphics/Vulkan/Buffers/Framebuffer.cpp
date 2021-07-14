@@ -39,7 +39,7 @@ Framebuffer::Framebuffer(Device* device, uint32_t width, uint32_t height, uint32
 
 void Framebuffer::build() {
     std::vector<VkImageView> attachments;
-    size_t attachmentCounter = 0;
+    uint32_t attachmentCounter = 0;
 
     std::vector<VkAttachmentDescription> attachmentDescriptions;
     attachmentDescriptions.reserve(

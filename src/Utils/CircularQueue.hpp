@@ -127,8 +127,8 @@ public:
     void resize(size_t newCapacity) {
         // Copy data to larger array.
         T* newData = new T[newCapacity];
-        int readIdx = startPointer;
-        int writeIdx = 0;
+        size_t readIdx = startPointer;
+        size_t writeIdx = 0;
         for (size_t i = 0; i < queueSize; i++) {
             newData[writeIdx] = queueData[readIdx];
             readIdx = (readIdx + 1) % queueCapacity;

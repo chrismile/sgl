@@ -35,9 +35,9 @@
 
 namespace sgl { namespace vk {
 
-struct Buffer;
+class Buffer;
 typedef std::shared_ptr<Buffer> BufferPtr;
-struct Renderer;
+class Renderer;
 
 class DLL_OBJECT TimerVk {
 public:

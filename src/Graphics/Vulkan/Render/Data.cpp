@@ -317,7 +317,7 @@ void RenderData::_updateDescriptorSets() {
 
         if (!descriptorWrites.empty()) {
             vkUpdateDescriptorSets(
-                    device->getVkDevice(), descriptorWrites.size(), descriptorWrites.data(),
+                    device->getVkDevice(), uint32_t(descriptorWrites.size()), descriptorWrites.data(),
                     0, nullptr);
         }
     }

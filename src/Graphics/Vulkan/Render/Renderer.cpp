@@ -54,9 +54,11 @@ Renderer::Renderer(Device* device, uint32_t numDescriptors) : device(device) {
             { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, numDescriptors }
     };
 
+#if VK_VERSION_1_2 && VK_HEADER_VERSION >= 162
     if (device->isDeviceExtensionSupported(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)) {
         globalPoolSizes.push_back({ VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, numDescriptors });
     }
+#endif
 
     VkDescriptorPoolCreateInfo globalPoolInfo = {};
     globalPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -126,7 +128,7 @@ Renderer::~Renderer() {
     if (!commandBuffers.empty()) {
         vkFreeCommandBuffers(
                 device->getVkDevice(), commandPool,
-                commandBuffers.size(), commandBuffers.data());
+                uint32_t(commandBuffers.size()), commandBuffers.data());
     }
     commandBuffers.clear();
 }
@@ -141,11 +143,11 @@ void Renderer::beginCommandBuffer() {
         if (!commandBuffers.empty()) {
             vkFreeCommandBuffers(
                     device->getVkDevice(), commandPool,
-                    commandBuffers.size(), commandBuffers.data());
+                    uint32_t(commandBuffers.size()), commandBuffers.data());
         }
         vk::CommandPoolType commandPoolType;
         commandPoolType.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        commandBuffers = device->allocateCommandBuffers(commandPoolType, &commandPool, numImages);
+        commandBuffers = device->allocateCommandBuffers(commandPoolType, &commandPool, uint32_t(numImages));
     }
     frameCaches.at(frameIndex).freeCameraMatrixBuffers = frameCaches.at(frameIndex).allCameraMatrixBuffers;
     frameCaches.at(frameIndex).freeMatrixBlockDescriptorSets = frameCaches.at(frameIndex).allMatrixBlockDescriptorSets;
@@ -198,7 +200,7 @@ void Renderer::render(RasterDataPtr rasterData) {
     renderPassBeginInfo.renderArea.extent = framebuffer->getExtent2D();
     if (framebuffer->getUseClear()) {
         const std::vector<VkClearValue>& clearValues = framebuffer->getVkClearValues();
-        renderPassBeginInfo.clearValueCount = clearValues.size();
+        renderPassBeginInfo.clearValueCount = uint32_t(clearValues.size());
         renderPassBeginInfo.pClearValues = clearValues.data();
     }
 
@@ -397,10 +399,10 @@ void Renderer::submitToQueue(
 
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.waitSemaphoreCount = waitSemaphoresVk.size();
+    submitInfo.waitSemaphoreCount = uint32_t(waitSemaphoresVk.size());
     submitInfo.pWaitSemaphores = waitSemaphoresVk.data();
     submitInfo.pWaitDstStageMask = waitStages.data();
-    submitInfo.signalSemaphoreCount = signalSemaphoresVk.size();
+    submitInfo.signalSemaphoreCount = uint32_t(signalSemaphoresVk.size());
     submitInfo.pSignalSemaphores = signalSemaphoresVk.data();
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;

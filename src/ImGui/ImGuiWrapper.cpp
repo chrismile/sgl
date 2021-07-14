@@ -181,7 +181,7 @@ void ImGuiWrapper::shutdown() {
         ImGui_ImplVulkan_Shutdown();
         vkFreeCommandBuffers(
                 device->getVkDevice(), commandPool,
-                imguiCommandBuffers.size(), imguiCommandBuffers.data());
+                uint32_t(imguiCommandBuffers.size()), imguiCommandBuffers.data());
     }
 #endif
     ImGui_ImplSDL2_Shutdown();
@@ -229,7 +229,7 @@ void ImGuiWrapper::onResolutionChanged() {
         if (!imguiCommandBuffers.empty()) {
             vkFreeCommandBuffers(
                     device->getVkDevice(), commandPool,
-                    imguiCommandBuffers.size(), imguiCommandBuffers.data());
+                    uint32_t(imguiCommandBuffers.size()), imguiCommandBuffers.data());
         }
         vk::CommandPoolType commandPoolType;
         commandPoolType.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
@@ -259,7 +259,7 @@ void ImGuiWrapper::renderStart() {
         initInfo.PipelineCache = VK_NULL_HANDLE;
         initInfo.DescriptorPool = imguiDescriptorPool;
         initInfo.MinImageCount = swapchain->getMinImageCount();
-        initInfo.ImageCount = swapchain->getNumImages();
+        initInfo.ImageCount = uint32_t(swapchain->getNumImages());
         initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
         initInfo.Allocator = nullptr;
         initInfo.CheckVkResultFn = checkImGuiVkResult;

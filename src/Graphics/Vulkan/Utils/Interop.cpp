@@ -29,6 +29,8 @@
 #include <Utils/File/Logfile.hpp>
 
 #ifdef _WIN32
+#include <windows.h>
+#include <vulkan/vulkan.h>
 #include <vulkan/vulkan_win32.h>
 #endif
 
@@ -126,7 +128,7 @@ void SemaphoreVkGlInterop::signalSemaphoreGl(std::vector<sgl::GeometryBufferPtr>
     for (sgl::GeometryBufferPtr& buffer : buffers) {
         buffersGl.push_back(static_cast<sgl::GeometryBufferGL*>(buffer.get())->getBuffer());
     }
-    glSignalSemaphoreEXT(semaphoreGl, buffersGl.size(), buffersGl.data(), 0, nullptr, nullptr);
+    glSignalSemaphoreEXT(semaphoreGl, GLuint(buffersGl.size()), buffersGl.data(), 0, nullptr, nullptr);
 }
 
 void SemaphoreVkGlInterop::signalSemaphoreGl(sgl::TexturePtr& texture, GLenum dstLayout) {
@@ -142,7 +144,7 @@ void SemaphoreVkGlInterop::signalSemaphoreGl(
     for (sgl::TexturePtr& texture : textures) {
         texturesGl.push_back(static_cast<sgl::TextureGL*>(texture.get())->getTexture());
     }
-    glSignalSemaphoreEXT(semaphoreGl, 0, nullptr, texturesGl.size(), texturesGl.data(), dstLayouts.data());
+    glSignalSemaphoreEXT(semaphoreGl, 0, nullptr, GLuint(texturesGl.size()), texturesGl.data(), dstLayouts.data());
 }
 
 void SemaphoreVkGlInterop::signalSemaphoreGl(
@@ -160,7 +162,8 @@ void SemaphoreVkGlInterop::signalSemaphoreGl(
         texturesGl.push_back(static_cast<sgl::TextureGL*>(texture.get())->getTexture());
     }
     glSignalSemaphoreEXT(
-            semaphoreGl, buffersGl.size(), buffersGl.data(), texturesGl.size(), texturesGl.data(), dstLayouts.data());
+            semaphoreGl, GLuint(buffersGl.size()), buffersGl.data(),
+            GLuint(texturesGl.size()), texturesGl.data(), dstLayouts.data());
 }
 
 
@@ -179,7 +182,7 @@ void SemaphoreVkGlInterop::waitSemaphoreGl(std::vector<sgl::GeometryBufferPtr>& 
     for (sgl::GeometryBufferPtr& buffer : buffers) {
         buffersGl.push_back(static_cast<sgl::GeometryBufferGL*>(buffer.get())->getBuffer());
     }
-    glWaitSemaphoreEXT(semaphoreGl, buffersGl.size(), buffersGl.data(), 0, nullptr, nullptr);
+    glWaitSemaphoreEXT(semaphoreGl, GLuint(buffersGl.size()), buffersGl.data(), 0, nullptr, nullptr);
 }
 
 void SemaphoreVkGlInterop::waitSemaphoreGl(sgl::TexturePtr& texture, GLenum srcLayout) {
@@ -195,7 +198,7 @@ void SemaphoreVkGlInterop::waitSemaphoreGl(
     for (sgl::TexturePtr& texture : textures) {
         texturesGl.push_back(static_cast<sgl::TextureGL*>(texture.get())->getTexture());
     }
-    glWaitSemaphoreEXT(semaphoreGl, 0, nullptr, texturesGl.size(), texturesGl.data(), srcLayouts.data());
+    glWaitSemaphoreEXT(semaphoreGl, 0, nullptr, GLuint(texturesGl.size()), texturesGl.data(), srcLayouts.data());
 }
 
 void SemaphoreVkGlInterop::waitSemaphoreGl(
@@ -213,7 +216,8 @@ void SemaphoreVkGlInterop::waitSemaphoreGl(
         texturesGl.push_back(static_cast<sgl::TextureGL*>(texture.get())->getTexture());
     }
     glWaitSemaphoreEXT(
-            semaphoreGl, buffersGl.size(), buffersGl.data(), texturesGl.size(), texturesGl.data(), srcLayouts.data());
+            semaphoreGl, GLuint(buffersGl.size()), buffersGl.data(),
+            GLuint(texturesGl.size()), texturesGl.data(), srcLayouts.data());
 }
 
 
@@ -319,6 +323,12 @@ bool createGlMemoryObjectFromVkDeviceMemory(
 
     glCreateMemoryObjectsEXT(1, &memoryObjectGl);
     glImportMemoryFdEXT(memoryObjectGl, sizeInBytes, GL_HANDLE_TYPE_OPAQUE_FD_EXT, fileDescriptor);
+#else
+    Logfile::get()->throwError(
+            "Error in createGlMemoryObjectFromVkDeviceMemory: External memory is only supported on Linux, Android "
+            "and Windows systems!");
+    return false;
+#endif
 
     if (!glIsMemoryObjectEXT(memoryObjectGl)) {
         Logfile::get()->throwError(
@@ -328,12 +338,6 @@ bool createGlMemoryObjectFromVkDeviceMemory(
 
     sgl::Renderer->errorCheck();
     return glGetError() == GL_NO_ERROR;
-#else
-    Logfile::get()->throwError(
-            "Error in createGlMemoryObjectFromVkDeviceMemory: External memory is only supported on Linux, Android "
-            "and Windows systems!");
-    return false;
-#endif
 }
 #endif
 

@@ -102,7 +102,7 @@ public:
 
     inline VkBuffer getVkBuffer() { return buffer; }
     inline size_t getSizeInBytes() const { return sizeInBytes; }
-    inline VkBufferUsageFlags getVkBufferUsageFlags() const { return sizeInBytes; }
+    inline VkBufferUsageFlags getVkBufferUsageFlags() const { return bufferUsageFlags; }
     inline VmaMemoryUsage getVmaMemoryUsage() const { return memoryUsage; }
 
 #ifdef SUPPORT_OPENGL

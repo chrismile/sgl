@@ -102,7 +102,7 @@ private:
 
 #ifdef SUPPORT_VULKAN
     void readBackOldestFrameVulkan();
-    uint32_t numSwapchainImages = 1;
+    size_t numSwapchainImages = 1;
     vk::Renderer* renderer = nullptr;
     //std::vector<vk::BufferPtr> readBackBuffersVk;
     std::vector<vk::ImagePtr> readBackImages;

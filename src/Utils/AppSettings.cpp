@@ -54,20 +54,21 @@
 #include <Graphics/OpenGL/TextureManager.hpp>
 #include <Graphics/OpenGL/SystemGL.hpp>
 #endif
+
 #ifdef SUPPORT_VULKAN
 #include <Graphics/Scene/Camera.hpp>
 #include <Graphics/Vulkan/Utils/Instance.hpp>
 #include <Graphics/Vulkan/Utils/Swapchain.hpp>
 #include <Graphics/Vulkan/Utils/Device.hpp>
 #include <Graphics/Vulkan/Shader/ShaderManager.hpp>
-#ifdef _WIN32
-#include <vulkan/vulkan_win32.h>
-#endif
 #endif
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <windows.h>
 #include <VersionHelpers.h>
+#ifdef SUPPORT_VULKAN
+#include <vulkan/vulkan_win32.h>
+#endif
 #endif
 
 namespace sgl {

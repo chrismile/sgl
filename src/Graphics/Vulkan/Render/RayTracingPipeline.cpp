@@ -43,7 +43,7 @@ RayTracingPipeline::RayTracingPipeline(Device* device, const RayTracingPipelineI
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = descriptorSetLayouts.size();
+    pipelineLayoutInfo.setLayoutCount = uint32_t(descriptorSetLayouts.size());
     pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
     pipelineLayoutInfo.pushConstantRangeCount = 0;
     pipelineLayoutInfo.pPushConstantRanges = nullptr;
@@ -62,6 +62,7 @@ RayTracingPipeline::RayTracingPipeline(Device* device, const RayTracingPipelineI
 
     const std::vector<VkPipelineShaderStageCreateInfo>& shaderStages = pipelineInfo.shaderStages->getVkShaderStages();
 
+#if VK_VERSION_1_2 && VK_HEADER_VERSION >= 162
     std::vector<VkRayTracingShaderGroupCreateInfoKHR> shaderGroups;
 
     VkRayTracingPipelineCreateInfoKHR pipelineCreateInfo = {};
@@ -141,6 +142,7 @@ RayTracingPipeline::RayTracingPipeline(Device* device, const RayTracingPipelineI
     bufferDeviceAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
     bufferDeviceAddressInfo.buffer = VK_NULL_HANDLE; // TODO
     VkDeviceAddress vertexBufferDeviceAddress = vkGetBufferDeviceAddress(device->getVkDevice(), &bufferDeviceAddressInfo);
+#endif
 
     // TODO: Do the same for the index buffer.
     /*VkAccelerationStructureGeometryTrianglesDataKHR trianglesData = {};
