@@ -53,7 +53,7 @@ typedef std::shared_ptr<GeometryBuffer> GeometryBufferPtr;
 class Texture;
 typedef std::shared_ptr<Texture> TexturePtr;
 
-class SemaphoreVkGlInterop : public vk::Semaphore {
+class DLL_OBJECT SemaphoreVkGlInterop : public vk::Semaphore {
 public:
     explicit SemaphoreVkGlInterop(sgl::vk::Device* device);
     ~SemaphoreVkGlInterop();
@@ -116,7 +116,7 @@ typedef std::shared_ptr<SemaphoreVkGlInterop> SemaphoreVkGlInteropPtr;
  * @param memoryUsage The VMA memory usage enum.
  * @return A VkMemoryPropertyFlags bit mask.
  */
-VkMemoryPropertyFlags convertVmaMemoryUsageToVkMemoryPropertyFlags(VmaMemoryUsage memoryUsage);
+DLL_OBJECT VkMemoryPropertyFlags convertVmaMemoryUsageToVkMemoryPropertyFlags(VmaMemoryUsage memoryUsage);
 
 #ifdef SUPPORT_OPENGL
 /**
@@ -124,7 +124,7 @@ VkMemoryPropertyFlags convertVmaMemoryUsageToVkMemoryPropertyFlags(VmaMemoryUsag
  * @param physicalDevice The physical Vulkan device.
  * @return True if the device is compatible with the currently used OpenGL server.
  */
-bool isDeviceCompatibleWithOpenGl(VkPhysicalDevice physicalDevice);
+DLL_OBJECT bool isDeviceCompatibleWithOpenGl(VkPhysicalDevice physicalDevice);
 
 /**
  * Creates an OpenGL memory object from the external Vulkan memory.
@@ -134,7 +134,7 @@ bool isDeviceCompatibleWithOpenGl(VkPhysicalDevice physicalDevice);
  * @param sizeInBytes The size of the memory in bytes.
  * @return Whether the OpenGL memory object could be created successfully.
  */
-bool createGlMemoryObjectFromVkDeviceMemory(
+DLL_OBJECT bool createGlMemoryObjectFromVkDeviceMemory(
         GLuint& memoryObjectGl, VkDevice device, VkDeviceMemory deviceMemory, size_t sizeInBytes);
 
 }

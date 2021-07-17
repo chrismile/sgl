@@ -44,7 +44,7 @@ struct DLL_OBJECT SwapchainSupportInfo {
     std::vector<VkSurfaceFormatKHR> formats;
     std::vector<VkPresentModeKHR> presentModes;
 };
-SwapchainSupportInfo querySwapchainSupportInfo(VkPhysicalDevice device, VkSurfaceKHR surface);
+DLL_OBJECT SwapchainSupportInfo querySwapchainSupportInfo(VkPhysicalDevice device, VkSurfaceKHR surface);
 
 class DLL_OBJECT Swapchain {
 public:

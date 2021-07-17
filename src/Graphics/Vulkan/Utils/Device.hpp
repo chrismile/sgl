@@ -43,7 +43,7 @@ namespace sgl { namespace vk {
 /**
  * Different types of command pools are automatically allocated for some often used types of command buffers.
  */
-struct CommandPoolType {
+struct DLL_OBJECT CommandPoolType {
     VkCommandPoolCreateFlags flags = 0;
     uint32_t queueFamilyIndex = 0xFFFFFFFF; // 0xFFFFFFFF encodes standard (graphics queue).
 

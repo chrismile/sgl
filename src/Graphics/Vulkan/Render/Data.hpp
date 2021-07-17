@@ -59,12 +59,12 @@ class RayTracingPipeline;
 typedef std::shared_ptr<RayTracingPipeline> RayTracingPipelinePtr;
 class Renderer;
 
-class Data {
+class DLL_OBJECT Data {
 public:
     virtual ~Data() {}
 };
 
-class ComputeData : public Data {
+class DLL_OBJECT ComputeData : public Data {
 public:
     ComputeData(ComputePipelinePtr& computePipeline);
 
@@ -78,7 +78,7 @@ class RenderData;
 typedef std::shared_ptr<RenderData> RenderDataPtr;
 typedef uint32_t ListenerToken;
 
-class RenderData : public Data {
+class DLL_OBJECT RenderData : public Data {
     friend class Renderer;
 public:
     RenderData(Renderer* renderer, ShaderStagesPtr& shaderStages);
@@ -156,7 +156,7 @@ private:
     std::vector<FrameData> frameDataList;
 };
 
-class RasterData : public RenderData {
+class DLL_OBJECT RasterData : public RenderData {
 public:
     RasterData(Renderer* renderer, GraphicsPipelinePtr& graphicsPipeline);
     void setIndexBuffer(BufferPtr& buffer, VkIndexType indexType = VK_INDEX_TYPE_UINT32);
@@ -190,7 +190,7 @@ protected:
     std::vector<VkBuffer> vulkanVertexBuffers;
 };
 
-class RayTracingData : public RenderData {
+class DLL_OBJECT RayTracingData : public RenderData {
 public:
     RayTracingData(Renderer* renderer, RayTracingPipelinePtr& rayTracingPipeline);
 

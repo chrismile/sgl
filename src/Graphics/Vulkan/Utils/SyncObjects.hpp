@@ -39,7 +39,7 @@ typedef std::shared_ptr<Semaphore> SemaphorePtr;
 class Fence;
 typedef std::shared_ptr<Fence> FencePtr;
 
-class Semaphore {
+class DLL_OBJECT Semaphore {
 public:
     explicit Semaphore(Device* device, VkSemaphoreCreateFlags semaphoreCreateFlags = 0);
     ~Semaphore();
@@ -57,7 +57,7 @@ protected:
     VkSemaphore semaphoreVk = VK_NULL_HANDLE;
 };
 
-class Fence {
+class DLL_OBJECT Fence {
 public:
     explicit Fence(Device* device, VkFenceCreateFlags fenceCreateFlags = VK_FENCE_CREATE_SIGNALED_BIT);
     ~Fence();

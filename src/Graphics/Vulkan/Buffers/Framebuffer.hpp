@@ -39,7 +39,7 @@ class Device;
 class ImageView;
 typedef std::shared_ptr<ImageView> ImageViewPtr;
 
-struct AttachmentState {
+struct DLL_OBJECT AttachmentState {
     static AttachmentState standardColorAttachment() {
         AttachmentState attachmentState;
         attachmentState.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
