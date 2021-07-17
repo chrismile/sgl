@@ -30,10 +30,7 @@
 #include <cstring>
 #include <string>
 #include <vector>
-#include <map>
-#include <fstream>
 #include <streambuf>
-#include <sstream>
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string.hpp>

@@ -35,6 +35,7 @@
 #include <vulkan/vulkan.h>
 
 #include <Utils/Convert.hpp>
+#include <Utils/AppSettings.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
 
@@ -45,7 +46,7 @@ namespace sgl { namespace vk {
 
 ShaderManagerVk::ShaderManagerVk(Device* device) : device(device) {
     shaderCompiler = new shaderc::Compiler;
-    pathPrefix = "./Data/Shaders/";
+    pathPrefix = sgl::AppSettings::get()->getDataDirectory() + "Shaders/";
     indexFiles(pathPrefix);
 
     // Was a file called "GlobalDefinesVulkan.glsl" found? If yes, store its content in the variable globalDefines.

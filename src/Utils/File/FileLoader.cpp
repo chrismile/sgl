@@ -53,9 +53,9 @@ bool loadFileFromSource(
     isBinaryFile = true;
 #endif
 #ifdef _MSC_VER
-    FILE* file = fopen(filename.c_str(), isBinaryFile ? "rb" : "r");
+    FILE* file = fopen(filename.c_str(), "rb");
 #else
-    FILE* file = fopen64(filename.c_str(), isBinaryFile ? "rb" : "r");
+    FILE* file = fopen64(filename.c_str(), "rb");
 #endif
     if (!file) {
         sgl::Logfile::get()->writeError(

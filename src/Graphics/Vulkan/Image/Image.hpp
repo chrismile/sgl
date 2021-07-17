@@ -30,6 +30,7 @@
 #define SGL_IMAGE_HPP
 
 #include <memory>
+#include <algorithm>
 #include <cmath>
 
 #include <vulkan/vulkan.h>
