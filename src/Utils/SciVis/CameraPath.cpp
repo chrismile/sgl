@@ -81,8 +81,7 @@ void CameraPath::fromCirclePath(
         glm::vec3 cameraPos =
                 glm::vec3(cos(angle)*pulseRadius, 0.0f, sin(angle)*pulseRadius)
                 * glm::length(sceneBoundingBox.getExtent()) + sceneBoundingBox.getCenter() + centerOffset;
-        controlPoints.push_back(
-                ControlPoint(time, cameraPos.x, cameraPos.y, cameraPos.z, sgl::PI + angle, 0.0f));
+        controlPoints.emplace_back(time, cameraPos.x, cameraPos.y, cameraPos.z, sgl::PI + angle, 0.0f);
     }
     update(0.0f);
 }
