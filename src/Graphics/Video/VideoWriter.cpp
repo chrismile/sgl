@@ -86,11 +86,20 @@ void VideoWriter::openFile(const std::string& filename, int framerate) {
 }
 
 VideoWriter::~VideoWriter() {
-    if (useAsyncCopy) {
-        while (!isReadBackBufferEmpty()) {
-            readBackOldestFrame();
+    if (AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
+        if (useAsyncCopy) {
+            while (!isReadBackBufferEmpty()) {
+                readBackOldestFrame();
+            }
         }
     }
+#ifdef SUPPORT_VULKAN
+    if (AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+        while (queueSize > 0) {
+            readBackOldestFrameVulkan();
+        }
+    }
+#endif
 
     if (framebuffer != NULL) {
 #ifdef __USE_ISOC11

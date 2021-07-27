@@ -85,4 +85,24 @@ Fence::~Fence() {
     vkDestroyFence(device->getVkDevice(), fence, nullptr);
 }
 
+bool Fence::wait(uint64_t timeoutNanoseconds) {
+    VkResult result = vkWaitForFences(
+            device->getVkDevice(), 1, &fence, VK_TRUE, timeoutNanoseconds);
+    if (result == VK_SUCCESS) {
+        return true;
+    } else if (result == VK_TIMEOUT) {
+        return false;
+    } else {
+        Logfile::get()->throwError("Error in Fence::wait: vkWaitForFences exited with an error code.");
+        return false;
+    }
+}
+
+void Fence::reset() {
+    VkResult result = vkResetFences(device->getVkDevice(), 1, &fence);
+    if (result != VK_SUCCESS) {
+        Logfile::get()->throwError("Error in Fence::reset: vkResetFences exited with an error code.");
+    }
+}
+
 }}

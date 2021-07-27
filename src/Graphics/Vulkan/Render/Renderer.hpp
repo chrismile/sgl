@@ -45,6 +45,8 @@ class Fence;
 typedef std::shared_ptr<Fence> FencePtr;
 class Buffer;
 typedef std::shared_ptr<Buffer> BufferPtr;
+class Framebuffer;
+typedef std::shared_ptr<Framebuffer> FramebufferPtr;
 class ComputeData;
 typedef std::shared_ptr<ComputeData> ComputeDataPtr;
 class RasterData;
@@ -118,8 +120,9 @@ private:
 
     // Rasterizer state.
     GraphicsPipelinePtr graphicsPipeline;
-    VkClearColorValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+    VkClearColorValue clearColor = { { 0.0f, 0.0f, 0.0f, 1.0f } };
     VkClearDepthStencilValue clearDepthStencil = { 1.0f, 0 };
+    FramebufferPtr lastFramebuffer;
 
     // Compute state.
     ComputePipelinePtr computePipeline;

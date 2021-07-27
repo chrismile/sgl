@@ -277,8 +277,8 @@ void Image::blit(ImagePtr& destImage, VkCommandBuffer commandBuffer) {
         commandBuffer = device->beginSingleTimeCommands();
     }
 
-    destImage->transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-    transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    destImage->transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
     VkImageBlit blit{};
     blit.srcOffsets[0] = { 0, 0, 0 };

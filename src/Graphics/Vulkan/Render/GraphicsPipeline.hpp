@@ -105,7 +105,7 @@ public:
     void reset();
 
     /// Sets the specified framebuffer (REQUIRED).
-    void setFramebuffer(FramebufferPtr framebuffer);
+    void setFramebuffer(FramebufferPtr framebuffer, uint32_t subpassIndex = 0);
 
     void setBlendMode(BlendMode blendMode);
     void setInputAssemblyTopology(PrimitiveTopology primitiveTopology, bool primitiveRestartEnable = false);
@@ -155,6 +155,7 @@ public:
 protected:
     ShaderStagesPtr shaderStages;
     FramebufferPtr framebuffer;
+    uint32_t subpassIndex = 0;
     VkRenderPassCreateInfo renderPassInfo = {};
 
     std::vector<VkVertexInputBindingDescription> vertexInputBindingDescriptions;
@@ -179,6 +180,7 @@ public:
     GraphicsPipeline(Device* device, const GraphicsPipelineInfo& pipelineInfo);
 
     inline const FramebufferPtr& getFramebuffer() const { return framebuffer; }
+    inline uint32_t getSubpassIndex() const { return subpassIndex; }
 
     // Used by RasterData to make deduce number of vertices from buffer byte size.
     inline const std::vector<VkVertexInputBindingDescription>& getVertexInputBindingDescriptions() const {
@@ -190,6 +192,7 @@ public:
 
 protected:
     FramebufferPtr framebuffer;
+    uint32_t subpassIndex = 0;
 
     // Used by RasterData to make deduce number of vertices from buffer byte size.
     std::vector<VkVertexInputBindingDescription> vertexInputBindingDescriptions;

@@ -62,6 +62,15 @@ public:
     explicit Fence(Device* device, VkFenceCreateFlags fenceCreateFlags = VK_FENCE_CREATE_SIGNALED_BIT);
     ~Fence();
 
+    /**
+     * Waits for the fence to become signaled.
+     * @param timeoutNanoseconds The number of nanoseconds to wait before returning if the fence doesn't become
+     * signaled.
+     * @return True if the fence became signaled, and false if a timeout occurred.
+     */
+    bool wait(uint64_t timeoutNanoseconds);
+    void reset();
+
     inline VkFence getVkFence() { return fence; }
 
 private:

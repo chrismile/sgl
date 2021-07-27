@@ -108,10 +108,15 @@ protected:
 #endif
 #ifdef SUPPORT_VULKAN
     // Off-screen rendering
-    sgl::vk::TexturePtr sceneTextureVk;
+    sgl::vk::TexturePtr sceneTextureVk; ///< Can be 8 or 16 bits per pixel.
     sgl::vk::TexturePtr sceneDepthTextureVk;
+    sgl::vk::TexturePtr compositedTextureVk; ///< The final RGBA8 texture.
     sgl::vk::RasterDataPtr sceneTextureBlitRenderData;
     sgl::vk::RasterDataPtr sceneTextureGammaCorrectionRenderData;
+    sgl::vk::RasterDataPtr compositedTextureBlitRenderData;
+
+    vk::ImagePtr readBackImage; ///< For reading back screenshots from the GPU.
+
     sgl::vk::Device* device = nullptr;
 #endif
 

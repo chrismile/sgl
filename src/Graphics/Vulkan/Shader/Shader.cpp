@@ -96,21 +96,29 @@ void ShaderModule::createReflectData(const std::vector<uint32_t>& spirvCode) {
 
     //descriptorSetsInfo.resize(numDescriptorSets);
     for (uint32_t descSetIdx = 0; descSetIdx < numDescriptorSets; ++descSetIdx) {
-        auto p_set = descriptorSets.at(descSetIdx);
+        SpvReflectDescriptorSet* reflectDescriptorSet = descriptorSets.at(descSetIdx);
 
         std::vector<DescriptorInfo> descriptorsInfo;
-        descriptorsInfo.reserve(p_set->binding_count);
-        for (uint32_t bindingIdx = 0; bindingIdx < p_set->binding_count; bindingIdx++) {
+        descriptorsInfo.reserve(reflectDescriptorSet->binding_count);
+        for (uint32_t bindingIdx = 0; bindingIdx < reflectDescriptorSet->binding_count; bindingIdx++) {
             DescriptorInfo descriptorInfo;
-            descriptorInfo.binding = p_set->bindings[bindingIdx]->binding;
-            descriptorInfo.type = VkDescriptorType(p_set->bindings[bindingIdx]->descriptor_type);
-            descriptorInfo.name = p_set->bindings[bindingIdx]->name;
-            descriptorInfo.count = p_set->bindings[bindingIdx]->count;
+            descriptorInfo.binding = reflectDescriptorSet->bindings[bindingIdx]->binding;
+            descriptorInfo.type = VkDescriptorType(reflectDescriptorSet->bindings[bindingIdx]->descriptor_type);
+            descriptorInfo.name = reflectDescriptorSet->bindings[bindingIdx]->name;
+            descriptorInfo.count = reflectDescriptorSet->bindings[bindingIdx]->count;
             descriptorInfo.shaderStageFlags = uint32_t(shaderModuleType);
+            descriptorInfo.readOnly = true;
             descriptorsInfo.push_back(descriptorInfo);
+
+            if (reflectDescriptorSet->bindings[bindingIdx]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE
+                    || reflectDescriptorSet->bindings[bindingIdx]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER
+                    || reflectDescriptorSet->bindings[bindingIdx]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER
+                    || reflectDescriptorSet->bindings[bindingIdx]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) {
+                descriptorInfo.readOnly = reflectDescriptorSet->bindings[0]->type_description->decoration_flags & SPV_REFLECT_DECORATION_NON_WRITABLE;
+            }
         }
 
-        descriptorSetsInfo.insert(std::make_pair(p_set->set, descriptorsInfo));
+        descriptorSetsInfo.insert(std::make_pair(reflectDescriptorSet->set, descriptorsInfo));
     }
 
     spvReflectDestroyShaderModule(&module);

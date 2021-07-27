@@ -131,6 +131,17 @@ public:
     inline VkDescriptorSet getVkDescriptorSet(uint32_t frameIdx) { return frameDataList.at(frameIdx).descriptorSet; }
     VkDescriptorSet getVkDescriptorSet();
 
+
+    struct FrameData {
+        std::map<uint32_t, BufferPtr> buffers;
+        std::map<uint32_t, BufferViewPtr> bufferViews;
+        std::map<uint32_t, ImageViewPtr> imageViews;
+        std::map<uint32_t, ImageSamplerPtr> imageSamplers;
+        std::map<uint32_t, VkAccelerationStructureKHR> accelerationStructures; // TODO
+        VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
+    };
+    inline FrameData& getFrameData(uint32_t frameIdx) { return frameDataList.at(frameIdx); }
+
 private:
     void _updateDescriptorSets();
     ListenerToken swapchainRecreatedEventListenerToken;
@@ -145,14 +156,6 @@ private:
     std::map<uint32_t, bool> imageViewsStatic;
     std::map<uint32_t, bool> accelerationStructuresStatic;
 
-    struct FrameData {
-        std::map<uint32_t, BufferPtr> buffers;
-        std::map<uint32_t, BufferViewPtr> bufferViews;
-        std::map<uint32_t, ImageViewPtr> imageViews;
-        std::map<uint32_t, ImageSamplerPtr> imageSamplers;
-        std::map<uint32_t, VkAccelerationStructureKHR> accelerationStructures; // TODO
-        VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
-    };
     std::vector<FrameData> frameDataList;
 };
 

@@ -67,6 +67,7 @@ struct DLL_OBJECT DescriptorInfo {
     std::string name;
     VkShaderStageFlags shaderStageFlags;
     uint32_t count;
+    bool readOnly;
 };
 //struct DescriptorSetInfo {
 //    int descriptorSetIndex;

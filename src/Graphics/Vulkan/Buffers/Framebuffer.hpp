@@ -139,6 +139,7 @@ public:
      */
     void build();
 
+    // Get size of the framebuffer attachments.
     inline uint32_t getWidth() const { return width; }
     inline uint32_t getHeight() const { return height; }
     inline uint32_t getLayers() const { return layers; }
@@ -149,6 +150,9 @@ public:
 
     /// Returns the number of multisamples used by the attachments.
     inline VkSampleCountFlagBits getSampleCount() { if (framebuffer == VK_NULL_HANDLE) build(); return sampleCount; }
+
+    /// Returns the number of subpasses.
+    inline uint32_t getNumSubpasses() { return 1; }
 
     inline VkFramebuffer getVkFramebuffer() { if (framebuffer == VK_NULL_HANDLE) build(); return framebuffer; }
     inline VkRenderPass getVkRenderPass() { if (renderPass == VK_NULL_HANDLE) build(); return renderPass; }

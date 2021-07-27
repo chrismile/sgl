@@ -44,6 +44,8 @@
 #include <Graphics/Vulkan/Utils/Swapchain.hpp>
 #include <Graphics/Vulkan/Image/Image.hpp>
 #include <Graphics/Vulkan/Render/Renderer.hpp>
+#include <Graphics/Vulkan/Render/Data.hpp>
+#include <Graphics/Vulkan/Render/GraphicsPipeline.hpp>
 #endif
 
 #include <ImGui/ImGuiWrapper.hpp>
@@ -121,6 +123,47 @@ SciVisApp::SciVisApp(float fovy)
 
     fpsArray.resize(16, float(refreshRate));
     framerateSmoother = FramerateSmoother(1);
+
+#ifdef SUPPORT_VULKAN
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+        // TODO
+        /*sgl::vk::ShaderStagesPtr shaderStages = sgl::vk::ShaderManager->getShaderStages(
+                {"TestShader.Vertex", "TestShader.Fragment"});
+
+        sgl::Window* window = sgl::AppSettings::get()->getMainWindow();
+        sgl::vk::FramebufferPtr framebuffer(new sgl::vk::Framebuffer(device, window->getWidth(), window->getHeight()));
+        framebuffer->setColorAttachment(
+                sceneTextureVk->getImageView(), 0, { .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR });
+        framebuffer->setDepthStencilAttachment(
+                sceneDepthTextureVk->getImageView(), {
+                        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                        .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+                });
+
+        std::vector<glm::vec3> vertexPositions = {
+                {-1.0f, -1.0f, 0.0f},
+                {1.0f, -1.0f, 0.0f},
+                {1.0f, 1.0f, 0.0f},
+                {-1.0f, -1.0f, 0.0f},
+                {1.0f, 1.0f, 0.0f},
+                {-1.0f, 1.0f, 0.0f},
+        };
+        sgl::vk::BufferPtr vertexBuffer(new sgl::vk::Buffer(
+                device, vertexPositions.size() * sizeof(glm::vec3), vertexPositions.data(),
+                VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                VMA_MEMORY_USAGE_GPU_ONLY));
+
+        sgl::vk::GraphicsPipelineInfo graphicsPipelineInfo(shaderStages);
+        graphicsPipelineInfo.setFramebuffer(framebuffer);
+        graphicsPipelineInfo.setVertexBufferBinding(0, sizeof(glm::vec3));
+        graphicsPipelineInfo.setInputAttributeDescription(0, 0, "vertexPosition");
+
+        sgl::vk::GraphicsPipelinePtr graphicsPipeline(new sgl::vk::GraphicsPipeline(device, graphicsPipelineInfo));
+        sgl::vk::RasterDataPtr renderData = std::make_shared<sgl::vk::RasterData>(rendererVk, graphicsPipeline);
+        renderData->setVertexBuffer(vertexBuffer, "vertexPosition");*/
+    }
+#endif
 }
 
 SciVisApp::~SciVisApp() {
@@ -169,6 +212,15 @@ void SciVisApp::createSceneFramebuffer() {
         sceneDepthTextureVk = std::make_shared<sgl::vk::Texture>(
                 device, imageSettings, sgl::vk::ImageSamplerSettings(),
                 VK_IMAGE_ASPECT_DEPTH_BIT);
+
+        vk::ImageSettings imageSettingsReadBack;
+        imageSettingsReadBack.width = width;
+        imageSettingsReadBack.width = height;
+        imageSettingsReadBack.format = VK_FORMAT_R8G8B8A8_UINT;
+        imageSettingsReadBack.tiling = VK_IMAGE_TILING_LINEAR;
+        imageSettingsReadBack.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        imageSettingsReadBack.memoryUsage = VMA_MEMORY_USAGE_GPU_TO_CPU;
+        readBackImage = vk::ImagePtr(new vk::Image(device, imageSettingsReadBack));
     }
 #endif
 }
@@ -208,6 +260,14 @@ void SciVisApp::saveScreenshot(const std::string &filename) {
 #ifdef SUPPORT_OPENGL
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
         glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, bitmap->getPixels());
+    }
+#endif
+#ifdef SUPPORT_VULKAN
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+        readBackImage->blit(readBackImage); //< Synchronous operation (suboptimal).
+        uint8_t* mappedData = reinterpret_cast<uint8_t*>(readBackImage->mapMemory());
+        memcpy(bitmap->getPixels(), mappedData, width * height * 4);
+        readBackImage->unmapMemory();
     }
 #endif
 
@@ -327,41 +387,10 @@ void SciVisApp::postRender() {
 
 #ifdef SUPPORT_VULKAN
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
-        rendererVk->setProjectionMatrix(sgl::matrixIdentity());
-        rendererVk->setViewMatrix(sgl::matrixIdentity());
-        rendererVk->setModelMatrix(sgl::matrixIdentity());
-
-        if (screenshot && screenshotTransparentBackground) {
-            if (useLinearRGB) {
-                sgl::Renderer->blitTexture(
-                        sceneTexture, sgl::AABB2(glm::vec2(-1.0f, -1.0f), glm::vec2(1.0f, 1.0f)),
-                        gammaCorrectionShader);
-            } else {
-                sgl::Renderer->blitTexture(
-                        sceneTexture, sgl::AABB2(glm::vec2(-1.0f, -1.0f), glm::vec2(1.0f, 1.0f)));
-            }
-
-            if (!uiOnScreenshot) {
-                printNow = true;
-                saveScreenshot(
-                        saveDirectoryScreenshots + saveFilenameScreenshots
-                        + "_" + sgl::toString(screenshotNumber++) + ".png");
-                printNow = false;
-            }
-
-            clearColor.setA(255);
-            glEnable(GL_BLEND);
-            glBlendEquation(GL_FUNC_ADD);
-            glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
-            reRender = true;
-        }
-
         if (useLinearRGB) {
-            // TODO
-            //rendererVk->blitTexture(sceneTexture, gammaCorrectionShader);
+            rendererVk->render(sceneTextureGammaCorrectionRenderData);
         } else {
-            sgl::Renderer->blitTexture(
-                    sceneTexture, sgl::AABB2(glm::vec2(-1.0f, -1.0f), glm::vec2(1.0f, 1.0f)));
+            rendererVk->render(sceneTextureBlitRenderData);
         }
     }
 #endif
@@ -376,13 +405,31 @@ void SciVisApp::postRender() {
 
     // Video recording enabled?
     if (!uiOnScreenshot && recording) {
-        videoWriter->pushWindowFrame();
+#ifdef SUPPORT_OPENGL
+        if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
+            videoWriter->pushWindowFrame();
+        }
+#endif
+#ifdef SUPPORT_VULKAN
+        if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+            videoWriter->pushFramebufferImage(compositedTextureVk->getImage());
+        }
+#endif
     }
 
     renderGui();
 
     if (uiOnScreenshot && recording) {
-        videoWriter->pushWindowFrame();
+#ifdef SUPPORT_OPENGL
+        if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
+            videoWriter->pushWindowFrame();
+        }
+#endif
+#ifdef SUPPORT_VULKAN
+        if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+            videoWriter->pushFramebufferImage(compositedTextureVk->getImage());
+        }
+#endif
     }
 
     if (uiOnScreenshot && screenshot) {
@@ -392,6 +439,12 @@ void SciVisApp::postRender() {
                 + "_" + sgl::toString(screenshotNumber++) + ".png");
         printNow = false;
     }
+
+#ifdef SUPPORT_VULKAN
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+        rendererVk->render(compositedTextureBlitRenderData);
+    }
+#endif
 }
 
 void SciVisApp::renderGui() {
@@ -473,8 +526,13 @@ void SciVisApp::renderSceneSettingsGuiPost() {
         saveScreenshot(
                 saveDirectoryScreenshots + saveFilenameScreenshots
                 + "_" + sgl::toString(screenshotNumber++) + ".png");
-    } ImGui::SameLine();
-    ImGui::Checkbox("Transparent Background", &screenshotTransparentBackground);
+    }
+
+    // Transparent backgrounds not supported in Vulkan so far.
+    if (AppSettings::get()->getRenderSystem() != RenderSystem::VULKAN) {
+        ImGui::SameLine();
+        ImGui::Checkbox("Transparent Background", &screenshotTransparentBackground);
+    }
 
     ImGui::Separator();
 
@@ -496,7 +554,8 @@ void SciVisApp::renderSceneSettingsGuiPost() {
 
         if (startRecording) {
             sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
-            if (useRecordingResolution && window->getWindowResolution() != recordingResolution) {
+            if (useRecordingResolution && window->getWindowResolution() != recordingResolution
+                    && !window->isFullscreen()) {
                 window->setWindowSize(recordingResolution.x, recordingResolution.y);
             }
 

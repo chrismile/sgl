@@ -112,8 +112,9 @@ void GraphicsPipelineInfo::reset() {
     colorBlendInfo.blendConstants[3] = 0.0f;
 }
 
-void GraphicsPipelineInfo::setFramebuffer(FramebufferPtr framebuffer) {
+void GraphicsPipelineInfo::setFramebuffer(FramebufferPtr framebuffer, uint32_t subpassIndex) {
     this->framebuffer = framebuffer;
+    this->subpassIndex = subpassIndex;
 
     multisamplingInfo.rasterizationSamples = framebuffer->getSampleCount();
 
@@ -289,7 +290,8 @@ void GraphicsPipelineInfo::setInputAttributeDescription(
 
 
 GraphicsPipeline::GraphicsPipeline(Device* device, const GraphicsPipelineInfo& pipelineInfo)
-        : Pipeline(device, pipelineInfo.shaderStages), framebuffer(pipelineInfo.framebuffer),
+        : Pipeline(device, pipelineInfo.shaderStages),
+          framebuffer(pipelineInfo.framebuffer), subpassIndex(pipelineInfo.subpassIndex),
           vertexInputBindingDescriptions(pipelineInfo.vertexInputBindingDescriptions),
           vertexInputAttributeDescriptions(pipelineInfo.vertexInputAttributeDescriptions) {
     const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts =
@@ -327,7 +329,7 @@ GraphicsPipeline::GraphicsPipeline(Device* device, const GraphicsPipelineInfo& p
     pipelineCreateInfo.pDynamicState = nullptr;
     pipelineCreateInfo.layout = pipelineLayout;
     pipelineCreateInfo.renderPass = framebuffer->getVkRenderPass();
-    pipelineCreateInfo.subpass = 0;
+    pipelineCreateInfo.subpass = subpassIndex;
     pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
     pipelineCreateInfo.basePipelineIndex = -1;
 

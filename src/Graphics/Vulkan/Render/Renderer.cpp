@@ -172,6 +172,7 @@ VkCommandBuffer Renderer::endCommandBuffer() {
                 "Error in Renderer::beginCommandBuffer: Could not record a command buffer.");
     }
     graphicsPipeline = GraphicsPipelinePtr();
+    lastFramebuffer = FramebufferPtr();
 
     return commandBuffer;
 }
@@ -185,6 +186,19 @@ void Renderer::render(RasterDataPtr rasterData) {
     }
 
     const FramebufferPtr& framebuffer = graphicsPipeline->getFramebuffer();
+    uint32_t numSubpasses = framebuffer->getNumSubpasses();
+    uint32_t subpassIndex = newGraphicsPipeline->getSubpassIndex();
+    bool isFirstSubpass = subpassIndex == 0;
+    bool isLastSubpass = subpassIndex == numSubpasses - 1;
+
+    if (numSubpasses > 1 && !isFirstSubpass && !isLastSubpass && lastFramebuffer != framebuffer) {
+        Logfile::get()->throwError(
+                "Error in Renderer::render: The used framebuffer changed before having reached the last subpass!");
+    }
+    if (subpassIndex >= numSubpasses) {
+        Logfile::get()->throwError(
+                "Error in Renderer::render: subpassIndex >= numSubpasses!");
+    }
 
     if (updateMatrixBlock() || recordingCommandBufferStarted) {
         vkCmdBindDescriptorSets(
@@ -192,20 +206,27 @@ void Renderer::render(RasterDataPtr rasterData) {
                 1, 1, &matrixBlockDescriptorSet, 0, nullptr);
     }
 
-    VkRenderPassBeginInfo renderPassBeginInfo = {};
-    renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassBeginInfo.renderPass = framebuffer->getVkRenderPass();
-    renderPassBeginInfo.framebuffer = framebuffer->getVkFramebuffer();
-    renderPassBeginInfo.renderArea.offset = {0, 0};
-    renderPassBeginInfo.renderArea.extent = framebuffer->getExtent2D();
-    if (framebuffer->getUseClear()) {
-        const std::vector<VkClearValue>& clearValues = framebuffer->getVkClearValues();
-        renderPassBeginInfo.clearValueCount = uint32_t(clearValues.size());
-        renderPassBeginInfo.pClearValues = clearValues.data();
+    if (isFirstSubpass) {
+        VkRenderPassBeginInfo renderPassBeginInfo = {};
+        renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        renderPassBeginInfo.renderPass = framebuffer->getVkRenderPass();
+        renderPassBeginInfo.framebuffer = framebuffer->getVkFramebuffer();
+        renderPassBeginInfo.renderArea.offset = {0, 0};
+        renderPassBeginInfo.renderArea.extent = framebuffer->getExtent2D();
+        if (framebuffer->getUseClear()) {
+            const std::vector<VkClearValue>& clearValues = framebuffer->getVkClearValues();
+            renderPassBeginInfo.clearValueCount = uint32_t(clearValues.size());
+            renderPassBeginInfo.pClearValues = clearValues.data();
+        }
+
+        // VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS
+        vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
     }
 
-    // VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS
-    vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+    if (!isFirstSubpass && numSubpasses > 1) {
+        vkCmdNextSubpass(commandBuffer, VK_SUBPASS_CONTENTS_INLINE);
+    }
+
     if (isNewPipeline) {
         vkCmdBindPipeline(
                 commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -239,7 +260,10 @@ void Renderer::render(RasterDataPtr rasterData) {
                 static_cast<uint32_t>(rasterData->getNumInstances()), 0, 0);
     }
 
-    vkCmdEndRenderPass(commandBuffer);
+    if (isLastSubpass) {
+        vkCmdEndRenderPass(commandBuffer);
+    }
+    lastFramebuffer = framebuffer;
 }
 
 void Renderer::setModelMatrix(const glm::mat4 &matrix) {
