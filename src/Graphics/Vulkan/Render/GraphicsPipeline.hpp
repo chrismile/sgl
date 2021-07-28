@@ -57,16 +57,13 @@ typedef std::shared_ptr<ShaderStages> ShaderStagesPtr;
 class Framebuffer;
 typedef std::shared_ptr<Framebuffer> FramebufferPtr;
 
-enum BlendMode {
+enum class BlendMode {
     // No blending
-    BLENDING_MODE_OVERWRITE,
+    OVERWRITE,
     // Alpha blending
-    BLENDING_MODE_BACK_TO_FRONT_STRAIGHT_ALPHA, BLENDING_MODE_BACK_TO_FRONT_PREMUL_ALPHA,
-    BLENDING_MODE_FRONT_TO_BACK_PREMUL_ALPHA,
+    BACK_TO_FRONT_STRAIGHT_ALPHA, BACK_TO_FRONT_PREMUL_ALPHA, FRONT_TO_BACK_PREMUL_ALPHA,
     // Additive blending modes & multiplicative blending
-    BLENDING_MODE_BACK_ADDITIVE,
-    BLENDING_MODE_BACK_SUBTRACTIVE,
-    BLENDING_MODE_BACK_MULTIPLICATIVE
+    BACK_ADDITIVE, BACK_SUBTRACTIVE, BACK_MULTIPLICATIVE
 };
 
 /// @see VkPrimitiveTopology
@@ -96,7 +93,7 @@ class DLL_OBJECT GraphicsPipelineInfo {
     friend class GraphicsPipeline;
 
 public:
-    GraphicsPipelineInfo(const ShaderStagesPtr& shaderStages);
+    explicit GraphicsPipelineInfo(const ShaderStagesPtr& shaderStages);
 
     /**
      * Resets to standard settings.
@@ -111,12 +108,17 @@ public:
     void setInputAssemblyTopology(PrimitiveTopology primitiveTopology, bool primitiveRestartEnable = false);
     void setCullMode(CullMode cullMode);
     void setIsFrontFaceCcw(bool isFrontFaceCcw);
-    void setEnableMinSampleShading(bool enableMinSampleShading, float minSampleShading = 1.0f);
+    void setMinSampleShading(bool enableMinSampleShading, float minSampleShading = 1.0f);
+    inline BlendMode getBlendMode() { return currentBlendMode; }
+    inline bool getIsBlendEnabled() { return currentBlendMode != BlendMode::OVERWRITE; }
 
     // Depth-stencil info.
-    void setEnableDepthTest(bool enableDepthTest);
-    void setEnableDepthWrite(bool enableDepthWrite);
-    void setEnableStencilTest(bool enableStencilTest);
+    void setDepthTestEnabled(bool enableDepthTest);
+    void setDepthWriteEnabled(bool enableDepthWrite);
+    void setStencilTestEnabled(bool enableStencilTest);
+    inline bool getDepthTestEnabled() const { return depthStencilInfo.depthTestEnable; }
+    inline bool getDepthWriteEnabled() const { return depthStencilInfo.depthWriteEnable; }
+    inline bool getStencilTestEnabled() const { return depthStencilInfo.stencilTestEnable; }
 
     /**
      * E.g., if we have struct Vertex { vec3 vertexPosition; float vertexAttribute; };
@@ -138,6 +140,7 @@ public:
      * @param attributeLocation The shader location of the input attribute.
      */
     void setInputAttributeDescription(uint32_t bufferBinding, uint32_t bufferOffset, uint32_t attributeLocation);
+
     /**
      * Specifies that an attribute should be read from an vertex buffer with the specified binding point.
      * The offset specifies the element offset in byte used for reading from the buffer.
@@ -157,6 +160,7 @@ protected:
     FramebufferPtr framebuffer;
     uint32_t subpassIndex = 0;
     VkRenderPassCreateInfo renderPassInfo = {};
+    BlendMode currentBlendMode = BlendMode::OVERWRITE;
 
     std::vector<VkVertexInputBindingDescription> vertexInputBindingDescriptions;
     std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions;

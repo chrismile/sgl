@@ -55,7 +55,7 @@ else()
     list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/Utils/File/Archive.cpp)
 endif()
 
-add_library(sgl SHARED ${SOURCES})
+add_library(sgl SHARED ${SOURCES} src/Graphics/Vulkan/Render/FrameGraphSync.cpp src/Graphics/Vulkan/Render/FrameGraphSync.hpp)
 if (MSVC)
     set(DLLIMPORT "__declspec(dllimport)")
     set(DLLEXPORT "__declspec(dllexport)")

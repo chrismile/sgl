@@ -38,7 +38,7 @@
 #include "Data.hpp"
 
 namespace sgl { namespace vk {
-/*
+
 class RenderPass;
 class FrameGraph;
 
@@ -126,7 +126,7 @@ public:
 private:
     sgl::vk::BufferPtr vertexBuffer;
 };
-*/
+
 } }
 
 #endif //SGL_FRAMEGRAPH_HPP

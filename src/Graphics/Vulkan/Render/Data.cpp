@@ -244,9 +244,7 @@ void RenderData::_updateDescriptorSets() {
             if (descriptorInfo.type == VK_DESCRIPTOR_TYPE_SAMPLER
                         || descriptorInfo.type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
                         || descriptorInfo.type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
-                        || descriptorInfo.type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
-                        || descriptorInfo.type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
-                        || descriptorInfo.type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+                        || descriptorInfo.type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
                 if (descriptorInfo.type == VK_DESCRIPTOR_TYPE_SAMPLER
                             || descriptorInfo.type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
                     auto it = frameData.imageSamplers.find(descriptorInfo.binding);

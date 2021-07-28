@@ -36,7 +36,7 @@
 #include "FrameGraph.hpp"
 
 namespace sgl { namespace vk {
-/*
+
 RenderPass::RenderPass(FrameGraph& frameGraph, PassId passId)
         : frameGraph(frameGraph), device(frameGraph.getDevice()), passId(passId) {}
 
@@ -160,7 +160,7 @@ PipelineBarrierCollection buildPipelineBarrierCollection(
         }
     }
 
-    pipelineBarrierCollection[std::make_pair()];
+    //pipelineBarrierCollection[std::make_pair()];
 }
 
 PipelineBarrierFrameData buildPipelineBarrierFrameData(RenderData* renderData, GraphicsPipeline* graphicsPipeline) {
@@ -170,7 +170,7 @@ PipelineBarrierFrameData buildPipelineBarrierFrameData(RenderData* renderData, G
     PipelineBarrierFrameData pipelineBarrierFrameData;
     pipelineBarrierFrameData.reserve(numImages);
     for (size_t frameIdx = 0; frameIdx < numImages; frameIdx++) {
-        pipelineBarrierFrameData.emplace_back(buildPipelineBarrierCollection(renderData, uint32_t(frameIdx)));
+        pipelineBarrierFrameData.emplace_back(buildPipelineBarrierCollection(renderData, graphicsPipeline, uint32_t(frameIdx)));
     }
 
     return pipelineBarrierFrameData;
@@ -210,10 +210,10 @@ void FrameGraph::_build() {
     for (size_t i = 0; i < linearizedRenderPasses.size(); i++) {
         RenderPass* renderPass = linearizedRenderPasses.at(i);
         RenderData* renderData;
-        GraphicsPipelinePtr graphicsPipeline = renderPass->getGraphicsPipeline();
+        //GraphicsPipelinePtr graphicsPipeline = renderPass->getGraphicsPipeline();
 
 
-        renderData->getFrameData(frameIdx);
+        //renderData->getFrameData(frameIdx);
     }
 
     dirty = false;
@@ -252,5 +252,5 @@ void FrameGraph::render() {
                 numBufferMemoryBarriers, bufferMemoryBarriers, numImageMemoryBarriers, imageMemoryBarriers);
     }
 }
-*/
+
 } }
