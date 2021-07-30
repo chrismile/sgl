@@ -47,6 +47,9 @@ class Texture;
 typedef std::shared_ptr<Texture> TexturePtr;
 class RasterData;
 typedef std::shared_ptr<RasterData> RasterDataPtr;
+class BlitRenderPass;
+typedef std::shared_ptr<BlitRenderPass> BlitRenderPassPtr;
+class FrameGraph;
 }}
 #endif
 
@@ -111,12 +114,13 @@ protected:
     sgl::vk::TexturePtr sceneTextureVk; ///< Can be 8 or 16 bits per pixel.
     sgl::vk::TexturePtr sceneDepthTextureVk;
     sgl::vk::TexturePtr compositedTextureVk; ///< The final RGBA8 texture.
-    sgl::vk::RasterDataPtr sceneTextureBlitRenderData;
-    sgl::vk::RasterDataPtr sceneTextureGammaCorrectionRenderData;
-    sgl::vk::RasterDataPtr compositedTextureBlitRenderData;
+    sgl::vk::BlitRenderPassPtr sceneTextureBlitPass;
+    sgl::vk::BlitRenderPassPtr sceneTextureGammaCorrectionPass;
+    sgl::vk::BlitRenderPassPtr compositedTextureBlitPass;
 
-    vk::ImagePtr readBackImage; ///< For reading back screenshots from the GPU.
+    sgl::vk::ImagePtr readBackImage; ///< For reading back screenshots from the GPU.
 
+    sgl::vk::FrameGraph* frameGraph = nullptr;
     sgl::vk::Device* device = nullptr;
 #endif
 

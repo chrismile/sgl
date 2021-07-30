@@ -46,6 +46,8 @@
 #include <Graphics/Vulkan/Render/Renderer.hpp>
 #include <Graphics/Vulkan/Render/Data.hpp>
 #include <Graphics/Vulkan/Render/GraphicsPipeline.hpp>
+#include <Graphics/Vulkan/Render/FrameGraph/FrameGraph.hpp>
+#include <Graphics/Vulkan/Render/FrameGraph/Passes/BlitRenderPass.hpp>
 #endif
 
 #include <ImGui/ImGuiWrapper.hpp>
@@ -78,6 +80,9 @@ SciVisApp::SciVisApp(float fovy)
 #ifdef SUPPORT_VULKAN
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
         device = sgl::AppSettings::get()->getPrimaryDevice();
+    }
+    if (sgl::AppSettings::get()->getPrimaryDevice()) {
+        frameGraph = new sgl::vk::FrameGraph(rendererVk);
     }
 #endif
 
@@ -127,6 +132,31 @@ SciVisApp::SciVisApp(float fovy)
 #ifdef SUPPORT_VULKAN
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
         // TODO
+
+        sceneTextureBlitPass = std::make_shared<vk::BlitRenderPass>(frameGraph);
+        frameGraph->addPass(std::static_pointer_cast<vk::FrameGraphPass>(sceneTextureBlitPass));
+        frameGraph->setFinalPass(std::static_pointer_cast<vk::FrameGraphPass>(sceneTextureBlitPass));
+
+        sceneTextureGammaCorrectionPass = vk::BlitRenderPassPtr(new vk::BlitRenderPass(
+                frameGraph, {"GammaCorrection.Vertex", "GammaCorrection.Fragment"}));
+        frameGraph->addPass(std::static_pointer_cast<vk::FrameGraphPass>(sceneTextureGammaCorrectionPass));
+        frameGraph->setFinalPass(std::static_pointer_cast<vk::FrameGraphPass>(sceneTextureGammaCorrectionPass));
+
+        compositedTextureBlitPass = std::make_shared<vk::BlitRenderPass>(frameGraph);
+        frameGraph->addPass(std::static_pointer_cast<vk::FrameGraphPass>(compositedTextureBlitPass));
+        frameGraph->setFinalPass(std::static_pointer_cast<vk::FrameGraphPass>(compositedTextureBlitPass));
+
+        // on resolution changed:
+        sceneTextureBlitPass->setInputTexture(sceneTextureVk);
+        sceneTextureBlitPass->setOutputImage(compositedTextureVk->getImageView());
+
+        sceneTextureGammaCorrectionPass->setInputTexture(sceneTextureVk);
+        sceneTextureGammaCorrectionPass->setOutputImage(compositedTextureVk->getImageView());
+
+        vk::Swapchain* swapchain = sgl::AppSettings::get()->getSwapchain();
+        compositedTextureBlitPass->setInputTexture(compositedTextureVk);
+        compositedTextureBlitPass->setOutputImages(swapchain->getSwapchainImageViews());
+
         /*sgl::vk::ShaderStagesPtr shaderStages = sgl::vk::ShaderManager->getShaderStages(
                 {"TestShader.Vertex", "TestShader.Fragment"});
 
@@ -170,6 +200,12 @@ SciVisApp::~SciVisApp() {
     if (videoWriter != NULL) {
         delete videoWriter;
     }
+
+#ifdef SUPPORT_VULKAN
+    if (sgl::AppSettings::get()->getPrimaryDevice()) {
+        delete frameGraph;
+    }
+#endif
 }
 
 void SciVisApp::createSceneFramebuffer() {
@@ -198,6 +234,8 @@ void SciVisApp::createSceneFramebuffer() {
         sgl::vk::ImageSettings imageSettings;
         imageSettings.width = width;
         imageSettings.height = height;
+
+        // Create scene texture.
         imageSettings.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
         if (useLinearRGB) {
             imageSettings.format = VK_FORMAT_R16G16B16A16_UNORM;
@@ -207,12 +245,23 @@ void SciVisApp::createSceneFramebuffer() {
         sceneTextureVk = std::make_shared<sgl::vk::Texture>(
                 device, imageSettings, sgl::vk::ImageSamplerSettings(),
                 VK_IMAGE_ASPECT_COLOR_BIT);
+
+        // Create scene depth texture.
         imageSettings.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
         imageSettings.format = VK_FORMAT_D32_SFLOAT;
         sceneDepthTextureVk = std::make_shared<sgl::vk::Texture>(
                 device, imageSettings, sgl::vk::ImageSamplerSettings(),
                 VK_IMAGE_ASPECT_DEPTH_BIT);
 
+        // Create composited (gamma-resolved, if VK_FORMAT_R16G16B16A16_UNORM for scene texture) scene texture.
+        imageSettings.usage =
+                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+        imageSettings.format = VK_FORMAT_R8G8B8A8_UNORM;
+        compositedTextureVk = std::make_shared<sgl::vk::Texture>(
+                device, imageSettings, sgl::vk::ImageSamplerSettings(),
+                VK_IMAGE_ASPECT_COLOR_BIT);
+
+        // Create the read-back image used for saving screenshots.
         vk::ImageSettings imageSettingsReadBack;
         imageSettingsReadBack.width = width;
         imageSettingsReadBack.width = height;
@@ -220,7 +269,7 @@ void SciVisApp::createSceneFramebuffer() {
         imageSettingsReadBack.tiling = VK_IMAGE_TILING_LINEAR;
         imageSettingsReadBack.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         imageSettingsReadBack.memoryUsage = VMA_MEMORY_USAGE_GPU_TO_CPU;
-        readBackImage = vk::ImagePtr(new vk::Image(device, imageSettingsReadBack));
+        readBackImage = std::make_shared<vk::Image>(device, imageSettingsReadBack);
     }
 #endif
 }
@@ -264,7 +313,7 @@ void SciVisApp::saveScreenshot(const std::string &filename) {
 #endif
 #ifdef SUPPORT_VULKAN
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
-        readBackImage->blit(readBackImage); //< Synchronous operation (suboptimal).
+        compositedTextureVk->getImage()->blit(readBackImage); //< Synchronous operation (suboptimal).
         uint8_t* mappedData = reinterpret_cast<uint8_t*>(readBackImage->mapMemory());
         memcpy(bitmap->getPixels(), mappedData, width * height * 4);
         readBackImage->unmapMemory();
@@ -388,9 +437,11 @@ void SciVisApp::postRender() {
 #ifdef SUPPORT_VULKAN
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
         if (useLinearRGB) {
-            rendererVk->render(sceneTextureGammaCorrectionRenderData);
+            // TODO
+            //rendererVk->render(sceneTextureGammaCorrectionRenderData);
         } else {
-            rendererVk->render(sceneTextureBlitRenderData);
+            // TODO
+            //rendererVk->render(sceneTextureBlitRenderData);
         }
     }
 #endif
@@ -442,7 +493,8 @@ void SciVisApp::postRender() {
 
 #ifdef SUPPORT_VULKAN
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
-        rendererVk->render(compositedTextureBlitRenderData);
+        // TODO
+        //rendererVk->render(compositedTextureBlitRenderData);
     }
 #endif
 }

@@ -98,32 +98,32 @@ public:
      * They should be used, e.g., for look-up tables or for objects only used exclusively by the GPU.
      * It is recommended to create the objects using the memory usage VMA_MEMORY_USAGE_GPU_ONLY.
      */
-    void addStaticBuffer(BufferPtr& buffer, uint32_t binding);
-    void addStaticBuffer(BufferPtr& buffer, const std::string& descName);
+    void setStaticBuffer(BufferPtr& buffer, uint32_t binding);
+    void setStaticBuffer(BufferPtr& buffer, const std::string& descName);
 
-    void addStaticBufferView(BufferViewPtr& bufferView, uint32_t binding);
-    void addStaticBufferView(BufferViewPtr& bufferView, const std::string& descName);
+    void setStaticBufferView(BufferViewPtr& bufferView, uint32_t binding);
+    void setStaticBufferView(BufferViewPtr& bufferView, const std::string& descName);
 
-    void addStaticImageView(ImageViewPtr& imageView, uint32_t binding);
-    void addImageSampler(ImageSamplerPtr& imageSampler, uint32_t binding);
-    void addStaticTexture(TexturePtr& texture, uint32_t binding) ;
+    void setStaticImageView(ImageViewPtr& imageView, uint32_t binding);
+    void setImageSampler(ImageSamplerPtr& imageSampler, uint32_t binding);
+    void setStaticTexture(TexturePtr& texture, uint32_t binding);
 
-    void addStaticImageView(ImageViewPtr& imageView, const std::string& descName);
-    void addImageSampler(ImageSamplerPtr& imageSampler, const std::string& descName);
-    void addStaticTexture(TexturePtr& texture, const std::string& descName);
+    void setStaticImageView(ImageViewPtr& imageView, const std::string& descName);
+    void setImageSampler(ImageSamplerPtr& imageSampler, const std::string& descName);
+    void setStaticTexture(TexturePtr& texture, const std::string& descName);
 
     /*
      * Dynamic data changes per frame. After adding the buffer, the per-frame buffer needs to be retrieved by calling
      * getBuffer.
      */
-    void addDynamicBuffer(BufferPtr& buffer, uint32_t binding);
-    void addDynamicBuffer(BufferPtr& buffer, const std::string& descName);
+    void setDynamicBuffer(BufferPtr& buffer, uint32_t binding);
+    void setDynamicBuffer(BufferPtr& buffer, const std::string& descName);
 
-    void addDynamicBufferView(BufferViewPtr& bufferView, uint32_t binding);
-    void addDynamicBufferView(BufferViewPtr& bufferView, const std::string& descName);
+    void setDynamicBufferView(BufferViewPtr& bufferView, uint32_t binding);
+    void setDynamicBufferView(BufferViewPtr& bufferView, const std::string& descName);
 
-    void addDynamicImageView(ImageViewPtr& imageView, uint32_t binding);
-    void addDynamicImageView(ImageViewPtr& imageView, const std::string& descName);
+    void setDynamicImageView(ImageViewPtr& imageView, uint32_t binding);
+    void setDynamicImageView(ImageViewPtr& imageView, const std::string& descName);
 
     BufferPtr getBuffer(uint32_t binding);
     BufferPtr getBuffer(const std::string& name);

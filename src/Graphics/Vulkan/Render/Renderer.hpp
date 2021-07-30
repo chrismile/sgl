@@ -30,6 +30,7 @@
 #define SGL_RENDERER_HPP
 
 #include <vector>
+#include <memory>
 #include <glm/mat4x4.hpp>
 #include <vulkan/vulkan.h>
 
@@ -69,6 +70,7 @@ public:
     void beginCommandBuffer();
     VkCommandBuffer endCommandBuffer();
     void render(RasterDataPtr rasterData);
+    void render(RasterDataPtr rasterData, const FramebufferPtr& framebuffer);
     void setModelMatrix(const glm::mat4 &matrix);
     void setViewMatrix(const glm::mat4 &matrix);
     void setProjectionMatrix(const glm::mat4 &matrix);

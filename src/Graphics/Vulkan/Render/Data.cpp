@@ -73,64 +73,64 @@ RenderDataPtr RenderData::copy(ShaderStagesPtr& shaderStages) {
 }
 
 
-void RenderData::addStaticBuffer(BufferPtr& buffer, uint32_t binding) {
+void RenderData::setStaticBuffer(BufferPtr& buffer, uint32_t binding) {
     for (FrameData& frameData : frameDataList) {
         frameData.buffers[binding] = buffer;
     }
     buffersStatic[binding] = true;
     isDirty = true;
 }
-void RenderData::addStaticBuffer(BufferPtr& buffer, const std::string& descName) {
+void RenderData::setStaticBuffer(BufferPtr& buffer, const std::string& descName) {
     const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, descName);
-    addStaticBuffer(buffer, descriptorInfo.binding);
+    setStaticBuffer(buffer, descriptorInfo.binding);
 }
 
-void RenderData::addStaticBufferView(BufferViewPtr& bufferView, uint32_t binding) {
+void RenderData::setStaticBufferView(BufferViewPtr& bufferView, uint32_t binding) {
     for (FrameData& frameData : frameDataList) {
         frameData.bufferViews[binding] = bufferView;
     }
     bufferViewsStatic[binding] = true;
     isDirty = true;
 }
-void RenderData::addStaticBufferView(BufferViewPtr& bufferView, const std::string& descName) {
+void RenderData::setStaticBufferView(BufferViewPtr& bufferView, const std::string& descName) {
     const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, descName);
-    addStaticBufferView(bufferView, descriptorInfo.binding);
+    setStaticBufferView(bufferView, descriptorInfo.binding);
 }
 
-void RenderData::addStaticImageView(ImageViewPtr& imageView, uint32_t binding) {
+void RenderData::setStaticImageView(ImageViewPtr& imageView, uint32_t binding) {
     for (FrameData& frameData : frameDataList) {
         frameData.imageViews[binding] = imageView;
     }
     imageViewsStatic[binding] = true;
     isDirty = true;
 }
-void RenderData::addImageSampler(ImageSamplerPtr& imageSampler, uint32_t binding) {
+void RenderData::setImageSampler(ImageSamplerPtr& imageSampler, uint32_t binding) {
     for (FrameData& frameData : frameDataList) {
         frameData.imageSamplers[binding] = imageSampler;
     }
     isDirty = true;
 }
-void RenderData::addStaticTexture(TexturePtr& texture, uint32_t binding) {
-    addStaticImageView(texture->getImageView(), binding);
-    addImageSampler(texture->getImageSampler(), binding);
+void RenderData::setStaticTexture(TexturePtr& texture, uint32_t binding) {
+    setStaticImageView(texture->getImageView(), binding);
+    setImageSampler(texture->getImageSampler(), binding);
 }
 
-void RenderData::addStaticImageView(ImageViewPtr& imageView, const std::string& descName) {
+void RenderData::setStaticImageView(ImageViewPtr& imageView, const std::string& descName) {
     const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, descName);
-    addStaticImageView(imageView, descriptorInfo.binding);
+    setStaticImageView(imageView, descriptorInfo.binding);
 }
-void RenderData::addImageSampler(ImageSamplerPtr& imageSampler, const std::string& descName) {
+void RenderData::setImageSampler(ImageSamplerPtr& imageSampler, const std::string& descName) {
     const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, descName);
-    addImageSampler(imageSampler, descriptorInfo.binding);
+    setImageSampler(imageSampler, descriptorInfo.binding);
 }
-void RenderData::addStaticTexture(TexturePtr& texture, const std::string& descName) {
+void RenderData::setStaticTexture(TexturePtr& texture, const std::string& descName) {
     const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, descName);
-    addStaticImageView(texture->getImageView(), descriptorInfo.binding);
-    addImageSampler(texture->getImageSampler(), descriptorInfo.binding);
+    setStaticImageView(texture->getImageView(), descriptorInfo.binding);
+    setImageSampler(texture->getImageSampler(), descriptorInfo.binding);
 }
 
 
-void RenderData::addDynamicBuffer(BufferPtr& buffer, uint32_t binding) {
+void RenderData::setDynamicBuffer(BufferPtr& buffer, uint32_t binding) {
     frameDataList.front().buffers[binding] = buffer;
     for (size_t i = 1; i < frameDataList.size(); i++) {
         FrameData& frameData = frameDataList.at(i);
@@ -139,12 +139,12 @@ void RenderData::addDynamicBuffer(BufferPtr& buffer, uint32_t binding) {
     buffersStatic[binding] = true;
     isDirty = true;
 }
-void RenderData::addDynamicBuffer(BufferPtr& buffer, const std::string& descName) {
+void RenderData::setDynamicBuffer(BufferPtr& buffer, const std::string& descName) {
     const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, descName);
-    addDynamicBuffer(buffer, descriptorInfo.binding);
+    setDynamicBuffer(buffer, descriptorInfo.binding);
 }
 
-void RenderData::addDynamicBufferView(BufferViewPtr& bufferView, uint32_t binding) {
+void RenderData::setDynamicBufferView(BufferViewPtr& bufferView, uint32_t binding) {
     frameDataList.front().bufferViews[binding] = bufferView;
     for (size_t i = 1; i < frameDataList.size(); i++) {
         FrameData& frameData = frameDataList.at(i);
@@ -153,12 +153,12 @@ void RenderData::addDynamicBufferView(BufferViewPtr& bufferView, uint32_t bindin
     bufferViewsStatic[binding] = true;
     isDirty = true;
 }
-void RenderData::addDynamicBufferView(BufferViewPtr& bufferView, const std::string& descName) {
+void RenderData::setDynamicBufferView(BufferViewPtr& bufferView, const std::string& descName) {
     const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, descName);
-    addDynamicBufferView(bufferView, descriptorInfo.binding);
+    setDynamicBufferView(bufferView, descriptorInfo.binding);
 }
 
-void RenderData::addDynamicImageView(ImageViewPtr& imageView, uint32_t binding) {
+void RenderData::setDynamicImageView(ImageViewPtr& imageView, uint32_t binding) {
     frameDataList.front().imageViews[binding] = imageView;
     for (size_t i = 1; i < frameDataList.size(); i++) {
         FrameData& frameData = frameDataList.at(i);
@@ -167,9 +167,9 @@ void RenderData::addDynamicImageView(ImageViewPtr& imageView, uint32_t binding) 
     imageViewsStatic[binding] = true;
     isDirty = true;
 }
-void RenderData::addDynamicImageView(ImageViewPtr& imageView, const std::string& descName) {
+void RenderData::setDynamicImageView(ImageViewPtr& imageView, const std::string& descName) {
     const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, descName);
-    addDynamicImageView(imageView, descriptorInfo.binding);
+    setDynamicImageView(imageView, descriptorInfo.binding);
 }
 
 BufferPtr RenderData::getBuffer(uint32_t binding) {

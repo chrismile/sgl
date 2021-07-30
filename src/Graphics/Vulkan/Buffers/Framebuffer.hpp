@@ -29,6 +29,7 @@
 #ifndef SGL_FRAMEBUFFER_HPP
 #define SGL_FRAMEBUFFER_HPP
 
+#include <vector>
 #include <memory>
 #include <vulkan/vulkan.h>
 #include <glm/vec4.hpp>

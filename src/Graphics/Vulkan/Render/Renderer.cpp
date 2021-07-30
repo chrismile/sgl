@@ -178,6 +178,11 @@ VkCommandBuffer Renderer::endCommandBuffer() {
 }
 
 void Renderer::render(RasterDataPtr rasterData) {
+    const FramebufferPtr& framebuffer = graphicsPipeline->getFramebuffer();
+    render(rasterData, framebuffer);
+}
+
+void Renderer::render(RasterDataPtr rasterData, const FramebufferPtr& framebuffer) {
     bool isNewPipeline = false;
     GraphicsPipelinePtr newGraphicsPipeline = rasterData->getGraphicsPipeline();
     if (graphicsPipeline != newGraphicsPipeline) {
@@ -185,7 +190,6 @@ void Renderer::render(RasterDataPtr rasterData) {
         isNewPipeline = true;
     }
 
-    const FramebufferPtr& framebuffer = graphicsPipeline->getFramebuffer();
     uint32_t numSubpasses = framebuffer->getNumSubpasses();
     uint32_t subpassIndex = newGraphicsPipeline->getSubpassIndex();
     bool isFirstSubpass = subpassIndex == 0;
@@ -204,6 +208,7 @@ void Renderer::render(RasterDataPtr rasterData) {
         vkCmdBindDescriptorSets(
                 commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline->getVkPipelineLayout(),
                 1, 1, &matrixBlockDescriptorSet, 0, nullptr);
+        recordingCommandBufferStarted = false;
     }
 
     if (isFirstSubpass) {

@@ -31,28 +31,22 @@
 #include <Utils/File/Logfile.hpp>
 #include <Utils/CircularQueue.hpp>
 #include <Utils/AppSettings.hpp>
-#include "../Utils/Swapchain.hpp"
-#include "Renderer.hpp"
+#include "Graphics/Vulkan/Utils/Swapchain.hpp"
+#include "Graphics/Vulkan/Render/Renderer.hpp"
+#include "FrameGraphPass.hpp"
 #include "FrameGraph.hpp"
 
 namespace sgl { namespace vk {
 
-RenderPass::RenderPass(FrameGraph& frameGraph, PassId passId)
-        : frameGraph(frameGraph), device(frameGraph.getDevice()), passId(passId) {}
-
-void RenderPass::_addIngoingEdge(FrameGraphEdge& edge) {
-    ingoingEdges.push_back(edge);
-    std::sort(ingoingEdges.begin(), ingoingEdges.end());
+FrameGraph::FrameGraph(vk::Renderer* renderer) : renderer(renderer), device(renderer->getDevice()) {
+    ;
 }
 
-void RenderPass::_addOutgoingEdge(FrameGraphEdge& edge) {
-    outgoingEdges.push_back(edge);
-    std::sort(outgoingEdges.begin(), outgoingEdges.end());
+void FrameGraph::resolutionChanged() {
+    // TODO
 }
 
-
-
-void FrameGraph::addPass(RenderPassPtr& renderPass) {
+void FrameGraph::addPass(FrameGraphPassPtr pass) {
     dirty = true;
 }
 
@@ -60,8 +54,8 @@ void FrameGraph::addEdge(PassId passId0, PassId passId1, uint32_t priority) {
     dirty = true;
 }
 
-void FrameGraph::setFinalRenderPass(RenderPassPtr& renderPass) {
-    finalRenderPass = renderPass;
+void FrameGraph::setFinalPass(FrameGraphPassPtr pass) {
+    finalPass = pass;
 }
 
 struct PipelineBarrierData {
@@ -177,27 +171,27 @@ PipelineBarrierFrameData buildPipelineBarrierFrameData(RenderData* renderData, G
 }
 
 void FrameGraph::_build() {
-    RenderPass* currentRenderPass = finalRenderPass.get();
-    if (currentRenderPass == nullptr) {
+    FrameGraphPass* currentPass = finalPass.get();
+    if (currentPass == nullptr) {
         Logfile::get()->throwError("Error in FrameGraph::_build: No final render pass was set.");
     }
 
     // Clear old linearized data.
-    linearizedRenderPasses.clear();
+    linearizedPasses.clear();
     imageDependenciesMap.clear();
     bufferDependenciesMap.clear();
 
     // Linearize the render passes by utilizing a breadth-first search.
     std::set<FrameGraphEdge> visitedEdges;
     CircularQueue<FrameGraphEdge> edgeQueue;
-    FrameGraphEdge firstEdge = std::make_pair(0, currentRenderPass);
+    FrameGraphEdge firstEdge = std::make_pair(0, currentPass);
     edgeQueue.push_back(firstEdge);
     visitedEdges.insert(firstEdge);
     while (!edgeQueue.is_empty()) {
         FrameGraphEdge currentEdge = edgeQueue.pop_front();
-        currentRenderPass = currentEdge.second;
+        currentPass = currentEdge.second;
 
-        for (FrameGraphEdge& ingoingEdge : currentRenderPass->ingoingEdges) {
+        for (FrameGraphEdge& ingoingEdge : currentPass->ingoingEdges) {
             if (visitedEdges.find(ingoingEdge) != visitedEdges.end()) {
                 continue;
             }
@@ -207,10 +201,18 @@ void FrameGraph::_build() {
     }
 
     // Compute all image/buffer memory dependencies.
-    for (size_t i = 0; i < linearizedRenderPasses.size(); i++) {
-        RenderPass* renderPass = linearizedRenderPasses.at(i);
+    for (size_t i = 0; i < linearizedPasses.size(); i++) {
+        FrameGraphPass* pass = linearizedPasses.at(i);
+
+        auto type = pass->getFrameGraphPassType();
+        if (type == FrameGraphPassType::RASTER_PASS) {
+            RasterPass* rasterPass = static_cast<RasterPass*>(pass);
+            rasterPass->loadShader();
+            //rasterPass->shader
+        }
+
         RenderData* renderData;
-        //GraphicsPipelinePtr graphicsPipeline = renderPass->getGraphicsPipeline();
+        //GraphicsPipelinePtr graphicsPipeline = pass->getGraphicsPipeline();
 
 
         //renderData->getFrameData(frameIdx);
@@ -224,9 +226,9 @@ void FrameGraph::render() {
         _build();
     }
 
-    for (size_t i = 0; i < linearizedRenderPasses.size(); i++) {
-        RenderPass* renderPass = linearizedRenderPasses.at(i);
-        renderPass->_render();
+    for (size_t i = 0; i < linearizedPasses.size(); i++) {
+        FrameGraphPass* pass = linearizedPasses.at(i);
+        pass->_render();
 
         size_t numImageMemoryBarriers = 0;
         VkImageMemoryBarrier* imageMemoryBarriers = nullptr;

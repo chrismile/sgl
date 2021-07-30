@@ -28,9 +28,9 @@
 
 #include <unordered_map>
 #include <Utils/File/Logfile.hpp>
-#include "Pipeline.hpp"
+#include "Graphics/Vulkan/Render/Pipeline.hpp"
 #include "FrameGraphSync.hpp"
-#include "GraphicsPipeline.hpp"
+#include "Graphics/Vulkan/Render/GraphicsPipeline.hpp"
 
 namespace sgl { namespace vk {
 
@@ -51,7 +51,6 @@ static const ShaderStageFlagsToPipelineFlagsMap pipelineStageSrcMap = {
         { VK_SHADER_STAGE_TASK_BIT_NV, VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_NV },
         { VK_SHADER_STAGE_MESH_BIT_NV, VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_NV },
 };
-
 static const ShaderStageFlagsToPipelineFlagsMap pipelineStageDstMap = {
         { VK_SHADER_STAGE_VERTEX_BIT, VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT_KHR },
         { VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT_KHR },
@@ -105,6 +104,9 @@ VkPipelineStageFlagBits2KHR mapToAccessMask(const ResourceAccess& resourceAccess
     } else if (resourceUsage == ResourceUsage::BLIT_SRC || resourceUsage == ResourceUsage::BLIT_DST) {
         return VK_PIPELINE_STAGE_2_BLIT_BIT_KHR;
     }
+
+    Logfile::get()->throwError("Error in mapToAccessMask: Reached end of function.");
+    return VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR;
 }
 
 VkAccessFlagBits2KHR mapToStageMask(
@@ -145,13 +147,13 @@ VkAccessFlagBits2KHR mapToStageMask(
     } else if (resourceUsage == ResourceUsage::OUTPUT_ATTACHMENT) {
         if (resourceAccess.outputAttachmentType == OutputAttachmentType::COLOR
                 || resourceAccess.outputAttachmentType == OutputAttachmentType::RESOLVE) {
-            if (pipelineInfo->getIsBlendEnabled()) {
+            if (!pipelineInfo || pipelineInfo->getIsBlendEnabled()) {
                 return VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT_KHR | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT_KHR;
             } else {
                 return VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT_KHR;
             }
         } else if (resourceAccess.outputAttachmentType == OutputAttachmentType::DEPTH_STENCIL) {
-            if (pipelineInfo->getDepthWriteEnabled()) {
+            if (!pipelineInfo || pipelineInfo->getDepthWriteEnabled()) {
                 return VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT_KHR
                         | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT_KHR;
             } else {
@@ -163,6 +165,9 @@ VkAccessFlagBits2KHR mapToStageMask(
     } else if (resourceUsage == ResourceUsage::COPY_DST || resourceUsage == ResourceUsage::BLIT_DST) {
         return VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR;
     }
+
+    Logfile::get()->throwError("Error in mapToAccessMask: Reached end of function.");
+    return VK_ACCESS_2_NONE_KHR;
 }
 
 } }
