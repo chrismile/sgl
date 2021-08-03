@@ -178,7 +178,7 @@ VkCommandBuffer Renderer::endCommandBuffer() {
 }
 
 void Renderer::render(RasterDataPtr rasterData) {
-    const FramebufferPtr& framebuffer = graphicsPipeline->getFramebuffer();
+    const FramebufferPtr& framebuffer = rasterData->getGraphicsPipeline()->getFramebuffer();
     render(rasterData, framebuffer);
 }
 
@@ -264,6 +264,9 @@ void Renderer::render(RasterDataPtr rasterData, const FramebufferPtr& framebuffe
                 commandBuffer, static_cast<uint32_t>(rasterData->getNumVertices()),
                 static_cast<uint32_t>(rasterData->getNumInstances()), 0, 0);
     }
+
+    // Transition the image layouts.
+    framebuffer->transitionAttachmentImageLayouts(subpassIndex);
 
     if (isLastSubpass) {
         vkCmdEndRenderPass(commandBuffer);
@@ -386,6 +389,10 @@ void Renderer::traceRays(RayTracingDataPtr rayTracingData) {
     //        commandBuffer,
     //        &raygenShaderSbtEntry, &missShaderSbtEntry, &hitShaderSbtEntry, &callableShaderSbtEntry,
     //        framebuffer->getWidth(), framebuffer->getHeight(), framebuffer->getLayers());
+}
+
+void Renderer::transitionImageLayout(vk::ImagePtr& image, VkImageLayout newLayout) {
+    image->transitionImageLayout(newLayout, commandBuffer);
 }
 
 void Renderer::submitToQueue(

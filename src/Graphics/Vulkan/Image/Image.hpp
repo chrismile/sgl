@@ -33,6 +33,7 @@
 #include <algorithm>
 #include <cmath>
 
+#include <glm/vec4.hpp>
 #include <vulkan/vulkan.h>
 #include "../libs/VMA/vk_mem_alloc.h"
 
@@ -136,14 +137,24 @@ public:
      */
     void blit(ImagePtr& destImage, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 
+    void clearColor(
+            const glm::vec4& clearColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f),
+            VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
+    void clearDepthStencil(
+            VkImageAspectFlags aspectFlags, float clearDepth = 1.0f, uint32_t clearStencil = 0,
+            VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
+
     /// Transitions the image layout from the current layout to the new layout.
     void transitionImageLayout(VkImageLayout newLayout);
-
-    /// Transitions the image layout from the old layout to the new layout.
     void transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout);
+    void transitionImageLayout(VkImageLayout newLayout, VkCommandBuffer commandBuffer);
+    void transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout, VkCommandBuffer commandBuffer);
 
     /// Transitions the image layout from the old layout to the new layout.
     inline VkImageLayout getVkImageLayout() const { return imageLayout; }
+
+    /// For access from the framebuffer after a subpass has finished.
+    inline void _updateLayout(VkImageLayout newLayout) { imageLayout = newLayout; }
 
     inline Device* getDevice() { return device; }
 
@@ -197,6 +208,12 @@ public:
      * @return The new image view.
      */
     ImageViewPtr copy(bool copyImage, bool copyContent);
+
+    void clearColor(
+            const glm::vec4& clearColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f),
+            VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
+    void clearDepthStencil(
+            float clearDepth = 1.0f, uint32_t clearStencil = 0, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 
     inline Device* getDevice() { return device; }
     inline ImagePtr& getImage() { return image; }

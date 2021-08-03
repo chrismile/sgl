@@ -46,8 +46,7 @@
 #include <Graphics/Vulkan/Render/Renderer.hpp>
 #include <Graphics/Vulkan/Render/Data.hpp>
 #include <Graphics/Vulkan/Render/GraphicsPipeline.hpp>
-#include <Graphics/Vulkan/Render/FrameGraph/FrameGraph.hpp>
-#include <Graphics/Vulkan/Render/FrameGraph/Passes/BlitRenderPass.hpp>
+#include <Graphics/Vulkan/Render/Passes/BlitRenderPass.hpp>
 #endif
 
 #include <ImGui/ImGuiWrapper.hpp>
@@ -61,7 +60,7 @@
 namespace sgl {
 
 SciVisApp::SciVisApp(float fovy)
-        : camera(new sgl::Camera()), checkpointWindow(camera), videoWriter(NULL) {
+        : camera(new sgl::Camera()), checkpointWindow(camera), videoWriter(nullptr) {
     saveDirectoryScreenshots = sgl::AppSettings::get()->getDataDirectory() + "Screenshots/";
     saveDirectoryVideos = sgl::AppSettings::get()->getDataDirectory() + "Videos/";
     saveDirectoryCameraPaths = sgl::AppSettings::get()->getDataDirectory() + "CameraPaths/";
@@ -71,7 +70,7 @@ SciVisApp::SciVisApp(float fovy)
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
         GLint gpuInitialFreeMemKilobytes = 0;
         if (usePerformanceMeasurementMode
-            && sgl::SystemGL::get()->isGLExtensionAvailable("GL_NVX_gpu_memory_info")) {
+                    && sgl::SystemGL::get()->isGLExtensionAvailable("GL_NVX_gpu_memory_info")) {
             glGetIntegerv(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &gpuInitialFreeMemKilobytes);
         }
         glEnable(GL_CULL_FACE);
@@ -80,9 +79,6 @@ SciVisApp::SciVisApp(float fovy)
 #ifdef SUPPORT_VULKAN
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
         device = sgl::AppSettings::get()->getPrimaryDevice();
-    }
-    if (sgl::AppSettings::get()->getPrimaryDevice()) {
-        frameGraph = new sgl::vk::FrameGraph(rendererVk);
     }
 #endif
 
@@ -131,67 +127,12 @@ SciVisApp::SciVisApp(float fovy)
 
 #ifdef SUPPORT_VULKAN
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
-        // TODO
-
-        sceneTextureBlitPass = std::make_shared<vk::BlitRenderPass>(frameGraph);
-        frameGraph->addPass(std::static_pointer_cast<vk::FrameGraphPass>(sceneTextureBlitPass));
-        frameGraph->setFinalPass(std::static_pointer_cast<vk::FrameGraphPass>(sceneTextureBlitPass));
-
+        sceneTextureBlitPass = std::make_shared<vk::BlitRenderPass>(rendererVk);
         sceneTextureGammaCorrectionPass = vk::BlitRenderPassPtr(new vk::BlitRenderPass(
-                frameGraph, {"GammaCorrection.Vertex", "GammaCorrection.Fragment"}));
-        frameGraph->addPass(std::static_pointer_cast<vk::FrameGraphPass>(sceneTextureGammaCorrectionPass));
-        frameGraph->setFinalPass(std::static_pointer_cast<vk::FrameGraphPass>(sceneTextureGammaCorrectionPass));
-
-        compositedTextureBlitPass = std::make_shared<vk::BlitRenderPass>(frameGraph);
-        frameGraph->addPass(std::static_pointer_cast<vk::FrameGraphPass>(compositedTextureBlitPass));
-        frameGraph->setFinalPass(std::static_pointer_cast<vk::FrameGraphPass>(compositedTextureBlitPass));
+                rendererVk, {"GammaCorrection.Vertex", "GammaCorrection.Fragment"}));
+        compositedTextureBlitPass = std::make_shared<vk::BlitRenderPass>(rendererVk);
 
         // on resolution changed:
-        sceneTextureBlitPass->setInputTexture(sceneTextureVk);
-        sceneTextureBlitPass->setOutputImage(compositedTextureVk->getImageView());
-
-        sceneTextureGammaCorrectionPass->setInputTexture(sceneTextureVk);
-        sceneTextureGammaCorrectionPass->setOutputImage(compositedTextureVk->getImageView());
-
-        vk::Swapchain* swapchain = sgl::AppSettings::get()->getSwapchain();
-        compositedTextureBlitPass->setInputTexture(compositedTextureVk);
-        compositedTextureBlitPass->setOutputImages(swapchain->getSwapchainImageViews());
-
-        /*sgl::vk::ShaderStagesPtr shaderStages = sgl::vk::ShaderManager->getShaderStages(
-                {"TestShader.Vertex", "TestShader.Fragment"});
-
-        sgl::Window* window = sgl::AppSettings::get()->getMainWindow();
-        sgl::vk::FramebufferPtr framebuffer(new sgl::vk::Framebuffer(device, window->getWidth(), window->getHeight()));
-        framebuffer->setColorAttachment(
-                sceneTextureVk->getImageView(), 0, { .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR });
-        framebuffer->setDepthStencilAttachment(
-                sceneDepthTextureVk->getImageView(), {
-                        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-                        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-                        .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-                });
-
-        std::vector<glm::vec3> vertexPositions = {
-                {-1.0f, -1.0f, 0.0f},
-                {1.0f, -1.0f, 0.0f},
-                {1.0f, 1.0f, 0.0f},
-                {-1.0f, -1.0f, 0.0f},
-                {1.0f, 1.0f, 0.0f},
-                {-1.0f, 1.0f, 0.0f},
-        };
-        sgl::vk::BufferPtr vertexBuffer(new sgl::vk::Buffer(
-                device, vertexPositions.size() * sizeof(glm::vec3), vertexPositions.data(),
-                VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                VMA_MEMORY_USAGE_GPU_ONLY));
-
-        sgl::vk::GraphicsPipelineInfo graphicsPipelineInfo(shaderStages);
-        graphicsPipelineInfo.setFramebuffer(framebuffer);
-        graphicsPipelineInfo.setVertexBufferBinding(0, sizeof(glm::vec3));
-        graphicsPipelineInfo.setInputAttributeDescription(0, 0, "vertexPosition");
-
-        sgl::vk::GraphicsPipelinePtr graphicsPipeline(new sgl::vk::GraphicsPipeline(device, graphicsPipelineInfo));
-        sgl::vk::RasterDataPtr renderData = std::make_shared<sgl::vk::RasterData>(rendererVk, graphicsPipeline);
-        renderData->setVertexBuffer(vertexBuffer, "vertexPosition");*/
     }
 #endif
 }
@@ -200,12 +141,6 @@ SciVisApp::~SciVisApp() {
     if (videoWriter != NULL) {
         delete videoWriter;
     }
-
-#ifdef SUPPORT_VULKAN
-    if (sgl::AppSettings::get()->getPrimaryDevice()) {
-        delete frameGraph;
-    }
-#endif
 }
 
 void SciVisApp::createSceneFramebuffer() {
@@ -270,6 +205,21 @@ void SciVisApp::createSceneFramebuffer() {
         imageSettingsReadBack.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         imageSettingsReadBack.memoryUsage = VMA_MEMORY_USAGE_GPU_TO_CPU;
         readBackImage = std::make_shared<vk::Image>(device, imageSettingsReadBack);
+
+        // Pass the textures to the render passes.
+        sceneTextureBlitPass->setInputTexture(sceneTextureVk);
+        sceneTextureBlitPass->setOutputImage(compositedTextureVk->getImageView());
+        sceneTextureBlitPass->recreateSwapchain(width, height);
+
+        sceneTextureGammaCorrectionPass->setInputTexture(sceneTextureVk);
+        sceneTextureGammaCorrectionPass->setOutputImage(compositedTextureVk->getImageView());
+        sceneTextureGammaCorrectionPass->recreateSwapchain(width, height);
+
+        vk::Swapchain* swapchain = sgl::AppSettings::get()->getSwapchain();
+        compositedTextureBlitPass->setInputTexture(compositedTextureVk);
+        compositedTextureBlitPass->setOutputImages(swapchain->getSwapchainImageViews());
+        compositedTextureBlitPass->setOutputImageLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+        compositedTextureBlitPass->recreateSwapchain(width, height);
     }
 #endif
 }
@@ -313,6 +263,8 @@ void SciVisApp::saveScreenshot(const std::string &filename) {
 #endif
 #ifdef SUPPORT_VULKAN
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+        rendererVk->transitionImageLayout(
+                compositedTextureVk->getImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
         compositedTextureVk->getImage()->blit(readBackImage); //< Synchronous operation (suboptimal).
         uint8_t* mappedData = reinterpret_cast<uint8_t*>(readBackImage->mapMemory());
         memcpy(bitmap->getPixels(), mappedData, width * height * 4);
@@ -357,6 +309,14 @@ void SciVisApp::preRender() {
         }
 #endif
     }
+
+#ifdef SUPPORT_VULKAN
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN && !reRender) {
+        rendererVk->transitionImageLayout(sceneTextureVk->getImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        sceneTextureVk->getImageView()->clearColor(
+                clearColor.getFloatColorRGBA(), rendererVk->getVkCommandBuffer());
+   }
+#endif
 }
 
 void SciVisApp::prepareReRender() {
@@ -436,12 +396,12 @@ void SciVisApp::postRender() {
 
 #ifdef SUPPORT_VULKAN
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+        rendererVk->transitionImageLayout(
+                sceneTextureVk->getImage(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         if (useLinearRGB) {
-            // TODO
-            //rendererVk->render(sceneTextureGammaCorrectionRenderData);
+            sceneTextureGammaCorrectionPass->render();
         } else {
-            // TODO
-            //rendererVk->render(sceneTextureBlitRenderData);
+            sceneTextureBlitPass->render();
         }
     }
 #endif
@@ -451,6 +411,10 @@ void SciVisApp::postRender() {
         saveScreenshot(
                 saveDirectoryScreenshots + saveFilenameScreenshots
                 + "_" + sgl::toString(screenshotNumber++) + ".png");
+        if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+            rendererVk->transitionImageLayout(
+                    compositedTextureVk->getImage(), VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR);
+        }
         printNow = false;
     }
 
@@ -463,7 +427,11 @@ void SciVisApp::postRender() {
 #endif
 #ifdef SUPPORT_VULKAN
         if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+            rendererVk->transitionImageLayout(
+                    compositedTextureVk->getImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
             videoWriter->pushFramebufferImage(compositedTextureVk->getImage());
+            rendererVk->transitionImageLayout(
+                    compositedTextureVk->getImage(), VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR);
         }
 #endif
     }
@@ -478,6 +446,8 @@ void SciVisApp::postRender() {
 #endif
 #ifdef SUPPORT_VULKAN
         if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+            rendererVk->transitionImageLayout(
+                    compositedTextureVk->getImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
             videoWriter->pushFramebufferImage(compositedTextureVk->getImage());
         }
 #endif
@@ -493,8 +463,9 @@ void SciVisApp::postRender() {
 
 #ifdef SUPPORT_VULKAN
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
-        // TODO
-        //rendererVk->render(compositedTextureBlitRenderData);
+        rendererVk->transitionImageLayout(
+                compositedTextureVk->getImage(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        compositedTextureBlitPass->render();
     }
 #endif
 }

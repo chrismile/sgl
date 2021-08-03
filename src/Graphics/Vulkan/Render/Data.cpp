@@ -226,7 +226,7 @@ void RenderData::_updateDescriptorSets() {
         }
 
         std::vector<VkWriteDescriptorSet> descriptorWrites;
-        descriptorWrites.reserve(descriptorSetInfo.size());
+        descriptorWrites.resize(descriptorSetInfo.size());
         for (size_t i = 0; i < descriptorSetInfo.size(); i++) {
             const DescriptorInfo& descriptorInfo = descriptorSetInfo.at(i);
             VkWriteDescriptorSet& descriptorWrite = descriptorWrites.at(i);

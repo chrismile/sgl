@@ -69,7 +69,7 @@ public:
             const ImWchar* fontRangesData = nullptr, bool useDocking = true, bool useMultiViewport = true,
             float uiScaleFactor = 1.0f);
     void shutdown(); //< to be called by AppSettings
-    inline float getScaleFactor() { return uiScaleFactor; } //< The UI high DPI scale factor
+    inline float getScaleFactor() const { return uiScaleFactor; } //< The UI high DPI scale factor
 
     // Sets the default scale factor.
     inline void setDefaultScaleFactor(float factor) {

@@ -26,4 +26,46 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ImGuiRenderPass.hpp"
+#include <Utils/File/Logfile.hpp>
+#include <Graphics/Vulkan/Render/Renderer.hpp>
+#include "Pass.hpp"
+
+namespace sgl { namespace vk {
+
+Pass::Pass(vk::Renderer *renderer) : renderer(renderer), device(renderer->getDevice()) {
+}
+
+void ComputePass::render() {
+    renderer->dispatch(computeData, groupCountX, groupCountY, groupCountZ);
+}
+
+
+void RasterPass::render() {
+    if (shaderDirty || framebufferDirty) {
+        _build();
+    }
+    _render();
+}
+
+void RasterPass::_render() {
+    renderer->render(rasterData);
+}
+
+void RasterPass::_build() {
+    if (shaderDirty) {
+        loadShader();
+    }
+
+    if (!framebuffer) {
+        Logfile::get()->throwError("Error in RasterPass::_build: No framebuffer object is set.");
+    }
+
+    sgl::vk::GraphicsPipelineInfo graphicsPipelineInfo(shaderStages);
+    graphicsPipelineInfo.setFramebuffer(framebuffer);
+    setGraphicsPipelineInfo(graphicsPipelineInfo);
+    sgl::vk::GraphicsPipelinePtr graphicsPipeline(new sgl::vk::GraphicsPipeline(device, graphicsPipelineInfo));
+
+    createRasterData(renderer, graphicsPipeline);
+}
+
+}}

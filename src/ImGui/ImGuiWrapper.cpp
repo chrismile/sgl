@@ -202,13 +202,9 @@ void ImGuiWrapper::setVkRenderTargets(std::vector<vk::ImageViewPtr> &imageViews)
 
     for (vk::ImageViewPtr& imageView : imageViews) {
         vk::AttachmentState attachmentState;
-        //attachmentState.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         attachmentState.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-        //attachmentState.initialLayout = imageView->getImage()->getVkImageLayout();
         attachmentState.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        // TODO
-        //attachmentState.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; // VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL or VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-        attachmentState.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        attachmentState.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
         vk::FramebufferPtr framebuffer = vk::FramebufferPtr(new vk::Framebuffer(
                 device, window->getWidth(), window->getHeight()));
@@ -240,7 +236,7 @@ void ImGuiWrapper::onResolutionChanged() {
 }
 
 void ImGuiWrapper::renderStart() {
-    SDLWindow *window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
+    SDLWindow* window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
 
 #ifdef SUPPORT_VULKAN
@@ -320,12 +316,11 @@ void ImGuiWrapper::renderEnd() {
         renderPassBeginInfo.renderPass = framebuffer->getVkRenderPass();
         renderPassBeginInfo.framebuffer = framebuffer->getVkFramebuffer();
         renderPassBeginInfo.renderArea.extent = framebuffer->getExtent2D();
-        // TODO
-        VkClearValue clearValue = { 0.0f, 0.0f, 0.0f, 1.0f };
-        //renderPassBeginInfo.clearValueCount = 0;
-        //renderPassBeginInfo.pClearValues = nullptr;
-        renderPassBeginInfo.clearValueCount = 1;
-        renderPassBeginInfo.pClearValues = &clearValue;
+        renderPassBeginInfo.clearValueCount = 0;
+        renderPassBeginInfo.pClearValues = nullptr;
+        //VkClearValue clearValue = { 0.0f, 0.0f, 0.0f, 1.0f };
+        //renderPassBeginInfo.clearValueCount = 1;
+        //renderPassBeginInfo.pClearValues = &clearValue;
         vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);

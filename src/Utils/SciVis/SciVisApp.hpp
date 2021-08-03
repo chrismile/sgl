@@ -49,7 +49,6 @@ class RasterData;
 typedef std::shared_ptr<RasterData> RasterDataPtr;
 class BlitRenderPass;
 typedef std::shared_ptr<BlitRenderPass> BlitRenderPassPtr;
-class FrameGraph;
 }}
 #endif
 
@@ -120,7 +119,6 @@ protected:
 
     sgl::vk::ImagePtr readBackImage; ///< For reading back screenshots from the GPU.
 
-    sgl::vk::FrameGraph* frameGraph = nullptr;
     sgl::vk::Device* device = nullptr;
 #endif
 

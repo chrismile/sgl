@@ -205,6 +205,30 @@ void Framebuffer::build() {
     }
 }
 
+void Framebuffer::transitionAttachmentImageLayouts(uint32_t subpassIndex) {
+    assert(subpassIndex == 0);
+
+    for (size_t i = 0; i < colorAttachments.size(); i++) {
+        AttachmentState& attachmentState = colorAttachmentStates.at(i);
+        ImagePtr& image = colorAttachments.at(i)->getImage();
+        image->_updateLayout(attachmentState.finalLayout);
+    }
+
+    for (size_t i = 0; i < inputAttachments.size(); i++) {
+        AttachmentState& attachmentState = inputAttachmentStates.at(i);
+        ImagePtr& image = inputAttachments.at(i)->getImage();
+        image->_updateLayout(attachmentState.finalLayout);
+    }
+
+    if (depthStencilAttachment) {
+        depthStencilAttachment->getImage()->_updateLayout(depthStencilAttachmentState.finalLayout);
+    }
+
+    if (resolveAttachment) {
+        resolveAttachment->getImage()->_updateLayout(resolveAttachmentState.finalLayout);
+    }
+}
+
 Framebuffer::~Framebuffer() {
     if (renderPass != VK_NULL_HANDLE) {
         vkDestroyRenderPass(device->getVkDevice(), renderPass, nullptr);

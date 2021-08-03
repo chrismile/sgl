@@ -26,14 +26,14 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_IMGUIRENDERPASS_HPP
-#define SGL_IMGUIRENDERPASS_HPP
+#ifndef SGL_BLITRENDERPASS_HPP
+#define SGL_BLITRENDERPASS_HPP
 
 #include <vector>
 #include <string>
 #include <glm/glm.hpp>
 #include <Graphics/Vulkan/Image/Image.hpp>
-#include "Graphics/Vulkan/Render/FrameGraph/FrameGraphPass.hpp"
+#include "Pass.hpp"
 
 namespace sgl { namespace vk {
 
@@ -46,32 +46,41 @@ public:
      * Uses the shaders {"BlitShader.Vertex", "BlitShader.Fragment"} for blitting.
      * @param frameGraph The frame graph object.
      */
-    explicit BlitRenderPass(FrameGraph* frameGraph);
+    explicit BlitRenderPass(sgl::vk::Renderer* renderer);
     /**
      * Uses the custom shaders for blitting.
      * @param frameGraph The frame graph object.
      */
-    BlitRenderPass(FrameGraph* frameGraph, std::vector<std::string> customShaderIds);
+    BlitRenderPass(sgl::vk::Renderer* renderer, std::vector<std::string> customShaderIds);
 
     // Public interface.
     void setInputTexture(sgl::vk::TexturePtr& texture);
     void setOutputImage(sgl::vk::ImageViewPtr& imageView);
     void setOutputImages(std::vector<sgl::vk::ImageViewPtr>& imageViews);
+    void setOutputImageLayout(VkImageLayout layout);
 
-    // Interface for the frame graph.
-    void loadShader() override;
-    void createRasterData(sgl::vk::Renderer* renderer, sgl::vk::GraphicsPipelinePtr& graphicsPipeline) override;
-    void setGraphicsPipelineInfo(sgl::vk::GraphicsPipelineInfo& graphicsPipelineInfo) override;
+    void recreateSwapchain(uint32_t width, uint32_t height) override;
 
 private:
+    void loadShader() override;
+    void setGraphicsPipelineInfo(sgl::vk::GraphicsPipelineInfo& graphicsPipelineInfo) override;
+    void createRasterData(sgl::vk::Renderer* renderer, sgl::vk::GraphicsPipelinePtr& graphicsPipeline) override;
+    void _render() override;
+
     void setupGeometryBuffers();
     std::vector<std::string> shaderIds;
-    sgl::vk::BufferPtr vertexPositionBuffer;
+
+    VkImageLayout finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     sgl::vk::TexturePtr inputTexture;
+    std::vector<sgl::vk::ImageViewPtr> outputImageViews;
+    std::vector<sgl::vk::FramebufferPtr> framebuffers;
+
+    sgl::vk::BufferPtr indexBuffer;
+    sgl::vk::BufferPtr vertexBuffer;
 };
 
 typedef std::shared_ptr<BlitRenderPass> BlitRenderPassPtr;
 
 }}
 
-#endif //SGL_IMGUIRENDERPASS_HPP
+#endif //SGL_BLITRENDERPASS_HPP

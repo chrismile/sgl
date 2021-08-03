@@ -333,7 +333,13 @@ const std::map<uint32_t, std::vector<DescriptorInfo>>& ShaderStages::getDescript
 }
 
 const DescriptorInfo& ShaderStages::getDescriptorInfoByName(uint32_t setIdx, const std::string& descName) const {
-    const std::vector<DescriptorInfo>& descriptorSetInfo = descriptorSetsInfo.at(setIdx);
+    auto it = descriptorSetsInfo.find(setIdx);
+    if (it == descriptorSetsInfo.end()) {
+        Logfile::get()->throwError(
+                "Error in ShaderStages::getDescriptorInfoByName: No descriptor set #" + std::to_string(setIdx)
+                + " is used in these shaders.");
+    }
+    const std::vector<DescriptorInfo>& descriptorSetInfo = it->second;
     for (const DescriptorInfo& descriptorInfo : descriptorSetInfo) {
         if (descriptorInfo.name == descName) {
             return descriptorInfo;
@@ -346,7 +352,13 @@ const DescriptorInfo& ShaderStages::getDescriptorInfoByName(uint32_t setIdx, con
 }
 
 const DescriptorInfo& ShaderStages::getDescriptorInfoByBinding(uint32_t setIdx, uint32_t binding) const {
-    const std::vector<DescriptorInfo>& descriptorSetInfo = descriptorSetsInfo.at(setIdx);
+    auto it = descriptorSetsInfo.find(setIdx);
+    if (it == descriptorSetsInfo.end()) {
+        Logfile::get()->throwError(
+                "Error in ShaderStages::getDescriptorInfoByBinding: No descriptor set #" + std::to_string(setIdx)
+                + " is used in these shaders.");
+    }
+    const std::vector<DescriptorInfo>& descriptorSetInfo = it->second;
     for (const DescriptorInfo& descriptorInfo : descriptorSetInfo) {
         if (descriptorInfo.binding == binding) {
             return descriptorInfo;

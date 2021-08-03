@@ -140,6 +140,9 @@ public:
      */
     void build();
 
+    /// Accessed by vk::Renderer.
+    void transitionAttachmentImageLayouts(uint32_t subpassIndex);
+
     // Get size of the framebuffer attachments.
     inline uint32_t getWidth() const { return width; }
     inline uint32_t getHeight() const { return height; }

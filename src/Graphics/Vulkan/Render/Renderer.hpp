@@ -46,6 +46,8 @@ class Fence;
 typedef std::shared_ptr<Fence> FencePtr;
 class Buffer;
 typedef std::shared_ptr<Buffer> BufferPtr;
+class Image;
+typedef std::shared_ptr<Image> ImagePtr;
 class Framebuffer;
 typedef std::shared_ptr<Framebuffer> FramebufferPtr;
 class ComputeData;
@@ -80,6 +82,9 @@ public:
 
     // Ray tracing pipeline.
     void traceRays(RayTracingDataPtr rayTracingData);
+
+    // Image pipeline barrier.
+    void transitionImageLayout(vk::ImagePtr& image, VkImageLayout newLayout);
 
     /**
      * For headless rendering without a swapchain.
