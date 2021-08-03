@@ -157,9 +157,9 @@ void AppLogic::run()
             commandBuffers.push_back(rendererVk->endCommandBuffer());
             sgl::vk::Swapchain* swapchain = sgl::AppSettings::get()->getSwapchain();
             if (swapchain) {
-                if (AppSettings::get()->getUseGUI()) {
-                    commandBuffers.push_back(ImGuiWrapper::get()->getVkCommandBuffers().at(swapchain->getImageIndex()));
-                }
+                //if (AppSettings::get()->getUseGUI()) {
+                //    commandBuffers.push_back(ImGuiWrapper::get()->getVkCommandBuffers().at(swapchain->getImageIndex()));
+                //}
                 sgl::AppSettings::get()->getSwapchain()->renderFrame(commandBuffers);
             }
         }

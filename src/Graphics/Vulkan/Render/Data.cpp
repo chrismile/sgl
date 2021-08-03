@@ -225,9 +225,19 @@ void RenderData::_updateDescriptorSets() {
             }
         }
 
+        struct DescWriteData {
+            VkDescriptorImageInfo imageInfo;
+            VkBufferView bufferView;
+            VkDescriptorBufferInfo bufferInfo;
+            VkWriteDescriptorSetAccelerationStructureKHR accelerationStructureInfo;
+        };
+        std::vector<DescWriteData> descWriteDataArray;
+        descWriteDataArray.resize(descriptorSetInfo.size());
         std::vector<VkWriteDescriptorSet> descriptorWrites;
         descriptorWrites.resize(descriptorSetInfo.size());
+
         for (size_t i = 0; i < descriptorSetInfo.size(); i++) {
+            DescWriteData& descWriteData = descWriteDataArray.at(i);
             const DescriptorInfo& descriptorInfo = descriptorSetInfo.at(i);
             VkWriteDescriptorSet& descriptorWrite = descriptorWrites.at(i);
             descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -237,10 +247,6 @@ void RenderData::_updateDescriptorSets() {
             descriptorWrite.descriptorType = descriptorInfo.type;
             descriptorWrite.descriptorCount = 1;
 
-            VkDescriptorImageInfo imageInfo = {};
-            VkBufferView bufferView = VK_NULL_HANDLE;
-            VkDescriptorBufferInfo bufferInfo = {};
-            VkWriteDescriptorSetAccelerationStructureKHR accelerationStructureInfo = {};
             if (descriptorInfo.type == VK_DESCRIPTOR_TYPE_SAMPLER
                         || descriptorInfo.type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
                         || descriptorInfo.type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
@@ -253,7 +259,7 @@ void RenderData::_updateDescriptorSets() {
                                 "Error in RenderData::_updateDescriptorSets: Couldn't find sampler with binding "
                                 + std::to_string(descriptorInfo.binding) + ".");
                     }
-                    imageInfo.sampler = it->second->getVkSampler();
+                    descWriteData.imageInfo.sampler = it->second->getVkSampler();
                 }
                 if (descriptorInfo.type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
                             || descriptorInfo.type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
@@ -265,16 +271,16 @@ void RenderData::_updateDescriptorSets() {
                                 "Error in RenderData::_updateDescriptorSets: Couldn't find image view with binding "
                                 + std::to_string(descriptorInfo.binding) + ".");
                     }
-                    imageInfo.imageView = it->second->getVkImageView();
+                    descWriteData.imageInfo.imageView = it->second->getVkImageView();
                     VkImageLayout imageLayout;
                     if (descriptorInfo.type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
                         imageLayout = VK_IMAGE_LAYOUT_GENERAL;
                     } else {
                         imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                     }
-                    imageInfo.imageLayout = imageLayout;
+                    descWriteData.imageInfo.imageLayout = imageLayout;
                 }
-                descriptorWrite.pImageInfo = &imageInfo;
+                descriptorWrite.pImageInfo = &descWriteData.imageInfo;
             } else if (descriptorInfo.type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER
                        || descriptorInfo.type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) {
                 auto it = frameData.bufferViews.find(descriptorInfo.binding);
@@ -283,8 +289,8 @@ void RenderData::_updateDescriptorSets() {
                             "Error in RenderData::_updateDescriptorSets: Couldn't find buffer view with binding "
                             + std::to_string(descriptorInfo.binding) + ".");
                 }
-                bufferView = it->second->getVkBufferView();
-                descriptorWrite.pTexelBufferView = &bufferView;
+                descWriteData.bufferView = it->second->getVkBufferView();
+                descriptorWrite.pTexelBufferView = &descWriteData.bufferView;
             } else if (descriptorInfo.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
                        || descriptorInfo.type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
                        || descriptorInfo.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC
@@ -295,10 +301,10 @@ void RenderData::_updateDescriptorSets() {
                             "Error in RenderData::_updateDescriptorSets: Couldn't find buffer with binding "
                             + std::to_string(descriptorInfo.binding) + ".");
                 }
-                bufferInfo.buffer = it->second->getVkBuffer();
-                bufferInfo.offset = 0;
-                bufferInfo.range = it->second->getSizeInBytes();
-                descriptorWrite.pBufferInfo = &bufferInfo;
+                descWriteData.bufferInfo.buffer = it->second->getVkBuffer();
+                descWriteData.bufferInfo.offset = 0;
+                descWriteData.bufferInfo.range = it->second->getSizeInBytes();
+                descriptorWrite.pBufferInfo = &descWriteData.bufferInfo;
             } else if (descriptorInfo.type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
                 auto it = frameData.accelerationStructures.find(descriptorInfo.binding);
                 if (it == frameData.accelerationStructures.end()) {
@@ -306,10 +312,11 @@ void RenderData::_updateDescriptorSets() {
                             "Error in RenderData::_updateDescriptorSets: Couldn't find acceleration structure with "
                             "binding " + std::to_string(descriptorInfo.binding) + ".");
                 }
-                accelerationStructureInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
-                accelerationStructureInfo.accelerationStructureCount = 1;
-                accelerationStructureInfo.pAccelerationStructures = &it->second;
-                descriptorWrite.pNext = &accelerationStructureInfo;
+                descWriteData.accelerationStructureInfo.sType =
+                        VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+                descWriteData.accelerationStructureInfo.accelerationStructureCount = 1;
+                descWriteData.accelerationStructureInfo.pAccelerationStructures = &it->second;
+                descriptorWrite.pNext = &descWriteData.accelerationStructureInfo;
             }
         }
 

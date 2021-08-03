@@ -73,7 +73,7 @@ void BlitRenderPass::recreateSwapchain(uint32_t width, uint32_t height) {
     framebuffers.clear();
     for (size_t i = 0; i < outputImageViews.size(); i++) {
         FramebufferPtr framebuffer = std::make_shared<sgl::vk::Framebuffer>(device, width, height);
-        framebuffer->setColorAttachment(outputImageViews.front(), 0, attachmentState);
+        framebuffer->setColorAttachment(outputImageViews.at(i), 0, attachmentState);
         framebuffers.push_back(framebuffer);
     }
     framebuffer = framebuffers.front();
@@ -96,10 +96,10 @@ void BlitRenderPass::setupGeometryBuffers() {
             0, 2, 3,
     };
     std::vector<float> vertexData = {
-            -1.0f, -1.0f, 0.0f, 0.0f, 1.0f,
-             1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-             1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
             -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+             1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+             1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+            -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
     };
     indexBuffer = std::make_shared<sgl::vk::Buffer>(
             device, indexData.size() * sizeof(uint32_t), indexData.data(),
@@ -119,7 +119,7 @@ void BlitRenderPass::createRasterData(sgl::vk::Renderer* renderer, sgl::vk::Grap
     rasterData = std::make_shared<sgl::vk::RasterData>(renderer, graphicsPipeline);
     rasterData->setIndexBuffer(indexBuffer);
     rasterData->setVertexBuffer(vertexBuffer, 0);
-    //rasterData->setStaticTexture(inputTexture, "inputTexture");
+    rasterData->setStaticTexture(inputTexture, "inputTexture");
 }
 
 void BlitRenderPass::setGraphicsPipelineInfo(sgl::vk::GraphicsPipelineInfo& graphicsPipelineInfo) {

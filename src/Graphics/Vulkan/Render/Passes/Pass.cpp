@@ -54,11 +54,13 @@ void RasterPass::_render() {
 void RasterPass::_build() {
     if (shaderDirty) {
         loadShader();
+        shaderDirty = false;
     }
 
     if (!framebuffer) {
         Logfile::get()->throwError("Error in RasterPass::_build: No framebuffer object is set.");
     }
+    framebufferDirty = false;
 
     sgl::vk::GraphicsPipelineInfo graphicsPipelineInfo(shaderStages);
     graphicsPipelineInfo.setFramebuffer(framebuffer);

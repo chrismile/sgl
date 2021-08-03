@@ -39,10 +39,10 @@
 #endif
 #ifdef SUPPORT_VULKAN
 #include "imgui_impl_vulkan.h"
-#include "Graphics/Vulkan/Utils/Instance.hpp"
-#include "Graphics/Vulkan/Utils/Device.hpp"
-#include "Graphics/Vulkan/Utils/Swapchain.hpp"
-#include "Graphics/Vulkan/Image/Image.hpp"
+#include <Graphics/Vulkan/Utils/Instance.hpp>
+#include <Graphics/Vulkan/Utils/Device.hpp>
+#include <Graphics/Vulkan/Utils/Swapchain.hpp>
+#include <Graphics/Vulkan/Render/Renderer.hpp>
 #endif
 #include "imgui_impl_sdl.h"
 #include "ImGuiWrapper.hpp"
@@ -174,14 +174,14 @@ void ImGuiWrapper::shutdown() {
         vk::Device* device = AppSettings::get()->getPrimaryDevice();
 
         imguiCommandBuffers.clear();
-        framebuffers.clear();
-        imageViews.clear();
+        framebuffer = vk::FramebufferPtr();
+        renderTargetImageView = vk::ImageViewPtr();
 
         vkDestroyDescriptorPool(device->getVkDevice(), imguiDescriptorPool, nullptr);
         ImGui_ImplVulkan_Shutdown();
-        vkFreeCommandBuffers(
-                device->getVkDevice(), commandPool,
-                uint32_t(imguiCommandBuffers.size()), imguiCommandBuffers.data());
+        //vkFreeCommandBuffers(
+        //        device->getVkDevice(), commandPool,
+        //        uint32_t(imguiCommandBuffers.size()), imguiCommandBuffers.data());
     }
 #endif
     ImGui_ImplSDL2_Shutdown();
@@ -193,24 +193,20 @@ void ImGuiWrapper::processSDLEvent(const SDL_Event &event) {
 }
 
 #ifdef SUPPORT_VULKAN
-void ImGuiWrapper::setVkRenderTargets(std::vector<vk::ImageViewPtr> &imageViews) {
+void ImGuiWrapper::setVkRenderTarget(vk::ImageViewPtr &imageView) {
     vk::Device* device = AppSettings::get()->getPrimaryDevice();
     Window* window = AppSettings::get()->getMainWindow();
 
-    this->imageViews = imageViews;
-    framebuffers.clear();
+    this->renderTargetImageView = imageView;
 
-    for (vk::ImageViewPtr& imageView : imageViews) {
-        vk::AttachmentState attachmentState;
-        attachmentState.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-        attachmentState.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        attachmentState.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    vk::AttachmentState attachmentState;
+    attachmentState.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attachmentState.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    attachmentState.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-        vk::FramebufferPtr framebuffer = vk::FramebufferPtr(new vk::Framebuffer(
-                device, window->getWidth(), window->getHeight()));
-        framebuffer->setColorAttachment(imageView, 0, attachmentState);
-        framebuffers.push_back(framebuffer);
-    }
+    framebuffer = vk::FramebufferPtr(new vk::Framebuffer(
+            device, window->getWidth(), window->getHeight()));
+    framebuffer->setColorAttachment(imageView, 0, attachmentState);
 }
 #endif
 
@@ -260,7 +256,7 @@ void ImGuiWrapper::renderStart() {
         initInfo.Allocator = nullptr;
         initInfo.CheckVkResultFn = checkImGuiVkResult;
 
-        ImGui_ImplVulkan_Init(&initInfo, framebuffers.front()->getVkRenderPass());
+        ImGui_ImplVulkan_Init(&initInfo, framebuffer->getVkRenderPass());
 
         VkCommandBuffer commandBuffer = device->beginSingleTimeCommands();
         ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
@@ -297,19 +293,19 @@ void ImGuiWrapper::renderEnd() {
 #endif
 #ifdef SUPPORT_VULKAN
     if (renderSystem == RenderSystem::VULKAN) {
-        vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
-        VkCommandBuffer commandBuffer = imguiCommandBuffers.at(swapchain->getImageIndex());
-        vk::FramebufferPtr framebuffer = framebuffers.at(swapchain->getImageIndex());
+        //vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
+        VkCommandBuffer commandBuffer = rendererVk->getVkCommandBuffer();//imguiCommandBuffers.at(swapchain->getImageIndex());
+        //vk::FramebufferPtr framebuffer = framebuffers.at(swapchain->getImageIndex());
 
-        VkCommandBufferBeginInfo beginInfo = {};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-        beginInfo.pInheritanceInfo = nullptr;
+        //VkCommandBufferBeginInfo beginInfo = {};
+        //beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        //beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        //beginInfo.pInheritanceInfo = nullptr;
 
-        if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
-            Logfile::get()->throwError(
-                    "Error in ImGuiWrapper::renderEnd: Could not begin recording a command buffer.");
-        }
+        //if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+        //    Logfile::get()->throwError(
+        //            "Error in ImGuiWrapper::renderEnd: Could not begin recording a command buffer.");
+        //}
 
         VkRenderPassBeginInfo renderPassBeginInfo = {};
         renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -326,7 +322,8 @@ void ImGuiWrapper::renderEnd() {
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 
         vkCmdEndRenderPass(commandBuffer);
-        vkEndCommandBuffer(commandBuffer);
+        //vkEndCommandBuffer(commandBuffer);
+        rendererVk->clearGraphicsPipeline();
     }
 #endif
 

@@ -249,10 +249,20 @@ void Renderer::render(RasterDataPtr rasterData, const FramebufferPtr& framebuffe
     rasterData->_updateDescriptorSets();
     VkDescriptorSet descriptorSet = rasterData->getVkDescriptorSet();
     if (descriptorSet != VK_NULL_HANDLE) {
-        vkCmdBindDescriptorSets(
-                commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                graphicsPipeline->getVkPipelineLayout(),
-                0, 1, &descriptorSet, 0, nullptr);
+        if (graphicsPipeline->getShaderStages()->getVkDescriptorSetLayouts().size() == 1) {
+            vkCmdBindDescriptorSets(
+                    commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    graphicsPipeline->getVkPipelineLayout(),
+                    0, 1, &descriptorSet, 0, nullptr);
+        } else {
+            VkDescriptorSet descriptorSets[2];
+            descriptorSets[0] = descriptorSet;
+            descriptorSets[1] = matrixBlockDescriptorSet;
+            vkCmdBindDescriptorSets(
+                    commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    graphicsPipeline->getVkPipelineLayout(),
+                    0, 2, descriptorSets, 0, nullptr);
+        }
     }
 
     if (rasterData->hasIndexBuffer()) {

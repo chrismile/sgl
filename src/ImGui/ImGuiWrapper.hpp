@@ -42,6 +42,7 @@ class ImageView;
 typedef std::shared_ptr<ImageView> ImageViewPtr;
 class Framebuffer;
 typedef std::shared_ptr<Framebuffer> FramebufferPtr;
+class Renderer;
 }}
 #endif
 
@@ -92,7 +93,8 @@ public:
     void showHelpMarker(const char* desc);
 
 #ifdef SUPPORT_VULKAN
-    void setVkRenderTargets(std::vector<vk::ImageViewPtr>& imageViews);
+    void setVkRenderTarget(vk::ImageViewPtr& imageView);
+    void setRendererVk(vk::Renderer* renderer) { rendererVk = renderer; }
     std::vector<VkCommandBuffer>& getVkCommandBuffers() { return imguiCommandBuffers; }
 #endif
 
@@ -105,9 +107,10 @@ private:
     bool initialized = false;
     VkDescriptorPool imguiDescriptorPool = VK_NULL_HANDLE;
     VkCommandPool commandPool = VK_NULL_HANDLE;
+    vk::Renderer* rendererVk = nullptr;
     std::vector<VkCommandBuffer> imguiCommandBuffers;
-    std::vector<vk::FramebufferPtr> framebuffers;
-    std::vector<vk::ImageViewPtr> imageViews;
+    vk::FramebufferPtr framebuffer;
+    vk::ImageViewPtr renderTargetImageView;
     ImGui_ImplVulkanH_Window mainWindowData;
 #endif
 };

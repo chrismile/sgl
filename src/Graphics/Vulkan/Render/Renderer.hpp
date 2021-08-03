@@ -115,6 +115,11 @@ public:
     inline Device* getDevice() { return device; }
     inline VkCommandBuffer getVkCommandBuffer() { return commandBuffer; }
     inline VkDescriptorPool getVkDescriptorPool() { return globalDescriptorPool; }
+    inline void clearGraphicsPipeline() {
+        graphicsPipeline = GraphicsPipelinePtr();
+        lastFramebuffer = FramebufferPtr();
+        recordingCommandBufferStarted = true;
+    }
 
 private:
     Device* device;

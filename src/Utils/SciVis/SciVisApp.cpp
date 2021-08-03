@@ -79,7 +79,8 @@ SciVisApp::SciVisApp(float fovy)
 #ifdef SUPPORT_VULKAN
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
         device = sgl::AppSettings::get()->getPrimaryDevice();
-    }
+        ImGuiWrapper::get()->setRendererVk(rendererVk);
+  }
 #endif
 
     sgl::FileUtils::get()->ensureDirectoryExists(saveDirectoryScreenshots);
@@ -171,7 +172,8 @@ void SciVisApp::createSceneFramebuffer() {
         imageSettings.height = height;
 
         // Create scene texture.
-        imageSettings.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+        imageSettings.usage =
+                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         if (useLinearRGB) {
             imageSettings.format = VK_FORMAT_R16G16B16A16_UNORM;
         } else {
@@ -241,7 +243,8 @@ void SciVisApp::resolutionChanged(sgl::EventPtr event) {
 
     sgl::vk::Swapchain* swapchain = sgl::AppSettings::get()->getSwapchain();
     if (swapchain && AppSettings::get()->getUseGUI()) {
-        sgl::ImGuiWrapper::get()->setVkRenderTargets(swapchain->getSwapchainImageViews());
+        //sgl::ImGuiWrapper::get()->setVkRenderTargets(swapchain->getSwapchainImageViews());
+        sgl::ImGuiWrapper::get()->setVkRenderTarget(compositedTextureVk->getImageView());
         sgl::ImGuiWrapper::get()->onResolutionChanged();
     }
 
@@ -315,7 +318,11 @@ void SciVisApp::preRender() {
         rendererVk->transitionImageLayout(sceneTextureVk->getImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
         sceneTextureVk->getImageView()->clearColor(
                 clearColor.getFloatColorRGBA(), rendererVk->getVkCommandBuffer());
-   }
+        rendererVk->transitionImageLayout(
+                sceneTextureVk->getImage(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+        rendererVk->transitionImageLayout(
+                compositedTextureVk->getImage(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+  }
 #endif
 }
 
@@ -413,7 +420,7 @@ void SciVisApp::postRender() {
                 + "_" + sgl::toString(screenshotNumber++) + ".png");
         if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
             rendererVk->transitionImageLayout(
-                    compositedTextureVk->getImage(), VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR);
+                    compositedTextureVk->getImage(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
         }
         printNow = false;
     }
@@ -431,7 +438,7 @@ void SciVisApp::postRender() {
                     compositedTextureVk->getImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
             videoWriter->pushFramebufferImage(compositedTextureVk->getImage());
             rendererVk->transitionImageLayout(
-                    compositedTextureVk->getImage(), VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR);
+                    compositedTextureVk->getImage(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
         }
 #endif
     }
