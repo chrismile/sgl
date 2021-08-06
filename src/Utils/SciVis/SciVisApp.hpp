@@ -49,6 +49,8 @@ class RasterData;
 typedef std::shared_ptr<RasterData> RasterDataPtr;
 class BlitRenderPass;
 typedef std::shared_ptr<BlitRenderPass> BlitRenderPassPtr;
+class ScreenshotReadbackHelper;
+typedef std::shared_ptr<ScreenshotReadbackHelper> ScreenshotReadbackHelperPtr;
 }}
 #endif
 
@@ -117,7 +119,7 @@ protected:
     sgl::vk::BlitRenderPassPtr sceneTextureGammaCorrectionPass;
     sgl::vk::BlitRenderPassPtr compositedTextureBlitPass;
 
-    sgl::vk::ImagePtr readBackImage; ///< For reading back screenshots from the GPU.
+    sgl::vk::ScreenshotReadbackHelperPtr readbackHelperVk; ///< For reading back screenshots from the GPU.
 
     sgl::vk::Device* device = nullptr;
 #endif
@@ -157,6 +159,7 @@ protected:
 
     // For recording videos.
     bool recording = false;
+    bool isFirstRecordingFrame = true;
     glm::ivec2 recordingResolution = glm::ivec2(2560, 1440); // 1920, 1080
     bool useRecordingResolution = true;
     sgl::VideoWriter* videoWriter = nullptr;

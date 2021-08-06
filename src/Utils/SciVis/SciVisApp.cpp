@@ -42,6 +42,8 @@
 #endif
 #ifdef SUPPORT_VULKAN
 #include <Graphics/Vulkan/Utils/Swapchain.hpp>
+#include <Graphics/Vulkan/Utils/Device.hpp>
+#include <Graphics/Vulkan/Utils/ScreenshotReadbackHelper.hpp>
 #include <Graphics/Vulkan/Image/Image.hpp>
 #include <Graphics/Vulkan/Render/Renderer.hpp>
 #include <Graphics/Vulkan/Render/Data.hpp>
@@ -133,7 +135,7 @@ SciVisApp::SciVisApp(float fovy)
                 rendererVk, {"GammaCorrection.Vertex", "GammaCorrection.Fragment"}));
         compositedTextureBlitPass = std::make_shared<vk::BlitRenderPass>(rendererVk);
 
-        // on resolution changed:
+        readbackHelperVk = std::make_shared<vk::ScreenshotReadbackHelper>(rendererVk);
     }
 #endif
 }
@@ -198,16 +200,6 @@ void SciVisApp::createSceneFramebuffer() {
                 device, imageSettings, sgl::vk::ImageSamplerSettings(),
                 VK_IMAGE_ASPECT_COLOR_BIT);
 
-        // Create the read-back image used for saving screenshots.
-        vk::ImageSettings imageSettingsReadBack;
-        imageSettingsReadBack.width = width;
-        imageSettingsReadBack.width = height;
-        imageSettingsReadBack.format = VK_FORMAT_R8G8B8A8_UINT;
-        imageSettingsReadBack.tiling = VK_IMAGE_TILING_LINEAR;
-        imageSettingsReadBack.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-        imageSettingsReadBack.memoryUsage = VMA_MEMORY_USAGE_GPU_TO_CPU;
-        readBackImage = std::make_shared<vk::Image>(device, imageSettingsReadBack);
-
         // Pass the textures to the render passes.
         sceneTextureBlitPass->setInputTexture(sceneTextureVk);
         sceneTextureBlitPass->setOutputImage(compositedTextureVk->getImageView());
@@ -222,6 +214,8 @@ void SciVisApp::createSceneFramebuffer() {
         compositedTextureBlitPass->setOutputImages(swapchain->getSwapchainImageViews());
         compositedTextureBlitPass->setOutputImageLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
         compositedTextureBlitPass->recreateSwapchain(width, height);
+
+        readbackHelperVk->onSwapchainRecreated();
     }
 #endif
 }
@@ -237,6 +231,11 @@ void SciVisApp::resolutionChanged(sgl::EventPtr event) {
         glViewport(0, 0, width, height);
     }
 #endif
+#ifdef SUPPORT_VULKAN
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+        device->waitIdle();
+    }
+#endif
 
     // Buffers for off-screen rendering
     createSceneFramebuffer();
@@ -248,6 +247,12 @@ void SciVisApp::resolutionChanged(sgl::EventPtr event) {
         sgl::ImGuiWrapper::get()->onResolutionChanged();
     }
 
+#ifdef SUPPORT_VULKAN
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN && videoWriter) {
+        videoWriter->onSwapchainRecreated();
+    }
+#endif
+
     camera->onResolutionChanged(event);
     reRender = true;
 }
@@ -257,10 +262,11 @@ void SciVisApp::saveScreenshot(const std::string &filename) {
     int width = window->getWidth();
     int height = window->getHeight();
 
-    sgl::BitmapPtr bitmap(new sgl::Bitmap(width, height, 32));
+    sgl::BitmapPtr bitmap;
 
 #ifdef SUPPORT_OPENGL
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
+        bitmap = std::make_shared<sgl::Bitmap>(width, height, 32);
         glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, bitmap->getPixels());
     }
 #endif
@@ -268,14 +274,15 @@ void SciVisApp::saveScreenshot(const std::string &filename) {
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
         rendererVk->transitionImageLayout(
                 compositedTextureVk->getImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-        compositedTextureVk->getImage()->blit(readBackImage); //< Synchronous operation (suboptimal).
-        uint8_t* mappedData = reinterpret_cast<uint8_t*>(readBackImage->mapMemory());
-        memcpy(bitmap->getPixels(), mappedData, width * height * 4);
-        readBackImage->unmapMemory();
+        readbackHelperVk->requestScreenshotReadback(compositedTextureVk->getImage(), filename);
     }
 #endif
 
-    bitmap->savePNG(filename.c_str(), true);
+#ifdef SUPPORT_OPENGL
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
+        bitmap->savePNG(filename.c_str(), true);
+    }
+#endif
     screenshot = false;
 }
 
@@ -291,6 +298,11 @@ void SciVisApp::processSDLEvent(const SDL_Event &event) {
 void SciVisApp::preRender() {
     if (videoWriter == nullptr && recording) {
         videoWriter = new sgl::VideoWriter(saveFilenameVideos + ".mp4", FRAME_RATE_VIDEOS);
+#ifdef SUPPORT_VULKAN
+        if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+            videoWriter->setRenderer(rendererVk);
+        }
+#endif
     }
 
     sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
@@ -322,6 +334,10 @@ void SciVisApp::preRender() {
                 sceneTextureVk->getImage(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
         rendererVk->transitionImageLayout(
                 compositedTextureVk->getImage(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+        vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
+        uint32_t imageIndex = swapchain ? swapchain->getImageIndex() : 0;
+        readbackHelperVk->saveDataIfAvailable(imageIndex);
   }
 #endif
 }
@@ -413,6 +429,10 @@ void SciVisApp::postRender() {
     }
 #endif
 
+
+    sgl::ImGuiWrapper::get()->renderStart();
+    renderGui();
+
     if (!screenshotTransparentBackground && !uiOnScreenshot && screenshot) {
         printNow = true;
         saveScreenshot(
@@ -426,7 +446,7 @@ void SciVisApp::postRender() {
     }
 
     // Video recording enabled?
-    if (!uiOnScreenshot && recording) {
+    if (!uiOnScreenshot && recording && !isFirstRecordingFrame) {
 #ifdef SUPPORT_OPENGL
         if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
             videoWriter->pushWindowFrame();
@@ -443,9 +463,9 @@ void SciVisApp::postRender() {
 #endif
     }
 
-    renderGui();
+    sgl::ImGuiWrapper::get()->renderEnd();
 
-    if (uiOnScreenshot && recording) {
+    if (uiOnScreenshot && recording&& !isFirstRecordingFrame) {
 #ifdef SUPPORT_OPENGL
         if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
             videoWriter->pushWindowFrame();
@@ -475,6 +495,8 @@ void SciVisApp::postRender() {
         compositedTextureBlitPass->render();
     }
 #endif
+
+    isFirstRecordingFrame = false;
 }
 
 void SciVisApp::renderGui() {
@@ -553,9 +575,7 @@ void SciVisApp::renderSceneSettingsGuiPost() {
 
     ImGui::InputText("##savescreenshotlabel", &saveFilenameScreenshots);
     if (ImGui::Button("Save Screenshot")) {
-        saveScreenshot(
-                saveDirectoryScreenshots + saveFilenameScreenshots
-                + "_" + sgl::toString(screenshotNumber++) + ".png");
+        screenshot = true;
     }
 
     // Transparent backgrounds not supported in Vulkan so far.
@@ -595,10 +615,16 @@ void SciVisApp::renderSceneSettingsGuiPost() {
             }
 
             recording = true;
+            isFirstRecordingFrame = true;
             sgl::ColorLegendWidget::setFontScale(1.0f);
             videoWriter = new sgl::VideoWriter(
                     saveDirectoryVideos + saveFilenameVideos
                     + "_" + sgl::toString(videoNumber++) + ".mp4", FRAME_RATE_VIDEOS);
+#ifdef SUPPORT_VULKAN
+            if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+                videoWriter->setRenderer(rendererVk);
+            }
+#endif
         }
     } else {
         if (ImGui::Button("Stop Recording Video")) {

@@ -119,7 +119,7 @@ public:
      * @param commandBuffer The command buffer. If VK_NULL_HANDLE is specified, a transient command buffer is used and
      * the function will wait with vkQueueWaitIdle for the command to finish on the GPU.
      */
-    void copyBufferToImage(BufferPtr& buffer, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
+    void copyFromBuffer(BufferPtr& buffer, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 
     /**
      * Copies the content of the image to the specified buffer.
@@ -128,6 +128,17 @@ public:
      * the function will wait with vkQueueWaitIdle for the command to finish on the GPU.
      */
     void copyToBuffer(BufferPtr& buffer, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
+
+    /**
+     * Copies the content of the image to the specified image.
+     * @param destImage The destination image.
+     * @param aspectFlags The image aspect flags.
+     * @param commandBuffer The command buffer. If VK_NULL_HANDLE is specified, a transient command buffer is used and
+     * the function will wait with vkQueueWaitIdle for the command to finish on the GPU.
+     * NOTE: This operation
+     */
+    void copyToImage(
+            ImagePtr& destImage, VkImageAspectFlags aspectFlags, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 
     /**
      * Blits the content of this image to a destination image and performs format conversion if necessary.
@@ -149,6 +160,10 @@ public:
     void transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout);
     void transitionImageLayout(VkImageLayout newLayout, VkCommandBuffer commandBuffer);
     void transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout, VkCommandBuffer commandBuffer);
+
+    /// Ret.
+    VkSubresourceLayout getSubresourceLayout(
+            VkImageAspectFlags aspectFlags, uint32_t mipLevel = 0, uint32_t arrayLayer = 0) const;
 
     /// Transitions the image layout from the old layout to the new layout.
     inline VkImageLayout getVkImageLayout() const { return imageLayout; }

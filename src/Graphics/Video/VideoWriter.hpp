@@ -68,7 +68,12 @@ public:
 #endif
 
 #ifdef SUPPORT_VULKAN
-    inline void setRenderer(vk::Renderer* renderer) { this->renderer = renderer; }
+    inline void setRenderer(vk::Renderer* renderer) {
+        this->renderer = renderer;
+        if (AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+            onSwapchainRecreated();
+        }
+    }
     /**
      * Retrieves frame from the passed framebuffer image. The flag VK_BUFFER_USAGE_TRANSFER_SRC_BIT needs to be set!
      * @param framebuffer
@@ -79,6 +84,7 @@ public:
 
 private:
     void openFile(const std::string& filename, int framerate = 25);
+    void createCpuBufferData(int width, int height);
 
 #ifdef SUPPORT_OPENGL
     // Asynchronous CPU/GPU data transfer.

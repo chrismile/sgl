@@ -55,13 +55,19 @@ public:
     Swapchain(Device* device, bool useClipping = true);
     ~Swapchain();
     void create(Window* window);
-    void recreate();
+
+    /// Interface for window class.
+    void recreateSwapchain();
 
     /**
      * Updates of buffers etc. can be performed between beginFrame and renderFrame.
      */
     void beginFrame();
     void renderFrame(std::vector<VkCommandBuffer>& commandBuffers);
+
+    /// Called by the window class when the resolution changed.
+    inline void windowResolutionChanged() { framebufferResized = true; }
+    inline bool getIsWaitingForResizeEnd() const { return isWaitingForResizeEnd; }
 
     inline size_t getNumImages() { return swapchainImageViews.size(); }
     inline uint32_t getMinImageCount() { return minImageCount; }
@@ -71,7 +77,6 @@ public:
     inline uint32_t getImageIndex() const { return imageIndex; }
 
 private:
-    void recreateSwapchain();
     void createSwapchainImages();
     void createSwapchainImageViews();
     void createSyncObjects();
@@ -100,6 +105,7 @@ private:
     uint32_t imageIndex = 0;
     uint32_t minImageCount = 0;
     bool framebufferResized = false;
+    bool isWaitingForResizeEnd = false;
 
     // Only call @see createSyncObjects the first time the swapchain is created.
     bool createFirstTime = true;

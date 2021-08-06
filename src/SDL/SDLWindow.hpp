@@ -95,7 +95,7 @@ private:
     std::function<void(const SDL_Event&)> eventHandler;
 
     /// For toggle fullscreen: Resolution before going fullscreen
-    SDL_DisplayMode oldDisplayMode;
+    SDL_DisplayMode oldDisplayMode{};
     bool isFirstFrame = true;
 
     SDL_Window *sdlWindow = nullptr;
@@ -105,7 +105,7 @@ private:
 #endif
 
 #ifdef SUPPORT_VULKAN
-    VkSurfaceKHR windowSurface;
+    VkSurfaceKHR windowSurface{};
 #endif
 };
 

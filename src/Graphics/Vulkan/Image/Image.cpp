@@ -183,7 +183,8 @@ void Image::uploadData(VkDeviceSize sizeInBytes, void* data, bool generateMipmap
                 "is not set.");
     }
 
-    copyBufferToImage(stagingBuffer);
+    transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    copyFromBuffer(stagingBuffer);
 
     if (generateMipmaps) {
         _generateMipmaps();
@@ -192,9 +193,7 @@ void Image::uploadData(VkDeviceSize sizeInBytes, void* data, bool generateMipmap
     }
 }
 
-void Image::copyBufferToImage(BufferPtr& buffer, VkCommandBuffer commandBuffer) {
-    transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-
+void Image::copyFromBuffer(BufferPtr& buffer, VkCommandBuffer commandBuffer) {
     bool transientCommandBuffer = commandBuffer == VK_NULL_HANDLE;
     if (transientCommandBuffer) {
         commandBuffer = device->beginSingleTimeCommands();
@@ -228,8 +227,6 @@ void Image::copyBufferToImage(BufferPtr& buffer, VkCommandBuffer commandBuffer) 
 }
 
 void Image::copyToBuffer(BufferPtr& buffer, VkCommandBuffer commandBuffer) {
-    transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-
     bool transientCommandBuffer = commandBuffer == VK_NULL_HANDLE;
     if (transientCommandBuffer) {
         commandBuffer = device->beginSingleTimeCommands();
@@ -255,7 +252,34 @@ void Image::copyToBuffer(BufferPtr& buffer, VkCommandBuffer commandBuffer) {
             buffer->getVkBuffer(),
             1,
             &region
-    );
+            );
+
+    if (transientCommandBuffer) {
+        device->endSingleTimeCommands(commandBuffer);
+    }
+}
+
+void Image::copyToImage(ImagePtr& destImage, VkImageAspectFlags aspectFlags, VkCommandBuffer commandBuffer) {
+    bool transientCommandBuffer = commandBuffer == VK_NULL_HANDLE;
+    if (transientCommandBuffer) {
+        commandBuffer = device->beginSingleTimeCommands();
+    }
+
+    VkImageSubresourceLayers subresource{};
+    subresource.aspectMask = aspectFlags;
+    subresource.mipLevel = 0;
+    subresource.baseArrayLayer = 0;
+    subresource.layerCount = imageSettings.arrayLayers;
+
+    VkImageCopy imageCopy{};
+    imageCopy.srcSubresource = subresource;
+    imageCopy.srcOffset = { 0, 0, 0 };
+    imageCopy.dstSubresource = subresource;
+    imageCopy.dstOffset = { 0, 0, 0 };
+    imageCopy.extent = { imageSettings.width, imageSettings.height, imageSettings.depth };
+    vkCmdCopyImage(
+            commandBuffer, this->image, this->imageLayout, destImage->image, destImage->imageLayout,
+            1, &imageCopy);
 
     if (transientCommandBuffer) {
         device->endSingleTimeCommands(commandBuffer);
@@ -276,9 +300,6 @@ void Image::blit(ImagePtr& destImage, VkCommandBuffer commandBuffer) {
     if (transientCommandBuffer) {
         commandBuffer = device->beginSingleTimeCommands();
     }
-
-    destImage->transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
     VkImageBlit blit{};
     blit.srcOffsets[0] = { 0, 0, 0 };
@@ -305,9 +326,6 @@ void Image::blit(ImagePtr& destImage, VkCommandBuffer commandBuffer) {
                    destImage->getVkImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                    1, &blit,
                    VK_FILTER_LINEAR);
-
-    destImage->transitionImageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    this->transitionImageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     if (transientCommandBuffer) {
         device->endSingleTimeCommands(commandBuffer);
@@ -565,6 +583,18 @@ void* Image::mapMemory() {
 
 void Image::unmapMemory() {
     vmaUnmapMemory(device->getAllocator(), imageAllocation);
+}
+
+VkSubresourceLayout Image::getSubresourceLayout(
+        VkImageAspectFlags aspectFlags, uint32_t mipLevel, uint32_t arrayLayer) const {
+    VkImageSubresource imageSubresource{};
+    imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imageSubresource.mipLevel = 0;
+    imageSubresource.arrayLayer = 0;
+
+    VkSubresourceLayout subresourceLayout{};
+    vkGetImageSubresourceLayout(device->getVkDevice(), image, &imageSubresource, &subresourceLayout);
+    return subresourceLayout;
 }
 
 #ifdef SUPPORT_OPENGL

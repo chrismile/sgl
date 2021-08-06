@@ -44,12 +44,12 @@ ComputeData::ComputeData(ComputePipelinePtr& computePipeline) : computePipeline(
 RenderData::RenderData(Renderer* renderer, ShaderStagesPtr& shaderStages)
         : renderer(renderer), device(renderer->getDevice()), shaderStages(shaderStages) {
     swapchainRecreatedEventListenerToken = EventManager::get()->addListener(
-            SWAPCHAIN_RECREATED_EVENT, [this](EventPtr){ this->onSwapchainRecreated(); });
+            RESOLUTION_CHANGED_EVENT, [this](EventPtr){ this->onSwapchainRecreated(); });
     onSwapchainRecreated();
 }
 
 RenderData::~RenderData() {
-    EventManager::get()->removeListener(SWAPCHAIN_RECREATED_EVENT, swapchainRecreatedEventListenerToken);
+    EventManager::get()->removeListener(RESOLUTION_CHANGED_EVENT, swapchainRecreatedEventListenerToken);
 
     for (FrameData& frameData : frameDataList) {
         vkFreeDescriptorSets(

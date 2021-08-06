@@ -46,7 +46,6 @@ union SDL_Event;
 namespace sgl {
 
 const uint32_t RESOLUTION_CHANGED_EVENT = 74561634U;
-const uint32_t SWAPCHAIN_RECREATED_EVENT = 74561635U;
 
 /**
  * If one of the modes is not available, the next lower one is used.

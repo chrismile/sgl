@@ -61,8 +61,10 @@ VideoWriter::VideoWriter(const std::string& filename, int framerate, bool useAsy
     sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
     frameW = window->getWidth();
     frameH = window->getHeight();
-    if (useAsyncCopy) {
-        initializeReadBackBuffers();
+    if (AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
+        if (useAsyncCopy) {
+            initializeReadBackBuffers();
+        }
     }
     openFile(filename, framerate);
 }
@@ -101,7 +103,7 @@ VideoWriter::~VideoWriter() {
     }
 #endif
 
-    if (framebuffer != NULL) {
+    if (framebuffer != nullptr) {
 #ifdef __USE_ISOC11
         free(framebuffer);
 #else
@@ -121,23 +123,27 @@ void VideoWriter::pushFrame(uint8_t* pixels) {
     }
 }
 
-void VideoWriter::pushWindowFrame() {
-    sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
-    if (frameW != window->getWidth() || frameH != window->getHeight()) {
+void VideoWriter::createCpuBufferData(int width, int height) {
+    if (frameW != width || frameH != height) {
         sgl::Logfile::get()->writeError("ERROR in VideoWriter::VideoWriter: Window size changed.");
-        sgl::Logfile::get()->writeError(std::string()
-                                        + "Expected " + sgl::toString(frameW) + "x" + sgl::toString(frameH)
-                                        + ", but got " + sgl::toString(window->getWidth()) + "x" + sgl::toString(window->getHeight()) + ".");
+        sgl::Logfile::get()->throwError(
+                std::string() + "Expected " + sgl::toString(frameW) + "x" + sgl::toString(frameH)
+                + ", but got " + sgl::toString(width) + "x" + sgl::toString(height) + ".");
         return;
     }
-    if (framebuffer == NULL) {
-        // Use 512-bit alignment for e.g. AVX-512, as ffmpeg might want to use vector instructions on the data stream.
+    if (framebuffer == nullptr) {
+        // Use 512-bit alignment for, e.g., AVX-512, as ffmpeg might want to use vector instructions on the data stream.
 #ifdef _ISOC11_SOURCE
         framebuffer = static_cast<uint8_t*>(aligned_alloc(64, frameW * frameH * 3)); // 512-bit aligned
 #else
         framebuffer = new uint8_t[frameW * frameH * 3];
 #endif
     }
+}
+
+void VideoWriter::pushWindowFrame() {
+    sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
+    createCpuBufferData(window->getWidth(), window->getHeight());
 
     if (useAsyncCopy) {
         if (!isReadBackBufferFree()) {
@@ -191,12 +197,14 @@ void VideoWriter::onSwapchainRecreated() {
     while (numSwapchainImages > readBackImages.size()) {
         vk::ImageSettings imageSettings;
         imageSettings.width = frameW;
-        imageSettings.width = frameH;
+        imageSettings.height = frameH;
         imageSettings.format = VK_FORMAT_R8G8B8A8_UINT;
         imageSettings.tiling = VK_IMAGE_TILING_LINEAR;
         imageSettings.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         imageSettings.memoryUsage = VMA_MEMORY_USAGE_GPU_TO_CPU;
-        readBackImages.push_back(vk::ImagePtr(new vk::Image(device, imageSettings)));
+        vk::ImagePtr readBackImage(new vk::Image(device, imageSettings));
+        readBackImage->transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        readBackImages.push_back(readBackImage);
     }
     queueCapacity = numSwapchainImages;
 }
@@ -207,23 +215,43 @@ void VideoWriter::readBackOldestFrameVulkan() {
     startPointer = (startPointer + 1) % queueCapacity;
     queueSize--;
 
+    VkSubresourceLayout subresourceLayout = readBackImage->getSubresourceLayout(VK_IMAGE_ASPECT_COLOR_BIT);
+
     uint8_t* mappedData = reinterpret_cast<uint8_t*>(readBackImage->mapMemory());
-    int imageSize = frameW * frameH;
-    for (int i = 0; i < imageSize; i++) {
-        framebuffer[i * 3] = mappedData[i * 4];
-        framebuffer[i * 3 + 1] = mappedData[i * 4 + 1];
-        framebuffer[i * 3 + 2] = mappedData[i * 4 + 2];
+    for (int y = 0; y < frameH; y++) {
+        for (int x = 0; x < frameW; x++) {
+            int readOffset = int(subresourceLayout.offset) + x * 4 + int(subresourceLayout.rowPitch) * (frameH - y - 1);
+            int writeOffset = (x + y * frameW) * 3;
+            framebuffer[writeOffset] = mappedData[readOffset];
+            framebuffer[writeOffset + 1] = mappedData[readOffset + 1];
+            framebuffer[writeOffset + 2] = mappedData[readOffset + 2];
+        }
     }
     readBackImage->unmapMemory();
     pushFrame(framebuffer);
 }
 
 void VideoWriter::pushFramebufferImage(vk::ImagePtr& image) {
+    if (AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN && queueSize == 0
+            && (frameW != int(image->getImageSettings().width) || frameH != int(image->getImageSettings().height))) {
+        Logfile::get()->writeInfo(
+                "Info: VideoWriter::pushFramebufferImage: Swapchain recreation is lagging behind. "
+                "A few of the first recorded frames might be missed.");
+        return;
+    }
+
+    createCpuBufferData(int(image->getImageSettings().width), int(image->getImageSettings().height));
+
     vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
     uint32_t imageIndex = swapchain ? swapchain->getImageIndex() : 0;
 
     if (imageIndex != endPointer) {
-        Logfile::get()->throwError("Error in VideoWriter::pushFramebufferImage: imageIndex != endPointer");
+        if (queueSize == 0) {
+            startPointer = imageIndex;
+            endPointer = imageIndex;
+        } else {
+            Logfile::get()->throwError("Error in VideoWriter::pushFramebufferImage: imageIndex != endPointer");
+        }
     }
 
     // Queue full?
@@ -233,7 +261,10 @@ void VideoWriter::pushFramebufferImage(vk::ImagePtr& image) {
 
     // Copy the image data to the GPU -> CPU read-back image.
     vk::ImagePtr& readBackImage = readBackImages.at(imageIndex);
-    image->blit(readBackImage, renderer->getVkCommandBuffer());
+    // No FORMAT_FEATURE_BLIT_DST_BIT for linearTiling on NVIDIA drivers.
+    // image->blit(readBackImage, renderer->getVkCommandBuffer());
+    image->copyToImage(
+            readBackImage, VK_IMAGE_ASPECT_COLOR_BIT, renderer->getVkCommandBuffer());
     endPointer = (endPointer + 1) % queueCapacity;
     queueSize++;
 }

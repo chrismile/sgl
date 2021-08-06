@@ -26,19 +26,22 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "SDLWindow.hpp"
-#include "Input/SDLMouse.hpp"
-#include "Input/SDLKeyboard.hpp"
-#include "Input/SDLGamepad.hpp"
+#include <iostream>
+#include <cstdlib>
+#include <boost/algorithm/string/predicate.hpp>
+#include <SDL2/SDL.h>
+
 #include <Math/Math.hpp>
 #include <Utils/AppSettings.hpp>
 #include <Utils/File/FileUtils.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/Events/EventManager.hpp>
 #include <Graphics/Texture/Bitmap.hpp>
-#include <cstdlib>
-#include <boost/algorithm/string/predicate.hpp>
-#include <SDL2/SDL.h>
+
+#include "Input/SDLMouse.hpp"
+#include "Input/SDLKeyboard.hpp"
+#include "Input/SDLGamepad.hpp"
+#include "SDLWindow.hpp"
 
 #ifdef SUPPORT_OPENGL
 #include <GL/glew.h>
@@ -52,14 +55,13 @@
 #ifdef SUPPORT_VULKAN
 #include <vulkan/vulkan.h>
 #include <Graphics/Vulkan/Utils/Instance.hpp>
+#include <Graphics/Vulkan/Utils/Device.hpp>
 #include <Graphics/Vulkan/Utils/Swapchain.hpp>
 #endif
 
 namespace sgl {
 
-SDLWindow::SDLWindow()
-{
-}
+SDLWindow::SDLWindow() = default;
 
 SDLWindow::~SDLWindow()
 {
@@ -263,10 +265,18 @@ void SDLWindow::toggleFullscreen(bool nativeFullscreen)
 
 void SDLWindow::setWindowSize(int width, int height)
 {
-    SDL_SetWindowSize(sdlWindow, width, height);
     windowSettings.width = width;
     windowSettings.height = height;
-    EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
+    SDL_SetWindowSize(sdlWindow, width, height);
+    if (renderSystem != RenderSystem::VULKAN) {
+        EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
+    }
+#ifdef SUPPORT_VULKAN
+    if (renderSystem == RenderSystem::VULKAN) {
+        //sgl::vk::Device* device = sgl::AppSettings::get()->getPrimaryDevice();
+        //device->waitIdle();
+    }
+#endif
 }
 
 glm::ivec2 SDLWindow::getWindowPosition()
@@ -332,7 +342,17 @@ bool SDLWindow::processEvents()
                     case SDL_WINDOWEVENT_RESIZED:
                         windowSettings.width = event.window.data1;
                         windowSettings.height = event.window.data2;
-                        EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
+                        if (renderSystem != RenderSystem::VULKAN) {
+                            EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
+                        }
+#ifdef SUPPORT_VULKAN
+                        else {
+                            vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
+                            if (swapchain && !swapchain->getIsWaitingForResizeEnd()) {
+                                swapchain->recreateSwapchain();
+                            }
+                        }
+#endif
                         break;
                     case SDL_WINDOWEVENT_CLOSE:
                         if (event.window.windowID == SDL_GetWindowID(sdlWindow)) {

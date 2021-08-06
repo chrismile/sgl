@@ -27,6 +27,7 @@
  */
 
 #include <set>
+#include <iostream>
 
 #include <Utils/File/Logfile.hpp>
 #include <Utils/Events/EventManager.hpp>
@@ -165,28 +166,26 @@ void Swapchain::createSwapchainImageViews() {
     }
 }
 
-void Swapchain::recreate() {
-    cleanupRecreate();
-    create(window);
-}
-
 void Swapchain::recreateSwapchain() {
+    std::cout << "INFO: Swapchain::recreateSwapchain" << std::endl;
+
     int windowWidth = 0;
     int windowHeight = 0;
     SDLWindow* sdlWindow = static_cast<SDLWindow*>(window);
     SDL_Window* sdlWindowData = sdlWindow->getSDLWindow();
+    isWaitingForResizeEnd = true;
     while (windowWidth == 0 || windowHeight == 0) {
         SDL_Vulkan_GetDrawableSize(sdlWindowData, &windowWidth, &windowHeight);
         window->processEvents();
     }
+    isWaitingForResizeEnd = false;
 
     cleanupRecreate();
     create(window);
 
     // Recreate framebuffer, pipeline, ...
     // For the moment, a resolution changed event is additionally triggered to be compatible with OpenGL.
-    EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
-    EventManager::get()->queueEvent(EventPtr(new Event(SWAPCHAIN_RECREATED_EVENT)));
+    EventManager::get()->triggerEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
 }
 
 void Swapchain::beginFrame() {
@@ -243,8 +242,7 @@ void Swapchain::renderFrame(std::vector<VkCommandBuffer>& commandBuffers) {
     presentInfo.pResults = nullptr;
     VkResult result = vkQueuePresentKHR(device->getGraphicsQueue(), &presentInfo);
 
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized) {
-        framebufferResized = false;
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
         recreateSwapchain();
     } else if (result != VK_SUCCESS) {
         sgl::Logfile::get()->writeError("Error in Swapchain::renderFrame: Failed to present swap chain image!");

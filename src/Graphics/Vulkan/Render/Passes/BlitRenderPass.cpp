@@ -77,6 +77,7 @@ void BlitRenderPass::recreateSwapchain(uint32_t width, uint32_t height) {
         framebuffers.push_back(framebuffer);
     }
     framebuffer = framebuffers.front();
+    framebufferDirty = true;
 }
 
 
