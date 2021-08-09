@@ -52,6 +52,8 @@ public:
     inline VkPipeline getVkPipeline() { return pipeline; }
 
 protected:
+    void createPipelineLayout();
+
     Device* device;
     ShaderStagesPtr shaderStages;
 

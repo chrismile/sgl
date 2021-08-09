@@ -38,21 +38,7 @@ namespace sgl { namespace vk {
 
 RayTracingPipeline::RayTracingPipeline(Device* device, const RayTracingPipelineInfo& pipelineInfo)
         : Pipeline(device, pipelineInfo.shaderStages) {
-    const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts =
-            pipelineInfo.shaderStages->getVkDescriptorSetLayouts();
-
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
-    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = uint32_t(descriptorSetLayouts.size());
-    pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
-    pipelineLayoutInfo.pushConstantRangeCount = 0;
-    pipelineLayoutInfo.pPushConstantRanges = nullptr;
-
-    if (vkCreatePipelineLayout(
-            device->getVkDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
-        Logfile::get()->throwError(
-                "Error in RayTracingPipeline::RayTracingPipeline: Could not create a pipeline layout.");
-    }
+    createPipelineLayout();
 
     auto& shaderModules = pipelineInfo.shaderStages->getShaderModules();
     if (shaderModules.size() != 1 || shaderModules.front()->getShaderModuleType() != ShaderModuleType::COMPUTE) {

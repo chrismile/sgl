@@ -39,9 +39,6 @@ class DLL_OBJECT ComputePipelineInfo {
 public:
     ComputePipelineInfo();
 
-    /// Resets to standard settings.
-    void reset();
-
 protected:
     ShaderStagesPtr shaderStages;
 };
@@ -49,7 +46,7 @@ protected:
 class DLL_OBJECT ComputePipeline : public Pipeline {
 public:
     ComputePipeline(Device* device, const ComputePipelineInfo& pipelineInfo);
-    ~ComputePipeline();
+    ~ComputePipeline() override;
 
 protected:
 };

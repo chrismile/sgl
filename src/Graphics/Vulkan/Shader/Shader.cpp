@@ -61,6 +61,7 @@ void ShaderModule::createReflectData(const std::vector<uint32_t>& spirvCode) {
         throw std::runtime_error("spvReflectCreateShaderModule failed!");
     }
 
+
     // Get reflection information on the input variables.
     uint32_t numInputVariables = 0;
     result = spvReflectEnumerateInputVariables(&module, &numInputVariables, nullptr);
@@ -82,7 +83,8 @@ void ShaderModule::createReflectData(const std::vector<uint32_t>& spirvCode) {
         inputVariableDescriptors.push_back(varDesc);
     }
 
-    // Get reflection information on the descriptor sets (TODO).
+
+    // Get reflection information on the descriptor sets.
     uint32_t numDescriptorSets = 0;
     result = spvReflectEnumerateDescriptorSets(&module, &numDescriptorSets, nullptr);
     if (result != SPV_REFLECT_RESULT_SUCCESS) {
@@ -94,7 +96,6 @@ void ShaderModule::createReflectData(const std::vector<uint32_t>& spirvCode) {
         throw std::runtime_error("spvReflectEnumerateDescriptorSets failed!");
     }
 
-    //descriptorSetsInfo.resize(numDescriptorSets);
     for (uint32_t descSetIdx = 0; descSetIdx < numDescriptorSets; ++descSetIdx) {
         SpvReflectDescriptorSet* reflectDescriptorSet = descriptorSets.at(descSetIdx);
 
@@ -120,6 +121,29 @@ void ShaderModule::createReflectData(const std::vector<uint32_t>& spirvCode) {
 
         descriptorSetsInfo.insert(std::make_pair(reflectDescriptorSet->set, descriptorsInfo));
     }
+
+
+    // Get reflection information on the push constant blocks.
+    uint32_t numPushConstantBlocks = 0;
+    result = spvReflectEnumeratePushConstantBlocks(&module, &numPushConstantBlocks, nullptr);
+    if (result != SPV_REFLECT_RESULT_SUCCESS) {
+        throw std::runtime_error("spvReflectEnumeratePushConstantBlocks failed!");
+    }
+    std::vector<SpvReflectBlockVariable*> pushConstantBlockVariables(numPushConstantBlocks);
+    result = spvReflectEnumeratePushConstantBlocks(&module, &numPushConstantBlocks, pushConstantBlockVariables.data());
+    if (result != SPV_REFLECT_RESULT_SUCCESS) {
+        throw std::runtime_error("spvReflectEnumeratePushConstantBlocks failed!");
+    }
+
+    pushConstantRanges.resize(numInputVariables);
+    for (uint32_t blockIdx = 0; blockIdx < numPushConstantBlocks; blockIdx++) {
+        VkPushConstantRange& pushConstantRange = pushConstantRanges.at(blockIdx);
+        SpvReflectBlockVariable* pushConstantBlockVariable = pushConstantBlockVariables.at(blockIdx);
+        pushConstantRange.stageFlags = uint32_t(shaderModuleType);
+        pushConstantRange.offset = pushConstantBlockVariable->absolute_offset;
+        pushConstantRange.size = pushConstantBlockVariable->size;
+    }
+
 
     spvReflectDestroyShaderModule(&module);
 }
@@ -154,6 +178,7 @@ ShaderStages::ShaderStages(
         }
 
         mergeDescriptorSetsInfo(shaderModule->getDescriptorSetsInfo());
+        mergePushConstantRanges(shaderModule->getVkPushConstantRanges());
     }
 }
 
@@ -227,6 +252,29 @@ void ShaderStages::mergeDescriptorSetsInfo(const std::map<uint32_t, std::vector<
         }
     }
     createDescriptorSetLayouts();
+}
+
+void ShaderStages::mergePushConstantRanges(const std::vector<VkPushConstantRange>& newPushConstantRanges) {
+    if (pushConstantRanges.empty()) {
+        pushConstantRanges = newPushConstantRanges;
+        return;
+    }
+
+    for (const VkPushConstantRange& newPushConstantRange : newPushConstantRanges) {
+        bool foundIdenticalRange = false;
+        for (VkPushConstantRange& pushConstantRange : pushConstantRanges) {
+            // Identical?
+            if (pushConstantRange.offset == newPushConstantRange.offset
+                    && pushConstantRange.size == newPushConstantRange.size) {
+                pushConstantRange.stageFlags = pushConstantRange.stageFlags | newPushConstantRange.stageFlags;
+                foundIdenticalRange = true;
+                break;
+            }
+        }
+        if (!foundIdenticalRange) {
+            pushConstantRanges.push_back(newPushConstantRange);
+        }
+    }
 }
 
 void ShaderStages::createDescriptorSetLayouts() {

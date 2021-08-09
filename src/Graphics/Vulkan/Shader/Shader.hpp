@@ -95,6 +95,8 @@ public:
 
     const std::map<uint32_t, std::vector<DescriptorInfo>>& getDescriptorSetsInfo() const;
 
+    inline const std::vector<VkPushConstantRange>& getVkPushConstantRanges() const { return pushConstantRanges; }
+
     inline const std::string& getShaderModuleId() const { return shaderModuleId; }
     inline ShaderModuleType getShaderModuleType() const { return shaderModuleType; }
 
@@ -115,6 +117,7 @@ private:
     // SPIR-V reflection data.
     std::vector<InterfaceVariableDescriptor> inputVariableDescriptors;
     std::map<uint32_t, std::vector<DescriptorInfo>> descriptorSetsInfo; ///< set index -> descriptor set info
+    std::vector<VkPushConstantRange> pushConstantRanges;
 };
 
 typedef std::shared_ptr<ShaderModule> ShaderModulePtr;
@@ -145,9 +148,11 @@ public:
 
     inline const std::vector<VkPipelineShaderStageCreateInfo>& getVkShaderStages() const { return vkShaderStages; }
     inline const std::vector<VkDescriptorSetLayout>& getVkDescriptorSetLayouts() const { return descriptorSetLayouts; }
+    inline const std::vector<VkPushConstantRange>& getVkPushConstantRanges() const { return pushConstantRanges; }
 
 private:
     void mergeDescriptorSetsInfo(const std::map<uint32_t, std::vector<DescriptorInfo>>& newDescriptorSetsInfo);
+    void mergePushConstantRanges(const std::vector<VkPushConstantRange>& newPushConstantRanges);
     void createDescriptorSetLayouts();
 
     Device* device;
@@ -157,6 +162,7 @@ private:
     std::map<std::string, std::vector<DescriptorInfo>> descriptorSetNameBindingMap; ///< name -> binding
     std::map<std::string, uint32_t> inputVariableNameMap; ///< input interface variable name -> location
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts; ///< created from descriptorSetsInfo for use in Vulkan
+    std::vector<VkPushConstantRange> pushConstantRanges;
     uint32_t numDescriptorSets = 0;
     std::vector<VkPipelineShaderStageCreateInfo> vkShaderStages;
 

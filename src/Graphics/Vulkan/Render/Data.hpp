@@ -59,30 +59,15 @@ class RayTracingPipeline;
 typedef std::shared_ptr<RayTracingPipeline> RayTracingPipelinePtr;
 class Renderer;
 
-class DLL_OBJECT Data {
-public:
-    virtual ~Data() {}
-};
-
-class DLL_OBJECT ComputeData : public Data {
-public:
-    ComputeData(ComputePipelinePtr& computePipeline);
-
-    inline ComputePipelinePtr getComputePipeline() { return computePipeline; }
-
-protected:
-    ComputePipelinePtr computePipeline;
-};
-
 class RenderData;
 typedef std::shared_ptr<RenderData> RenderDataPtr;
 typedef uint32_t ListenerToken;
 
-class DLL_OBJECT RenderData : public Data {
+class DLL_OBJECT RenderData {
     friend class Renderer;
 public:
     RenderData(Renderer* renderer, ShaderStagesPtr& shaderStages);
-    ~RenderData();
+    virtual ~RenderData();
 
     /**
      * Creates a shallow copy of the render data using the passed shader stages.
@@ -159,6 +144,16 @@ private:
     std::vector<FrameData> frameDataList;
 };
 
+class DLL_OBJECT ComputeData : public RenderData {
+public:
+    explicit ComputeData(Renderer* renderer, ComputePipelinePtr& computePipeline);
+
+    inline ComputePipelinePtr getComputePipeline() { return computePipeline; }
+
+protected:
+    ComputePipelinePtr computePipeline;
+};
+
 class DLL_OBJECT RasterData : public RenderData {
 public:
     RasterData(Renderer* renderer, GraphicsPipelinePtr& graphicsPipeline);
@@ -167,7 +162,7 @@ public:
     void setVertexBuffer(BufferPtr& buffer, const std::string& name);
 
     inline void setNumInstances(size_t numInstances) { this->numInstances = numInstances; }
-    inline size_t getNumInstances() { return numInstances; }
+    inline size_t getNumInstances() const { return numInstances; }
 
     inline bool hasIndexBuffer() const { return indexBuffer.get(); }
     inline size_t getNumIndices() const { return numIndices; }

@@ -369,10 +369,14 @@ void Renderer::dispatch(ComputeDataPtr computeData, uint32_t groupCountX, uint32
                 computePipeline->getVkPipeline());
     }
 
-    //std::vector<VkDescriptorSet>& dataDescriptorSets = rasterData->getVkDescriptorSets();
-    //vkCmdBindDescriptorSets(
-    //        commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, graphicsPipeline->getVkPipelineLayout(),
-    //        1, uint32_t(dataDescriptorSets.size()), dataDescriptorSets.data(), 0, nullptr);
+    computeData->_updateDescriptorSets();
+    VkDescriptorSet descriptorSet = computeData->getVkDescriptorSet();
+    if (descriptorSet != VK_NULL_HANDLE) {
+        vkCmdBindDescriptorSets(
+                commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                computePipeline->getVkPipelineLayout(),
+                0, 1, &descriptorSet, 0, nullptr);
+    }
 
     vkCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
 }
@@ -403,6 +407,12 @@ void Renderer::traceRays(RayTracingDataPtr rayTracingData) {
 
 void Renderer::transitionImageLayout(vk::ImagePtr& image, VkImageLayout newLayout) {
     image->transitionImageLayout(newLayout, commandBuffer);
+}
+
+void Renderer::pushConstants(
+        PipelinePtr& pipeline, VkShaderStageFlagBits shaderStageFlagBits,
+        uint32_t offset, uint32_t size, const void* data) {
+    vkCmdPushConstants(commandBuffer, pipeline->getVkPipelineLayout(), shaderStageFlagBits, offset, size, data);
 }
 
 void Renderer::submitToQueue(

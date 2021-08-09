@@ -56,6 +56,8 @@ class RasterData;
 typedef std::shared_ptr<RasterData> RasterDataPtr;
 class RayTracingData;
 typedef std::shared_ptr<RayTracingData> RayTracingDataPtr;
+class Pipeline;
+typedef std::shared_ptr<Pipeline> PipelinePtr;
 class GraphicsPipeline;
 typedef std::shared_ptr<GraphicsPipeline> GraphicsPipelinePtr;
 class ComputePipeline;
@@ -85,6 +87,17 @@ public:
 
     // Image pipeline barrier.
     void transitionImageLayout(vk::ImagePtr& image, VkImageLayout newLayout);
+
+    // Push constants.
+    void pushConstants(
+            PipelinePtr& pipeline, VkShaderStageFlagBits shaderStageFlagBits,
+            uint32_t offset, uint32_t size, const void* data);
+    template<class T>
+    void pushConstants(
+            PipelinePtr& pipeline, VkShaderStageFlagBits shaderStageFlagBits,
+            uint32_t offset, const T& data) {
+        pushConstants(pipeline, shaderStageFlagBits, offset, sizeof(T), &data);
+    }
 
     /**
      * For headless rendering without a swapchain.

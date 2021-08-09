@@ -295,21 +295,7 @@ GraphicsPipeline::GraphicsPipeline(Device* device, const GraphicsPipelineInfo& p
           framebuffer(pipelineInfo.framebuffer), subpassIndex(pipelineInfo.subpassIndex),
           vertexInputBindingDescriptions(pipelineInfo.vertexInputBindingDescriptions),
           vertexInputAttributeDescriptions(pipelineInfo.vertexInputAttributeDescriptions) {
-    const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts =
-            pipelineInfo.shaderStages->getVkDescriptorSetLayouts();
-
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
-    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = uint32_t(descriptorSetLayouts.size());
-    pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
-    pipelineLayoutInfo.pushConstantRangeCount = 0;
-    pipelineLayoutInfo.pPushConstantRanges = nullptr;
-
-    if (vkCreatePipelineLayout(
-            device->getVkDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
-        Logfile::get()->throwError(
-                "Error in GraphicsPipeline::GraphicsPipeline: Could not create a pipeline layout.");
-    }
+    createPipelineLayout();
 
     const std::vector<VkPipelineShaderStageCreateInfo>& shaderStagesCreateInfo =
             pipelineInfo.shaderStages->getVkShaderStages();

@@ -31,15 +31,12 @@
 #include "../Utils/Device.hpp"
 #include "../Utils/Swapchain.hpp"
 #include "Renderer.hpp"
+#include "ComputePipeline.hpp"
 #include "GraphicsPipeline.hpp"
 #include "RayTracingPipeline.hpp"
 #include "Data.hpp"
 
 namespace sgl { namespace vk {
-
-ComputeData::ComputeData(ComputePipelinePtr& computePipeline) : computePipeline(computePipeline) {
-}
-
 
 RenderData::RenderData(Renderer* renderer, ShaderStagesPtr& shaderStages)
         : renderer(renderer), device(renderer->getDevice()), shaderStages(shaderStages) {
@@ -397,6 +394,11 @@ void RenderData::onSwapchainRecreated() {
             }
         }
     }
+}
+
+
+ComputeData::ComputeData(Renderer* renderer, ComputePipelinePtr& computePipeline)
+: RenderData(renderer, computePipeline->getShaderStages()), computePipeline(computePipeline) {
 }
 
 

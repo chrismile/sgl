@@ -26,10 +26,30 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <Utils/File/Logfile.hpp>
 #include "../Utils/Device.hpp"
+#include "../Shader/Shader.hpp"
 #include "Pipeline.hpp"
 
 namespace sgl { namespace vk {
+
+void Pipeline::createPipelineLayout() {
+    const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts = shaderStages->getVkDescriptorSetLayouts();
+    const std::vector<VkPushConstantRange>& pushConstantRanges = shaderStages->getVkPushConstantRanges();
+
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutInfo.setLayoutCount = uint32_t(descriptorSetLayouts.size());
+    pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
+    pipelineLayoutInfo.pushConstantRangeCount = uint32_t(pushConstantRanges.size());
+    pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data();
+
+    if (vkCreatePipelineLayout(
+            device->getVkDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+        Logfile::get()->throwError(
+                "Error in Pipeline::createPipelineLayout: Could not create the pipeline layout.");
+    }
+}
 
 Pipeline::~Pipeline() {
     vkDestroyPipeline(device->getVkDevice(), pipeline, nullptr);

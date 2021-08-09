@@ -161,7 +161,7 @@ public:
     void transitionImageLayout(VkImageLayout newLayout, VkCommandBuffer commandBuffer);
     void transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout, VkCommandBuffer commandBuffer);
 
-    /// Ret.
+    /// The subresource layout contains information necessary when accessing the image data on the CPU (e.g., stride).
     VkSubresourceLayout getSubresourceLayout(
             VkImageAspectFlags aspectFlags, uint32_t mipLevel = 0, uint32_t arrayLayer = 0) const;
 
@@ -245,7 +245,7 @@ private:
 };
 
 struct DLL_OBJECT ImageSamplerSettings {
-    ImageSamplerSettings() {}
+    ImageSamplerSettings() = default;
     VkFilter magFilter = VK_FILTER_LINEAR;
     VkFilter minFilter = VK_FILTER_LINEAR;
     VkSamplerMipmapMode mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
