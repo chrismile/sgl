@@ -30,7 +30,9 @@
 #include <Utils/Events/EventManager.hpp>
 #include "../Utils/Device.hpp"
 #include "../Utils/Swapchain.hpp"
+#include "Helpers.hpp"
 #include "Renderer.hpp"
+#include "AccelerationStructure.hpp"
 #include "ComputePipeline.hpp"
 #include "GraphicsPipeline.hpp"
 #include "RayTracingPipeline.hpp"
@@ -126,6 +128,19 @@ void RenderData::setStaticTexture(TexturePtr& texture, const std::string& descNa
     setImageSampler(texture->getImageSampler(), descriptorInfo.binding);
 }
 
+void RenderData::setTopLevelAccelerationStructure(TopLevelAccelerationStructurePtr& tlas, uint32_t binding) {
+    for (FrameData& frameData : frameDataList) {
+        frameData.accelerationStructures[binding] = tlas;
+    }
+    imageViewsStatic[binding] = true;
+    isDirty = true;
+}
+
+void RenderData::setTopLevelAccelerationStructure(TopLevelAccelerationStructurePtr& tlas, const std::string& descName) {
+    const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, descName);
+    setTopLevelAccelerationStructure(tlas, descriptorInfo.binding);
+}
+
 
 void RenderData::setDynamicBuffer(BufferPtr& buffer, uint32_t binding) {
     frameDataList.front().buffers[binding] = buffer;
@@ -179,6 +194,16 @@ BufferPtr RenderData::getBuffer(const std::string& name) {
     return frameDataList.at(swapchain ? swapchain->getImageIndex() : 0).buffers.at(descriptorInfo.binding);
 }
 
+ImageViewPtr RenderData::getImageView(uint32_t binding) {
+    Swapchain* swapchain = AppSettings::get()->getSwapchain();
+    return frameDataList.at(swapchain ? swapchain->getImageIndex() : 0).imageViews.at(binding);
+}
+ImageViewPtr RenderData::getImageView(const std::string& name) {
+    Swapchain* swapchain = AppSettings::get()->getSwapchain();
+    const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, name);
+    return frameDataList.at(swapchain ? swapchain->getImageIndex() : 0).imageViews.at(descriptorInfo.binding);
+}
+
 VkDescriptorSet RenderData::getVkDescriptorSet() {
     Swapchain* swapchain = AppSettings::get()->getSwapchain();
     return frameDataList.at(swapchain ? swapchain->getImageIndex() : 0).descriptorSet;
@@ -226,6 +251,7 @@ void RenderData::_updateDescriptorSets() {
             VkDescriptorImageInfo imageInfo;
             VkBufferView bufferView;
             VkDescriptorBufferInfo bufferInfo;
+            VkAccelerationStructureKHR accelerationStructure;
             VkWriteDescriptorSetAccelerationStructureKHR accelerationStructureInfo;
         };
         std::vector<DescWriteData> descWriteDataArray;
@@ -309,10 +335,11 @@ void RenderData::_updateDescriptorSets() {
                             "Error in RenderData::_updateDescriptorSets: Couldn't find acceleration structure with "
                             "binding " + std::to_string(descriptorInfo.binding) + ".");
                 }
+                descWriteData.accelerationStructure = it->second->getAccelerationStructure();
                 descWriteData.accelerationStructureInfo.sType =
                         VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
                 descWriteData.accelerationStructureInfo.accelerationStructureCount = 1;
-                descWriteData.accelerationStructureInfo.pAccelerationStructures = &it->second;
+                descWriteData.accelerationStructureInfo.pAccelerationStructures = &descWriteData.accelerationStructure;
                 descriptorWrite.pNext = &descWriteData.accelerationStructureInfo;
             }
         }
@@ -398,22 +425,9 @@ void RenderData::onSwapchainRecreated() {
 
 
 ComputeData::ComputeData(Renderer* renderer, ComputePipelinePtr& computePipeline)
-: RenderData(renderer, computePipeline->getShaderStages()), computePipeline(computePipeline) {
+        : RenderData(renderer, computePipeline->getShaderStages()), computePipeline(computePipeline) {
 }
 
-
-inline size_t getIndexTypeByteSize(VkIndexType indexType) {
-    if (indexType == VK_INDEX_TYPE_UINT32) {
-        return 4;
-    } else if (indexType == VK_INDEX_TYPE_UINT16) {
-        return 2;
-    } else if (indexType == VK_INDEX_TYPE_UINT8_EXT) {
-        return 1;
-    } else {
-        Logfile::get()->throwError("Error in getIndexTypeByteSize: Invalid index type.");
-        return 1;
-    }
-}
 
 RasterData::RasterData(Renderer* renderer, GraphicsPipelinePtr& graphicsPipeline)
         : RenderData(renderer, graphicsPipeline->getShaderStages()),

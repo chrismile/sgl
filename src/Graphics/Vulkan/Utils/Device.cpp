@@ -279,6 +279,39 @@ bool Device::isDeviceExtensionSupported(const std::string& name) {
     return deviceExtensionsSet.find(name) != deviceExtensionsSet.end();
 }
 
+void Device::_getDeviceInformation() {
+    vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
+    vkGetPhysicalDeviceMemoryProperties(physicalDevice, &physicalDeviceMemoryProperties);
+    vkGetPhysicalDeviceFeatures(physicalDevice, &physicalDeviceFeatures);
+
+    if (isDeviceExtensionSupported(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)) {
+        accelerationStructureProperties = {};
+        accelerationStructureProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
+        VkPhysicalDeviceProperties2 deviceProperties2 = {};
+        deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        deviceProperties2.pNext = &accelerationStructureProperties;
+        vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
+
+        accelerationStructureFeatures = {};
+        accelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &accelerationStructureFeatures;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+    }
+    if (isDeviceExtensionSupported(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME)) {
+        rayTracingPipelineProperties = {};
+        rayTracingPipelineProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+        VkPhysicalDeviceProperties2 deviceProperties2 = {};
+        deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        deviceProperties2.pNext = &rayTracingPipelineProperties;
+        vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
+    }
+    isRaytracingSupported =
+            isDeviceExtensionSupported(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)
+            && isDeviceExtensionSupported(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+}
+
 void Device::createDeviceSwapchain(
         Instance* instance, Window* window,
         std::vector<const char*> requiredDeviceExtensions,
@@ -297,9 +330,7 @@ void Device::createDeviceSwapchain(
     initializeDeviceExtensionList(physicalDevice);
     printAvailableDeviceExtensionList();
 
-    vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
-    vkGetPhysicalDeviceMemoryProperties(physicalDevice, &physicalDeviceMemoryProperties);
-    vkGetPhysicalDeviceFeatures(physicalDevice, &physicalDeviceFeatures);
+    _getDeviceInformation();
 
     auto deviceQueuePair = createLogicalDeviceAndQueues(
             physicalDevice, instance->getUseValidationLayer(), instance->getInstanceLayerNames(), deviceExtensions,
@@ -338,9 +369,7 @@ void Device::createDeviceHeadless(
     initializeDeviceExtensionList(physicalDevice);
     printAvailableDeviceExtensionList();
 
-    vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
-    vkGetPhysicalDeviceMemoryProperties(physicalDevice, &physicalDeviceMemoryProperties);
-    vkGetPhysicalDeviceFeatures(physicalDevice, &physicalDeviceFeatures);
+    _getDeviceInformation();
 
     auto deviceQueuePair = createLogicalDeviceAndQueues(
             physicalDevice, instance->getUseValidationLayer(), instance->getInstanceLayerNames(), deviceExtensions,
@@ -492,6 +521,53 @@ void Device::endSingleTimeCommands(VkCommandBuffer commandBuffer, uint32_t queue
     commandPoolType.queueFamilyIndex = queueIndex;
     VkCommandPool commandPool = commandPools.find(commandPoolType)->second;
     vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
+}
+
+std::vector<VkCommandBuffer> Device::beginSingleTimeMultipleCommands(uint32_t numCommandBuffers, uint32_t queueIndex) {
+    if (queueIndex == 0xFFFFFFFF) {
+        queueIndex = getGraphicsQueueIndex();
+    }
+
+    CommandPoolType commandPoolType;
+    commandPoolType.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+    commandPoolType.queueFamilyIndex = queueIndex;
+    VkCommandPool pool;
+    std::vector<VkCommandBuffer> commandBuffers = allocateCommandBuffers(commandPoolType, &pool, numCommandBuffers);
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    for (auto & commandBuffer : commandBuffers) {
+        vkBeginCommandBuffer(commandBuffer, &beginInfo);
+    }
+
+    return commandBuffers;
+}
+
+void Device::endSingleTimeMultipleCommands(const std::vector<VkCommandBuffer>& commandBuffers, uint32_t queueIndex) {
+    if (queueIndex == 0xFFFFFFFF) {
+        queueIndex = getGraphicsQueueIndex();
+    }
+
+    for (auto commandBuffer : commandBuffers) {
+        vkEndCommandBuffer(commandBuffer);
+    }
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = uint32_t(commandBuffers.size());
+    submitInfo.pCommandBuffers = commandBuffers.data();
+
+    // Could pass fence instead of VK_NULL_HANDLE and call vkWaitForFences later.
+    vkQueueSubmit(graphicsQueue, uint32_t(commandBuffers.size()), &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(graphicsQueue);
+
+    CommandPoolType commandPoolType;
+    commandPoolType.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+    commandPoolType.queueFamilyIndex = queueIndex;
+    VkCommandPool commandPool = commandPools.find(commandPoolType)->second;
+    vkFreeCommandBuffers(device, commandPool, uint32_t(commandBuffers.size()), commandBuffers.data());
 }
 
 }}

@@ -88,6 +88,7 @@ public:
 
     void waitIdle();
 
+    /// Returns whether the device extension is supported.
     bool isDeviceExtensionSupported(const std::string& name);
 
     inline VkPhysicalDevice getVkPhysicalDevice() { return physicalDevice; }
@@ -101,6 +102,16 @@ public:
     // Helpers for querying physical device properties and features.
     inline VkPhysicalDeviceProperties getPhysicalDeviceProperties() { return physicalDeviceProperties; }
     inline VkPhysicalDeviceFeatures getPhysicalDeviceFeatures() { return physicalDeviceFeatures; }
+    inline VkPhysicalDeviceAccelerationStructurePropertiesKHR getPhysicalDeviceAccelerationStructureProperties() const {
+        return accelerationStructureProperties;
+    }
+    inline VkPhysicalDeviceAccelerationStructureFeaturesKHR getPhysicalDeviceAccelerationStructureFeatures() const {
+        return accelerationStructureFeatures;
+    }
+    inline VkPhysicalDeviceRayTracingPipelinePropertiesKHR getPhysicalDeviceRayTracingPipelineProperties() const {
+        return rayTracingPipelineProperties;
+    }
+    inline bool getRaytracingSupported() const { return isRaytracingSupported; }
     VkSampleCountFlagBits getMaxUsableSampleCount();
 
     /**
@@ -122,6 +133,12 @@ public:
     VkCommandBuffer beginSingleTimeCommands(uint32_t queueIndex = 0xFFFFFFFF);
     void endSingleTimeCommands(VkCommandBuffer commandBuffer, uint32_t queueIndex = 0xFFFFFFFF);
 
+    // Create multiple transient command buffers ready to execute commands (0xFFFFFFFF encodes graphics queue).
+    std::vector<VkCommandBuffer> beginSingleTimeMultipleCommands(
+            uint32_t numCommandBuffers, uint32_t queueIndex = 0xFFFFFFFF);
+    void endSingleTimeMultipleCommands(
+            const std::vector<VkCommandBuffer>& commandBuffers, uint32_t queueIndex = 0xFFFFFFFF);
+
     inline Instance* getInstance() { return instance; }
 
     // Get the standard descriptor pool.
@@ -135,7 +152,10 @@ public:
 private:
     void initializeDeviceExtensionList(VkPhysicalDevice physicalDevice);
     void printAvailableDeviceExtensionList();
+    /// Returns whether the device extension is available in general (not necessarily enabled).
     bool isDeviceExtensionAvailable(const std::string &extensionName);
+
+    void _getDeviceInformation();
 
     // Internal implementations.
     void _allocateCommandBuffers(
@@ -155,9 +175,15 @@ private:
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VmaAllocator allocator;
 
-    VkPhysicalDeviceProperties physicalDeviceProperties;
-    VkPhysicalDeviceMemoryProperties physicalDeviceMemoryProperties;
-    VkPhysicalDeviceFeatures physicalDeviceFeatures;
+    VkPhysicalDeviceProperties physicalDeviceProperties{};
+    VkPhysicalDeviceMemoryProperties physicalDeviceMemoryProperties{};
+    VkPhysicalDeviceFeatures physicalDeviceFeatures{};
+
+    // Ray tracing information.
+    VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties{};
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures{};
+    VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties{};
+    bool isRaytracingSupported = false;
 
     // Queues for the logical device.
     uint32_t graphicsQueueIndex;

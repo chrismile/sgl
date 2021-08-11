@@ -36,20 +36,61 @@
 
 namespace sgl { namespace vk {
 
+RayTracingPipelineInfo::RayTracingPipelineInfo(const ShaderStagesPtr& shaderStages) : shaderStages(shaderStages) {
+    assert(shaderStages.get() != nullptr);
+    reset();
+}
+
+void RayTracingPipelineInfo::reset() {
+    maxPipelineRayRecursionDepth = 1;
+}
+
 RayTracingPipeline::RayTracingPipeline(Device* device, const RayTracingPipelineInfo& pipelineInfo)
         : Pipeline(device, pipelineInfo.shaderStages) {
     createPipelineLayout();
 
-    auto& shaderModules = pipelineInfo.shaderStages->getShaderModules();
-    if (shaderModules.size() != 1 || shaderModules.front()->getShaderModuleType() != ShaderModuleType::COMPUTE) {
-        Logfile::get()->throwError(
-                "Error in RayTracingPipeline::RayTracingPipeline: Expected exactly one compute shader module.");
-    }
-
+    const std::vector<ShaderModulePtr>& shaderModules = pipelineInfo.shaderStages->getShaderModules();
     const std::vector<VkPipelineShaderStageCreateInfo>& shaderStages = pipelineInfo.shaderStages->getVkShaderStages();
 
 #if VK_VERSION_1_2 && VK_HEADER_VERSION >= 162
+    const VkPhysicalDeviceRayTracingPipelinePropertiesKHR& rayTracingPipelineProperties =
+            device->getPhysicalDeviceRayTracingPipelineProperties();
+
+    if (pipelineInfo.maxPipelineRayRecursionDepth > rayTracingPipelineProperties.maxRayRecursionDepth) {
+        Logfile::get()->throwError(
+                "Error in RayTracingPipelineInfo::RayTracingPipelineInfo: The maximum pipeline ray recursion depth"
+                "is larger than the maximum ray recursion depth supported.");
+    }
+
     std::vector<VkRayTracingShaderGroupCreateInfoKHR> shaderGroups;
+    for (size_t shaderIdx = 0; shaderIdx < shaderModules.size(); shaderIdx++) {
+        const ShaderModulePtr& shaderModule = shaderModules.at(shaderIdx);
+        ShaderModuleType shaderModuleType = shaderModule->getShaderModuleType();
+
+        VkRayTracingShaderGroupCreateInfoKHR shaderGroupCreateInfo{};
+        shaderGroupCreateInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        shaderGroupCreateInfo.generalShader = VK_SHADER_UNUSED_KHR;
+        shaderGroupCreateInfo.closestHitShader = VK_SHADER_UNUSED_KHR;
+        shaderGroupCreateInfo.anyHitShader = VK_SHADER_UNUSED_KHR;
+        shaderGroupCreateInfo.intersectionShader = VK_SHADER_UNUSED_KHR;
+
+        shaderGroupCreateInfo.type = shaderModule->getRayTracingShaderGroupType();
+        if (shaderModuleType == ShaderModuleType::RAYGEN || shaderModuleType == ShaderModuleType::MISS
+                || shaderModuleType == ShaderModuleType::CALLABLE) {
+            shaderGroupCreateInfo.generalShader = uint32_t(shaderIdx);
+        } else if (shaderModuleType == ShaderModuleType::ANY_HIT) {
+            shaderGroupCreateInfo.anyHitShader = uint32_t(shaderIdx);
+        } else if (shaderModuleType == ShaderModuleType::CLOSEST_HIT) {
+            shaderGroupCreateInfo.closestHitShader = uint32_t(shaderIdx);
+        } else if (shaderModuleType == ShaderModuleType::INTERSECTION) {
+            shaderGroupCreateInfo.intersectionShader = uint32_t(shaderIdx);
+        } else {
+            Logfile::get()->throwError(
+                    "Error in RayTracingPipelineInfo::RayTracingPipelineInfo: Unsupported shader type.");
+        }
+
+        shaderGroups.push_back(shaderGroupCreateInfo);
+    }
 
     VkRayTracingPipelineCreateInfoKHR pipelineCreateInfo = {};
     pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
@@ -58,45 +99,22 @@ RayTracingPipeline::RayTracingPipeline(Device* device, const RayTracingPipelineI
     pipelineCreateInfo.pStages = shaderStages.data();
     pipelineCreateInfo.groupCount = uint32_t(shaderGroups.size());
     pipelineCreateInfo.pGroups = shaderGroups.data();
-    pipelineCreateInfo.maxPipelineRayRecursionDepth;
-    pipelineCreateInfo.pLibraryInfo;
-    pipelineCreateInfo.pLibraryInterface;
-    pipelineCreateInfo.pDynamicState;
+    pipelineCreateInfo.maxPipelineRayRecursionDepth = pipelineInfo.maxPipelineRayRecursionDepth;
     pipelineCreateInfo.layout = pipelineLayout;
     pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
     pipelineCreateInfo.basePipelineIndex = -1;
 
-    //if (vkCreateRayTracingPipelinesKHR(
-    //        device->getVkDevice(), VK_NULL_HANDLE, 1, &pipelineCreateInfo,
-    //        nullptr, &pipeline) != VK_SUCCESS) {
-    //    Logfile::get()->throwError(
-    //            "Error in RayTracingPipeline::RayTracingPipeline: Could not create a RayTracing pipeline.");
-    //}
-
-    VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties = {};
-    accelerationStructureProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
-    VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties = {};
-    rayTracingPipelineProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
-    rayTracingPipelineProperties.pNext = &accelerationStructureProperties;
-    VkPhysicalDeviceProperties2 deviceProperties2 = {};
-    deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-    deviceProperties2.pNext = &rayTracingPipelineProperties;
-    vkGetPhysicalDeviceProperties2(device->getVkPhysicalDevice(), &deviceProperties2);
-
-    //accelerationStructureProperties.maxInstanceCount;
-
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures = {};
-    accelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
-    VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
-    deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    deviceFeatures2.pNext = &accelerationStructureFeatures;
-    vkGetPhysicalDeviceFeatures2(device->getVkPhysicalDevice(), &deviceFeatures2);
+    if (vkCreateRayTracingPipelinesKHR(
+            device->getVkDevice(), VK_NULL_HANDLE, VK_NULL_HANDLE,
+            1, &pipelineCreateInfo, nullptr, &pipeline) != VK_SUCCESS) {
+        Logfile::get()->throwError(
+                "Error in RayTracingPipeline::RayTracingPipeline: Could not create a RayTracing pipeline.");
+    }
 
     const uint32_t handleSize = rayTracingPipelineProperties.shaderGroupHandleSize;
-    const uint32_t handleSizeAligned = uint32_t(sgl::iceil(
-            int(rayTracingPipelineProperties.shaderGroupHandleSize),
-            int(rayTracingPipelineProperties.shaderGroupHandleAlignment)))
-                    * rayTracingPipelineProperties.shaderGroupHandleAlignment;
+    const uint32_t handleAlignment = rayTracingPipelineProperties.shaderGroupHandleAlignment;
+    const uint32_t baseAlignment = rayTracingPipelineProperties.shaderGroupBaseAlignment;
+    const uint32_t handleSizeAligned = uint32_t(sgl::iceil(int(handleSize), int(handleAlignment))) * handleAlignment;
 
     const uint32_t shaderBindingTableSize = uint32_t(shaderGroups.size()) * handleSizeAligned;
     std::vector<uint8_t> shaderGroupHandleData(shaderBindingTableSize);
@@ -122,40 +140,9 @@ RayTracingPipeline::RayTracingPipeline(Device* device, const RayTracingPipelineI
             | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
             VMA_MEMORY_USAGE_CPU_TO_GPU));
 
-
-    // Build acceleration structure.
-    VkBufferDeviceAddressInfo bufferDeviceAddressInfo;
-    bufferDeviceAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
-    bufferDeviceAddressInfo.buffer = VK_NULL_HANDLE; // TODO
-    VkDeviceAddress vertexBufferDeviceAddress = vkGetBufferDeviceAddress(device->getVkDevice(), &bufferDeviceAddressInfo);
 #endif
-
-    // TODO: Do the same for the index buffer.
-    /*VkAccelerationStructureGeometryTrianglesDataKHR trianglesData = {};
-    trianglesData.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
-    trianglesData.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT; // vec3 data
-    trianglesData.vertexData = { .deviceAddress = vertexBufferDeviceAddress };
-    trianglesData.vertexStride = 3 * sizeof(float);
-    trianglesData.indexType = VK_INDEX_TYPE_UINT32;
-    trianglesData.indexData = TODO;
-    trianglesData.transformData = {};
-    trianglesData.maxVertex = numVertices;
-
-    VkAccelerationStructureGeometryKHR asGeometry = {};
-    asGeometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR; // TODO: or VK_GEOMETRY_TYPE_AABBS_KHR
-    asGeometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR; // VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR: Call any-hit once.
-    asGeometry.geometry.triangles = trianglesData;
-
-    VkAccelerationStructureBuildRangeInfoKHR buildRangeInfo = {};
-    buildRangeInfo.firstVertex = 0;
-    buildRangeInfo.primitiveCount = numPrimitives; // numIndices / 3
-    buildRangeInfo.primitiveOffset = 0;
-    buildRangeInfo.transformOffset = 0;
-
-    VkRayTracingBuilder;*/
 }
 
-RayTracingPipeline::~RayTracingPipeline() {
-}
+RayTracingPipeline::~RayTracingPipeline() = default;
 
 }}

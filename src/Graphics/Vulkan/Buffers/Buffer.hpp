@@ -88,8 +88,10 @@ public:
      * VMA_MEMORY_USAGE_CPU_COPY, a staging buffer is used for uploading.
      * @param sizeInBytesData The size of the data to upload in bytes.
      * @param dataPtr Data that is uploaded to the GPU.
+     * @param commandBuffer The command buffer to use for the copy operation.
+     * If the command buffer is a null pointer, the command will be executed synchronously.
      */
-    void uploadData(size_t sizeInBytesData, void* dataPtr);
+    void uploadData(size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 
     /**
      * Maps the memory to a host-accessible address.
@@ -99,6 +101,8 @@ public:
      */
     void* mapMemory();
     void unmapMemory();
+
+    VkDeviceAddress getVkDeviceAddress();
 
     inline VkBuffer getVkBuffer() { return buffer; }
     inline size_t getSizeInBytes() const { return sizeInBytes; }

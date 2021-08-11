@@ -138,6 +138,16 @@ void GraphicsPipelineInfo::setFramebuffer(FramebufferPtr framebuffer, uint32_t s
     viewportStateInfo.pScissors = &scissor;
 }
 
+void GraphicsPipelineInfo::setColorWriteEnabled(bool enableColorWrite) {
+    if (enableColorWrite) {
+        colorBlendAttachment.colorWriteMask =
+                VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT
+                | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    } else {
+        colorBlendAttachment.colorWriteMask = 0;
+    }
+}
+
 void GraphicsPipelineInfo::setBlendMode(BlendMode blendMode) {
     this->currentBlendMode = blendMode;
     if (blendMode == BlendMode::OVERWRITE) {

@@ -104,13 +104,16 @@ public:
     /// Sets the specified framebuffer (REQUIRED).
     void setFramebuffer(FramebufferPtr framebuffer, uint32_t subpassIndex = 0);
 
+    // Color info.
+    void setColorWriteEnabled(bool enableColorWrite);
     void setBlendMode(BlendMode blendMode);
+    inline BlendMode getBlendMode() { return currentBlendMode; }
+    inline bool getIsBlendEnabled() { return currentBlendMode != BlendMode::OVERWRITE; }
+
     void setInputAssemblyTopology(PrimitiveTopology primitiveTopology, bool primitiveRestartEnable = false);
     void setCullMode(CullMode cullMode);
     void setIsFrontFaceCcw(bool isFrontFaceCcw);
     void setMinSampleShading(bool enableMinSampleShading, float minSampleShading = 1.0f);
-    inline BlendMode getBlendMode() { return currentBlendMode; }
-    inline bool getIsBlendEnabled() { return currentBlendMode != BlendMode::OVERWRITE; }
 
     // Depth-stencil info.
     void setDepthTestEnabled(bool enableDepthTest);

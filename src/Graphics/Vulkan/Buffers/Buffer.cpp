@@ -136,7 +136,7 @@ BufferPtr Buffer::copy(bool copyContent) {
     return newBuffer;
 }
 
-void Buffer::uploadData(size_t sizeInBytesData, void* dataPtr) {
+void Buffer::uploadData(size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer) {
     if (sizeInBytesData > sizeInBytes) {
         sgl::Logfile::get()->throwError(
                 "Error in Buffer::uploadData: sizeInBytesData > sizeInBytes");
@@ -160,14 +160,22 @@ void Buffer::uploadData(size_t sizeInBytesData, void* dataPtr) {
         memcpy(mappedData, dataPtr, sizeInBytesData);
         stagingBuffer->unmapMemory();
 
-        VkCommandBuffer commandBuffer = device->beginSingleTimeCommands();
+        bool isSingleTimeCommand = false;
+        if (commandBuffer == VK_NULL_HANDLE) {
+            commandBuffer = device->beginSingleTimeCommands();
+            isSingleTimeCommand = true;
+        }
+
         VkBufferCopy bufferCopy{};
         bufferCopy.size = sizeInBytesData;
         bufferCopy.srcOffset = 0;
         bufferCopy.dstOffset = 0;
         vkCmdCopyBuffer(
                 commandBuffer, stagingBuffer->getVkBuffer(), this->getVkBuffer(), 1, &bufferCopy);
-        device->endSingleTimeCommands(commandBuffer);
+
+        if (isSingleTimeCommand) {
+            device->endSingleTimeCommands(commandBuffer);
+        }
     }
 }
 
@@ -186,6 +194,15 @@ void* Buffer::mapMemory() {
 
 void Buffer::unmapMemory() {
     vmaUnmapMemory(device->getAllocator(), bufferAllocation);
+}
+
+VkDeviceAddress Buffer::getVkDeviceAddress() {
+    VkBufferDeviceAddressInfo bufferDeviceAddressInfo;
+    bufferDeviceAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+    bufferDeviceAddressInfo.buffer = buffer;
+    VkDeviceAddress bufferDeviceAddress = vkGetBufferDeviceAddress(
+            device->getVkDevice(), &bufferDeviceAddressInfo);
+    return bufferDeviceAddress;
 }
 
 #ifdef SUPPORT_OPENGL

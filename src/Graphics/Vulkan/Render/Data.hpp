@@ -51,6 +51,9 @@ typedef std::shared_ptr<ImageSampler> ImageSamplerPtr;
 class Texture;
 typedef std::shared_ptr<Texture> TexturePtr;
 
+class TopLevelAccelerationStructure;
+typedef std::shared_ptr<TopLevelAccelerationStructure> TopLevelAccelerationStructurePtr;
+
 class GraphicsPipeline;
 typedef std::shared_ptr<GraphicsPipeline> GraphicsPipelinePtr;
 class ComputePipeline;
@@ -97,6 +100,9 @@ public:
     void setImageSampler(ImageSamplerPtr& imageSampler, const std::string& descName);
     void setStaticTexture(TexturePtr& texture, const std::string& descName);
 
+    void setTopLevelAccelerationStructure(TopLevelAccelerationStructurePtr& tlas, uint32_t binding);
+    void setTopLevelAccelerationStructure(TopLevelAccelerationStructurePtr& tlas, const std::string& descName);
+
     /*
      * Dynamic data changes per frame. After adding the buffer, the per-frame buffer needs to be retrieved by calling
      * getBuffer.
@@ -113,6 +119,9 @@ public:
     BufferPtr getBuffer(uint32_t binding);
     BufferPtr getBuffer(const std::string& name);
 
+    ImageViewPtr getImageView(uint32_t binding);
+    ImageViewPtr getImageView(const std::string& name);
+
     inline VkDescriptorSet getVkDescriptorSet(uint32_t frameIdx) { return frameDataList.at(frameIdx).descriptorSet; }
     VkDescriptorSet getVkDescriptorSet();
 
@@ -122,7 +131,7 @@ public:
         std::map<uint32_t, BufferViewPtr> bufferViews;
         std::map<uint32_t, ImageViewPtr> imageViews;
         std::map<uint32_t, ImageSamplerPtr> imageSamplers;
-        std::map<uint32_t, VkAccelerationStructureKHR> accelerationStructures; // TODO
+        std::map<uint32_t, TopLevelAccelerationStructurePtr> accelerationStructures;
         VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
     };
     inline FrameData& getFrameData(uint32_t frameIdx) { return frameDataList.at(frameIdx); }
@@ -157,6 +166,7 @@ protected:
 class DLL_OBJECT RasterData : public RenderData {
 public:
     RasterData(Renderer* renderer, GraphicsPipelinePtr& graphicsPipeline);
+
     void setIndexBuffer(BufferPtr& buffer, VkIndexType indexType = VK_INDEX_TYPE_UINT32);
     void setVertexBuffer(BufferPtr& buffer, uint32_t binding);
     void setVertexBuffer(BufferPtr& buffer, const std::string& name);
@@ -192,10 +202,20 @@ class DLL_OBJECT RayTracingData : public RenderData {
 public:
     RayTracingData(Renderer* renderer, RayTracingPipelinePtr& rayTracingPipeline);
 
+    // TODO
+    void setAccelerationStructure();
+
     inline RayTracingPipelinePtr getRayTracingPipeline() { return rayTracingPipeline; }
 
 protected:
     RayTracingPipelinePtr rayTracingPipeline;
+
+    BufferPtr indexBuffer;
+    VkIndexType indexType = VK_INDEX_TYPE_UINT32;
+    size_t numIndices = 0;
+
+    BufferPtr vertexBuffer;
+    size_t numVertices = 0;
 };
 
 typedef std::shared_ptr<ComputeData> ComputeDataPtr;

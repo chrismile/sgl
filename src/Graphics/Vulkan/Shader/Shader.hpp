@@ -84,6 +84,10 @@ public:
             const std::vector<uint32_t>& spirvCode);
     ~ShaderModule();
 
+    bool getIsRayTracingShader();
+    void setRayTracingShaderGroupType(VkRayTracingShaderGroupTypeKHR groupType);
+    inline VkRayTracingShaderGroupTypeKHR getRayTracingShaderGroupType() const { return rayTracingShaderGroupType; }
+
     /**
      * Returns, e.g.: {InterfaceVariableDescriptor(0, SPV_REFLECT_FORMAT_R32G32B32_SFLOAT, "vertexPosition")}
      * ... for a shader with a single interface variable "vertexPosition" defined by, e.g.,
@@ -118,6 +122,9 @@ private:
     std::vector<InterfaceVariableDescriptor> inputVariableDescriptors;
     std::map<uint32_t, std::vector<DescriptorInfo>> descriptorSetsInfo; ///< set index -> descriptor set info
     std::vector<VkPushConstantRange> pushConstantRanges;
+
+    /// The ray tracing shader group type can be specified if this is a ray tracing shader module.
+    VkRayTracingShaderGroupTypeKHR rayTracingShaderGroupType = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
 };
 
 typedef std::shared_ptr<ShaderModule> ShaderModulePtr;

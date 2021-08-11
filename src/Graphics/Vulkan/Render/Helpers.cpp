@@ -26,43 +26,22 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_RAYTRACINGPIPELINE_HPP
-#define SGL_RAYTRACINGPIPELINE_HPP
-
-#include "Pipeline.hpp"
+#include <Utils/File/Logfile.hpp>
+#include "Helpers.hpp"
 
 namespace sgl { namespace vk {
 
-class Buffer;
-typedef std::shared_ptr<Buffer> BufferPtr;
-
-class DLL_OBJECT RayTracingPipelineInfo {
-    friend class RayTracingPipeline;
-
-public:
-    RayTracingPipelineInfo(const ShaderStagesPtr& shaderStages);
-
-    /// Resets to standard settings.
-    void reset();
-
-    /// Sets the maximum ray recursion depth. A value of one means no recursion.
-    inline void setMaxRayRecursionDepth(uint32_t depth) { maxPipelineRayRecursionDepth = depth; }
-
-protected:
-    ShaderStagesPtr shaderStages;
-    uint32_t maxPipelineRayRecursionDepth = 1;
-};
-
-class DLL_OBJECT RayTracingPipeline : public Pipeline {
-public:
-    RayTracingPipeline(Device* device, const RayTracingPipelineInfo& pipelineInfo);
-    ~RayTracingPipeline();
-
-protected:
-};
-
-typedef std::shared_ptr<RayTracingPipeline> RayTracingPipelinePtr;
+size_t getIndexTypeByteSize(VkIndexType indexType) {
+    if (indexType == VK_INDEX_TYPE_UINT32) {
+        return 4;
+    } else if (indexType == VK_INDEX_TYPE_UINT16) {
+        return 2;
+    } else if (indexType == VK_INDEX_TYPE_UINT8_EXT) {
+        return 1;
+    } else {
+        Logfile::get()->throwError("Error in getIndexTypeByteSize: Invalid index type.");
+        return 1;
+    }
+}
 
 }}
-
-#endif //SGL_RAYTRACINGPIPELINE_HPP

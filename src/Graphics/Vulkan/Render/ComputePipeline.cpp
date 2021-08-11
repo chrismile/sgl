@@ -40,7 +40,7 @@ ComputePipeline::ComputePipeline(Device* device, const ComputePipelineInfo& pipe
         : Pipeline(device, pipelineInfo.shaderStages) {
     createPipelineLayout();
 
-    auto& shaderModules = pipelineInfo.shaderStages->getShaderModules();
+    const std::vector<ShaderModulePtr>& shaderModules = pipelineInfo.shaderStages->getShaderModules();
     if (shaderModules.size() != 1 || shaderModules.front()->getShaderModuleType() != ShaderModuleType::COMPUTE) {
         Logfile::get()->throwError(
                 "Error in ComputePipeline::ComputePipeline: Expected exactly one compute shader module.");

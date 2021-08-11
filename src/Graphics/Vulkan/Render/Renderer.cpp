@@ -390,6 +390,13 @@ void Renderer::traceRays(RayTracingDataPtr rayTracingData) {
     }
 
     updateMatrixBlock();
+    if (updateMatrixBlock() || recordingCommandBufferStarted) {
+        vkCmdBindDescriptorSets(
+                commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+                rayTracingPipeline->getVkPipelineLayout(), 1, 1,
+                &matrixBlockDescriptorSet, 0, nullptr);
+        recordingCommandBufferStarted = false;
+    }
 
     if (isNewPipeline) {
         vkCmdBindPipeline(
@@ -397,12 +404,35 @@ void Renderer::traceRays(RayTracingDataPtr rayTracingData) {
                 rayTracingPipeline->getVkPipeline());
     }
 
-    //const FramebufferPtr& framebuffer = graphicsPipeline->getFramebuffer();
+    rayTracingData->_updateDescriptorSets();
+    VkDescriptorSet descriptorSet = rayTracingData->getVkDescriptorSet();
+    if (descriptorSet != VK_NULL_HANDLE) {
+        if (rayTracingPipeline->getShaderStages()->getVkDescriptorSetLayouts().size() == 1) {
+            vkCmdBindDescriptorSets(
+                    commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+                    rayTracingPipeline->getVkPipelineLayout(),
+                    0, 1, &descriptorSet, 0, nullptr);
+        } else {
+            VkDescriptorSet descriptorSets[2];
+            descriptorSets[0] = descriptorSet;
+            descriptorSets[1] = matrixBlockDescriptorSet;
+            vkCmdBindDescriptorSets(
+                    commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    rayTracingPipeline->getVkPipelineLayout(),
+                    0, 2, descriptorSets, 0, nullptr);
+        }
+    }
 
-    //vkCmdTraceRaysKHR(
-    //        commandBuffer,
-    //        &raygenShaderSbtEntry, &missShaderSbtEntry, &hitShaderSbtEntry, &callableShaderSbtEntry,
-    //        framebuffer->getWidth(), framebuffer->getHeight(), framebuffer->getLayers());
+    const FramebufferPtr& framebuffer = graphicsPipeline->getFramebuffer();
+
+    VkStridedDeviceAddressRegionKHR raygenShaderBindingTable;
+    VkStridedDeviceAddressRegionKHR missShaderBindingTable;
+    VkStridedDeviceAddressRegionKHR hitShaderBindingTable;
+    VkStridedDeviceAddressRegionKHR callableShaderBindingTable;
+    vkCmdTraceRaysKHR(
+            commandBuffer,
+            &raygenShaderBindingTable, &missShaderBindingTable, &hitShaderBindingTable, &callableShaderBindingTable,
+            framebuffer->getWidth(), framebuffer->getHeight(), framebuffer->getLayers());
 }
 
 void Renderer::transitionImageLayout(vk::ImagePtr& image, VkImageLayout newLayout) {
