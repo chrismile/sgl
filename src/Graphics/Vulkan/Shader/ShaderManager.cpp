@@ -32,7 +32,7 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include <vulkan/vulkan.h>
+#include "../libs/volk/volk.h"
 
 #include <Utils/Convert.hpp>
 #include <Utils/AppSettings.hpp>

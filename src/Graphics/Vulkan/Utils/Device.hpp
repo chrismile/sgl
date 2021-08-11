@@ -34,7 +34,7 @@
 #include <set>
 #include <functional>
 #include <unordered_map>
-#include <vulkan/vulkan.h>
+#include "../libs/volk/volk.h"
 #include "../libs/VMA/vk_mem_alloc.h"
 
 namespace sgl { class Window; }

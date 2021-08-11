@@ -183,7 +183,7 @@ void ShaderModule::createReflectData(const std::vector<uint32_t>& spirvCode) {
         throw std::runtime_error("spvReflectEnumeratePushConstantBlocks failed!");
     }
 
-    pushConstantRanges.resize(numInputVariables);
+    pushConstantRanges.resize(numPushConstantBlocks);
     for (uint32_t blockIdx = 0; blockIdx < numPushConstantBlocks; blockIdx++) {
         VkPushConstantRange& pushConstantRange = pushConstantRanges.at(blockIdx);
         SpvReflectBlockVariable* pushConstantBlockVariable = pushConstantBlockVariables.at(blockIdx);

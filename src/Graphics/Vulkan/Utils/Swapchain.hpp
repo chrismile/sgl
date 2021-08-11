@@ -30,8 +30,8 @@
 #define SGL_SWAPCHAIN_HPP
 
 #include <vector>
-#include <vulkan/vulkan.h>
 #include <Graphics/Window.hpp>
+#include "../libs/volk/volk.h"
 #include "../Image/Image.hpp"
 #include "../Buffers/Framebuffer.hpp"
 

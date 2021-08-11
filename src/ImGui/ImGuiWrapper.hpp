@@ -34,7 +34,7 @@
 #include "imgui.h"
 
 #ifdef SUPPORT_VULKAN
-#include <vulkan/vulkan.h>
+#include <Graphics/Vulkan/libs/volk/volk.h>
 #include "imgui_impl_vulkan.h"
 
 namespace sgl { namespace vk {

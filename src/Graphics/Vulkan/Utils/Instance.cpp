@@ -47,6 +47,11 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugCallback(
 }
 
 Instance::Instance() {
+    VkResult result = volkInitialize();
+    if (result != VK_SUCCESS) {
+        Logfile::get()->throwError("Error in AppSettings::initializeVolk: volkInitialize failed.");
+    }
+
     initializeInstanceExtensionList();
 }
 
@@ -116,6 +121,7 @@ void Instance::createInstance(std::vector<const char*> instanceExtensionNames, b
         sgl::Logfile::get()->throwError(
                 std::string() + "Error in Instance::createInstance: Failed to create a Vulkan instance.");
     }
+    volkLoadInstance(instance);
 
     if (useValidationLayer) {
         VkDebugUtilsMessengerCreateInfoEXT createInfo = { };

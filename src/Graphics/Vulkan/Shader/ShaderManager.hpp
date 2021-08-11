@@ -33,9 +33,8 @@
 #include <vector>
 #include <map>
 
-#include <vulkan/vulkan.h>
-
 #include <Utils/File/FileManager.hpp>
+#include "../libs/volk/volk.h"
 #include "Shader.hpp"
 
 namespace shaderc { class Compiler; }

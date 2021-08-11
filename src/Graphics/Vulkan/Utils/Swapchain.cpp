@@ -167,8 +167,6 @@ void Swapchain::createSwapchainImageViews() {
 }
 
 void Swapchain::recreateSwapchain() {
-    std::cout << "INFO: Swapchain::recreateSwapchain" << std::endl;
-
     int windowWidth = 0;
     int windowHeight = 0;
     SDLWindow* sdlWindow = static_cast<SDLWindow*>(window);

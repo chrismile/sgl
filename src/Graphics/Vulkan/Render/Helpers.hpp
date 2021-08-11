@@ -29,7 +29,7 @@
 #ifndef SGL_HELPERS_HPP
 #define SGL_HELPERS_HPP
 
-#include <vulkan/vulkan.h>
+#include "../libs/volk/volk.h"
 
 namespace sgl { namespace vk {
 

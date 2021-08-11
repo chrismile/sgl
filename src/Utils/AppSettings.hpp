@@ -157,6 +157,7 @@ private:
     Window* mainWindow = nullptr;
 
 #ifdef SUPPORT_VULKAN
+    void initializeVolk();
     vk::Instance* instance = nullptr;
     vk::Device* primaryDevice = nullptr;
     vk::Swapchain* swapchain = nullptr;

@@ -32,7 +32,7 @@
 #include <vector>
 #include <set>
 #include <functional>
-#include <vulkan/vulkan.h>
+#include "../libs/volk/volk.h"
 
 namespace sgl { namespace vk {
 

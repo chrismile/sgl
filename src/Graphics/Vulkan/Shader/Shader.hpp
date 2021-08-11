@@ -33,8 +33,8 @@
 #include <memory>
 #include <map>
 
-#include <vulkan/vulkan.h>
-#include <Graphics/Vulkan/libs/SPIRV-Reflect/spirv_reflect.h>
+#include "../libs/volk/volk.h"
+#include "../libs/SPIRV-Reflect/spirv_reflect.h"
 
 namespace sgl { namespace vk {
 

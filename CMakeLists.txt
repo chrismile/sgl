@@ -40,6 +40,11 @@ if ((NOT ${SUPPORT_VULKAN}) OR (NOT ${Vulkan_FOUND}))
     list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/ImGui/imgui_impl_vulkan.h)
     list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/ImGui/imgui_impl_vulkan.cpp)
 endif()
+if (${SUPPORT_VULKAN} AND ${Vulkan_FOUND})
+    #set_source_files_properties(
+    #        ${CMAKE_CURRENT_SOURCE_DIR}/src/Vulkan/libs/volk/volk.c
+    #        PROPERTIES COMPILE_DEFINITIONS )
+endif()
 
 if (${USE_LIBARCHIVE})
     find_package(LibArchive QUIET)
@@ -91,7 +96,8 @@ endif()
 
 if (${SUPPORT_VULKAN} AND ${Vulkan_FOUND})
     target_compile_definitions(sgl PUBLIC SUPPORT_VULKAN)
-    target_link_libraries(sgl PUBLIC ${Vulkan_LIBRARIES})
+    target_compile_definitions(sgl PUBLIC VK_NO_PROTOTYPES)
+    #target_link_libraries(sgl PUBLIC ${Vulkan_LIBRARIES})
     if(VCPKG_TOOLCHAIN)
         find_package(glslang CONFIG REQUIRED)
         target_link_libraries(sgl PRIVATE glslang OSDependent OGLCompiler HLSL SPIRV MachineIndependent)

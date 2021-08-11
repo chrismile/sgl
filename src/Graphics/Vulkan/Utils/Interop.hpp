@@ -32,8 +32,8 @@
 #include <algorithm>
 #include <cstring>
 #include <cassert>
-#include <vulkan/vulkan.h>
-#include <Graphics/Vulkan/libs/VMA/vk_mem_alloc.h>
+#include "../libs/volk/volk.h"
+#include "../libs/VMA/vk_mem_alloc.h"
 
 #ifdef SUPPORT_OPENGL
 #include <GL/glew.h>

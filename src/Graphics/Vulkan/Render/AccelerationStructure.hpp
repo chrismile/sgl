@@ -31,7 +31,7 @@
 
 #include <memory>
 #include <glm/glm.hpp>
-#include <vulkan/vulkan.h>
+#include "../libs/volk/volk.h"
 
 namespace sgl { namespace vk {
 

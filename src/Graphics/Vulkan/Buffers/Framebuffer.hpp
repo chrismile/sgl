@@ -31,8 +31,8 @@
 
 #include <vector>
 #include <memory>
-#include <vulkan/vulkan.h>
 #include <glm/vec4.hpp>
+#include "../libs/volk/volk.h"
 
 namespace sgl { namespace vk {
 

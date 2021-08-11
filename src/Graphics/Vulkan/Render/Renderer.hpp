@@ -32,7 +32,7 @@
 #include <vector>
 #include <memory>
 #include <glm/mat4x4.hpp>
-#include <vulkan/vulkan.h>
+#include "../libs/volk/volk.h"
 
 #include <Utils/CircularQueue.hpp>
 #include <Math/Geometry/MatrixUtil.hpp>

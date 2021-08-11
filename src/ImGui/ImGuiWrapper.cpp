@@ -256,6 +256,9 @@ void ImGuiWrapper::renderStart() {
         initInfo.Allocator = nullptr;
         initInfo.CheckVkResultFn = checkImGuiVkResult;
 
+        ImGui_ImplVulkan_LoadFunctions([](const char* functionName, void* instance) {
+            return vkGetInstanceProcAddr(static_cast<VkInstance>(instance), functionName);
+        }, instance->getVkInstance());
         ImGui_ImplVulkan_Init(&initInfo, framebuffer->getVkRenderPass());
 
         VkCommandBuffer commandBuffer = device->beginSingleTimeCommands();

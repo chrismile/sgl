@@ -30,7 +30,7 @@
 #define SGL_DATA_HPP
 
 #include <memory>
-#include <vulkan/vulkan.h>
+#include "../libs/volk/volk.h"
 
 #include "../Shader/Shader.hpp"
 #include "../Buffers/Buffer.hpp"

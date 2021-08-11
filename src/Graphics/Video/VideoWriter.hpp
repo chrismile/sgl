@@ -112,6 +112,7 @@ private:
     vk::Renderer* renderer = nullptr;
     //std::vector<vk::BufferPtr> readBackBuffersVk;
     std::vector<vk::ImagePtr> readBackImages;
+    VkSubresourceLayout readBackImageSubresourceLayout{};
 #endif
 
     // Frame & file data.

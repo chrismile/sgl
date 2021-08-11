@@ -273,7 +273,7 @@ void AppSettings::initializeVulkanInteropSupport(
         vulkanInteropCapabilities = VulkanInteropCapabilities::NO_INTEROP;
     }
 
-    instance = new sgl::vk::Instance;
+    instance = new vk::Instance;
 
     if (!sgl::SystemGL::get()->isGLExtensionAvailable("GL_EXT_memory_object")) {
         sgl::Logfile::get()->writeInfo(

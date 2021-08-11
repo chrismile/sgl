@@ -207,6 +207,8 @@ void VideoWriter::onSwapchainRecreated() {
         readBackImages.push_back(readBackImage);
     }
     queueCapacity = numSwapchainImages;
+
+    readBackImageSubresourceLayout = readBackImages.front()->getSubresourceLayout(VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
 void VideoWriter::readBackOldestFrameVulkan() {
@@ -215,12 +217,12 @@ void VideoWriter::readBackOldestFrameVulkan() {
     startPointer = (startPointer + 1) % queueCapacity;
     queueSize--;
 
-    VkSubresourceLayout subresourceLayout = readBackImage->getSubresourceLayout(VK_IMAGE_ASPECT_COLOR_BIT);
-
     uint8_t* mappedData = reinterpret_cast<uint8_t*>(readBackImage->mapMemory());
     for (int y = 0; y < frameH; y++) {
         for (int x = 0; x < frameW; x++) {
-            int readOffset = int(subresourceLayout.offset) + x * 4 + int(subresourceLayout.rowPitch) * (frameH - y - 1);
+            int readOffset =
+                    int(readBackImageSubresourceLayout.offset) + x * 4
+                    + int(readBackImageSubresourceLayout.rowPitch) * (frameH - y - 1);
             int writeOffset = (x + y * frameW) * 3;
             framebuffer[writeOffset] = mappedData[readOffset];
             framebuffer[writeOffset + 1] = mappedData[readOffset + 1];

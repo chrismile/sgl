@@ -34,7 +34,7 @@
 #include <SDL2/SDL.h>
 
 #ifdef SUPPORT_VULKAN
-#include <vulkan/vulkan.h>
+#include <Graphics/Vulkan/libs/volk/volk.h>
 namespace sgl { namespace vk {
 class Renderer;
 }}
