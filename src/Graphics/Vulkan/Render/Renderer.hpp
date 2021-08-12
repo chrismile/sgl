@@ -37,6 +37,8 @@
 #include <Utils/CircularQueue.hpp>
 #include <Math/Geometry/MatrixUtil.hpp>
 
+#include "ShaderGroupSettings.hpp"
+
 namespace sgl { namespace vk {
 
 class Device;
@@ -83,7 +85,9 @@ public:
     void dispatch(ComputeDataPtr computeData, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
 
     // Ray tracing pipeline.
-    void traceRays(RayTracingDataPtr rayTracingData);
+    void traceRays(
+            RayTracingDataPtr rayTracingData,
+            const ShaderGroupSettings& shaderGroupSettings = ShaderGroupSettings());
 
     // Image pipeline barrier.
     void transitionImageLayout(vk::ImagePtr& image, VkImageLayout newLayout);

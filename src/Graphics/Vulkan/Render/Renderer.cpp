@@ -381,7 +381,7 @@ void Renderer::dispatch(ComputeDataPtr computeData, uint32_t groupCountX, uint32
     vkCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
 }
 
-void Renderer::traceRays(RayTracingDataPtr rayTracingData) {
+void Renderer::traceRays(RayTracingDataPtr rayTracingData, const ShaderGroupSettings& shaderGroupSettings) {
     bool isNewPipeline = false;
     RayTracingPipelinePtr newRayTracingPipeline = rayTracingData->getRayTracingPipeline();
     if (rayTracingPipeline != newRayTracingPipeline) {

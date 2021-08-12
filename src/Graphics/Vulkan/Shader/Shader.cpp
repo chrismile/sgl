@@ -46,19 +46,6 @@ ShaderModule::ShaderModule(
         exit(1);
     }
 
-    if (getIsRayTracingShader()) {
-        if (shaderModuleType == ShaderModuleType::RAYGEN || shaderModuleType == ShaderModuleType::MISS
-                || shaderModuleType == ShaderModuleType::CALLABLE) {
-            rayTracingShaderGroupType = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-        } else if (shaderModuleType == ShaderModuleType::ANY_HIT) {
-            rayTracingShaderGroupType = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
-        } else if (shaderModuleType == ShaderModuleType::CLOSEST_HIT) {
-            rayTracingShaderGroupType = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
-        } else if (shaderModuleType == ShaderModuleType::INTERSECTION) {
-            rayTracingShaderGroupType = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR;
-        }
-    }
-
     createReflectData(spirvCode);
 }
 
@@ -70,35 +57,6 @@ bool ShaderModule::getIsRayTracingShader() {
     return shaderModuleType == ShaderModuleType::RAYGEN || shaderModuleType == ShaderModuleType::MISS
             || shaderModuleType == ShaderModuleType::CALLABLE || shaderModuleType == ShaderModuleType::ANY_HIT
             || shaderModuleType == ShaderModuleType::CLOSEST_HIT || shaderModuleType == ShaderModuleType::INTERSECTION;
-}
-
-void ShaderModule::setRayTracingShaderGroupType(VkRayTracingShaderGroupTypeKHR groupType) {
-    if (shaderModuleType == ShaderModuleType::RAYGEN || shaderModuleType == ShaderModuleType::MISS
-            || shaderModuleType == ShaderModuleType::CALLABLE) {
-        if (groupType != VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR) {
-            Logfile::get()->throwError(
-                    "Error in RayTracingPipelineInfo::RayTracingPipelineInfo: For shader module types ray gen, "
-                    "miss and callable, only VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR is supported.");
-        }
-    } else if (shaderModuleType == ShaderModuleType::ANY_HIT || shaderModuleType == ShaderModuleType::CLOSEST_HIT) {
-        if (groupType != VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR
-                && groupType != VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR) {
-            Logfile::get()->throwError(
-                    "Error in RayTracingPipelineInfo::RayTracingPipelineInfo: For shader module types any hit and "
-                    "closest hit, only VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR and "
-                    "VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR are supported.");
-        }
-        rayTracingShaderGroupType = groupType;
-    } else if (shaderModuleType == ShaderModuleType::INTERSECTION) {
-        if (groupType != VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR) {
-            Logfile::get()->throwError(
-                    "Error in RayTracingPipelineInfo::RayTracingPipelineInfo: For shader module type intersection, "
-                    "only VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR is supported.");
-        }
-    } else {
-        Logfile::get()->throwError(
-                "Error in RayTracingPipelineInfo::RayTracingPipelineInfo: Unsupported shader type.");
-    }
 }
 
 void ShaderModule::createReflectData(const std::vector<uint32_t>& spirvCode) {
@@ -464,6 +422,24 @@ const DescriptorInfo& ShaderStages::getDescriptorInfoByBinding(uint32_t setIdx, 
             "Error in ShaderStages::getDescriptorInfoByBinding: Couldn't find descriptor with binding \""
             + std::to_string(binding) + "\" for descriptor set index " + std::to_string(setIdx) + ".");
     return descriptorSetInfo.front(); // To get rid of warning...
+}
+
+ShaderModulePtr ShaderStages::findModuleId(const std::string& shaderModuleId) {
+    for (ShaderModulePtr& shaderModule : shaderModules) {
+        if (shaderModule->getShaderModuleId() == shaderModuleId) {
+            return shaderModule;
+        }
+    }
+}
+
+size_t ShaderStages::findModuleIndexFromId(const std::string& shaderModuleId) const {
+    for (size_t moduleIdx = 0; moduleIdx < shaderModules.size(); moduleIdx++) {
+        if (shaderModules.at(moduleIdx)->getShaderModuleId() == shaderModuleId) {
+            return moduleIdx;
+        }
+    }
+    Logfile::get()->throwError("Error");
+    return std::numeric_limits<size_t>::max();
 }
 
 }}

@@ -39,7 +39,7 @@ class Device;
 class Buffer;
 typedef std::shared_ptr<Buffer> BufferPtr;
 
-class BottomLevelAccelerationStructureInput {
+class DLL_OBJECT BottomLevelAccelerationStructureInput {
 public:
     /**
      * @param device A Vulkan device.
@@ -65,7 +65,7 @@ protected:
     VkAccelerationStructureBuildRangeInfoKHR buildRangeInfo = {};
 };
 
-class TrianglesAccelerationStructureInput : public BottomLevelAccelerationStructureInput {
+class DLL_OBJECT TrianglesAccelerationStructureInput : public BottomLevelAccelerationStructureInput {
 public:
     /**
      * @param device A Vulkan device.
@@ -90,7 +90,7 @@ protected:
     size_t numVertices = 0;
 };
 
-class AabbsAccelerationStructureInput : public BottomLevelAccelerationStructureInput {
+class DLL_OBJECT AabbsAccelerationStructureInput : public BottomLevelAccelerationStructureInput {
 public:
     /**
      * @param device A Vulkan device.
@@ -114,7 +114,7 @@ protected:
     size_t numAabbs = 0;
 };
 
-class BottomLevelAccelerationStructure {
+class DLL_OBJECT BottomLevelAccelerationStructure {
 public:
     explicit BottomLevelAccelerationStructure(
             Device* device, VkAccelerationStructureKHR accelerationStructure, BufferPtr accelerationStructureBuffer)
@@ -137,26 +137,26 @@ protected:
 typedef std::shared_ptr<BottomLevelAccelerationStructure> BottomLevelAccelerationStructurePtr;
 typedef std::vector<BottomLevelAccelerationStructureInput> BottomLevelAccelerationStructureInputList;
 
-std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStructuresFromInputsLists(
+DLL_OBJECT std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStructuresFromInputsLists(
         const std::vector<BottomLevelAccelerationStructureInputList>& blasInputsList,
         VkBuildAccelerationStructureFlagsKHR flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR);
 
-std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStructuresFromInputList(
+DLL_OBJECT std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStructuresFromInputList(
         const std::vector<BottomLevelAccelerationStructureInput>& blasInputsList,
         VkBuildAccelerationStructureFlagsKHR flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR);
 
-BottomLevelAccelerationStructurePtr buildBottomLevelAccelerationStructureFromInputs(
+DLL_OBJECT BottomLevelAccelerationStructurePtr buildBottomLevelAccelerationStructureFromInputs(
         const BottomLevelAccelerationStructureInputList& blasInputs,
         VkBuildAccelerationStructureFlagsKHR flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR);
 
-BottomLevelAccelerationStructurePtr buildBottomLevelAccelerationStructureFromInput(
+DLL_OBJECT BottomLevelAccelerationStructurePtr buildBottomLevelAccelerationStructureFromInput(
         const BottomLevelAccelerationStructureInput& blasInput,
         VkBuildAccelerationStructureFlagsKHR flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR);
 
 /**
  * Bottom-level acceleration structure instance.
  */
-class BlasInstance {
+class DLL_OBJECT BlasInstance {
 public:
     BlasInstance()
             : transform(), blasIdx(0), instanceCustomIndex(0), mask(0), shaderBindingTableRecordOffset(0),
@@ -170,7 +170,7 @@ public:
     VkGeometryInstanceFlagsKHR flags:8;
 };
 
-class TopLevelAccelerationStructure {
+class DLL_OBJECT TopLevelAccelerationStructure {
 public:
     TopLevelAccelerationStructure(
             Device* device, VkAccelerationStructureKHR accelerationStructure, BufferPtr accelerationStructureBuffer)

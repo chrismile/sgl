@@ -85,8 +85,6 @@ public:
     ~ShaderModule();
 
     bool getIsRayTracingShader();
-    void setRayTracingShaderGroupType(VkRayTracingShaderGroupTypeKHR groupType);
-    inline VkRayTracingShaderGroupTypeKHR getRayTracingShaderGroupType() const { return rayTracingShaderGroupType; }
 
     /**
      * Returns, e.g.: {InterfaceVariableDescriptor(0, SPV_REFLECT_FORMAT_R32G32B32_SFLOAT, "vertexPosition")}
@@ -106,6 +104,7 @@ public:
 
     // Get Vulkan data.
     inline VkShaderModule getVkShaderModule() { return vkShaderModule; }
+    inline Device* getDevice() const { return device; }
 
 private:
     void createReflectData(const std::vector<uint32_t>& spirvCode);
@@ -122,9 +121,6 @@ private:
     std::vector<InterfaceVariableDescriptor> inputVariableDescriptors;
     std::map<uint32_t, std::vector<DescriptorInfo>> descriptorSetsInfo; ///< set index -> descriptor set info
     std::vector<VkPushConstantRange> pushConstantRanges;
-
-    /// The ray tracing shader group type can be specified if this is a ray tracing shader module.
-    VkRayTracingShaderGroupTypeKHR rayTracingShaderGroupType = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
 };
 
 typedef std::shared_ptr<ShaderModule> ShaderModulePtr;
@@ -151,7 +147,13 @@ public:
     const DescriptorInfo& getDescriptorInfoByName(uint32_t setIdx, const std::string& descName) const;
     const DescriptorInfo& getDescriptorInfoByBinding(uint32_t setIdx, uint32_t binding) const;
 
+    /// Finds a certain module based on its ID.
+    ShaderModulePtr findModuleId(const std::string& shaderModuleId);
+    size_t findModuleIndexFromId(const std::string& shaderModuleId) const;
+
     inline std::vector<ShaderModulePtr>& getShaderModules() { return shaderModules; }
+    inline const std::vector<ShaderModulePtr>& getShaderModules() const { return shaderModules; }
+    inline Device* getDevice() const { return device; }
 
     inline const std::vector<VkPipelineShaderStageCreateInfo>& getVkShaderStages() const { return vkShaderStages; }
     inline const std::vector<VkDescriptorSetLayout>& getVkDescriptorSetLayouts() const { return descriptorSetLayouts; }
