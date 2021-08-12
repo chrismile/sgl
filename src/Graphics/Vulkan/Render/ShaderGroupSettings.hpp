@@ -44,6 +44,8 @@ struct DLL_OBJECT ShaderGroupSettings {
     uint32_t missShaderGroupSize = std::numeric_limits<uint32_t>::max(); ///< Max encodes all groups.
     uint32_t hitShaderGroupOffset = 0;
     uint32_t hitShaderGroupSize = std::numeric_limits<uint32_t>::max(); ///< Max encodes all groups.
+    uint32_t callableShaderGroupOffset = 0;
+    uint32_t callableShaderGroupSize = std::numeric_limits<uint32_t>::max(); ///< Max encodes all groups.
 };
 
 }}

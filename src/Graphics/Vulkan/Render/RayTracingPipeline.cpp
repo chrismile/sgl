@@ -183,8 +183,6 @@ HitShaderGroup* ShaderBindingTable::addHitShaderGroup(VkRayTracingShaderGroupTyp
     return shaderGroup;
 }
 CallableShaderGroup* ShaderBindingTable::addCallableShaderGroup() {
-    Logfile::get()->throwError(
-            "Error in ShaderBindingTable::addCallableShaderGroup: Callable shaders are currently not supported.");
     auto shaderGroup = new CallableShaderGroup(shaderStages);
     callableShaderGroups.push_back(RayTracingShaderGroupPtr(shaderGroup));
     return shaderGroup;
@@ -210,8 +208,13 @@ void ShaderBindingTable::buildShaderGroups() {
     for (RayTracingShaderGroupPtr& shaderGroup : hitShaderGroups) {
         hitGroupStride = std::max(hitGroupStride, shaderGroup->getSize());
     }
+    callableGroupStride = groupSizeAligned;
+    for (RayTracingShaderGroupPtr& shaderGroup : callableShaderGroups) {
+        callableGroupStride = std::max(callableGroupStride, shaderGroup->getSize());
+    }
     missGroupsOffset = rayGenGroupStride * uint32_t(rayGenShaderGroups.size());
     hitGroupsOffset = missGroupsOffset + missGroupStride * uint32_t(missShaderGroups.size());
+    callableGroupsOffset = hitGroupsOffset + callableGroupStride * uint32_t(callableShaderGroups.size());
 
     for (RayTracingShaderGroupPtr& shaderGroup : rayGenShaderGroups) {
         shaderGroups.push_back(shaderGroup->getShaderGroupCreateInfo());
@@ -255,7 +258,8 @@ void ShaderBindingTable::buildShaderBindingTable(VkPipeline pipeline) {
     size_t sbtBufferSize =
             rayGenGroupStride * rayGenShaderGroups.size()
             + missGroupStride * missShaderGroups.size()
-            + hitGroupStride * hitShaderGroups.size();
+            + hitGroupStride * hitShaderGroups.size()
+            + callableGroupStride * callableShaderGroups.size();
     sbtBuffer = std::make_shared<Buffer>(
             device, sbtBufferSize,
             VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR
@@ -290,6 +294,14 @@ void ShaderBindingTable::buildShaderBindingTable(VkPipeline pipeline) {
         shaderGroupHandlePtr += handleSize;
         sbtDataOffset += hitGroupStride;
     }
+    for (auto& shaderGroup : callableShaderGroups) {
+        memcpy(sbtDataOffset, shaderGroupHandlePtr, handleSize);
+        if (shaderGroup->hasRecordData()) {
+            memcpy(sbtDataOffset + handleSize, shaderGroup->getRecordData(), shaderGroup->getRecordDataSize());
+        }
+        shaderGroupHandlePtr += handleSize;
+        sbtDataOffset += callableGroupStride;
+    }
     sbtBuffer->unmapMemory();
 
     sbtAddress = sbtBuffer->getVkDeviceAddress();
@@ -298,6 +310,7 @@ void ShaderBindingTable::buildShaderBindingTable(VkPipeline pipeline) {
 std::array<VkStridedDeviceAddressRegionKHR, 4> ShaderBindingTable::getStridedDeviceAddressRegions(
         const ShaderGroupSettings& shaderGroupSettings) const {
     std::array<VkStridedDeviceAddressRegionKHR, 4> stridedDeviceAddressRegions{};
+    VkStridedDeviceAddressRegionKHR region;
 
     uint32_t missShaderGroupSize = shaderGroupSettings.missShaderGroupSize;
     if (missShaderGroupSize == std::numeric_limits<uint32_t>::max()) {
@@ -307,28 +320,49 @@ std::array<VkStridedDeviceAddressRegionKHR, 4> ShaderBindingTable::getStridedDev
     if (hitShaderGroupSize == std::numeric_limits<uint32_t>::max()) {
         hitShaderGroupSize = uint32_t(hitShaderGroups.size());
     }
+    uint32_t callableShaderGroupSize = shaderGroupSettings.callableShaderGroupSize;
+    if (callableShaderGroupSize == std::numeric_limits<uint32_t>::max()) {
+        callableShaderGroupSize = uint32_t(callableShaderGroups.size());
+    }
 
     // RayGen
-    VkStridedDeviceAddressRegionKHR region;
     region.deviceAddress = sbtAddress + shaderGroupSettings.rayGenShaderIndex * rayGenGroupStride;
     region.stride = rayGenGroupStride;
     region.size = rayGenGroupStride;
     stridedDeviceAddressRegions.at(0) = region;
 
     // Miss
-    region.deviceAddress = sbtAddress + missGroupsOffset + shaderGroupSettings.missShaderGroupOffset * missGroupStride;
-    region.stride = missGroupStride;
-    region.size = missGroupStride * missShaderGroupSize;
+    if (shaderGroupSettings.missShaderGroupSize > 0) {
+        region.deviceAddress =
+                sbtAddress + missGroupsOffset + shaderGroupSettings.missShaderGroupOffset * missGroupStride;
+        region.stride = missGroupStride;
+        region.size = missGroupStride * missShaderGroupSize;
+    } else {
+        region = VkStridedDeviceAddressRegionKHR{0u, 0u, 0u};
+    }
     stridedDeviceAddressRegions.at(1) = region;
 
     // Hit
-    region.deviceAddress = sbtAddress + hitGroupsOffset + shaderGroupSettings.hitShaderGroupOffset * hitGroupStride;
-    region.stride = hitGroupStride;
-    region.size = hitGroupStride * hitShaderGroupSize;
+    if (shaderGroupSettings.missShaderGroupSize > 0) {
+        region.deviceAddress =
+                sbtAddress + hitGroupsOffset + shaderGroupSettings.hitShaderGroupOffset * hitGroupStride;
+        region.stride = hitGroupStride;
+        region.size = hitGroupStride * hitShaderGroupSize;
+    } else {
+        region = VkStridedDeviceAddressRegionKHR{0u, 0u, 0u};
+    }
     stridedDeviceAddressRegions.at(2) = region;
 
-    // Callable (not supported so far).
-    stridedDeviceAddressRegions.at(3) = VkStridedDeviceAddressRegionKHR{0u, 0u, 0u};
+    // Callable
+    if (shaderGroupSettings.callableShaderGroupSize > 0) {
+        region.deviceAddress =
+                sbtAddress + callableGroupsOffset + shaderGroupSettings.callableShaderGroupOffset * callableGroupStride;
+        region.stride = callableGroupStride;
+        region.size = callableGroupStride * callableShaderGroupSize;
+    } else {
+        region = VkStridedDeviceAddressRegionKHR{0u, 0u, 0u};
+    }
+    stridedDeviceAddressRegions.at(3) = region;
 
     return stridedDeviceAddressRegions;
 }

@@ -179,6 +179,19 @@ void Buffer::uploadData(size_t sizeInBytesData, void* dataPtr, VkCommandBuffer c
     }
 }
 
+void Buffer::updateData(size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer) {
+    updateData(0, sizeInBytesData, dataPtr, commandBuffer);
+}
+
+void Buffer::updateData(size_t offset, size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer) {
+    if (sizeInBytesData > 65536) {
+        Logfile::get()->throwError(
+                "Error in Buffer::uploadDataAsync: vkCmdUpdateBuffer only supports transferring up to 65536 "
+                "bytes of data.");
+    }
+    vkCmdUpdateBuffer(commandBuffer, buffer, offset, sizeInBytesData, dataPtr);
+}
+
 void* Buffer::mapMemory() {
     if (memoryUsage != VMA_MEMORY_USAGE_CPU_ONLY && memoryUsage != VMA_MEMORY_USAGE_CPU_TO_GPU
             && memoryUsage != VMA_MEMORY_USAGE_GPU_TO_CPU && memoryUsage != VMA_MEMORY_USAGE_CPU_COPY) {

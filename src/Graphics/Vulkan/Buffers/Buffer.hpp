@@ -94,6 +94,15 @@ public:
     void uploadData(size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 
     /**
+     * Asynchronously updates the buffer data using vkCmdUpdateBuffer.
+     * This operation is allowed only outside of a rendering pass. Furthermore, the user needs to ensure that the
+     * correct synchronization primitives are used to avoid race conditions when accessing the updated buffer.
+     * Also, VK_BUFFER_USAGE_TRANSFER_DST_BIT must be specified in the VkBufferUsageFlags when creating the buffer.
+     */
+    void updateData(size_t offset, size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer);
+    void updateData(size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer);
+
+    /**
      * Maps the memory to a host-accessible address.
      * memoryUsage must be VMA_MEMORY_USAGE_CPU_ONLY, VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_MEMORY_USAGE_GPU_TO_CPU or
      * VMA_MEMORY_USAGE_CPU_COPY.
