@@ -35,6 +35,8 @@
 #include "../Shader/Shader.hpp"
 #include "../Buffers/Buffer.hpp"
 
+#include "ShaderGroupSettings.hpp"
+
 namespace sgl { namespace vk {
 
 class Buffer;
@@ -66,18 +68,23 @@ class RenderData;
 typedef std::shared_ptr<RenderData> RenderDataPtr;
 typedef uint32_t ListenerToken;
 
+enum class RenderDataType {
+    COMPUTE, RASTER, RAYTRACING
+};
+
 class DLL_OBJECT RenderData {
     friend class Renderer;
 public:
     RenderData(Renderer* renderer, ShaderStagesPtr& shaderStages);
     virtual ~RenderData();
+    virtual RenderDataType getRenderDataType() const=0;
 
     /**
      * Creates a shallow copy of the render data using the passed shader stages.
      * NOTE: The descriptor layouts of the new shaders have to match!
      * @param shaderStages The shader stages to use in the copy.
      */
-    RenderDataPtr copy(ShaderStagesPtr& shaderStages);
+    //RenderDataPtr copy(ShaderStagesPtr& shaderStages);
 
     void onSwapchainRecreated();
 
@@ -156,6 +163,7 @@ private:
 class DLL_OBJECT ComputeData : public RenderData {
 public:
     explicit ComputeData(Renderer* renderer, ComputePipelinePtr& computePipeline);
+    RenderDataType getRenderDataType() const override { return RenderDataType::COMPUTE; }
 
     inline ComputePipelinePtr getComputePipeline() { return computePipeline; }
 
@@ -166,6 +174,7 @@ protected:
 class DLL_OBJECT RasterData : public RenderData {
 public:
     RasterData(Renderer* renderer, GraphicsPipelinePtr& graphicsPipeline);
+    RenderDataType getRenderDataType() const override { return RenderDataType::RASTER; }
 
     void setIndexBuffer(BufferPtr& buffer, VkIndexType indexType = VK_INDEX_TYPE_UINT32);
     void setVertexBuffer(BufferPtr& buffer, uint32_t binding);
@@ -200,22 +209,20 @@ protected:
 
 class DLL_OBJECT RayTracingData : public RenderData {
 public:
-    RayTracingData(Renderer* renderer, RayTracingPipelinePtr& rayTracingPipeline);
-
-    // TODO
-    void setAccelerationStructure();
+    RayTracingData(
+            Renderer* renderer, RayTracingPipelinePtr& rayTracingPipeline,
+            const ShaderGroupSettings& settings = ShaderGroupSettings());
+    RenderDataType getRenderDataType() const override { return RenderDataType::RAYTRACING; }
 
     inline RayTracingPipelinePtr getRayTracingPipeline() { return rayTracingPipeline; }
+    inline const std::array<VkStridedDeviceAddressRegionKHR, 4>& getStridedDeviceAddressRegions() {
+        return stridedDeviceAddressRegions;
+    }
 
 protected:
     RayTracingPipelinePtr rayTracingPipeline;
-
-    BufferPtr indexBuffer;
-    VkIndexType indexType = VK_INDEX_TYPE_UINT32;
-    size_t numIndices = 0;
-
-    BufferPtr vertexBuffer;
-    size_t numVertices = 0;
+    ShaderGroupSettings shaderGroupSettings;
+    std::array<VkStridedDeviceAddressRegionKHR, 4> stridedDeviceAddressRegions{};
 };
 
 typedef std::shared_ptr<ComputeData> ComputeDataPtr;

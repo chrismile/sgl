@@ -37,8 +37,6 @@
 #include <Utils/CircularQueue.hpp>
 #include <Math/Geometry/MatrixUtil.hpp>
 
-#include "ShaderGroupSettings.hpp"
-
 namespace sgl { namespace vk {
 
 class Device;
@@ -75,19 +73,19 @@ public:
     // Graphics pipeline.
     void beginCommandBuffer();
     VkCommandBuffer endCommandBuffer();
-    void render(RasterDataPtr rasterData);
-    void render(RasterDataPtr rasterData, const FramebufferPtr& framebuffer);
+    void render(const RasterDataPtr& rasterData);
+    void render(const RasterDataPtr& rasterData, const FramebufferPtr& framebuffer);
     void setModelMatrix(const glm::mat4 &matrix);
     void setViewMatrix(const glm::mat4 &matrix);
     void setProjectionMatrix(const glm::mat4 &matrix);
 
     // Compute pipeline.
-    void dispatch(ComputeDataPtr computeData, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
+    void dispatch(const ComputeDataPtr& computeData, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
 
     // Ray tracing pipeline.
     void traceRays(
-            RayTracingDataPtr rayTracingData,
-            const ShaderGroupSettings& shaderGroupSettings = ShaderGroupSettings());
+            const RayTracingDataPtr& rayTracingData,
+            uint32_t launchSizeX, uint32_t launchSizeY, uint32_t launchSizeZ = 1);
 
     // Image pipeline barrier.
     void transitionImageLayout(vk::ImagePtr& image, VkImageLayout newLayout);
@@ -137,6 +135,10 @@ public:
         lastFramebuffer = FramebufferPtr();
         recordingCommandBufferStarted = true;
     }
+    inline const glm::mat4& getModelMatrix() const { return matrixBlock.mMatrix; }
+    inline const glm::mat4& getViewMatrix() const { return matrixBlock.vMatrix; }
+    inline const glm::mat4& getProjectionMatrix() const { return matrixBlock.pMatrix; }
+    inline const glm::mat4& getModelViewProjectionMatrix() const { return matrixBlock.mvpMatrix; }
 
 private:
     Device* device;

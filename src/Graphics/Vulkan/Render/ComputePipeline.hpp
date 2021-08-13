@@ -37,7 +37,7 @@ class DLL_OBJECT ComputePipelineInfo {
     friend class ComputePipeline;
 
 public:
-    ComputePipelineInfo();
+    explicit ComputePipelineInfo(const ShaderStagesPtr& shaderStages);
 
 protected:
     ShaderStagesPtr shaderStages;

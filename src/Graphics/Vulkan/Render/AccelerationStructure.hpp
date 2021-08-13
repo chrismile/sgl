@@ -31,6 +31,7 @@
 
 #include <memory>
 #include <glm/glm.hpp>
+#include <utility>
 #include "../libs/volk/volk.h"
 
 namespace sgl { namespace vk {
@@ -61,9 +62,11 @@ public:
 protected:
     Device* device = nullptr;
 
-    VkAccelerationStructureGeometryKHR asGeometry = {};
-    VkAccelerationStructureBuildRangeInfoKHR buildRangeInfo = {};
+    VkAccelerationStructureGeometryKHR asGeometry{};
+    VkAccelerationStructureBuildRangeInfoKHR buildRangeInfo{};
 };
+
+typedef std::shared_ptr<BottomLevelAccelerationStructureInput> BottomLevelAccelerationStructureInputPtr;
 
 class DLL_OBJECT TrianglesAccelerationStructureInput : public BottomLevelAccelerationStructureInput {
 public:
@@ -86,7 +89,7 @@ protected:
 
     BufferPtr vertexBuffer;
     VkFormat vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-    VkDeviceSize vertexStride;
+    VkDeviceSize vertexStride = 0;
     size_t numVertices = 0;
 };
 
@@ -110,7 +113,7 @@ public:
 
 protected:
     BufferPtr aabbsBuffer;
-    VkDeviceSize aabbsBufferStride;
+    VkDeviceSize aabbsBufferStride = 0;
     size_t numAabbs = 0;
 };
 
@@ -119,7 +122,7 @@ public:
     explicit BottomLevelAccelerationStructure(
             Device* device, VkAccelerationStructureKHR accelerationStructure, BufferPtr accelerationStructureBuffer)
             : device(device), accelerationStructure(accelerationStructure),
-            accelerationStructureBuffer(accelerationStructureBuffer) {
+            accelerationStructureBuffer(std::move(accelerationStructureBuffer)) {
     }
 
     ~BottomLevelAccelerationStructure();
@@ -135,14 +138,14 @@ protected:
 };
 
 typedef std::shared_ptr<BottomLevelAccelerationStructure> BottomLevelAccelerationStructurePtr;
-typedef std::vector<BottomLevelAccelerationStructureInput> BottomLevelAccelerationStructureInputList;
+typedef std::vector<BottomLevelAccelerationStructureInputPtr> BottomLevelAccelerationStructureInputList;
 
 DLL_OBJECT std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStructuresFromInputsLists(
         const std::vector<BottomLevelAccelerationStructureInputList>& blasInputsList,
         VkBuildAccelerationStructureFlagsKHR flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR);
 
 DLL_OBJECT std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStructuresFromInputList(
-        const std::vector<BottomLevelAccelerationStructureInput>& blasInputsList,
+        const std::vector<BottomLevelAccelerationStructureInputPtr>& blasInputsList,
         VkBuildAccelerationStructureFlagsKHR flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR);
 
 DLL_OBJECT BottomLevelAccelerationStructurePtr buildBottomLevelAccelerationStructureFromInputs(
@@ -150,7 +153,7 @@ DLL_OBJECT BottomLevelAccelerationStructurePtr buildBottomLevelAccelerationStruc
         VkBuildAccelerationStructureFlagsKHR flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR);
 
 DLL_OBJECT BottomLevelAccelerationStructurePtr buildBottomLevelAccelerationStructureFromInput(
-        const BottomLevelAccelerationStructureInput& blasInput,
+        const BottomLevelAccelerationStructureInputPtr& blasInput,
         VkBuildAccelerationStructureFlagsKHR flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR);
 
 /**
@@ -159,10 +162,10 @@ DLL_OBJECT BottomLevelAccelerationStructurePtr buildBottomLevelAccelerationStruc
 class DLL_OBJECT BlasInstance {
 public:
     BlasInstance()
-            : transform(), blasIdx(0), instanceCustomIndex(0), mask(0), shaderBindingTableRecordOffset(0),
+            : transform(1.0f), blasIdx(0), instanceCustomIndex(0), mask(0xFF), shaderBindingTableRecordOffset(0),
             flags(VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR) {}
 
-    glm::mat4 transform;
+    glm::mat4 transform = glm::mat4();
     uint32_t blasIdx;
     uint32_t instanceCustomIndex:24;
     uint32_t mask:8;
@@ -172,11 +175,7 @@ public:
 
 class DLL_OBJECT TopLevelAccelerationStructure {
 public:
-    TopLevelAccelerationStructure(
-            Device* device, VkAccelerationStructureKHR accelerationStructure, BufferPtr accelerationStructureBuffer)
-            : device(device), accelerationStructure(accelerationStructure),
-            accelerationStructureBuffer(accelerationStructureBuffer) {
-    }
+    explicit TopLevelAccelerationStructure(Device* device) : device(device) {}
 
     ~TopLevelAccelerationStructure();
 
@@ -199,6 +198,7 @@ protected:
     Device* device = nullptr;
     VkAccelerationStructureKHR accelerationStructure = VK_NULL_HANDLE;
     BufferPtr accelerationStructureBuffer;
+    std::vector<BottomLevelAccelerationStructurePtr> bottomLevelAccelerationStructures;
 };
 
 typedef std::shared_ptr<TopLevelAccelerationStructure> TopLevelAccelerationStructurePtr;

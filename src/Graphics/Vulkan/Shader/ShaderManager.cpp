@@ -39,6 +39,7 @@
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
 
+#include <Graphics/Vulkan/Utils/Instance.hpp>
 #include "Internal/IncluderInterface.hpp"
 #include "ShaderManager.hpp"
 
@@ -189,6 +190,20 @@ ShaderModulePtr ShaderManagerVk::loadAsset(ShaderModuleInfo& shaderInfo) {
     IncluderInterface* includerInterface = new IncluderInterface();
     compileOptions.SetIncluder(std::unique_ptr<shaderc::CompileOptions::IncluderInterface>(includerInterface));
 
+    if (device->getInstance()->getInstanceVulkanVersion() < VK_API_VERSION_1_1) {
+        compileOptions.SetTargetSpirv(shaderc_spirv_version_1_0);
+    } else if (device->getInstance()->getInstanceVulkanVersion() < VK_API_VERSION_1_2) {
+        compileOptions.SetTargetSpirv(shaderc_spirv_version_1_3);
+    } else {
+        compileOptions.SetTargetSpirv(shaderc_spirv_version_1_5);
+    }
+
+    // Sets the target SPIR-V version.  The generated module will use this version
+    // of SPIR-V.  Each target environment determines what versions of SPIR-V
+    // it can consume.  Defaults to the highest version of SPIR-V 1.0 which is
+    // required to be supported by the target environment.  E.g. Default to SPIR-V
+    // 1.0 for Vulkan 1.0 and SPIR-V 1.3 for Vulkan 1.1.
+
     const std::unordered_map<ShaderModuleType, shaderc_shader_kind> shaderKindLookupTable = {
             { ShaderModuleType::VERTEX,                 shaderc_vertex_shader },
             { ShaderModuleType::FRAGMENT,               shaderc_fragment_shader },
@@ -233,8 +248,8 @@ ShaderModulePtr ShaderManagerVk::loadAsset(ShaderModuleInfo& shaderInfo) {
 std::string ShaderManagerVk::loadHeaderFileString(const std::string &shaderName, std::string &prependContent) {
     std::ifstream file(shaderName.c_str());
     if (!file.is_open()) {
-        Logfile::get()->writeError(std::string() + "Error in loadHeaderFileString: Couldn't open the file \""
-                                   + shaderName + "\".");
+        Logfile::get()->throwError(
+                std::string() + "Error in loadHeaderFileString: Couldn't open the file \"" + shaderName + "\".");
         return "";
     }
     //std::string fileContent((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
@@ -355,8 +370,8 @@ std::string ShaderManagerVk::getShaderString(const std::string &globalShaderName
 
     std::ifstream file(shaderFilename.c_str());
     if (!file.is_open()) {
-        Logfile::get()->writeError(std::string() + "Error in getShader: Couldn't open the file \""
-                                   + shaderFilename + "\".");
+        Logfile::get()->throwError(
+                std::string() + "Error in getShader: Couldn't open the file \"" + shaderFilename + "\".");
     }
 
     std::string shaderName;

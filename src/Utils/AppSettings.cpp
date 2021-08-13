@@ -262,7 +262,8 @@ void checkGlExtension(const char *extensionName, VulkanInteropCapabilities& vulk
 
 void AppSettings::initializeVulkanInteropSupport(
         const std::vector<const char*>& requiredDeviceExtensionNames,
-        const std::vector<const char*>& optionalDeviceExtensionNames) {
+        const std::vector<const char*>& optionalDeviceExtensionNames,
+        const vk::DeviceFeatures& requestedDeviceFeatures) {
     vulkanInteropCapabilities = VulkanInteropCapabilities::EXTERNAL_MEMORY;
 
     if (operatingSystem != sgl::OperatingSystem::LINUX && operatingSystem != sgl::OperatingSystem::ANDROID
@@ -346,7 +347,8 @@ void AppSettings::initializeVulkanInteropSupport(
             optionalDeviceExtensionNamesAll.end(), optionalDeviceExtensionNames.begin(),
             optionalDeviceExtensionNames.end());
 
-    primaryDevice->createDeviceHeadless(instance, requiredDeviceExtensionNames, optionalDeviceExtensionNamesAll);
+    primaryDevice->createDeviceHeadless(
+            instance, requiredDeviceExtensionNames, optionalDeviceExtensionNamesAll, requestedDeviceFeatures);
 
     for (const char* deviceExtension : externalMemoryDeviceExtensionNames) {
         if (!primaryDevice->isDeviceExtensionSupported(deviceExtension)) {

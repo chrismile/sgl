@@ -31,6 +31,8 @@
 
 #include <memory>
 #include <limits>
+
+#include <Defs.hpp>
 #include "../libs/volk/volk.h"
 #include "../libs/VMA/vk_mem_alloc.h"
 
@@ -86,12 +88,34 @@ public:
     /**
      * Uploads memory to the GPU. If memoryUsage is not VMA_MEMORY_USAGE_CPU_ONLY, VMA_MEMORY_USAGE_CPU_TO_GPU or
      * VMA_MEMORY_USAGE_CPU_COPY, a staging buffer is used for uploading.
+     * NOTE: This version of uploadData will wait for the copy operation to finish.
+     * @param sizeInBytesData The size of the data to upload in bytes.
+     * @param dataPtr Data that is uploaded to the GPU.
+     */
+    void uploadData(size_t sizeInBytesData, void* dataPtr);
+
+    /**
+     * Uploads memory to the GPU. If memoryUsage is not VMA_MEMORY_USAGE_CPU_ONLY, VMA_MEMORY_USAGE_CPU_TO_GPU or
+     * VMA_MEMORY_USAGE_CPU_COPY, a staging buffer is used for uploading.
+     * NOTE: The version of uploadData with four parameters needs to be called in order to save the staging buffer when
+     * using a custom command buffer in combination with VMA_MEMORY_USAGE_GPU_ONLY buffers.
      * @param sizeInBytesData The size of the data to upload in bytes.
      * @param dataPtr Data that is uploaded to the GPU.
      * @param commandBuffer The command buffer to use for the copy operation.
      * If the command buffer is a null pointer, the command will be executed synchronously.
      */
-    void uploadData(size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
+    void uploadData(size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer);
+
+    /**
+     * Uploads memory to the GPU. If memoryUsage is not VMA_MEMORY_USAGE_CPU_ONLY, VMA_MEMORY_USAGE_CPU_TO_GPU or
+     * VMA_MEMORY_USAGE_CPU_COPY, a staging buffer is used for uploading.
+     * @param sizeInBytesData The size of the data to upload in bytes.
+     * @param dataPtr Data that is uploaded to the GPU.
+     * @param commandBuffer The command buffer to use for the copy operation.
+     * @param stagingBuffer A reference to which the used staging buffer should be stored. This object must not be
+     * deleted before the device queue has finished the copy operation!
+     */
+    void uploadData(size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer, BufferPtr& stagingBuffer);
 
     /**
      * Asynchronously updates the buffer data using vkCmdUpdateBuffer.
@@ -101,6 +125,22 @@ public:
      */
     void updateData(size_t offset, size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer);
     void updateData(size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer);
+
+    /**
+     * Copies the data of this buffer object to the passed data object.
+     * @param destinationBuffer The destination buffer for the copy operation.
+     * @param commandBuffer The command buffer to use for the copy operation.
+     */
+    void copyDataTo(const BufferPtr& destinationBuffer, VkCommandBuffer commandBuffer);
+
+    /**
+     * Copies the data of this buffer object to the passed data object.
+     * @param destinationBuffer The destination buffer for the copy operation.
+     * @param commandBuffer The command buffer to use for the copy operation.
+     */
+    void copyDataTo(
+            const BufferPtr& destinationBuffer, VkDeviceSize sourceOffset, VkDeviceSize destOffset,
+            VkDeviceSize copySizeInBytes, VkCommandBuffer commandBuffer);
 
     /**
      * Maps the memory to a host-accessible address.

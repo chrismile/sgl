@@ -34,6 +34,7 @@
 #include <set>
 #include <functional>
 #include <unordered_map>
+#include <Defs.hpp>
 #include "../libs/volk/volk.h"
 #include "../libs/VMA/vk_mem_alloc.h"
 
@@ -67,6 +68,20 @@ namespace sgl { namespace vk {
 
 class Instance;
 
+struct DLL_OBJECT DeviceFeatures {
+    DeviceFeatures() {
+        deviceBufferDeviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
+        accelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+        rayTracingPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+        rayQueryFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
+    }
+    VkPhysicalDeviceFeatures requestedPhysicalDeviceFeatures = {};
+    VkPhysicalDeviceBufferDeviceAddressFeatures deviceBufferDeviceAddressFeatures = {};
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures = {};
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures = {};
+    VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures = {};
+};
+
 /**
  * An encapsulation of VkDevice and VkPhysicalDevice.
  */
@@ -77,13 +92,13 @@ public:
             Instance* instance, Window* window,
             std::vector<const char*> requiredDeviceExtensions = {},
             const std::vector<const char*>& optionalDeviceExtensions = {},
-            VkPhysicalDeviceFeatures requestedPhysicalDeviceFeatures = {});
+            const DeviceFeatures& requestedDeviceFeatures = DeviceFeatures());
     /// For headless rendering without a window (or when coupled with an OpenGL context in interoperability mode).
     void createDeviceHeadless(
             Instance* instance,
             const std::vector<const char*>& requiredDeviceExtensions = {},
             const std::vector<const char*>& optionalDeviceExtensions = {},
-            VkPhysicalDeviceFeatures requestedPhysicalDeviceFeatures = {});
+            const DeviceFeatures& requestedDeviceFeatures = DeviceFeatures());
     ~Device();
 
     void waitIdle();
@@ -112,7 +127,7 @@ public:
         return rayTracingPipelineProperties;
     }
     inline bool getRaytracingSupported() const { return isRaytracingSupported; }
-    VkSampleCountFlagBits getMaxUsableSampleCount();
+    VkSampleCountFlagBits getMaxUsableSampleCount() const;
 
     /**
      * @param memoryTypeBits

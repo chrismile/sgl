@@ -38,13 +38,14 @@ namespace sgl { namespace vk {
 
 BottomLevelAccelerationStructureInput::BottomLevelAccelerationStructureInput(
         Device* device, VkGeometryFlagsKHR geometryFlags) : device(device) {
+    asGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
     asGeometry.flags = geometryFlags;
 }
 
 std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStructuresFromInputsLists(
         const std::vector<BottomLevelAccelerationStructureInputList>& blasInputsList,
         VkBuildAccelerationStructureFlagsKHR flags) {
-    Device* device = blasInputsList.front().front().getDevice();
+    Device* device = blasInputsList.front().front()->getDevice();
 
     size_t numBlases = blasInputsList.size();
     std::vector<std::vector<VkAccelerationStructureGeometryKHR>> asGeometriesList(numBlases);
@@ -56,8 +57,8 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
         const BottomLevelAccelerationStructureInputList& blasInputs = blasInputsList.at(blasIdx);
         std::vector<VkAccelerationStructureGeometryKHR>& asGeometries = asGeometriesList.at(blasIdx);
         asGeometries.reserve(blasInputs.size());
-        for (const BottomLevelAccelerationStructureInput& blasInput : blasInputs) {
-            asGeometries.push_back(blasInput.getAccelerationStructureGeometry());
+        for (const BottomLevelAccelerationStructureInputPtr& blasInput : blasInputs) {
+            asGeometries.push_back(blasInput->getAccelerationStructureGeometry());
         }
 
         buildInfos.at(blasIdx).sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
@@ -74,7 +75,7 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
         const BottomLevelAccelerationStructureInputList& blasInputs = blasInputsList.at(blasIdx);
         std::vector<uint32_t> numPrimitivesList(blasInputs.size());
         for (size_t inputIdx = 0; inputIdx < blasInputs.size(); inputIdx++) {
-            numPrimitivesList.at(inputIdx) = blasInputs.at(inputIdx).getNumPrimitives();
+            numPrimitivesList.at(inputIdx) = blasInputs.at(inputIdx)->getNumPrimitives();
         }
 
         // Query the memory requirements for the bottom-level acceleration structure.
@@ -139,8 +140,8 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
 
         std::vector<const VkAccelerationStructureBuildRangeInfoKHR*> buildRangeInfos;
         buildRangeInfos.reserve(blasInputs.size());
-        for (const BottomLevelAccelerationStructureInput& blasInput : blasInputs) {
-            buildRangeInfos.push_back(&blasInput.getBuildRangeInfo());
+        for (const BottomLevelAccelerationStructureInputPtr& blasInput : blasInputs) {
+            buildRangeInfos.push_back(&blasInput->getBuildRangeInfo());
         }
 
         vkCmdBuildAccelerationStructuresKHR(commandBuffer, 1, &buildInfos.at(blasIdx), buildRangeInfos.data());
@@ -227,7 +228,7 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
 }
 
 std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStructuresFromInputList(
-        const std::vector<BottomLevelAccelerationStructureInput>& blasInputsList,
+        const std::vector<BottomLevelAccelerationStructureInputPtr>& blasInputsList,
         VkBuildAccelerationStructureFlagsKHR flags) {
     return buildBottomLevelAccelerationStructuresFromInputsLists({ blasInputsList }, flags);
 }
@@ -239,7 +240,7 @@ BottomLevelAccelerationStructurePtr buildBottomLevelAccelerationStructureFromInp
 }
 
 BottomLevelAccelerationStructurePtr buildBottomLevelAccelerationStructureFromInput(
-        const BottomLevelAccelerationStructureInput& blasInput,
+        const BottomLevelAccelerationStructureInputPtr& blasInput,
         VkBuildAccelerationStructureFlagsKHR flags) {
     return buildBottomLevelAccelerationStructuresFromInputsLists({ { blasInput } }, flags).front();
 }
@@ -274,7 +275,6 @@ void TrianglesAccelerationStructureInput::setVertexBuffer(
         BufferPtr& buffer, VkFormat vertexFormat, VkDeviceSize vertexStride) {
     this->vertexBuffer = buffer;
     this->vertexFormat = vertexFormat;
-    this->numVertices = buffer->getSizeInBytes() / vertexStride;
     if (vertexStride == 0) {
         if (vertexFormat == VK_FORMAT_R32G32B32_SFLOAT) {
             this->vertexStride = 3 * sizeof(float);
@@ -288,6 +288,7 @@ void TrianglesAccelerationStructureInput::setVertexBuffer(
     } else {
         this->vertexStride = vertexStride;
     }
+    this->numVertices = buffer->getSizeInBytes() / this->vertexStride;
 
     VkAccelerationStructureGeometryTrianglesDataKHR& trianglesData = asGeometry.geometry.triangles;
     trianglesData.vertexFormat = this->vertexFormat;
@@ -318,7 +319,9 @@ void AabbsAccelerationStructureInput::setAabbsBuffer(BufferPtr& buffer, VkDevice
 
 
 BottomLevelAccelerationStructure::~BottomLevelAccelerationStructure() {
-    vkDestroyAccelerationStructureKHR(device->getVkDevice(), accelerationStructure, nullptr);
+    if (accelerationStructure != VK_NULL_HANDLE) {
+        vkDestroyAccelerationStructureKHR(device->getVkDevice(), accelerationStructure, nullptr);
+    }
 }
 
 VkDeviceAddress BottomLevelAccelerationStructure::getAccelerationStructureDeviceAddress() {
@@ -334,6 +337,8 @@ void TopLevelAccelerationStructure::build(
         const std::vector<BottomLevelAccelerationStructurePtr>& blases,
         const std::vector<BlasInstance>& instances,
         VkBuildAccelerationStructureFlagsKHR flags) {
+    bottomLevelAccelerationStructures = blases;
+
     if (instances.size() > device->getPhysicalDeviceAccelerationStructureProperties().maxInstanceCount) {
         Logfile::get()->throwError(
                 "Error in TopLevelAccelerationStructure::build: The maximum number of supported instances is "
@@ -366,11 +371,13 @@ void TopLevelAccelerationStructure::build(
     // Create a buffering that stores the AS instance data.
     BufferPtr instancesBuffer(new Buffer(
             device, asInstances.size() * sizeof(VkAccelerationStructureInstanceKHR),
-            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT
+            | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
             VMA_MEMORY_USAGE_GPU_ONLY));
+    BufferPtr instancesStagingBuffer;
     instancesBuffer->uploadData(
             asInstances.size() * sizeof(VkAccelerationStructureInstanceKHR), asInstances.data(),
-            commandBuffer);
+            commandBuffer, instancesStagingBuffer);
 
     VkMemoryBarrier memoryBarrier{};
     memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
@@ -450,6 +457,12 @@ void TopLevelAccelerationStructure::build(
     vkCmdBuildAccelerationStructuresKHR(commandBuffer, 1, &buildInfo, &buildRangeInfos);
 
     device->endSingleTimeCommands(commandBuffer);
+}
+
+TopLevelAccelerationStructure::~TopLevelAccelerationStructure() {
+    if (accelerationStructure != VK_NULL_HANDLE) {
+        vkDestroyAccelerationStructureKHR(device->getVkDevice(), accelerationStructure, nullptr);
+    }
 }
 
 }}

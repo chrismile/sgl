@@ -28,6 +28,8 @@
 
 #include <Utils/File/Logfile.hpp>
 #include <Graphics/Vulkan/Render/Renderer.hpp>
+#include <Graphics/Vulkan/Render/ComputePipeline.hpp>
+#include <Graphics/Vulkan/Render/RayTracingPipeline.hpp>
 #include "Pass.hpp"
 
 namespace sgl { namespace vk {
@@ -36,7 +38,27 @@ Pass::Pass(vk::Renderer *renderer) : renderer(renderer), device(renderer->getDev
 }
 
 void ComputePass::render() {
+    if (shaderDirty) {
+        _build();
+    }
+    _render();
+}
+
+void ComputePass::_render() {
     renderer->dispatch(computeData, groupCountX, groupCountY, groupCountZ);
+}
+
+void ComputePass::_build() {
+    if (shaderDirty) {
+        loadShader();
+        shaderDirty = false;
+    }
+
+    sgl::vk::ComputePipelineInfo computePipelineInfo(shaderStages);
+    setComputePipelineInfo(computePipelineInfo);
+    sgl::vk::ComputePipelinePtr computePipeline(new sgl::vk::ComputePipeline(device, computePipelineInfo));
+
+    createComputeData(renderer, computePipeline);
 }
 
 
@@ -68,6 +90,39 @@ void RasterPass::_build() {
     sgl::vk::GraphicsPipelinePtr graphicsPipeline(new sgl::vk::GraphicsPipeline(device, graphicsPipelineInfo));
 
     createRasterData(renderer, graphicsPipeline);
+}
+
+
+void RayTracingPass::render() {
+    if (shaderDirty) {
+        _build();
+    }
+    _render();
+}
+
+void RayTracingPass::_render() {
+    renderer->traceRays(rayTracingData, launchSizeX, launchSizeY, launchSizeZ);
+}
+
+void RayTracingPass::recreateSwapchain(uint32_t width, uint32_t height) {
+    launchSizeX = width;
+    launchSizeY = height;
+}
+
+sgl::vk::RayTracingPipelinePtr RayTracingPass::createRayTracingPipeline() {
+    sgl::vk::ShaderBindingTable sbt = sgl::vk::ShaderBindingTable::generateSimpleShaderBindingTable(shaderStages);
+    sgl::vk::RayTracingPipelineInfo rayTracingPipelineInfo(sbt);
+    return std::make_shared<sgl::vk::RayTracingPipeline>(device, rayTracingPipelineInfo);
+}
+
+void RayTracingPass::_build() {
+    if (shaderDirty) {
+        loadShader();
+        shaderDirty = false;
+    }
+
+    sgl::vk::RayTracingPipelinePtr rayTracingPipeline = createRayTracingPipeline();
+    createRayTracingData(renderer, rayTracingPipeline);
 }
 
 }}

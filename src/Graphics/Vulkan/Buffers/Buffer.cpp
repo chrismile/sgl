@@ -26,6 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <memory>
 #include <stdexcept>
 #include <cstring>
 
@@ -136,7 +137,7 @@ BufferPtr Buffer::copy(bool copyContent) {
     return newBuffer;
 }
 
-void Buffer::uploadData(size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer) {
+void Buffer::uploadData(size_t sizeInBytesData, void* dataPtr) {
     if (sizeInBytesData > sizeInBytes) {
         sgl::Logfile::get()->throwError(
                 "Error in Buffer::uploadData: sizeInBytesData > sizeInBytes");
@@ -160,11 +161,7 @@ void Buffer::uploadData(size_t sizeInBytesData, void* dataPtr, VkCommandBuffer c
         memcpy(mappedData, dataPtr, sizeInBytesData);
         stagingBuffer->unmapMemory();
 
-        bool isSingleTimeCommand = false;
-        if (commandBuffer == VK_NULL_HANDLE) {
-            commandBuffer = device->beginSingleTimeCommands();
-            isSingleTimeCommand = true;
-        }
+        VkCommandBuffer commandBuffer = device->beginSingleTimeCommands();
 
         VkBufferCopy bufferCopy{};
         bufferCopy.size = sizeInBytesData;
@@ -173,14 +170,85 @@ void Buffer::uploadData(size_t sizeInBytesData, void* dataPtr, VkCommandBuffer c
         vkCmdCopyBuffer(
                 commandBuffer, stagingBuffer->getVkBuffer(), this->getVkBuffer(), 1, &bufferCopy);
 
-        if (isSingleTimeCommand) {
-            device->endSingleTimeCommands(commandBuffer);
+        device->endSingleTimeCommands(commandBuffer);
+    }
+}
+
+void Buffer::uploadData(size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer) {
+    if (sizeInBytesData > sizeInBytes) {
+        sgl::Logfile::get()->throwError(
+                "Error in Buffer::uploadData: sizeInBytesData > sizeInBytes");
+    }
+
+    if (memoryUsage == VMA_MEMORY_USAGE_CPU_ONLY || memoryUsage == VMA_MEMORY_USAGE_CPU_TO_GPU
+            || memoryUsage == VMA_MEMORY_USAGE_CPU_COPY) {
+        void* mappedData = mapMemory();
+        memcpy(mappedData, dataPtr, sizeInBytesData);
+        unmapMemory();
+    } else {
+        sgl::Logfile::get()->throwError(
+                "Error in Buffer::uploadData: The version of uploadData with four parameters needs to be called in "
+                "order to save the staging buffer when using a custom command buffer in combination with "
+                "VMA_MEMORY_USAGE_GPU_ONLY buffers!");
+    }
+}
+
+void Buffer::uploadData(
+        size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer, BufferPtr& stagingBuffer) {
+    if (sizeInBytesData > sizeInBytes) {
+        sgl::Logfile::get()->throwError(
+                "Error in Buffer::uploadData: sizeInBytesData > sizeInBytes");
+    }
+
+    if (memoryUsage == VMA_MEMORY_USAGE_CPU_ONLY || memoryUsage == VMA_MEMORY_USAGE_CPU_TO_GPU
+            || memoryUsage == VMA_MEMORY_USAGE_CPU_COPY) {
+        void* mappedData = mapMemory();
+        memcpy(mappedData, dataPtr, sizeInBytesData);
+        unmapMemory();
+    } else {
+        if ((bufferUsageFlags & VK_BUFFER_USAGE_TRANSFER_DST_BIT) == 0) {
+            sgl::Logfile::get()->throwError(
+                    "Error in Buffer::uploadData: Buffer usage flag VK_BUFFER_USAGE_TRANSFER_DST_BIT not set!");
         }
+
+        stagingBuffer = std::make_shared<Buffer>(
+                device, sizeInBytesData, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY,
+                queueExclusive);
+        void* mappedData = stagingBuffer->mapMemory();
+        memcpy(mappedData, dataPtr, sizeInBytesData);
+        stagingBuffer->unmapMemory();
+
+        VkBufferCopy bufferCopy{};
+        bufferCopy.size = sizeInBytesData;
+        bufferCopy.srcOffset = 0;
+        bufferCopy.dstOffset = 0;
+        vkCmdCopyBuffer(
+                commandBuffer, stagingBuffer->getVkBuffer(), this->getVkBuffer(), 1, &bufferCopy);
     }
 }
 
 void Buffer::updateData(size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer) {
     updateData(0, sizeInBytesData, dataPtr, commandBuffer);
+}
+
+void Buffer::copyDataTo(const BufferPtr& destinationBuffer, VkCommandBuffer commandBuffer) {
+    copyDataTo(destinationBuffer, 0, 0, getSizeInBytes(), commandBuffer);
+}
+
+void Buffer::copyDataTo(
+        const BufferPtr& destinationBuffer, VkDeviceSize sourceOffset, VkDeviceSize destOffset,
+        VkDeviceSize copySizeInBytes, VkCommandBuffer commandBuffer) {
+    if (sourceOffset + copySizeInBytes > destOffset + destinationBuffer->getSizeInBytes()) {
+        Logfile::get()->throwError(
+                "Error in Buffer::copyDataTo: The destination buffer is not large enough to hold the copied data!");
+    }
+
+    VkBufferCopy bufferCopy{};
+    bufferCopy.size = copySizeInBytes;
+    bufferCopy.srcOffset = sourceOffset;
+    bufferCopy.dstOffset = destOffset;
+    vkCmdCopyBuffer(
+            commandBuffer, this->getVkBuffer(), destinationBuffer->getVkBuffer(), 1, &bufferCopy);
 }
 
 void Buffer::updateData(size_t offset, size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer) {
@@ -210,7 +278,7 @@ void Buffer::unmapMemory() {
 }
 
 VkDeviceAddress Buffer::getVkDeviceAddress() {
-    VkBufferDeviceAddressInfo bufferDeviceAddressInfo;
+    VkBufferDeviceAddressInfo bufferDeviceAddressInfo{};
     bufferDeviceAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
     bufferDeviceAddressInfo.buffer = buffer;
     VkDeviceAddress bufferDeviceAddress = vkGetBufferDeviceAddress(

@@ -430,6 +430,10 @@ ShaderModulePtr ShaderStages::findModuleId(const std::string& shaderModuleId) {
             return shaderModule;
         }
     }
+    Logfile::get()->throwError(
+            "Error in ShaderStages::findModuleId: Could not find a module with the passed ID \""
+            + shaderModuleId + "\".");
+    return {};
 }
 
 size_t ShaderStages::findModuleIndexFromId(const std::string& shaderModuleId) const {
@@ -438,7 +442,9 @@ size_t ShaderStages::findModuleIndexFromId(const std::string& shaderModuleId) co
             return moduleIdx;
         }
     }
-    Logfile::get()->throwError("Error");
+    Logfile::get()->throwError(
+            "Error in ShaderStages::findModuleIndexFromId: Could not find a module with the passed ID \""
+            + shaderModuleId + "\".");
     return std::numeric_limits<size_t>::max();
 }
 

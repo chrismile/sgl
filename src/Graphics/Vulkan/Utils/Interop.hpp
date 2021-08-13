@@ -32,6 +32,7 @@
 #include <algorithm>
 #include <cstring>
 #include <cassert>
+#include <Defs.hpp>
 #include "../libs/volk/volk.h"
 #include "../libs/VMA/vk_mem_alloc.h"
 

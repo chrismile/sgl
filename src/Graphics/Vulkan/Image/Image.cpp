@@ -441,6 +441,9 @@ void Image::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayo
     } else if (oldLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
         barrier.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
         sourceStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    } else if (oldLayout == VK_IMAGE_LAYOUT_GENERAL) {
+        barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+        sourceStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
     } else {
         Logfile::get()->throwError("Error in Image::transitionImageLayout: Unsupported old layout!");
     }
@@ -460,6 +463,9 @@ void Image::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayo
     } else if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
         barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
         destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    } else if (newLayout == VK_IMAGE_LAYOUT_GENERAL) {
+        barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+        destinationStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
     } else {
         Logfile::get()->throwError("Error in Image::transitionImageLayout: Unsupported new layout!");
     }

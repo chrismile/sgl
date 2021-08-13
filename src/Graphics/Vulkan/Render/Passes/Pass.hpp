@@ -54,10 +54,14 @@ public:
     virtual void render()=0;
     virtual void recreateSwapchain(uint32_t width, uint32_t height) {}
 
+    inline sgl::vk::ShaderStagesPtr& getShaderStages() { return shaderStages; }
+
 protected:
     virtual void loadShader()=0;
     vk::Renderer* renderer;
     vk::Device* device;
+    sgl::vk::ShaderStagesPtr shaderStages;
+    bool shaderDirty = true;
 };
 
 class ComputePass : public Pass {
@@ -65,36 +69,27 @@ public:
     explicit ComputePass(sgl::vk::Renderer* renderer) : Pass(renderer) {}
     PassType getPassType() override { return PassType::RASTER_PASS; }
 
-    inline sgl::vk::ShaderModulePtr& getShaderModule() { return computeShader; }
+    inline sgl::vk::ShaderModulePtr& getShaderModule() { return shaderStages->getShaderModules().front(); }
 
     void render() override;
 
 protected:
-    virtual void setComputePipelineInfo(sgl::vk::ComputePipelineInfo& pipelineInfo)=0;
-    virtual void createComputeData(sgl::vk::Renderer* renderer, sgl::vk::GraphicsPipelinePtr& graphicsPipeline)=0;
+    virtual void setComputePipelineInfo(sgl::vk::ComputePipelineInfo& pipelineInfo) {}
+    virtual void createComputeData(sgl::vk::Renderer* renderer, sgl::vk::ComputePipelinePtr& computePipeline)=0;
+    virtual void _render();
 
-    vk::ShaderModulePtr computeShader;
     vk::ComputeDataPtr computeData;
     uint32_t groupCountX = 1;
     uint32_t groupCountY = 1;
     uint32_t groupCountZ = 1;
+
+private:
+    void _build();
 };
 
-class RenderPass : public Pass {
+class RasterPass : public Pass {
 public:
-    explicit RenderPass(sgl::vk::Renderer* renderer) : Pass(renderer) {}
-    inline sgl::vk::ShaderStagesPtr& getShaderStages() { return shaderStages; }
-
-protected:
-    sgl::vk::ShaderStagesPtr shaderStages;
-    sgl::vk::FramebufferPtr framebuffer;
-    bool shaderDirty = true;
-    bool framebufferDirty = true;
-};
-
-class RasterPass : public RenderPass {
-public:
-    explicit RasterPass(sgl::vk::Renderer* renderer) : RenderPass(renderer) {}
+    explicit RasterPass(sgl::vk::Renderer* renderer) : Pass(renderer) {}
     PassType getPassType() override { return PassType::RASTER_PASS; }
 
     void render() final;
@@ -105,6 +100,35 @@ protected:
     virtual void _render();
 
     sgl::vk::RasterDataPtr rasterData;
+    sgl::vk::FramebufferPtr framebuffer;
+    bool framebufferDirty = true;
+
+private:
+    void _build();
+};
+
+class RayTracingPass : public Pass {
+public:
+    explicit RayTracingPass(sgl::vk::Renderer* renderer) : Pass(renderer) {}
+    PassType getPassType() override { return PassType::RAYTRACING_PASS; }
+
+    void render() final;
+
+    /**
+     * Sets launchSizeX and launchSizeY to the screen width and height.
+     * Override this function if you want to change this!
+     * @param width The width of the swapchain surface.
+     * @param height The height of the swapchain surface.
+     */
+    void recreateSwapchain(uint32_t width, uint32_t height) override;
+
+protected:
+    virtual sgl::vk::RayTracingPipelinePtr createRayTracingPipeline();
+    virtual void createRayTracingData(sgl::vk::Renderer* renderer, sgl::vk::RayTracingPipelinePtr& rayTracingPipeline)=0;
+    virtual void _render();
+
+    sgl::vk::RayTracingDataPtr rayTracingData;
+    uint32_t launchSizeX = 1, launchSizeY = 1, launchSizeZ = 1;
 
 private:
     void _build();

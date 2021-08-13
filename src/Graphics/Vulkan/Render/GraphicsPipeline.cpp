@@ -36,7 +36,10 @@
 namespace sgl { namespace vk {
 
 GraphicsPipelineInfo::GraphicsPipelineInfo(const ShaderStagesPtr& shaderStages) : shaderStages(shaderStages) {
-    assert(shaderStages.get() != nullptr);
+    if (!shaderStages) {
+        Logfile::get()->throwError(
+                "Error in GraphicsPipelineInfo::GraphicsPipelineInfo: shaderStages is not valid.");
+    }
     reset();
 }
 

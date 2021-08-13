@@ -37,7 +37,7 @@
 namespace sgl { namespace vk {
 
 RayTracingShaderGroup::RayTracingShaderGroup(ShaderStagesPtr shaderStages)
-        : shaderStages(std::move(shaderStages)), device(shaderStages->getDevice()) {
+        : shaderStages(std::move(shaderStages)), device(this->shaderStages->getDevice()) {
     shaderGroupCreateInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
     shaderGroupCreateInfo.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
     shaderGroupCreateInfo.generalShader = VK_SHADER_UNUSED_KHR;
@@ -166,6 +166,12 @@ void CallableShaderGroup::setCallable(const std::string& shaderModuleId) {
     setCallable(uint32_t(shaderStages->findModuleIndexFromId(shaderModuleId)));
 }
 
+
+ShaderBindingTable::ShaderBindingTable(ShaderStagesPtr shaderStages) : shaderStages(std::move(shaderStages)) {
+    if (!this->shaderStages) {
+        Logfile::get()->throwError("Error in ShaderBindingTable::ShaderBindingTable: shaderStages is not valid.");
+    }
+}
 
 RayGenShaderGroup* ShaderBindingTable::addRayGenShaderGroup() {
     auto shaderGroup = new RayGenShaderGroup(shaderStages);
@@ -332,7 +338,7 @@ std::array<VkStridedDeviceAddressRegionKHR, 4> ShaderBindingTable::getStridedDev
     stridedDeviceAddressRegions.at(0) = region;
 
     // Miss
-    if (shaderGroupSettings.missShaderGroupSize > 0) {
+    if (missShaderGroupSize > 0) {
         region.deviceAddress =
                 sbtAddress + missGroupsOffset + shaderGroupSettings.missShaderGroupOffset * missGroupStride;
         region.stride = missGroupStride;
@@ -343,7 +349,7 @@ std::array<VkStridedDeviceAddressRegionKHR, 4> ShaderBindingTable::getStridedDev
     stridedDeviceAddressRegions.at(1) = region;
 
     // Hit
-    if (shaderGroupSettings.missShaderGroupSize > 0) {
+    if (hitShaderGroupSize > 0) {
         region.deviceAddress =
                 sbtAddress + hitGroupsOffset + shaderGroupSettings.hitShaderGroupOffset * hitGroupStride;
         region.stride = hitGroupStride;
@@ -354,7 +360,7 @@ std::array<VkStridedDeviceAddressRegionKHR, 4> ShaderBindingTable::getStridedDev
     stridedDeviceAddressRegions.at(2) = region;
 
     // Callable
-    if (shaderGroupSettings.callableShaderGroupSize > 0) {
+    if (callableShaderGroupSize > 0) {
         region.deviceAddress =
                 sbtAddress + callableGroupsOffset + shaderGroupSettings.callableShaderGroupOffset * callableGroupStride;
         region.stride = callableGroupStride;
@@ -440,7 +446,10 @@ ShaderBindingTable ShaderBindingTable::generateSimpleShaderBindingTable(
 
 RayTracingPipelineInfo::RayTracingPipelineInfo(const ShaderBindingTable& table)
         : sbt(table), shaderStages(table.getShaderStages()) {
-    assert(shaderStages.get() != nullptr);
+    if (!shaderStages) {
+        Logfile::get()->throwError(
+                "Error in RayTracingPipelineInfo::RayTracingPipelineInfo: shaderStages is not valid.");
+    }
     sbt.buildShaderGroups();
     reset();
 }

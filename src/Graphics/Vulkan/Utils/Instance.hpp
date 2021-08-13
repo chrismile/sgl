@@ -60,6 +60,7 @@ public:
 
     // Access to internal data.
     inline VkInstance getVkInstance() { return instance; }
+    inline uint32_t getInstanceVulkanVersion() { return instanceVulkanVersion; }
     inline bool getUseValidationLayer() { return useValidationLayer; }
     inline const std::vector<const char*>& getInstanceLayerNames() const { return instanceLayerNames; }
     inline void setDebugCallback(std::function<void()> callback) { debugCallback = callback; }
@@ -76,6 +77,7 @@ private:
 
     VkInstance instance = VK_NULL_HANDLE;
     VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
+    uint32_t instanceVulkanVersion = VK_API_VERSION_1_0;
 
     bool useValidationLayer = false;
     MessageSeverity messageSeverityLevel = MESSAGE_SEVERITY_WARNING;

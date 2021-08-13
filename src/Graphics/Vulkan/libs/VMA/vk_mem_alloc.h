@@ -9973,6 +9973,7 @@ void VmaBlockMetadata_Linear::Alloc(
             // New allocation at the end of 2-part ring buffer, so before first allocation from 1st vector.
             VMA_ASSERT(!suballocations1st.empty() &&
                 request.offset + allocSize <= suballocations1st[m_1stNullItemsBeginCount].offset);
+            UNUSED(suballocations1st);
             SuballocationVectorType& suballocations2nd = AccessSuballocations2nd();
 
             switch(m_2ndVectorMode)
@@ -11584,6 +11585,7 @@ VkResult VmaBlockVector::AllocatePage(
                     {
                         VkResult res = pBestRequestBlock->WriteMagicValueAroundAllocation(m_hAllocator, bestRequest.offset, size);
                         VMA_ASSERT(res == VK_SUCCESS && "Couldn't map block memory to write magic value.");
+                        UNUSED(res);
                     }
                     return VK_SUCCESS;
                 }
@@ -11630,6 +11632,7 @@ void VmaBlockVector::Free(
         {
             VkResult res = pBlock->ValidateMagicValueAroundAllocation(m_hAllocator, hAllocation->GetOffset(), hAllocation->GetSize());
             VMA_ASSERT(res == VK_SUCCESS && "Couldn't map block memory to validate magic value.");
+            UNUSED(res);
         }
 
         if(hAllocation->IsPersistentMap())
@@ -11787,6 +11790,7 @@ VkResult VmaBlockVector::AllocateFromBlock(
         {
             VkResult res = pBlock->WriteMagicValueAroundAllocation(m_hAllocator, currRequest.offset, size);
             VMA_ASSERT(res == VK_SUCCESS && "Couldn't map block memory to write magic value.");
+            UNUSED(res);
         }
         return VK_SUCCESS;
     }
@@ -15683,6 +15687,8 @@ VkResult VmaAllocator_T::AllocateVulkanMemory(const VkMemoryAllocateInfo* pAlloc
     {
         return VK_ERROR_TOO_MANY_OBJECTS;
     }
+#else
+    UNUSED(prevDeviceMemoryCount);
 #endif
 
     const uint32_t heapIndex = MemoryTypeIndexToHeapIndex(pAllocateInfo->memoryTypeIndex);

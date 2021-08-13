@@ -141,7 +141,7 @@ public:
  */
 class DLL_OBJECT ShaderBindingTable {
 public:
-    explicit ShaderBindingTable(ShaderStagesPtr shaderStages) : shaderStages(std::move(shaderStages)) {}
+    explicit ShaderBindingTable(ShaderStagesPtr shaderStages);
 
     /*
      * Adds a shader group to the binding table. The groups can then be referenced in ShaderGroupSettings in the order
@@ -179,7 +179,7 @@ private:
     BufferPtr sbtBuffer;
     VkDeviceAddress sbtAddress{};
     uint32_t rayGenGroupStride = 0, missGroupStride = 0, hitGroupStride = 0, callableGroupStride = 0;
-    uint32_t missGroupsOffset = 0, hitGroupsOffset = 0, callableGroupsOffset;
+    uint32_t missGroupsOffset = 0, hitGroupsOffset = 0, callableGroupsOffset = 0;
 };
 
 class DLL_OBJECT RayTracingPipelineInfo {

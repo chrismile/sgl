@@ -34,6 +34,8 @@
 #include <cmath>
 
 #include <glm/vec4.hpp>
+
+#include <Defs.hpp>
 #include "../libs/volk/volk.h"
 #include "../libs/VMA/vk_mem_alloc.h"
 

@@ -47,8 +47,10 @@ void Device::initializeDeviceExtensionList(VkPhysicalDevice physicalDevice) {
         VkExtensionProperties *deviceExtensions = new VkExtensionProperties[deviceExtensionCount];
         res = vkEnumerateDeviceExtensionProperties(
                 physicalDevice, NULL, &deviceExtensionCount, deviceExtensions);
-        assert(!res);
-        UNUSED(res);
+        if (res != VK_SUCCESS) {
+            Logfile::get()->throwError(
+                    "Error in Device::initializeDeviceExtensionList: vkEnumerateDeviceExtensionProperties failed!");
+        }
 
         for (uint32_t i = 0; i < deviceExtensionCount; i++) {
             availableDeviceExtensionNames.insert(deviceExtensions[i].extensionName);
@@ -102,7 +104,7 @@ bool isDeviceSuitable(
         const std::vector<const char*>& requiredDeviceExtensions,
         const std::vector<const char*>& optionalDeviceExtensions,
         std::set<std::string>& deviceExtensionsSet, std::vector<const char*>& deviceExtensions,
-        VkPhysicalDeviceFeatures requestedPhysicalDeviceFeatures) {
+        const DeviceFeatures& requestedDeviceFeatures) {
     // TODO: Support compute-only devices?
     int graphicsQueueIndex = findQueueFamilies(
             physicalDevice, static_cast<VkQueueFlagBits>(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT));
@@ -149,8 +151,9 @@ bool isDeviceSuitable(
     // Check if all requested features are available.
     bool requestedFeaturesAvailable = true;
     constexpr size_t numFeatures = sizeof(VkPhysicalDeviceFeatures) / sizeof(VkBool32);
-    VkBool32* requestedPhysicalDeviceFeaturesArray = reinterpret_cast<VkBool32*>(&requestedPhysicalDeviceFeatures);
-    VkBool32* physicalDeviceFeaturesArray = reinterpret_cast<VkBool32*>(&physicalDeviceFeatures);
+    auto requestedPhysicalDeviceFeaturesArray = reinterpret_cast<const VkBool32*>(
+            &requestedDeviceFeatures.requestedPhysicalDeviceFeatures);
+    auto physicalDeviceFeaturesArray = reinterpret_cast<VkBool32*>(&physicalDeviceFeatures);
     for (size_t i = 0; i < numFeatures; i++) {
         if (requestedPhysicalDeviceFeaturesArray[i] && !physicalDeviceFeaturesArray[i]) {
             requestedFeaturesAvailable = false;
@@ -177,11 +180,17 @@ VkPhysicalDevice createPhysicalDeviceBinding(
         const std::vector<const char*>& requiredDeviceExtensions,
         const std::vector<const char*>& optionalDeviceExtensions,
         std::set<std::string>& deviceExtensionsSet, std::vector<const char*>& deviceExtensions,
-        VkPhysicalDeviceFeatures requestedPhysicalDeviceFeatures) {
+        const DeviceFeatures& requestedDeviceFeatures) {
     uint32_t numPhysicalDevices = 0;
     VkResult res = vkEnumeratePhysicalDevices(instance, &numPhysicalDevices, NULL);
-    assert(!res && numPhysicalDevices > 0);
-    UNUSED(res);
+    if (res != VK_SUCCESS) {
+        Logfile::get()->throwError(
+                "Error in createPhysicalDeviceBinding: vkEnumeratePhysicalDevices failed!");
+    }
+    if (numPhysicalDevices == 0) {
+        Logfile::get()->throwError(
+                "Error in createPhysicalDeviceBinding: vkEnumeratePhysicalDevices returned zero devices!");
+    }
 
     std::vector<VkPhysicalDevice> physicalDevices(numPhysicalDevices);
     res = vkEnumeratePhysicalDevices(instance, &numPhysicalDevices, physicalDevices.data());
@@ -194,7 +203,7 @@ VkPhysicalDevice createPhysicalDeviceBinding(
     for (const auto &device : physicalDevices) {
         if (isDeviceSuitable(
                 device, surface, openGlInteropEnabled, requiredDeviceExtensions, optionalDeviceExtensions,
-                deviceExtensionsSet, deviceExtensions, requestedPhysicalDeviceFeatures)) {
+                deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures)) {
             physicalDevice = device;
             break;
         }
@@ -218,7 +227,21 @@ struct LogicalDeviceAndQueues {
 };
 LogicalDeviceAndQueues createLogicalDeviceAndQueues(
         VkPhysicalDevice physicalDevice, bool useValidationLayer, const std::vector<const char*>& layerNames,
-        const std::vector<const char*>& deviceExtensions, VkPhysicalDeviceFeatures requestedPhysicalDeviceFeatures) {
+        const std::vector<const char*>& deviceExtensions, const std::set<std::string>& deviceExtensionsSet,
+        DeviceFeatures requestedDeviceFeatures) {
+    if (deviceExtensionsSet.find(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME) != deviceExtensionsSet.end()) {
+        requestedDeviceFeatures.deviceBufferDeviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
+    }
+    if (deviceExtensionsSet.find(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) != deviceExtensionsSet.end()) {
+        requestedDeviceFeatures.accelerationStructureFeatures.accelerationStructure = VK_TRUE;
+    }
+    if (deviceExtensionsSet.find(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) != deviceExtensionsSet.end()) {
+        requestedDeviceFeatures.rayTracingPipelineFeatures.rayTracingPipeline = VK_TRUE;
+    }
+    if (deviceExtensionsSet.find(VK_KHR_RAY_QUERY_EXTENSION_NAME) != deviceExtensionsSet.end()) {
+        requestedDeviceFeatures.rayQueryFeatures.rayQuery = VK_TRUE;
+    }
+
     uint32_t queueIndex = findQueueFamilies(
             physicalDevice, static_cast<VkQueueFlagBits>(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT));
 
@@ -230,14 +253,13 @@ LogicalDeviceAndQueues createLogicalDeviceAndQueues(
     queueInfo.queueCount = 2;
     queueInfo.pQueuePriorities = queuePriorities;
 
-    VkDeviceCreateInfo deviceInfo = { };
+    VkDeviceCreateInfo deviceInfo{};
     deviceInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    deviceInfo.pNext = nullptr;
     deviceInfo.queueCreateInfoCount = 1;
     deviceInfo.pQueueCreateInfos = &queueInfo;
     deviceInfo.enabledExtensionCount = uint32_t(deviceExtensions.size());
     deviceInfo.ppEnabledExtensionNames = deviceExtensions.data();
-    deviceInfo.pEnabledFeatures = &requestedPhysicalDeviceFeatures;
+    deviceInfo.pEnabledFeatures = &requestedDeviceFeatures.requestedPhysicalDeviceFeatures;
     if (useValidationLayer) {
         deviceInfo.enabledLayerCount = uint32_t(layerNames.size());
         deviceInfo.ppEnabledLayerNames = layerNames.data();
@@ -245,16 +267,35 @@ LogicalDeviceAndQueues createLogicalDeviceAndQueues(
         deviceInfo.enabledLayerCount = 0;
     }
 
+    const void** pNextPtr = &deviceInfo.pNext;
+    if (requestedDeviceFeatures.deviceBufferDeviceAddressFeatures.bufferDeviceAddress) {
+        *pNextPtr = &requestedDeviceFeatures.deviceBufferDeviceAddressFeatures;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.deviceBufferDeviceAddressFeatures.pNext);
+    }
+    if (requestedDeviceFeatures.accelerationStructureFeatures.accelerationStructure) {
+        *pNextPtr = &requestedDeviceFeatures.accelerationStructureFeatures;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.accelerationStructureFeatures.pNext);
+    }
+    if (requestedDeviceFeatures.rayTracingPipelineFeatures.rayTracingPipeline) {
+        *pNextPtr = &requestedDeviceFeatures.rayTracingPipelineFeatures;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.rayTracingPipelineFeatures.pNext);
+    }
+    if (requestedDeviceFeatures.rayQueryFeatures.rayQuery) {
+        *pNextPtr = &requestedDeviceFeatures.rayQueryFeatures;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.rayQueryFeatures.pNext);
+    }
+
     VkDevice device;
-    VkResult res = vkCreateDevice(physicalDevice, &deviceInfo, NULL, &device);
-    assert(!res);
-    UNUSED(res);
+    VkResult res = vkCreateDevice(physicalDevice, &deviceInfo, nullptr, &device);
+    if (res != VK_SUCCESS) {
+        Logfile::get()->throwError("Error in createLogicalDeviceAndQueues: vkCreateDevice failed!");
+    }
 
     VkQueue graphicsQueue, computeQueue;
     vkGetDeviceQueue(device, queueIndex, 0, &graphicsQueue);
     vkGetDeviceQueue(device, queueIndex, 1, &computeQueue);
 
-    LogicalDeviceAndQueues logicalDeviceAndQueues;
+    LogicalDeviceAndQueues logicalDeviceAndQueues{};
     logicalDeviceAndQueues.device = device;
     logicalDeviceAndQueues.graphicsQueueIndex = queueIndex;
     logicalDeviceAndQueues.computeQueueIndex = queueIndex;
@@ -270,7 +311,7 @@ void createVulkanMemoryAllocator(
     allocatorInfo.physicalDevice = physicalDevice;
     allocatorInfo.device = device;
     allocatorInfo.instance = instance;
-    //allocatorInfo.flags;
+    allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 
     vmaCreateAllocator(&allocatorInfo, &allocator);
 }
@@ -316,7 +357,7 @@ void Device::createDeviceSwapchain(
         Instance* instance, Window* window,
         std::vector<const char*> requiredDeviceExtensions,
         const std::vector<const char*>& optionalDeviceExtensions,
-        VkPhysicalDeviceFeatures requestedPhysicalDeviceFeatures) {
+        const DeviceFeatures& requestedDeviceFeatures) {
     this->instance = instance;
     this->window = window;
 
@@ -326,7 +367,7 @@ void Device::createDeviceSwapchain(
     std::vector<const char*> deviceExtensions;
     physicalDevice = createPhysicalDeviceBinding(
             instance->getVkInstance(), surface, openGlInteropEnabled, requiredDeviceExtensions,
-            optionalDeviceExtensions, deviceExtensionsSet, deviceExtensions, requestedPhysicalDeviceFeatures);
+            optionalDeviceExtensions, deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures);
     initializeDeviceExtensionList(physicalDevice);
     printAvailableDeviceExtensionList();
 
@@ -334,7 +375,7 @@ void Device::createDeviceSwapchain(
 
     auto deviceQueuePair = createLogicalDeviceAndQueues(
             physicalDevice, instance->getUseValidationLayer(), instance->getInstanceLayerNames(), deviceExtensions,
-            requestedPhysicalDeviceFeatures);
+            deviceExtensionsSet, requestedDeviceFeatures);
     device = deviceQueuePair.device;
     graphicsQueueIndex = deviceQueuePair.graphicsQueueIndex;
     computeQueueIndex = deviceQueuePair.computeQueueIndex;
@@ -358,14 +399,14 @@ void Device::createDeviceHeadless(
         Instance* instance,
         const std::vector<const char*>& requiredDeviceExtensions,
         const std::vector<const char*>& optionalDeviceExtensions,
-        VkPhysicalDeviceFeatures requestedPhysicalDeviceFeatures) {
+        const DeviceFeatures& requestedDeviceFeatures) {
     this->instance = instance;
     this->window = nullptr;
 
     std::vector<const char*> deviceExtensions;
     physicalDevice = createPhysicalDeviceBinding(
             instance->getVkInstance(), nullptr, openGlInteropEnabled, requiredDeviceExtensions,
-            optionalDeviceExtensions, deviceExtensionsSet, deviceExtensions, requestedPhysicalDeviceFeatures);
+            optionalDeviceExtensions, deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures);
     initializeDeviceExtensionList(physicalDevice);
     printAvailableDeviceExtensionList();
 
@@ -373,7 +414,7 @@ void Device::createDeviceHeadless(
 
     auto deviceQueuePair = createLogicalDeviceAndQueues(
             physicalDevice, instance->getUseValidationLayer(), instance->getInstanceLayerNames(), deviceExtensions,
-            requestedPhysicalDeviceFeatures);
+            deviceExtensionsSet, requestedDeviceFeatures);
     device = deviceQueuePair.device;
     graphicsQueueIndex = deviceQueuePair.graphicsQueueIndex;
     computeQueueIndex = deviceQueuePair.computeQueueIndex;
@@ -407,7 +448,7 @@ void Device::waitIdle() {
     vkDeviceWaitIdle(device);
 }
 
-VkSampleCountFlagBits Device::getMaxUsableSampleCount() {
+VkSampleCountFlagBits Device::getMaxUsableSampleCount() const {
     VkSampleCountFlags counts =
             physicalDeviceProperties.limits.framebufferColorSampleCounts
             & physicalDeviceProperties.limits.framebufferDepthSampleCounts;

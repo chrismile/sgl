@@ -51,6 +51,7 @@ Instance::Instance() {
     if (result != VK_SUCCESS) {
         Logfile::get()->throwError("Error in AppSettings::initializeVolk: volkInitialize failed.");
     }
+    instanceVulkanVersion = volkGetInstanceVersion();
 
     initializeInstanceExtensionList();
 }

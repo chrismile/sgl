@@ -172,17 +172,19 @@ VkCommandBuffer Renderer::endCommandBuffer() {
                 "Error in Renderer::beginCommandBuffer: Could not record a command buffer.");
     }
     graphicsPipeline = GraphicsPipelinePtr();
+    computePipeline = ComputePipelinePtr();
+    rayTracingPipeline = RayTracingPipelinePtr();
     lastFramebuffer = FramebufferPtr();
 
     return commandBuffer;
 }
 
-void Renderer::render(RasterDataPtr rasterData) {
+void Renderer::render(const RasterDataPtr& rasterData) {
     const FramebufferPtr& framebuffer = rasterData->getGraphicsPipeline()->getFramebuffer();
     render(rasterData, framebuffer);
 }
 
-void Renderer::render(RasterDataPtr rasterData, const FramebufferPtr& framebuffer) {
+void Renderer::render(const RasterDataPtr& rasterData, const FramebufferPtr& framebuffer) {
     bool isNewPipeline = false;
     GraphicsPipelinePtr newGraphicsPipeline = rasterData->getGraphicsPipeline();
     if (graphicsPipeline != newGraphicsPipeline) {
@@ -355,7 +357,8 @@ bool Renderer::updateMatrixBlock() {
     return false;
 }
 
-void Renderer::dispatch(ComputeDataPtr computeData, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
+void Renderer::dispatch(
+        const ComputeDataPtr& computeData, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
     bool isNewPipeline = false;
     ComputePipelinePtr newComputePipeline = computeData->getComputePipeline();
     if (computePipeline != newComputePipeline) {
@@ -381,21 +384,14 @@ void Renderer::dispatch(ComputeDataPtr computeData, uint32_t groupCountX, uint32
     vkCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
 }
 
-void Renderer::traceRays(RayTracingDataPtr rayTracingData, const ShaderGroupSettings& shaderGroupSettings) {
+void Renderer::traceRays(
+        const RayTracingDataPtr& rayTracingData,
+        uint32_t launchSizeX, uint32_t launchSizeY, uint32_t launchSizeZ) {
     bool isNewPipeline = false;
     RayTracingPipelinePtr newRayTracingPipeline = rayTracingData->getRayTracingPipeline();
     if (rayTracingPipeline != newRayTracingPipeline) {
         rayTracingPipeline = newRayTracingPipeline;
         isNewPipeline = true;
-    }
-
-    updateMatrixBlock();
-    if (updateMatrixBlock() || recordingCommandBufferStarted) {
-        vkCmdBindDescriptorSets(
-                commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
-                rayTracingPipeline->getVkPipelineLayout(), 1, 1,
-                &matrixBlockDescriptorSet, 0, nullptr);
-        recordingCommandBufferStarted = false;
     }
 
     if (isNewPipeline) {
@@ -412,27 +408,19 @@ void Renderer::traceRays(RayTracingDataPtr rayTracingData, const ShaderGroupSett
                     commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
                     rayTracingPipeline->getVkPipelineLayout(),
                     0, 1, &descriptorSet, 0, nullptr);
-        } else {
-            VkDescriptorSet descriptorSets[2];
-            descriptorSets[0] = descriptorSet;
-            descriptorSets[1] = matrixBlockDescriptorSet;
-            vkCmdBindDescriptorSets(
-                    commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                    rayTracingPipeline->getVkPipelineLayout(),
-                    0, 2, descriptorSets, 0, nullptr);
         }
     }
 
-    const FramebufferPtr& framebuffer = graphicsPipeline->getFramebuffer();
-
-    VkStridedDeviceAddressRegionKHR raygenShaderBindingTable;
-    VkStridedDeviceAddressRegionKHR missShaderBindingTable;
-    VkStridedDeviceAddressRegionKHR hitShaderBindingTable;
-    VkStridedDeviceAddressRegionKHR callableShaderBindingTable;
+    const std::array<VkStridedDeviceAddressRegionKHR, 4>& stridedDeviceAddressRegions =
+            rayTracingData->getStridedDeviceAddressRegions();
+    const VkStridedDeviceAddressRegionKHR& raygenShaderBindingTable = stridedDeviceAddressRegions.at(0);
+    const VkStridedDeviceAddressRegionKHR& missShaderBindingTable = stridedDeviceAddressRegions.at(1);
+    const VkStridedDeviceAddressRegionKHR& hitShaderBindingTable = stridedDeviceAddressRegions.at(2);
+    const VkStridedDeviceAddressRegionKHR& callableShaderBindingTable = stridedDeviceAddressRegions.at(3);
     vkCmdTraceRaysKHR(
             commandBuffer,
             &raygenShaderBindingTable, &missShaderBindingTable, &hitShaderBindingTable, &callableShaderBindingTable,
-            framebuffer->getWidth(), framebuffer->getHeight(), framebuffer->getLayers());
+            launchSizeX, launchSizeY, launchSizeZ);
 }
 
 void Renderer::transitionImageLayout(vk::ImagePtr& image, VkImageLayout newLayout) {

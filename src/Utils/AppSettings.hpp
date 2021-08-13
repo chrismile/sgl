@@ -35,6 +35,9 @@
 #include <Defs.hpp>
 #include <Utils/Singleton.hpp>
 #include <Utils/Convert.hpp>
+#ifdef SUPPORT_VULKAN
+#include <Graphics/Vulkan/Utils/Device.hpp>
+#endif
 
 namespace sgl {
 
@@ -118,7 +121,8 @@ public:
 #if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
     void initializeVulkanInteropSupport(
             const std::vector<const char*>& requiredDeviceExtensionNames = {},
-            const std::vector<const char*>& optionalDeviceExtensionNames = {});
+            const std::vector<const char*>& optionalDeviceExtensionNames = {},
+            const vk::DeviceFeatures& requestedDeviceFeatures = vk::DeviceFeatures());
     inline VulkanInteropCapabilities getVulkanInteropCapabilities() { return vulkanInteropCapabilities; }
 #endif
 #endif

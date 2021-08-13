@@ -58,18 +58,18 @@ RenderData::~RenderData() {
     frameDataList.clear();
 }
 
-RenderDataPtr RenderData::copy(ShaderStagesPtr& shaderStages) {
-    RenderDataPtr renderDataCopy(new RenderData(this->renderer, shaderStages));
-    renderDataCopy->frameDataList = this->frameDataList;
-    for (FrameData& frameData : renderDataCopy->frameDataList) {
-        frameData.descriptorSet = VK_NULL_HANDLE;
-    }
-    renderDataCopy->buffersStatic = buffersStatic;
-    renderDataCopy->bufferViewsStatic = bufferViewsStatic;
-    renderDataCopy->imageViewsStatic = imageViewsStatic;
-    renderDataCopy->accelerationStructuresStatic = accelerationStructuresStatic;
-    return renderDataCopy;
-}
+//RenderDataPtr RenderData::copy(ShaderStagesPtr& shaderStages) {
+//    RenderDataPtr renderDataCopy(new RenderData(this->renderer, shaderStages));
+//    renderDataCopy->frameDataList = this->frameDataList;
+//    for (FrameData& frameData : renderDataCopy->frameDataList) {
+//        frameData.descriptorSet = VK_NULL_HANDLE;
+//    }
+//    renderDataCopy->buffersStatic = buffersStatic;
+//    renderDataCopy->bufferViewsStatic = bufferViewsStatic;
+//    renderDataCopy->imageViewsStatic = imageViewsStatic;
+//    renderDataCopy->accelerationStructuresStatic = accelerationStructuresStatic;
+//    return renderDataCopy;
+//}
 
 
 void RenderData::setStaticBuffer(BufferPtr& buffer, uint32_t binding) {
@@ -223,7 +223,7 @@ void RenderData::_updateDescriptorSets() {
                 "Warning in RenderData::RenderData: More than two descriptor sets used by the shaders."
                 "So far, sgl only supports one user-defined set (0) and one transformation matrix set (1).");
     }
-    if (descriptorSetLayouts.size() < 2) {
+    if (descriptorSetLayouts.size() < 2 && getRenderDataType() == RenderDataType::RASTER) {
         Logfile::get()->throwError(
                 "Expected exactly two descriptor sets - one user-defined set (0) and one transformation matrix "
                 "set (1).");
@@ -473,9 +473,11 @@ void RasterData::setVertexBuffer(BufferPtr& buffer, const std::string& name) {
 }
 
 
-RayTracingData::RayTracingData(Renderer* renderer, RayTracingPipelinePtr& rayTracingPipeline)
-        : RenderData(renderer, rayTracingPipeline->getShaderStages()),
-        rayTracingPipeline(rayTracingPipeline) {
+RayTracingData::RayTracingData(
+        Renderer* renderer, RayTracingPipelinePtr& rayTracingPipeline, const ShaderGroupSettings& settings)
+        : RenderData(renderer, rayTracingPipeline->getShaderStages()), rayTracingPipeline(rayTracingPipeline),
+        shaderGroupSettings(settings) {
+    stridedDeviceAddressRegions = rayTracingPipeline->getStridedDeviceAddressRegions(shaderGroupSettings);
 }
 
 }}
