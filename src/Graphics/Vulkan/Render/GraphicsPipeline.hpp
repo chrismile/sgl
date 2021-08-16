@@ -115,6 +115,13 @@ public:
     void setIsFrontFaceCcw(bool isFrontFaceCcw);
     void setMinSampleShading(bool enableMinSampleShading, float minSampleShading = 1.0f);
 
+    /**
+     * In Vulkan, the coordinate origin is usually at the top left corner of the viewport.
+     * In Vulkan >= 1.1 (or when using VK_KHR_maintenance1), it is possible to move it to the bottom left.
+     * In this case,
+     */
+    void setUseCoordinateOriginBottomLeft(bool bottomLeft);
+
     // Depth-stencil info.
     void setDepthTestEnabled(bool enableDepthTest);
     void setDepthWriteEnabled(bool enableDepthWrite);
@@ -170,6 +177,7 @@ protected:
 
     VkViewport viewport = {};
     VkRect2D scissor = {};
+    bool coordinateOriginBottomLeft = true;
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo = {};

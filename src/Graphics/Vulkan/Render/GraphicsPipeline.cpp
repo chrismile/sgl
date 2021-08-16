@@ -44,6 +44,8 @@ GraphicsPipelineInfo::GraphicsPipelineInfo(const ShaderStagesPtr& shaderStages) 
 }
 
 void GraphicsPipelineInfo::reset() {
+    coordinateOriginBottomLeft = true;
+
     inputAssemblyInfo = {};
     inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -76,7 +78,7 @@ void GraphicsPipelineInfo::reset() {
     rasterizerInfo.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizerInfo.lineWidth = 1.0f;
     rasterizerInfo.cullMode = VK_CULL_MODE_BACK_BIT;
-    rasterizerInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    rasterizerInfo.frontFace = coordinateOriginBottomLeft ? VK_FRONT_FACE_CLOCKWISE : VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizerInfo.depthBiasEnable = VK_FALSE;
     rasterizerInfo.depthBiasConstantFactor = 0.0f;
     rasterizerInfo.depthBiasClamp = 0.0f;
@@ -125,7 +127,11 @@ void GraphicsPipelineInfo::setFramebuffer(FramebufferPtr framebuffer, uint32_t s
     viewport.x = 0.0f;
     viewport.y = 0.0f;
     viewport.width = float(framebuffer->getWidth());
-    viewport.height = float(framebuffer->getHeight());
+    if (coordinateOriginBottomLeft) {
+        viewport.height = -float(framebuffer->getHeight());
+    } else {
+        viewport.height = float(framebuffer->getHeight());
+    }
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
@@ -227,12 +233,26 @@ void GraphicsPipelineInfo::setCullMode(CullMode cullMode) {
 }
 
 void GraphicsPipelineInfo::setIsFrontFaceCcw(bool isFrontFaceCcw) {
+    if (coordinateOriginBottomLeft) {
+        isFrontFaceCcw = !isFrontFaceCcw;
+    }
     rasterizerInfo.frontFace = isFrontFaceCcw ? VK_FRONT_FACE_COUNTER_CLOCKWISE : VK_FRONT_FACE_CLOCKWISE;
 }
 
 void GraphicsPipelineInfo::setMinSampleShading(bool enableMinSampleShading, float minSampleShading) {
     multisamplingInfo.sampleShadingEnable = enableMinSampleShading;
     multisamplingInfo.minSampleShading = minSampleShading;
+}
+
+void GraphicsPipelineInfo::setUseCoordinateOriginBottomLeft(bool bottomLeft) {
+    if (coordinateOriginBottomLeft != bottomLeft) {
+        if (rasterizerInfo.frontFace == VK_FRONT_FACE_COUNTER_CLOCKWISE) {
+            rasterizerInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
+        } else {
+            rasterizerInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+        }
+    }
+    coordinateOriginBottomLeft = bottomLeft;
 }
 
 void GraphicsPipelineInfo::setDepthTestEnabled(bool enableDepthTest) {
