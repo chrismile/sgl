@@ -40,9 +40,10 @@
 
 namespace sgl {
 
-Camera::DepthRange Camera::depthRange = Camera::DEPTH_RANGE_MINUS_ONE_ONE;
+Camera::DepthRange Camera::depthRange = Camera::DepthRange::MINUS_ONE_ONE;
+Camera::CoordinateOrigin Camera::coordinateOrigin = Camera::CoordinateOrigin::BOTTOM_LEFT;
 
-Camera::Camera() :  projType(Camera::PERSPECTIVE_PROJECTION),
+Camera::Camera() :  projType(Camera::ProjectionType::PERSPECTIVE),
         fovy(PI/4.0f), nearDist(0.1f), farDist(1000.0f), aspect(4.0f/3.0f),
         recalcFrustum(true) {
     renderTarget = RenderTargetPtr(new RenderTarget());
@@ -98,13 +99,31 @@ void Camera::overwriteViewMatrix(const glm::mat4 &viewMatrix)
     pitch = std::asin(cameraFront.y);
 }
 
-/*void Camera::setProjectionType(ProjectionType pt) {
-    ;
-}
+glm::mat4 Camera::getProjectionMatrix(DepthRange customDepthRange, CoordinateOrigin customCoordinateOrigin) {
+    if (depthRange == customDepthRange && coordinateOrigin == customCoordinateOrigin) {
+        return getProjectionMatrix();
+    }
 
-void Camera::setOrthoWindow(float w, float h) {
-    ;
-}*/
+#if GLM_VERSION < 980
+    sgl::Logfile::get()->throwError(
+            "Error in Camera::updateCamera: Clip control not supported in GLM versions prior to 0.9.8.0.");
+    return getProjectionMatrix();
+#else
+    glm::mat4 customProjectionMatrix;
+
+    if (customDepthRange == Camera::DepthRange::MINUS_ONE_ONE) {
+        customProjectionMatrix = glm::perspectiveRH_NO(fovy, aspect, nearDist, farDist);
+    } else {
+        customProjectionMatrix = glm::perspectiveRH_ZO(fovy, aspect, nearDist, farDist);
+    }
+
+    if (customCoordinateOrigin == CoordinateOrigin::TOP_LEFT) {
+        customProjectionMatrix[1][1] = -customProjectionMatrix[1][1];
+    }
+
+    return customProjectionMatrix;
+#endif
+}
 
 
 void Camera::onResolutionChanged(EventPtr event) {
@@ -144,18 +163,21 @@ void Camera::updateCamera() {
     if (recalcFrustum) {
         //projMat = glm::perspective(fovy, aspect, nearDist, farDist);
 #if GLM_VERSION < 980
-        if (depthRange != Camera::DEPTH_RANGE_MINUS_ONE_ONE) {
+        if (depthRange != Camera::DepthRange::MINUS_ONE_ONE) {
             sgl::Logfile::get()->writeError(
                     "Error in Camera::updateCamera: Clip control not supported in GLM versions prior to 0.9.8.0.");
         }
         projMat = glm::perspective(fovy, aspect, nearDist, farDist);
 #else
-        if (depthRange == Camera::DEPTH_RANGE_MINUS_ONE_ONE) {
+        if (depthRange == Camera::DepthRange::MINUS_ONE_ONE) {
             projMat = glm::perspectiveRH_NO(fovy, aspect, nearDist, farDist);
         } else {
             projMat = glm::perspectiveRH_ZO(fovy, aspect, nearDist, farDist);
         }
 #endif
+        if (coordinateOrigin == CoordinateOrigin::TOP_LEFT) {
+            projMat[1][1] = -projMat[1][1];
+        }
     }
     if (recalcModelMat) {
         // We don't want a flip-over at the poles of the unit sphere.

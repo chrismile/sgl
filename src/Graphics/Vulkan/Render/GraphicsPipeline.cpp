@@ -44,8 +44,6 @@ GraphicsPipelineInfo::GraphicsPipelineInfo(const ShaderStagesPtr& shaderStages) 
 }
 
 void GraphicsPipelineInfo::reset() {
-    coordinateOriginBottomLeft = true;
-
     inputAssemblyInfo = {};
     inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -55,7 +53,6 @@ void GraphicsPipelineInfo::reset() {
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
     colorBlendAttachment = {};
-    // TODO: Let the user disable the color write mask.
     colorBlendAttachment.colorWriteMask =
             VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     setBlendMode(BlendMode::OVERWRITE);
@@ -125,11 +122,12 @@ void GraphicsPipelineInfo::setFramebuffer(FramebufferPtr framebuffer, uint32_t s
 
     viewport = {};
     viewport.x = 0.0f;
-    viewport.y = 0.0f;
     viewport.width = float(framebuffer->getWidth());
     if (coordinateOriginBottomLeft) {
+        viewport.y = float(framebuffer->getHeight());
         viewport.height = -float(framebuffer->getHeight());
     } else {
+        viewport.y = 0.0f;
         viewport.height = float(framebuffer->getHeight());
     }
     viewport.minDepth = 0.0f;

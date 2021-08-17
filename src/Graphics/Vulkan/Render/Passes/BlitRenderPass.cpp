@@ -96,12 +96,21 @@ void BlitRenderPass::setupGeometryBuffers() {
             0, 1, 2,
             0, 2, 3,
     };
+#if DEFAULT_COORDINATE_ORIGIN_BOTTOM_LEFT
+    std::vector<float> vertexData = {
+            -1.0f, -1.0f, 0.0f, 0.0f, 1.0f,
+             1.0f, -1.0f, 0.0f, 1.0f, 1.0f,
+             1.0f,  1.0f, 0.0f, 1.0f, 0.0f,
+            -1.0f,  1.0f, 0.0f, 0.0f, 0.0f,
+    };
+#else
     std::vector<float> vertexData = {
             -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
              1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
              1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
             -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
     };
+#endif
     indexBuffer = std::make_shared<sgl::vk::Buffer>(
             device, indexData.size() * sizeof(uint32_t), indexData.data(),
             VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
@@ -124,6 +133,7 @@ void BlitRenderPass::createRasterData(sgl::vk::Renderer* renderer, sgl::vk::Grap
 }
 
 void BlitRenderPass::setGraphicsPipelineInfo(sgl::vk::GraphicsPipelineInfo& graphicsPipelineInfo) {
+    graphicsPipelineInfo.setIsFrontFaceCcw(true);
     graphicsPipelineInfo.setVertexBufferBinding(0, sizeof(float) * 5);
     graphicsPipelineInfo.setInputAttributeDescription(
             0, 0, "vertexPosition");

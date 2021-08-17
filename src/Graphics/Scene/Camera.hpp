@@ -54,12 +54,16 @@ public:
     virtual ~Camera() {}
     void onResolutionChanged(EventPtr event);
 
-    enum ProjectionType {
-        ORTHOGRAPHIC_PROJECTION, PERSPECTIVE_PROJECTION
+    enum class ProjectionType {
+        ORTHOGRAPHIC, PERSPECTIVE
     };
-    enum DepthRange {
-        DEPTH_RANGE_MINUS_ONE_ONE, // OpenGL
-        DEPTH_RANGE_ZERO_ONE // Vulkan/DirectX
+    enum class DepthRange {
+        MINUS_ONE_ONE, // OpenGL
+        ZERO_ONE // Vulkan/DirectX
+    };
+    enum CoordinateOrigin {
+        BOTTOM_LEFT, // OpenGL
+        TOP_LEFT // Vulkan/DirectX
     };
 
     //! Render target & viewport area
@@ -97,13 +101,27 @@ public:
     //virtual void setOrthoWindow(float w, float h);
 
     //! View & projection matrices
-    inline const glm::mat4& getViewMatrix()            { updateCamera(); return modelMatrix; }
-    inline const glm::mat4& getProjectionMatrix()      { updateCamera(); return projMat; }
-    inline const glm::mat4& getViewProjMatrix()        { updateCamera(); return viewProjMat; }
-    inline const glm::mat4& getInverseViewProjMatrix() { updateCamera(); return inverseViewProjMat; }
-    inline DepthRange getDepthRange()            const { return depthRange; }
+    inline const glm::mat4& getViewMatrix()              { updateCamera(); return modelMatrix; }
+    inline const glm::mat4& getProjectionMatrix()        { updateCamera(); return projMat; }
+    inline const glm::mat4& getViewProjMatrix()          { updateCamera(); return viewProjMat; }
+    inline const glm::mat4& getInverseViewProjMatrix()   { updateCamera(); return inverseViewProjMat; }
+    static inline DepthRange getDepthRange()             { return depthRange; }
+    static inline CoordinateOrigin getCoordinateOrigin() { return coordinateOrigin; }
     glm::mat4 getRotationMatrix();
     void overwriteViewMatrix(const glm::mat4 &viewMatrix);
+
+    //! Get projection matrix with overwritten clip space or coordinate origins (e.g., for OpenGL/Vulkan interop).
+    glm::mat4 getProjectionMatrix(DepthRange customDepthRange, CoordinateOrigin customCoordinateOrigin);
+    glm::mat4 getProjectionMatrixVulkan() {
+        return getProjectionMatrix(
+                DepthRange::ZERO_ONE,
+                CoordinateOrigin::TOP_LEFT);
+    }
+    glm::mat4 getProjectionMatrixOpenGL() {
+        return getProjectionMatrix(
+                DepthRange::MINUS_ONE_ONE,
+                CoordinateOrigin::BOTTOM_LEFT);
+    }
 
     //! For frustum culling
     virtual bool isVisible(const AABB3& bound) const;
@@ -133,8 +151,9 @@ protected:
     glm::vec3 globalUp = glm::vec3(0.0f, 1.0f, 0.0f);
     glm::vec3 cameraFront, cameraRight, cameraUp;
 
-    // The depth range is set by AppSettings::initializeSubsystems depending on what renderer is used.
+    // The depth range and coordinate origin is set by AppSettings::initializeSubsystems depending on what renderer is used.
     static DepthRange depthRange;
+    static CoordinateOrigin coordinateOrigin;
     ProjectionType projType;
     float fovy;
     float nearDist;

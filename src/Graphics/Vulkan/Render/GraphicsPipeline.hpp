@@ -89,6 +89,8 @@ enum class CullMode {
     CULL_FRONT_AND_BACK = 0x00000003,
 };
 
+#define DEFAULT_COORDINATE_ORIGIN_BOTTOM_LEFT false
+
 class DLL_OBJECT GraphicsPipelineInfo {
     friend class GraphicsPipeline;
 
@@ -121,6 +123,7 @@ public:
      * In this case,
      */
     void setUseCoordinateOriginBottomLeft(bool bottomLeft);
+    inline bool getUseCoordinateOriginBottomLeft() const { return coordinateOriginBottomLeft; }
 
     // Depth-stencil info.
     void setDepthTestEnabled(bool enableDepthTest);
@@ -177,7 +180,11 @@ protected:
 
     VkViewport viewport = {};
     VkRect2D scissor = {};
+#if DEFAULT_COORDINATE_ORIGIN_BOTTOM_LEFT
     bool coordinateOriginBottomLeft = true;
+#else
+    bool coordinateOriginBottomLeft = false;
+#endif
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo = {};

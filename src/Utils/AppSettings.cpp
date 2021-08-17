@@ -400,7 +400,8 @@ void AppSettings::initializeSubsystems()
 #endif
 #ifdef SUPPORT_VULKAN
     if (renderSystem == RenderSystem::VULKAN) {
-        Camera::depthRange = Camera::DEPTH_RANGE_ZERO_ONE;
+        Camera::depthRange = Camera::DepthRange::ZERO_ONE;
+        Camera::coordinateOrigin = Camera::CoordinateOrigin::TOP_LEFT;
     }
     if (primaryDevice) {
         vk::ShaderManager = new vk::ShaderManagerVk(primaryDevice);
