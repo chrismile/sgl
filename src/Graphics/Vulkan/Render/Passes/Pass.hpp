@@ -62,6 +62,7 @@ protected:
     vk::Device* device;
     sgl::vk::ShaderStagesPtr shaderStages;
     bool shaderDirty = true;
+    bool dataDirty = true;
 };
 
 class ComputePass : public Pass {

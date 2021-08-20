@@ -26,8 +26,11 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <iostream>
+
 #define VMA_IMPLEMENTATION
 #include <Utils/File/Logfile.hpp>
+#include <Math/Math.hpp>
 #include <Graphics/Window.hpp>
 #include "Instance.hpp"
 #include "Swapchain.hpp"
@@ -86,17 +89,26 @@ uint32_t findQueueFamilies(VkPhysicalDevice device, VkQueueFlagBits queueFlags) 
     std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
-    uint32_t queueIndex = -1;
-    uint32_t i = 0;
-    for (const auto& queueFamily : queueFamilies) {
-        if (queueFamily.queueCount > 0 && queueFamily.queueFlags & queueFlags) {
-            queueIndex = i;
-            break;
+    // Get the best fitting queue family (i.e., no more flags than necessary).
+    uint32_t bestFittingQueueIdx = std::numeric_limits<uint32_t>::max();
+    VkQueueFlagBits bestFittingQueueFlags;
+    for (uint32_t i = 0; i < uint32_t(queueFamilies.size()); i++) {
+        const VkQueueFamilyProperties& queueFamily = queueFamilies.at(i);
+        if (queueFamily.queueCount > 0 && (queueFamily.queueFlags & queueFlags) == queueFlags) {
+            if (bestFittingQueueIdx != std::numeric_limits<uint32_t>::max()) {
+                uint32_t bitsSetPrev = getNumberOfBitsSet(uint32_t(bestFittingQueueFlags));
+                uint32_t bitsSetNext = getNumberOfBitsSet(uint32_t(queueFamily.queueFlags));
+                if (bitsSetNext < bitsSetPrev) {
+                    bestFittingQueueIdx = i;
+                    bestFittingQueueFlags = VkQueueFlagBits(queueFamily.queueFlags);
+                }
+            } else {
+                bestFittingQueueIdx = i;
+                bestFittingQueueFlags = VkQueueFlagBits(queueFamily.queueFlags);
+            }
         }
-
-        i++;
     }
-    return queueIndex;
+    return bestFittingQueueIdx;
 }
 
 bool isDeviceSuitable(
@@ -104,11 +116,12 @@ bool isDeviceSuitable(
         const std::vector<const char*>& requiredDeviceExtensions,
         const std::vector<const char*>& optionalDeviceExtensions,
         std::set<std::string>& deviceExtensionsSet, std::vector<const char*>& deviceExtensions,
-        const DeviceFeatures& requestedDeviceFeatures) {
-    // TODO: Support compute-only devices?
+        const DeviceFeatures& requestedDeviceFeatures, bool computeOnly) {
     int graphicsQueueIndex = findQueueFamilies(
             physicalDevice, static_cast<VkQueueFlagBits>(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT));
-    if (graphicsQueueIndex < 0) {
+    int computeQueueIndex = findQueueFamilies(
+            physicalDevice, static_cast<VkQueueFlagBits>(VK_QUEUE_COMPUTE_BIT));
+    if ((graphicsQueueIndex < 0 && !computeOnly) || computeQueueIndex < 0) {
         return false;
     }
 
@@ -180,7 +193,7 @@ VkPhysicalDevice createPhysicalDeviceBinding(
         const std::vector<const char*>& requiredDeviceExtensions,
         const std::vector<const char*>& optionalDeviceExtensions,
         std::set<std::string>& deviceExtensionsSet, std::vector<const char*>& deviceExtensions,
-        const DeviceFeatures& requestedDeviceFeatures) {
+        const DeviceFeatures& requestedDeviceFeatures, bool computeOnly) {
     uint32_t numPhysicalDevices = 0;
     VkResult res = vkEnumeratePhysicalDevices(instance, &numPhysicalDevices, NULL);
     if (res != VK_SUCCESS) {
@@ -203,7 +216,7 @@ VkPhysicalDevice createPhysicalDeviceBinding(
     for (const auto &device : physicalDevices) {
         if (isDeviceSuitable(
                 device, surface, openGlInteropEnabled, requiredDeviceExtensions, optionalDeviceExtensions,
-                deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures)) {
+                deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures, computeOnly)) {
             physicalDevice = device;
             break;
         }
@@ -228,9 +241,12 @@ struct LogicalDeviceAndQueues {
 LogicalDeviceAndQueues createLogicalDeviceAndQueues(
         VkPhysicalDevice physicalDevice, bool useValidationLayer, const std::vector<const char*>& layerNames,
         const std::vector<const char*>& deviceExtensions, const std::set<std::string>& deviceExtensionsSet,
-        DeviceFeatures requestedDeviceFeatures) {
+        DeviceFeatures requestedDeviceFeatures, bool computeOnly) {
     if (deviceExtensionsSet.find(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME) != deviceExtensionsSet.end()) {
         requestedDeviceFeatures.deviceBufferDeviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
+    }
+    if (deviceExtensionsSet.find(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME) != deviceExtensionsSet.end()) {
+        requestedDeviceFeatures.scalarBlockLayoutFeatures.scalarBlockLayout = VK_TRUE;
     }
     if (deviceExtensionsSet.find(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) != deviceExtensionsSet.end()) {
         requestedDeviceFeatures.accelerationStructureFeatures.accelerationStructure = VK_TRUE;
@@ -242,21 +258,40 @@ LogicalDeviceAndQueues createLogicalDeviceAndQueues(
         requestedDeviceFeatures.rayQueryFeatures.rayQuery = VK_TRUE;
     }
 
-    uint32_t queueIndex = findQueueFamilies(
-            physicalDevice, static_cast<VkQueueFlagBits>(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT));
+    uint32_t graphicsQueueIndex = findQueueFamilies(
+                physicalDevice, static_cast<VkQueueFlagBits>(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT));
+    uint32_t computeQueueIndex = findQueueFamilies(
+            physicalDevice, static_cast<VkQueueFlagBits>(VK_QUEUE_COMPUTE_BIT));
 
-    float queuePriorities[2] = { 1.0, 1.0 };
-    VkDeviceQueueCreateInfo queueInfo = {};
-    queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queueInfo.pNext = nullptr;
-    queueInfo.queueFamilyIndex = (uint32_t)queueIndex;
-    queueInfo.queueCount = 2;
-    queueInfo.pQueuePriorities = queuePriorities;
+    std::cout << "graphicsQueueIndex: " << graphicsQueueIndex << std::endl;
+    std::cout << "computeQueueIndex: " << computeQueueIndex << std::endl;
+
+    float queuePriority = 1.0;
+
+    VkDeviceQueueCreateInfo graphicsQueueInfo = {};
+    graphicsQueueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    graphicsQueueInfo.pNext = nullptr;
+    graphicsQueueInfo.queueFamilyIndex = uint32_t(graphicsQueueIndex);
+    graphicsQueueInfo.queueCount = 1;
+    graphicsQueueInfo.pQueuePriorities = &queuePriority;
+
+    VkDeviceQueueCreateInfo computeQueueInfo = {};
+    computeQueueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    computeQueueInfo.pNext = nullptr;
+    computeQueueInfo.queueFamilyIndex = uint32_t(computeQueueIndex);
+    computeQueueInfo.queueCount = 1;
+    computeQueueInfo.pQueuePriorities = &queuePriority;
+
+    VkDeviceQueueCreateInfo queueInfos[] = { graphicsQueueInfo, computeQueueInfo };
+    VkDeviceQueueCreateInfo* queueInfosPtr = queueInfos;
+    if (computeOnly) {
+        queueInfosPtr = &queueInfos[1];
+    }
 
     VkDeviceCreateInfo deviceInfo{};
     deviceInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    deviceInfo.queueCreateInfoCount = 1;
-    deviceInfo.pQueueCreateInfos = &queueInfo;
+    deviceInfo.queueCreateInfoCount = computeOnly ? 1 : 2;
+    deviceInfo.pQueueCreateInfos = queueInfosPtr;
     deviceInfo.enabledExtensionCount = uint32_t(deviceExtensions.size());
     deviceInfo.ppEnabledExtensionNames = deviceExtensions.data();
     deviceInfo.pEnabledFeatures = &requestedDeviceFeatures.requestedPhysicalDeviceFeatures;
@@ -271,6 +306,10 @@ LogicalDeviceAndQueues createLogicalDeviceAndQueues(
     if (requestedDeviceFeatures.deviceBufferDeviceAddressFeatures.bufferDeviceAddress) {
         *pNextPtr = &requestedDeviceFeatures.deviceBufferDeviceAddressFeatures;
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.deviceBufferDeviceAddressFeatures.pNext);
+    }
+    if (requestedDeviceFeatures.scalarBlockLayoutFeatures.scalarBlockLayout) {
+        *pNextPtr = &requestedDeviceFeatures.scalarBlockLayoutFeatures;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.scalarBlockLayoutFeatures.pNext);
     }
     if (requestedDeviceFeatures.accelerationStructureFeatures.accelerationStructure) {
         *pNextPtr = &requestedDeviceFeatures.accelerationStructureFeatures;
@@ -291,14 +330,16 @@ LogicalDeviceAndQueues createLogicalDeviceAndQueues(
         Logfile::get()->throwError("Error in createLogicalDeviceAndQueues: vkCreateDevice failed!");
     }
 
-    VkQueue graphicsQueue, computeQueue;
-    vkGetDeviceQueue(device, queueIndex, 0, &graphicsQueue);
-    vkGetDeviceQueue(device, queueIndex, 1, &computeQueue);
+    VkQueue graphicsQueue = VK_NULL_HANDLE, computeQueue = VK_NULL_HANDLE;
+    if (!computeOnly) {
+        vkGetDeviceQueue(device, graphicsQueueIndex, 0, &graphicsQueue);
+    }
+    vkGetDeviceQueue(device, computeQueueIndex, 0, &computeQueue);
 
     LogicalDeviceAndQueues logicalDeviceAndQueues{};
     logicalDeviceAndQueues.device = device;
-    logicalDeviceAndQueues.graphicsQueueIndex = queueIndex;
-    logicalDeviceAndQueues.computeQueueIndex = queueIndex;
+    logicalDeviceAndQueues.graphicsQueueIndex = graphicsQueueIndex;
+    logicalDeviceAndQueues.computeQueueIndex = computeQueueIndex;
     logicalDeviceAndQueues.graphicsQueue = graphicsQueue;
     logicalDeviceAndQueues.computeQueue = computeQueue;
     return logicalDeviceAndQueues;
@@ -357,7 +398,7 @@ void Device::createDeviceSwapchain(
         Instance* instance, Window* window,
         std::vector<const char*> requiredDeviceExtensions,
         const std::vector<const char*>& optionalDeviceExtensions,
-        const DeviceFeatures& requestedDeviceFeatures) {
+        const DeviceFeatures& requestedDeviceFeatures, bool computeOnly) {
     this->instance = instance;
     this->window = window;
 
@@ -367,7 +408,7 @@ void Device::createDeviceSwapchain(
     std::vector<const char*> deviceExtensions;
     physicalDevice = createPhysicalDeviceBinding(
             instance->getVkInstance(), surface, openGlInteropEnabled, requiredDeviceExtensions,
-            optionalDeviceExtensions, deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures);
+            optionalDeviceExtensions, deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures, computeOnly);
     initializeDeviceExtensionList(physicalDevice);
     printAvailableDeviceExtensionList();
 
@@ -375,7 +416,7 @@ void Device::createDeviceSwapchain(
 
     auto deviceQueuePair = createLogicalDeviceAndQueues(
             physicalDevice, instance->getUseValidationLayer(), instance->getInstanceLayerNames(), deviceExtensions,
-            deviceExtensionsSet, requestedDeviceFeatures);
+            deviceExtensionsSet, requestedDeviceFeatures, computeOnly);
     device = deviceQueuePair.device;
     graphicsQueueIndex = deviceQueuePair.graphicsQueueIndex;
     computeQueueIndex = deviceQueuePair.computeQueueIndex;
@@ -399,14 +440,14 @@ void Device::createDeviceHeadless(
         Instance* instance,
         const std::vector<const char*>& requiredDeviceExtensions,
         const std::vector<const char*>& optionalDeviceExtensions,
-        const DeviceFeatures& requestedDeviceFeatures) {
+        const DeviceFeatures& requestedDeviceFeatures, bool computeOnly) {
     this->instance = instance;
     this->window = nullptr;
 
     std::vector<const char*> deviceExtensions;
     physicalDevice = createPhysicalDeviceBinding(
             instance->getVkInstance(), nullptr, openGlInteropEnabled, requiredDeviceExtensions,
-            optionalDeviceExtensions, deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures);
+            optionalDeviceExtensions, deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures, computeOnly);
     initializeDeviceExtensionList(physicalDevice);
     printAvailableDeviceExtensionList();
 
@@ -414,7 +455,7 @@ void Device::createDeviceHeadless(
 
     auto deviceQueuePair = createLogicalDeviceAndQueues(
             physicalDevice, instance->getUseValidationLayer(), instance->getInstanceLayerNames(), deviceExtensions,
-            deviceExtensionsSet, requestedDeviceFeatures);
+            deviceExtensionsSet, requestedDeviceFeatures, computeOnly);
     device = deviceQueuePair.device;
     graphicsQueueIndex = deviceQueuePair.graphicsQueueIndex;
     computeQueueIndex = deviceQueuePair.computeQueueIndex;

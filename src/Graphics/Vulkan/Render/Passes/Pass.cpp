@@ -38,7 +38,7 @@ Pass::Pass(vk::Renderer *renderer) : renderer(renderer), device(renderer->getDev
 }
 
 void ComputePass::render() {
-    if (shaderDirty) {
+    if (shaderDirty || dataDirty) {
         _build();
     }
     _render();
@@ -54,16 +54,19 @@ void ComputePass::_build() {
         shaderDirty = false;
     }
 
-    sgl::vk::ComputePipelineInfo computePipelineInfo(shaderStages);
-    setComputePipelineInfo(computePipelineInfo);
-    sgl::vk::ComputePipelinePtr computePipeline(new sgl::vk::ComputePipeline(device, computePipelineInfo));
+    if (shaderDirty || dataDirty) {
+        sgl::vk::ComputePipelineInfo computePipelineInfo(shaderStages);
+        setComputePipelineInfo(computePipelineInfo);
+        sgl::vk::ComputePipelinePtr computePipeline(new sgl::vk::ComputePipeline(device, computePipelineInfo));
 
-    createComputeData(renderer, computePipeline);
+        createComputeData(renderer, computePipeline);
+        dataDirty = false;
+    }
 }
 
 
 void RasterPass::render() {
-    if (shaderDirty || framebufferDirty) {
+    if (shaderDirty || framebufferDirty || dataDirty) {
         _build();
     }
     _render();
@@ -84,17 +87,20 @@ void RasterPass::_build() {
     }
     framebufferDirty = false;
 
-    sgl::vk::GraphicsPipelineInfo graphicsPipelineInfo(shaderStages);
-    graphicsPipelineInfo.setFramebuffer(framebuffer);
-    setGraphicsPipelineInfo(graphicsPipelineInfo);
-    sgl::vk::GraphicsPipelinePtr graphicsPipeline(new sgl::vk::GraphicsPipeline(device, graphicsPipelineInfo));
+    if (shaderDirty || dataDirty) {
+        sgl::vk::GraphicsPipelineInfo graphicsPipelineInfo(shaderStages);
+        graphicsPipelineInfo.setFramebuffer(framebuffer);
+        setGraphicsPipelineInfo(graphicsPipelineInfo);
+        sgl::vk::GraphicsPipelinePtr graphicsPipeline(new sgl::vk::GraphicsPipeline(device, graphicsPipelineInfo));
 
-    createRasterData(renderer, graphicsPipeline);
+        createRasterData(renderer, graphicsPipeline);
+        dataDirty = false;
+    }
 }
 
 
 void RayTracingPass::render() {
-    if (shaderDirty) {
+    if (shaderDirty || dataDirty) {
         _build();
     }
     _render();
@@ -121,8 +127,12 @@ void RayTracingPass::_build() {
         shaderDirty = false;
     }
 
-    sgl::vk::RayTracingPipelinePtr rayTracingPipeline = createRayTracingPipeline();
-    createRayTracingData(renderer, rayTracingPipeline);
+    if (shaderDirty || dataDirty) {
+        sgl::vk::RayTracingPipelinePtr rayTracingPipeline = createRayTracingPipeline();
+
+        createRayTracingData(renderer, rayTracingPipeline);
+        dataDirty = false;
+    }
 }
 
 }}

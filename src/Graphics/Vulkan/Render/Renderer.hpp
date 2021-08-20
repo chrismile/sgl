@@ -70,9 +70,14 @@ public:
     Renderer(Device* device, uint32_t numDescriptors = 1000);
     ~Renderer();
 
-    // Graphics pipeline.
+    // @see beginCommandBuffer and @see endCommandBuffer need to be called before calling any other command.
     void beginCommandBuffer();
     VkCommandBuffer endCommandBuffer();
+    /// Use VK_NULL_HANDLE to reset the custom command buffer.
+    void setCustomCommandBuffer(VkCommandBuffer commandBuffer, bool useGraphicsQueue = true);
+    inline void resetCustomCommandBuffer() { setCustomCommandBuffer(VK_NULL_HANDLE); }
+
+    // Graphics pipeline.
     void render(const RasterDataPtr& rasterData);
     void render(const RasterDataPtr& rasterData, const FramebufferPtr& framebuffer);
     void setModelMatrix(const glm::mat4 &matrix);
@@ -100,6 +105,15 @@ public:
             uint32_t offset, const T& data) {
         pushConstants(pipeline, shaderStageFlagBits, offset, sizeof(T), &data);
     }
+
+    // Synchronization primitives.
+    void insertMemoryBarrier(
+            VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+            VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask);
+    void insertBufferMemoryBarrier(
+            VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+            VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+            BufferPtr& buffer);
 
     /**
      * For headless rendering without a swapchain.
@@ -145,6 +159,8 @@ private:
     VkCommandPool commandPool = VK_NULL_HANDLE;
     std::vector<VkCommandBuffer> commandBuffers;
     VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
+    VkCommandBuffer customCommandBuffer = VK_NULL_HANDLE;
+    bool useGraphicsQueue = true;
 
     // Global descriptor pool that can be used by ComputeData, RasterData and RayTracingData.
     VkDescriptorPool globalDescriptorPool;

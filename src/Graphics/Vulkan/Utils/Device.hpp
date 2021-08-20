@@ -71,15 +71,17 @@ class Instance;
 struct DLL_OBJECT DeviceFeatures {
     DeviceFeatures() {
         deviceBufferDeviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
+        scalarBlockLayoutFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES;
         accelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
         rayTracingPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
         rayQueryFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
     }
-    VkPhysicalDeviceFeatures requestedPhysicalDeviceFeatures = {};
-    VkPhysicalDeviceBufferDeviceAddressFeatures deviceBufferDeviceAddressFeatures = {};
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures = {};
-    VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures = {};
-    VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures = {};
+    VkPhysicalDeviceFeatures requestedPhysicalDeviceFeatures{};
+    VkPhysicalDeviceBufferDeviceAddressFeatures deviceBufferDeviceAddressFeatures{};
+    VkPhysicalDeviceScalarBlockLayoutFeatures scalarBlockLayoutFeatures{};
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures{};
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures{};
+    VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures{};
 };
 
 /**
@@ -92,13 +94,15 @@ public:
             Instance* instance, Window* window,
             std::vector<const char*> requiredDeviceExtensions = {},
             const std::vector<const char*>& optionalDeviceExtensions = {},
-            const DeviceFeatures& requestedDeviceFeatures = DeviceFeatures());
+            const DeviceFeatures& requestedDeviceFeatures = DeviceFeatures(),
+            bool computeOnly = false);
     /// For headless rendering without a window (or when coupled with an OpenGL context in interoperability mode).
     void createDeviceHeadless(
             Instance* instance,
             const std::vector<const char*>& requiredDeviceExtensions = {},
             const std::vector<const char*>& optionalDeviceExtensions = {},
-            const DeviceFeatures& requestedDeviceFeatures = DeviceFeatures());
+            const DeviceFeatures& requestedDeviceFeatures = DeviceFeatures(),
+            bool computeOnly = false);
     ~Device();
 
     void waitIdle();

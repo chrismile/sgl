@@ -134,30 +134,38 @@ Renderer::~Renderer() {
 }
 
 void Renderer::beginCommandBuffer() {
-    Swapchain* swapchain = AppSettings::get()->getSwapchain();
-    size_t numImages = swapchain ? swapchain->getNumImages() : 1;
-    frameIndex = swapchain ? swapchain->getImageIndex() : 0;
-    if (frameCaches.size() != numImages) {
-        frameCaches.resize(numImages);
+    if (customCommandBuffer == VK_NULL_HANDLE) {
+        Swapchain* swapchain = AppSettings::get()->getSwapchain();
+        size_t numImages = swapchain ? swapchain->getNumImages() : 1;
+        frameIndex = swapchain ? swapchain->getImageIndex() : 0;
+        if (frameCaches.size() != numImages) {
+            frameCaches.resize(numImages);
 
-        if (!commandBuffers.empty()) {
-            vkFreeCommandBuffers(
-                    device->getVkDevice(), commandPool,
-                    uint32_t(commandBuffers.size()), commandBuffers.data());
+            if (!commandBuffers.empty()) {
+                vkFreeCommandBuffers(
+                        device->getVkDevice(), commandPool,
+                        uint32_t(commandBuffers.size()), commandBuffers.data());
+            }
+            vk::CommandPoolType commandPoolType;
+            commandPoolType.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+            commandBuffers = device->allocateCommandBuffers(commandPoolType, &commandPool, uint32_t(numImages));
         }
-        vk::CommandPoolType commandPoolType;
-        commandPoolType.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        commandBuffers = device->allocateCommandBuffers(commandPoolType, &commandPool, uint32_t(numImages));
+        frameCaches.at(frameIndex).freeCameraMatrixBuffers =
+                frameCaches.at(frameIndex).allCameraMatrixBuffers;
+        frameCaches.at(frameIndex).freeMatrixBlockDescriptorSets =
+                frameCaches.at(frameIndex).allMatrixBlockDescriptorSets;
+
+        commandBuffer = commandBuffers.at(frameIndex);
+    } else {
+        frameIndex = 0;
+        commandBuffer = customCommandBuffer;
     }
-    frameCaches.at(frameIndex).freeCameraMatrixBuffers = frameCaches.at(frameIndex).allCameraMatrixBuffers;
-    frameCaches.at(frameIndex).freeMatrixBlockDescriptorSets = frameCaches.at(frameIndex).allMatrixBlockDescriptorSets;
 
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = 0;
     beginInfo.pInheritanceInfo = nullptr;
 
-    commandBuffer = commandBuffers.at(frameIndex);
     if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
         Logfile::get()->throwError(
                 "Error in Renderer::beginCommandBuffer: Could not begin recording a command buffer.");
@@ -177,6 +185,11 @@ VkCommandBuffer Renderer::endCommandBuffer() {
     lastFramebuffer = FramebufferPtr();
 
     return commandBuffer;
+}
+
+void Renderer::setCustomCommandBuffer(VkCommandBuffer commandBuffer, bool useGraphicsQueue) {
+    customCommandBuffer = commandBuffer;
+    this->useGraphicsQueue = useGraphicsQueue;
 }
 
 void Renderer::render(const RasterDataPtr& rasterData) {
@@ -433,6 +446,37 @@ void Renderer::pushConstants(
     vkCmdPushConstants(commandBuffer, pipeline->getVkPipelineLayout(), shaderStageFlagBits, offset, size, data);
 }
 
+void Renderer::insertMemoryBarrier(
+        VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+        VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask) {
+    VkMemoryBarrier memoryBarrier{};
+    memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+    memoryBarrier.srcAccessMask = srcAccessMask;
+    memoryBarrier.dstAccessMask = dstAccessMask;
+
+    vkCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, 0, 1, &memoryBarrier, 0, nullptr, 0, nullptr);
+}
+
+void Renderer::insertBufferMemoryBarrier(
+        VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+        VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+        BufferPtr& buffer) {
+    VkMemoryBarrier memoryBarrier{};
+    memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+    memoryBarrier.srcAccessMask = srcAccessMask;
+    memoryBarrier.dstAccessMask = dstAccessMask;
+
+    VkBufferMemoryBarrier bufferMemoryBarrier{};
+    bufferMemoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    bufferMemoryBarrier.srcAccessMask = srcAccessMask;
+    bufferMemoryBarrier.dstAccessMask = dstAccessMask;
+    bufferMemoryBarrier.buffer = buffer->getVkBuffer();
+    bufferMemoryBarrier.size = buffer->getSizeInBytes();
+
+    vkCmdPipelineBarrier(
+            commandBuffer, srcStageMask, dstStageMask, 0, 1, &memoryBarrier, 1, &bufferMemoryBarrier, 0, nullptr);
+}
+
 void Renderer::submitToQueue(
         SemaphorePtr& waitSemaphore, SemaphorePtr& signalSemaphore, FencePtr& fence, VkPipelineStageFlags waitStage) {
     VkSemaphore waitSemaphoreVk = waitSemaphore->getVkSemaphore();
@@ -448,7 +492,9 @@ void Renderer::submitToQueue(
     submitInfo.pSignalSemaphores = &signalSemaphoreVk;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
-    if (vkQueueSubmit(device->getGraphicsQueue(), 1, &submitInfo, fenceVk) != VK_SUCCESS) {
+
+    VkQueue queue = useGraphicsQueue ? device->getGraphicsQueue() : device->getComputeQueue();
+    if (vkQueueSubmit(queue, 1, &submitInfo, fenceVk) != VK_SUCCESS) {
         sgl::Logfile::get()->throwError(
                 "Error in Renderer::submitToQueue: Could not submit to the graphics queue.");
     }
@@ -480,7 +526,9 @@ void Renderer::submitToQueue(
     submitInfo.pSignalSemaphores = signalSemaphoresVk.data();
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
-    if (vkQueueSubmit(device->getGraphicsQueue(), 1, &submitInfo, fenceVk) != VK_SUCCESS) {
+
+    VkQueue queue = useGraphicsQueue ? device->getGraphicsQueue() : device->getComputeQueue();
+    if (vkQueueSubmit(queue, 1, &submitInfo, fenceVk) != VK_SUCCESS) {
         sgl::Logfile::get()->throwError(
                 "Error in Renderer::submitToQueue: Could not submit to the graphics queue.");
     }
@@ -491,7 +539,8 @@ void Renderer::submitToQueueImmediate() {
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
-    if (vkQueueSubmit(device->getGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+    VkQueue queue = useGraphicsQueue ? device->getGraphicsQueue() : device->getComputeQueue();
+    if (vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
         sgl::Logfile::get()->throwError(
                 "Error in Renderer::submitToQueueImmediate: Could not submit to the graphics queue.");
     }

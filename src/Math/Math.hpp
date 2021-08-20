@@ -32,6 +32,10 @@
 #include <cmath>
 #include <glm/fwd.hpp>
 
+#if _cplusplus >= 201907L
+#include <bit>
+#endif
+
 //! Collection of math utility functions
 namespace sgl
 {
@@ -84,8 +88,8 @@ inline int intlog2(int x) {
 }
 
 inline int floorDiv(int a, int b) {
-    int div = a/b;
-    if (a < 0 && a%b != 0) {
+    int div = a / b;
+    if (a < 0 && a % b != 0) {
         div -= 1;
     }
     return div;
@@ -93,12 +97,12 @@ inline int floorDiv(int a, int b) {
 
 inline int floorMod(int a, int b) {
     int div = floorDiv(a, b);
-    return a-b*div;
+    return a - b * div;
 }
 
 inline int floorDiv(float a, float b) {
-    int div = int(a/b);
-    if (a < 0 && fmod(a,b) != 0) {
+    int div = int(a / b);
+    if (a < 0 && std::fmod(a, b) != 0.0f) {
         div -= 1;
     }
     return div;
@@ -106,16 +110,36 @@ inline int floorDiv(float a, float b) {
 
 inline float floorMod(float a, float b) {
     int div = floorDiv(a, b);
-    return a-b*div;
+    return a - b * float(div);
 }
 
 inline int ceilDiv(int a, int b) {
     int div = a/b;
-    if (a > 0 && a%b != 0) {
+    if (a > 0 && a % b != 0) {
         div += 1;
     }
     return div;
 }
+
+
+/**
+ * Returns the number of bits set in the passed 32-bit unsigned integer number.
+ * For more details see:
+ * https://stackoverflow.com/questions/109023/how-to-count-the-number-of-set-bits-in-a-32-bit-integer
+ */
+inline uint32_t getNumberOfBitsSet(uint32_t number) {
+#if _cplusplus >= 201907L
+    return std::popcount(number);
+#elif defined(__GNUC__)
+    return __builtin_popcount(number);
+#else
+    number = number - ((number >> 1) & 0x55555555);
+    number = (number & 0x33333333) + ((number >> 2) & 0x33333333);
+    number = (number + (number >> 4)) & 0x0F0F0F0F;
+    return (number * 0x01010101) >> 24;
+#endif
+}
+
 
 //! Interpolation
 template <typename T> T interpolateLinear(const T &val1, const T &val2, float factor)
