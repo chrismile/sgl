@@ -83,6 +83,12 @@ void RenderData::setStaticBuffer(BufferPtr& buffer, const std::string& descName)
     const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, descName);
     setStaticBuffer(buffer, descriptorInfo.binding);
 }
+void RenderData::setStaticBufferOptional(BufferPtr& buffer, const std::string& descName) {
+    uint32_t binding;
+    if (shaderStages->getDescriptorBindingByNameOptional(0, descName, binding)) {
+        setStaticBuffer(buffer, binding);
+    }
+}
 
 void RenderData::setStaticBufferView(BufferViewPtr& bufferView, uint32_t binding) {
     for (FrameData& frameData : frameDataList) {
@@ -94,6 +100,12 @@ void RenderData::setStaticBufferView(BufferViewPtr& bufferView, uint32_t binding
 void RenderData::setStaticBufferView(BufferViewPtr& bufferView, const std::string& descName) {
     const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, descName);
     setStaticBufferView(bufferView, descriptorInfo.binding);
+}
+void RenderData::setStaticBufferViewOptional(BufferViewPtr& bufferView, const std::string& descName) {
+    uint32_t binding;
+    if (shaderStages->getDescriptorBindingByNameOptional(0, descName, binding)) {
+        setStaticBufferView(bufferView, binding);
+    }
 }
 
 void RenderData::setStaticImageView(ImageViewPtr& imageView, uint32_t binding) {
@@ -127,6 +139,25 @@ void RenderData::setStaticTexture(TexturePtr& texture, const std::string& descNa
     setStaticImageView(texture->getImageView(), descriptorInfo.binding);
     setImageSampler(texture->getImageSampler(), descriptorInfo.binding);
 }
+void RenderData::setStaticImageViewOptional(ImageViewPtr& imageView, const std::string& descName) {
+    uint32_t binding;
+    if (shaderStages->getDescriptorBindingByNameOptional(0, descName, binding)) {
+        setStaticImageView(imageView, binding);
+    }
+}
+void RenderData::setImageSamplerOptional(ImageSamplerPtr& imageSampler, const std::string& descName) {
+    uint32_t binding;
+    if (shaderStages->getDescriptorBindingByNameOptional(0, descName, binding)) {
+        setImageSampler(imageSampler, binding);
+    }
+}
+void RenderData::setStaticTextureOptional(TexturePtr& texture, const std::string& descName) {
+    uint32_t binding;
+    if (shaderStages->getDescriptorBindingByNameOptional(0, descName, binding)) {
+        setStaticImageView(texture->getImageView(), binding);
+        setImageSampler(texture->getImageSampler(), binding);
+    }
+}
 
 void RenderData::setTopLevelAccelerationStructure(TopLevelAccelerationStructurePtr& tlas, uint32_t binding) {
     for (FrameData& frameData : frameDataList) {
@@ -135,10 +166,16 @@ void RenderData::setTopLevelAccelerationStructure(TopLevelAccelerationStructureP
     imageViewsStatic[binding] = true;
     isDirty = true;
 }
-
 void RenderData::setTopLevelAccelerationStructure(TopLevelAccelerationStructurePtr& tlas, const std::string& descName) {
     const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, descName);
     setTopLevelAccelerationStructure(tlas, descriptorInfo.binding);
+}
+void RenderData::setTopLevelAccelerationStructureOptional(
+        TopLevelAccelerationStructurePtr& tlas, const std::string& descName) {
+    uint32_t binding;
+    if (shaderStages->getDescriptorBindingByNameOptional(0, descName, binding)) {
+        setTopLevelAccelerationStructure(tlas, binding);
+    }
 }
 
 
@@ -155,6 +192,12 @@ void RenderData::setDynamicBuffer(BufferPtr& buffer, const std::string& descName
     const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, descName);
     setDynamicBuffer(buffer, descriptorInfo.binding);
 }
+void RenderData::setDynamicBufferOptional(BufferPtr& buffer, const std::string& descName) {
+    uint32_t binding;
+    if (shaderStages->getDescriptorBindingByNameOptional(0, descName, binding)) {
+        setDynamicBuffer(buffer, binding);
+    }
+}
 
 void RenderData::setDynamicBufferView(BufferViewPtr& bufferView, uint32_t binding) {
     frameDataList.front().bufferViews[binding] = bufferView;
@@ -169,6 +212,12 @@ void RenderData::setDynamicBufferView(BufferViewPtr& bufferView, const std::stri
     const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, descName);
     setDynamicBufferView(bufferView, descriptorInfo.binding);
 }
+void RenderData::setDynamicBufferViewOptional(BufferViewPtr& bufferView, const std::string& descName) {
+    uint32_t binding;
+    if (shaderStages->getDescriptorBindingByNameOptional(0, descName, binding)) {
+        setDynamicBufferView(bufferView, binding);
+    }
+}
 
 void RenderData::setDynamicImageView(ImageViewPtr& imageView, uint32_t binding) {
     frameDataList.front().imageViews[binding] = imageView;
@@ -182,6 +231,12 @@ void RenderData::setDynamicImageView(ImageViewPtr& imageView, uint32_t binding) 
 void RenderData::setDynamicImageView(ImageViewPtr& imageView, const std::string& descName) {
     const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, descName);
     setDynamicImageView(imageView, descriptorInfo.binding);
+}
+void RenderData::setDynamicImageViewOptional(ImageViewPtr& imageView, const std::string& descName) {
+    uint32_t binding;
+    if (shaderStages->getDescriptorBindingByNameOptional(0, descName, binding)) {
+        setDynamicImageView(imageView, binding);
+    }
 }
 
 BufferPtr RenderData::getBuffer(uint32_t binding) {
@@ -477,6 +532,11 @@ RayTracingData::RayTracingData(
         Renderer* renderer, RayTracingPipelinePtr& rayTracingPipeline, const ShaderGroupSettings& settings)
         : RenderData(renderer, rayTracingPipeline->getShaderStages()), rayTracingPipeline(rayTracingPipeline),
         shaderGroupSettings(settings) {
+    stridedDeviceAddressRegions = rayTracingPipeline->getStridedDeviceAddressRegions(shaderGroupSettings);
+}
+
+void RayTracingData::setShaderGroupSettings(const ShaderGroupSettings& settings) {
+    shaderGroupSettings = settings;
     stridedDeviceAddressRegions = rayTracingPipeline->getStridedDeviceAddressRegions(shaderGroupSettings);
 }
 

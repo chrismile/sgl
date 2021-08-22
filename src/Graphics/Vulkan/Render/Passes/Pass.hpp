@@ -54,6 +54,8 @@ public:
     virtual void render()=0;
     virtual void recreateSwapchain(uint32_t width, uint32_t height) {}
 
+    inline void setShaderDirty() { shaderDirty = true; }
+    inline void setDataDirty() { dataDirty = true; }
     inline sgl::vk::ShaderStagesPtr& getShaderStages() { return shaderStages; }
 
 protected:

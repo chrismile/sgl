@@ -44,8 +44,10 @@
 #ifdef SUPPORT_OPENGL
 #include <Graphics/Renderer.hpp>
 #include <Graphics/Texture/TextureManager.hpp>
+#include <memory>
 #endif
 #ifdef SUPPORT_VULKAN
+#include <Graphics/Vulkan/Buffers/Buffer.hpp>
 #endif
 #include "TransferFunctionWindow.hpp"
 
@@ -85,12 +87,16 @@ TransferFunctionWindow::TransferFunctionWindow() {
     }
 #endif
 #ifdef SUPPORT_VULKAN
-    if (AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+    if (AppSettings::get()->getPrimaryDevice()) {
         tfMapImageSettingsVulkan.imageType = VK_IMAGE_TYPE_1D;
         tfMapImageSettingsVulkan.format = VK_FORMAT_R16G16B16A16_UNORM;
         tfMapImageSettingsVulkan.width = TRANSFER_FUNCTION_TEXTURE_SIZE;
-        tfMapTextureVulkan = sgl::vk::TexturePtr(new sgl::vk::Texture(
-                AppSettings::get()->getPrimaryDevice(), tfMapImageSettingsVulkan));
+        tfMapTextureVulkan = std::make_shared<sgl::vk::Texture>(
+                AppSettings::get()->getPrimaryDevice(), tfMapImageSettingsVulkan);
+        minMaxUboVulkan = std::make_shared<sgl::vk::Buffer>(
+                sgl::AppSettings::get()->getPrimaryDevice(), sizeof(glm::vec2),
+                VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                VMA_MEMORY_USAGE_GPU_ONLY);
     }
 #endif
 
@@ -100,6 +106,7 @@ TransferFunctionWindow::TransferFunctionWindow() {
 
     updateAvailableFiles();
     rebuildTransferFunctionMap();
+    rebuildRangeUbo();
 
     if (sgl::FileUtils::get()->exists(saveDirectory + "Standard.xml")) {
         loadFunctionFromFile(saveDirectory + "Standard.xml");
@@ -108,7 +115,7 @@ TransferFunctionWindow::TransferFunctionWindow() {
 
 bool TransferFunctionWindow::saveFunctionToFile(const std::string& filename) {
     FILE* file = fopen(filename.c_str(), "w");
-    if (file == NULL) {
+    if (file == nullptr) {
         sgl::Logfile::get()->writeError(std::string()
                 + "ERROR: TransferFunctionWindow::saveFunctionToFile: Couldn't create file \"" + filename + "\"!");
         return false;
@@ -156,7 +163,7 @@ bool TransferFunctionWindow::loadFunctionFromFile(const std::string& filename) {
         return false;
     }
     XMLElement* tfNode = doc.FirstChildElement("TransferFunction");
-    if (tfNode == NULL) {
+    if (tfNode == nullptr) {
         sgl::Logfile::get()->writeError("TransferFunctionWindow::loadFunctionFromFile: No \"TransferFunction\" node found!");
         return false;
     }
@@ -176,18 +183,18 @@ bool TransferFunctionWindow::loadFunctionFromFile(const std::string& filename) {
 
     // Traverse all opacity points
     auto opacityPointsNode = tfNode->FirstChildElement("OpacityPoints");
-    if (opacityPointsNode != NULL) {
+    if (opacityPointsNode != nullptr) {
         for (sgl::XMLIterator it(opacityPointsNode, sgl::XMLNameFilter("OpacityPoint")); it.isValid(); ++it) {
             XMLElement* childElement = *it;
             float position = childElement->FloatAttribute("position");
             float opacity = sgl::clamp(childElement->FloatAttribute("opacity"), 0.0f, 1.0f);
-            opacityPoints.push_back(OpacityPoint(opacity, position));
+            opacityPoints.emplace_back(opacity, position);
         }
     }
 
     // Traverse all color points
     auto colorPointsNode = tfNode->FirstChildElement("ColorPoints");
-    if (colorPointsNode != NULL) {
+    if (colorPointsNode != nullptr) {
         ColorDataMode colorDataMode = COLOR_DATA_MODE_UNSIGNED_BYTE;
         const char* colorDataModeName = colorPointsNode->Attribute("color_data");
         if (colorDataModeName != nullptr) {
@@ -218,7 +225,7 @@ bool TransferFunctionWindow::loadFunctionFromFile(const std::string& filename) {
                 float blue = sgl::clamp(childElement->FloatAttribute("b"), 0.0f, 255.0f) / 255.0f;
                 color = sgl::Color16(glm::vec3(red, green, blue));
             }
-            colorPoints.push_back(ColorPoint_sRGB(color, position));
+            colorPoints.emplace_back(color, position);
         }
     }
 
@@ -288,6 +295,7 @@ void TransferFunctionWindow::computeHistogram(const std::vector<float>& attribut
     this->dataRange = glm::vec2(minAttr, maxAttr);
     this->selectedRange = glm::vec2(minAttr, maxAttr);
     recomputeHistogram();
+    rebuildRangeUbo();
 }
 
 void TransferFunctionWindow::computeHistogram(const std::vector<float>& attributes, float minAttr, float maxAttr) {
@@ -295,6 +303,7 @@ void TransferFunctionWindow::computeHistogram(const std::vector<float>& attribut
     this->dataRange = glm::vec2(minAttr, maxAttr);
     this->selectedRange = glm::vec2(minAttr, maxAttr);
     recomputeHistogram();
+    rebuildRangeUbo();
 }
 
 
@@ -371,12 +380,14 @@ bool TransferFunctionWindow::renderGui() {
 
         if (ImGui::SliderFloat2("Range", &selectedRange.x, dataRange.x, dataRange.y)) {
             recomputeHistogram();
+            rebuildRangeUbo();
             reRender = true;
         }
         ImGui::SameLine();
         if (ImGui::Button("Reset")) {
             selectedRange = dataRange;
             recomputeHistogram();
+            rebuildRangeUbo();
             reRender = true;
         }
 
@@ -553,6 +564,14 @@ bool TransferFunctionWindow::getTransferFunctionMapRebuilt() {
     return false;
 }
 
+void TransferFunctionWindow::rebuildRangeUbo() {
+#ifdef SUPPORT_VULKAN
+    if (sgl::AppSettings::get()->getPrimaryDevice()) {
+        minMaxUboVulkan->uploadData(sizeof(glm::vec2), &selectedRange.x);
+    }
+#endif
+}
+
 // For OpenGL: Has 256 entries. Get mapped color for normalized attribute by accessing entry at "attr*255".
 void TransferFunctionWindow::rebuildTransferFunctionMap() {
     // Create linear RGB color points
@@ -582,7 +601,7 @@ void TransferFunctionWindow::rebuildTransferFunctionMap() {
     }
 #endif
 #ifdef SUPPORT_VULKAN
-    if (AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+    if (AppSettings::get()->getPrimaryDevice()) {
         if (useLinearRGB) {
             tfMapTextureVulkan->getImage()->uploadData(
                     TRANSFER_FUNCTION_TEXTURE_SIZE * 8, transferFunctionMap_linearRGB.data());

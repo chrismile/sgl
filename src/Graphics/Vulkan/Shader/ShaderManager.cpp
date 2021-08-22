@@ -82,11 +82,34 @@ ShaderStagesPtr ShaderManagerVk::getShaderStages(const std::vector<std::string> 
     return createShaderStages(shaderIds, dumpTextDebug);
 }
 
+ShaderStagesPtr ShaderManagerVk::getShaderStages(
+        const std::vector<std::string> &shaderIds, const std::map<std::string, std::string>& customPreprocessorDefines,
+        bool dumpTextDebug) {
+    tempPreprocessorDefines = customPreprocessorDefines;
+    ShaderStagesPtr shaderStages = createShaderStages(shaderIds, dumpTextDebug);
+    tempPreprocessorDefines.clear();
+    return shaderStages;
+}
+
 ShaderModulePtr ShaderManagerVk::getShaderModule(const std::string& shaderId, ShaderModuleType shaderModuleType) {
     ShaderModuleInfo info;
     info.filename = shaderId;
     info.shaderModuleType = shaderModuleType;
     return FileManager<ShaderModule, ShaderModuleInfo>::getAsset(info);
+}
+
+ShaderModulePtr ShaderManagerVk::getShaderModule(
+        const std::string& shaderId, ShaderModuleType shaderModuleType,
+        const std::map<std::string, std::string>& customPreprocessorDefines) {
+    tempPreprocessorDefines = customPreprocessorDefines;
+
+    ShaderModuleInfo info;
+    info.filename = shaderId;
+    info.shaderModuleType = shaderModuleType;
+    ShaderModulePtr shaderModule = FileManager<ShaderModule, ShaderModuleInfo>::getAsset(info);
+
+    tempPreprocessorDefines.clear();
+    return shaderModule;
 }
 
 
@@ -187,7 +210,10 @@ ShaderModulePtr ShaderManagerVk::loadAsset(ShaderModuleInfo& shaderInfo) {
     for (auto& it : preprocessorDefines) {
         compileOptions.AddMacroDefinition(it.first, it.second);
     }
-    IncluderInterface* includerInterface = new IncluderInterface();
+    for (auto& it : tempPreprocessorDefines) {
+        compileOptions.AddMacroDefinition(it.first, it.second);
+    }
+    auto includerInterface = new IncluderInterface();
     compileOptions.SetIncluder(std::unique_ptr<shaderc::CompileOptions::IncluderInterface>(includerInterface));
 
     if (device->getInstance()->getInstanceVulkanVersion() < VK_API_VERSION_1_1) {

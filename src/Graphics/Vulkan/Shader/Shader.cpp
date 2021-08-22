@@ -111,10 +111,17 @@ void ShaderModule::createReflectData(const std::vector<uint32_t>& spirvCode) {
             DescriptorInfo descriptorInfo;
             descriptorInfo.binding = reflectDescriptorSet->bindings[bindingIdx]->binding;
             descriptorInfo.type = VkDescriptorType(reflectDescriptorSet->bindings[bindingIdx]->descriptor_type);
-            descriptorInfo.name = reflectDescriptorSet->bindings[bindingIdx]->name;
+            if (reflectDescriptorSet->bindings[bindingIdx]->type_description
+                    && reflectDescriptorSet->bindings[bindingIdx]->type_description->type_name
+                    && strlen(reflectDescriptorSet->bindings[bindingIdx]->type_description->type_name) > 0) {
+                descriptorInfo.name = reflectDescriptorSet->bindings[bindingIdx]->type_description->type_name;
+            } else {
+                descriptorInfo.name = reflectDescriptorSet->bindings[bindingIdx]->name;
+            }
             descriptorInfo.count = reflectDescriptorSet->bindings[bindingIdx]->count;
             descriptorInfo.shaderStageFlags = uint32_t(shaderModuleType);
             descriptorInfo.readOnly = true;
+            descriptorInfo.dim = reflectDescriptorSet->bindings[bindingIdx]->image.dim;
             descriptorsInfo.push_back(descriptorInfo);
 
             if (reflectDescriptorSet->bindings[bindingIdx]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE
@@ -422,6 +429,41 @@ const DescriptorInfo& ShaderStages::getDescriptorInfoByBinding(uint32_t setIdx, 
             "Error in ShaderStages::getDescriptorInfoByBinding: Couldn't find descriptor with binding \""
             + std::to_string(binding) + "\" for descriptor set index " + std::to_string(setIdx) + ".");
     return descriptorSetInfo.front(); // To get rid of warning...
+}
+
+uint32_t ShaderStages::getDescriptorBindingByName(uint32_t setIdx, const std::string& descName) const {
+    auto it = descriptorSetsInfo.find(setIdx);
+    if (it == descriptorSetsInfo.end()) {
+        Logfile::get()->throwError(
+                "Error in ShaderStages::getDescriptorBindingByName: No descriptor set #" + std::to_string(setIdx)
+                + " is used in these shaders.");
+    }
+    const std::vector<DescriptorInfo>& descriptorSetInfo = it->second;
+    for (const DescriptorInfo& descriptorInfo : descriptorSetInfo) {
+        if (descriptorInfo.name == descName) {
+            return descriptorInfo.binding;
+        }
+    }
+    Logfile::get()->throwError(
+            "Error in ShaderStages::getDescriptorBindingByName: Couldn't find descriptor with name \"" + descName
+            + "\" for descriptor set index " + std::to_string(setIdx) + ".");
+    return std::numeric_limits<uint32_t>::max(); // To get rid of warning...
+}
+
+bool ShaderStages::getDescriptorBindingByNameOptional(
+        uint32_t setIdx, const std::string& descName, uint32_t& binding) const {
+    auto it = descriptorSetsInfo.find(setIdx);
+    if (it == descriptorSetsInfo.end()) {
+        return false;
+    }
+    const std::vector<DescriptorInfo>& descriptorSetInfo = it->second;
+    for (const DescriptorInfo& descriptorInfo : descriptorSetInfo) {
+        if (descriptorInfo.name == descName) {
+            binding = descriptorInfo.binding;
+            return true;
+        }
+    }
+    return false;
 }
 
 ShaderModulePtr ShaderStages::findModuleId(const std::string& shaderModuleId) {

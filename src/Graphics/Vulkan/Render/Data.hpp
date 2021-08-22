@@ -79,6 +79,8 @@ public:
     virtual ~RenderData();
     virtual RenderDataType getRenderDataType() const=0;
 
+    inline const ShaderStagesPtr& getShaderStages() { return shaderStages; }
+
     /**
      * Creates a shallow copy of the render data using the passed shader stages.
      * NOTE: The descriptor layouts of the new shaders have to match!
@@ -95,9 +97,11 @@ public:
      */
     void setStaticBuffer(BufferPtr& buffer, uint32_t binding);
     void setStaticBuffer(BufferPtr& buffer, const std::string& descName);
+    void setStaticBufferOptional(BufferPtr& buffer, const std::string& descName);
 
     void setStaticBufferView(BufferViewPtr& bufferView, uint32_t binding);
     void setStaticBufferView(BufferViewPtr& bufferView, const std::string& descName);
+    void setStaticBufferViewOptional(BufferViewPtr& bufferView, const std::string& descName);
 
     void setStaticImageView(ImageViewPtr& imageView, uint32_t binding);
     void setImageSampler(ImageSamplerPtr& imageSampler, uint32_t binding);
@@ -106,9 +110,13 @@ public:
     void setStaticImageView(ImageViewPtr& imageView, const std::string& descName);
     void setImageSampler(ImageSamplerPtr& imageSampler, const std::string& descName);
     void setStaticTexture(TexturePtr& texture, const std::string& descName);
+    void setStaticImageViewOptional(ImageViewPtr& imageView, const std::string& descName);
+    void setImageSamplerOptional(ImageSamplerPtr& imageSampler, const std::string& descName);
+    void setStaticTextureOptional(TexturePtr& texture, const std::string& descName);
 
     void setTopLevelAccelerationStructure(TopLevelAccelerationStructurePtr& tlas, uint32_t binding);
     void setTopLevelAccelerationStructure(TopLevelAccelerationStructurePtr& tlas, const std::string& descName);
+    void setTopLevelAccelerationStructureOptional(TopLevelAccelerationStructurePtr& tlas, const std::string& descName);
 
     /*
      * Dynamic data changes per frame. After adding the buffer, the per-frame buffer needs to be retrieved by calling
@@ -116,12 +124,15 @@ public:
      */
     void setDynamicBuffer(BufferPtr& buffer, uint32_t binding);
     void setDynamicBuffer(BufferPtr& buffer, const std::string& descName);
+    void setDynamicBufferOptional(BufferPtr& buffer, const std::string& descName);
 
     void setDynamicBufferView(BufferViewPtr& bufferView, uint32_t binding);
     void setDynamicBufferView(BufferViewPtr& bufferView, const std::string& descName);
+    void setDynamicBufferViewOptional(BufferViewPtr& bufferView, const std::string& descName);
 
     void setDynamicImageView(ImageViewPtr& imageView, uint32_t binding);
     void setDynamicImageView(ImageViewPtr& imageView, const std::string& descName);
+    void setDynamicImageViewOptional(ImageViewPtr& imageView, const std::string& descName);
 
     BufferPtr getBuffer(uint32_t binding);
     BufferPtr getBuffer(const std::string& name);
@@ -213,6 +224,10 @@ public:
             Renderer* renderer, RayTracingPipelinePtr& rayTracingPipeline,
             const ShaderGroupSettings& settings = ShaderGroupSettings());
     RenderDataType getRenderDataType() const override { return RenderDataType::RAYTRACING; }
+
+    void setShaderGroupSettings(const ShaderGroupSettings& settings);
+    inline ShaderGroupSettings& getShaderGroupSettings() { return shaderGroupSettings; }
+    inline const ShaderGroupSettings& getShaderGroupSettings() const { return shaderGroupSettings; }
 
     inline RayTracingPipelinePtr getRayTracingPipeline() { return rayTracingPipeline; }
     inline const std::array<VkStridedDeviceAddressRegionKHR, 4>& getStridedDeviceAddressRegions() {

@@ -134,6 +134,11 @@ public:
 #endif
     bool getTransferFunctionMapRebuilt();
 
+#ifdef SUPPORT_VULKAN
+    /// Returns the Data range uniform buffer object.
+    inline sgl::vk::BufferPtr& getMinMaxUboVulkan() { return minMaxUboVulkan; }
+#endif
+
     // For ray tracing interface
     inline const std::vector<OpacityPoint>& getOpacityPoints() { return opacityPoints; }
     inline const std::vector<ColorPoint_sRGB>& getColorPoints_sRGB() { return colorPoints; }
@@ -149,6 +154,7 @@ public:
     inline void setSelectedRange(const glm::vec2& selectedRange) {
         this->selectedRange = selectedRange;
         recomputeHistogram();
+        rebuildRangeUbo();
     }
 
     // sRGB and linear RGB conversion
@@ -209,6 +215,7 @@ private:
     void rebuildTransferFunctionMap();
     void rebuildTransferFunctionMap_sRGB();
     void rebuildTransferFunctionMap_LinearRGB();
+    void rebuildRangeUbo();
     std::vector<sgl::Color16> transferFunctionMap_sRGB;
     std::vector<sgl::Color16> transferFunctionMap_linearRGB;
 #ifdef SUPPORT_OPENGL
@@ -218,6 +225,11 @@ private:
 #ifdef SUPPORT_VULKAN
     sgl::vk::TexturePtr tfMapTextureVulkan;
     sgl::vk::ImageSettings tfMapImageSettingsVulkan;
+#endif
+
+#ifdef SUPPORT_VULKAN
+    // Data range uniform buffer object (storing float min, float max).
+    sgl::vk::BufferPtr minMaxUboVulkan;
 #endif
 
     std::vector<OpacityPoint> opacityPoints;

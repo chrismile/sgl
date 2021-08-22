@@ -138,6 +138,20 @@ public:
  * For more information please refer to one of the following resources.
  * - https://vulkan.lunarg.com/doc/view/1.2.135.0/windows/chunked_spec/chap35.html
  * - https://www.willusher.io/graphics/2019/11/20/the-sbt-three-ways
+ *
+ * (A) Hit shaders
+ * pHitShaderBindingTable::offset + pHitShaderBindingTable::stride *
+ * (instanceShaderBindingTableRecordOffset + geometryIndex * sbtRecordStride + sbtRecordOffset)
+ * 'sbtRecordStride' and 'sbtRecordOffset' are used in traceRayEXT. 'geometryIndex' is the location of the geometry
+ * within the instance and is available to shaders as 'RayGeometryIndexKHR'.
+ *
+ * (B) Miss shaders
+ * pMissShaderBindingTable::offset + pMissShaderBindingTable::stride * missIndex
+ * 'missIndex' is used in traceRayEXT calls.
+ *
+ * (C) Callable shaders
+ * pCallableShaderBindingTable::offset + pCallableShaderBindingTable::stride * sbtRecordIndex
+ *
  */
 class DLL_OBJECT ShaderBindingTable {
 public:

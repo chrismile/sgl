@@ -57,7 +57,13 @@ public:
     /// Reference-counted loading.
     /// If dumpTextDebug, the pre-processed source will be dumped on the command line.
     ShaderStagesPtr getShaderStages(const std::vector<std::string>& shaderIds, bool dumpTextDebug = false);
+    ShaderStagesPtr getShaderStages(
+            const std::vector<std::string>& shaderIds,
+            const std::map<std::string, std::string>& customPreprocessorDefines, bool dumpTextDebug = false);
     ShaderModulePtr getShaderModule(const std::string& shaderId, ShaderModuleType shaderModuleType);
+    ShaderModulePtr getShaderModule(
+            const std::string& shaderId, ShaderModuleType shaderModuleType,
+            const std::map<std::string, std::string>& customPreprocessorDefines);
 
     //virtual ShaderAttributesPtr createShaderAttributes(ShaderStagesPtr& shader)=0;
 
@@ -130,6 +136,7 @@ protected:
 
     /// A token-value map for user-provided preprocessor #define's
     std::map<std::string, std::string> preprocessorDefines;
+    std::map<std::string, std::string> tempPreprocessorDefines; // Temporarily set when loading a shader.
 
     // Vulkan device.
     Device* device = nullptr;

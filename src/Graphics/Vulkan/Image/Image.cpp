@@ -29,6 +29,7 @@
 #include <cstring>
 
 #include <Utils/File/Logfile.hpp>
+#include <memory>
 #include "../Utils/Device.hpp"
 #include "../Utils/Interop.hpp"
 #include "../Buffers/Buffer.hpp"
@@ -207,7 +208,7 @@ void Image::copyFromBuffer(BufferPtr& buffer, VkCommandBuffer commandBuffer) {
     region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     region.imageSubresource.mipLevel = 0;
     region.imageSubresource.baseArrayLayer = 0;
-    region.imageSubresource.layerCount = 1;
+    region.imageSubresource.layerCount = imageSettings.arrayLayers;
 
     region.imageOffset = {0, 0, 0};
     region.imageExtent = { imageSettings.width, imageSettings.height, imageSettings.depth };
@@ -741,8 +742,16 @@ Texture::Texture(
         Device* device, const ImageSettings& imageSettings, const ImageSamplerSettings& samplerSettings,
         VkImageAspectFlags aspectFlags) {
     vk::ImagePtr image(new Image(device, imageSettings));
-    imageView = vk::ImageViewPtr(new ImageView(image, aspectFlags));
-    imageSampler = vk::ImageSamplerPtr(new ImageSampler(device, samplerSettings, image));
+    imageView = std::make_shared<ImageView>(image, aspectFlags);
+    imageSampler = std::make_shared<ImageSampler>(device, samplerSettings, image);
+}
+
+Texture::Texture(
+        Device* device, const ImageSettings& imageSettings, VkImageViewType imageViewType,
+        const ImageSamplerSettings& samplerSettings, VkImageAspectFlags aspectFlags) {
+    vk::ImagePtr image(new Image(device, imageSettings));
+    imageView = std::make_shared<ImageView>(image, imageViewType, aspectFlags);
+    imageSampler = std::make_shared<ImageSampler>(device, samplerSettings, image);
 }
 
 }}

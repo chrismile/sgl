@@ -26,8 +26,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <iostream>
-
 #define VMA_IMPLEMENTATION
 #include <Utils/File/Logfile.hpp>
 #include <Math/Math.hpp>
@@ -262,9 +260,6 @@ LogicalDeviceAndQueues createLogicalDeviceAndQueues(
                 physicalDevice, static_cast<VkQueueFlagBits>(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT));
     uint32_t computeQueueIndex = findQueueFamilies(
             physicalDevice, static_cast<VkQueueFlagBits>(VK_QUEUE_COMPUTE_BIT));
-
-    std::cout << "graphicsQueueIndex: " << graphicsQueueIndex << std::endl;
-    std::cout << "computeQueueIndex: " << computeQueueIndex << std::endl;
 
     float queuePriority = 1.0;
 

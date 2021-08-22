@@ -49,7 +49,7 @@ public:
      * - VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR: Call any-hit once.
      */
     explicit BottomLevelAccelerationStructureInput(
-            Device* device, VkGeometryFlagsKHR geometryFlags = VK_GEOMETRY_OPAQUE_BIT_KHR);
+            Device* device, VkGeometryFlagsKHR geometryFlags = VkGeometryFlagsKHR(0));
 
     inline Device* getDevice() const { return device; }
     inline size_t getNumPrimitives() const { return buildRangeInfo.primitiveCount; }
@@ -77,7 +77,7 @@ public:
      * - VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR: Call any-hit once.
      */
     explicit TrianglesAccelerationStructureInput(
-            Device* device, VkGeometryFlagsKHR geometryFlags = VK_GEOMETRY_OPAQUE_BIT_KHR);
+            Device* device, VkGeometryFlagsKHR geometryFlags = VkGeometryFlagsKHR(0));
 
     void setIndexBuffer(BufferPtr& buffer, VkIndexType indexType = VK_INDEX_TYPE_UINT32);
     void setVertexBuffer(BufferPtr& buffer, VkFormat vertexFormat, VkDeviceSize vertexStride = 0);
@@ -102,7 +102,7 @@ public:
      * - VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR: Call any-hit once.
      */
     explicit AabbsAccelerationStructureInput(
-            Device* device, VkGeometryFlagsKHR geometryFlags = VK_GEOMETRY_OPAQUE_BIT_KHR);
+            Device* device, VkGeometryFlagsKHR geometryFlags = VkGeometryFlagsKHR(0));
 
     /**
      * @param buffer A buffer containing a list of VkAabbPositionsKHR entries.

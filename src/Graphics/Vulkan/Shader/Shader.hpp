@@ -68,6 +68,7 @@ struct DLL_OBJECT DescriptorInfo {
     VkShaderStageFlags shaderStageFlags;
     uint32_t count;
     bool readOnly;
+    SpvDim dim;
 };
 //struct DescriptorSetInfo {
 //    int descriptorSetIndex;
@@ -146,6 +147,8 @@ public:
     const std::map<uint32_t, std::vector<DescriptorInfo>>& getDescriptorSetsInfo() const;
     const DescriptorInfo& getDescriptorInfoByName(uint32_t setIdx, const std::string& descName) const;
     const DescriptorInfo& getDescriptorInfoByBinding(uint32_t setIdx, uint32_t binding) const;
+    uint32_t getDescriptorBindingByName(uint32_t setIdx, const std::string& descName) const;
+    bool getDescriptorBindingByNameOptional(uint32_t setIdx, const std::string& descName, uint32_t& binding) const;
 
     /// Finds a certain module based on its ID.
     ShaderModulePtr findModuleId(const std::string& shaderModuleId);
