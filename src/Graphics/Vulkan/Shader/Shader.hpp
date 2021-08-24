@@ -68,7 +68,7 @@ struct DLL_OBJECT DescriptorInfo {
     VkShaderStageFlags shaderStageFlags;
     uint32_t count;
     bool readOnly;
-    SpvDim dim;
+    SpvReflectImageTraits image; ///< If this is a descriptor of an image.
 };
 //struct DescriptorSetInfo {
 //    int descriptorSetIndex;
@@ -145,6 +145,7 @@ public:
     const InterfaceVariableDescriptor& getInputVariableDescriptorFromLocation(uint32_t location);
     const InterfaceVariableDescriptor& getInputVariableDescriptorFromName(const std::string& name);
     const std::map<uint32_t, std::vector<DescriptorInfo>>& getDescriptorSetsInfo() const;
+    bool hasDescriptorBinding(uint32_t setIdx, const std::string& descName) const;
     const DescriptorInfo& getDescriptorInfoByName(uint32_t setIdx, const std::string& descName) const;
     const DescriptorInfo& getDescriptorInfoByBinding(uint32_t setIdx, uint32_t binding) const;
     uint32_t getDescriptorBindingByName(uint32_t setIdx, const std::string& descName) const;

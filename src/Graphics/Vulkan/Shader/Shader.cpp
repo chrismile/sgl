@@ -64,7 +64,8 @@ void ShaderModule::createReflectData(const std::vector<uint32_t>& spirvCode) {
     SpvReflectShaderModule module;
     SpvReflectResult result = spvReflectCreateShaderModule(spirvCode.size() * 4, spirvCode.data(), &module);
     if (result != SPV_REFLECT_RESULT_SUCCESS) {
-        throw std::runtime_error("spvReflectCreateShaderModule failed!");
+        Logfile::get()->throwError(
+                "Error in ShaderModule::createReflectData: spvReflectCreateShaderModule failed!");
     }
 
 
@@ -72,12 +73,14 @@ void ShaderModule::createReflectData(const std::vector<uint32_t>& spirvCode) {
     uint32_t numInputVariables = 0;
     result = spvReflectEnumerateInputVariables(&module, &numInputVariables, nullptr);
     if (result != SPV_REFLECT_RESULT_SUCCESS) {
-        throw std::runtime_error("spvReflectEnumerateInputVariables failed!");
+        Logfile::get()->throwError(
+                "Error in ShaderModule::createReflectData: spvReflectEnumerateInputVariables failed!");
     }
     std::vector<SpvReflectInterfaceVariable*> inputVariables(numInputVariables);
     result = spvReflectEnumerateInputVariables(&module, &numInputVariables, inputVariables.data());
     if (result != SPV_REFLECT_RESULT_SUCCESS) {
-        throw std::runtime_error("spvReflectEnumerateInputVariables failed!");
+        Logfile::get()->throwError(
+                "Error in ShaderModule::createReflectData: spvReflectEnumerateInputVariables failed!");
     }
 
     inputVariableDescriptors.reserve(numInputVariables);
@@ -94,12 +97,14 @@ void ShaderModule::createReflectData(const std::vector<uint32_t>& spirvCode) {
     uint32_t numDescriptorSets = 0;
     result = spvReflectEnumerateDescriptorSets(&module, &numDescriptorSets, nullptr);
     if (result != SPV_REFLECT_RESULT_SUCCESS) {
-        throw std::runtime_error("spvReflectEnumerateDescriptorSets failed!");
+        Logfile::get()->throwError(
+                "Error in ShaderModule::createReflectData: spvReflectEnumerateDescriptorSets failed!");
     }
     std::vector<SpvReflectDescriptorSet*> descriptorSets(numDescriptorSets);
     result = spvReflectEnumerateDescriptorSets(&module, &numDescriptorSets, descriptorSets.data());
     if (result != SPV_REFLECT_RESULT_SUCCESS) {
-        throw std::runtime_error("spvReflectEnumerateDescriptorSets failed!");
+        Logfile::get()->throwError(
+                "Error in ShaderModule::createReflectData: spvReflectEnumerateDescriptorSets failed!");
     }
 
     for (uint32_t descSetIdx = 0; descSetIdx < numDescriptorSets; ++descSetIdx) {
@@ -121,7 +126,7 @@ void ShaderModule::createReflectData(const std::vector<uint32_t>& spirvCode) {
             descriptorInfo.count = reflectDescriptorSet->bindings[bindingIdx]->count;
             descriptorInfo.shaderStageFlags = uint32_t(shaderModuleType);
             descriptorInfo.readOnly = true;
-            descriptorInfo.dim = reflectDescriptorSet->bindings[bindingIdx]->image.dim;
+            descriptorInfo.image = reflectDescriptorSet->bindings[bindingIdx]->image;
             descriptorsInfo.push_back(descriptorInfo);
 
             if (reflectDescriptorSet->bindings[bindingIdx]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE
@@ -140,12 +145,14 @@ void ShaderModule::createReflectData(const std::vector<uint32_t>& spirvCode) {
     uint32_t numPushConstantBlocks = 0;
     result = spvReflectEnumeratePushConstantBlocks(&module, &numPushConstantBlocks, nullptr);
     if (result != SPV_REFLECT_RESULT_SUCCESS) {
-        throw std::runtime_error("spvReflectEnumeratePushConstantBlocks failed!");
+        Logfile::get()->throwError(
+                "Error in ShaderModule::createReflectData: spvReflectEnumeratePushConstantBlocks failed!");
     }
     std::vector<SpvReflectBlockVariable*> pushConstantBlockVariables(numPushConstantBlocks);
     result = spvReflectEnumeratePushConstantBlocks(&module, &numPushConstantBlocks, pushConstantBlockVariables.data());
     if (result != SPV_REFLECT_RESULT_SUCCESS) {
-        throw std::runtime_error("spvReflectEnumeratePushConstantBlocks failed!");
+        Logfile::get()->throwError(
+                "Error in ShaderModule::createReflectData: spvReflectEnumeratePushConstantBlocks failed!");
     }
 
     pushConstantRanges.resize(numPushConstantBlocks);
@@ -391,6 +398,20 @@ const InterfaceVariableDescriptor& ShaderStages::getInputVariableDescriptorFromN
 
 const std::map<uint32_t, std::vector<DescriptorInfo>>& ShaderStages::getDescriptorSetsInfo() const {
     return descriptorSetsInfo;
+}
+
+bool ShaderStages::hasDescriptorBinding(uint32_t setIdx, const std::string &descName) const {
+    auto it = descriptorSetsInfo.find(setIdx);
+    if (it == descriptorSetsInfo.end()) {
+        return false;
+    }
+    const std::vector<DescriptorInfo>& descriptorSetInfo = it->second;
+    for (const DescriptorInfo& descriptorInfo : descriptorSetInfo) {
+        if (descriptorInfo.name == descName) {
+            return true;
+        }
+    }
+    return false;
 }
 
 const DescriptorInfo& ShaderStages::getDescriptorInfoByName(uint32_t setIdx, const std::string& descName) const {
