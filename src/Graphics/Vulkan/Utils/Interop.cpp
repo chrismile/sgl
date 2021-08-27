@@ -117,48 +117,48 @@ void SemaphoreVkGlInterop::signalSemaphoreGl() {
     glSignalSemaphoreEXT(semaphoreGl, 0, nullptr, 0, nullptr, nullptr);
 }
 
-void SemaphoreVkGlInterop::signalSemaphoreGl(sgl::GeometryBufferPtr& buffer) {
+void SemaphoreVkGlInterop::signalSemaphoreGl(const sgl::GeometryBufferPtr& buffer) {
     GLuint bufferGl = static_cast<sgl::GeometryBufferGL*>(buffer.get())->getBuffer();
     glSignalSemaphoreEXT(semaphoreGl, 1, &bufferGl, 0, nullptr, nullptr);
 }
 
-void SemaphoreVkGlInterop::signalSemaphoreGl(std::vector<sgl::GeometryBufferPtr>& buffers) {
+void SemaphoreVkGlInterop::signalSemaphoreGl(const std::vector<sgl::GeometryBufferPtr>& buffers) {
     std::vector<GLuint> buffersGl;
     buffersGl.reserve(buffers.size());
-    for (sgl::GeometryBufferPtr& buffer : buffers) {
+    for (const sgl::GeometryBufferPtr& buffer : buffers) {
         buffersGl.push_back(static_cast<sgl::GeometryBufferGL*>(buffer.get())->getBuffer());
     }
     glSignalSemaphoreEXT(semaphoreGl, GLuint(buffersGl.size()), buffersGl.data(), 0, nullptr, nullptr);
 }
 
-void SemaphoreVkGlInterop::signalSemaphoreGl(sgl::TexturePtr& texture, GLenum dstLayout) {
+void SemaphoreVkGlInterop::signalSemaphoreGl(const sgl::TexturePtr& texture, GLenum dstLayout) {
     GLuint textureGl = static_cast<sgl::TextureGL*>(texture.get())->getTexture();
     glSignalSemaphoreEXT(semaphoreGl, 0, nullptr, 1, &textureGl, &dstLayout);
 }
 
 void SemaphoreVkGlInterop::signalSemaphoreGl(
-        std::vector<sgl::TexturePtr>& textures, const std::vector<GLenum>& dstLayouts) {
+        const std::vector<sgl::TexturePtr>& textures, const std::vector<GLenum>& dstLayouts) {
     assert(textures.size() == dstLayouts.size());
     std::vector<GLuint> texturesGl;
     texturesGl.reserve(textures.size());
-    for (sgl::TexturePtr& texture : textures) {
+    for (const sgl::TexturePtr& texture : textures) {
         texturesGl.push_back(static_cast<sgl::TextureGL*>(texture.get())->getTexture());
     }
     glSignalSemaphoreEXT(semaphoreGl, 0, nullptr, GLuint(texturesGl.size()), texturesGl.data(), dstLayouts.data());
 }
 
 void SemaphoreVkGlInterop::signalSemaphoreGl(
-        std::vector<sgl::GeometryBufferPtr>& buffers,
-        std::vector<sgl::TexturePtr>& textures, const std::vector<GLenum>& dstLayouts) {
+        const std::vector<sgl::GeometryBufferPtr>& buffers,
+        const std::vector<sgl::TexturePtr>& textures, const std::vector<GLenum>& dstLayouts) {
     assert(textures.size() == dstLayouts.size());
     std::vector<GLuint> buffersGl;
     buffersGl.reserve(buffers.size());
-    for (sgl::GeometryBufferPtr& buffer : buffers) {
+    for (const sgl::GeometryBufferPtr& buffer : buffers) {
         buffersGl.push_back(static_cast<sgl::GeometryBufferGL*>(buffer.get())->getBuffer());
     }
     std::vector<GLuint> texturesGl;
     texturesGl.reserve(textures.size());
-    for (sgl::TexturePtr& texture : textures) {
+    for (const sgl::TexturePtr& texture : textures) {
         texturesGl.push_back(static_cast<sgl::TextureGL*>(texture.get())->getTexture());
     }
     glSignalSemaphoreEXT(
@@ -171,48 +171,48 @@ void SemaphoreVkGlInterop::waitSemaphoreGl() {
     glWaitSemaphoreEXT(semaphoreGl, 0, nullptr, 0, nullptr, nullptr);
 }
 
-void SemaphoreVkGlInterop::waitSemaphoreGl(sgl::GeometryBufferPtr& buffer) {
+void SemaphoreVkGlInterop::waitSemaphoreGl(const sgl::GeometryBufferPtr& buffer) {
     GLuint bufferGl = static_cast<sgl::GeometryBufferGL*>(buffer.get())->getBuffer();
     glWaitSemaphoreEXT(semaphoreGl, 1, &bufferGl, 0, nullptr, nullptr);
 }
 
-void SemaphoreVkGlInterop::waitSemaphoreGl(std::vector<sgl::GeometryBufferPtr>& buffers) {
+void SemaphoreVkGlInterop::waitSemaphoreGl(const std::vector<sgl::GeometryBufferPtr>& buffers) {
     std::vector<GLuint> buffersGl;
     buffersGl.reserve(buffers.size());
-    for (sgl::GeometryBufferPtr& buffer : buffers) {
+    for (const sgl::GeometryBufferPtr& buffer : buffers) {
         buffersGl.push_back(static_cast<sgl::GeometryBufferGL*>(buffer.get())->getBuffer());
     }
     glWaitSemaphoreEXT(semaphoreGl, GLuint(buffersGl.size()), buffersGl.data(), 0, nullptr, nullptr);
 }
 
-void SemaphoreVkGlInterop::waitSemaphoreGl(sgl::TexturePtr& texture, GLenum srcLayout) {
+void SemaphoreVkGlInterop::waitSemaphoreGl(const sgl::TexturePtr& texture, GLenum srcLayout) {
     GLuint textureGl = static_cast<sgl::TextureGL*>(texture.get())->getTexture();
     glWaitSemaphoreEXT(semaphoreGl, 0, nullptr, 1, &textureGl, &srcLayout);
 }
 
 void SemaphoreVkGlInterop::waitSemaphoreGl(
-        std::vector<sgl::TexturePtr>& textures, const std::vector<GLenum>& srcLayouts) {
+        const std::vector<sgl::TexturePtr>& textures, const std::vector<GLenum>& srcLayouts) {
     assert(textures.size() == srcLayouts.size());
     std::vector<GLuint> texturesGl;
     texturesGl.reserve(textures.size());
-    for (sgl::TexturePtr& texture : textures) {
+    for (const sgl::TexturePtr& texture : textures) {
         texturesGl.push_back(static_cast<sgl::TextureGL*>(texture.get())->getTexture());
     }
     glWaitSemaphoreEXT(semaphoreGl, 0, nullptr, GLuint(texturesGl.size()), texturesGl.data(), srcLayouts.data());
 }
 
 void SemaphoreVkGlInterop::waitSemaphoreGl(
-        std::vector<sgl::GeometryBufferPtr>& buffers,
-        std::vector<sgl::TexturePtr>& textures, const std::vector<GLenum>& srcLayouts) {
+        const std::vector<sgl::GeometryBufferPtr>& buffers,
+        const std::vector<sgl::TexturePtr>& textures, const std::vector<GLenum>& srcLayouts) {
     assert(textures.size() == srcLayouts.size());
     std::vector<GLuint> buffersGl;
     buffersGl.reserve(buffers.size());
-    for (sgl::GeometryBufferPtr& buffer : buffers) {
+    for (const sgl::GeometryBufferPtr& buffer : buffers) {
         buffersGl.push_back(static_cast<sgl::GeometryBufferGL*>(buffer.get())->getBuffer());
     }
     std::vector<GLuint> texturesGl;
     texturesGl.reserve(textures.size());
-    for (sgl::TexturePtr& texture : textures) {
+    for (const sgl::TexturePtr& texture : textures) {
         texturesGl.push_back(static_cast<sgl::TextureGL*>(texture.get())->getTexture());
     }
     glWaitSemaphoreEXT(

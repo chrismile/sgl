@@ -59,6 +59,8 @@
 
 #include "imgui_custom.h"
 
+#include <Math/Math.hpp>
+
 bool ImGui::ListBox(const char* label, int* current_item, std::function<bool(void*, int, const char**)> items_getter, void* data, int items_count, int height_in_items)
 {
     if (!ListBoxHeader(label, items_count, height_in_items))
@@ -296,4 +298,91 @@ bool ImGui::SliderFloatActive(const char* label, float* v, float v_min, float v_
 bool ImGui::SliderIntActive(const char* label, int* v, int v_min, int v_max, bool is_active, const char* format)
 {
     return SliderScalarActive(label, ImGuiDataType_S32, v, &v_min, &v_max, is_active, format);
+}
+
+
+bool ImGui::SliderIntPowerOfTwo(const char* label, int* v, int v_min, int v_max, const char* format, ImGuiSliderFlags flags)
+{
+    int log_min = sgl::intlog2(v_min);
+    int log_max = sgl::intlog2(v_max);
+    int log_v = sgl::intlog2(*v);
+
+    ImGuiWindow* window = GetCurrentWindow();
+    if (window->SkipItems)
+        return false;
+
+    ImGuiContext& g = *GImGui;
+    const ImGuiStyle& style = g.Style;
+    const ImGuiID id = window->GetID(label);
+    const float w = CalcItemWidth();
+
+    const ImVec2 label_size = CalcTextSize(label, NULL, true);
+    const ImRect frame_bb(window->DC.CursorPos, window->DC.CursorPos + ImVec2(w, label_size.y + style.FramePadding.y * 2.0f));
+    const ImRect total_bb(frame_bb.Min, frame_bb.Max + ImVec2(label_size.x > 0.0f ? style.ItemInnerSpacing.x + label_size.x : 0.0f, 0.0f));
+
+    const bool temp_input_allowed = (flags & ImGuiSliderFlags_NoInput) == 0;
+    ItemSize(total_bb, style.FramePadding.y);
+    if (!ItemAdd(total_bb, id, &frame_bb, temp_input_allowed ? ImGuiItemAddFlags_Focusable : 0))
+        return false;
+
+    // Default format string when passing NULL
+    if (format == NULL)
+        format = DataTypeGetInfo(ImGuiDataType_S32)->PrintFmt;
+    else if (strcmp(format, "%d") != 0) // (FIXME-LEGACY: Patch old "%.0f" format string to use "%d", read function more details.)
+        format = PatchFormatStringFloatToInt(format);
+
+    // Tabbing or CTRL-clicking on Slider turns it into an input box
+    const bool hovered = ItemHoverable(frame_bb, id);
+    bool temp_input_is_active = temp_input_allowed && TempInputIsActive(id);
+    if (!temp_input_is_active)
+    {
+        const bool focus_requested = temp_input_allowed && (window->DC.LastItemStatusFlags & ImGuiItemStatusFlags_Focused) != 0;
+        const bool clicked = (hovered && g.IO.MouseClicked[0]);
+        if (focus_requested || clicked || g.NavActivateId == id || g.NavInputId == id)
+        {
+            SetActiveID(id, window);
+            SetFocusID(id, window);
+            FocusWindow(window);
+            g.ActiveIdUsingNavDirMask |= (1 << ImGuiDir_Left) | (1 << ImGuiDir_Right);
+            if (temp_input_allowed && (focus_requested || (clicked && g.IO.KeyCtrl) || g.NavInputId == id))
+                temp_input_is_active = true;
+        }
+    }
+
+    if (temp_input_is_active)
+    {
+        // Only clamp CTRL+Click input when ImGuiSliderFlags_AlwaysClamp is set
+        const bool is_clamp_input = (flags & ImGuiSliderFlags_AlwaysClamp) != 0;
+        return TempInputScalar(frame_bb, id, label, ImGuiDataType_S32, &log_v, format, is_clamp_input ? &log_min : NULL, is_clamp_input ? &log_max : NULL);
+    }
+
+    // Draw frame
+    const ImU32 frame_col = GetColorU32(g.ActiveId == id ? ImGuiCol_FrameBgActive : g.HoveredId == id ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg);
+    RenderNavHighlight(frame_bb, id);
+    RenderFrame(frame_bb.Min, frame_bb.Max, frame_col, true, g.Style.FrameRounding);
+
+    // Slider behavior
+    ImRect grab_bb;
+    const bool value_changed = SliderBehavior(frame_bb, id, ImGuiDataType_S32, &log_v, &log_min, &log_max, format, flags, &grab_bb);
+    if (value_changed)
+        MarkItemEdited(id);
+
+    // Render grab
+    if (grab_bb.Max.x > grab_bb.Min.x)
+        window->DrawList->AddRectFilled(grab_bb.Min, grab_bb.Max, GetColorU32(g.ActiveId == id ? ImGuiCol_SliderGrabActive : ImGuiCol_SliderGrab), style.GrabRounding);
+
+    // Display value using user-provided display format so user can add prefix/suffix/decorations to the value.
+    char value_buf[64];
+    const char* value_buf_end = value_buf + DataTypeFormatString(value_buf, IM_ARRAYSIZE(value_buf), ImGuiDataType_S32, v, format);
+    if (g.LogEnabled)
+        LogSetNextTextDecoration("{", "}");
+    RenderTextClipped(frame_bb.Min, frame_bb.Max, value_buf, value_buf_end, NULL, ImVec2(0.5f, 0.5f));
+
+    if (label_size.x > 0.0f)
+        RenderText(ImVec2(frame_bb.Max.x + style.ItemInnerSpacing.x, frame_bb.Min.y + style.FramePadding.y), label);
+
+    IMGUI_TEST_ENGINE_ITEM_INFO(id, label, window->DC.LastItemStatusFlags);
+
+    *v = 1 << log_v;
+    return value_changed;
 }

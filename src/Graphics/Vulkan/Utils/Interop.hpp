@@ -76,32 +76,32 @@ public:
     /// Signal semaphore without any barriers.
     void signalSemaphoreGl();
     /// Signal semaphore with one buffer barrier.
-    void signalSemaphoreGl(sgl::GeometryBufferPtr& buffer);
+    void signalSemaphoreGl(const sgl::GeometryBufferPtr& buffer);
     /// Signal semaphore with multiple buffer barriers.
-    void signalSemaphoreGl(std::vector<sgl::GeometryBufferPtr>& buffers);
+    void signalSemaphoreGl(const std::vector<sgl::GeometryBufferPtr>& buffers);
     /// Signal semaphore with one texture barrier.
-    void signalSemaphoreGl(sgl::TexturePtr& texture, GLenum dstLayout);
+    void signalSemaphoreGl(const sgl::TexturePtr& texture, GLenum dstLayout);
     /// Signal semaphore with multiple texture barriers.
-    void signalSemaphoreGl(std::vector<sgl::TexturePtr>& textures, const std::vector<GLenum>& dstLayouts);
+    void signalSemaphoreGl(const std::vector<sgl::TexturePtr>& textures, const std::vector<GLenum>& dstLayouts);
     /// Signal semaphore with multiple buffer and texture barriers.
     void signalSemaphoreGl(
-            std::vector<sgl::GeometryBufferPtr>& buffers,
-            std::vector<sgl::TexturePtr>& textures, const std::vector<GLenum>& dstLayouts);
+            const std::vector<sgl::GeometryBufferPtr>& buffers,
+            const std::vector<sgl::TexturePtr>& textures, const std::vector<GLenum>& dstLayouts);
 
     /// Wait on semaphore without any memory barriers.
     void waitSemaphoreGl();
     /// Wait on semaphore with one buffer barrier.
-    void waitSemaphoreGl(sgl::GeometryBufferPtr& buffer);
+    void waitSemaphoreGl(const sgl::GeometryBufferPtr& buffer);
     /// Wait on semaphore with multiple buffer barriers.
-    void waitSemaphoreGl(std::vector<sgl::GeometryBufferPtr>& buffers);
+    void waitSemaphoreGl(const std::vector<sgl::GeometryBufferPtr>& buffers);
     /// Wait on semaphore with one texture barrier.
-    void waitSemaphoreGl(sgl::TexturePtr& texture, GLenum srcLayout);
+    void waitSemaphoreGl(const sgl::TexturePtr& texture, GLenum srcLayout);
     /// Wait on semaphore with multiple texture barriers.
-    void waitSemaphoreGl(std::vector<sgl::TexturePtr>& textures, const std::vector<GLenum>& srcLayouts);
+    void waitSemaphoreGl(const std::vector<sgl::TexturePtr>& textures, const std::vector<GLenum>& srcLayouts);
     /// Wait on semaphore with multiple buffer and texture barriers.
     void waitSemaphoreGl(
-            std::vector<sgl::GeometryBufferPtr>& buffers,
-            std::vector<sgl::TexturePtr>& textures, const std::vector<GLenum>& srcLayouts);
+            const std::vector<sgl::GeometryBufferPtr>& buffers,
+            const std::vector<sgl::TexturePtr>& textures, const std::vector<GLenum>& srcLayouts);
 
 private:
     sgl::vk::Device* device = nullptr;
