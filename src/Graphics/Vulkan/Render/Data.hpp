@@ -118,6 +118,10 @@ public:
     void setTopLevelAccelerationStructure(TopLevelAccelerationStructurePtr& tlas, const std::string& descName);
     void setTopLevelAccelerationStructureOptional(TopLevelAccelerationStructurePtr& tlas, const std::string& descName);
 
+    // Binds a small dummy buffer (of size 4 bytes) in order to avoid warnings.
+    void setStaticBufferUnused(uint32_t binding);
+    void setStaticBufferUnused(const std::string& descName);
+
     /*
      * Dynamic data changes per frame. After adding the buffer, the per-frame buffer needs to be retrieved by calling
      * getBuffer.

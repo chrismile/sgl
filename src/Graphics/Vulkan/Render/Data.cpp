@@ -89,6 +89,40 @@ void RenderData::setStaticBufferOptional(BufferPtr& buffer, const std::string& d
         setStaticBuffer(buffer, binding);
     }
 }
+void RenderData::setStaticBufferUnused(uint32_t binding) {
+    const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByBinding(0, binding);
+    for (FrameData& frameData : frameDataList) {
+        VkBufferUsageFlags usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        if (descriptorInfo.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+            || descriptorInfo.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
+            usageFlags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        } else if (descriptorInfo.type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+                   || descriptorInfo.type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) {
+            usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        }
+        frameData.buffers[binding] = std::make_shared<sgl::vk::Buffer>(
+                device, sizeof(uint32_t), usageFlags, VMA_MEMORY_USAGE_GPU_ONLY);
+    }
+    buffersStatic[binding] = true;
+    isDirty = true;
+}
+void RenderData::setStaticBufferUnused(const std::string& descName) {
+    const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, descName);
+    for (FrameData& frameData : frameDataList) {
+        VkBufferUsageFlags usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        if (descriptorInfo.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+                || descriptorInfo.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
+            usageFlags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        } else if (descriptorInfo.type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+                || descriptorInfo.type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) {
+            usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        }
+        frameData.buffers[descriptorInfo.binding] = std::make_shared<sgl::vk::Buffer>(
+                device, sizeof(uint32_t), usageFlags, VMA_MEMORY_USAGE_GPU_ONLY);
+    }
+    buffersStatic[descriptorInfo.binding] = true;
+    isDirty = true;
+}
 
 void RenderData::setStaticBufferView(BufferViewPtr& bufferView, uint32_t binding) {
     for (FrameData& frameData : frameDataList) {

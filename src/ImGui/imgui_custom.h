@@ -57,6 +57,18 @@
 #include <string>
 #include <functional>
 
+#include "imgui.h"
+
+/*
+ * - No change: The same as SliderXXX returning false.
+ * - Live edit: The user is editing the slider value (either by dragging or by text input).
+ * - Input finished: The user has finished the input (e.g., by releasing the mouse button, pressing enter or the element
+ * losing focus).
+ */
+enum class EditMode {
+    NO_CHANGE, LIVE_EDIT, INPUT_FINISHED
+};
+
 namespace ImGui
 {
 
@@ -70,6 +82,46 @@ IMGUI_API bool SliderIntActive(const char* label, int* v, int v_min, int v_max, 
 IMGUI_API bool SliderScalarActive(const char* label, ImGuiDataType data_type, void* p_data, const void* p_min, const void* p_max, bool is_active, const char* format = NULL, ImGuiSliderFlags flags = 0);
 
 IMGUI_API bool SliderIntPowerOfTwo(const char* label, int* v, int v_min, int v_max, const char* format = NULL, ImGuiSliderFlags flags = 0);
+
+/*
+ * Only changes the returns true/changes the value v if the editing has finished.
+ */
+IMGUI_API bool SliderFloatNoLiveEdit(const char* label, float* v, float v_min, float v_max, const char* format = "%.3f", ImGuiSliderFlags flags = 0);     // adjust format to decorate the value with a prefix or a suffix for in-slider labels or unit display.
+IMGUI_API bool SliderFloat2NoLiveEdit(const char* label, float v[2], float v_min, float v_max, const char* format = "%.3f", ImGuiSliderFlags flags = 0);
+IMGUI_API bool SliderFloat3NoLiveEdit(const char* label, float v[3], float v_min, float v_max, const char* format = "%.3f", ImGuiSliderFlags flags = 0);
+IMGUI_API bool SliderFloat4NoLiveEdit(const char* label, float v[4], float v_min, float v_max, const char* format = "%.3f", ImGuiSliderFlags flags = 0);
+IMGUI_API bool SliderAngleNoLiveEdit(const char* label, float* v_rad, float v_degrees_min = -360.0f, float v_degrees_max = +360.0f, const char* format = "%.0f deg", ImGuiSliderFlags flags = 0);
+IMGUI_API bool SliderIntNoLiveEdit(const char* label, int* v, int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0);
+IMGUI_API bool SliderInt2NoLiveEdit(const char* label, int v[2], int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0);
+IMGUI_API bool SliderInt3NoLiveEdit(const char* label, int v[3], int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0);
+IMGUI_API bool SliderInt4NoLiveEdit(const char* label, int v[4], int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0);
+IMGUI_API bool SliderScalarNoLiveEdit(const char* label, ImGuiDataType data_type, void* p_data, const void* p_min, const void* p_max, const char* format = NULL, ImGuiSliderFlags flags = 0);
+IMGUI_API bool SliderScalarNNoLiveEdit(const char* label, ImGuiDataType data_type, void* p_data, int components, const void* p_min, const void* p_max, const char* format = NULL, ImGuiSliderFlags flags = 0);
+IMGUI_API bool VSliderFloatNoLiveEdit(const char* label, const ImVec2& size, float* v, float v_min, float v_max, const char* format = "%.3f", ImGuiSliderFlags flags = 0);
+IMGUI_API bool VSliderIntNoLiveEdit(const char* label, const ImVec2& size, int* v, int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0);
+IMGUI_API bool VSliderScalarNoLiveEdit(const char* label, const ImVec2& size, ImGuiDataType data_type, void* p_data, const void* p_min, const void* p_max, const char* format = NULL, ImGuiSliderFlags flags = 0);
+
+/*
+ * Sliders with three separate edit modes.
+ * - No change: The same as SliderXXX returning false.
+ * - Live edit: The user is editing the slider value (either by dragging or by text input).
+ * - Input finished: The user has finished the input (e.g., by releasing the mouse button, pressing enter or the element
+ * losing focus).
+ */
+IMGUI_API EditMode SliderFloatEdit(const char* label, float* v, float v_min, float v_max, const char* format = "%.3f", ImGuiSliderFlags flags = 0);     // adjust format to decorate the value with a prefix or a suffix for in-slider labels or unit display.
+IMGUI_API EditMode SliderFloat2Edit(const char* label, float v[2], float v_min, float v_max, const char* format = "%.3f", ImGuiSliderFlags flags = 0);
+IMGUI_API EditMode SliderFloat3Edit(const char* label, float v[3], float v_min, float v_max, const char* format = "%.3f", ImGuiSliderFlags flags = 0);
+IMGUI_API EditMode SliderFloat4Edit(const char* label, float v[4], float v_min, float v_max, const char* format = "%.3f", ImGuiSliderFlags flags = 0);
+IMGUI_API EditMode SliderAngleEdit(const char* label, float* v_rad, float v_degrees_min = -360.0f, float v_degrees_max = +360.0f, const char* format = "%.0f deg", ImGuiSliderFlags flags = 0);
+IMGUI_API EditMode SliderIntEdit(const char* label, int* v, int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0);
+IMGUI_API EditMode SliderInt2Edit(const char* label, int v[2], int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0);
+IMGUI_API EditMode SliderInt3Edit(const char* label, int v[3], int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0);
+IMGUI_API EditMode SliderInt4Edit(const char* label, int v[4], int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0);
+IMGUI_API EditMode SliderScalarEdit(const char* label, ImGuiDataType data_type, void* p_data, const void* p_min, const void* p_max, const char* format = NULL, ImGuiSliderFlags flags = 0);
+IMGUI_API EditMode SliderScalarNEdit(const char* label, ImGuiDataType data_type, void* p_data, int components, const void* p_min, const void* p_max, const char* format = NULL, ImGuiSliderFlags flags = 0);
+IMGUI_API EditMode VSliderFloatEdit(const char* label, const ImVec2& size, float* v, float v_min, float v_max, const char* format = "%.3f", ImGuiSliderFlags flags = 0);
+IMGUI_API EditMode VSliderIntEdit(const char* label, const ImVec2& size, int* v, int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0);
+IMGUI_API EditMode VSliderScalarEdit(const char* label, const ImVec2& size, ImGuiDataType data_type, void* p_data, const void* p_min, const void* p_max, const char* format = NULL, ImGuiSliderFlags flags = 0);
 
 }
 
