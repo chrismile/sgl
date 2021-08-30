@@ -353,7 +353,8 @@ bool ImGui::SliderIntPowerOfTwo(const char* label, int* v, int v_min, int v_max,
     {
         // Only clamp CTRL+Click input when ImGuiSliderFlags_AlwaysClamp is set
         const bool is_clamp_input = (flags & ImGuiSliderFlags_AlwaysClamp) != 0;
-        return TempInputScalar(frame_bb, id, label, ImGuiDataType_S32, &log_v, format, is_clamp_input ? &log_min : NULL, is_clamp_input ? &log_max : NULL);
+        return TempInputScalar(
+                frame_bb, id, label, ImGuiDataType_S32, v, format, is_clamp_input ? &v_min : NULL, is_clamp_input ? &v_max : NULL);
     }
 
     // Draw frame
