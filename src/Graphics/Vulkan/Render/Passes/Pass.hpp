@@ -45,7 +45,7 @@ enum class PassType {
     RASTER_PASS, RAYTRACING_PASS, COMPUTE_PASS, COPY_PASS, BLIT_PASS, CUSTOM_PASS
 };
 
-class Pass {
+class DLL_OBJECT Pass {
 public:
     explicit Pass(sgl::vk::Renderer* renderer);
     virtual ~Pass()=default;
@@ -67,7 +67,7 @@ protected:
     bool dataDirty = true;
 };
 
-class ComputePass : public Pass {
+class DLL_OBJECT ComputePass : public Pass {
 public:
     explicit ComputePass(sgl::vk::Renderer* renderer) : Pass(renderer) {}
     PassType getPassType() override { return PassType::RASTER_PASS; }
@@ -90,7 +90,7 @@ private:
     void _build();
 };
 
-class RasterPass : public Pass {
+class DLL_OBJECT RasterPass : public Pass {
 public:
     explicit RasterPass(sgl::vk::Renderer* renderer) : Pass(renderer) {}
     PassType getPassType() override { return PassType::RASTER_PASS; }
@@ -110,7 +110,7 @@ private:
     void _build();
 };
 
-class RayTracingPass : public Pass {
+class DLL_OBJECT RayTracingPass : public Pass {
 public:
     explicit RayTracingPass(sgl::vk::Renderer* renderer) : Pass(renderer) {}
     PassType getPassType() override { return PassType::RAYTRACING_PASS; }
