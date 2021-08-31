@@ -29,11 +29,12 @@
 #ifndef SGL_RAYTRACINGPIPELINE_HPP
 #define SGL_RAYTRACINGPIPELINE_HPP
 
-#include "ShaderGroupSettings.hpp"
-#include "Pipeline.hpp"
-
+#include <array>
 #include <memory>
 #include <utility>
+
+#include "ShaderGroupSettings.hpp"
+#include "Pipeline.hpp"
 
 namespace sgl { namespace vk {
 
