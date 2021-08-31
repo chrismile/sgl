@@ -577,3 +577,16 @@ EditMode ImGui::VSliderIntEdit(const char* label, const ImVec2& size, int* v, in
 {
     return VSliderScalarEdit(label, size, ImGuiDataType_S32, v, &v_min, &v_max, format, flags);
 }
+
+void ImGui::HelpMarker(const char* label)
+{
+    ImGui::TextDisabled("(?)");
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::BeginTooltip();
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+        ImGui::TextUnformatted(label);
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+    }
+}

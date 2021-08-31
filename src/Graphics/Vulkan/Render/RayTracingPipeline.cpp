@@ -103,7 +103,7 @@ void MissShaderGroup::setMissShader(const std::string& shaderModuleId) {
 HitShaderGroup::HitShaderGroup(ShaderStagesPtr shaderStages, VkRayTracingShaderGroupTypeKHR shaderGroupType)
         : RayTracingShaderGroup(std::move(shaderStages)) {
     if (shaderGroupType != VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR
-    && shaderGroupType != VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR) {
+            && shaderGroupType != VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR) {
         Logfile::get()->throwError(
                 "Error in HitShaderGroup::HitShaderGroup: shaderGroupType must be either "
                 "VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR or "
@@ -220,14 +220,14 @@ void ShaderBindingTable::buildShaderGroups() {
     }
     missGroupsOffset = rayGenGroupStride * uint32_t(rayGenShaderGroups.size());
     hitGroupsOffset = missGroupsOffset + missGroupStride * uint32_t(missShaderGroups.size());
-    callableGroupsOffset = hitGroupsOffset + callableGroupStride * uint32_t(callableShaderGroups.size());
+    callableGroupsOffset = hitGroupsOffset + hitGroupStride * uint32_t(hitShaderGroups.size());
 
     for (RayTracingShaderGroupPtr& shaderGroup : rayGenShaderGroups) {
         shaderGroups.push_back(shaderGroup->getShaderGroupCreateInfo());
     }
     for (RayTracingShaderGroupPtr& shaderGroup : missShaderGroups) {
         shaderGroups.push_back(shaderGroup->getShaderGroupCreateInfo());
-  }
+    }
     for (RayTracingShaderGroupPtr& shaderGroup : hitShaderGroups) {
         shaderGroups.push_back(shaderGroup->getShaderGroupCreateInfo());
     }

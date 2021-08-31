@@ -162,7 +162,7 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
             VkAccelerationStructureKHR accelerationStructure = blas->getAccelerationStructure();
             vkCmdWriteAccelerationStructuresPropertiesKHR(
                     commandBuffer, 1, &accelerationStructure,
-                    VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, queryPool, blasIdx);
+                    VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, queryPool, uint32_t(blasIdx));
         }
     }
     device->endSingleTimeMultipleCommands(commandBuffers);

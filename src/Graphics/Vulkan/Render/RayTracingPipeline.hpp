@@ -59,8 +59,6 @@ public:
      * - #extension GL_EXT_buffer_reference2 : require
      * - #extension GL_EXT_scalar_block_layout : enable
      * - #extension GL_EXT_nonuniform_qualifier : enable
-     * - #extension GL_EXT_buffer_reference2 : require
-     * - #extension GL_EXT_buffer_reference2 : require
      */
     void setShaderRecordData(void* data, uint32_t size);
 
