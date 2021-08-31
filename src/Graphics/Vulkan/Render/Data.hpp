@@ -29,6 +29,7 @@
 #ifndef SGL_DATA_HPP
 #define SGL_DATA_HPP
 
+#include <array>
 #include <memory>
 #include "../libs/volk/volk.h"
 
