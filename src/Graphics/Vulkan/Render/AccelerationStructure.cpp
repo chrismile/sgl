@@ -75,7 +75,7 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
         const BottomLevelAccelerationStructureInputList& blasInputs = blasInputsList.at(blasIdx);
         std::vector<uint32_t> numPrimitivesList(blasInputs.size());
         for (size_t inputIdx = 0; inputIdx < blasInputs.size(); inputIdx++) {
-            numPrimitivesList.at(inputIdx) = blasInputs.at(inputIdx)->getNumPrimitives();
+            numPrimitivesList.at(inputIdx) = uint32_t(blasInputs.at(inputIdx)->getNumPrimitives());
         }
 
         // Query the memory requirements for the bottom-level acceleration structure.
@@ -124,7 +124,7 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
 
     VkQueryPoolCreateInfo queryPoolCreateInfo{};
     queryPoolCreateInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
-    queryPoolCreateInfo.queryCount = numBlases;
+    queryPoolCreateInfo.queryCount = uint32_t(numBlases);
     queryPoolCreateInfo.queryType  = VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR;
 
     VkQueryPool queryPool = VK_NULL_HANDLE;
@@ -262,13 +262,13 @@ void TrianglesAccelerationStructureInput::setIndexBuffer(
     this->numIndices = buffer->getSizeInBytes() / getIndexTypeByteSize(indexType);
 
     buildRangeInfo.firstVertex = 0;
-    buildRangeInfo.primitiveCount = numIndices / 3;
+    buildRangeInfo.primitiveCount = uint32_t(numIndices / 3);
     buildRangeInfo.primitiveOffset = 0;
     buildRangeInfo.transformOffset = 0;
 
     VkAccelerationStructureGeometryTrianglesDataKHR& trianglesData = asGeometry.geometry.triangles;
     trianglesData.indexType = indexType;
-    trianglesData.indexData = { .deviceAddress = indexBuffer->getVkDeviceAddress() };
+    trianglesData.indexData.deviceAddress = indexBuffer->getVkDeviceAddress();
 }
 
 void TrianglesAccelerationStructureInput::setVertexBuffer(
@@ -292,9 +292,9 @@ void TrianglesAccelerationStructureInput::setVertexBuffer(
 
     VkAccelerationStructureGeometryTrianglesDataKHR& trianglesData = asGeometry.geometry.triangles;
     trianglesData.vertexFormat = this->vertexFormat;
-    trianglesData.vertexData = { .deviceAddress = vertexBuffer->getVkDeviceAddress() };
+    trianglesData.vertexData.deviceAddress = vertexBuffer->getVkDeviceAddress();
     trianglesData.vertexStride = this->vertexStride;
-    trianglesData.maxVertex = this->numVertices;
+    trianglesData.maxVertex = uint32_t(this->numVertices);
 }
 
 
@@ -313,8 +313,8 @@ void AabbsAccelerationStructureInput::setAabbsBuffer(BufferPtr& buffer, VkDevice
 
     VkAccelerationStructureGeometryAabbsDataKHR& aabbsData = asGeometry.geometry.aabbs;
     aabbsData.stride = aabbsBufferStride;
-    aabbsData.data = { .deviceAddress = aabbsBuffer->getVkDeviceAddress() };
-    buildRangeInfo.primitiveCount = numAabbs;
+    aabbsData.data.deviceAddress = aabbsBuffer->getVkDeviceAddress();
+    buildRangeInfo.primitiveCount = uint32_t(numAabbs);
 }
 
 
