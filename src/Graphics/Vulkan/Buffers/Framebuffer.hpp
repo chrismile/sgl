@@ -78,6 +78,9 @@ public:
      * The color attachment at the specified index can be used in GLSL as: layout(location = [index]) out [type] [name];
      * @param imageView The image view to use as an attachment.
      * @param index The index of the attachment.
+     * @param attachmentState The state of the attachment specifying, e.g., the load and store operations and initial
+     * and final image layout.
+     * @param clearColor The clear color to use if VK_ATTACHMENT_LOAD_OP_CLEAR is used for loadOp.
      */
     void setColorAttachment(
             ImageViewPtr& attachmentImageView, int index,
@@ -90,14 +93,18 @@ public:
         }
         colorAttachments.at(index) = attachmentImageView;
         colorAttachmentStates.at(index) = attachmentState;
-        colorAttachmentClearValues.at(index).color = { {
-            clearColor.x, clearColor.y, clearColor.z, clearColor.w } };
+        colorAttachmentClearValues.at(index).color =
+                { { clearColor.x, clearColor.y, clearColor.z, clearColor.w } };
     }
 
     /**
      * Sets the depth-stencil attachment.
      * This function may only be called before a call to @see build or @see getVkFramebuffer.
      * @param imageView The image view to use as an attachment.
+     * @param attachmentState The state of the attachment specifying, e.g., the load and store operations and initial
+     * and final image layout.
+     * @param clearDepth The clear depth to use if VK_ATTACHMENT_LOAD_OP_CLEAR is used for loadOp.
+     * @param clearStencil The clear stencil value to use if VK_ATTACHMENT_LOAD_OP_CLEAR is used for stencilLoadOp.
      */
     inline void setDepthStencilAttachment(
             ImageViewPtr& attachmentImageView,
@@ -111,6 +118,8 @@ public:
      * Sets the resolve attachment.
      * This function may only be called before a call to @see build or @see getVkFramebuffer.
      * @param imageView The image view to use as an attachment.
+     * @param attachmentState The state of the attachment specifying, e.g., the load and store operations and initial
+     * and final image layout.
      */
     inline void setResolveAttachment(
             ImageViewPtr& attachmentImageView,
@@ -123,8 +132,10 @@ public:
      * This function may only be called before a call to @see build or @see getVkFramebuffer.
      * @param imageView The image view to use as an attachment.
      * @param index The index of the attachment.
+     * @param attachmentState The state of the attachment specifying, e.g., the load and store operations and initial
+     * and final image layout.
      */
-    void setInputAttachment(
+    inline void setInputAttachment(
             ImageViewPtr& attachmentImageView, int index,
             const AttachmentState& attachmentState = AttachmentState::standardColorAttachment()) {
         if (int(inputAttachments.size()) <= index) {
@@ -133,6 +144,35 @@ public:
         }
         inputAttachments.at(index) = attachmentImageView;
         inputAttachmentStates.at(index) = attachmentState;
+    }
+
+    /**
+     * Sets the clear color of the color attachment at the specified index.
+     * @param index The index of the attachment.
+     * @param clearColor The clear color to use if VK_ATTACHMENT_LOAD_OP_CLEAR is used for loadOp.
+     */
+    inline void setClearColor(int index, const glm::vec4& clearColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)) {
+        if (size_t(index) >= colorAttachmentClearValues.size()) {
+            return;
+        }
+        colorAttachmentClearValues.at(index).color =
+                { { clearColor.x, clearColor.y, clearColor.z, clearColor.w } };
+        if (framebuffer != VK_NULL_HANDLE) {
+            clearValues.at(index) = colorAttachmentClearValues.at(index);
+        }
+    }
+
+    /**
+     * Sets the clear depth and stencil value of the depth-stencil attachment.
+     * @param clearDepth The clear depth to use if VK_ATTACHMENT_LOAD_OP_CLEAR is used for loadOp.
+     * @param clearStencil The clear stencil value to use if VK_ATTACHMENT_LOAD_OP_CLEAR is used for stencilLoadOp.
+     */
+    inline void setDepthStencilValue(float clearDepth = 1.0f, uint32_t clearStencil = 0) {
+        depthStencilAttachmentClearValue.depthStencil = { clearDepth, clearStencil };
+        if (framebuffer != VK_NULL_HANDLE) {
+            size_t index = colorAttachments.size() + inputAttachments.size();
+            clearValues.at(index) = depthStencilAttachmentClearValue;
+        }
     }
 
     /**
