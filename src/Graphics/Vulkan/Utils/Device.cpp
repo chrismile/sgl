@@ -180,7 +180,6 @@ bool isDeviceSuitable(
                 deviceExtensions.push_back(extensionName);
             }
         }
-        deviceExtensionsSet.insert(optionalDeviceExtensions.begin(), optionalDeviceExtensions.end());
     }
 
     return isSuitable;

@@ -477,19 +477,47 @@ void Renderer::insertBufferMemoryBarrier(
             commandBuffer, srcStageMask, dstStageMask, 0, 1, &memoryBarrier, 1, &bufferMemoryBarrier, 0, nullptr);
 }
 
+void Renderer::insertBufferMemoryBarrier(
+        VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+        VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+        uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex,
+        BufferPtr& buffer) {
+    VkMemoryBarrier memoryBarrier{};
+    memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+    memoryBarrier.srcAccessMask = srcAccessMask;
+    memoryBarrier.dstAccessMask = dstAccessMask;
+
+    VkBufferMemoryBarrier bufferMemoryBarrier{};
+    bufferMemoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    bufferMemoryBarrier.srcAccessMask = srcAccessMask;
+    bufferMemoryBarrier.dstAccessMask = dstAccessMask;
+    bufferMemoryBarrier.srcQueueFamilyIndex = srcQueueFamilyIndex;
+    bufferMemoryBarrier.dstQueueFamilyIndex = dstQueueFamilyIndex;
+    bufferMemoryBarrier.buffer = buffer->getVkBuffer();
+    bufferMemoryBarrier.size = buffer->getSizeInBytes();
+
+    vkCmdPipelineBarrier(
+            commandBuffer, srcStageMask, dstStageMask, 0, 1, &memoryBarrier, 1, &bufferMemoryBarrier, 0, nullptr);
+}
+
 void Renderer::submitToQueue(
-        SemaphorePtr& waitSemaphore, SemaphorePtr& signalSemaphore, FencePtr& fence, VkPipelineStageFlags waitStage) {
-    VkSemaphore waitSemaphoreVk = waitSemaphore->getVkSemaphore();
-    VkSemaphore signalSemaphoreVk = signalSemaphore->getVkSemaphore();
+        const SemaphorePtr& waitSemaphore, const SemaphorePtr& signalSemaphore, const FencePtr& fence,
+        VkPipelineStageFlags waitStage) {
+    VkSemaphore waitSemaphoreVk = waitSemaphore ? waitSemaphore->getVkSemaphore() : VK_NULL_HANDLE;
+    VkSemaphore signalSemaphoreVk = signalSemaphore ? signalSemaphore->getVkSemaphore() : VK_NULL_HANDLE;
     VkFence fenceVk = fence ? fence->getVkFence() : VK_NULL_HANDLE;
 
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = &waitSemaphoreVk;
+    if (waitSemaphoreVk) {
+        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.pWaitSemaphores = &waitSemaphoreVk;
+    }
     submitInfo.pWaitDstStageMask = &waitStage;
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = &signalSemaphoreVk;
+    if (signalSemaphoreVk) {
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = &signalSemaphoreVk;
+    }
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
 
@@ -501,17 +529,18 @@ void Renderer::submitToQueue(
 }
 
 void Renderer::submitToQueue(
-        std::vector<SemaphorePtr>& waitSemaphores, std::vector<SemaphorePtr>& signalSemaphores, FencePtr& fence,
+        const std::vector<SemaphorePtr>& waitSemaphores, const std::vector<SemaphorePtr>& signalSemaphores,
+        const FencePtr& fence,
         const std::vector<VkPipelineStageFlags>& waitStages) {
     std::vector<VkSemaphore> waitSemaphoresVk;
     waitSemaphoresVk.reserve(waitSemaphores.size());
-    for (SemaphorePtr& semaphore : waitSemaphores) {
+    for (const SemaphorePtr& semaphore : waitSemaphores) {
         waitSemaphoresVk.push_back(semaphore->getVkSemaphore());
     }
 
     std::vector<VkSemaphore> signalSemaphoresVk;
     signalSemaphoresVk.reserve(signalSemaphores.size());
-    for (SemaphorePtr& semaphore : signalSemaphores) {
+    for (const SemaphorePtr& semaphore : signalSemaphores) {
         signalSemaphoresVk.push_back(semaphore->getVkSemaphore());
     }
 

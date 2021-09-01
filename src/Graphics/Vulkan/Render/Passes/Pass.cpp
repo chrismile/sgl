@@ -44,6 +44,12 @@ void ComputePass::render() {
     _render();
 }
 
+void ComputePass::buildIfNecessary() {
+    if (shaderDirty || dataDirty) {
+        _build();
+    }
+}
+
 void ComputePass::_render() {
     renderer->dispatch(computeData, groupCountX, groupCountY, groupCountZ);
 }
@@ -70,6 +76,12 @@ void RasterPass::render() {
         _build();
     }
     _render();
+}
+
+void RasterPass::buildIfNecessary() {
+    if (shaderDirty || framebufferDirty || dataDirty) {
+        _build();
+    }
 }
 
 void RasterPass::_render() {
@@ -104,6 +116,12 @@ void RayTracingPass::render() {
         _build();
     }
     _render();
+}
+
+void RayTracingPass::buildIfNecessary() {
+    if (shaderDirty || dataDirty) {
+        _build();
+    }
 }
 
 void RayTracingPass::_render() {

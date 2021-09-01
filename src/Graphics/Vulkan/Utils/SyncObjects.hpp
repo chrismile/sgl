@@ -47,7 +47,7 @@ public:
     void signalSemaphoreVk();
     void waitSemaphoreVk();
 
-    inline VkSemaphore getVkSemaphore() { return semaphoreVk; }
+    inline VkSemaphore getVkSemaphore() const { return semaphoreVk; }
 
 protected:
     Semaphore() = default;

@@ -52,6 +52,7 @@ public:
     virtual PassType getPassType()=0;
 
     virtual void render()=0;
+    virtual void buildIfNecessary()=0;
     virtual void recreateSwapchain(uint32_t width, uint32_t height) {}
 
     inline void setShaderDirty() { shaderDirty = true; }
@@ -74,7 +75,8 @@ public:
 
     inline sgl::vk::ShaderModulePtr& getShaderModule() { return shaderStages->getShaderModules().front(); }
 
-    void render() override;
+    void render() final;
+    void buildIfNecessary() final;
 
 protected:
     virtual void setComputePipelineInfo(sgl::vk::ComputePipelineInfo& pipelineInfo) {}
@@ -96,6 +98,7 @@ public:
     PassType getPassType() override { return PassType::RASTER_PASS; }
 
     void render() final;
+    void buildIfNecessary() final;
 
 protected:
     virtual void setGraphicsPipelineInfo(sgl::vk::GraphicsPipelineInfo& pipelineInfo)=0;
@@ -116,6 +119,7 @@ public:
     PassType getPassType() override { return PassType::RAYTRACING_PASS; }
 
     void render() final;
+    void buildIfNecessary() final;
 
     /**
      * Sets launchSizeX and launchSizeY to the screen width and height.

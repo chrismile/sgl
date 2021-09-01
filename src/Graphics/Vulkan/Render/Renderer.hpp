@@ -114,6 +114,11 @@ public:
             VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
             VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
             BufferPtr& buffer);
+    void insertBufferMemoryBarrier(
+            VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+            VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+            uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex,
+            BufferPtr& buffer);
 
     /**
      * For headless rendering without a swapchain.
@@ -123,7 +128,7 @@ public:
      * @param waitStage The pipeline stages to wait on.
      */
     void submitToQueue(
-            SemaphorePtr& waitSemaphore, SemaphorePtr& signalSemaphore, FencePtr& fence,
+            const SemaphorePtr& waitSemaphore, const SemaphorePtr& signalSemaphore, const FencePtr& fence,
             VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
     /**
      * For headless rendering without a swapchain.
@@ -133,7 +138,8 @@ public:
      * @param waitStages An array of pipeline stages to wait on.
      */
     void submitToQueue(
-            std::vector<SemaphorePtr>& waitSemaphores, std::vector<SemaphorePtr>& signalSemaphores, FencePtr& fence,
+            const std::vector<SemaphorePtr>& waitSemaphores, const std::vector<SemaphorePtr>& signalSemaphores,
+            const FencePtr& fence,
             const std::vector<VkPipelineStageFlags>& waitStages = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT });
     /**
      * For headless rendering without a swapchain. This command waits for the queue to become idle manually.
