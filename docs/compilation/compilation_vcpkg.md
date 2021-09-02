@@ -12,6 +12,7 @@ git clone https://github.com/microsoft/vcpkg
 As the first step, call the following command in the directory which vcpkg has been cloned to.
 
 ```
+export VCPKG_HOME=$(pwd)
 ./bootstrap-vcpkg.sh -disableMetrics
 ```
 

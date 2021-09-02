@@ -103,6 +103,8 @@ if (${SUPPORT_VULKAN} AND ${Vulkan_FOUND})
     target_compile_definitions(sgl PUBLIC VK_NO_PROTOTYPES)
     #target_link_libraries(sgl PUBLIC ${Vulkan_LIBRARIES})
     if(VCPKG_TOOLCHAIN)
+        # Fix for CMake generators with debug/release configuration available at the same time (e.g., Visual Studio).
+        # For more details see: https://github.com/Microsoft/vcpkg/issues/2979
         find_path(VCPKG_INSTALL_ROOT_DIR include/spirv-tools/libspirv.h)
         find_path(VCPKG_INCLUDE_DIR spirv-tools/libspirv.h)
         set(VCPKG_DEBUG_LIB_DIR ${VCPKG_INSTALL_ROOT_DIR}/debug/lib)
