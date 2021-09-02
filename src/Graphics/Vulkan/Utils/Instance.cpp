@@ -188,12 +188,20 @@ void Instance::initializeInstanceExtensionList() {
     uint32_t availableInstanceExtensionCount = 0;
     VkResult res = vkEnumerateInstanceExtensionProperties(
             nullptr, &availableInstanceExtensionCount, nullptr);
-    assert(res == VK_SUCCESS);
+    if (res != VK_SUCCESS) {
+        sgl::Logfile::get()->throwError(
+                "Error in Instance::initializeInstanceExtensionList: "
+                "vkEnumerateInstanceExtensionProperties failed!");
+    }
 
     if (availableInstanceExtensionCount > 0) {
         VkExtensionProperties* instanceExtensions = new VkExtensionProperties[availableInstanceExtensionCount];
         res = vkEnumerateInstanceExtensionProperties(nullptr, &availableInstanceExtensionCount, instanceExtensions);
-        assert(res == VK_SUCCESS);
+        if (res != VK_SUCCESS) {
+            sgl::Logfile::get()->throwError(
+                    "Error in Instance::initializeInstanceExtensionList: "
+                    "vkEnumerateInstanceExtensionProperties failed!");
+        }
 
         for (uint32_t i = 0; i < availableInstanceExtensionCount; i++) {
             availableInstanceExtensionNames.insert(instanceExtensions[i].extensionName);
