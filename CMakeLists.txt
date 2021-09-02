@@ -316,3 +316,9 @@ install(
         FILES "${CMAKE_CURRENT_BINARY_DIR}/sgl/sglConfig.cmake"
         DESTINATION ${ConfigPackageLocation}
 )
+if (WIN32 AND ((CMAKE_CXX_COMPILER_ID STREQUAL "MSVC") OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")))
+    install(
+            FILES $<TARGET_PDB_FILE:sgl>
+            DESTINATION bin OPTIONAL
+    )
+endif()
