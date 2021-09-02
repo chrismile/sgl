@@ -70,14 +70,14 @@ class Instance;
 
 struct DLL_OBJECT DeviceFeatures {
     DeviceFeatures() {
-        deviceBufferDeviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
+        bufferDeviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
         scalarBlockLayoutFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES;
         accelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
         rayTracingPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
         rayQueryFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
     }
     VkPhysicalDeviceFeatures requestedPhysicalDeviceFeatures{};
-    VkPhysicalDeviceBufferDeviceAddressFeatures deviceBufferDeviceAddressFeatures{};
+    VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures{};
     VkPhysicalDeviceScalarBlockLayoutFeatures scalarBlockLayoutFeatures{};
     VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures{};
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures{};
@@ -130,7 +130,8 @@ public:
     inline VkPhysicalDeviceRayTracingPipelinePropertiesKHR getPhysicalDeviceRayTracingPipelineProperties() const {
         return rayTracingPipelineProperties;
     }
-    inline bool getRaytracingSupported() const { return isRaytracingSupported; }
+    inline bool getRayQueriesSupported() const { return deviceRayQueryFeatures.rayQuery == VK_TRUE; }
+    inline bool getRayTracingPipelineSupported() const { return rayTracingPipelineFeatures.rayTracingPipeline == VK_TRUE; }
     VkSampleCountFlagBits getMaxUsableSampleCount() const;
 
     /**
@@ -174,6 +175,24 @@ private:
     /// Returns whether the device extension is available in general (not necessarily enabled).
     bool isDeviceExtensionAvailable(const std::string &extensionName);
 
+    void createLogicalDeviceAndQueues(
+            VkPhysicalDevice physicalDevice, bool useValidationLayer, const std::vector<const char*>& layerNames,
+            const std::vector<const char*>& deviceExtensions, const std::set<std::string>& deviceExtensionsSet,
+            DeviceFeatures requestedDeviceFeatures, bool computeOnly);
+    uint32_t findQueueFamilies(VkPhysicalDevice physicalDevice, VkQueueFlagBits queueFlags);
+    bool isDeviceSuitable(
+            VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+            const std::vector<const char*>& requiredDeviceExtensions,
+            const std::vector<const char*>& optionalDeviceExtensions,
+            std::set<std::string>& deviceExtensionsSet, std::vector<const char*>& deviceExtensions,
+            const DeviceFeatures& requestedDeviceFeatures, bool computeOnly);
+    VkPhysicalDevice createPhysicalDeviceBinding(
+            VkSurfaceKHR surface,
+            const std::vector<const char*>& requiredDeviceExtensions,
+            const std::vector<const char*>& optionalDeviceExtensions,
+            std::set<std::string>& deviceExtensionsSet, std::vector<const char*>& deviceExtensions,
+            const DeviceFeatures& requestedDeviceFeatures, bool computeOnly);
+
     void _getDeviceInformation();
 
     // Internal implementations.
@@ -200,9 +219,13 @@ private:
 
     // Ray tracing information.
     VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties{};
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures{};
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties{};
-    bool isRaytracingSupported = false;
+
+    VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures{};
+    VkPhysicalDeviceScalarBlockLayoutFeatures scalarBlockLayoutFeatures{};
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures{};
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures{};
+    VkPhysicalDeviceRayQueryFeaturesKHR deviceRayQueryFeatures{};
 
     // Queues for the logical device.
     uint32_t graphicsQueueIndex;

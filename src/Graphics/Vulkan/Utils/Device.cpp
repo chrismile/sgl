@@ -80,12 +80,12 @@ bool Device::isDeviceExtensionAvailable(const std::string &extensionName) {
 }
 
 
-uint32_t findQueueFamilies(VkPhysicalDevice device, VkQueueFlagBits queueFlags) {
+uint32_t Device::findQueueFamilies(VkPhysicalDevice physicalDevice, VkQueueFlagBits queueFlags) {
     uint32_t queueFamilyCount = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
 
     std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
 
     // Get the best fitting queue family (i.e., no more flags than necessary).
     uint32_t bestFittingQueueIdx = std::numeric_limits<uint32_t>::max();
@@ -109,8 +109,8 @@ uint32_t findQueueFamilies(VkPhysicalDevice device, VkQueueFlagBits queueFlags) 
     return bestFittingQueueIdx;
 }
 
-bool isDeviceSuitable(
-        VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, bool openGlInteropEnabled,
+bool Device::isDeviceSuitable(
+        VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
         const std::vector<const char*>& requiredDeviceExtensions,
         const std::vector<const char*>& optionalDeviceExtensions,
         std::set<std::string>& deviceExtensionsSet, std::vector<const char*>& deviceExtensions,
@@ -185,14 +185,14 @@ bool isDeviceSuitable(
     return isSuitable;
 }
 
-VkPhysicalDevice createPhysicalDeviceBinding(
-        VkInstance instance, VkSurfaceKHR surface, bool openGlInteropEnabled,
+VkPhysicalDevice Device::createPhysicalDeviceBinding(
+        VkSurfaceKHR surface,
         const std::vector<const char*>& requiredDeviceExtensions,
         const std::vector<const char*>& optionalDeviceExtensions,
         std::set<std::string>& deviceExtensionsSet, std::vector<const char*>& deviceExtensions,
         const DeviceFeatures& requestedDeviceFeatures, bool computeOnly) {
     uint32_t numPhysicalDevices = 0;
-    VkResult res = vkEnumeratePhysicalDevices(instance, &numPhysicalDevices, NULL);
+    VkResult res = vkEnumeratePhysicalDevices(instance->getVkInstance(), &numPhysicalDevices, nullptr);
     if (res != VK_SUCCESS) {
         Logfile::get()->throwError(
                 "Error in createPhysicalDeviceBinding: vkEnumeratePhysicalDevices failed!");
@@ -203,18 +203,18 @@ VkPhysicalDevice createPhysicalDeviceBinding(
     }
 
     std::vector<VkPhysicalDevice> physicalDevices(numPhysicalDevices);
-    res = vkEnumeratePhysicalDevices(instance, &numPhysicalDevices, physicalDevices.data());
+    res = vkEnumeratePhysicalDevices(instance->getVkInstance(), &numPhysicalDevices, physicalDevices.data());
     assert(!res);
 
     deviceExtensionsSet = {requiredDeviceExtensions.begin(), requiredDeviceExtensions.end()};
     deviceExtensions.insert(deviceExtensions.end(), requiredDeviceExtensions.begin(), requiredDeviceExtensions.end());
 
-    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-    for (const auto &device : physicalDevices) {
+    physicalDevice = VK_NULL_HANDLE;
+    for (const auto &physicalDeviceIt : physicalDevices) {
         if (isDeviceSuitable(
-                device, surface, openGlInteropEnabled, requiredDeviceExtensions, optionalDeviceExtensions,
+                physicalDeviceIt, surface, requiredDeviceExtensions, optionalDeviceExtensions,
                 deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures, computeOnly)) {
-            physicalDevice = device;
+            physicalDevice = physicalDeviceIt;
             break;
         }
     }
@@ -228,36 +228,69 @@ VkPhysicalDevice createPhysicalDeviceBinding(
     return physicalDevice;
 }
 
-struct LogicalDeviceAndQueues {
-    VkDevice device;
-    uint32_t graphicsQueueIndex;
-    uint32_t computeQueueIndex;
-    VkQueue graphicsQueue;
-    VkQueue computeQueue;
-};
-LogicalDeviceAndQueues createLogicalDeviceAndQueues(
+void Device::createLogicalDeviceAndQueues(
         VkPhysicalDevice physicalDevice, bool useValidationLayer, const std::vector<const char*>& layerNames,
         const std::vector<const char*>& deviceExtensions, const std::set<std::string>& deviceExtensionsSet,
         DeviceFeatures requestedDeviceFeatures, bool computeOnly) {
     if (deviceExtensionsSet.find(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME) != deviceExtensionsSet.end()) {
-        requestedDeviceFeatures.deviceBufferDeviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
+        bufferDeviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &bufferDeviceAddressFeatures;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        if (requestedDeviceFeatures.bufferDeviceAddressFeatures.bufferDeviceAddress == VK_FALSE) {
+            requestedDeviceFeatures.bufferDeviceAddressFeatures = bufferDeviceAddressFeatures;
+        }
     }
     if (deviceExtensionsSet.find(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME) != deviceExtensionsSet.end()) {
-        requestedDeviceFeatures.scalarBlockLayoutFeatures.scalarBlockLayout = VK_TRUE;
+        scalarBlockLayoutFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES;
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &scalarBlockLayoutFeatures;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        if (requestedDeviceFeatures.scalarBlockLayoutFeatures.scalarBlockLayout == VK_FALSE) {
+            requestedDeviceFeatures.scalarBlockLayoutFeatures = scalarBlockLayoutFeatures;
+        }
     }
     if (deviceExtensionsSet.find(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) != deviceExtensionsSet.end()) {
-        requestedDeviceFeatures.accelerationStructureFeatures.accelerationStructure = VK_TRUE;
+        accelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &accelerationStructureFeatures;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        if (requestedDeviceFeatures.accelerationStructureFeatures.accelerationStructure == VK_FALSE) {
+            requestedDeviceFeatures.accelerationStructureFeatures = accelerationStructureFeatures;
+        }
     }
     if (deviceExtensionsSet.find(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) != deviceExtensionsSet.end()) {
-        requestedDeviceFeatures.rayTracingPipelineFeatures.rayTracingPipeline = VK_TRUE;
+        rayTracingPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &rayTracingPipelineFeatures;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        if (requestedDeviceFeatures.rayTracingPipelineFeatures.rayTracingPipeline == VK_FALSE) {
+            requestedDeviceFeatures.rayTracingPipelineFeatures = rayTracingPipelineFeatures;
+        }
     }
     if (deviceExtensionsSet.find(VK_KHR_RAY_QUERY_EXTENSION_NAME) != deviceExtensionsSet.end()) {
-        requestedDeviceFeatures.rayQueryFeatures.rayQuery = VK_TRUE;
+        deviceRayQueryFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &deviceRayQueryFeatures;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        if (requestedDeviceFeatures.rayQueryFeatures.rayQuery == VK_FALSE) {
+            requestedDeviceFeatures.rayQueryFeatures = deviceRayQueryFeatures;
+        }
     }
 
-    uint32_t graphicsQueueIndex = findQueueFamilies(
-                physicalDevice, static_cast<VkQueueFlagBits>(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT));
-    uint32_t computeQueueIndex = findQueueFamilies(
+    graphicsQueueIndex = findQueueFamilies(
+            physicalDevice, static_cast<VkQueueFlagBits>(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT));
+    computeQueueIndex = findQueueFamilies(
             physicalDevice, static_cast<VkQueueFlagBits>(VK_QUEUE_COMPUTE_BIT));
 
     float queuePriority = 1.0;
@@ -297,9 +330,9 @@ LogicalDeviceAndQueues createLogicalDeviceAndQueues(
     }
 
     const void** pNextPtr = &deviceInfo.pNext;
-    if (requestedDeviceFeatures.deviceBufferDeviceAddressFeatures.bufferDeviceAddress) {
-        *pNextPtr = &requestedDeviceFeatures.deviceBufferDeviceAddressFeatures;
-        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.deviceBufferDeviceAddressFeatures.pNext);
+    if (requestedDeviceFeatures.bufferDeviceAddressFeatures.bufferDeviceAddress) {
+        *pNextPtr = &requestedDeviceFeatures.bufferDeviceAddressFeatures;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.bufferDeviceAddressFeatures.pNext);
     }
     if (requestedDeviceFeatures.scalarBlockLayoutFeatures.scalarBlockLayout) {
         *pNextPtr = &requestedDeviceFeatures.scalarBlockLayoutFeatures;
@@ -318,25 +351,17 @@ LogicalDeviceAndQueues createLogicalDeviceAndQueues(
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.rayQueryFeatures.pNext);
     }
 
-    VkDevice device;
     VkResult res = vkCreateDevice(physicalDevice, &deviceInfo, nullptr, &device);
     if (res != VK_SUCCESS) {
         Logfile::get()->throwError("Error in createLogicalDeviceAndQueues: vkCreateDevice failed!");
     }
 
-    VkQueue graphicsQueue = VK_NULL_HANDLE, computeQueue = VK_NULL_HANDLE;
+    graphicsQueue = VK_NULL_HANDLE;
+    computeQueue = VK_NULL_HANDLE;
     if (!computeOnly) {
         vkGetDeviceQueue(device, graphicsQueueIndex, 0, &graphicsQueue);
     }
     vkGetDeviceQueue(device, computeQueueIndex, 0, &computeQueue);
-
-    LogicalDeviceAndQueues logicalDeviceAndQueues{};
-    logicalDeviceAndQueues.device = device;
-    logicalDeviceAndQueues.graphicsQueueIndex = graphicsQueueIndex;
-    logicalDeviceAndQueues.computeQueueIndex = computeQueueIndex;
-    logicalDeviceAndQueues.graphicsQueue = graphicsQueue;
-    logicalDeviceAndQueues.computeQueue = computeQueue;
-    return logicalDeviceAndQueues;
 }
 
 void createVulkanMemoryAllocator(
@@ -367,13 +392,6 @@ void Device::_getDeviceInformation() {
         deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
         deviceProperties2.pNext = &accelerationStructureProperties;
         vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
-
-        accelerationStructureFeatures = {};
-        accelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
-        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
-        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-        deviceFeatures2.pNext = &accelerationStructureFeatures;
-        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
     }
     if (isDeviceExtensionSupported(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME)) {
         rayTracingPipelineProperties = {};
@@ -383,9 +401,6 @@ void Device::_getDeviceInformation() {
         deviceProperties2.pNext = &rayTracingPipelineProperties;
         vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
     }
-    isRaytracingSupported =
-            isDeviceExtensionSupported(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)
-            && isDeviceExtensionSupported(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
 }
 
 void Device::createDeviceSwapchain(
@@ -401,21 +416,16 @@ void Device::createDeviceSwapchain(
     VkSurfaceKHR surface = window->getVkSurface();
     std::vector<const char*> deviceExtensions;
     physicalDevice = createPhysicalDeviceBinding(
-            instance->getVkInstance(), surface, openGlInteropEnabled, requiredDeviceExtensions,
-            optionalDeviceExtensions, deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures, computeOnly);
+            surface, requiredDeviceExtensions, optionalDeviceExtensions,
+            deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures, computeOnly);
     initializeDeviceExtensionList(physicalDevice);
     printAvailableDeviceExtensionList();
 
     _getDeviceInformation();
 
-    auto deviceQueuePair = createLogicalDeviceAndQueues(
+    createLogicalDeviceAndQueues(
             physicalDevice, instance->getUseValidationLayer(), instance->getInstanceLayerNames(), deviceExtensions,
             deviceExtensionsSet, requestedDeviceFeatures, computeOnly);
-    device = deviceQueuePair.device;
-    graphicsQueueIndex = deviceQueuePair.graphicsQueueIndex;
-    computeQueueIndex = deviceQueuePair.computeQueueIndex;
-    graphicsQueue = deviceQueuePair.graphicsQueue;
-    computeQueue = deviceQueuePair.computeQueue;
 
     std::string deviceExtensionString;
     for (size_t i = 0; i < deviceExtensions.size(); i++) {
@@ -440,21 +450,16 @@ void Device::createDeviceHeadless(
 
     std::vector<const char*> deviceExtensions;
     physicalDevice = createPhysicalDeviceBinding(
-            instance->getVkInstance(), nullptr, openGlInteropEnabled, requiredDeviceExtensions,
-            optionalDeviceExtensions, deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures, computeOnly);
+            nullptr, requiredDeviceExtensions, optionalDeviceExtensions,
+            deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures, computeOnly);
     initializeDeviceExtensionList(physicalDevice);
     printAvailableDeviceExtensionList();
 
     _getDeviceInformation();
 
-    auto deviceQueuePair = createLogicalDeviceAndQueues(
+    createLogicalDeviceAndQueues(
             physicalDevice, instance->getUseValidationLayer(), instance->getInstanceLayerNames(), deviceExtensions,
             deviceExtensionsSet, requestedDeviceFeatures, computeOnly);
-    device = deviceQueuePair.device;
-    graphicsQueueIndex = deviceQueuePair.graphicsQueueIndex;
-    computeQueueIndex = deviceQueuePair.computeQueueIndex;
-    graphicsQueue = deviceQueuePair.graphicsQueue;
-    computeQueue = deviceQueuePair.computeQueue;
 
     std::string deviceExtensionString;
     for (size_t i = 0; i < deviceExtensions.size(); i++) {

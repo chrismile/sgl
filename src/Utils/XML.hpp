@@ -30,8 +30,10 @@
 #define UTILS_XML_HPP_
 
 #include <string>
-#include <cassert>
 #include <functional>
+#include <utility>
+#include <cassert>
+
 #include <tinyxml2.h>
 
 using namespace tinyxml2;
@@ -69,7 +71,7 @@ DLL_OBJECT void pushAttributeNotEqual(
 typedef std::function<bool(tinyxml2::XMLElement*)> XMLItFilterFunc;
 struct DLL_OBJECT XMLItFilter {
 public:
-    XMLItFilter(std::function<bool(tinyxml2::XMLElement*)> f) { filterFunc = f; }
+    explicit XMLItFilter(std::function<bool(tinyxml2::XMLElement*)> f) { filterFunc = std::move(f); }
     XMLItFilter() : XMLItFilter([](tinyxml2::XMLElement* e) { return true; }) {}
     bool operator()(tinyxml2::XMLElement* element) { return filterFunc(element); }
 
@@ -88,38 +90,48 @@ inline XMLItFilter XMLAttributeFilter(const std::string& attrName, const std::st
 }
 inline XMLItFilter XMLAttributePresenceFilter(const std::string& attrName) {
     return XMLItFilter([attrName](tinyxml2::XMLElement* e) -> bool {
-        return e->Attribute(attrName.c_str()) != NULL;
+        return e->Attribute(attrName.c_str()) != nullptr;
     });
 }
 
-
+#if __cplusplus < 201703L
 class DLL_OBJECT XMLIterator : public std::iterator<std::input_iterator_tag, tinyxml2::XMLElement> {
-private:
-    tinyxml2::XMLElement *element;
-    XMLItFilter filter;
-
 public:
-    XMLIterator(tinyxml2::XMLElement* e, XMLItFilter f) : filter(f) {
+#else
+class DLL_OBJECT XMLIterator {
+public:
+    using iterator_category = std::input_iterator_tag;
+    using difference_type   = std::ptrdiff_t;
+    using value_type        = tinyxml2::XMLElement;
+    using pointer           = value_type*;
+    using reference         = value_type&;
+#endif
+
+    XMLIterator(tinyxml2::XMLElement* e, XMLItFilter f) : filter(std::move(f)) {
         element = e->FirstChildElement();
-        if (element != NULL && !filter(element)) {
+        while (element != nullptr && !filter(element)) {
             operator++();
         }
     }
-    XMLIterator(tinyxml2::XMLElement* e) : XMLIterator(e, XMLItFilter()) { }
+    explicit XMLIterator(tinyxml2::XMLElement* e) : XMLIterator(e, XMLItFilter()) { }
     XMLIterator(const XMLIterator& otherIt) : XMLIterator(otherIt.element) {}
 
     XMLIterator& operator++() {
         do {
             tinyxml2::XMLNode* next = element->NextSibling();
-            element = next ? next->ToElement() : NULL;
-        } while (element != NULL && !filter(element));
+            element = next ? next->ToElement() : nullptr;
+        } while (element != nullptr && !filter(element));
         return *this;
     }
-    bool operator==(const XMLIterator& rhs) { return element==rhs.element; }
-    bool operator!=(const XMLIterator& rhs) { return element!=rhs.element; }
-    tinyxml2::XMLElement* operator*() { assert(element); return element; }
-    tinyxml2::XMLElement* operator->() { assert(element); return element; }
-    bool isValid() { return element != NULL; }
+    bool operator==(const XMLIterator& rhs) { return element == rhs.element; }
+    bool operator!=(const XMLIterator& rhs) { return element != rhs.element; }
+    inline tinyxml2::XMLElement* operator*() { assert(element); return element; }
+    inline tinyxml2::XMLElement* operator->() { assert(element); return element; }
+    inline bool isValid() const { return element != nullptr; }
+
+private:
+    tinyxml2::XMLElement *element;
+    XMLItFilter filter;
 };
 
 }
