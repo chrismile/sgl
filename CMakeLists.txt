@@ -103,18 +103,63 @@ if (${SUPPORT_VULKAN} AND ${Vulkan_FOUND})
     target_compile_definitions(sgl PUBLIC VK_NO_PROTOTYPES)
     #target_link_libraries(sgl PUBLIC ${Vulkan_LIBRARIES})
     if(VCPKG_TOOLCHAIN)
+        find_path(VCPKG_INSTALL_ROOT_DIR include/spirv-tools/libspirv.h)
+        find_path(VCPKG_INCLUDE_DIR spirv-tools/libspirv.h)
+        set(VCPKG_DEBUG_LIB_DIR ${VCPKG_INSTALL_ROOT_DIR}/debug/lib)
+        set(VCPKG_RELEASE_LIB_DIR ${VCPKG_INSTALL_ROOT_DIR}/lib)
+
         find_package(glslang CONFIG REQUIRED)
         target_link_libraries(sgl PRIVATE glslang OSDependent OGLCompiler HLSL SPIRV MachineIndependent)
-        
-        find_library(SPIRV_TOOLS_LIB SPIRV-Tools)
-        target_link_libraries(sgl PRIVATE ${SPIRV_TOOLS_LIB})
-        
-        find_library(SPIRV_TOOLS_OPT_LIB SPIRV-Tools-opt)
-        target_link_libraries(sgl PRIVATE ${SPIRV_TOOLS_OPT_LIB})
-        
-        find_library(SHADERC_LIB shaderc)
-        find_library(SHADERC_UTIL_LIB shaderc_util)
-        target_link_libraries(sgl PRIVATE ${SHADERC_LIB} ${SHADERC_UTIL_LIB})
+
+        find_library(SPIRV_TOOLS_LIB_DEBUG SPIRV-Tools
+                PATHS ${VCPKG_DEBUG_LIB_DIR}
+                NO_DEFAULT_PATH)
+        find_library(SPIRV_TOOLS_LIB_RELEASE SPIRV-Tools
+                PATHS ${VCPKG_RELEASE_LIB_DIR}
+                NO_DEFAULT_PATH)
+        add_library(spirvtools STATIC IMPORTED)
+        set_target_properties(spirvtools PROPERTIES
+                IMPORTED_LOCATION_DEBUG ${SPIRV_TOOLS_LIB_DEBUG}
+                IMPORTED_LOCATION_RELEASE ${SPIRV_TOOLS_LIB_RELEASE}
+                INTERFACE_INCLUDE_DIRECTORIES "${VCPKG_INCLUDE_DIR}")
+
+        find_library(SPIRV_TOOLS_OPT_LIB_DEBUG SPIRV-Tools-opt
+                PATHS ${VCPKG_DEBUG_LIB_DIR}
+                NO_DEFAULT_PATH)
+        find_library(SPIRV_TOOLS_OPT_LIB_RELEASE SPIRV-Tools-opt
+                PATHS ${VCPKG_RELEASE_LIB_DIR}
+                NO_DEFAULT_PATH)
+        add_library(spirvtoolsopt STATIC IMPORTED)
+        set_target_properties(spirvtoolsopt PROPERTIES
+                IMPORTED_LOCATION_DEBUG ${SPIRV_TOOLS_OPT_LIB_DEBUG}
+                IMPORTED_LOCATION_RELEASE ${SPIRV_TOOLS_OPT_LIB_RELEASE}
+                INTERFACE_INCLUDE_DIRECTORIES "${VCPKG_INCLUDE_DIR}")
+
+        find_library(SHADERC_LIB_DEBUG shaderc
+                PATHS ${VCPKG_DEBUG_LIB_DIR}
+                NO_DEFAULT_PATH)
+        find_library(SHADERC_LIB_RELEASE shaderc
+                PATHS ${VCPKG_RELEASE_LIB_DIR}
+                NO_DEFAULT_PATH)
+        add_library(shaderc STATIC IMPORTED)
+        set_target_properties(shaderc PROPERTIES
+                IMPORTED_LOCATION_DEBUG ${SHADERC_LIB_DEBUG}
+                IMPORTED_LOCATION_RELEASE ${SHADERC_LIB_RELEASE}
+                INTERFACE_INCLUDE_DIRECTORIES "${VCPKG_INCLUDE_DIR}")
+
+        find_library(SHADERC_UTIL_LIB_DEBUG shaderc_util
+                PATHS ${VCPKG_DEBUG_LIB_DIR}
+                NO_DEFAULT_PATH)
+        find_library(SHADERC_UTIL_LIB_RELEASE shaderc_util
+                PATHS ${VCPKG_RELEASE_LIB_DIR}
+                NO_DEFAULT_PATH)
+        add_library(shaderc_util STATIC IMPORTED)
+        set_target_properties(shaderc_util PROPERTIES
+                IMPORTED_LOCATION_DEBUG ${SHADERC_UTIL_LIB_DEBUG}
+                IMPORTED_LOCATION_RELEASE ${SHADERC_UTIL_LIB_RELEASE}
+                INTERFACE_INCLUDE_DIRECTORIES "${VCPKG_INCLUDE_DIR}")
+
+        target_link_libraries(sgl PRIVATE spirvtools spirvtoolsopt shaderc shaderc_util)
     else()
         find_package(PkgConfig REQUIRED)
         pkg_check_modules(SHADERC shaderc)
