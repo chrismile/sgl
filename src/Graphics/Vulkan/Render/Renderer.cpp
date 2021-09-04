@@ -109,7 +109,9 @@ Renderer::Renderer(Device* device, uint32_t numDescriptors) : device(device) {
 }
 
 Renderer::~Renderer() {
-    device->waitIdle();
+    if (!customCommandBuffer) {
+        device->waitIdle();
+    }
 
     for (FrameCache& frameCache : frameCaches) {
         while (!frameCache.allMatrixBlockDescriptorSets.is_empty()) {
@@ -190,6 +192,10 @@ VkCommandBuffer Renderer::endCommandBuffer() {
 void Renderer::setCustomCommandBuffer(VkCommandBuffer commandBuffer, bool useGraphicsQueue) {
     customCommandBuffer = commandBuffer;
     this->useGraphicsQueue = useGraphicsQueue;
+}
+
+void Renderer::resetCustomCommandBuffer() {
+    setCustomCommandBuffer(VK_NULL_HANDLE);
 }
 
 void Renderer::render(const RasterDataPtr& rasterData) {

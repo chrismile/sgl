@@ -148,16 +148,20 @@ public:
     std::vector<VkCommandBuffer> allocateCommandBuffers(
             CommandPoolType commandPoolType, VkCommandPool* pool, uint32_t count,
             VkCommandBufferLevel commandBufferLevel = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+    void freeCommandBuffer(VkCommandPool commandPool, VkCommandBuffer commandBuffer);
+    void freeCommandBuffers(VkCommandPool commandPool, const std::vector<VkCommandBuffer>& commandBuffers);
 
     // Create a transient command buffer ready to execute commands (0xFFFFFFFF encodes graphics queue).
-    VkCommandBuffer beginSingleTimeCommands(uint32_t queueIndex = 0xFFFFFFFF);
-    void endSingleTimeCommands(VkCommandBuffer commandBuffer, uint32_t queueIndex = 0xFFFFFFFF);
+    VkCommandBuffer beginSingleTimeCommands(uint32_t queueIndex = 0xFFFFFFFF, bool beginCommandBuffer = true);
+    void endSingleTimeCommands(
+            VkCommandBuffer commandBuffer, uint32_t queueIndex = 0xFFFFFFFF, bool endCommandBuffer = true);
 
     // Create multiple transient command buffers ready to execute commands (0xFFFFFFFF encodes graphics queue).
     std::vector<VkCommandBuffer> beginSingleTimeMultipleCommands(
-            uint32_t numCommandBuffers, uint32_t queueIndex = 0xFFFFFFFF);
+            uint32_t numCommandBuffers, uint32_t queueIndex = 0xFFFFFFFF, bool beginCommandBuffer = true);
     void endSingleTimeMultipleCommands(
-            const std::vector<VkCommandBuffer>& commandBuffers, uint32_t queueIndex = 0xFFFFFFFF);
+            const std::vector<VkCommandBuffer>& commandBuffers, uint32_t queueIndex = 0xFFFFFFFF,
+            bool endCommandBuffer = true);
 
     inline Instance* getInstance() { return instance; }
 

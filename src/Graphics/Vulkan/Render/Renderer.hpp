@@ -75,7 +75,7 @@ public:
     VkCommandBuffer endCommandBuffer();
     /// Use VK_NULL_HANDLE to reset the custom command buffer.
     void setCustomCommandBuffer(VkCommandBuffer commandBuffer, bool useGraphicsQueue = true);
-    inline void resetCustomCommandBuffer() { setCustomCommandBuffer(VK_NULL_HANDLE); }
+    void resetCustomCommandBuffer();
 
     // Graphics pipeline.
     void render(const RasterDataPtr& rasterData);

@@ -527,6 +527,14 @@ std::vector<VkCommandBuffer> Device::allocateCommandBuffers(
     return commandBuffers;
 }
 
+void Device::freeCommandBuffer(VkCommandPool commandPool, VkCommandBuffer commandBuffer) {
+    vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
+}
+
+void Device::freeCommandBuffers(VkCommandPool commandPool, const std::vector<VkCommandBuffer>& commandBuffers) {
+    vkFreeCommandBuffers(device, commandPool, uint32_t(commandBuffers.size()), commandBuffers.data());
+}
+
 void Device::_allocateCommandBuffers(
         CommandPoolType commandPoolType, VkCommandPool* pool, VkCommandBuffer* commandBuffers, uint32_t count,
         VkCommandBufferLevel commandBufferLevel) {
@@ -561,7 +569,7 @@ void Device::_allocateCommandBuffers(
     vkAllocateCommandBuffers(device, &allocInfo, commandBuffers);
 }
 
-VkCommandBuffer Device::beginSingleTimeCommands(uint32_t queueIndex) {
+VkCommandBuffer Device::beginSingleTimeCommands(uint32_t queueIndex, bool beginCommandBuffer) {
     if (queueIndex == 0xFFFFFFFF) {
         queueIndex = getGraphicsQueueIndex();
     }
@@ -576,17 +584,21 @@ VkCommandBuffer Device::beginSingleTimeCommands(uint32_t queueIndex) {
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-    vkBeginCommandBuffer(commandBuffer, &beginInfo);
+    if (beginCommandBuffer) {
+        vkBeginCommandBuffer(commandBuffer, &beginInfo);
+    }
 
     return commandBuffer;
 }
 
-void Device::endSingleTimeCommands(VkCommandBuffer commandBuffer, uint32_t queueIndex) {
+void Device::endSingleTimeCommands(VkCommandBuffer commandBuffer, uint32_t queueIndex, bool endCommandBuffer) {
     if (queueIndex == 0xFFFFFFFF) {
         queueIndex = getGraphicsQueueIndex();
     }
 
-    vkEndCommandBuffer(commandBuffer);
+    if (endCommandBuffer) {
+        vkEndCommandBuffer(commandBuffer);
+    }
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -604,7 +616,8 @@ void Device::endSingleTimeCommands(VkCommandBuffer commandBuffer, uint32_t queue
     vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
 }
 
-std::vector<VkCommandBuffer> Device::beginSingleTimeMultipleCommands(uint32_t numCommandBuffers, uint32_t queueIndex) {
+std::vector<VkCommandBuffer> Device::beginSingleTimeMultipleCommands(
+        uint32_t numCommandBuffers, uint32_t queueIndex, bool beginCommandBuffer) {
     if (queueIndex == 0xFFFFFFFF) {
         queueIndex = getGraphicsQueueIndex();
     }
@@ -619,20 +632,25 @@ std::vector<VkCommandBuffer> Device::beginSingleTimeMultipleCommands(uint32_t nu
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-    for (auto & commandBuffer : commandBuffers) {
-        vkBeginCommandBuffer(commandBuffer, &beginInfo);
+    if (beginCommandBuffer) {
+        for (auto & commandBuffer : commandBuffers) {
+            vkBeginCommandBuffer(commandBuffer, &beginInfo);
+        }
     }
 
     return commandBuffers;
 }
 
-void Device::endSingleTimeMultipleCommands(const std::vector<VkCommandBuffer>& commandBuffers, uint32_t queueIndex) {
+void Device::endSingleTimeMultipleCommands(
+        const std::vector<VkCommandBuffer>& commandBuffers, uint32_t queueIndex, bool endCommandBuffer) {
     if (queueIndex == 0xFFFFFFFF) {
         queueIndex = getGraphicsQueueIndex();
     }
 
-    for (auto commandBuffer : commandBuffers) {
-        vkEndCommandBuffer(commandBuffer);
+    if (endCommandBuffer) {
+        for (auto commandBuffer : commandBuffers) {
+            vkEndCommandBuffer(commandBuffer);
+        }
     }
 
     VkSubmitInfo submitInfo{};
