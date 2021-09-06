@@ -44,9 +44,9 @@ public:
     TextureGL(unsigned int _texture, int _w, int _h, TextureSettings settings, int _samples = 0);
     TextureGL(unsigned int _texture, int _w, int _h, int _d, TextureSettings settings, int _samples = 0);
     ~TextureGL() override;
-    void uploadPixelData(int width, void *pixelData, PixelFormat pixelFormat = PixelFormat()) override;
-    void uploadPixelData(int width, int height, void *pixelData, PixelFormat pixelFormat = PixelFormat()) override;
-    void uploadPixelData(int width, int height, int depth, void *pixelData, PixelFormat pixelFormat = PixelFormat()) override;
+    void uploadPixelData(int width, const void* pixelData, PixelFormat pixelFormat = PixelFormat()) override;
+    void uploadPixelData(int width, int height, const void* pixelData, PixelFormat pixelFormat = PixelFormat()) override;
+    void uploadPixelData(int width, int height, int depth, const void* pixelData, PixelFormat pixelFormat = PixelFormat()) override;
     /// Do NOT access a texture view anymore after the reference count of the base texture has reached zero!
     TexturePtr createTextureView() override;
     inline unsigned int getTexture() const { return texture; }

@@ -538,6 +538,7 @@ void SciVisApp::renderSceneSettingsGuiPre() {
         camera->setFOVy(standardFov);
         fovDegree = standardFov / sgl::PI * 180.0f;
         reRender = true;
+        hasMoved();
     }
     ImGui::SameLine();
     ImGui::Checkbox("Continuous Rendering", &continuousRendering);

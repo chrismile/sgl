@@ -133,9 +133,9 @@ public:
     Texture(int _w, int _h, int _d, TextureSettings settings, int _samples = 0) : w(_w), h(_h), d(_d),
             settings(settings), samples(_samples) {}
     virtual ~Texture() {}
-    virtual void uploadPixelData(int width, void *pixelData, PixelFormat pixelFormat = PixelFormat())=0;
-    virtual void uploadPixelData(int width, int height, void *pixelData, PixelFormat pixelFormat = PixelFormat())=0;
-    virtual void uploadPixelData(int width, int height, int depth, void *pixelData, PixelFormat pixelFormat = PixelFormat())=0;
+    virtual void uploadPixelData(int width, const void* pixelData, PixelFormat pixelFormat = PixelFormat())=0;
+    virtual void uploadPixelData(int width, int height, const void* pixelData, PixelFormat pixelFormat = PixelFormat())=0;
+    virtual void uploadPixelData(int width, int height, int depth, const void* pixelData, PixelFormat pixelFormat = PixelFormat())=0;
     /// Do NOT access a texture view anymore after the reference count of the base texture has reached zero!
     virtual TexturePtr createTextureView()=0;
     inline int getW() const { return w; }

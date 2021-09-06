@@ -57,26 +57,28 @@ TextureGL::~TextureGL()
     glDeleteTextures(1, &texture);
 }
 
-void TextureGL::uploadPixelData(int width, void *pixelData, PixelFormat pixelFormat)
+void TextureGL::uploadPixelData(int width, const void* pixelData, PixelFormat pixelFormat)
 {
     TexturePtr texturePtr = shared_from_this();
     Renderer->bindTexture(texturePtr);
-    glTexSubImage1D(settings.type, 0, 0, width, pixelFormat.pixelFormat, pixelFormat.pixelType, pixelData);
+    glTexSubImage1D(
+            settings.type, 0, 0, width, pixelFormat.pixelFormat, pixelFormat.pixelType, pixelData);
 }
 
-void TextureGL::uploadPixelData(int width, int height, void *pixelData, PixelFormat pixelFormat)
+void TextureGL::uploadPixelData(int width, int height, const void* pixelData, PixelFormat pixelFormat)
 {
     TexturePtr texturePtr = shared_from_this();
     Renderer->bindTexture(texturePtr);
-    glTexSubImage2D(settings.type, 0, 0, 0, width, height, pixelFormat.pixelFormat, pixelFormat.pixelType, pixelData);
+    glTexSubImage2D(
+            settings.type, 0, 0, 0, width, height, pixelFormat.pixelFormat, pixelFormat.pixelType, pixelData);
 }
 
-void TextureGL::uploadPixelData(int width, int height, int depth, void *pixelData, PixelFormat pixelFormat)
+void TextureGL::uploadPixelData(int width, int height, int depth, const void* pixelData, PixelFormat pixelFormat)
 {
     TexturePtr texturePtr = shared_from_this();
     Renderer->bindTexture(texturePtr);
-    glTexSubImage3D(settings.type, 0, 0, 0, 0, width, height, depth, pixelFormat.pixelFormat, pixelFormat.pixelType,
-            pixelData);
+    glTexSubImage3D(
+            settings.type, 0, 0, 0, 0, width, height, depth, pixelFormat.pixelFormat, pixelFormat.pixelType, pixelData);
 }
 
 TexturePtr TextureGL::createTextureView() {
