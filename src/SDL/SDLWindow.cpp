@@ -46,8 +46,8 @@
 #ifdef SUPPORT_OPENGL
 #include <GL/glew.h>
 #ifdef __linux__
+#include <dlfcn.h>
 #include <X11/Xlib.h>
-#include <GL/gl.h>
 #include <GL/glx.h>
 #endif
 #endif
@@ -92,29 +92,73 @@ void SDLWindow::errorCheck()
 // Query the numbers of multisample samples possible (given a maximum number of desired samples)
 int getMaxSamplesGLImpl(int desiredSamples) {
 #ifdef __linux__
+    typedef Display* (*PFN_XOpenDisplay)(_Xconst char*);
+    typedef GLXFBConfig* (*PFN_glXChooseFBConfig)(Display* dpy, int screen, const int* attribList, int* nitems);
+    typedef int (*PFN_glXGetFBConfigAttrib)(Display* dpy, GLXFBConfig config, int attribute, int* value);
+
+    void* libX11so = dlopen("libX11.so", RTLD_NOW | RTLD_LOCAL);
+    if (!libX11so) {
+        sgl::Logfile::get()->writeError("Error in getMaxSamplesGLImpl: Could not load libX11.so!");
+        return 1;
+    }
+    void* libGLXso = dlopen("libGLX.so", RTLD_NOW | RTLD_LOCAL);
+    if (!libGLXso) {
+        sgl::Logfile::get()->writeError("Error in getMaxSamplesGLImpl: Could not load libGLX.so!");
+        dlclose(libX11so);
+        return 1;
+    }
+
+    auto dyn_XOpenDisplay = PFN_XOpenDisplay(dlsym(libX11so, "XOpenDisplay"));
+    if (!dyn_XOpenDisplay) {
+        sgl::Logfile::get()->writeError("Error in getMaxSamplesGLImpl: Could not load function from libX11.so!");
+        dlclose(libGLXso);
+        dlclose(libX11so);
+        return 1;
+    }
+
+    auto dyn_glXChooseFBConfig = PFN_glXChooseFBConfig(dlsym(libGLXso, "glXChooseFBConfig"));
+    auto dyn_glXGetFBConfigAttrib = PFN_glXGetFBConfigAttrib(dlsym(libGLXso, "glXGetFBConfigAttrib"));
+    if (!dyn_glXChooseFBConfig || !dyn_glXGetFBConfigAttrib) {
+        sgl::Logfile::get()->writeError("Error in getMaxSamplesGLImpl: Could not load functions from libGLX.so!");
+        dlclose(libGLXso);
+        dlclose(libX11so);
+        return 1;
+    }
+
+
     const char* displayName = ":0";
     Display* display;
-    if (!(display = XOpenDisplay(displayName))) {
-        Logfile::get()->writeError("Couldn't open X11 display");
+    if (!(display = dyn_XOpenDisplay(displayName))) {
+        Logfile::get()->writeError("Error in getMaxSamplesGLImpl: Couldn't open X11 display!");
+        dlclose(libGLXso);
+        dlclose(libX11so);
+        return 1;
     }
     int defscreen = DefaultScreen(display);
 
     int nitems;
-    GLXFBConfig* fbcfg = glXChooseFBConfig(display, defscreen, NULL, &nitems);
-    if (!fbcfg)
-        throw std::string("Couldn't get FB configs\n");
+    GLXFBConfig* fbcfg = dyn_glXChooseFBConfig(display, defscreen, NULL, &nitems);
+    if (!fbcfg) {
+        Logfile::get()->writeError("Error in getMaxSamplesGLImpl: Couldn't get FB configs!");
+        dlclose(libGLXso);
+        dlclose(libX11so);
+        return 1;
+    }
 
     // https://www.khronos.org/registry/OpenGL-Refpages/gl2.1/xhtml/glXGetFBConfigAttrib.xml
     int maxSamples = 0;
     for (int i = 0; i < nitems; ++i) {
         int samples = 0;
-        glXGetFBConfigAttrib(display, fbcfg[i], GLX_SAMPLES, &samples);
+        dyn_glXGetFBConfigAttrib(display, fbcfg[i], GLX_SAMPLES, &samples);
         if (samples > maxSamples) {
             maxSamples = samples;
         }
     }
 
     Logfile::get()->writeInfo("Maximum OpenGL multisamples (GLX): " + toString(maxSamples));
+
+    dlclose(libGLXso);
+    dlclose(libX11so);
 
     return min(maxSamples, desiredSamples);
 #else

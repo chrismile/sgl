@@ -44,7 +44,7 @@ namespace sgl
 {
 
 // Inspired by https://github.com/glfw/glfw/issues/1019
-float getScreenScalingX11(Display *display) {
+float getScreenScalingX11(Display* display) {
     typedef char* (*PFN_XResourceManagerString)(Display*);
     typedef void (*PFN_XrmInitialize)();
     typedef XrmDatabase (*PFN_XrmGetStringDatabase)(_Xconst char*);
@@ -53,31 +53,34 @@ float getScreenScalingX11(Display *display) {
 
     void* libX11so = dlopen("libX11.so", RTLD_NOW | RTLD_LOCAL);
     if (!libX11so) {
-        sgl::Logfile::get()->throwError("Error in getScreenScalingX11: Could not load libX11.so!");
+        sgl::Logfile::get()->writeError("Error in getScreenScalingX11: Could not load libX11.so!");
+        return 1.0f;
     }
 
-    auto _XResourceManagerString = PFN_XResourceManagerString(dlsym(libX11so, "XResourceManagerString"));
-    auto _XrmInitialize = PFN_XrmInitialize(dlsym(libX11so, "XrmInitialize"));
-    auto _XrmGetStringDatabase = PFN_XrmGetStringDatabase(dlsym(libX11so, "XrmGetStringDatabase"));
-    auto _XrmGetResource = PFN_XrmGetResource(dlsym(libX11so, "XrmGetResource"));
-    auto _XrmDestroyDatabase = PFN_XrmDestroyDatabase(dlsym(libX11so, "XrmDestroyDatabase"));
+    auto dyn_XResourceManagerString = PFN_XResourceManagerString(dlsym(libX11so, "XResourceManagerString"));
+    auto dyn_XrmInitialize = PFN_XrmInitialize(dlsym(libX11so, "XrmInitialize"));
+    auto dyn_XrmGetStringDatabase = PFN_XrmGetStringDatabase(dlsym(libX11so, "XrmGetStringDatabase"));
+    auto dyn_XrmGetResource = PFN_XrmGetResource(dlsym(libX11so, "XrmGetResource"));
+    auto dyn_XrmDestroyDatabase = PFN_XrmDestroyDatabase(dlsym(libX11so, "XrmDestroyDatabase"));
 
-    if (!_XResourceManagerString || !_XrmInitialize || !_XrmGetStringDatabase || !_XrmGetResource
-            || !_XrmDestroyDatabase) {
-        sgl::Logfile::get()->throwError("Error in getScreenScalingX11: Could not load all required functions!");
+    if (!dyn_XResourceManagerString || !dyn_XrmInitialize || !dyn_XrmGetStringDatabase || !dyn_XrmGetResource
+            || !dyn_XrmDestroyDatabase) {
+        sgl::Logfile::get()->writeError("Error in getScreenScalingX11: Could not load all required functions!");
+        dlclose(libX11so);
+        return 1.0f;
     }
 
-    char* resourceString = _XResourceManagerString(display);
-    _XrmInitialize();
-    XrmDatabase database = _XrmGetStringDatabase(resourceString);
+    char* resourceString = dyn_XResourceManagerString(display);
+    dyn_XrmInitialize();
+    XrmDatabase database = dyn_XrmGetStringDatabase(resourceString);
 
     XrmValue value;
     char* type = nullptr;
     float scalingFactor = 1.0f;
-    if (_XrmGetResource(database, "Xft.dpi", "String", &type, &value) && value.addr) {
+    if (dyn_XrmGetResource(database, "Xft.dpi", "String", &type, &value) && value.addr) {
         scalingFactor = atof(value.addr) / 96.0f;
     }
-    _XrmDestroyDatabase(database);
+    dyn_XrmDestroyDatabase(database);
 
     dlclose(libX11so);
 

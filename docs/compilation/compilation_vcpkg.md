@@ -62,7 +62,7 @@ All necessary packages can be installed using the following command.
 On Windows `--triplet=x64-windows` needs to be added if the 64-bit version of the packages should be installed.
 
 ```
-./vcpkg install boost-core boost-algorithm boost-filesystem boost-locale libpng sdl2[vulkan] sdl2-image ****_\_****
+./vcpkg install boost-core boost-algorithm boost-filesystem boost-locale libpng sdl2[vulkan] sdl2-image \
 tinyxml2 glew glm libarchive[bzip2,core,lz4,lzma,zstd] vulkan vulkan-headers shaderc
 ```
 
