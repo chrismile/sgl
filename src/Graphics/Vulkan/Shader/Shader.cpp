@@ -26,6 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <limits>
+
 #include <Utils/File/Logfile.hpp>
 
 #include "../Utils/Device.hpp"
