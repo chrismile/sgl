@@ -134,6 +134,13 @@ public:
     inline bool getRayTracingPipelineSupported() const { return rayTracingPipelineFeatures.rayTracingPipeline == VK_TRUE; }
     VkSampleCountFlagBits getMaxUsableSampleCount() const;
 
+    VkFormat getSupportedDepthFormat(
+            VkFormat hint = VK_FORMAT_D32_SFLOAT, VkImageTiling imageTiling = VK_IMAGE_TILING_OPTIMAL);
+    std::vector<VkFormat> getSupportedDepthFormats(VkImageTiling imageTiling = VK_IMAGE_TILING_OPTIMAL);
+    VkFormat getSupportedDepthStencilFormat(
+            VkFormat hint = VK_FORMAT_D24_UNORM_S8_UINT, VkImageTiling imageTiling = VK_IMAGE_TILING_OPTIMAL);
+    std::vector<VkFormat> getSupportedDepthStencilFormats(VkImageTiling imageTiling = VK_IMAGE_TILING_OPTIMAL);
+
     /**
      * @param memoryTypeBits
      * @param memoryPropertyFlags
@@ -198,6 +205,9 @@ private:
             const DeviceFeatures& requestedDeviceFeatures, bool computeOnly);
 
     void _getDeviceInformation();
+
+    VkFormat _findSupportedFormat(
+            const std::vector<VkFormat>& candidates, VkImageTiling imageTiling, VkFormatFeatureFlags features);
 
     // Internal implementations.
     void _allocateCommandBuffers(

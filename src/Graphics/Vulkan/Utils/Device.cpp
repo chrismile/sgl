@@ -502,6 +502,77 @@ VkSampleCountFlagBits Device::getMaxUsableSampleCount() const {
     return VK_SAMPLE_COUNT_1_BIT;
 }
 
+VkFormat Device::_findSupportedFormat(
+        const std::vector<VkFormat>& candidates, VkImageTiling imageTiling, VkFormatFeatureFlags features) {
+    for (VkFormat format : candidates) {
+        VkFormatProperties props;
+        vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
+        if ((imageTiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features)
+                || (imageTiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features)) {
+            return format;
+        }
+    }
+    Logfile::get()->throwError("Error in Device::_findSupportedFormat: Failed to find a supported format!");
+    return VK_FORMAT_D24_UNORM_S8_UINT;
+}
+
+VkFormat Device::getSupportedDepthFormat(VkFormat hint, VkImageTiling imageTiling) {
+    std::vector<VkFormat> formats;
+    formats.reserve(7);
+    formats.push_back(hint);
+    formats.push_back(VK_FORMAT_D32_SFLOAT);
+    formats.push_back(VK_FORMAT_X8_D24_UNORM_PACK32);
+    formats.push_back(VK_FORMAT_D16_UNORM);
+    formats.push_back(VK_FORMAT_D24_UNORM_S8_UINT);
+    formats.push_back(VK_FORMAT_D32_SFLOAT_S8_UINT);
+    formats.push_back(VK_FORMAT_D16_UNORM_S8_UINT);
+    return _findSupportedFormat(formats, imageTiling, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+}
+
+std::vector<VkFormat> Device::getSupportedDepthFormats(VkImageTiling imageTiling) {
+    VkFormatFeatureFlags features = VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    std::vector<VkFormat> allFormats = {
+            VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT_S8_UINT
+    };
+    std::vector<VkFormat> supportedFormats;
+    for (VkFormat format : allFormats) {
+        VkFormatProperties props;
+        vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
+        if ((imageTiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features)
+                || (imageTiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features)) {
+            supportedFormats.push_back(format);
+        }
+    }
+    return supportedFormats;
+}
+
+VkFormat Device::getSupportedDepthStencilFormat(VkFormat hint, VkImageTiling imageTiling) {
+    std::vector<VkFormat> formats;
+    formats.reserve(4);
+    formats.push_back(hint);
+    formats.push_back(VK_FORMAT_D24_UNORM_S8_UINT);
+    formats.push_back(VK_FORMAT_D32_SFLOAT_S8_UINT);
+    formats.push_back(VK_FORMAT_D16_UNORM_S8_UINT);
+    return _findSupportedFormat(formats, imageTiling, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+}
+
+std::vector<VkFormat> Device::getSupportedDepthStencilFormats(VkImageTiling imageTiling) {
+    VkFormatFeatureFlags features = VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    std::vector<VkFormat> allFormats = {
+            VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D16_UNORM_S8_UINT
+    };
+    std::vector<VkFormat> supportedFormats;
+    for (VkFormat format : allFormats) {
+        VkFormatProperties props;
+        vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
+        if ((imageTiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features)
+                || (imageTiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features)) {
+            supportedFormats.push_back(format);
+        }
+    }
+    return supportedFormats;
+}
+
 uint32_t Device::findMemoryTypeIndex(uint32_t memoryTypeBits, VkMemoryPropertyFlags memoryPropertyFlags) {
     for (uint32_t memoryTypeIndex = 0; memoryTypeIndex < physicalDeviceMemoryProperties.memoryTypeCount; memoryTypeIndex++) {
         if (((physicalDeviceMemoryProperties.memoryTypes[memoryTypeIndex].propertyFlags & memoryPropertyFlags) == memoryPropertyFlags
