@@ -446,6 +446,45 @@ void Renderer::transitionImageLayout(vk::ImagePtr& image, VkImageLayout newLayou
     image->transitionImageLayout(newLayout, commandBuffer);
 }
 
+void Renderer::insertImageMemoryBarrier(
+        vk::ImagePtr& image, VkImageLayout oldLayout, VkImageLayout newLayout,
+        VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
+        VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask) {
+    VkImageMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout = oldLayout;
+    barrier.newLayout = newLayout;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = image->getVkImage();
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = image->getImageSettings().mipLevels;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = image->getImageSettings().arrayLayers;
+    if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+
+        if (hasStencilComponent(image->getImageSettings().format)) {
+            barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+        }
+    } else {
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    }
+    barrier.srcAccessMask = srcAccessMask;
+    barrier.dstAccessMask = dstAccessMask;
+
+    vkCmdPipelineBarrier(
+            commandBuffer,
+            srcStage, dstStage,
+            0, // 0 or VK_DEPENDENCY_BY_REGION_BIT
+            0, nullptr,
+            0, nullptr,
+            1, &barrier
+    );
+
+    image->imageLayout = newLayout;
+}
+
 void Renderer::pushConstants(
         PipelinePtr& pipeline, VkShaderStageFlagBits shaderStageFlagBits,
         uint32_t offset, uint32_t size, const void* data) {

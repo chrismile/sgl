@@ -260,6 +260,14 @@ void Buffer::updateData(size_t offset, size_t sizeInBytesData, void* dataPtr, Vk
     vkCmdUpdateBuffer(commandBuffer, buffer, offset, sizeInBytesData, dataPtr);
 }
 
+void Buffer::fill(uint32_t data, VkCommandBuffer commandBuffer) {
+    fill(0, VK_WHOLE_SIZE, data, commandBuffer);
+}
+
+void Buffer::fill(VkDeviceSize offset, VkDeviceSize size, uint32_t data, VkCommandBuffer commandBuffer) {
+    vkCmdFillBuffer(commandBuffer, buffer, offset, size, data);
+}
+
 void* Buffer::mapMemory() {
     if (memoryUsage != VMA_MEMORY_USAGE_CPU_ONLY && memoryUsage != VMA_MEMORY_USAGE_CPU_TO_GPU
             && memoryUsage != VMA_MEMORY_USAGE_GPU_TO_CPU && memoryUsage != VMA_MEMORY_USAGE_CPU_COPY) {

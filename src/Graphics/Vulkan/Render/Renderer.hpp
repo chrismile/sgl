@@ -94,6 +94,10 @@ public:
 
     // Image pipeline barrier.
     void transitionImageLayout(vk::ImagePtr& image, VkImageLayout newLayout);
+    void insertImageMemoryBarrier(
+            vk::ImagePtr& image, VkImageLayout oldLayout, VkImageLayout newLayout,
+            VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
+            VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask);
 
     // Push constants.
     void pushConstants(

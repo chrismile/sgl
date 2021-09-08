@@ -80,6 +80,7 @@ inline bool hasStencilComponent(VkFormat format) {
 }
 
 class DLL_OBJECT Image {
+    friend class Renderer;
 public:
     Image(Device* device, const ImageSettings& imageSettings);
     Image(Device* device, const ImageSettings& imageSettings, VkImage image, bool takeImageOwnership = true);

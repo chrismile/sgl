@@ -143,6 +143,24 @@ public:
             VkDeviceSize copySizeInBytes, VkCommandBuffer commandBuffer);
 
     /**
+     * Fills the buffer with a 32-bit data value.
+     * NOTE: This operation needs VK_BUFFER_USAGE_TRANSFER_DST_BIT.
+     * @param data The 32-bit data to fill the buffer with.
+     * @param commandBuffer The command buffer to use for the fill operation.
+     */
+    void fill(uint32_t data, VkCommandBuffer commandBuffer);
+
+    /**
+     * Fills the buffer with a 32-bit data value.
+     * NOTE: This operation needs VK_BUFFER_USAGE_TRANSFER_DST_BIT.
+     * @param offset A byte offset into the buffer at which to start filling (must be a multiple of 4).
+     * @param size The number of bytes to fill (must be either a multiple of 4 or VK_WHOLE_SIZE).
+     * @param data The 32-bit data to fill the buffer with.
+     * @param commandBuffer The command buffer to use for the fill operation.
+     */
+    void fill(VkDeviceSize offset, VkDeviceSize size, uint32_t data, VkCommandBuffer commandBuffer);
+
+    /**
      * Maps the memory to a host-accessible address.
      * memoryUsage must be VMA_MEMORY_USAGE_CPU_ONLY, VMA_MEMORY_USAGE_CPU_TO_GPU, VMA_MEMORY_USAGE_GPU_TO_CPU or
      * VMA_MEMORY_USAGE_CPU_COPY.

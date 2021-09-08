@@ -425,7 +425,7 @@ void Image::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayo
     VkPipelineStageFlags destinationStage = 0;
 
     if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
-        barrier.srcAccessMask = 0;
+        barrier.srcAccessMask = VK_ACCESS_NONE_KHR;
         sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
     } else if (oldLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
         barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
