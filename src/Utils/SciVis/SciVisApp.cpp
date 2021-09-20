@@ -327,7 +327,7 @@ void SciVisApp::preRender() {
     }
 
 #ifdef SUPPORT_VULKAN
-    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN && !reRender) {
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN && reRender) {
         rendererVk->transitionImageLayout(sceneTextureVk->getImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
         sceneTextureVk->getImageView()->clearColor(
                 clearColor.getFloatColorRGBA(), rendererVk->getVkCommandBuffer());

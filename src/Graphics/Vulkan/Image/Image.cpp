@@ -619,7 +619,7 @@ bool Image::createGlMemoryObject(GLuint& memoryObjectGl) {
 
 
 
-ImageView::ImageView(ImagePtr& image, VkImageViewType imageViewType, VkImageAspectFlags aspectFlags)
+ImageView::ImageView(const ImagePtr& image, VkImageViewType imageViewType, VkImageAspectFlags aspectFlags)
         : device(image->getDevice()), image(image), imageViewType(imageViewType), aspectFlags(aspectFlags) {
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -641,12 +641,12 @@ ImageView::ImageView(ImagePtr& image, VkImageViewType imageViewType, VkImageAspe
     }
 }
 
-ImageView::ImageView(ImagePtr& image, VkImageAspectFlags aspectFlags)
+ImageView::ImageView(const ImagePtr& image, VkImageAspectFlags aspectFlags)
         : ImageView(image, VkImageViewType(image->getImageSettings().imageType), aspectFlags) {
 }
 
 ImageView::ImageView(
-        ImagePtr& image, VkImageView imageView, VkImageViewType imageViewType, VkImageAspectFlags aspectFlags)
+        const ImagePtr& image, VkImageView imageView, VkImageViewType imageViewType, VkImageAspectFlags aspectFlags)
         : device(image->getDevice()), image(image), imageViewType(imageViewType), aspectFlags(aspectFlags) {
     this->imageView = imageView;
 }
@@ -734,7 +734,7 @@ ImageSampler::~ImageSampler() {
     vkDestroySampler(device->getVkDevice(), sampler, nullptr);
 }
 
-Texture::Texture(ImageViewPtr& imageView, ImageSamplerPtr& imageSampler)
+Texture::Texture(const ImageViewPtr& imageView, const ImageSamplerPtr& imageSampler)
         : imageView(imageView), imageSampler(imageSampler) {
 }
 

@@ -210,11 +210,12 @@ private:
 class DLL_OBJECT ImageView {
 public:
     ImageView(
-            ImagePtr& image, VkImageViewType imageViewType, VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
+            const ImagePtr& image, VkImageViewType imageViewType,
+            VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
     explicit ImageView(
-            ImagePtr& image, VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
+            const ImagePtr& image, VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
     ImageView(
-            ImagePtr& image, VkImageView imageView, VkImageViewType imageViewType,
+            const ImagePtr& image, VkImageView imageView, VkImageViewType imageViewType,
             VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
     ~ImageView();
 
@@ -292,7 +293,7 @@ private:
 
 class DLL_OBJECT Texture {
 public:
-    Texture(ImageViewPtr& imageView, ImageSamplerPtr& imageSampler);
+    Texture(const ImageViewPtr& imageView, const ImageSamplerPtr& imageSampler);
     Texture(
             Device* device, const ImageSettings& imageSettings,
             const ImageSamplerSettings& samplerSettings = ImageSamplerSettings(),
