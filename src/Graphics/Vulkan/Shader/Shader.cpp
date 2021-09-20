@@ -126,6 +126,7 @@ void ShaderModule::createReflectData(const std::vector<uint32_t>& spirvCode) {
                 descriptorInfo.name = reflectDescriptorSet->bindings[bindingIdx]->name;
             }
             descriptorInfo.count = reflectDescriptorSet->bindings[bindingIdx]->count;
+            descriptorInfo.size = reflectDescriptorSet->bindings[bindingIdx]->block.size;
             descriptorInfo.shaderStageFlags = uint32_t(shaderModuleType);
             descriptorInfo.readOnly = true;
             descriptorInfo.image = reflectDescriptorSet->bindings[bindingIdx]->image;

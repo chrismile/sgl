@@ -67,6 +67,7 @@ struct DLL_OBJECT DescriptorInfo {
     std::string name;
     VkShaderStageFlags shaderStageFlags;
     uint32_t count;
+    uint32_t size;
     bool readOnly;
     SpvReflectImageTraits image; ///< If this is a descriptor of an image.
 };

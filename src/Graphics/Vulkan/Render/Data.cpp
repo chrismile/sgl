@@ -415,7 +415,11 @@ void RenderData::_updateDescriptorSets() {
                 }
                 descWriteData.bufferInfo.buffer = it->second->getVkBuffer();
                 descWriteData.bufferInfo.offset = 0;
-                descWriteData.bufferInfo.range = it->second->getSizeInBytes();
+                if (descriptorInfo.size > 0) {
+                    descWriteData.bufferInfo.range = std::min(it->second->getSizeInBytes(), size_t(descriptorInfo.size));
+                } else {
+                    descWriteData.bufferInfo.range = it->second->getSizeInBytes();
+                }
                 descriptorWrite.pBufferInfo = &descWriteData.bufferInfo;
             } else if (descriptorInfo.type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
                 auto it = frameData.accelerationStructures.find(descriptorInfo.binding);
