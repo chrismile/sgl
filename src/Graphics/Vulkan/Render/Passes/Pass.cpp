@@ -57,7 +57,6 @@ void ComputePass::_render() {
 void ComputePass::_build() {
     if (shaderDirty) {
         loadShader();
-        shaderDirty = false;
     }
 
     if (shaderDirty || dataDirty) {
@@ -67,6 +66,11 @@ void ComputePass::_build() {
 
         createComputeData(renderer, computePipeline);
         dataDirty = false;
+    }
+
+
+    if (shaderDirty) {
+        shaderDirty = false;
     }
 }
 
@@ -91,7 +95,6 @@ void RasterPass::_render() {
 void RasterPass::_build() {
     if (shaderDirty) {
         loadShader();
-        shaderDirty = false;
     }
 
     if (!framebuffer) {
@@ -107,6 +110,10 @@ void RasterPass::_build() {
 
         createRasterData(renderer, graphicsPipeline);
         dataDirty = false;
+    }
+
+    if (shaderDirty) {
+        shaderDirty = false;
     }
 }
 
@@ -142,7 +149,6 @@ sgl::vk::RayTracingPipelinePtr RayTracingPass::createRayTracingPipeline() {
 void RayTracingPass::_build() {
     if (shaderDirty) {
         loadShader();
-        shaderDirty = false;
     }
 
     if (shaderDirty || dataDirty) {
@@ -150,6 +156,10 @@ void RayTracingPass::_build() {
 
         createRayTracingData(renderer, rayTracingPipeline);
         dataDirty = false;
+    }
+
+    if (shaderDirty) {
+        shaderDirty = false;
     }
 }
 

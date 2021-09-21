@@ -43,7 +43,7 @@ namespace sgl { namespace vk {
 class BlitRenderPass : public RasterPass {
 public:
     /**
-     * Uses the shaders {"BlitShader.Vertex", "BlitShader.Fragment"} for blitting.
+     * Uses the shaders {"Blit.Vertex", "Blit.Fragment"} for blitting.
      * @param frameGraph The frame graph object.
      */
     explicit BlitRenderPass(sgl::vk::Renderer* renderer);
@@ -54,14 +54,14 @@ public:
     BlitRenderPass(sgl::vk::Renderer* renderer, std::vector<std::string> customShaderIds);
 
     // Public interface.
-    void setInputTexture(sgl::vk::TexturePtr& texture);
-    void setOutputImage(sgl::vk::ImageViewPtr& imageView);
-    void setOutputImages(std::vector<sgl::vk::ImageViewPtr>& imageViews);
-    void setOutputImageLayout(VkImageLayout layout);
+    virtual void setInputTexture(sgl::vk::TexturePtr& texture);
+    virtual void setOutputImage(sgl::vk::ImageViewPtr& imageView);
+    virtual void setOutputImages(std::vector<sgl::vk::ImageViewPtr>& imageViews);
+    virtual void setOutputImageLayout(VkImageLayout layout);
 
     void recreateSwapchain(uint32_t width, uint32_t height) override;
 
-private:
+protected:
     void loadShader() override;
     void setGraphicsPipelineInfo(sgl::vk::GraphicsPipelineInfo& graphicsPipelineInfo) override;
     void createRasterData(sgl::vk::Renderer* renderer, sgl::vk::GraphicsPipelinePtr& graphicsPipeline) override;

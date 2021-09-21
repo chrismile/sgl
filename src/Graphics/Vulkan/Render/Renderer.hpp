@@ -101,11 +101,11 @@ public:
 
     // Push constants.
     void pushConstants(
-            PipelinePtr& pipeline, VkShaderStageFlagBits shaderStageFlagBits,
+            const PipelinePtr& pipeline, VkShaderStageFlagBits shaderStageFlagBits,
             uint32_t offset, uint32_t size, const void* data);
     template<class T>
     void pushConstants(
-            PipelinePtr& pipeline, VkShaderStageFlagBits shaderStageFlagBits,
+            const PipelinePtr& pipeline, VkShaderStageFlagBits shaderStageFlagBits,
             uint32_t offset, const T& data) {
         pushConstants(pipeline, shaderStageFlagBits, offset, sizeof(T), &data);
     }

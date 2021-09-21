@@ -48,6 +48,9 @@ BlitRenderPass::BlitRenderPass(sgl::vk::Renderer* renderer, std::vector<std::str
 
 void BlitRenderPass::setInputTexture(sgl::vk::TexturePtr& texture) {
     inputTexture = texture;
+    if (rasterData) {
+        rasterData->setStaticTexture(inputTexture, "inputTexture");
+    }
 }
 
 void BlitRenderPass::setOutputImage(sgl::vk::ImageViewPtr& imageView) {
@@ -78,6 +81,7 @@ void BlitRenderPass::recreateSwapchain(uint32_t width, uint32_t height) {
     }
     framebuffer = framebuffers.front();
     framebufferDirty = true;
+    dataDirty = true;
 }
 
 

@@ -48,7 +48,7 @@ public:
     inline ShaderStagesPtr& getShaderStages() { return shaderStages; }
     inline const ShaderStagesPtr& getShaderStages() const { return shaderStages; }
 
-    inline VkPipelineLayout getVkPipelineLayout() { return pipelineLayout; }
+    inline VkPipelineLayout getVkPipelineLayout() const { return pipelineLayout; }
     inline VkPipeline getVkPipeline() { return pipeline; }
 
 protected:

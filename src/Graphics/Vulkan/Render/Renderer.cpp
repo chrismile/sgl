@@ -486,7 +486,7 @@ void Renderer::insertImageMemoryBarrier(
 }
 
 void Renderer::pushConstants(
-        PipelinePtr& pipeline, VkShaderStageFlagBits shaderStageFlagBits,
+        const PipelinePtr& pipeline, VkShaderStageFlagBits shaderStageFlagBits,
         uint32_t offset, uint32_t size, const void* data) {
     vkCmdPushConstants(commandBuffer, pipeline->getVkPipelineLayout(), shaderStageFlagBits, offset, size, data);
 }

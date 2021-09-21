@@ -335,7 +335,9 @@ void SciVisApp::preRender() {
                 sceneTextureVk->getImage(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
         rendererVk->transitionImageLayout(
                 compositedTextureVk->getImage(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    }
 
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
         vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
         uint32_t imageIndex = swapchain ? swapchain->getImageIndex() : 0;
         readbackHelperVk->saveDataIfAvailable(imageIndex);
