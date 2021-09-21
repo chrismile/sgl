@@ -112,18 +112,35 @@ void ScreenshotReadbackHelper::saveDataIfAvailable(uint32_t imageIndex) {
     uint8_t* bitmapPixels = bitmap->getPixels();
 
     uint8_t* mappedData = reinterpret_cast<uint8_t*>(readBackImage->mapMemory());
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            int writeLocation = (x + y * width) * 4;
-            int readLocation = int(subresourceLayout.offset) + x * 4 + int(subresourceLayout.rowPitch) * y;
-            for (int c = 0; c < 4; c++) {
-                bitmapPixels[writeLocation + c] = mappedData[readLocation + c];
+    if (screenshotTransparentBackground) {
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int writeLocation = (x + y * width) * 4;
+                int readLocation = int(subresourceLayout.offset) + x * 4 + int(subresourceLayout.rowPitch) * y;
+                for (int c = 0; c < 4; c++) {
+                    bitmapPixels[writeLocation + c] = mappedData[readLocation + c];
+                }
+            }
+        }
+    } else {
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int writeLocation = (x + y * width) * 4;
+                int readLocation = int(subresourceLayout.offset) + x * 4 + int(subresourceLayout.rowPitch) * y;
+                for (int c = 0; c < 3; c++) {
+                    bitmapPixels[writeLocation + c] = mappedData[readLocation + c];
+                }
+                bitmapPixels[writeLocation + 3] = 255;
             }
         }
     }
     readBackImage->unmapMemory();
 
     bitmap->savePNG(frameData.filename.c_str(), false);
+}
+
+void ScreenshotReadbackHelper::setScreenshotTransparentBackground(bool transparentBackground) {
+    screenshotTransparentBackground = transparentBackground;
 }
 
 }}

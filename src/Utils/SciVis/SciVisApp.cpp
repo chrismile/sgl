@@ -136,6 +136,7 @@ SciVisApp::SciVisApp(float fovy)
         compositedTextureBlitPass = std::make_shared<vk::BlitRenderPass>(rendererVk);
 
         readbackHelperVk = std::make_shared<vk::ScreenshotReadbackHelper>(rendererVk);
+        readbackHelperVk->setScreenshotTransparentBackground(screenshotTransparentBackground);
     }
 #endif
 }
@@ -582,10 +583,13 @@ void SciVisApp::renderSceneSettingsGuiPost() {
         screenshot = true;
     }
 
-    // Transparent backgrounds not supported in Vulkan so far.
-    if (AppSettings::get()->getRenderSystem() != RenderSystem::VULKAN) {
-        ImGui::SameLine();
-        ImGui::Checkbox("Transparent Background", &screenshotTransparentBackground);
+    ImGui::SameLine();
+    if (ImGui::Checkbox("Transparent Background", &screenshotTransparentBackground)) {
+#ifdef SUPPORT_VULKAN
+        if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+            readbackHelperVk->setScreenshotTransparentBackground(screenshotTransparentBackground);
+        }
+#endif
     }
 
     ImGui::Separator();

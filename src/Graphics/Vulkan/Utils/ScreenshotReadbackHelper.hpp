@@ -44,6 +44,7 @@ public:
     void onSwapchainRecreated();
     void requestScreenshotReadback(vk::ImagePtr& image, const std::string& filename);
     void saveDataIfAvailable(uint32_t imageIndex);
+    void setScreenshotTransparentBackground(bool transparentBackground);
 
 private:
     vk::Renderer* renderer = nullptr;
@@ -54,6 +55,7 @@ private:
         bool used = false;
     };
     std::vector<FrameData> frameDataList;
+    bool screenshotTransparentBackground = false;
 };
 
 }}
