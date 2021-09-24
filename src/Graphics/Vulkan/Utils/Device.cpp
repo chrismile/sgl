@@ -254,6 +254,19 @@ void Device::createLogicalDeviceAndQueues(
             requestedDeviceFeatures.scalarBlockLayoutFeatures = scalarBlockLayoutFeatures;
         }
     }
+    if (deviceExtensionsSet.find(VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME) != deviceExtensionsSet.end()
+            || instance->getInstanceVulkanVersion() >= VK_API_VERSION_1_2) {
+        uniformBufferStandardLayoutFeaturesKhr.sType =
+                VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES;
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &uniformBufferStandardLayoutFeaturesKhr;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        if (requestedDeviceFeatures.uniformBufferStandardLayoutFeaturesKhr.uniformBufferStandardLayout == VK_FALSE) {
+            requestedDeviceFeatures.uniformBufferStandardLayoutFeaturesKhr = uniformBufferStandardLayoutFeaturesKhr;
+        }
+    }
     if (deviceExtensionsSet.find(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) != deviceExtensionsSet.end()) {
         accelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
         VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
@@ -337,6 +350,10 @@ void Device::createLogicalDeviceAndQueues(
     if (requestedDeviceFeatures.scalarBlockLayoutFeatures.scalarBlockLayout) {
         *pNextPtr = &requestedDeviceFeatures.scalarBlockLayoutFeatures;
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.scalarBlockLayoutFeatures.pNext);
+    }
+    if (requestedDeviceFeatures.uniformBufferStandardLayoutFeaturesKhr.uniformBufferStandardLayout) {
+        *pNextPtr = &requestedDeviceFeatures.uniformBufferStandardLayoutFeaturesKhr;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.uniformBufferStandardLayoutFeaturesKhr.pNext);
     }
     if (requestedDeviceFeatures.accelerationStructureFeatures.accelerationStructure) {
         *pNextPtr = &requestedDeviceFeatures.accelerationStructureFeatures;

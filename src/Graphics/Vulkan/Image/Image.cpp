@@ -754,4 +754,8 @@ Texture::Texture(
     imageSampler = std::make_shared<ImageSampler>(device, samplerSettings, image);
 }
 
+Texture::Texture(const ImageViewPtr& imageView, const ImageSamplerSettings& samplerSettings) : imageView(imageView) {
+    imageSampler = std::make_shared<ImageSampler>(imageView->getDevice(), samplerSettings, imageView->getImage());
+}
+
 }}

@@ -302,6 +302,7 @@ public:
             Device* device, const ImageSettings& imageSettings, VkImageViewType imageViewType,
             const ImageSamplerSettings& samplerSettings = ImageSamplerSettings(),
             VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
+    Texture(const ImageViewPtr& imageView, const ImageSamplerSettings& samplerSettings = ImageSamplerSettings());
 
     inline ImagePtr& getImage() { return imageView->getImage(); }
     inline ImageViewPtr& getImageView() { return imageView; }
