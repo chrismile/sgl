@@ -250,6 +250,10 @@ private:
 
 struct DLL_OBJECT ImageSamplerSettings {
     ImageSamplerSettings() = default;
+
+    /// Sets filter modes to NEAREST if an integer format is used.
+    ImageSamplerSettings(const ImageSettings& imageSettings);
+
     VkFilter magFilter = VK_FILTER_LINEAR;
     VkFilter minFilter = VK_FILTER_LINEAR;
     VkSamplerMipmapMode mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
@@ -296,13 +300,20 @@ public:
     Texture(const ImageViewPtr& imageView, const ImageSamplerPtr& imageSampler);
     Texture(
             Device* device, const ImageSettings& imageSettings,
-            const ImageSamplerSettings& samplerSettings = ImageSamplerSettings(),
             VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
     Texture(
             Device* device, const ImageSettings& imageSettings, VkImageViewType imageViewType,
-            const ImageSamplerSettings& samplerSettings = ImageSamplerSettings(),
             VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
-    Texture(const ImageViewPtr& imageView, const ImageSamplerSettings& samplerSettings = ImageSamplerSettings());
+    Texture(const ImageViewPtr& imageView);
+    Texture(
+            Device* device, const ImageSettings& imageSettings,
+            const ImageSamplerSettings& samplerSettings,
+            VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
+    Texture(
+            Device* device, const ImageSettings& imageSettings, VkImageViewType imageViewType,
+            const ImageSamplerSettings& samplerSettings,
+            VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
+    Texture(const ImageViewPtr& imageView, const ImageSamplerSettings& samplerSettings);
 
     inline ImagePtr& getImage() { return imageView->getImage(); }
     inline ImageViewPtr& getImageView() { return imageView; }

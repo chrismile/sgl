@@ -149,7 +149,10 @@ public:
     inline float getDataRangeMax() const { return dataRange.y; }
     inline const glm::vec2& getDataRange() const { return dataRange; }
     inline float getSelectedRangeMin() const { return selectedRange.x; }
-    inline float getSelectedRangeMax() const { return selectedRange.y; }
+    inline float getSelectedRangeMax() const {
+        // Use epsilon to avoid division by NaN.
+        return selectedRange.y + (selectedRange.x == selectedRange.y ? 1e-4f : 0.0f);
+    }
     inline const glm::vec2& getSelectedRange() const { return selectedRange; }
     inline void setSelectedRange(const glm::vec2& selectedRange) {
         this->selectedRange = selectedRange;

@@ -34,6 +34,7 @@
 #include <set>
 #include <functional>
 #include <unordered_map>
+#include <thread>
 #include <Defs.hpp>
 #include "../libs/volk/volk.h"
 #include "../libs/VMA/vk_mem_alloc.h"
@@ -118,8 +119,11 @@ public:
     inline VmaAllocator getAllocator() { return allocator; }
     inline VkQueue getGraphicsQueue() { return graphicsQueue; }
     inline VkQueue getComputeQueue() { return computeQueue; }
+    inline VkQueue getWorkerThreadGraphicsQueue() { return workerThreadGraphicsQueue; } ///< For use in another thread.
     inline uint32_t getGraphicsQueueIndex() { return graphicsQueueIndex; }
     inline uint32_t getComputeQueueIndex() { return computeQueueIndex; }
+
+    inline bool getIsMainThread() const { return mainThreadId == std::this_thread::get_id(); }
 
     // Helpers for querying physical device properties and features.
     inline VkPhysicalDeviceProperties getPhysicalDeviceProperties() { return physicalDeviceProperties; }
@@ -250,6 +254,8 @@ private:
     uint32_t computeQueueIndex;
     VkQueue graphicsQueue;
     VkQueue computeQueue;
+    VkQueue workerThreadGraphicsQueue; ///< For use in another thread.
+    std::thread::id mainThreadId;
 
     // Set of used command pools.
     std::unordered_map<CommandPoolType, VkCommandPool> commandPools;

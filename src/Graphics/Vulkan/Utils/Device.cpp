@@ -312,7 +312,7 @@ void Device::createLogicalDeviceAndQueues(
     graphicsQueueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     graphicsQueueInfo.pNext = nullptr;
     graphicsQueueInfo.queueFamilyIndex = uint32_t(graphicsQueueIndex);
-    graphicsQueueInfo.queueCount = 1;
+    graphicsQueueInfo.queueCount = 2;
     graphicsQueueInfo.pQueuePriorities = &queuePriority;
 
     VkDeviceQueueCreateInfo computeQueueInfo = {};
@@ -375,10 +375,14 @@ void Device::createLogicalDeviceAndQueues(
 
     graphicsQueue = VK_NULL_HANDLE;
     computeQueue = VK_NULL_HANDLE;
+    workerThreadGraphicsQueue = VK_NULL_HANDLE;
     if (!computeOnly) {
         vkGetDeviceQueue(device, graphicsQueueIndex, 0, &graphicsQueue);
+        vkGetDeviceQueue(device, graphicsQueueIndex, 1, &workerThreadGraphicsQueue);
     }
     vkGetDeviceQueue(device, computeQueueIndex, 0, &computeQueue);
+
+    mainThreadId = std::this_thread::get_id();
 }
 
 void createVulkanMemoryAllocator(
@@ -694,8 +698,18 @@ void Device::endSingleTimeCommands(VkCommandBuffer commandBuffer, uint32_t queue
     submitInfo.pCommandBuffers = &commandBuffer;
 
     // Could pass fence instead of VK_NULL_HANDLE and call vkWaitForFences later.
-    vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(graphicsQueue);
+    VkQueue queue;
+    if (mainThreadId == std::this_thread::get_id()) {
+        if (queueIndex == graphicsQueueIndex) {
+            queue = graphicsQueue;
+        } else {
+            queue = computeQueue;
+        }
+    } else {
+        queue = workerThreadGraphicsQueue;
+    }
+    vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(queue);
 
     CommandPoolType commandPoolType;
     commandPoolType.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
@@ -747,8 +761,18 @@ void Device::endSingleTimeMultipleCommands(
     submitInfo.pCommandBuffers = commandBuffers.data();
 
     // Could pass fence instead of VK_NULL_HANDLE and call vkWaitForFences later.
-    vkQueueSubmit(graphicsQueue, uint32_t(commandBuffers.size()), &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(graphicsQueue);
+    VkQueue queue;
+    if (mainThreadId == std::this_thread::get_id()) {
+        if (queueIndex == graphicsQueueIndex) {
+            queue = graphicsQueue;
+        } else {
+            queue = computeQueue;
+        }
+    } else {
+        queue = workerThreadGraphicsQueue;
+    }
+    vkQueueSubmit(queue, uint32_t(commandBuffers.size()), &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(queue);
 
     CommandPoolType commandPoolType;
     commandPoolType.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;

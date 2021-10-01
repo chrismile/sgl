@@ -96,28 +96,29 @@ public:
      * They should be used, e.g., for look-up tables or for objects only used exclusively by the GPU.
      * It is recommended to create the objects using the memory usage VMA_MEMORY_USAGE_GPU_ONLY.
      */
-    void setStaticBuffer(BufferPtr& buffer, uint32_t binding);
-    void setStaticBuffer(BufferPtr& buffer, const std::string& descName);
-    void setStaticBufferOptional(BufferPtr& buffer, const std::string& descName);
+    void setStaticBuffer(const BufferPtr& buffer, uint32_t binding);
+    void setStaticBuffer(const BufferPtr& buffer, const std::string& descName);
+    void setStaticBufferOptional(const BufferPtr& buffer, const std::string& descName);
 
-    void setStaticBufferView(BufferViewPtr& bufferView, uint32_t binding);
-    void setStaticBufferView(BufferViewPtr& bufferView, const std::string& descName);
-    void setStaticBufferViewOptional(BufferViewPtr& bufferView, const std::string& descName);
+    void setStaticBufferView(const BufferViewPtr& bufferView, uint32_t binding);
+    void setStaticBufferView(const BufferViewPtr& bufferView, const std::string& descName);
+    void setStaticBufferViewOptional(const BufferViewPtr& bufferView, const std::string& descName);
 
-    void setStaticImageView(ImageViewPtr& imageView, uint32_t binding);
-    void setImageSampler(ImageSamplerPtr& imageSampler, uint32_t binding);
-    void setStaticTexture(TexturePtr& texture, uint32_t binding);
+    void setStaticImageView(const ImageViewPtr& imageView, uint32_t binding);
+    void setImageSampler(const ImageSamplerPtr& imageSampler, uint32_t binding);
+    void setStaticTexture(const TexturePtr& texture, uint32_t binding);
 
-    void setStaticImageView(ImageViewPtr& imageView, const std::string& descName);
-    void setImageSampler(ImageSamplerPtr& imageSampler, const std::string& descName);
-    void setStaticTexture(TexturePtr& texture, const std::string& descName);
-    void setStaticImageViewOptional(ImageViewPtr& imageView, const std::string& descName);
-    void setImageSamplerOptional(ImageSamplerPtr& imageSampler, const std::string& descName);
-    void setStaticTextureOptional(TexturePtr& texture, const std::string& descName);
+    void setStaticImageView(const ImageViewPtr& imageView, const std::string& descName);
+    void setImageSampler(const ImageSamplerPtr& imageSampler, const std::string& descName);
+    void setStaticTexture(const TexturePtr& texture, const std::string& descName);
+    void setStaticImageViewOptional(const ImageViewPtr& imageView, const std::string& descName);
+    void setImageSamplerOptional(const ImageSamplerPtr& imageSampler, const std::string& descName);
+    void setStaticTextureOptional(const TexturePtr& texture, const std::string& descName);
 
-    void setTopLevelAccelerationStructure(TopLevelAccelerationStructurePtr& tlas, uint32_t binding);
-    void setTopLevelAccelerationStructure(TopLevelAccelerationStructurePtr& tlas, const std::string& descName);
-    void setTopLevelAccelerationStructureOptional(TopLevelAccelerationStructurePtr& tlas, const std::string& descName);
+    void setTopLevelAccelerationStructure(const TopLevelAccelerationStructurePtr& tlas, uint32_t binding);
+    void setTopLevelAccelerationStructure(const TopLevelAccelerationStructurePtr& tlas, const std::string& descName);
+    void setTopLevelAccelerationStructureOptional(
+            const TopLevelAccelerationStructurePtr& tlas, const std::string& descName);
 
     // Binds a small dummy buffer (of size 4 bytes) in order to avoid warnings.
     void setStaticBufferUnused(uint32_t binding);
@@ -127,17 +128,17 @@ public:
      * Dynamic data changes per frame. After adding the buffer, the per-frame buffer needs to be retrieved by calling
      * getBuffer.
      */
-    void setDynamicBuffer(BufferPtr& buffer, uint32_t binding);
-    void setDynamicBuffer(BufferPtr& buffer, const std::string& descName);
-    void setDynamicBufferOptional(BufferPtr& buffer, const std::string& descName);
+    void setDynamicBuffer(const BufferPtr& buffer, uint32_t binding);
+    void setDynamicBuffer(const BufferPtr& buffer, const std::string& descName);
+    void setDynamicBufferOptional(const BufferPtr& buffer, const std::string& descName);
 
-    void setDynamicBufferView(BufferViewPtr& bufferView, uint32_t binding);
-    void setDynamicBufferView(BufferViewPtr& bufferView, const std::string& descName);
-    void setDynamicBufferViewOptional(BufferViewPtr& bufferView, const std::string& descName);
+    void setDynamicBufferView(const BufferViewPtr& bufferView, uint32_t binding);
+    void setDynamicBufferView(const BufferViewPtr& bufferView, const std::string& descName);
+    void setDynamicBufferViewOptional(const BufferViewPtr& bufferView, const std::string& descName);
 
-    void setDynamicImageView(ImageViewPtr& imageView, uint32_t binding);
-    void setDynamicImageView(ImageViewPtr& imageView, const std::string& descName);
-    void setDynamicImageViewOptional(ImageViewPtr& imageView, const std::string& descName);
+    void setDynamicImageView(const ImageViewPtr& imageView, uint32_t binding);
+    void setDynamicImageView(const ImageViewPtr& imageView, const std::string& descName);
+    void setDynamicImageViewOptional(const ImageViewPtr& imageView, const std::string& descName);
 
     BufferPtr getBuffer(uint32_t binding);
     BufferPtr getBuffer(const std::string& name);
@@ -192,9 +193,9 @@ public:
     RasterData(Renderer* renderer, GraphicsPipelinePtr& graphicsPipeline);
     RenderDataType getRenderDataType() const override { return RenderDataType::RASTER; }
 
-    void setIndexBuffer(BufferPtr& buffer, VkIndexType indexType = VK_INDEX_TYPE_UINT32);
-    void setVertexBuffer(BufferPtr& buffer, uint32_t binding);
-    void setVertexBuffer(BufferPtr& buffer, const std::string& name);
+    void setIndexBuffer(const BufferPtr& buffer, VkIndexType indexType = VK_INDEX_TYPE_UINT32);
+    void setVertexBuffer(const BufferPtr& buffer, uint32_t binding);
+    void setVertexBuffer(const BufferPtr& buffer, const std::string& name);
 
     inline void setNumInstances(size_t numInstances) { this->numInstances = numInstances; }
     inline size_t getNumInstances() const { return numInstances; }

@@ -566,7 +566,12 @@ void Renderer::submitToQueue(
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
 
-    VkQueue queue = useGraphicsQueue ? device->getGraphicsQueue() : device->getComputeQueue();
+    VkQueue queue;
+    if (device->getIsMainThread()) {
+        queue = useGraphicsQueue ? device->getGraphicsQueue() : device->getComputeQueue();
+    } else {
+        queue = device->getWorkerThreadGraphicsQueue();
+    }
     if (vkQueueSubmit(queue, 1, &submitInfo, fenceVk) != VK_SUCCESS) {
         sgl::Logfile::get()->throwError(
                 "Error in Renderer::submitToQueue: Could not submit to the graphics queue.");
