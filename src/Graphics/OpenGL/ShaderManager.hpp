@@ -37,25 +37,29 @@ class DLL_OBJECT ShaderManagerGL : public ShaderManagerInterface
 {
 public:
     ShaderManagerGL();
-    ~ShaderManagerGL();
+    ~ShaderManagerGL() override;
 
-    ShaderProgramPtr createShaderProgram();
-    ShaderPtr createShader(ShaderType sh);
-    ShaderAttributesPtr createShaderAttributes(ShaderProgramPtr &shader);
+    ShaderProgramPtr createShaderProgram() override;
+    ShaderPtr createShader(ShaderType sh) override;
+    ShaderAttributesPtr createShaderAttributes(ShaderProgramPtr &shader) override;
 
     /// Make sure no shader is bound for rendering.
-    virtual void unbindShader();
+    void unbindShader() override;
 
     /**
      * Deletes all cached shaders in the ShaderManager. This is necessary e.g. when wanting to switch to a
      * different rendering technique with "addPreprocessorDefine" after already loading a certain shader.
      * Already loaded shaders will stay intact thanks to reference counting.
      */
-    virtual void invalidateShaderCache()
+    void invalidateShaderCache() override
     {
         assetMap.clear();
         effectSources.clear();
     }
+
+    /// Invalidates all uniform, atomic counter and shader storage buffer bindings.
+    void invalidateBindings();
+
 
     // --- Compute shader interface ---
 

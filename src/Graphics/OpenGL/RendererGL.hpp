@@ -123,6 +123,7 @@ public:
     void bindVAO(GLuint vao);
     GLuint getVAO();
     void useShaderProgram(ShaderProgramGL *shader);
+    void resetShaderProgram();
 
 public:
     // OpenGL reuses deleted texture IDs -> "unbind" texture
@@ -148,8 +149,8 @@ public:
     BlendMode blendMode;
     FramebufferObjectPtr boundFBO;
     std::vector<GLuint> boundTextureID;
-    GLuint currentTextureUnit;
-    GLuint boundFBOID, boundVAO, boundShader;
+    GLuint currentTextureUnit = 0;
+    GLuint boundFBOID = 0, boundVAO = 0, boundShader = 0;
     CameraPtr camera;
 
     // --- For post-processing effects ---

@@ -852,4 +852,10 @@ void RendererGL::useShaderProgram(ShaderProgramGL *shader)
     }
 }
 
+void RendererGL::resetShaderProgram()
+{
+    boundShader = 0;
+    ShaderManager->bindUniformBuffer(0, matrixBlockBuffer);
+}
+
 }

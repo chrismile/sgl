@@ -94,10 +94,17 @@ int ShaderManagerGL::getMaxWorkGroupInvocations()
     return maxWorkGroupInvocations;
 }
 
-void ShaderManagerGL::unbindShader() {
+void ShaderManagerGL::unbindShader()
+{
     glUseProgram(0);
 }
 
+void ShaderManagerGL::invalidateBindings()
+{
+    uniformBuffers.clear();
+    atomicCounterBuffers.clear();
+    shaderStorageBuffers.clear();
+}
 
 
 void ShaderManagerGL::bindUniformBuffer(int binding, GeometryBufferPtr &geometryBuffer)

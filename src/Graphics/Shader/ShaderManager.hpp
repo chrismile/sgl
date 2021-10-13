@@ -97,6 +97,9 @@ public:
      */
     virtual void invalidateShaderCache()=0;
 
+    /// Invalidates all uniform, atomic counter and shader storage buffer bindings.
+    virtual void invalidateBindings()=0;
+
 
     // --- Compute shader interface ---
 
