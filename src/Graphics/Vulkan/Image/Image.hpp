@@ -163,6 +163,10 @@ public:
     void transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout);
     void transitionImageLayout(VkImageLayout newLayout, VkCommandBuffer commandBuffer);
     void transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout, VkCommandBuffer commandBuffer);
+    void insertMemoryBarrier(
+            VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout,
+            VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
+            VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask);
 
     /// The subresource layout contains information necessary when accessing the image data on the CPU (e.g., stride).
     VkSubresourceLayout getSubresourceLayout(

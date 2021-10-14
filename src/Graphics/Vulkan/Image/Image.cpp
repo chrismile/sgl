@@ -484,6 +484,45 @@ void Image::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayo
     this->imageLayout = newLayout;
 }
 
+void Image::insertMemoryBarrier(
+        VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout,
+        VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
+        VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask) {
+    VkImageMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout = oldLayout;
+    barrier.newLayout = newLayout;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = this->getVkImage();
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = this->getImageSettings().mipLevels;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = this->getImageSettings().arrayLayers;
+    if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+
+        if (hasStencilComponent(this->getImageSettings().format)) {
+            barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+        }
+    } else {
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    }
+    barrier.srcAccessMask = srcAccessMask;
+    barrier.dstAccessMask = dstAccessMask;
+
+    vkCmdPipelineBarrier(
+            commandBuffer,
+            srcStage, dstStage,
+            0, // 0 or VK_DEPENDENCY_BY_REGION_BIT
+            0, nullptr,
+            0, nullptr,
+            1, &barrier
+    );
+
+    this->imageLayout = newLayout;
+}
+
 void Image::_generateMipmaps() {
     // Does the device support linear filtering for blit operations?
     VkFormatProperties formatProperties;

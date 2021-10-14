@@ -88,8 +88,9 @@ bool FramebufferObjectGL::checkStatus()
         case GL_FRAMEBUFFER_COMPLETE:
             break;
         default:
-            Logfile::get()->writeError(std::string() + "Error: FramebufferObject::internBind2DTexture(): "
-                    + "Cannot bind texture to FBO! status = " + toString(status));
+            Logfile::get()->writeError(
+                    std::string() + "Error: FramebufferObject::checkStatus(): "
+                    + "Invalid FBO status " + toString(status) + "!");
             return false;
     }
     return true;
@@ -107,11 +108,11 @@ unsigned int FramebufferObjectGL::_bindInternal()
 
     // More than one color attachment
     if (textures.size() > 1) {
-        if (colorAttachments.size() == 0) {
+        if (colorAttachments.empty()) {
             colorAttachments.reserve(textures.size());
-            for (auto it = textures.begin(); it != textures.end(); it++) {
-                if (it->first >= COLOR_ATTACHMENT0 && it->first <= COLOR_ATTACHMENT15) {
-                    colorAttachments.push_back(it->first);
+            for (auto& texture : textures) {
+                if (texture.first >= COLOR_ATTACHMENT0 && texture.first <= COLOR_ATTACHMENT15) {
+                    colorAttachments.push_back(texture.first);
                 }
             }
         }
@@ -181,8 +182,9 @@ bool FramebufferObjectGL2::checkStatus()
         case GL_FRAMEBUFFER_COMPLETE_EXT:
             break;
         default:
-            Logfile::get()->writeError(std::string() + "Error: FramebufferObject::internBind2DTexture(): "
-                    + "Cannot bind texture to FBO! status = " + toString(status));
+            Logfile::get()->writeError(
+                    std::string() + "Error: FramebufferObject::checkStatus(): "
+                    + "Invalid FBO status " + toString(status) + "!");
             return false;
     }
     return true;
