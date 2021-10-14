@@ -26,6 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <algorithm>
+
 #include <ImGui/ImGuiWrapper.hpp>
 #include <ImGui/imgui_verticaltext.h>
 

@@ -26,6 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <algorithm>
 #include <cstring>
 #include <Utils/File/Logfile.hpp>
 #include <Graphics/Vulkan/Utils/Device.hpp>
