@@ -141,6 +141,7 @@ void VideoWriter::createCpuBufferData(int width, int height) {
     }
 }
 
+#ifdef SUPPORT_OPENGL
 void VideoWriter::pushWindowFrame() {
     sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
     createCpuBufferData(window->getWidth(), window->getHeight());
@@ -184,7 +185,9 @@ void VideoWriter::pushWindowFrame() {
         pushFrame(framebuffer);
     }
 }
+#endif
 
+#ifdef SUPPORT_VULKAN
 void VideoWriter::onSwapchainRecreated() {
     while (queueSize > 0) {
         readBackOldestFrameVulkan();
@@ -270,7 +273,9 @@ void VideoWriter::pushFramebufferImage(vk::ImagePtr& image) {
     endPointer = (endPointer + 1) % queueCapacity;
     queueSize++;
 }
+#endif
 
+#ifdef SUPPORT_OPENGL
 void VideoWriter::initializeReadBackBuffers() {
     for (size_t i = 0; i < NUM_RB_BUFFERS; i++) {
         glGenBuffers(1, &readBackBuffers[i].pbo);
@@ -278,6 +283,7 @@ void VideoWriter::initializeReadBackBuffers() {
         glBufferData(GL_PIXEL_PACK_BUFFER, frameW * frameH * 3, 0, GL_STREAM_READ);
     }
 }
+#endif
 
 bool VideoWriter::isReadBackBufferFree() {
     return queueSize < queueCapacity;
@@ -287,6 +293,7 @@ bool VideoWriter::isReadBackBufferEmpty() {
     return queueSize == 0;
 }
 
+#ifdef SUPPORT_OPENGL
 void VideoWriter::addCurrentFrameToQueue() {
     // 1. Query a free read back buffer.
     assert(isReadBackBufferFree());
@@ -390,5 +397,6 @@ void VideoWriter::readBackOldestFrame() {
     startPointer = (startPointer + 1) % queueCapacity;
     queueSize--;
 }
+#endif
 
 }

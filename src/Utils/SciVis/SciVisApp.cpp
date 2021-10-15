@@ -242,12 +242,14 @@ void SciVisApp::resolutionChanged(sgl::EventPtr event) {
     // Buffers for off-screen rendering
     createSceneFramebuffer();
 
+#ifdef SUPPORT_VULKAN
     sgl::vk::Swapchain* swapchain = sgl::AppSettings::get()->getSwapchain();
     if (swapchain && AppSettings::get()->getUseGUI()) {
         //sgl::ImGuiWrapper::get()->setVkRenderTargets(swapchain->getSwapchainImageViews());
         sgl::ImGuiWrapper::get()->setVkRenderTarget(compositedTextureVk->getImageView());
         sgl::ImGuiWrapper::get()->onResolutionChanged();
     }
+#endif
 
 #ifdef SUPPORT_VULKAN
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN && videoWriter) {
@@ -442,10 +444,12 @@ void SciVisApp::postRender() {
         saveScreenshot(
                 saveDirectoryScreenshots + saveFilenameScreenshots
                 + "_" + sgl::toString(screenshotNumber++) + ".png");
+#ifdef SUPPORT_VULKAN
         if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
             rendererVk->transitionImageLayout(
                     compositedTextureVk->getImage(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
         }
+#endif
         printNow = false;
     }
 

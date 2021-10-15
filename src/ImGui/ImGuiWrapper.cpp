@@ -50,11 +50,13 @@
 namespace sgl
 {
 
+#ifdef SUPPORT_VULKAN
 static void checkImGuiVkResult(VkResult result) {
     if (result != VK_SUCCESS) {
         Logfile::get()->throwError("Error in checkImGuiVkResult: result = " + std::to_string(result));
     }
 }
+#endif
 
 void ImGuiWrapper::initialize(
         const ImWchar* fontRangesData, bool useDocking, bool useMultiViewport, float uiScaleFactor) {
