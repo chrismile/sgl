@@ -306,21 +306,21 @@ void Device::createLogicalDeviceAndQueues(
     computeQueueIndex = findQueueFamilies(
             physicalDevice, static_cast<VkQueueFlagBits>(VK_QUEUE_COMPUTE_BIT));
 
-    float queuePriority = 1.0;
+    float queuePriorities[2] = { 1.0, 1.0 };
 
     VkDeviceQueueCreateInfo graphicsQueueInfo = {};
     graphicsQueueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     graphicsQueueInfo.pNext = nullptr;
     graphicsQueueInfo.queueFamilyIndex = uint32_t(graphicsQueueIndex);
     graphicsQueueInfo.queueCount = 2;
-    graphicsQueueInfo.pQueuePriorities = &queuePriority;
+    graphicsQueueInfo.pQueuePriorities = queuePriorities;
 
     VkDeviceQueueCreateInfo computeQueueInfo = {};
     computeQueueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     computeQueueInfo.pNext = nullptr;
     computeQueueInfo.queueFamilyIndex = uint32_t(computeQueueIndex);
     computeQueueInfo.queueCount = 1;
-    computeQueueInfo.pQueuePriorities = &queuePriority;
+    computeQueueInfo.pQueuePriorities = queuePriorities;
 
     VkDeviceQueueCreateInfo queueInfos[] = { graphicsQueueInfo, computeQueueInfo };
     VkDeviceQueueCreateInfo* queueInfosPtr = queueInfos;
