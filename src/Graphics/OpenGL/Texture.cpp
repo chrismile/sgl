@@ -88,6 +88,7 @@ TexturePtr TextureGL::createTextureView() {
     return TexturePtr(new TextureGL(textureViewGL, w, h, d, settings, samples));
 }
 
+#ifdef SUPPORT_VULKAN
 static std::unordered_map<VkFormat, GLenum> vulkanFormatToGlSizedFormatMap = {
         { VK_FORMAT_R8_UNORM, GL_R8 },
         { VK_FORMAT_R8_SNORM, GL_R8_SNORM },
@@ -306,5 +307,6 @@ TextureGLExternalMemoryVk::TextureGLExternalMemoryVk(vk::TexturePtr& vulkanTextu
 TextureGLExternalMemoryVk::~TextureGLExternalMemoryVk() {
     glDeleteMemoryObjectsEXT(1, &memoryObject);
 }
+#endif
 
 }
