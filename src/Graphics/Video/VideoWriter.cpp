@@ -52,22 +52,34 @@
 namespace sgl {
 
 VideoWriter::VideoWriter(const std::string& filename, int frameW, int frameH, int framerate, bool useAsyncCopy)
-        : useAsyncCopy(useAsyncCopy), frameW(frameW), frameH(frameH), framebuffer(NULL) {
+        :
+#ifdef SUPPORT_OPENGL
+        useAsyncCopy(useAsyncCopy),
+#endif
+        frameW(frameW), frameH(frameH), framebuffer(NULL) {
+#ifdef SUPPORT_OPENGL
     if (useAsyncCopy) {
         initializeReadBackBuffers();
     }
+#endif
     openFile(filename, framerate);
 }
 
 VideoWriter::VideoWriter(const std::string& filename, int framerate, bool useAsyncCopy)
-        : useAsyncCopy(useAsyncCopy), framebuffer(NULL) {
+        :
+#ifdef SUPPORT_OPENGL
+        useAsyncCopy(useAsyncCopy),
+#endif
+        framebuffer(NULL) {
     sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
     frameW = window->getWidth();
     frameH = window->getHeight();
     if (AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
+#ifdef SUPPORT_OPENGL
         if (useAsyncCopy) {
             initializeReadBackBuffers();
         }
+#endif
     }
     openFile(filename, framerate);
 }
@@ -91,6 +103,7 @@ void VideoWriter::openFile(const std::string& filename, int framerate) {
 }
 
 VideoWriter::~VideoWriter() {
+#ifdef SUPPORT_OPENGL
     if (AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
         if (useAsyncCopy) {
             while (!isReadBackBufferEmpty()) {
@@ -98,6 +111,7 @@ VideoWriter::~VideoWriter() {
             }
         }
     }
+#endif
 #ifdef SUPPORT_VULKAN
     if (AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
         while (queueSize > 0) {
@@ -286,7 +300,6 @@ void VideoWriter::initializeReadBackBuffers() {
         glBufferData(GL_PIXEL_PACK_BUFFER, frameW * frameH * 3, 0, GL_STREAM_READ);
     }
 }
-#endif
 
 bool VideoWriter::isReadBackBufferFree() {
     return queueSize < queueCapacity;
@@ -296,7 +309,6 @@ bool VideoWriter::isReadBackBufferEmpty() {
     return queueSize == 0;
 }
 
-#ifdef SUPPORT_OPENGL
 void VideoWriter::addCurrentFrameToQueue() {
     // 1. Query a free read back buffer.
     assert(isReadBackBufferFree());
