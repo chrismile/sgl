@@ -180,7 +180,9 @@ protected:
     float customEndTime = 0.0f; ///< > 0.0 if the camera path should play for a custom amount of time.
 
     /// Data passed between functions.
+#ifdef SUPPORT_OPENGL
     GLint gpuInitialFreeMemKilobytes = 0;
+#endif
     glm::mat4 rotationMatrix; ///< Camera rotation matrix.
     glm::mat4 invRotationMatrix; ///< Inverse camera rotation matrix.
 };

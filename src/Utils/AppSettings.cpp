@@ -26,7 +26,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <GL/glew.h>
 #include "AppSettings.hpp"
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
@@ -49,6 +48,7 @@
 #endif
 
 #ifdef SUPPORT_OPENGL
+#include <GL/glew.h>
 #include <Graphics/OpenGL/RendererGL.hpp>
 #include <Graphics/OpenGL/ShaderManager.hpp>
 #include <Graphics/OpenGL/TextureManager.hpp>

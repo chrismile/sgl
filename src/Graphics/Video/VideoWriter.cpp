@@ -31,12 +31,15 @@
 #include <cstdlib>
 #include <iostream>
 #include <thread>
-#include <GL/glew.h>
 
 #include <Graphics/Window.hpp>
 #include <Utils/AppSettings.hpp>
 #include <Utils/Convert.hpp>
 #include <Utils/File/Logfile.hpp>
+
+#ifdef SUPPORT_OPENGL
+#include <GL/glew.h>
+#endif
 
 #ifdef SUPPORT_VULKAN
 #include <Graphics/Vulkan/Utils/Device.hpp>

@@ -27,7 +27,6 @@
  */
 
 #include <cmath>
-#include <GL/glew.h>
 #include <glm/glm.hpp>
 
 #define IMGUI_DEFINE_MATH_OPERATORS
@@ -42,9 +41,10 @@
 #include <Utils/File/FileUtils.hpp>
 #include <Math/Math.hpp>
 #ifdef SUPPORT_OPENGL
+#include <GL/glew.h>
+#include <memory>
 #include <Graphics/Renderer.hpp>
 #include <Graphics/Texture/TextureManager.hpp>
-#include <memory>
 #endif
 #ifdef SUPPORT_VULKAN
 #include <Graphics/Vulkan/Buffers/Buffer.hpp>
