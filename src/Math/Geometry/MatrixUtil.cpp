@@ -87,11 +87,8 @@ glm::mat4 matrixOrthogonalProjection(float left, float right, float bottom, floa
             0.0f, 2.0f / (top - bottom), 0.0f, 0.0f,
             0.0f, 0.0f, -2.0f / (far - near), -(far + near) / (far - near),
             -(right + left) / (right - left), -(top + bottom) / (top - bottom), 0.0f, 1.0f);
-    return glm::mat4(2.0f / (right - left), 0.0f, 0.0f, - (right + left) / (right - left),
-                     0.0f, 2.0f / (top - bottom), 0.0f, - (top + bottom) / (top - bottom),
-                     0.0f, 0.0f, -2.0f / (far - near), - (far + near) / (far - near),
-                     0.0f, 0.0f, 0.0f, 1.0f);
 }
+
 glm::mat4 matrixSkewX(float f)
 {
     // Calculate scaling matrix

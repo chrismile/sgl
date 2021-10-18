@@ -54,7 +54,7 @@ SystemGL::SystemGL()
     vendorString = (const char*)glGetString(GL_VENDOR);
 
     // Get OpenGL version (including GLSL)
-    versionString = (char*)glGetString(GL_VERSION);
+    versionString = (const char*)glGetString(GL_VERSION);
     shadingLanguageVersionString = (char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
     majorVersionNumber = fromString<int>(std::string()+versionString.at(0));
     minorVersionNumber = fromString<int>(std::string()+versionString.at(2));
