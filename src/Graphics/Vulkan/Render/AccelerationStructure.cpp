@@ -441,8 +441,8 @@ void TopLevelAccelerationStructure::build(
     // Allocate a scratch buffer for holding the temporary memory needed by the AS builder.
     BufferPtr scratchBuffer(new Buffer(
             device, buildSizesInfo.buildScratchSize,
-            VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-            VMA_MEMORY_USAGE_GPU_ONLY));
+            VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
+            | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY));
 
     buildInfo.srcAccelerationStructure = update ? accelerationStructure : VK_NULL_HANDLE;
     buildInfo.dstAccelerationStructure = accelerationStructure;
