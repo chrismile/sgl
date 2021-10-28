@@ -246,6 +246,19 @@ bool isDeviceCompatibleWithOpenGl(VkPhysicalDevice physicalDevice) {
     assert(VK_UUID_SIZE == GL_UUID_SIZE_EXT);
     const size_t UUID_SIZE = std::min(size_t(VK_UUID_SIZE), size_t(GL_UUID_SIZE_EXT));
 
+    VkPhysicalDeviceProperties physicalDeviceProperties{};
+    vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
+    const std::string infoMessage =
+            std::string() + "Checking Vulkan device \'" + physicalDeviceProperties.deviceName
+            + "\' for compatibility with OpenGL...";
+    sgl::Logfile::get()->write(infoMessage, BLUE);
+
+    if (physicalDeviceProperties.apiVersion < VK_API_VERSION_1_1) {
+        sgl::Logfile::get()->write(
+                "Discarding the Vulkan device due to not supporting at least Vulkan 1.1.", BLUE);
+        return false;
+    }
+
     // Get the Vulkan UUID data for the driver and device.
     VkPhysicalDeviceIDProperties physicalDeviceIdProperties = {};
     physicalDeviceIdProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES;
@@ -260,6 +273,8 @@ bool isDeviceCompatibleWithOpenGl(VkPhysicalDevice physicalDevice) {
     glGetUnsignedBytevEXT(GL_DRIVER_UUID_EXT, driverUuid);
 
     if (strncmp((const char*)driverUuid, (const char*)physicalDeviceIdProperties.driverUUID, UUID_SIZE) != 0) {
+        sgl::Logfile::get()->write(
+                "Discarding the Vulkan device due to a mismatch in driver UUIDs with the OpenGL.", BLUE);
         return false;
     }
 
