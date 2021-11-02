@@ -61,7 +61,7 @@ void CameraPath::setApplicationCallback(ApplicationCallback applicationCallback)
 }
 
 void CameraPath::fromCirclePath(
-        sgl::AABB3& sceneBoundingBox, const std::string& modelFilename, float totalTime,
+        const sgl::AABB3& sceneBoundingBox, const std::string& modelFilename, float totalTime,
         bool performanceMeasurementMode) {
     const size_t NUM_CIRCLE_POINTS = 64;
     controlPoints.clear();

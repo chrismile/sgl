@@ -64,7 +64,7 @@ public:
     CameraPath() {}
     void setApplicationCallback(ApplicationCallback applicationCallback);
     void fromCirclePath(
-            sgl::AABB3& sceneBoundingBox, const std::string& modelFilename, float totalTime,
+            const sgl::AABB3& sceneBoundingBox, const std::string& modelFilename, float totalTime,
             bool performanceMeasurementMode);
     void fromControlPoints(const std::vector<ControlPoint>& controlPoints);
     bool fromBinaryFile(const std::string& filename);
