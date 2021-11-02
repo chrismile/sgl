@@ -45,17 +45,21 @@ public:
     inline glm::vec2 getDimensions() const { return max - min; }
     inline glm::vec2 getExtent() const { return (max - min) / 2.0f; }
     inline glm::vec2 getCenter() const { return (max + min) / 2.0f; }
-    inline glm::vec2 getMinimum() const { return min; }
-    inline glm::vec2 getMaximum() const { return max; }
+    inline const glm::vec2& getMinimum() const { return min; }
+    inline const glm::vec2& getMaximum() const { return max; }
     inline float getWidth() const { return max.x - min.x; }
     inline float getHeight() const { return max.y - min.y; }
 
-    //! Merge the two AABBs
-    void combine(const AABB2 &otherAABB);
-    //! Merge AABB with a point
-    void combine(const glm::vec2 &pt);
-    //! Transform AABB
-    AABB2 transformed(const glm::mat4 &matrix);
+    //! Returns whether the two AABBs intersect.
+    bool intersects(const AABB2& otherAABB);
+    //! Merge the two AABBs.
+    void combine(const AABB2& otherAABB);
+    //! Merge AABB with a point.
+    void combine(const glm::vec2& pt);
+    //! Returns whether the AABB contain the point.
+    bool contains(const glm::vec2& pt);
+    //! Transform AABB.
+    AABB2 transformed(const glm::mat4& matrix);
 };
 
 }

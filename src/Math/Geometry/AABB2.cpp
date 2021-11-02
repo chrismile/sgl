@@ -31,7 +31,16 @@
 
 namespace sgl {
 
-void AABB2::combine(const AABB2 &otherAABB)
+bool AABB2::intersects(const AABB2& otherAABB)
+{
+    if (max.x < otherAABB.min.x || min.x > otherAABB.max.x
+            || max.y < otherAABB.min.y || min.y > otherAABB.max.y) {
+        return false;
+    }
+    return true;
+}
+
+void AABB2::combine(const AABB2& otherAABB)
 {
     if (otherAABB.min.x < min.x)
         min.x = otherAABB.min.x;
@@ -43,7 +52,7 @@ void AABB2::combine(const AABB2 &otherAABB)
         max.y = otherAABB.max.y;
 }
 
-void AABB2::combine(const glm::vec2 &pt)
+void AABB2::combine(const glm::vec2& pt)
 {
     if (pt.x < min.x)
         min.x = pt.x;
@@ -55,7 +64,12 @@ void AABB2::combine(const glm::vec2 &pt)
         max.y = pt.y;
 }
 
-AABB2 AABB2::transformed(const glm::mat4 &matrix)
+bool AABB2::contains(const glm::vec2& pt)
+{
+    return pt.x >= min.x && pt.y >= min.y && pt.x <= max.x && pt.y <= max.y;
+}
+
+AABB2 AABB2::transformed(const glm::mat4& matrix)
 {
     glm::vec2 transformedCorners[4];
     transformedCorners[0] = transformPoint(matrix, min);
