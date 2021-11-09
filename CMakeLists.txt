@@ -103,9 +103,6 @@ if (${CMAKE_VERSION} VERSION_GREATER "3.11")
     cmake_policy(SET CMP0072 NEW)
 endif()
 
-cmake_policy(SET CMP0012 NEW)
-find_package(OpenMP REQUIRED)
-
 find_package(OpenGL QUIET)
 find_package(GLEW QUIET)
 if (${SUPPORT_OPENGL} AND ${OpenGL_FOUND} AND ${GLEW_FOUND})
@@ -284,10 +281,36 @@ if(NOT WIN32 AND NOT (UNIX AND NOT APPLE))
     endif()
 endif()
 
-if(OPENMP_FOUND)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+# According to https://devblogs.microsoft.com/cppblog/improved-openmp-support-for-cpp-in-visual-studio/,
+# support for LLVM OpenMP was added with Visual Studio 2019 version 16.9. According to
+# https://docs.microsoft.com/en-us/cpp/preprocessor/predefined-macros?view=msvc-170,
+# both Visual Studio 2019 version 16.8 and 16.9 have _MSC_VER / MSVC_VERSION 1928, so we need to check
+# for a minimum version 1929.
+find_package(OpenMP REQUIRED)
+if(MSVC)
+    option(USE_MSVC_OPENMP_LLVM "Use LLVM OpenMP with MSVC (available since Visual Studio 2019 version 16.9)." ON)
+    option(USE_MSVC_OPENMP_EXPERIMENTAL "Use experimental OpenMP with MSVC (available since Visual Studio 2019 version 16.9)." ON)
+
+    if(${MSVC_VERSION} GREATER_EQUAL 1929 AND (USE_MSVC_OPENMP_LLVM OR USE_MSVC_OPENMP_EXPERIMENTAL))
+        if(USE_MSVC_OPENMP_LLVM)
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /openmp:llvm")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /openmp:llvm")
+        endif()
+        if(USE_MSVC_OPENMP_EXPERIMENTAL)
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /openmp:experimental")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /openmp:experimental")
+        endif()
+        if(USE_MSVC_OPENMP_LLVM AND USE_MSVC_OPENMP_EXPERIMENTAL)
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /w44005")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /w44005")
+        endif()
+    endif()
+else()
+    if(OPENMP_FOUND)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+    endif()
 endif()
 
 
