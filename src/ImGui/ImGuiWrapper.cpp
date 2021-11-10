@@ -77,6 +77,7 @@ void ImGuiWrapper::initialize(
     if (useMultiViewport) {
         io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     }
+    io.ConfigWindowsMoveFromTitleBarOnly = true;
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
     //io.FontGlobalScale = fontScaleFactor*2.0f;
 

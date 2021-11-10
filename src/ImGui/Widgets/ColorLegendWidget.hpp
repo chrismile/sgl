@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2020, Christoph Neuhauser
+ * Copyright (c) 2021, Christoph Neuhauser
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,8 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef STRESSLINEVIS_COLORLEGENDWIDGET_HPP
-#define STRESSLINEVIS_COLORLEGENDWIDGET_HPP
+#ifndef SGL_COLORLEGENDWIDGET_HPP
+#define SGL_COLORLEGENDWIDGET_HPP
 
 #include <Graphics/Color.hpp>
 #include <string>
@@ -93,4 +93,4 @@ private:
 
 }
 
-#endif //STRESSLINEVIS_COLORLEGENDWIDGET_HPP
+#endif //SGL_COLORLEGENDWIDGET_HPP

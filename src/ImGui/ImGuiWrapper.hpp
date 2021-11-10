@@ -89,6 +89,29 @@ public:
     void processSDLEvent(const SDL_Event &event);
     void onResolutionChanged();
 
+    // Utility functions for dock space mode.
+    inline bool getUseDockSpaceMode() const { return useDockSpaceMode; }
+    inline void setUseDockSpaceMode(bool _useDockSpaceMode) { useDockSpaceMode = _useDockSpaceMode; }
+    ImGuiViewport* getCurrentWindowViewport() { return windowViewports.at(currentWindowIdx); }
+    void setWindowViewport(size_t windowIdx, ImGuiViewport* windowViewport) {
+        if (windowViewports.size() <= windowIdx) {
+            windowViewports.resize(windowIdx + 1);
+        }
+        currentWindowIdx = windowIdx;
+        windowViewports.at(currentWindowIdx) = windowViewport;
+    }
+    const ImVec2& getCurrentWindowPosition() { return windowPositions.at(currentWindowIdx); }
+    const ImVec2& getCurrentWindowSize() { return windowSizes.at(currentWindowIdx); }
+    void setWindowPosAndSize(size_t windowIdx, const ImVec2& windowPosition, const ImVec2& windowSize) {
+        if (windowPositions.size() <= windowIdx) {
+            windowPositions.resize(windowIdx + 1);
+            windowSizes.resize(windowIdx + 1);
+        }
+        currentWindowIdx = windowIdx;
+        windowPositions.at(currentWindowIdx) = windowPosition;
+        windowSizes.at(currentWindowIdx) = windowSize;
+    }
+
     void renderDemoWindow();
     void showHelpMarker(const char* desc);
 
@@ -102,6 +125,13 @@ private:
     float uiScaleFactor;
     float defaultUiScaleFactor = 1.875f;
     float sizeScale = 1.0f;
+
+    // Dock space mode.
+    bool useDockSpaceMode = false;
+    size_t currentWindowIdx = 0;
+    std::vector<ImGuiViewport*> windowViewports;
+    std::vector<ImVec2> windowPositions;
+    std::vector<ImVec2> windowSizes;
 
 #ifdef SUPPORT_VULKAN
     bool initialized = false;

@@ -147,6 +147,9 @@ protected:
     int rotateModelBy90DegreeTurns = 0;
     glm::ivec2 windowResolution;
 
+    // Dock space mode.
+    bool useDockSpaceMode = false;
+
     // Continuous rendering: Re-render each frame or only when scene changes?
     bool continuousRendering = false;
     bool reRender = true;

@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2020, Christoph Neuhauser
+ * Copyright (c) 2021, Christoph Neuhauser
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,11 +26,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <iostream>
 #include <algorithm>
 
 #include <ImGui/ImGuiWrapper.hpp>
 #include <ImGui/imgui_verticaltext.h>
 
+#include "NumberFormatting.hpp"
 #include "ColorLegendWidget.hpp"
 
 namespace sgl {
@@ -66,45 +68,6 @@ void ColorLegendWidget::setClearColor(const sgl::Color& _clearColor) {
     this->textColor = sgl::Color(255 - clearColor.getR(), 255 - clearColor.getG(), 255 - clearColor.getB());
 }
 
-/// Removes trailing zeros and unnecessary decimal points.
-std::string removeTrailingZeros(const std::string& numberString) {
-    size_t lastPos = numberString.size();
-    for (int i = int(numberString.size()) - 1; i > 0; i--) {
-        char c = numberString.at(i);
-        if (c == '.') {
-            lastPos--;
-            break;
-        }
-        if (c != '0') {
-            break;
-        }
-        lastPos--;
-    }
-    return numberString.substr(0, lastPos);
-}
-
-/// Removes decimal points if more than maxDigits digits are used.
-std::string getNiceNumberString(float number, int digits) {
-    int maxDigits = digits + 2; // Add 2 digits for '.' and one digit afterwards.
-    std::string outString = removeTrailingZeros(sgl::toString(number, digits, true));
-
-    // Can we remove digits after the decimal point?
-    size_t dotPos = outString.find('.');
-    if (int(outString.size()) > maxDigits && dotPos != std::string::npos) {
-        size_t substrSize = dotPos;
-        if (int(dotPos) < maxDigits - 1) {
-            substrSize = maxDigits;
-        }
-        outString = outString.substr(0, substrSize);
-    }
-
-    // Still too large?
-    if (int(outString.size()) > maxDigits) {
-        outString = sgl::toString(number, std::max(digits - 2, 1), false, false, true);
-    }
-    return outString;
-}
-
 void ColorLegendWidget::renderGui() {
     float scaleFactor = sgl::ImGuiWrapper::get()->getScaleFactor() / 1.875f;
 
@@ -115,30 +78,60 @@ void ColorLegendWidget::renderGui() {
 
     float textHeight = 0;
 
-    std::string windowId = std::string() + "##" + attributeDisplayName;
-    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    bool useDockSpaceMode = ImGuiWrapper::get()->getUseDockSpaceMode();
+    float contentOffset = ImGui::GetCursorPos().x;
+
     ImVec2 windowSize = ImVec2(totalWidth + 3, regionHeight + 30 * scaleFactor);
-    float windowOffset = (windowSize.x + 8) * (numPositionsTotal - positionIndex - 1);
-    ImVec2 windowPos = ImVec2(
-            viewport->Pos.x + viewport->Size.x - totalWidth - 12 - windowOffset,
-            viewport->Pos.y + viewport->Size.y - regionHeight - 40 * scaleFactor);
-    ImGui::SetNextWindowPos(windowPos);
-    ImGui::SetNextWindowSize(windowSize);
+    float windowOffset = (windowSize.x + 8) * float(numPositionsTotal - positionIndex - 1);
+
+    ImVec2 windowPos;
+    if (useDockSpaceMode) {
+        ImVec2 currentWindowSize = sgl::ImGuiWrapper::get()->getCurrentWindowSize();
+        windowPos = ImVec2(
+                currentWindowSize.x - totalWidth - 18 - windowOffset,
+                currentWindowSize.y - regionHeight - 46 * scaleFactor);
+        ImGui::SetCursorPos(windowPos);
+    } else {
+        ImGuiViewport* viewport = ImGui::GetMainViewport();
+        windowPos = ImVec2(
+                viewport->Pos.x + viewport->Size.x - totalWidth - 12 - windowOffset,
+                viewport->Pos.y + viewport->Size.y - regionHeight - 40 * scaleFactor);
+        ImGui::SetNextWindowViewport(viewport->ID);
+        ImGui::SetNextWindowPos(windowPos);
+        ImGui::SetNextWindowSize(windowSize);
+    }
+
     glm::vec3 clearColorFlt(clearColor.getFloatR(), clearColor.getFloatG(), clearColor.getFloatB());
     glm::vec3 textColorFlt(textColor.getFloatR(), textColor.getFloatG(), textColor.getFloatB());
     glm::vec3 bgColor = glm::mix(clearColorFlt, textColorFlt, 0.1);
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(bgColor.r, bgColor.g, bgColor.b, 0.7f));
-    if (ImGui::Begin(
-            windowId.c_str(), &showWindow,
-            ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize/*|ImGuiWindowFlags_NoMove*/
-            |ImGuiWindowFlags_NoScrollbar|ImGuiWindowFlags_NoSavedSettings/*|ImGuiWindowFlags_NoInputs*/
-            |ImGuiWindowFlags_NoFocusOnAppearing)) {
+    ImVec4 bgColorImGui = ImVec4(bgColor.r, bgColor.g, bgColor.b, 0.7f);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, bgColorImGui);
+    bool showContent = true;
+    if (!useDockSpaceMode) {
+        std::string windowId = std::string() + "##" + attributeDisplayName;
+        showContent = ImGui::Begin(
+                windowId.c_str(), &showWindow,
+                ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove
+                | ImGuiWindowFlags_NoScrollbar| ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing);
+    }
+    if (showContent) {
         ImGui::SetWindowFontScale(fontScale); // Make font slightly smaller.
         ImDrawList* drawList = ImGui::GetWindowDrawList();
-        //float scaleFactor = sgl::ImGuiWrapper::get()->getScaleFactor();
+
+        ImVec2 startPos = ImGui::GetCursorScreenPos();
+
+        if (useDockSpaceMode) {
+            ImVec2 bgPos = ImVec2(startPos.x - contentOffset, startPos.y - contentOffset);
+            drawList->AddRectFilled(
+                    bgPos, ImVec2(bgPos.x + windowSize.x, bgPos.y + windowSize.y),
+                    ImColor(bgColorImGui), 1.0f);
+            ImColor borderColor = ImColor(ImGui::GetStyleColorVec4(ImGuiCol_Border));
+            drawList->AddRect(
+                    bgPos, ImVec2(bgPos.x + windowSize.x, bgPos.y + windowSize.y),
+                    borderColor, 1.0f);
+        }
 
         // Draw color bar.
-        ImVec2 startPos = ImGui::GetCursorScreenPos();
         ImVec2 pos = ImVec2(startPos.x + 1, startPos.y + 1);
         const float lineHeightFactor = 1.0f / float(transferFunctionColorMap.size() - 1);
         const size_t numColorMapEntries = transferFunctionColorMap.size();
@@ -164,14 +157,14 @@ void ColorLegendWidget::renderGui() {
         ImU32 textColorImgui = textColor.getColorRGBA();
 
         // Add min/max value text to color bar.
-        float textHeight = ImGui::CalcTextSize(attributeDisplayName.c_str()).y;
+        float textHeightLocal = ImGui::CalcTextSize(attributeDisplayName.c_str()).y;
         std::string minText = getNiceNumberString(attributeMinValue, 3);
         std::string maxText = getNiceNumberString(attributeMaxValue, 3);
         drawList->AddText(
-                ImVec2(startPos.x + barWidth + 10, startPos.y + regionHeight - textHeight/2.0f + 1),
+                ImVec2(startPos.x + barWidth + 10, startPos.y + regionHeight - textHeightLocal/2.0f + 1),
                 textColorImgui, minText.c_str());
         drawList->AddText(
-                ImVec2(startPos.x + barWidth + 10, startPos.y - textHeight/2.0f + 1),
+                ImVec2(startPos.x + barWidth + 10, startPos.y - textHeightLocal/2.0f + 1),
                 textColorImgui, maxText.c_str());
 
         ImVec2 rangeSize = ImGui::CalcTextSize(minText.c_str());
@@ -187,6 +180,9 @@ void ColorLegendWidget::renderGui() {
                     textColorImgui, 2
             );
         }
+    }
+
+    if (!useDockSpaceMode) {
         ImGui::End();
     }
     ImGui::PopStyleColor();
