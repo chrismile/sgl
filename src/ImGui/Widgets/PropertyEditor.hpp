@@ -26,48 +26,40 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <Utils/Convert.hpp>
-#include "NumberFormatting.hpp"
+#ifndef SGL_PROPERTYEDITOR_HPP
+#define SGL_PROPERTYEDITOR_HPP
+
+#include <string>
+#include <utility>
 
 namespace sgl {
 
-/// Removes trailing zeros and unnecessary decimal points.
-std::string removeTrailingZeros(const std::string &numberString) {
-    size_t lastPos = numberString.size();
-    for (int i = int(numberString.size()) - 1; i > 0; i--) {
-        char c = numberString.at(i);
-        if (c == '.') {
-            lastPos--;
-            break;
-        }
-        if (c != '0') {
-            break;
-        }
-        lastPos--;
-    }
-    return numberString.substr(0, lastPos);
-}
-
-/// Removes decimal points if more than maxDigits digits are used.
-std::string getNiceNumberString(float number, int digits) {
-    int maxDigits = digits + 2; // Add 2 digits for '.' and one digit afterwards.
-    std::string outString = removeTrailingZeros(sgl::toString(number, digits, true));
-
-    // Can we remove digits after the decimal point?
-    size_t dotPos = outString.find('.');
-    if (int(outString.size()) > maxDigits && dotPos != std::string::npos) {
-        size_t substrSize = dotPos;
-        if (int(dotPos) < maxDigits - 1) {
-            substrSize = maxDigits;
-        }
-        outString = outString.substr(0, substrSize);
+class DLL_OBJECT PropertyEditor {
+public:
+    PropertyEditor(std::string name, bool& show) : windowName(std::move(name)), showPropertyEditor(show) {
+        tableName = windowName + " Table";
     }
 
-    // Still too large?
-    if (int(outString.size()) > maxDigits) {
-        outString = sgl::toString(number, std::max(digits - 2, 1), false, false, true);
-    }
-    return outString;
-}
+    bool begin();
+    void end();
+
+    bool beginNode(const std::string& nodeText);
+    void endNode();
+
+    bool addSliderInt(const std::string& name, int* value, int minVal, int maxVal);
+    bool addSliderFloat(const std::string& name, float* value, float minVal, float maxVal);
+    bool addSliderFloat3(const std::string& name, float* value, float minVal, float maxVal);
+
+    bool addCheckbox(const std::string& name, bool* value);
+    bool addInputAction(const std::string& name, std::string* text);
+
+private:
+    std::string windowName;
+    std::string tableName;
+    bool& showPropertyEditor;
+    bool windowWasOpened = true;
+};
 
 }
+
+#endif //SGL_PROPERTYEDITOR_HPP

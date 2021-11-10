@@ -40,22 +40,27 @@ namespace sgl {
 
 class DLL_OBJECT Checkpoint {
 public:
-    Checkpoint() {}
+    Checkpoint() = default;
     Checkpoint(const glm::vec3& position, float yaw, float pitch, float fovy)
         : position(position), yaw(yaw), pitch(pitch), fovy(fovy) {}
     Checkpoint(float tx, float ty, float tz, float yaw, float pitch, float fovy)
         : position(tx, ty, tz), yaw(yaw), pitch(pitch), fovy(fovy) {}
 
-    glm::vec3 position;
-    float yaw;
-    float pitch;
-    float fovy;
+    glm::vec3 position{};
+    float yaw{};
+    float pitch{};
+    float fovy{};
 };
 
 class DLL_OBJECT CheckpointWindow {
 public:
-    CheckpointWindow(CameraPtr& camera);
+    explicit CheckpointWindow(CameraPtr& camera);
     ~CheckpointWindow();
+
+    [[nodiscard]] inline bool getShowWindow() const { return showWindow; }
+    [[nodiscard]] inline bool& getShowWindow() { return showWindow; }
+    inline void setShowWindow(bool show) { showWindow = show; }
+
     void onLoadDataSet(const std::string& dataSetName);
     bool getCheckpoint(const std::string& checkpointName, Checkpoint& checkpoint);
     inline void setStandardWindowSize(int width, int height) { standardWidth = width; standardHeight = height; }

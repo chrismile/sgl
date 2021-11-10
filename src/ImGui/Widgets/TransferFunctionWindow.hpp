@@ -113,9 +113,10 @@ public:
     bool renderGui();
     void update(float dt);
 
+    [[nodiscard]] inline bool getShowWindow() const { return showTransferFunctionWindow; }
+    [[nodiscard]] inline bool& getShowWindow() { return showTransferFunctionWindow; }
+    inline void setShowWindow(bool show) { showTransferFunctionWindow = show; }
     void setClearColor(const sgl::Color& clearColor);
-    void setShow(const bool showWindow) { showTransferFunctionWindow = showWindow; }
-    inline bool& getShowTransferFunctionWindow() { return showTransferFunctionWindow; }
     void computeHistogram(const std::vector<float>& attributes);
     void computeHistogram(const std::vector<float>& attributes, float minAttr, float maxAttr);
     void setUseLinearRGB(bool useLinearRGB);

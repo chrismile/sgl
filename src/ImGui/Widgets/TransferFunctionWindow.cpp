@@ -345,7 +345,7 @@ float TransferFunctionWindow::getOpacityAtAttribute(float attribute) {
 
 
 bool TransferFunctionWindow::renderGui() {
-    if (showTransferFunctionWindow) { // , ImGuiWindowFlags_AlwaysAutoResize)
+    if (showTransferFunctionWindow) {
         sgl::ImGuiWrapper::get()->setNextWindowStandardPosSize(
                 standardPositionX, standardPositionY, standardWidth, standardHeight);
         if (!ImGui::Begin("Transfer Function", &showTransferFunctionWindow)) {

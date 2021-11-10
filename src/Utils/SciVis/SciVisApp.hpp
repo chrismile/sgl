@@ -33,6 +33,7 @@
 #include <Utils/SciVis/CameraPath.hpp>
 #include <Graphics/Video/VideoWriter.hpp>
 #include <ImGui/Widgets/CheckpointWindow.hpp>
+#include <ImGui/Widgets/PropertyEditor.hpp>
 #include <ImGui/imgui.h>
 
 #ifdef SUPPORT_VULKAN
@@ -87,6 +88,14 @@ protected:
     virtual void createSceneFramebuffer();
     /// Update the color space (linear RGB vs. sRGB).
     virtual void updateColorSpaceMode();
+
+    // Dock space mode.
+    void renderGuiPropertyEditorWindow();
+    void renderGuiFpsOverlay();
+    PropertyEditor propertyEditor;
+    bool showPropertyEditor = false;
+    bool useDockSpaceMode = false;
+    bool showFpsOverlay = true;
 
     /// To be implemented by the sub-class.
     virtual void reloadDataSet()=0;
@@ -146,9 +155,6 @@ protected:
     glm::vec3 modelRotationAxis = glm::vec3(1.0f, 0.0f, 0.0f);
     int rotateModelBy90DegreeTurns = 0;
     glm::ivec2 windowResolution;
-
-    // Dock space mode.
-    bool useDockSpaceMode = false;
 
     // Continuous rendering: Re-render each frame or only when scene changes?
     bool continuousRendering = false;

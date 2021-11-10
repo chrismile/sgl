@@ -62,7 +62,8 @@
 namespace sgl {
 
 SciVisApp::SciVisApp(float fovy)
-        : camera(new sgl::Camera()), checkpointWindow(camera), videoWriter(nullptr) {
+        : propertyEditor("Property Editor", showPropertyEditor),
+        camera(new sgl::Camera()), checkpointWindow(camera), videoWriter(nullptr) {
     saveDirectoryScreenshots = sgl::AppSettings::get()->getDataDirectory() + "Screenshots/";
     saveDirectoryVideos = sgl::AppSettings::get()->getDataDirectory() + "Videos/";
     saveDirectoryCameraPaths = sgl::AppSettings::get()->getDataDirectory() + "CameraPaths/";
@@ -663,6 +664,160 @@ void SciVisApp::renderSceneSettingsGuiPost() {
         sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
         window->setWindowSize(windowResolution.x, windowResolution.y);
     }
+}
+
+void SciVisApp::renderGuiPropertyEditorWindow() {
+    if (propertyEditor.begin()) {
+        if (propertyEditor.beginNode("Camera Settings")) {
+            propertyEditor.addSliderFloat("Move Speed", &MOVE_SPEED, 0.02f, 0.5f);
+            propertyEditor.addSliderFloat("Mouse Speed", &MOUSE_ROT_SPEED, 0.01f, 0.10f);
+            if (propertyEditor.addSliderFloat("FoV (y)", &fovDegree, 10.0f, 120.0f)) {
+                camera->setFOVy(fovDegree / 180.0f * sgl::PI);
+                reRender = true;
+            }
+
+            if (propertyEditor.addSliderFloat3("Rotation Axis", &modelRotationAxis.x, 0.0f, 1.0f)) {
+                if (rotateModelBy90DegreeTurns != 0) {
+                    reloadDataSet();
+                }
+            }
+            if (propertyEditor.addSliderInt("Rotation 90°", &rotateModelBy90DegreeTurns, 0, 3)) {
+                reloadDataSet();
+            }
+
+            if (propertyEditor.addCheckbox("Use Camera Flight", &useCameraFlight)) {
+                startedCameraFlightPerUI = true;
+                reRender = true;
+            }
+
+            propertyEditor.endNode();
+        }
+
+        if (propertyEditor.beginNode("General Settings")) {
+            propertyEditor.addCheckbox("Use Recording Res.", &useRecordingResolution);
+
+            ImGui::Separator();
+
+            /*propertyEditor.addInputText("##savescreenshotlabel", &saveFilenameScreenshots);
+            if (propertyEditor.addButton("Save Screenshot")) {
+                screenshot = true;
+            }
+
+            ImGui::SameLine();
+            if (ImGui::Checkbox("Transparent Background", &screenshotTransparentBackground)) {
+#ifdef SUPPORT_VULKAN
+                if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+                    readbackHelperVk->setScreenshotTransparentBackground(screenshotTransparentBackground);
+                }
+#endif
+            }
+
+            ImGui::Separator();
+
+            ImGui::InputText("##savevideolabel", &saveFilenameVideos);
+            if (!recording) {
+                bool startRecording = false;
+                if (propertyEditor.addButton("Start Recording Video")) {
+                    startRecording = true;
+                } ImGui::SameLine();
+                if (propertyEditor.addButton("Start Recording Video Camera Path")) {
+                    startRecording = true;
+                    useCameraFlight = true;
+                    startedCameraFlightPerUI = true;
+                    recordingTime = 0.0f;
+                    realTimeCameraFlight = false;
+                    cameraPath.resetTime();
+                    reRender = true;
+                }
+
+                if (startRecording) {
+                    sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
+                    if (useRecordingResolution && window->getWindowResolution() != recordingResolution
+                        && !window->isFullscreen()) {
+                        window->setWindowSize(recordingResolution.x, recordingResolution.y);
+                    }
+
+                    if (videoWriter) {
+                        delete videoWriter;
+                        videoWriter = nullptr;
+                    }
+
+                    recording = true;
+                    isFirstRecordingFrame = true;
+                    sgl::ColorLegendWidget::setFontScale(1.0f);
+                    videoWriter = new sgl::VideoWriter(
+                            saveDirectoryVideos + saveFilenameVideos
+                            + "_" + sgl::toString(videoNumber++) + ".mp4", FRAME_RATE_VIDEOS);
+#ifdef SUPPORT_VULKAN
+                    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+                        videoWriter->setRenderer(rendererVk);
+                    }
+#endif
+                }
+            } else {
+                if (propertyEditor.addButton("Stop Recording Video")) {
+                    recording = false;
+                    sgl::ColorLegendWidget::resetStandardSize();
+                    customEndTime = 0.0f;
+                    if (videoWriter) {
+                        delete videoWriter;
+                        videoWriter = nullptr;
+                    }
+                }
+            }
+
+            ImGui::Separator();
+
+            propertyEditor.addSliderInt2("Window Resolution", &windowResolution.x, 480, 3840);
+            if (ImGui::Button("Set Resolution")) {
+                sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
+                window->setWindowSize(windowResolution.x, windowResolution.y);
+            }*/
+
+            propertyEditor.endNode();
+        }
+    }
+    propertyEditor.end();
+}
+
+void SciVisApp::renderGuiFpsOverlay() {
+    static int corner = 1;
+    ImGuiIO& io = ImGui::GetIO();
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
+    if (corner != -1) {
+        const float PAD = 10.0f;
+        const ImGuiViewport* viewport = ImGui::GetMainViewport();
+        ImVec2 work_pos = viewport->WorkPos; // Use work area to avoid menu-bar/task-bar, if any!
+        ImVec2 work_size = viewport->WorkSize;
+        ImVec2 window_pos, window_pos_pivot;
+        window_pos.x = (corner & 1) ? (work_pos.x + work_size.x - PAD) : (work_pos.x + PAD);
+        window_pos.y = (corner & 2) ? (work_pos.y + work_size.y - PAD) : (work_pos.y + PAD);
+        window_pos_pivot.x = (corner & 1) ? 1.0f : 0.0f;
+        window_pos_pivot.y = (corner & 2) ? 1.0f : 0.0f;
+        ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
+        window_flags |= ImGuiWindowFlags_NoMove;
+    }
+    ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
+    if (ImGui::Begin("Example: Simple overlay", &showFpsOverlay, window_flags)) {
+        ImGui::Text("Simple overlay\n" "in the corner of the screen.\n" "(right-click to change position)");
+        ImGui::Separator();
+        if (ImGui::IsMousePosValid())
+            ImGui::Text("Mouse Position: (%.1f,%.1f)", io.MousePos.x, io.MousePos.y);
+        else
+            ImGui::Text("Mouse Position: <invalid>");
+        if (ImGui::BeginPopupContextWindow()) {
+            if (ImGui::MenuItem("Custom", nullptr, corner == -1)) corner = -1;
+            if (ImGui::MenuItem("Top-left", nullptr, corner == 0)) corner = 0;
+            if (ImGui::MenuItem("Top-right", nullptr, corner == 1)) corner = 1;
+            if (ImGui::MenuItem("Bottom-left", nullptr, corner == 2)) corner = 2;
+            if (ImGui::MenuItem("Bottom-right", nullptr, corner == 3)) corner = 3;
+            if (showFpsOverlay && ImGui::MenuItem("Close")) {
+                showFpsOverlay = false;
+            }
+            ImGui::EndPopup();
+        }
+    }
+    ImGui::End();
 }
 
 void SciVisApp::update(float dt) {

@@ -31,10 +31,14 @@
 
 #include <string>
 
+namespace sgl {
+
 /// Removes trailing zeros and unnecessary decimal points.
-std::string removeTrailingZeros(const std::string& numberString);
+DLL_OBJECT std::string removeTrailingZeros(const std::string &numberString);
 
 /// Removes decimal points if more than maxDigits digits are used.
-std::string getNiceNumberString(float number, int digits);
+DLL_OBJECT std::string getNiceNumberString(float number, int digits);
+
+}
 
 #endif //SGL_NUMBERFORMATTING_HPP

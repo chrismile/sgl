@@ -202,6 +202,10 @@ bool CheckpointWindow::writeToFile(const std::string& filename) {
 }
 
 bool CheckpointWindow::renderGui() {
+    if (!showWindow) {
+        return false;
+    }
+
     bool reRender = false;
     bool shallDeleteElement = false;
     size_t deleteElementId = 0;
