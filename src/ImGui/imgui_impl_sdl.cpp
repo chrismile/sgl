@@ -1,7 +1,7 @@
 // dear imgui: Platform Backend for SDL2
 // This needs to be used along with a Renderer (e.g. DirectX11, OpenGL3, Vulkan..)
 // (Info: SDL2 is a cross-platform general purpose library for handling windows, inputs, graphics context creation, etc.)
-// (Requires: SDL 2.0. Prefer SDL 2.0.4+ for full feature support.)
+// (Prefer SDL 2.0.5+ for full feature support.)
 
 // Implemented features:
 //  [X] Platform: Mouse cursor shape and visibility. Disable with 'io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange'.
@@ -21,6 +21,9 @@
 // CHANGELOG
 // (minor and older changes stripped away, please see git history for details)
 //  2021-XX-XX: Platform: Added support for multiple windows via the ImGuiPlatformIO interface.
+//  2021-08-17: Calling io.AddFocusEvent() on SDL_WINDOWEVENT_FOCUS_GAINED/SDL_WINDOWEVENT_FOCUS_LOST.
+//  2021-07-29: Inputs: MousePos is correctly reported when the host platform window is hovered but not focused (using SDL_GetMouseFocus() + SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, requires SDL 2.0.5+)
+//  2021-06:29: *BREAKING CHANGE* Removed 'SDL_Window* window' parameter to ImGui_ImplSDL2_NewFrame() which was unnecessary.
 //  2021-06-29: Reorganized backend to pull data from a single structure to facilitate usage with multiple-contexts (all g_XXXX access changed to bd->XXXX).
 //  2021-03-22: Rework global mouse pos availability check listing supported platforms explicitly, effectively fixing mouse access on Raspberry Pi. (#2837, #3950)
 //  2020-05-25: Misc: Report a zero display-size when window is minimized, to be consistent with other backends.
@@ -58,21 +61,25 @@
 #include <SDL.h>
 #include <SDL_syswm.h>
 #if defined(__APPLE__)
-#include "TargetConditionals.h"
+#include <TargetConditionals.h>
 #endif
 
-#define SDL_HAS_CAPTURE_AND_GLOBAL_MOUSE    SDL_VERSION_ATLEAST(2,0,4)
+#if SDL_VERSION_ATLEAST(2,0,4) && !defined(__EMSCRIPTEN__) && !defined(__ANDROID__) && !(defined(__APPLE__) && TARGET_OS_IOS)
+#define SDL_HAS_CAPTURE_AND_GLOBAL_MOUSE    1
+#else
+#define SDL_HAS_CAPTURE_AND_GLOBAL_MOUSE    0
+#endif
+#define SDL_HAS_MOUSE_FOCUS_CLICKTHROUGH    SDL_VERSION_ATLEAST(2,0,5)
 #define SDL_HAS_WINDOW_ALPHA                SDL_VERSION_ATLEAST(2,0,5)
 #define SDL_HAS_ALWAYS_ON_TOP               SDL_VERSION_ATLEAST(2,0,5)
 #define SDL_HAS_USABLE_DISPLAY_BOUNDS       SDL_VERSION_ATLEAST(2,0,5)
 #define SDL_HAS_PER_MONITOR_DPI             SDL_VERSION_ATLEAST(2,0,4)
 #define SDL_HAS_VULKAN                      SDL_VERSION_ATLEAST(2,0,6)
-#define SDL_HAS_MOUSE_FOCUS_CLICKTHROUGH    SDL_VERSION_ATLEAST(2,0,5)
 #if !SDL_HAS_VULKAN
 static const Uint32 SDL_WINDOW_VULKAN = 0x10000000;
 #endif
 
- // SDL Data
+// SDL Data
 struct ImGui_ImplSDL2_Data
 {
     SDL_Window* Window;
@@ -83,14 +90,17 @@ struct ImGui_ImplSDL2_Data
     bool        MouseCanUseGlobalState;
     bool        UseVulkan;
 
-    ImGui_ImplSDL2_Data() { memset(this, 0, sizeof(*this)); }
+    ImGui_ImplSDL2_Data()   { memset(this, 0, sizeof(*this)); }
 };
 
-// Wrapping access to backend data data (to facilitate multiple-contexts stored in io.BackendPlatformUserData)
-static ImGui_ImplSDL2_Data* g_Data;
-static ImGui_ImplSDL2_Data* ImGui_ImplSDL2_CreateBackendData()  { IM_ASSERT(g_Data == NULL); g_Data = IM_NEW(ImGui_ImplSDL2_Data); return g_Data; }
-static ImGui_ImplSDL2_Data* ImGui_ImplSDL2_GetBackendData()     { return ImGui::GetCurrentContext() != NULL ? g_Data : NULL; }
-static void                 ImGui_ImplSDL2_DestroyBackendData() { IM_DELETE(g_Data); g_Data = NULL; }
+// Backend data stored in io.BackendPlatformUserData to allow support for multiple Dear ImGui contexts
+// It is STRONGLY preferred that you use docking branch with multi-viewports (== single Dear ImGui context + multiple windows) instead of multiple Dear ImGui contexts.
+// FIXME: multi-context support is not well tested and probably dysfunctional in this backend.
+// FIXME: some shared resources (mouse cursor shape, gamepad) are mishandled when using multi-context.
+static ImGui_ImplSDL2_Data* ImGui_ImplSDL2_GetBackendData()
+{
+    return ImGui::GetCurrentContext() ? (ImGui_ImplSDL2_Data*)ImGui::GetIO().BackendPlatformUserData : NULL;
+}
 
 // Forward Declarations
 static void ImGui_ImplSDL2_UpdateMonitors();
@@ -163,7 +173,7 @@ bool ImGui_ImplSDL2_ProcessEvent(const SDL_Event* event)
     // Multi-viewport support
     case SDL_WINDOWEVENT:
         Uint8 window_event = event->window.event;
-        if (window_event == SDL_WINDOWEVENT_CLOSE || window_event == SDL_WINDOWEVENT_MOVED || window_event == SDL_WINDOWEVENT_RESIZED)
+        if (window_event == SDL_WINDOWEVENT_CLOSE || window_event == SDL_WINDOWEVENT_MOVED || window_event == SDL_WINDOWEVENT_RESIZED || window_event == SDL_WINDOWEVENT_FOCUS_GAINED || window_event == SDL_WINDOWEVENT_FOCUS_LOST)
             if (ImGuiViewport* viewport = ImGui::FindViewportByPlatformHandle((void*)SDL_GetWindowFromID(event->window.windowID)))
             {
                 if (window_event == SDL_WINDOWEVENT_CLOSE)
@@ -172,6 +182,10 @@ bool ImGui_ImplSDL2_ProcessEvent(const SDL_Event* event)
                     viewport->PlatformRequestMove = true;
                 if (window_event == SDL_WINDOWEVENT_RESIZED)
                     viewport->PlatformRequestResize = true;
+                if (window_event == SDL_WINDOWEVENT_FOCUS_GAINED)
+                    io.AddFocusEvent(true);
+                else if (window_event == SDL_WINDOWEVENT_FOCUS_LOST)
+                    io.AddFocusEvent(false);
                 return true;
             }
         break;
@@ -184,17 +198,28 @@ static bool ImGui_ImplSDL2_Init(SDL_Window* window, void* sdl_gl_context)
     ImGuiIO& io = ImGui::GetIO();
     IM_ASSERT(io.BackendPlatformUserData == NULL && "Already initialized a platform backend!");
 
-    ImGui_ImplSDL2_Data* bd = ImGui_ImplSDL2_CreateBackendData();
-    bd->Window = window;
+    // Check and store if we are on a SDL backend that supports global mouse position
+    // ("wayland" and "rpi" don't support it, but we chose to use a white-list instead of a black-list)
+    bool mouse_can_use_global_state = false;
+#if SDL_HAS_CAPTURE_AND_GLOBAL_MOUSE
+    const char* sdl_backend = SDL_GetCurrentVideoDriver();
+    const char* global_mouse_whitelist[] = { "windows", "cocoa", "x11", "DIVE", "VMAN" };
+    for (int n = 0; n < IM_ARRAYSIZE(global_mouse_whitelist); n++)
+        if (strncmp(sdl_backend, global_mouse_whitelist[n], strlen(global_mouse_whitelist[n])) == 0)
+            mouse_can_use_global_state = true;
+#endif
 
     // Setup backend capabilities flags
+    ImGui_ImplSDL2_Data* bd = IM_NEW(ImGui_ImplSDL2_Data)();
     io.BackendPlatformUserData = (void*)bd;
     io.BackendPlatformName = "imgui_impl_sdl";
-    io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;       // We can honor GetMouseCursor() values (optional)
-    io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;        // We can honor io.WantSetMousePos requests (optional, rarely used)
-#if SDL_HAS_CAPTURE_AND_GLOBAL_MOUSE
-    io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports;  // We can create multi-viewports on the Platform side (optional)
-#endif
+    io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;           // We can honor GetMouseCursor() values (optional)
+    io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;            // We can honor io.WantSetMousePos requests (optional, rarely used)
+    if (mouse_can_use_global_state)
+        io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports;  // We can create multi-viewports on the Platform side (optional)
+
+    bd->Window = window;
+    bd->MouseCanUseGlobalState = mouse_can_use_global_state;
 
     // Keyboard mapping. Dear ImGui will use those indices to peek into the io.KeysDown[] array.
     io.KeyMap[ImGuiKey_Tab] = SDL_SCANCODE_TAB;
@@ -235,23 +260,23 @@ static bool ImGui_ImplSDL2_Init(SDL_Window* window, void* sdl_gl_context)
     bd->MouseCursors[ImGuiMouseCursor_Hand] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_HAND);
     bd->MouseCursors[ImGuiMouseCursor_NotAllowed] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_NO);
 
-    // Check and store if we are on a SDL backend that supports global mouse position
-    // ("wayland" and "rpi" don't support it, but we chose to use a white-list instead of a black-list)
-    const char* sdl_backend = SDL_GetCurrentVideoDriver();
-    const char* global_mouse_whitelist[] = { "windows", "cocoa", "x11", "DIVE", "VMAN" };
-    bd->MouseCanUseGlobalState = false;
-    for (int n = 0; n < IM_ARRAYSIZE(global_mouse_whitelist); n++)
-        if (strncmp(sdl_backend, global_mouse_whitelist[n], strlen(global_mouse_whitelist[n])) == 0)
-            bd->MouseCanUseGlobalState = true;
-
     // Our mouse update function expect PlatformHandle to be filled for the main viewport
     ImGuiViewport* main_viewport = ImGui::GetMainViewport();
     main_viewport->PlatformHandle = (void*)window;
-#if defined(_WIN32)
+#ifdef _WIN32
     SDL_SysWMinfo info;
     SDL_VERSION(&info.version);
     if (SDL_GetWindowWMInfo(window, &info))
         main_viewport->PlatformHandleRaw = info.info.win.window;
+#endif
+
+    // Set SDL hint to receive mouse click events on window focus, otherwise SDL doesn't emit the event.
+    // Without this, when clicking to gain focus, our widgets wouldn't activate even though they showed as hovered.
+    // (This is unfortunately a global SDL setting, so enabling it might have a side-effect on your application.
+    // It is unlikely to make a difference, but if your app absolutely needs to ignore the initial on-focus click:
+    // you can ignore SDL_MOUSEBUTTONDOWN events coming right after a SDL_WINDOWEVENT_FOCUS_GAINED)
+#if SDL_HAS_MOUSE_FOCUS_CLICKTHROUGH
+    SDL_SetHint(SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "1");
 #endif
 
     // Update monitors
@@ -295,104 +320,101 @@ bool ImGui_ImplSDL2_InitForMetal(SDL_Window* window)
     return ImGui_ImplSDL2_Init(window, NULL);
 }
 
+bool ImGui_ImplSDL2_InitForSDLRenderer(SDL_Window* window)
+{
+    return ImGui_ImplSDL2_Init(window, NULL);
+}
+
 void ImGui_ImplSDL2_Shutdown()
 {
-    ImGuiIO& io = ImGui::GetIO();
     ImGui_ImplSDL2_Data* bd = ImGui_ImplSDL2_GetBackendData();
-    bd->Window = NULL;
+    IM_ASSERT(bd != NULL && "No platform backend to shutdown, or already shutdown?");
+    ImGuiIO& io = ImGui::GetIO();
 
     ImGui_ImplSDL2_ShutdownPlatformInterface();
 
-    // Destroy last known clipboard data
     if (bd->ClipboardTextData)
         SDL_free(bd->ClipboardTextData);
-    bd->ClipboardTextData = NULL;
-
-    // Destroy SDL mouse cursors
     for (ImGuiMouseCursor cursor_n = 0; cursor_n < ImGuiMouseCursor_COUNT; cursor_n++)
         SDL_FreeCursor(bd->MouseCursors[cursor_n]);
-    memset(bd->MouseCursors, 0, sizeof(bd->MouseCursors));
 
     io.BackendPlatformName = NULL;
     io.BackendPlatformUserData = NULL;
-    ImGui_ImplSDL2_DestroyBackendData();
+    IM_DELETE(bd);
 }
 
 // This code is incredibly messy because some of the functions we need for full viewport support are not available in SDL < 2.0.4.
 static void ImGui_ImplSDL2_UpdateMousePosAndButtons()
 {
-    ImGuiIO& io = ImGui::GetIO();
     ImGui_ImplSDL2_Data* bd = ImGui_ImplSDL2_GetBackendData();
+    ImGuiIO& io = ImGui::GetIO();
 
+    ImVec2 mouse_pos_prev = io.MousePos;
+    io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
     io.MouseHoveredViewport = 0;
 
-    // [1]
-    // Only when requested by io.WantSetMousePos: set OS mouse pos from Dear ImGui mouse pos.
-    // (rarely used, mostly when ImGuiConfigFlags_NavEnableSetMousePos is enabled by user)
-    if (io.WantSetMousePos)
-    {
-#if SDL_HAS_CAPTURE_AND_GLOBAL_MOUSE
-        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-            SDL_WarpMouseGlobal((int)io.MousePos.x, (int)io.MousePos.y);
-        else
-#endif
-            SDL_WarpMouseInWindow(bd->Window, (int)io.MousePos.x, (int)io.MousePos.y);
-    }
-    else
-    {
-        io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
-    }
-
-    // [2]
-    // Set Dear ImGui mouse pos from OS mouse pos + get buttons. (this is the common behavior)
+    // Update mouse buttons
     int mouse_x_local, mouse_y_local;
     Uint32 mouse_buttons = SDL_GetMouseState(&mouse_x_local, &mouse_y_local);
-    io.MouseDown[0] = bd->MousePressed[0] || (mouse_buttons & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;      // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
+    io.MouseDown[0] = bd->MousePressed[0] || (mouse_buttons & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;  // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
     io.MouseDown[1] = bd->MousePressed[1] || (mouse_buttons & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
     io.MouseDown[2] = bd->MousePressed[2] || (mouse_buttons & SDL_BUTTON(SDL_BUTTON_MIDDLE)) != 0;
     bd->MousePressed[0] = bd->MousePressed[1] = bd->MousePressed[2] = false;
 
-#if SDL_HAS_CAPTURE_AND_GLOBAL_MOUSE && !defined(__EMSCRIPTEN__) && !defined(__ANDROID__) && !(defined(__APPLE__) && TARGET_OS_IOS)
+    // Obtain focused and hovered window. We forward mouse input when focused or when hovered (and no other window is capturing)
+#if SDL_HAS_CAPTURE_AND_GLOBAL_MOUSE
+    SDL_Window* focused_window = SDL_GetKeyboardFocus();
+    SDL_Window* hovered_window = SDL_HAS_MOUSE_FOCUS_CLICKTHROUGH ? SDL_GetMouseFocus() : NULL; // This is better but is only reliably useful with SDL 2.0.5+ and SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH.
+    SDL_Window* mouse_window = NULL;
+    if (hovered_window && (bd->Window == hovered_window || ImGui::FindViewportByPlatformHandle((void*)hovered_window)))
+        mouse_window = hovered_window;
+    else if (focused_window && (bd->Window == focused_window || ImGui::FindViewportByPlatformHandle((void*)focused_window)))
+        mouse_window = focused_window;
 
+    // SDL_CaptureMouse() let the OS know e.g. that our imgui drag outside the SDL window boundaries shouldn't e.g. trigger other operations outside
+    SDL_CaptureMouse(ImGui::IsAnyMouseDown() ? SDL_TRUE : SDL_FALSE);
+#else
+    // SDL 2.0.3 and non-windowed systems: single-viewport only
+    SDL_Window* mouse_window = (SDL_GetWindowFlags(bd->Window) & SDL_WINDOW_INPUT_FOCUS) ? bd->Window : NULL;
+#endif
+
+    if (mouse_window == NULL)
+        return;
+
+    // Set OS mouse position from Dear ImGui if requested (rarely used, only when ImGuiConfigFlags_NavEnableSetMousePos is enabled by user)
+    if (io.WantSetMousePos)
+    {
+#if SDL_HAS_CAPTURE_AND_GLOBAL_MOUSE
+        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+            SDL_WarpMouseGlobal((int)mouse_pos_prev.x, (int)mouse_pos_prev.y);
+        else
+#endif
+            SDL_WarpMouseInWindow(bd->Window, (int)mouse_pos_prev.x, (int)mouse_pos_prev.y);
+    }
+
+    // Set Dear ImGui mouse position from OS position + get buttons. (this is the common behavior)
     if (bd->MouseCanUseGlobalState)
     {
-        // SDL 2.0.4 and later has SDL_GetGlobalMouseState() and SDL_CaptureMouse()
         int mouse_x_global, mouse_y_global;
         SDL_GetGlobalMouseState(&mouse_x_global, &mouse_y_global);
-
         if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
         {
             // Multi-viewport mode: mouse position in OS absolute coordinates (io.MousePos is (0,0) when the mouse is on the upper-left of the primary monitor)
-            if (SDL_Window* focused_window = SDL_GetKeyboardFocus())
-                if (ImGui::FindViewportByPlatformHandle((void*)focused_window) != NULL)
-                    io.MousePos = ImVec2((float)mouse_x_global, (float)mouse_y_global);
+            io.MousePos = ImVec2((float)mouse_x_global, (float)mouse_y_global);
         }
         else
         {
-            // Single-viewport mode: mouse position in client window coordinatesio.MousePos is (0,0) when the mouse is on the upper-left corner of the app window)
-            if (SDL_GetWindowFlags(bd->Window) & SDL_WINDOW_INPUT_FOCUS)
-            {
-                int window_x, window_y;
-                SDL_GetWindowPosition(bd->Window, &window_x, &window_y);
-                io.MousePos = ImVec2((float)(mouse_x_global - window_x), (float)(mouse_y_global - window_y));
-            }
+            // Single-viewport mode: mouse position in client window coordinates (io.MousePos is (0,0) when the mouse is on the upper-left corner of the app window)
+            // Unlike local position obtained earlier this will be valid when straying out of bounds.
+            int window_x, window_y;
+            SDL_GetWindowPosition(mouse_window, &window_x, &window_y);
+            io.MousePos = ImVec2((float)(mouse_x_global - window_x), (float)(mouse_y_global - window_y));
         }
     }
     else
     {
-        if (SDL_GetWindowFlags(bd->Window) & SDL_WINDOW_INPUT_FOCUS)
-            io.MousePos = ImVec2((float)mouse_x_local, (float)mouse_y_local);
-    }
-
-    // SDL_CaptureMouse() let the OS know e.g. that our imgui drag outside the SDL window boundaries shouldn't e.g. trigger the OS window resize cursor.
-    // The function is only supported from SDL 2.0.4 (released Jan 2016)
-    bool any_mouse_button_down = ImGui::IsAnyMouseDown();
-    SDL_CaptureMouse(any_mouse_button_down ? SDL_TRUE : SDL_FALSE);
-#else
-    // SDL 2.0.3 and before: single-viewport only
-    if (SDL_GetWindowFlags(bd->Window) & SDL_WINDOW_INPUT_FOCUS)
         io.MousePos = ImVec2((float)mouse_x_local, (float)mouse_y_local);
-#endif
+    }
 }
 
 static void ImGui_ImplSDL2_UpdateMouseCursor()
@@ -485,19 +507,19 @@ static void ImGui_ImplSDL2_UpdateMonitors()
     }
 }
 
-void ImGui_ImplSDL2_NewFrame(SDL_Window* window)
+void ImGui_ImplSDL2_NewFrame()
 {
-    ImGuiIO& io = ImGui::GetIO();
     ImGui_ImplSDL2_Data* bd = ImGui_ImplSDL2_GetBackendData();
-    IM_ASSERT(bd->Window == window); // FIXME: Should remove parameter from ImGui_ImplSDL2_NewFrame()
+    IM_ASSERT(bd != NULL && "Did you call ImGui_ImplSDL2_Init()?");
+    ImGuiIO& io = ImGui::GetIO();
 
     // Setup display size (every frame to accommodate for window resizing)
     int w, h;
     int display_w, display_h;
-    SDL_GetWindowSize(window, &w, &h);
-    if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED)
+    SDL_GetWindowSize(bd->Window, &w, &h);
+    if (SDL_GetWindowFlags(bd->Window) & SDL_WINDOW_MINIMIZED)
         w = h = 0;
-    SDL_GL_GetDrawableSize(window, &display_w, &display_h);
+    SDL_GL_GetDrawableSize(bd->Window, &display_w, &display_h);
     io.DisplaySize = ImVec2((float)w, (float)h);
     if (w > 0 && h > 0)
         io.DisplayFramebufferScale = ImVec2((float)display_w / w, (float)display_h / h);
@@ -742,11 +764,6 @@ static void ImGui_ImplSDL2_InitPlatformInterface(SDL_Window* window, void* sdl_g
     platform_io.Platform_CreateVkSurface = ImGui_ImplSDL2_CreateVkSurface;
 #endif
 
-    // SDL2 by default doesn't pass mouse clicks to the application when the click focused a window. This is getting in the way of our interactions and we disable that behavior.
-#if SDL_HAS_MOUSE_FOCUS_CLICKTHROUGH
-    SDL_SetHint(SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "1");
-#endif
-
     // Register main window handle (which is owned by the main application, not by us)
     // This is mostly for simplicity and consistency, so that our code (e.g. mouse handling etc.) can use same logic for main and secondary viewports.
     ImGuiViewport* main_viewport = ImGui::GetMainViewport();
@@ -761,4 +778,5 @@ static void ImGui_ImplSDL2_InitPlatformInterface(SDL_Window* window, void* sdl_g
 
 static void ImGui_ImplSDL2_ShutdownPlatformInterface()
 {
+    ImGui::DestroyPlatformWindows();
 }

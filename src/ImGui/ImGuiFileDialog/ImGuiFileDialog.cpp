@@ -2932,7 +2932,7 @@ namespace IGFD
 
 			if (g.NavId && g.NavId == vListViewID)
 			{
-				if (ImGui::IsKeyPressedMap(IGFD_KEY_ENTER) ||
+				if (ImGui::IsKeyPressedMap(ImGuiKey_Enter) ||
 					ImGui::IsKeyPressedMap(ImGuiKey_KeyPadEnter) ||
 					ImGui::IsKeyPressedMap(ImGuiKey_Space))
 				{
@@ -4200,7 +4200,7 @@ namespace IGFD
 							}
 							else
 							{
-								ImGui::Text("");
+								ImGui::TextUnformatted("");
 							}
 						}
 						if (ImGui::TableNextColumn()) // file date + time
