@@ -491,7 +491,7 @@ bool ImGui::VSliderIntNoLiveEdit(const char* label, const ImVec2& size, int* v, 
 
 
 
-EditMode ImGui::SliderScalarEdit(const char* label, ImGuiDataType data_type, void* p_data, const void* p_min, const void* p_max, const char* format, ImGuiSliderFlags flags)
+ImGui::EditMode ImGui::SliderScalarEdit(const char* label, ImGuiDataType data_type, void* p_data, const void* p_min, const void* p_max, const char* format, ImGuiSliderFlags flags)
 {
     bool isEdited = SliderScalar(label, data_type, p_data,  p_min, p_max, format, flags);
     if (ImGui::IsItemDeactivatedAfterEdit()) {
@@ -504,7 +504,7 @@ EditMode ImGui::SliderScalarEdit(const char* label, ImGuiDataType data_type, voi
 }
 
 // Add multiple sliders on 1 line for compact edition of multiple components
-EditMode ImGui::SliderScalarNEdit(const char* label, ImGuiDataType data_type, void* v, int components, const void* v_min, const void* v_max, const char* format, ImGuiSliderFlags flags)
+ImGui::EditMode ImGui::SliderScalarNEdit(const char* label, ImGuiDataType data_type, void* v, int components, const void* v_min, const void* v_max, const char* format, ImGuiSliderFlags flags)
 {
     bool isEdited = SliderScalarN(label, data_type, v, components, v_min, v_max, format, flags);
     if (ImGui::IsItemDeactivatedAfterEdit()) {
@@ -516,27 +516,27 @@ EditMode ImGui::SliderScalarNEdit(const char* label, ImGuiDataType data_type, vo
     }
 }
 
-EditMode ImGui::SliderFloatEdit(const char* label, float* v, float v_min, float v_max, const char* format, ImGuiSliderFlags flags)
+ImGui::EditMode ImGui::SliderFloatEdit(const char* label, float* v, float v_min, float v_max, const char* format, ImGuiSliderFlags flags)
 {
     return SliderScalarEdit(label, ImGuiDataType_Float, v, &v_min, &v_max, format, flags);
 }
 
-EditMode ImGui::SliderFloat2Edit(const char* label, float v[2], float v_min, float v_max, const char* format, ImGuiSliderFlags flags)
+ImGui::EditMode ImGui::SliderFloat2Edit(const char* label, float v[2], float v_min, float v_max, const char* format, ImGuiSliderFlags flags)
 {
     return SliderScalarNEdit(label, ImGuiDataType_Float, v, 2, &v_min, &v_max, format, flags);
 }
 
-EditMode ImGui::SliderFloat3Edit(const char* label, float v[3], float v_min, float v_max, const char* format, ImGuiSliderFlags flags)
+ImGui::EditMode ImGui::SliderFloat3Edit(const char* label, float v[3], float v_min, float v_max, const char* format, ImGuiSliderFlags flags)
 {
     return SliderScalarNEdit(label, ImGuiDataType_Float, v, 3, &v_min, &v_max, format, flags);
 }
 
-EditMode ImGui::SliderFloat4Edit(const char* label, float v[4], float v_min, float v_max, const char* format, ImGuiSliderFlags flags)
+ImGui::EditMode ImGui::SliderFloat4Edit(const char* label, float v[4], float v_min, float v_max, const char* format, ImGuiSliderFlags flags)
 {
     return SliderScalarNEdit(label, ImGuiDataType_Float, v, 4, &v_min, &v_max, format, flags);
 }
 
-EditMode ImGui::SliderAngleEdit(const char* label, float* v_rad, float v_degrees_min, float v_degrees_max, const char* format, ImGuiSliderFlags flags)
+ImGui::EditMode ImGui::SliderAngleEdit(const char* label, float* v_rad, float v_degrees_min, float v_degrees_max, const char* format, ImGuiSliderFlags flags)
 {
     if (format == NULL)
         format = "%.0f deg";
@@ -546,27 +546,27 @@ EditMode ImGui::SliderAngleEdit(const char* label, float* v_rad, float v_degrees
     return edit_mode;
 }
 
-EditMode ImGui::SliderIntEdit(const char* label, int* v, int v_min, int v_max, const char* format, ImGuiSliderFlags flags)
+ImGui::EditMode ImGui::SliderIntEdit(const char* label, int* v, int v_min, int v_max, const char* format, ImGuiSliderFlags flags)
 {
     return SliderScalarEdit(label, ImGuiDataType_S32, v, &v_min, &v_max, format, flags);
 }
 
-EditMode ImGui::SliderInt2Edit(const char* label, int v[2], int v_min, int v_max, const char* format, ImGuiSliderFlags flags)
+ImGui::EditMode ImGui::SliderInt2Edit(const char* label, int v[2], int v_min, int v_max, const char* format, ImGuiSliderFlags flags)
 {
     return SliderScalarNEdit(label, ImGuiDataType_S32, v, 2, &v_min, &v_max, format, flags);
 }
 
-EditMode ImGui::SliderInt3Edit(const char* label, int v[3], int v_min, int v_max, const char* format, ImGuiSliderFlags flags)
+ImGui::EditMode ImGui::SliderInt3Edit(const char* label, int v[3], int v_min, int v_max, const char* format, ImGuiSliderFlags flags)
 {
     return SliderScalarNEdit(label, ImGuiDataType_S32, v, 3, &v_min, &v_max, format, flags);
 }
 
-EditMode ImGui::SliderInt4Edit(const char* label, int v[4], int v_min, int v_max, const char* format, ImGuiSliderFlags flags)
+ImGui::EditMode ImGui::SliderInt4Edit(const char* label, int v[4], int v_min, int v_max, const char* format, ImGuiSliderFlags flags)
 {
     return SliderScalarNEdit(label, ImGuiDataType_S32, v, 4, &v_min, &v_max, format, flags);
 }
 
-EditMode ImGui::VSliderScalarEdit(const char* label, const ImVec2& size, ImGuiDataType data_type, void* p_data, const void* p_min, const void* p_max, const char* format, ImGuiSliderFlags flags)
+ImGui::EditMode ImGui::VSliderScalarEdit(const char* label, const ImVec2& size, ImGuiDataType data_type, void* p_data, const void* p_min, const void* p_max, const char* format, ImGuiSliderFlags flags)
 {
     bool isEdited = VSliderScalar(label, size, data_type, p_data, p_min, p_max, format, flags);
     if (ImGui::IsItemDeactivatedAfterEdit()) {
@@ -578,12 +578,12 @@ EditMode ImGui::VSliderScalarEdit(const char* label, const ImVec2& size, ImGuiDa
     }
 }
 
-EditMode ImGui::VSliderFloatEdit(const char* label, const ImVec2& size, float* v, float v_min, float v_max, const char* format, ImGuiSliderFlags flags)
+ImGui::EditMode ImGui::VSliderFloatEdit(const char* label, const ImVec2& size, float* v, float v_min, float v_max, const char* format, ImGuiSliderFlags flags)
 {
     return VSliderScalarEdit(label, size, ImGuiDataType_Float, v, &v_min, &v_max, format, flags);
 }
 
-EditMode ImGui::VSliderIntEdit(const char* label, const ImVec2& size, int* v, int v_min, int v_max, const char* format, ImGuiSliderFlags flags)
+ImGui::EditMode ImGui::VSliderIntEdit(const char* label, const ImVec2& size, int* v, int v_min, int v_max, const char* format, ImGuiSliderFlags flags)
 {
     return VSliderScalarEdit(label, size, ImGuiDataType_S32, v, &v_min, &v_max, format, flags);
 }

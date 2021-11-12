@@ -92,6 +92,7 @@ protected:
     // Dock space mode.
     void renderGuiPropertyEditorWindow();
     void renderGuiFpsOverlay();
+    virtual void renderGuiPropertyEditorCustomNodes() {}
     PropertyEditor propertyEditor;
     bool showPropertyEditor = false;
     bool useDockSpaceMode = false;

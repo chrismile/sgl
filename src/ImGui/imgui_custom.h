@@ -59,18 +59,18 @@
 
 #include "imgui.h"
 
+namespace ImGui
+{
+
 /*
  * - No change: The same as SliderXXX returning false.
  * - Live edit: The user is editing the slider value (either by dragging or by text input).
  * - Input finished: The user has finished the input (e.g., by releasing the mouse button, pressing enter or the element
  * losing focus).
  */
-enum class EditMode {
+enum class EditMode : unsigned int {
     NO_CHANGE, LIVE_EDIT, INPUT_FINISHED
 };
-
-namespace ImGui
-{
 
 IMGUI_API bool ListBox(const char* label, int* current_item, std::function<bool(void*, int, const char**)> items_getter, void* data, int items_count, int height_in_items = -1);
 IMGUI_API bool Combo(const char* label, int* current_item, const std::string* items, int items_count, int popup_max_height_in_items = -1);

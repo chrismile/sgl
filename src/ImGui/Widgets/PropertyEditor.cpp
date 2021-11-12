@@ -27,6 +27,7 @@
  */
 
 #include <ImGui/ImGuiWrapper.hpp>
+#include <ImGui/imgui_custom.h>
 #include "PropertyEditor.hpp"
 
 namespace sgl {
@@ -41,6 +42,18 @@ static const ImGuiTreeNodeFlags treeNodeFlagsLeaf =
 bool PropertyEditor::begin() {
     if (ImGui::Begin(windowName.c_str(), &showPropertyEditor)) {
         windowWasOpened = true;
+    } else  {
+        windowWasOpened = false;
+    }
+    return windowWasOpened;
+}
+
+void PropertyEditor::end() {
+    ImGui::End();
+}
+
+bool PropertyEditor::beginTable() {
+    if (windowWasOpened) {
         bool tableOpen = ImGui::BeginTable(tableName.c_str(), 2, tableFlags);
 
         ImGui::TableSetupColumn("Property", ImGuiTableColumnFlags_NoHide);
@@ -49,16 +62,14 @@ bool PropertyEditor::begin() {
 
         return tableOpen;
     } else  {
-        windowWasOpened = false;
         return false;
     }
 }
 
-void PropertyEditor::end() {
+void PropertyEditor::endTable() {
     if (windowWasOpened) {
         ImGui::EndTable();
     }
-    ImGui::End();
 }
 
 
@@ -76,35 +87,110 @@ void PropertyEditor::endNode() {
 }
 
 
-bool PropertyEditor::addSliderInt(const std::string& name, int* value, int minVal, int maxVal) {
+void PropertyEditor::addText(const std::string& nodeText, const std::string& value) {
     ImGui::TableNextRow();
     ImGui::TableNextColumn();
-    ImGui::TreeNodeEx(name.c_str(), treeNodeFlagsLeaf);
+    ImGui::TreeNodeEx(nodeText.c_str(), treeNodeFlagsLeaf);
     ImGui::TableNextColumn();
     ImGui::SetNextItemWidth(-FLT_MIN);
-    std::string internalId = "##" + name;
-    return ImGui::SliderInt(internalId.c_str(), value, minVal, maxVal);
+    ImGui::TextUnformatted(value.c_str());
 }
 
-bool PropertyEditor::addSliderFloat(const std::string& name, float* value, float minVal, float maxVal) {
+
+bool PropertyEditor::addSliderInt(
+        const std::string& name, int* value, int minVal, int maxVal,
+        const char* format, ImGuiSliderFlags flags) {
     ImGui::TableNextRow();
     ImGui::TableNextColumn();
     ImGui::TreeNodeEx(name.c_str(), treeNodeFlagsLeaf);
     ImGui::TableNextColumn();
     ImGui::SetNextItemWidth(-FLT_MIN);
     std::string internalId = "##" + name;
-    return ImGui::SliderFloat(internalId.c_str(), value, minVal, maxVal);
+    return ImGui::SliderInt(internalId.c_str(), value, minVal, maxVal, format, flags);
 }
 
-bool PropertyEditor::addSliderFloat3(const std::string& name, float* value, float minVal, float maxVal) {
+bool PropertyEditor::addSliderIntPowerOfTwo(
+        const std::string& name, int* value, int minVal, int maxVal,
+        const char* format, ImGuiSliderFlags flags) {
     ImGui::TableNextRow();
     ImGui::TableNextColumn();
     ImGui::TreeNodeEx(name.c_str(), treeNodeFlagsLeaf);
     ImGui::TableNextColumn();
     ImGui::SetNextItemWidth(-FLT_MIN);
     std::string internalId = "##" + name;
-    return ImGui::SliderFloat3(internalId.c_str(), value, minVal, maxVal);
+    return ImGui::SliderIntPowerOfTwo(internalId.c_str(), value, minVal, maxVal, format, flags);
 }
+
+bool PropertyEditor::addSliderFloat(
+        const std::string& name, float* value, float minVal, float maxVal,
+        const char* format, ImGuiSliderFlags flags) {
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+    ImGui::TreeNodeEx(name.c_str(), treeNodeFlagsLeaf);
+    ImGui::TableNextColumn();
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    std::string internalId = "##" + name;
+    return ImGui::SliderFloat(internalId.c_str(), value, minVal, maxVal, format, flags);
+}
+
+bool PropertyEditor::addSliderFloat3(
+        const std::string& name, float* value, float minVal, float maxVal,
+        const char* format, ImGuiSliderFlags flags) {
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+    ImGui::TreeNodeEx(name.c_str(), treeNodeFlagsLeaf);
+    ImGui::TableNextColumn();
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    std::string internalId = "##" + name;
+    return ImGui::SliderFloat3(internalId.c_str(), value, minVal, maxVal, format, flags);
+}
+
+
+ImGui::EditMode PropertyEditor::addSliderFloatEdit(
+        const std::string& name, float* value, float minVal, float maxVal,
+        const char* format, ImGuiSliderFlags flags) {
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+    ImGui::TreeNodeEx(name.c_str(), treeNodeFlagsLeaf);
+    ImGui::TableNextColumn();
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    std::string internalId = "##" + name;
+    return ImGui::SliderFloatEdit(internalId.c_str(), value, minVal, maxVal, format, flags);
+}
+
+ImGui::EditMode PropertyEditor::addSliderFloat2Edit(
+        const std::string& name, float* value, float minVal, float maxVal,
+        const char* format, ImGuiSliderFlags flags) {
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+    ImGui::TreeNodeEx(name.c_str(), treeNodeFlagsLeaf);
+    ImGui::TableNextColumn();
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    std::string internalId = "##" + name;
+    return ImGui::SliderFloat2Edit(internalId.c_str(), value, minVal, maxVal, format, flags);
+}
+
+
+bool PropertyEditor::addColorEdit3(const std::string& label, float col[3], ImGuiColorEditFlags flags) {
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+    ImGui::TreeNodeEx(label.c_str(), treeNodeFlagsLeaf);
+    ImGui::TableNextColumn();
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    std::string internalId = "##" + label;
+    return ImGui::ColorEdit3(internalId.c_str(), col, flags);
+}
+
+bool PropertyEditor::addColorEdit4(const std::string& label, float col[4], ImGuiColorEditFlags flags) {
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+    ImGui::TreeNodeEx(label.c_str(), treeNodeFlagsLeaf);
+    ImGui::TableNextColumn();
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    std::string internalId = "##" + label;
+    return ImGui::ColorEdit4(internalId.c_str(), col, flags);
+}
+
 
 bool PropertyEditor::addCheckbox(const std::string& name, bool* value) {
     ImGui::TableNextRow();
@@ -116,6 +202,15 @@ bool PropertyEditor::addCheckbox(const std::string& name, bool* value) {
     return ImGui::Checkbox(internalId.c_str(), value);
 }
 
+bool PropertyEditor::addButton(const std::string& labelText, const std::string& buttonText) {
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+    ImGui::TreeNodeEx(labelText.c_str(), treeNodeFlagsLeaf);
+    ImGui::TableNextColumn();
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    return ImGui::Button(buttonText.c_str());
+}
+
 bool PropertyEditor::addInputAction(const std::string& name, std::string* text) {
     ImGui::TableNextRow();
     ImGui::TableNextColumn();
@@ -123,7 +218,45 @@ bool PropertyEditor::addInputAction(const std::string& name, std::string* text) 
     ImGui::TableNextColumn();
     ImGui::SetNextItemWidth(-FLT_MIN);
     std::string internalId = "##" + name;
-    return ImGui::Button(internalId.c_str());
+    return ImGui::Button(internalId.c_str()) || clicked;
+}
+
+bool PropertyEditor::addCombo(
+        const std::string& label, int* current_item, const char* const items[], int items_count,
+        int popup_max_height_in_items) {
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+    ImGui::TreeNodeEx(label.c_str(), treeNodeFlagsLeaf);
+    ImGui::TableNextColumn();
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    std::string internalId = "##" + label;
+    return ImGui::Combo(internalId.c_str(), current_item, items, items_count, popup_max_height_in_items);
+}
+
+bool PropertyEditor::addCombo(
+        const std::string& label, int* current_item, const std::string* items, int items_count,
+        int popup_max_height_in_items) {
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+    ImGui::TreeNodeEx(label.c_str(), treeNodeFlagsLeaf);
+    ImGui::TableNextColumn();
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    std::string internalId = "##" + label;
+    return ImGui::Combo(internalId.c_str(), current_item, items, items_count, popup_max_height_in_items);
+}
+
+bool PropertyEditor::addBeginCombo(const std::string& label, const std::string& preview_value, ImGuiComboFlags flags) {
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+    ImGui::TreeNodeEx(label.c_str(), treeNodeFlagsLeaf);
+    ImGui::TableNextColumn();
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    std::string internalId = "##" + label;
+    return ImGui::BeginCombo(internalId.c_str(), preview_value.c_str(), flags);
+}
+
+void PropertyEditor::addEndCombo() {
+    ImGui::EndCombo();
 }
 
 }

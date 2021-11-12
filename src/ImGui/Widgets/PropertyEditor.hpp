@@ -31,6 +31,11 @@
 
 #include <string>
 #include <utility>
+#include "../imgui.h"
+
+namespace ImGui {
+enum class EditMode : unsigned int;
+}
 
 namespace sgl {
 
@@ -43,15 +48,49 @@ public:
     bool begin();
     void end();
 
+    bool beginTable();
+    void endTable();
+
     bool beginNode(const std::string& nodeText);
     void endNode();
 
-    bool addSliderInt(const std::string& name, int* value, int minVal, int maxVal);
-    bool addSliderFloat(const std::string& name, float* value, float minVal, float maxVal);
-    bool addSliderFloat3(const std::string& name, float* value, float minVal, float maxVal);
+    void addText(const std::string& nodeText, const std::string& value);
+
+    bool addSliderInt(
+            const std::string& name, int* value, int minVal, int maxVal,
+            const char* format = "%d", ImGuiSliderFlags flags = 0);
+    bool addSliderIntPowerOfTwo(
+            const std::string& name, int* value, int minVal, int maxVal,
+            const char* format = "%d", ImGuiSliderFlags flags = 0);
+    bool addSliderFloat(
+            const std::string& name, float* value, float minVal, float maxVal,
+            const char* format = "%.3f", ImGuiSliderFlags flags = 0);
+    bool addSliderFloat3(
+            const std::string& name, float* value, float minVal, float maxVal,
+            const char* format = "%.3f", ImGuiSliderFlags flags = 0);
+
+    ImGui::EditMode addSliderFloatEdit(
+            const std::string& name, float* value, float minVal, float maxVal,
+            const char* format = "%.3f", ImGuiSliderFlags flags = 0);
+    ImGui::EditMode addSliderFloat2Edit(
+            const std::string& name, float* value, float minVal, float maxVal,
+            const char* format = "%.3f", ImGuiSliderFlags flags = 0);
+
+    bool addColorEdit3(const std::string& label, float col[3], ImGuiColorEditFlags flags = 0);
+    bool addColorEdit4(const std::string& label, float col[4], ImGuiColorEditFlags flags = 0);
 
     bool addCheckbox(const std::string& name, bool* value);
+    bool addButton(const std::string& labelText, const std::string& buttonText);
     bool addInputAction(const std::string& name, std::string* text);
+
+    bool addCombo(
+            const std::string& label, int* current_item, const char* const items[], int items_count,
+            int popup_max_height_in_items = -1);
+    bool addCombo(
+            const std::string& label, int* current_item, const std::string* items, int items_count,
+            int popup_max_height_in_items = -1);
+    bool addBeginCombo(const std::string& label, const std::string& preview_value, ImGuiComboFlags flags = 0);
+    void addEndCombo();
 
 private:
     std::string windowName;
