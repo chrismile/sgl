@@ -42,7 +42,7 @@ void EventManager::update() {
     }
 }
 
-ListenerToken EventManager::addListener(uint32_t eventType, EventFunc func) {
+ListenerToken EventManager::addListener(uint32_t eventType, const EventFunc& func) {
     ListenerToken token = listenerCounter++;
 
     EventFuncList &eventListenerList = listeners[eventType];
@@ -62,19 +62,19 @@ void EventManager::removeListener(uint32_t eventType, ListenerToken token) {
 }
 
 // Event function is called instantly
-void EventManager::triggerEvent(EventPtr event) {
+void EventManager::triggerEvent(const EventPtr& event) {
     auto mapEntry = listeners.find(event->getType());
     if (mapEntry == listeners.end()) {
         return;
     }
 
-    for (auto it = mapEntry->second.begin(); it != mapEntry->second.end(); it++) {
-        it->second(event);
+    for (auto& it : mapEntry->second) {
+        it.second(event);
     }
 }
 
 // Adds an event to the event queue, which is updated by calling the function "update"
-void EventManager::queueEvent(EventPtr event) {
+void EventManager::queueEvent(const EventPtr& event) {
     eventQueue.push_back(event);
 }
 

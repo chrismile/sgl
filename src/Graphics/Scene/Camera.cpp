@@ -51,7 +51,7 @@ Camera::Camera() :  projType(Camera::ProjectionType::PERSPECTIVE),
     updateCamera();
 }
 
-void Camera::setRenderTarget(RenderTargetPtr target) {
+void Camera::setRenderTarget(RenderTargetPtr target, bool bindFramebuffer) {
     renderTarget = target;
     if (Renderer->getCamera().get() == this) {
         Renderer->setCamera(Renderer->getCamera(), true);
@@ -126,7 +126,7 @@ glm::mat4 Camera::getProjectionMatrix(DepthRange customDepthRange, CoordinateOri
 }
 
 
-void Camera::onResolutionChanged(EventPtr event) {
+void Camera::onResolutionChanged(const EventPtr& event) {
     float w = viewport.getWidth()*renderTarget->getWidth();
     float h = viewport.getHeight()*renderTarget->getHeight();
     aspect = w/h;

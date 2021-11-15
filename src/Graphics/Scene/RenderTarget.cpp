@@ -31,12 +31,18 @@
 #include <Graphics/Buffers/FBO.hpp>
 #include <Utils/AppSettings.hpp>
 #include <Graphics/Window.hpp>
+#include <utility>
 
 namespace sgl {
 
+RenderTarget::RenderTarget(FramebufferObjectPtr _framebuffer)
+{
+    framebuffer = std::move(_framebuffer);
+}
+
 void RenderTarget::bindFramebufferObject(FramebufferObjectPtr _framebuffer)
 {
-    framebuffer = _framebuffer;
+    framebuffer = std::move(_framebuffer);
 }
 
 void RenderTarget::bindWindowFramebuffer()

@@ -41,15 +41,15 @@ namespace sgl {
 
 class Event;
 typedef std::shared_ptr<Event> EventPtr;
-typedef std::function<void(EventPtr)> EventFunc;
+typedef std::function<void(const EventPtr&)> EventFunc;
 typedef uint32_t ListenerToken;
 typedef std::list<std::pair<ListenerToken, EventFunc>> EventFuncList;
 
 class DLL_OBJECT Event {
 public:
-    Event(uint32_t eventType) : eventType(eventType) {}
-    virtual ~Event() {}
-    inline uint32_t getType() const { return eventType; }
+    explicit Event(uint32_t eventType) : eventType(eventType) {}
+    virtual ~Event() = default;
+    [[nodiscard]] inline uint32_t getType() const { return eventType; }
     virtual void serialize(WriteStream &stream) {}
     virtual void deserialize(ReadStream &stream) {}
 
@@ -63,13 +63,13 @@ public:
     void update();
 
     //! Creates a listener
-    ListenerToken addListener(uint32_t eventType, EventFunc func);
+    ListenerToken addListener(uint32_t eventType, const EventFunc& func);
     void removeListener(uint32_t eventType, ListenerToken token);
 
     //! Event function is called instantly
-    void triggerEvent(EventPtr event);
+    void triggerEvent(const EventPtr& event);
     //! Adds an event to the event queue, which is updated by calling the function "update"
-    void queueEvent(EventPtr event);
+    void queueEvent(const EventPtr& event);
     //bool threadSafeQueueEvent(const EventDataPtr &event);
 
 

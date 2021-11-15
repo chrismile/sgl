@@ -100,7 +100,7 @@ SciVisApp::SciVisApp(float fovy)
 
     sgl::EventManager::get()->addListener(
             sgl::RESOLUTION_CHANGED_EVENT,
-            [this](sgl::EventPtr event) { this->resolutionChanged(event); });
+            [this](const EventPtr& event) { this->resolutionChanged(event); });
 
     camera->setNearClipDistance(0.001f);
     camera->setFarClipDistance(100.0f);
@@ -662,6 +662,8 @@ void SciVisApp::renderSceneSettingsGuiPost() {
 
 void SciVisApp::renderGuiPropertyEditorWindow() {
     if (propertyEditor.begin()) {
+        renderGuiPropertyEditorBegin();
+
         if (propertyEditor.beginTable()) {
             if (propertyEditor.beginNode("Camera Settings")) {
                 if (propertyEditor.addButton("Reset Camera", "Reset")) {
@@ -700,84 +702,7 @@ void SciVisApp::renderGuiPropertyEditorWindow() {
 
             if (propertyEditor.beginNode("General Settings")) {
                 propertyEditor.addCheckbox("Continuous Rendering", &continuousRendering);
-
-                ImGui::Separator();
-
-                /*propertyEditor.addInputText("##savescreenshotlabel", &saveFilenameScreenshots);
-                if (propertyEditor.addButton("Save Screenshot")) {
-                    screenshot = true;
-                }
-
-                ImGui::SameLine();
-                if (ImGui::Checkbox("Transparent Background", &screenshotTransparentBackground)) {
-    #ifdef SUPPORT_VULKAN
-                    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
-                        readbackHelperVk->setScreenshotTransparentBackground(screenshotTransparentBackground);
-                    }
-    #endif
-                }
-
-                ImGui::Separator();
-
-                ImGui::InputText("##savevideolabel", &saveFilenameVideos);
-                if (!recording) {
-                    bool startRecording = false;
-                    if (propertyEditor.addButton("Start Recording Video")) {
-                        startRecording = true;
-                    } ImGui::SameLine();
-                    if (propertyEditor.addButton("Start Recording Video Camera Path")) {
-                        startRecording = true;
-                        useCameraFlight = true;
-                        startedCameraFlightPerUI = true;
-                        recordingTime = 0.0f;
-                        realTimeCameraFlight = false;
-                        cameraPath.resetTime();
-                        reRender = true;
-                    }
-
-                    if (startRecording) {
-                        sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
-                        if (useRecordingResolution && window->getWindowResolution() != recordingResolution
-                            && !window->isFullscreen()) {
-                            window->setWindowSize(recordingResolution.x, recordingResolution.y);
-                        }
-
-                        if (videoWriter) {
-                            delete videoWriter;
-                            videoWriter = nullptr;
-                        }
-
-                        recording = true;
-                        isFirstRecordingFrame = true;
-                        sgl::ColorLegendWidget::setFontScale(1.0f);
-                        videoWriter = new sgl::VideoWriter(
-                                saveDirectoryVideos + saveFilenameVideos
-                                + "_" + sgl::toString(videoNumber++) + ".mp4", FRAME_RATE_VIDEOS);
-    #ifdef SUPPORT_VULKAN
-                        if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
-                            videoWriter->setRenderer(rendererVk);
-                        }
-    #endif
-                    }
-                } else {
-                    if (propertyEditor.addButton("Stop Recording Video")) {
-                        recording = false;
-                        sgl::ColorLegendWidget::resetStandardSize();
-                        customEndTime = 0.0f;
-                        if (videoWriter) {
-                            delete videoWriter;
-                            videoWriter = nullptr;
-                        }
-                    }
-                }
-
-                ImGui::Separator();
-
-                propertyEditor.addSliderInt2("Window Resolution", &windowResolution.x, 480, 3840);
-                if (ImGui::Button("Set Resolution")) {
-                    sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
-                    window->setWindowSize(windowResolution.x, windowResolution.y);
-                }*/
+                renderGuiGeneralSettingsPropertyEditor();
 
                 propertyEditor.endNode();
             }

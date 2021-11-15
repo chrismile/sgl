@@ -43,7 +43,7 @@ namespace sgl { namespace vk {
 RenderData::RenderData(Renderer* renderer, ShaderStagesPtr& shaderStages)
         : renderer(renderer), device(renderer->getDevice()), shaderStages(shaderStages) {
     swapchainRecreatedEventListenerToken = EventManager::get()->addListener(
-            RESOLUTION_CHANGED_EVENT, [this](EventPtr){ this->onSwapchainRecreated(); });
+            RESOLUTION_CHANGED_EVENT, [this](const EventPtr&){ this->onSwapchainRecreated(); });
     onSwapchainRecreated();
 }
 

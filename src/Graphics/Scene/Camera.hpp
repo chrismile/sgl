@@ -52,7 +52,7 @@ class DLL_OBJECT Camera : public SceneNode {
 public:
     Camera();
     virtual ~Camera() {}
-    void onResolutionChanged(EventPtr event);
+    void onResolutionChanged(const EventPtr& event);
 
     enum class ProjectionType {
         ORTHOGRAPHIC, PERSPECTIVE
@@ -72,7 +72,7 @@ public:
     AABB2 getViewport() const { return viewport; }
     //! Viewport left, top, width, height for OpenGL/DirectX
     glm::ivec4 getViewportLTWH();
-    void setRenderTarget(RenderTargetPtr target);
+    void setRenderTarget(RenderTargetPtr target, bool bindFramebuffer = true);
     inline RenderTargetPtr getRenderTarget() { return renderTarget; }
 
     //! Frustum data

@@ -81,6 +81,7 @@ protected:
     virtual void prepareReRender();
     /// GUI rendering snippets.
     virtual void renderGui();
+    virtual void renderGuiGeneralSettingsPropertyEditor() {}
     virtual void renderGuiFpsCounter();
     virtual void renderSceneSettingsGuiPre();
     virtual void renderSceneSettingsGuiPost();
@@ -92,6 +93,7 @@ protected:
     // Dock space mode.
     void renderGuiPropertyEditorWindow();
     void renderGuiFpsOverlay();
+    virtual void renderGuiPropertyEditorBegin() {}
     virtual void renderGuiPropertyEditorCustomNodes() {}
     PropertyEditor propertyEditor;
     bool showPropertyEditor = false;

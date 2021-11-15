@@ -42,6 +42,8 @@ typedef std::shared_ptr<RenderTarget> RenderTargetPtr;
 class DLL_OBJECT RenderTarget
 {
 public:
+    RenderTarget() = default;
+    explicit RenderTarget(FramebufferObjectPtr _framebuffer);
     void bindFramebufferObject(FramebufferObjectPtr _framebuffer);
     void bindWindowFramebuffer();
     FramebufferObjectPtr getFramebufferObject();

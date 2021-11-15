@@ -255,7 +255,7 @@ void RendererGL::bindFBO(FramebufferObjectPtr _fbo, bool force /* = false */)
 {
     if (boundFBO.get() != _fbo.get() || force) {
         boundFBO = _fbo;
-        if (_fbo.get() != NULL) {
+        if (_fbo.get() != nullptr) {
             boundFBOID = _fbo->_bindInternal();
         } else {
             unbindFBO(true);
