@@ -361,9 +361,6 @@ bool SDLWindow::processEvents()
 
         case (SDL_KEYDOWN):
             switch (event.key.keysym.sym) {
-            case (SDLK_ESCAPE):
-                running = false;
-                break;
             case (SDLK_v):
                 if (SDL_GetModState() & KMOD_CTRL) {
                     char* clipboardText = SDL_GetClipboardText();

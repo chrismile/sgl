@@ -370,6 +370,10 @@ void ImGuiWrapper::setNextWindowStandardPosSize(int x, int y, int width, int hei
             float(width) * sizeScale, float(height) * sizeScale), ImGuiCond_FirstUseEver);
 }
 
+ImVec2 ImGuiWrapper::getScaleDependentSize(int width, int height) {
+    return ImVec2(float(width) * sizeScale, float(height) * sizeScale);
+}
+
 void ImGuiWrapper::renderDemoWindow() {
     static bool showDemoWindow = true;
     if (showDemoWindow)

@@ -73,6 +73,7 @@ glm::ivec4 Camera::getViewportLTWH() {
 
 glm::mat4 Camera::getRotationMatrix()
 {
+    updateCamera();
     return glm::lookAt(glm::vec3(0.0f), cameraFront, cameraUp);
 }
 

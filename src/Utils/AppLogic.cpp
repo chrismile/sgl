@@ -118,7 +118,8 @@ void AppLogic::run()
             accumulatedTimeFixed -= fixedFPSInMicroSeconds;
         } while(Timer->getFixedPhysicsFPSEnabled() && int64_t(accumulatedTimeFixed) >= fixedFPSInMicroSeconds);
 
-        running = window->processEvents();
+        bool windowRunning = window->processEvents();
+        running = running && windowRunning;
 
         //float dt = Timer->getElapsedSeconds();
         framerateSmoother.addSample(1.0f/Timer->getElapsedSeconds());

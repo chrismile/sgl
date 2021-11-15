@@ -79,6 +79,7 @@ void ColorLegendWidget::renderGui() {
     float textHeight = 0;
 
     bool useDockSpaceMode = ImGuiWrapper::get()->getUseDockSpaceMode();
+    ImVec2 oldCursorPos = ImGui::GetCursorPos();
     float contentOffset = ImGui::GetCursorPos().x;
 
     ImVec2 windowSize = ImVec2(totalWidth + 3, regionHeight + 30 * scaleFactor);
@@ -90,7 +91,6 @@ void ColorLegendWidget::renderGui() {
         windowPos = ImVec2(
                 currentWindowSize.x - totalWidth - 18 - windowOffset,
                 currentWindowSize.y - regionHeight - 46 * scaleFactor);
-        ImGui::SetCursorPos(windowPos);
     } else {
         ImGuiViewport* viewport = ImGui::GetMainViewport();
         windowPos = ImVec2(
@@ -119,6 +119,10 @@ void ColorLegendWidget::renderGui() {
         ImDrawList* drawList = ImGui::GetWindowDrawList();
 
         ImVec2 startPos = ImGui::GetCursorScreenPos();
+        if (useDockSpaceMode) {
+            ImVec2 cursorPos = ImGui::GetCursorPos();
+            startPos = ImVec2(windowPos.x - cursorPos.x + startPos.x, windowPos.y - cursorPos.y + startPos.y);
+        }
 
         if (useDockSpaceMode) {
             ImVec2 bgPos = ImVec2(startPos.x - contentOffset, startPos.y - contentOffset);
@@ -128,7 +132,7 @@ void ColorLegendWidget::renderGui() {
             ImColor borderColor = ImColor(ImGui::GetStyleColorVec4(ImGuiCol_Border));
             drawList->AddRect(
                     bgPos, ImVec2(bgPos.x + windowSize.x, bgPos.y + windowSize.y),
-                    borderColor, 1.0f);
+                    borderColor, 3.0f);
         }
 
         // Draw color bar.

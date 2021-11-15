@@ -66,8 +66,31 @@ public:
     template<class T> inline void addKeyValue(const std::string &key, const T &value) { settings[key] = toString(value); }
     inline void clear() { settings.clear(); }
 
-    void getValueOpt(const char *key, std::string &toset) const { auto it = settings.find(key); if (it != settings.end()) { toset = it->second; } }
-    template<class T> void getValueOpt(const char *key, T &toset) const { auto it = settings.find(key); if (it != settings.end()) { toset = fromString<T>(it->second); } }
+    bool getValueOpt(const char *key, std::string &toset) const {
+        auto it = settings.find(key);
+        if (it != settings.end()) {
+            toset = it->second;
+            return true;
+        }
+        return false;
+    }
+    template<class T> bool getValueOpt(const char *key, T &toset) const {
+        auto it = settings.find(key);
+        if (it != settings.end()) {
+            toset = fromString<T>(it->second);
+            return true;
+        }
+        return false;
+    }
+    bool getValueOpt(const char *key, bool &toset) const {
+        auto it = settings.find(key);
+        if (it != settings.end()) {
+            std::string val = getValue(key);
+            toset = val != "false" && val != "0";
+            return true;
+        }
+        return false;
+    }
 
     void saveToFile(const char *filename);
     void loadFromFile(const char *filename);

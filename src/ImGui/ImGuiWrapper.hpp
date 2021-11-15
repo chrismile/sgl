@@ -82,6 +82,7 @@ public:
     void setNextWindowStandardPos(int x, int y);
     void setNextWindowStandardSize(int width, int height);
     void setNextWindowStandardPosSize(int x, int y, int width, int height);
+    ImVec2 getScaleDependentSize(int width, int height);
 
     // Insert your ImGui code between "renderStart" and "renderEnd"
     void renderStart();

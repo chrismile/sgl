@@ -302,6 +302,13 @@ void SciVisApp::updateColorSpaceMode() {
 }
 
 void SciVisApp::processSDLEvent(const SDL_Event &event) {
+    if (event.type == SDL_KEYDOWN) {
+        if ((useDockSpaceMode && event.key.keysym.sym == SDLK_q && (event.key.keysym.mod & KMOD_CTRL) != 0)
+                || (!useDockSpaceMode && event.key.keysym.sym == SDLK_ESCAPE)) {
+            quit();
+        }
+    }
+
     sgl::ImGuiWrapper::get()->processSDLEvent(event);
 }
 
@@ -800,15 +807,13 @@ void SciVisApp::renderGuiPropertyEditorWindow() {
 }
 
 void SciVisApp::renderGuiFpsOverlay() {
-    //ImVec2 oldCursorPos = ImGui::GetCursorPos();
-
     ImDrawList* drawList = ImGui::GetWindowDrawList();
 
     sgl::Color textColor = sgl::Color(
             255 - clearColor.getR(), 255 - clearColor.getG(), 255 - clearColor.getB(), 90);
     glm::vec3 clearColorFlt(clearColor.getFloatR(), clearColor.getFloatG(), clearColor.getFloatB());
     glm::vec3 textColorFlt(textColor.getFloatR(), textColor.getFloatG(), textColor.getFloatB());
-    glm::vec3 bgColor = glm::mix(clearColorFlt, textColorFlt, 0.1);
+    //glm::vec3 bgColor = glm::mix(clearColorFlt, textColorFlt, 0.1);
     ImU32 textColorImgui = textColor.getColorRGBA();
 
     std::string fpsText =
@@ -822,49 +827,6 @@ void SciVisApp::renderGuiFpsOverlay() {
             windowPos.x + windowSize.x - textSize.x - 28,
             windowPos.y + textSize.y + 35);
     drawList->AddText(pos, textColorImgui, fpsText.c_str());
-    //ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / fps, fps);
-
-    //ImGui::SetCursorPos(oldCursorPos);
-
-    /*static int corner = 1;
-    ImGuiIO& io = ImGui::GetIO();
-    ImGuiWindowFlags window_flags =
-            ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings
-            | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
-    if (corner != -1) {
-        const float PAD = 10.0f;
-        const ImGuiViewport* viewport = ImGui::GetMainViewport();
-        ImVec2 work_pos = viewport->WorkPos; // Use work area to avoid menu-bar/task-bar, if any!
-        ImVec2 work_size = viewport->WorkSize;
-        ImVec2 window_pos, window_pos_pivot;
-        window_pos.x = (corner & 1) ? (work_pos.x + work_size.x - PAD) : (work_pos.x + PAD);
-        window_pos.y = (corner & 2) ? (work_pos.y + work_size.y - PAD) : (work_pos.y + PAD);
-        window_pos_pivot.x = (corner & 1) ? 1.0f : 0.0f;
-        window_pos_pivot.y = (corner & 2) ? 1.0f : 0.0f;
-        ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
-        window_flags |= ImGuiWindowFlags_NoMove;
-    }
-    ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
-    if (ImGui::Begin("Example: Simple overlay", &showFpsOverlay, window_flags)) {
-        ImGui::Text("Simple overlay\n" "in the corner of the screen.\n" "(right-click to change position)");
-        ImGui::Separator();
-        if (ImGui::IsMousePosValid())
-            ImGui::Text("Mouse Position: (%.1f,%.1f)", io.MousePos.x, io.MousePos.y);
-        else
-            ImGui::Text("Mouse Position: <invalid>");
-        if (ImGui::BeginPopupContextWindow()) {
-            if (ImGui::MenuItem("Custom", nullptr, corner == -1)) corner = -1;
-            if (ImGui::MenuItem("Top-left", nullptr, corner == 0)) corner = 0;
-            if (ImGui::MenuItem("Top-right", nullptr, corner == 1)) corner = 1;
-            if (ImGui::MenuItem("Bottom-left", nullptr, corner == 2)) corner = 2;
-            if (ImGui::MenuItem("Bottom-right", nullptr, corner == 3)) corner = 3;
-            if (showFpsOverlay && ImGui::MenuItem("Close")) {
-                showFpsOverlay = false;
-            }
-            ImGui::EndPopup();
-        }
-    }
-    ImGui::End();*/
 }
 
 void SciVisApp::update(float dt) {
