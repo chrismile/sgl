@@ -522,7 +522,6 @@ void SciVisApp::postRender() {
 }
 
 void SciVisApp::renderGui() {
-    ;
 }
 
 void SciVisApp::renderGuiFpsCounter() {

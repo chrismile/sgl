@@ -79,7 +79,6 @@ void ColorLegendWidget::renderGui() {
     float textHeight = 0;
 
     bool useDockSpaceMode = ImGuiWrapper::get()->getUseDockSpaceMode();
-    ImVec2 oldCursorPos = ImGui::GetCursorPos();
     float contentOffset = ImGui::GetCursorPos().x;
 
     ImVec2 windowSize = ImVec2(totalWidth + 3, regionHeight + 30 * scaleFactor);
