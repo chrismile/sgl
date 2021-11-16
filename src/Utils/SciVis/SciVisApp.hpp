@@ -109,6 +109,8 @@ protected:
     virtual void moveCameraMouse(float dt);
     /// Callback when the camera was moved/rotated.
     virtual void hasMoved() {}
+    /// Callback when the camera was reset.
+    virtual void onCameraReset() {}
 
     /// Scene data (e.g., camera, main framebuffer, ...).
     sgl::CameraPtr camera;

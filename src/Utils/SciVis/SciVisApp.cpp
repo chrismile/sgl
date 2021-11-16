@@ -552,6 +552,7 @@ void SciVisApp::renderSceneSettingsGuiPre() {
         camera->setFOVy(standardFov);
         fovDegree = standardFov / sgl::PI * 180.0f;
         reRender = true;
+        onCameraReset();
         hasMoved();
     }
     ImGui::SameLine();
@@ -885,21 +886,6 @@ void SciVisApp::updateCameraFlight(bool hasData, bool& usesNewState) {
 
 void SciVisApp::moveCameraKeyboard(float dt) {
     // Rotate scene around camera origin
-    /*if (sgl::Keyboard->isKeyDown(SDLK_x)) {
-        glm::quat rot = glm::quat(glm::vec3(dt*ROT_SPEED, 0.0f, 0.0f));
-        camera->rotate(rot);
-        reRender = true;
-    }
-    if (sgl::Keyboard->isKeyDown(SDLK_y)) {
-        glm::quat rot = glm::quat(glm::vec3(0.0f, dt*ROT_SPEED, 0.0f));
-        camera->rotate(rot);
-        reRender = true;
-    }
-    if (sgl::Keyboard->isKeyDown(SDLK_z)) {
-        glm::quat rot = glm::quat(glm::vec3(0.0f, 0.0f, dt*ROT_SPEED));
-        camera->rotate(rot);
-        reRender = true;
-    }*/
     if (sgl::Keyboard->isKeyDown(SDLK_q)) {
         camera->rotateYaw(-1.9f*dt*MOVE_SPEED);
         reRender = true;
@@ -920,11 +906,6 @@ void SciVisApp::moveCameraKeyboard(float dt) {
         reRender = true;
         hasMoved();
     }
-
-    if (sgl::Keyboard->isKeyDown(SDLK_u)) {
-        showSettingsWindow = !showSettingsWindow;
-    }
-
 
     rotationMatrix = camera->getRotationMatrix();
     invRotationMatrix = glm::inverse(rotationMatrix);
