@@ -57,7 +57,7 @@ bool PropertyEditor::beginTable() {
         bool tableOpen = ImGui::BeginTable(tableName.c_str(), 2, tableFlags);
 
         ImGui::TableSetupColumn("Property", ImGuiTableColumnFlags_NoHide);
-        ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, 240.0f);
+        ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, initWidthValues);
         ImGui::TableHeadersRow();
 
         return tableOpen;
@@ -257,6 +257,13 @@ bool PropertyEditor::addBeginCombo(const std::string& label, const std::string& 
 
 void PropertyEditor::addEndCombo() {
     ImGui::EndCombo();
+}
+
+void PropertyEditor::addCustomWidgets(const std::string& label) {
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+    ImGui::TreeNodeEx(label.c_str(), treeNodeFlagsLeaf);
+    ImGui::TableNextColumn();
 }
 
 }

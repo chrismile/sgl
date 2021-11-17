@@ -99,6 +99,7 @@ protected:
     bool showPropertyEditor = false;
     bool useDockSpaceMode = false;
     bool showFpsOverlay = true;
+    int customScreenshotWidth = -1, customScreenshotHeight = -1;
 
     /// To be implemented by the sub-class.
     virtual void reloadDataSet()=0;

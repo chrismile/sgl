@@ -45,6 +45,8 @@ public:
         tableName = windowName + " Table";
     }
 
+    inline void setInitWidthValues(float width) { initWidthValues = width; }
+
     bool begin();
     void end();
 
@@ -92,11 +94,14 @@ public:
     bool addBeginCombo(const std::string& label, const std::string& preview_value, ImGuiComboFlags flags = 0);
     void addEndCombo();
 
+    void addCustomWidgets(const std::string& label);
+
 private:
     std::string windowName;
     std::string tableName;
     bool& showPropertyEditor;
     bool windowWasOpened = true;
+    float initWidthValues = 240.0f;
 };
 
 }

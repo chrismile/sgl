@@ -266,9 +266,16 @@ void SciVisApp::resolutionChanged(sgl::EventPtr event) {
 
 void SciVisApp::saveScreenshot(const std::string &filename) {
 #if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN)
-    sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
-    int width = window->getWidth();
-    int height = window->getHeight();
+    int width;
+    int height;
+    if (customScreenshotWidth < 0 || customScreenshotHeight < 0) {
+        sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
+        width = window->getWidth();
+        height = window->getHeight();
+    } else {
+        width = customScreenshotWidth;
+        height = customScreenshotHeight;
+    }
 #endif
 
 #ifdef SUPPORT_OPENGL
@@ -399,7 +406,7 @@ void SciVisApp::postRender() {
         sgl::Renderer->setViewMatrix(sgl::matrixIdentity());
         sgl::Renderer->setModelMatrix(sgl::matrixIdentity());
 
-        if (screenshot && screenshotTransparentBackground) {
+        if (!useDockSpaceMode && screenshot && screenshotTransparentBackground) {
             if (useLinearRGB) {
                 sgl::Renderer->blitTexture(
                         sceneTexture, sgl::AABB2(glm::vec2(-1.0f, -1.0f), glm::vec2(1.0f, 1.0f)),
@@ -453,7 +460,7 @@ void SciVisApp::postRender() {
     sgl::ImGuiWrapper::get()->renderStart();
     renderGui();
 
-    if (!screenshotTransparentBackground && !uiOnScreenshot && screenshot) {
+    if (!useDockSpaceMode && !screenshotTransparentBackground && !uiOnScreenshot && screenshot) {
         printNow = true;
         saveScreenshot(
                 saveDirectoryScreenshots + saveFilenameScreenshots
@@ -468,7 +475,7 @@ void SciVisApp::postRender() {
     }
 
     // Video recording enabled?
-    if (!uiOnScreenshot && recording && !isFirstRecordingFrame) {
+    if (!useDockSpaceMode && !uiOnScreenshot && recording && !isFirstRecordingFrame) {
 #ifdef SUPPORT_OPENGL
         if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
             videoWriter->pushWindowFrame();
@@ -726,6 +733,7 @@ void SciVisApp::renderGuiPropertyEditorWindow() {
                 screenshot = true;
             }
 
+            ImGui::Checkbox("UI on Screenshot", &uiOnScreenshot);
             ImGui::SameLine();
             if (ImGui::Checkbox("Transparent Background", &screenshotTransparentBackground)) {
 #ifdef SUPPORT_VULKAN
@@ -734,7 +742,6 @@ void SciVisApp::renderGuiPropertyEditorWindow() {
                 }
 #endif
             }
-            ImGui::Checkbox("UI on Screenshot", &uiOnScreenshot);
 
             ImGui::Separator();
 
