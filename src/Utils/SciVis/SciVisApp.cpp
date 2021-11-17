@@ -688,6 +688,7 @@ void SciVisApp::renderGuiPropertyEditorWindow() {
                     camera->setFOVy(standardFov);
                     fovDegree = standardFov / sgl::PI * 180.0f;
                     reRender = true;
+                    onCameraReset();
                     hasMoved();
                 }
                 propertyEditor.addSliderFloat("Move Speed", &MOVE_SPEED, 0.02f, 0.5f);

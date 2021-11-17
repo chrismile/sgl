@@ -202,6 +202,10 @@ private:
     VkImage image = nullptr;
     VkImageLayout imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
+    // For looking up and caching the properties of the currently used format.
+    VkFormat cachedFormat{};
+    VkFormatProperties formatProperties{};
+
     // Memory not exported, used only in Vulkan.
     VmaAllocation imageAllocation = nullptr;
     VmaAllocationInfo imageAllocationInfo = {};

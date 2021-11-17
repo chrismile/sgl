@@ -290,9 +290,11 @@ void Image::copyToImage(ImagePtr& destImage, VkImageAspectFlags aspectFlags, VkC
 
 void Image::blit(ImagePtr& destImage, VkCommandBuffer commandBuffer) {
     // Does the device support linear filtering for blit operations?
-    VkFormatProperties formatProperties;
-    vkGetPhysicalDeviceFormatProperties(
-            device->getVkPhysicalDevice(), imageSettings.format, &formatProperties);
+    if (imageSettings.format != cachedFormat) {
+        cachedFormat = imageSettings.format;
+        vkGetPhysicalDeviceFormatProperties(
+                device->getVkPhysicalDevice(), imageSettings.format, &formatProperties);
+    }
     if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
         Logfile::get()->throwError(
                 "Error in Image::blit: Texture image format does not support linear blitting!");
@@ -525,9 +527,11 @@ void Image::insertMemoryBarrier(
 
 void Image::_generateMipmaps() {
     // Does the device support linear filtering for blit operations?
-    VkFormatProperties formatProperties;
-    vkGetPhysicalDeviceFormatProperties(
-            device->getVkPhysicalDevice(), imageSettings.format, &formatProperties);
+    if (imageSettings.format != cachedFormat) {
+        cachedFormat = imageSettings.format;
+        vkGetPhysicalDeviceFormatProperties(
+                device->getVkPhysicalDevice(), imageSettings.format, &formatProperties);
+    }
     if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
         Logfile::get()->throwError(
                 "Error in Image::_generateMipmaps: Texture image format does not support linear blitting!");
