@@ -46,25 +46,30 @@ class Renderer;
 
 namespace sgl {
 
-/** Video writer using the libav command line tool. Supports mp4 video.
+/**
+ * Video writer using the libav command line tool. Supports mp4 video.
  * Please install the necessary dependencies for this writer to work:
  * https://wiki.ubuntuusers.de/avconv/
+ *
+ * NOTE: In newer versions, the avconv package was replaced by ffmpeg.
  */
 class DLL_OBJECT VideoWriter
 {
 public:
-    /// Open mp4 video file with specified frame width and height
+    /// Open mp4 video file with specified frame width and height.
     VideoWriter(const std::string& filename, int frameW, int frameH, int framerate = 30, bool useAsyncCopy = true);
-    /// Open mp4 video file with frame width and height specified by application window
+    /// Open mp4 video file with frame width and height specified by application window.
     VideoWriter(const std::string& filename, int framerate = 30, bool useAsyncCopy = true);
     /// Closes file automatically
     ~VideoWriter();
-    /// Push a 24-bit RGB frame (with width and height specified in constructor)
+    /// Push a 24-bit RGB frame (with width and height specified in constructor).
     void pushFrame(uint8_t* pixels);
 
 #ifdef SUPPORT_OPENGL
-    /// Retrieves frame automatically from current window
+    /// Retrieves frame automatically from current window.
     void pushWindowFrame();
+    /// Retrieves frame from a framebuffer object.
+    void pushFramebuffer(const sgl::FramebufferObjectPtr& fbo);
 #endif
 
 #ifdef SUPPORT_VULKAN
@@ -83,17 +88,19 @@ public:
 #endif
 
 private:
-    void openFile(const std::string& filename, int framerate = 25);
+    void openFile(const std::string& filename, int frameWidth, int frameHeight, int framerate = 25);
     void createCpuBufferData(int width, int height);
 
 #ifdef SUPPORT_OPENGL
     // Asynchronous CPU/GPU data transfer.
     void initializeReadBackBuffers();
-    bool isReadBackBufferFree();
-    bool isReadBackBufferEmpty();
+    bool isReadBackBufferFree() const;
+    bool isReadBackBufferEmpty() const;
     void addCurrentFrameToQueue();
+    void addCurrentFramebufferFrameToQueue(const sgl::FramebufferObjectPtr& fbo);
     void readBackFinishedFrames();
     void readBackOldestFrame();
+    bool initializedReadBackBuffers = false;
     bool useAsyncCopy;
     static const size_t NUM_RB_BUFFERS = 4; ///< Sufficient for up to 4 frames queued at the same time.
     struct ReadBackBuffer {
@@ -117,9 +124,11 @@ private:
 
     // Frame & file data.
     FILE *avfile = nullptr;
+    std::string filename;
     int frameW = 0;
     int frameH = 0;
-    uint8_t *framebuffer = nullptr; ///< Used for pushWindowFrame
+    int framerate = 0;
+    uint8_t *framebuffer = nullptr; ///< Used for pushWindowFrame.
 };
 
 }

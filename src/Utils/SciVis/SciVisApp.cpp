@@ -494,7 +494,7 @@ void SciVisApp::postRender() {
 
     sgl::ImGuiWrapper::get()->renderEnd();
 
-    if (uiOnScreenshot && recording&& !isFirstRecordingFrame) {
+    if (uiOnScreenshot && recording && !isFirstRecordingFrame) {
 #ifdef SUPPORT_OPENGL
         if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
             videoWriter->pushWindowFrame();
@@ -645,8 +645,8 @@ void SciVisApp::renderSceneSettingsGuiPost() {
             isFirstRecordingFrame = true;
             sgl::ColorLegendWidget::setFontScale(1.0f);
             videoWriter = new sgl::VideoWriter(
-                    saveDirectoryVideos + saveFilenameVideos
-                    + "_" + sgl::toString(videoNumber++) + ".mp4", FRAME_RATE_VIDEOS);
+                    saveDirectoryVideos + saveFilenameVideos + "_" + sgl::toString(videoNumber++) + ".mp4",
+                    FRAME_RATE_VIDEOS);
 #ifdef SUPPORT_VULKAN
             if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
                 videoWriter->setRenderer(rendererVk);
@@ -777,6 +777,7 @@ void SciVisApp::renderGuiPropertyEditorWindow() {
                     recording = true;
                     isFirstRecordingFrame = true;
                     sgl::ColorLegendWidget::setFontScale(1.0f);
+
                     videoWriter = new sgl::VideoWriter(
                             saveDirectoryVideos + saveFilenameVideos
                             + "_" + sgl::toString(videoNumber++) + ".mp4", FRAME_RATE_VIDEOS);
@@ -831,9 +832,10 @@ void SciVisApp::renderGuiFpsOverlay() {
     ImVec2 textSize = ImGui::CalcTextSize(fpsText.c_str());
     ImVec2 windowPos = ImGuiWrapper::get()->getCurrentWindowPosition();
     ImVec2 windowSize = ImGuiWrapper::get()->getCurrentWindowSize();
+    ImVec2 offset = ImGuiWrapper::get()->getScaleDependentSize(28, 35);
     ImVec2 pos = ImVec2(
-            windowPos.x + windowSize.x - textSize.x - 28,
-            windowPos.y + textSize.y + 35);
+            windowPos.x + windowSize.x - textSize.x - offset.x,
+            windowPos.y + textSize.y + offset.y);
     drawList->AddText(pos, textColorImgui, fpsText.c_str());
 }
 
