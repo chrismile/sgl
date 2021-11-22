@@ -36,7 +36,7 @@
 namespace sgl {
 
 template <class AssetType, class AssetInfo>
-class DLL_OBJECT FileManager
+class FileManager
 {
 public:
     virtual ~FileManager() {}
