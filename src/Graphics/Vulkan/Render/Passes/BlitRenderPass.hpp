@@ -40,7 +40,7 @@ namespace sgl { namespace vk {
 /**
  * A frame graph pass for blitting one image to another image via a vertex and fragment shader.
  */
-class BlitRenderPass : public RasterPass {
+class DLL_OBJECT BlitRenderPass : public RasterPass {
 public:
     /**
      * Uses the shaders {"Blit.Vertex", "Blit.Fragment"} for blitting.

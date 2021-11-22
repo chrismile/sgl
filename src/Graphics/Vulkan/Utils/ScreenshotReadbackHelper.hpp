@@ -36,7 +36,7 @@ namespace sgl { namespace vk {
 
 class Renderer;
 
-class ScreenshotReadbackHelper {
+class DLL_OBJECT ScreenshotReadbackHelper {
 public:
     explicit ScreenshotReadbackHelper(vk::Renderer* renderer) : renderer(renderer) {}
     ~ScreenshotReadbackHelper();
