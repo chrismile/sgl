@@ -56,13 +56,7 @@ VideoWriter::VideoWriter(const std::string& filename, int frameW, int frameH, in
 #ifdef SUPPORT_OPENGL
         useAsyncCopy(useAsyncCopy),
 #endif
-        frameW(frameW), frameH(frameH), framebuffer(NULL) {
-#ifdef SUPPORT_OPENGL
-    if (useAsyncCopy) {
-        initializeReadBackBuffers();
-    }
-#endif
-    openFile(filename, framerate);
+        filename(filename), frameW(frameW), frameH(frameH), framerate(framerate), framebuffer(nullptr) {
 }
 
 VideoWriter::VideoWriter(const std::string& filename, int framerate, bool useAsyncCopy)
@@ -70,30 +64,25 @@ VideoWriter::VideoWriter(const std::string& filename, int framerate, bool useAsy
 #ifdef SUPPORT_OPENGL
         useAsyncCopy(useAsyncCopy),
 #endif
-        framebuffer(NULL) {
+        filename(filename), framerate(framerate), framebuffer(nullptr) {
     sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
     frameW = window->getWidth();
     frameH = window->getHeight();
-    if (AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
-#ifdef SUPPORT_OPENGL
-        if (useAsyncCopy) {
-            initializeReadBackBuffers();
-        }
-#endif
-    }
-    openFile(filename, framerate);
 }
 
-void VideoWriter::openFile(const std::string& filename, int framerate) {
-    std::string command = std::string() + "ffmpeg -y -f rawvideo -s "
-                          + sgl::toString(frameW) + "x" + sgl::toString(frameH)
-                          + " -pix_fmt rgb24 -r " + sgl::toString(framerate)
-                          //+ " -i - -vf vflip -an -b:v 100M \"" + filename + "\"";
-                          + " -i - -vf vflip -an -vcodec libx264 -crf 5 \"" + filename + "\""; // -crf 15
+void VideoWriter::openFile(const std::string& filename, int frameWidth, int frameHeight, int framerate) {
+    frameW = frameWidth;
+    frameH = frameHeight;
+    std::string command =
+            std::string() + "ffmpeg -y -f rawvideo -s "
+            + sgl::toString(frameW) + "x" + sgl::toString(frameH)
+            + " -pix_fmt rgb24 -r " + sgl::toString(framerate)
+            //+ " -i - -vf vflip -an -b:v 100M \"" + filename + "\"";
+            + " -i - -vf vflip -an -vcodec libx264 -crf 5 \"" + filename + "\""; // -crf 15
     std::cout << command << std::endl;
-#if defined(__linux__) ||defined(__MINGW32__)
+#if defined(__linux__) || defined(__MINGW32__)
     avfile = popen(command.c_str(), "w");
-    if (avfile == NULL) {
+    if (avfile == nullptr) {
         sgl::Logfile::get()->writeError("ERROR in VideoWriter::VideoWriter: Couldn't open file.");
         sgl::Logfile::get()->writeError(std::string() + "Error in errno: " + strerror(errno));
     }
@@ -136,7 +125,7 @@ VideoWriter::~VideoWriter() {
 
 void VideoWriter::pushFrame(uint8_t* pixels) {
     if (avfile) {
-        fwrite((const void *)pixels, frameW*frameH*3, 1, avfile);
+        fwrite((const void *)pixels, frameW * frameH * 3, 1, avfile);
     }
 }
 
@@ -161,7 +150,13 @@ void VideoWriter::createCpuBufferData(int width, int height) {
 #ifdef SUPPORT_OPENGL
 void VideoWriter::pushWindowFrame() {
     sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
+    if (!avfile) {
+        openFile(filename, window->getWidth(), window->getHeight(), framerate);
+    }
     createCpuBufferData(window->getWidth(), window->getHeight());
+    if (useAsyncCopy && !initializedReadBackBuffers) {
+        initializeReadBackBuffers();
+    }
 
     if (useAsyncCopy) {
         if (!isReadBackBufferFree()) {
@@ -200,6 +195,57 @@ void VideoWriter::pushWindowFrame() {
         }
         glReadPixels(0, 0, frameW, frameH, GL_RGB, GL_UNSIGNED_BYTE, framebuffer);
         pushFrame(framebuffer);
+    }
+}
+
+void VideoWriter::pushFramebuffer(const sgl::FramebufferObjectPtr& fbo) {
+    if (!avfile) {
+        openFile(filename, fbo->getWidth(), fbo->getHeight(), framerate);
+    }
+    createCpuBufferData(fbo->getWidth(), fbo->getHeight());
+    if (useAsyncCopy && !initializedReadBackBuffers) {
+        initializeReadBackBuffers();
+    }
+
+    if (useAsyncCopy) {
+        if (!isReadBackBufferFree()) {
+            readBackOldestFrame();
+        }
+        addCurrentFramebufferFrameToQueue(fbo);
+        readBackFinishedFrames();
+    } else {
+        /*
+         * For some reasons, we found manual synchronization to be necessary on NVIDIA GPUs under some circumstances.
+         */
+        GLsync fence;
+        fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+        bool renderingFinished = false;
+        while (!renderingFinished) {
+            GLenum signalType = glClientWaitSync(fence, GL_SYNC_FLUSH_COMMANDS_BIT, GL_TIMEOUT_IGNORED);
+            if (signalType == GL_ALREADY_SIGNALED || signalType == GL_CONDITION_SATISFIED) {
+                renderingFinished = true;
+            } else {
+                if (signalType == GL_WAIT_FAILED) {
+                    sgl::Logfile::get()->writeError("ERROR in VideoWriter::pushWindowFrame: Wait for sync failed.");
+                    exit(-1);
+                } else if (signalType == GL_TIMEOUT_EXPIRED) {
+                    sgl::Logfile::get()->writeError(
+                            "ERROR in VideoWriter::pushWindowFrame: Wait for sync has timed out.");
+                    continue;
+                }
+            }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+        glDeleteSync(fence);
+
+        Renderer->bindFBO(fbo);
+        if (frameW % 4 != 0) {
+            glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        }
+        glReadPixels(0, 0, frameW, frameH, GL_RGB, GL_UNSIGNED_BYTE, framebuffer);
+        pushFrame(framebuffer);
+        Renderer->unbindFBO();
     }
 }
 #endif
@@ -254,6 +300,9 @@ void VideoWriter::readBackOldestFrameVulkan() {
 }
 
 void VideoWriter::pushFramebufferImage(vk::ImagePtr& image) {
+    if (!avfile) {
+        openFile(filename, int(image->getImageSettings().width), int(image->getImageSettings().height), framerate);
+    }
     if (AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN && queueSize == 0
             && (frameW != int(image->getImageSettings().width) || frameH != int(image->getImageSettings().height))) {
         Logfile::get()->writeInfo(
@@ -294,18 +343,19 @@ void VideoWriter::pushFramebufferImage(vk::ImagePtr& image) {
 
 #ifdef SUPPORT_OPENGL
 void VideoWriter::initializeReadBackBuffers() {
-    for (size_t i = 0; i < NUM_RB_BUFFERS; i++) {
-        glGenBuffers(1, &readBackBuffers[i].pbo);
-        glBindBuffer(GL_PIXEL_PACK_BUFFER, readBackBuffers[i].pbo);
+    for (auto& readBackBuffer : readBackBuffers) {
+        glGenBuffers(1, &readBackBuffer.pbo);
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, readBackBuffer.pbo);
         glBufferData(GL_PIXEL_PACK_BUFFER, frameW * frameH * 3, 0, GL_STREAM_READ);
     }
+    initializedReadBackBuffers = true;
 }
 
-bool VideoWriter::isReadBackBufferFree() {
+bool VideoWriter::isReadBackBufferFree() const {
     return queueSize < queueCapacity;
 }
 
-bool VideoWriter::isReadBackBufferEmpty() {
+bool VideoWriter::isReadBackBufferEmpty() const {
     return queueSize == 0;
 }
 
@@ -322,6 +372,29 @@ void VideoWriter::addCurrentFrameToQueue() {
     }
     glReadPixels(0, 0, frameW, frameH, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
     glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+
+    // 3. Add a fence sync to later wait on. Push the read back buffer on the queue.
+    assert(readBackBuffer.fence == nullptr);
+    readBackBuffer.fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+    endPointer = (endPointer + 1) % queueCapacity;
+    queueSize++;
+}
+
+void VideoWriter::addCurrentFramebufferFrameToQueue(const sgl::FramebufferObjectPtr& fbo) {
+    // 1. Query a free read back buffer.
+    assert(isReadBackBufferFree());
+    ReadBackBuffer& readBackBuffer = readBackBuffers[endPointer];
+
+    // 2. Read the framebuffer data to the PBO (asynchronously).
+    Renderer->bindFBO(fbo);
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, readBackBuffer.pbo);
+    //glReadBuffer(GL_BACK);
+    if (frameW % 4 != 0) {
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    }
+    glReadPixels(0, 0, frameW, frameH, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+    Renderer->unbindFBO();
 
     // 3. Add a fence sync to later wait on. Push the read back buffer on the queue.
     assert(readBackBuffer.fence == nullptr);
