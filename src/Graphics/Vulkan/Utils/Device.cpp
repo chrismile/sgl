@@ -43,11 +43,11 @@ namespace sgl { namespace vk {
 void Device::initializeDeviceExtensionList(VkPhysicalDevice physicalDevice) {
     uint32_t deviceExtensionCount = 0;
     VkResult res = vkEnumerateDeviceExtensionProperties(
-            physicalDevice, NULL, &deviceExtensionCount, NULL);
+            physicalDevice, nullptr, &deviceExtensionCount, nullptr);
     if (deviceExtensionCount > 0) {
         VkExtensionProperties *deviceExtensions = new VkExtensionProperties[deviceExtensionCount];
         res = vkEnumerateDeviceExtensionProperties(
-                physicalDevice, NULL, &deviceExtensionCount, deviceExtensions);
+                physicalDevice, nullptr, &deviceExtensionCount, deviceExtensions);
         if (res != VK_SUCCESS) {
             Logfile::get()->throwError(
                     "Error in Device::initializeDeviceExtensionList: vkEnumerateDeviceExtensionProperties failed!");
@@ -75,7 +75,7 @@ void Device::printAvailableDeviceExtensionList() {
             std::string() + "Available Vulkan device extensions: " + deviceExtensionString, BLUE);
 }
 
-bool Device::isDeviceExtensionAvailable(const std::string &extensionName) {
+bool Device::_isDeviceExtensionAvailable(const std::string &extensionName) {
     return availableDeviceExtensionNames.find(extensionName) != availableDeviceExtensionNames.end();
 }
 
@@ -385,14 +385,15 @@ void Device::createLogicalDeviceAndQueues(
     mainThreadId = std::this_thread::get_id();
 }
 
-void createVulkanMemoryAllocator(
-        VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, VmaAllocator& allocator) {
+void Device::createVulkanMemoryAllocator() {
     VmaAllocatorCreateInfo allocatorInfo = {};
     allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_2;
     allocatorInfo.physicalDevice = physicalDevice;
     allocatorInfo.device = device;
-    allocatorInfo.instance = instance;
-    allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+    allocatorInfo.instance = instance->getVkInstance();
+    if (isDeviceExtensionSupported(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) {
+        allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+    }
 
     vmaCreateAllocator(&allocatorInfo, &allocator);
 }
@@ -458,7 +459,7 @@ void Device::createDeviceSwapchain(
     sgl::Logfile::get()->write(
             std::string() + "Used Vulkan device extensions: " + deviceExtensionString, BLUE);
 
-    createVulkanMemoryAllocator(instance->getVkInstance(), physicalDevice, device, allocator);
+    createVulkanMemoryAllocator();
 }
 
 void Device::createDeviceHeadless(
@@ -492,7 +493,7 @@ void Device::createDeviceHeadless(
     sgl::Logfile::get()->write(
             std::string() + "Used Vulkan device extensions: " + deviceExtensionString, BLUE);
 
-    createVulkanMemoryAllocator(instance->getVkInstance(), physicalDevice, device, allocator);
+    createVulkanMemoryAllocator();
 }
 
 Device::~Device() {

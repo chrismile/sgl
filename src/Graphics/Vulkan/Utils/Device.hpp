@@ -191,7 +191,9 @@ private:
     void initializeDeviceExtensionList(VkPhysicalDevice physicalDevice);
     void printAvailableDeviceExtensionList();
     /// Returns whether the device extension is available in general (not necessarily enabled).
-    bool isDeviceExtensionAvailable(const std::string &extensionName);
+    bool _isDeviceExtensionAvailable(const std::string &extensionName);
+
+    void createVulkanMemoryAllocator();
 
     void createLogicalDeviceAndQueues(
             VkPhysicalDevice physicalDevice, bool useValidationLayer, const std::vector<const char*>& layerNames,
