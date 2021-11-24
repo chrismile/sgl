@@ -132,12 +132,15 @@ void SDLGamepad::initialize()
         }
 
         // Does initializing force feedback work for this gamepad?
-        if (SDL_HapticRumbleInit(hapticList.at(j)) != 0) {
-            Logfile::get()->write(std::string() + "WARNING: SDLGamepad::initialize: SDL_HapticRumbleInit(hapticList.at("
-                    + toString(j) + ")) != 0", ORANGE);
-            rumbleInited.push_back(false);
-        } else {
+        if (hapticList.at(j) != nullptr && SDL_HapticRumbleInit(hapticList.at(j)) == 0) {
             rumbleInited.push_back(true);
+        } else {
+            rumbleInited.push_back(false);
+            if (hapticList.at(j) != nullptr) {
+                Logfile::get()->write(
+                        std::string() + "WARNING: SDLGamepad::initialize: SDL_HapticRumbleInit(hapticList.at("
+                                        + toString(j) + ")) != 0", ORANGE);
+            }
         }
 
         Logfile::get()->write(std::string() + "INFO: SDLGamepad::initialize: Adress of Joystick #"
@@ -148,7 +151,7 @@ void SDLGamepad::initialize()
 void SDLGamepad::release()
 {
     for (size_t j = 0; j < gamepads.size(); j++) {
-        if (hapticList.at(j) != NULL) {
+        if (hapticList.at(j) != nullptr) {
             SDL_HapticClose(hapticList.at(j));
         }
         SDL_JoystickClose(gamepads.at(j));
