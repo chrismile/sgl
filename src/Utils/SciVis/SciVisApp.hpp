@@ -57,6 +57,16 @@ typedef std::shared_ptr<ScreenshotReadbackHelper> ScreenshotReadbackHelperPtr;
 
 namespace sgl {
 
+enum class CameraNavigationMode {
+    // Similar to a FPS game.
+    FIRST_PERSON,
+    // For more details refer to: https://docs.blender.org/manual/en/latest/editors/preferences/navigation.html
+    TURNTABLE
+};
+const char* const CAMERA_NAVIGATION_MODE_NAMES[] = {
+        "First Person", "Turntable"
+};
+
 /**
  * Derived from AppLogic, but has some helper functions for scientific visualization.
  */
@@ -115,7 +125,8 @@ protected:
 
     /// Scene data (e.g., camera, main framebuffer, ...).
     sgl::CameraPtr camera;
-    bool screenshotTransparentBackground = false;
+    CameraNavigationMode cameraNavigationMode = CameraNavigationMode::FIRST_PERSON;
+    int cameraInitialUpDirection = 1;
 
 #ifdef SUPPORT_OPENGL
     // Off-screen rendering
@@ -144,6 +155,7 @@ protected:
     sgl::Color clearColor;
     ImVec4 clearColorSelection = ImColor(255, 255, 255, 255);
     bool useLinearRGB = true;
+    bool screenshotTransparentBackground = false;
     std::string saveDirectoryScreenshots;
     std::string saveFilenameScreenshots = "Screenshot";
     std::vector<float> fpsArray;

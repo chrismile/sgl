@@ -71,15 +71,13 @@ glm::ivec4 Camera::getViewportLTWH() {
             roundf(absMax.y - absMin.y)); // height
 }
 
-glm::mat4 Camera::getRotationMatrix()
-{
+glm::mat4 Camera::getRotationMatrix() {
     updateCamera();
     return glm::lookAt(glm::vec3(0.0f), cameraFront, cameraUp);
 }
 
 
-void Camera::overwriteViewMatrix(const glm::mat4 &viewMatrix)
-{
+void Camera::overwriteViewMatrix(const glm::mat4 &viewMatrix) {
     modelMatrix = viewMatrix;
     viewProjMat = projMat * modelMatrix;
     inverseViewProjMat = glm::inverse(viewProjMat);
@@ -87,10 +85,11 @@ void Camera::overwriteViewMatrix(const glm::mat4 &viewMatrix)
 
     glm::mat3 rotationMatrix(viewMatrix);
     glm::mat3 inverseRotationMatrix = glm::transpose(rotationMatrix);
-    this->transform.position = inverseRotationMatrix * glm::vec3(-viewMatrix[3][0], -viewMatrix[3][1], -viewMatrix[3][2]);
+    this->transform.position = inverseRotationMatrix * glm::vec3(
+            -viewMatrix[3][0], -viewMatrix[3][1], -viewMatrix[3][2]);
 
-    cameraRight = glm::vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
-    cameraUp =    glm::vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
+    cameraRight =  glm::vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
+    cameraUp    =  glm::vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
     cameraFront = -glm::vec3(viewMatrix[0][2], viewMatrix[1][2], viewMatrix[2][2]);
 
     //cameraFront.x = cos(yaw) * cos(pitch);
@@ -99,6 +98,37 @@ void Camera::overwriteViewMatrix(const glm::mat4 &viewMatrix)
     yaw = std::atan2(cameraFront.z, cameraFront.x);
     pitch = std::asin(cameraFront.y);
 }
+
+void Camera::setLookAtViewMatrix(const glm::vec3 &cameraPos, const glm::vec3 &lookAtPos, const glm::vec3 &upDir) {
+    lookAtLocation = lookAtPos;
+    isPitchMode = false;
+    overwriteViewMatrix(glm::lookAt(cameraPos, lookAtPos, upDir));
+}
+
+void Camera::copyState(const CameraPtr& otherCamera) {
+    this->transform = otherCamera->transform;
+    this->cameraRight = otherCamera->cameraRight;
+    this->cameraUp = otherCamera->cameraUp;
+    this->cameraFront = otherCamera->cameraFront;
+    this->yaw = otherCamera->yaw;
+    this->pitch = otherCamera->pitch;
+    this->isPitchMode = otherCamera->isPitchMode;
+    this->lookAtLocation = otherCamera->lookAtLocation;
+
+    this->projType = otherCamera->projType;
+    this->fovy = otherCamera->fovy;
+    this->nearDist = otherCamera->nearDist;
+    this->farDist = otherCamera->farDist;
+
+    this->modelMatrix = otherCamera->modelMatrix;
+    this->projMat = otherCamera->projMat;
+    this->viewProjMat = otherCamera->viewProjMat;
+    this->inverseViewProjMat = otherCamera->inverseViewProjMat;
+    this->recalcModelMat = otherCamera->recalcModelMat;
+
+    recalcFrustum = true;
+}
+
 
 glm::mat4 Camera::getProjectionMatrix(DepthRange customDepthRange, CoordinateOrigin customCoordinateOrigin) {
     if (depthRange == customDepthRange && coordinateOrigin == customCoordinateOrigin) {
@@ -128,9 +158,9 @@ glm::mat4 Camera::getProjectionMatrix(DepthRange customDepthRange, CoordinateOri
 
 
 void Camera::onResolutionChanged(const EventPtr& event) {
-    float w = viewport.getWidth()*renderTarget->getWidth();
-    float h = viewport.getHeight()*renderTarget->getHeight();
-    aspect = w/h;
+    float w = viewport.getWidth() * float(renderTarget->getWidth());
+    float h = viewport.getHeight() * float(renderTarget->getHeight());
+    aspect = w / h;
     invalidateFrustum();
 }
 
@@ -183,7 +213,9 @@ void Camera::updateCamera() {
     if (recalcModelMat) {
         // We don't want a flip-over at the poles of the unit sphere.
         const float EPSILON = 0.001f;
-        pitch = sgl::clamp(pitch, -sgl::HALF_PI + EPSILON, sgl::HALF_PI - EPSILON);
+        if (isPitchMode) {
+            pitch = sgl::clamp(pitch, -sgl::HALF_PI + EPSILON, sgl::HALF_PI - EPSILON);
+        }
 
         cameraFront.x = cos(yaw) * cos(pitch);
         cameraFront.y = sin(pitch);

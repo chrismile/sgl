@@ -86,15 +86,18 @@ public:
     void setFOVy(float fov)              { fovy = fov; invalidateFrustum(); }
 
     // View data
-    float getYaw()   const { return yaw; }
-    float getPitch() const { return pitch; }
-    void rotateYaw(float offset)   { recalcModelMat = true; yaw += offset; }
-    void setYaw(float newYaw)      { recalcModelMat = true; yaw = newYaw; }
-    void rotatePitch(float offset) { recalcModelMat = true; pitch += offset; }
-    void setPitch(float newPitch)  { recalcModelMat = true; pitch = newPitch; }
-    const glm::vec3 &getCameraFront() const { return cameraFront; }
-    const glm::vec3 &getCameraRight() const { return cameraRight; }
-    const glm::vec3 &getCameraUp() const { return cameraUp; }
+    [[nodiscard]] inline float getYaw()   const { return yaw; }
+    [[nodiscard]] inline float getPitch() const { return pitch; }
+    inline void rotateYaw(float offset)         { recalcModelMat = true; yaw += offset; }
+    inline void setYaw(float newYaw)            { recalcModelMat = true; yaw = newYaw; }
+    inline void rotatePitch(float offset)       { recalcModelMat = true; pitch += offset; isPitchMode = true; }
+    inline void setPitch(float newPitch)        { recalcModelMat = true; pitch = newPitch; isPitchMode = true; }
+    [[nodiscard]] inline const glm::vec3 &getCameraFront() const    { return cameraFront; }
+    [[nodiscard]] inline const glm::vec3 &getCameraRight() const    { return cameraRight; }
+    [[nodiscard]] inline const glm::vec3 &getCameraUp() const       { return cameraUp; }
+    [[nodiscard]] inline const glm::vec3 &getCameraGlobalUp() const { return globalUp; }
+    [[nodiscard]] inline const glm::vec3 &getLookAtLocation() const { return lookAtLocation; }
+    inline void resetLookAtLocation() { lookAtLocation = {}; }
 
     //! Set projection type: Orthogonal or perspective
     //virtual void setProjectionType(ProjectionType pt);
@@ -109,6 +112,8 @@ public:
     static inline CoordinateOrigin getCoordinateOrigin() { return coordinateOrigin; }
     glm::mat4 getRotationMatrix();
     void overwriteViewMatrix(const glm::mat4 &viewMatrix);
+    void setLookAtViewMatrix(const glm::vec3 &cameraPos, const glm::vec3 &lookAtPos, const glm::vec3 &upDir);
+    void copyState(const CameraPtr& otherCamera);
 
     //! Get projection matrix with overwritten clip space or coordinate origins (e.g., for OpenGL/Vulkan interop).
     glm::mat4 getProjectionMatrix(DepthRange customDepthRange, CoordinateOrigin customCoordinateOrigin);
@@ -150,6 +155,10 @@ protected:
     float pitch = 0.0f; //< around x axis
     glm::vec3 globalUp = glm::vec3(0.0f, 1.0f, 0.0f);
     glm::vec3 cameraFront, cameraRight, cameraUp;
+    bool isPitchMode = true; // Pitch set explicitly?
+
+    // If a navigation mode using look-at is used.
+    glm::vec3 lookAtLocation{};
 
     // The depth range and coordinate origin is set by AppSettings::initializeSubsystems depending on what renderer is used.
     static DepthRange depthRange;
@@ -170,8 +179,6 @@ protected:
     bool recalcFrustum;
 
 };
-
-typedef std::shared_ptr<Camera> CameraPtr;
 
 }
 

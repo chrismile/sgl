@@ -64,6 +64,8 @@ public:
     inline bool getBoolValue(const char *key) const { std::string val = getValue(key); if (val == "false" || val == "0") return false; return val.length() > 0; }
     inline void addKeyValue(const std::string &key, const std::string &value) { settings[key] = value; }
     template<class T> inline void addKeyValue(const std::string &key, const T &value) { settings[key] = toString(value); }
+    inline bool hasKey(const std::string &key) { return settings.find(key) != settings.end(); }
+    inline void removeKey(const std::string &key) { settings.erase(key); }
     inline void clear() { settings.clear(); }
 
     bool getValueOpt(const char *key, std::string &toset) const {
