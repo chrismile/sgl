@@ -83,10 +83,19 @@ public:
     inline int getW() const { return w; }
     inline int getH() const { return h; }
     inline uint8_t getBPP() const { return bpp; }
-    inline uint8_t getChannels() const { return bpp/8; }
-    inline int getPixelIndexXY(int x, int y) { assert(x >= 0 && x < w && y >= 0 && y < h); return y * w*bpp/8 + x * bpp/8; }
-    inline uint8_t *getPixel(int x, int y) { assert(x >= 0 && x < w && y >= 0 && y < h); return bitmap + y * w*bpp/8  + x * bpp/8; }
-    inline const uint8_t *getPixelConst(int x, int y) const { assert(x >= 0 && x < w && y >= 0 && y < h); return bitmap + y * w*bpp/8 + x * bpp/8; }
+    inline uint8_t getChannels() const { return bpp / 8; }
+    inline int getPixelIndexXY(int x, int y) {
+        assert(x >= 0 && x < w && y >= 0 && y < h);
+        return y * w * (bpp / 8) + x * (bpp / 8);
+    }
+    inline uint8_t *getPixel(int x, int y) {
+        assert(x >= 0 && x < w && y >= 0 && y < h);
+        return bitmap + y * w * (bpp / 8)  + x * (bpp / 8);
+    }
+    inline const uint8_t *getPixelConst(int x, int y) const {
+        assert(x >= 0 && x < w && y >= 0 && y < h);
+        return bitmap + y * w * (bpp / 8) + x * (bpp / 8);
+    }
     Color getPixelColor(int x, int y) const;
     void setPixelColor(int x, int y, const Color &color);
     void setPixel(int x, int y, const uint8_t *color);

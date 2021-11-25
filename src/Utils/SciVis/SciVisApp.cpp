@@ -1056,7 +1056,8 @@ void SciVisApp::moveCameraMouse(float dt) {
                 sgl::Point2 mouseDiff = sgl::Mouse->mouseMovement();
                 mouseDiff.x *= cameraInitialUpDirection;
 
-                const float pixelsForCompleteRotation = 1000 / MOUSE_ROT_SPEED * 0.05f;
+                const float pixelsForCompleteRotation =
+                        sgl::ImGuiWrapper::get()->getScaleDependentSize(1000.0f / MOUSE_ROT_SPEED * 0.05f);
 
                 float theta = sgl::TWO_PI * float(mouseDiff.x) / pixelsForCompleteRotation;
                 float phi   = sgl::TWO_PI * float(mouseDiff.y) / pixelsForCompleteRotation;

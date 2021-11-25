@@ -78,6 +78,13 @@ inline int lastPowerOfTwo(int x) { return nextPowerOfTwo(x/2+1); }
 
 inline int iceil(int x, int y) { return (x - 1) / y + 1; }
 
+inline int nextMultiple(int num, int multiple) {
+    int remainder = num % multiple;
+    if (remainder == 0) {
+        return num;
+    }
+    return num + multiple - remainder;
+}
 
 inline int intlog2(int x) {
     int log2x = 0;

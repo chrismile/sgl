@@ -119,6 +119,9 @@ public:
     BinaryReadStream& operator>>(T &val) { read(val); return *this; }
     BinaryReadStream& operator>>(std::string &str) { read(str); return *this; }
 
+    /// Skips part of the stream. 'size' is given in bytes.
+    void skip(size_t size);
+
 protected:
     void resize();
     /// The total buffer size

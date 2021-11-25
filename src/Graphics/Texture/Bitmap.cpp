@@ -45,7 +45,7 @@ void Bitmap::allocate(int width, int height, int _bpp /* = 32 */) {
     w = width;
     h = height;
     bpp = _bpp;
-    bitmap = new uint8_t[width * height * bpp / 8];
+    bitmap = new uint8_t[width * height * (bpp / 8)];
 }
 
 void Bitmap::fill(const Color &color) {
@@ -60,7 +60,7 @@ void Bitmap::fill(const Color &color) {
 }
 
 void Bitmap::memset(uint8_t data) {
-    std::memset(bitmap, data, w * h * bpp / 8);
+    std::memset(bitmap, data, w * h * (bpp / 8));
 }
 
 void Bitmap::fromMemory(void *data, int width, int height, int _bpp /* = 32 */) {
@@ -71,8 +71,8 @@ void Bitmap::fromMemory(void *data, int width, int height, int _bpp /* = 32 */) 
     w = width;
     h = height;
     bpp = _bpp;
-    bitmap = new uint8_t[w * h * bpp / 8];
-    std::memcpy(bitmap, data, w * h * bpp / 8);
+    bitmap = new uint8_t[w * h * (bpp / 8)];
+    std::memcpy(bitmap, data, w * h * (bpp / 8));
 
 }
 
@@ -97,7 +97,9 @@ void Bitmap::blit(BitmapPtr &aim, const Point2 &pos)
 
     // Copy the relevant scanlines
     for (int y = starty; y <= endy; ++y) {
-        memcpy(aim->getPixel(startx, y), this->getPixel(startx-pos.x, y-pos.y), (endx-startx+1)*getBPP()/8);
+        memcpy(
+                aim->getPixel(startx, y), this->getPixel(startx - pos.x, y - pos.y),
+                (endx - startx + 1) * (bpp / 8));
     }
 }
 
@@ -122,7 +124,9 @@ void Bitmap::blit(BitmapPtr &aim, const Rectangle &sourceRectangle, const Rectan
 
     for (int y = 0; y < sourceH - sourceY; ++y) {
         int x = 0;
-        memcpy(aim->getPixel(destX+x, destY+y), this->getPixel(sourceX+x, sourceY+y), sourceW*getBPP()/8);
+        memcpy(
+                aim->getPixel(destX + x, destY + y), this->getPixel(sourceX + x, sourceY + y),
+                sourceW * (bpp / 8));
     }
 }
 
@@ -259,7 +263,7 @@ void Bitmap::fromFile(const char *filename) {
 
     w = tempWidth;
     h = tempHeight;
-    bpp = bitDepth*4;
+    bpp = bitDepth * 4;
 
     // Update the png info struct.
     png_read_update_info(png_ptr, info_ptr);
@@ -343,7 +347,7 @@ bool Bitmap::savePNG(const char *filename, bool mirror /* = false */) {
     png_write_info(pngPointer, pngInfoPointer);
 
     png_uint_32 pngHeight = h;
-    png_uint_32 rowBytes = w * bpp / 8;
+    png_uint_32 rowBytes = w * (bpp / 8);
 
     //png_byte *image = new png_byte[pngHeight * rowBytes];
     png_bytep *rowPointers = new png_bytep[pngHeight];
@@ -395,7 +399,7 @@ void Bitmap::setPixelColor(int x, int y, const Color &color)
 
 void Bitmap::setPixel(int x, int y, const uint8_t *color)
 {
-    memcpy(getPixel(x, y), color, bpp/8);
+    memcpy(getPixel(x, y), color, bpp / 8);
 }
 
 void Bitmap::blendPixelColor(int x, int y, const Color &color)
