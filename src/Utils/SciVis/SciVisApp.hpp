@@ -66,6 +66,9 @@ enum class CameraNavigationMode {
 const char* const CAMERA_NAVIGATION_MODE_NAMES[] = {
         "First Person", "Turntable"
 };
+const char* const MOUSE_BUTTON_NAMES[] = {
+        "Left Button", "Middle Button", "Right Button"
+};
 
 /**
  * Derived from AppLogic, but has some helper functions for scientific visualization.
@@ -127,6 +130,7 @@ protected:
     sgl::CameraPtr camera;
     CameraNavigationMode cameraNavigationMode = CameraNavigationMode::FIRST_PERSON;
     int cameraInitialUpDirection = 1;
+    int turntableMouseButtonIndex = 1;
 
 #ifdef SUPPORT_OPENGL
     // Off-screen rendering

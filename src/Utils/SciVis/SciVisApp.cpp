@@ -118,6 +118,8 @@ SciVisApp::SciVisApp(float fovy)
             sgl::AppSettings::get()->getSettings().removeKey("cameraNavigationMode");
         }
     }
+    sgl::AppSettings::get()->getSettings().getValueOpt("turntableMouseButtonIndex", turntableMouseButtonIndex);
+    turntableMouseButtonIndex = sgl::clamp(turntableMouseButtonIndex, 1, 5);
 
     camera->setNearClipDistance(0.001f);
     camera->setFarClipDistance(100.0f);
@@ -162,6 +164,8 @@ SciVisApp::SciVisApp(float fovy)
 SciVisApp::~SciVisApp() {
     sgl::AppSettings::get()->getSettings().addKeyValue(
             "cameraNavigationMode", CAMERA_NAVIGATION_MODE_NAMES[int(cameraNavigationMode)]);
+    sgl::AppSettings::get()->getSettings().addKeyValue("turntableMouseButtonIndex", turntableMouseButtonIndex);
+
 
     if (videoWriter != nullptr) {
         delete videoWriter;
@@ -714,11 +718,20 @@ void SciVisApp::renderGuiPropertyEditorWindow() {
                     onCameraReset();
                     hasMoved();
                 }
+
                 if (propertyEditor.addCombo(
                         "Navigation", (int*)&cameraNavigationMode, CAMERA_NAVIGATION_MODE_NAMES,
                         IM_ARRAYSIZE(CAMERA_NAVIGATION_MODE_NAMES))) {
-                    ;
                 }
+                if (cameraNavigationMode == CameraNavigationMode::TURNTABLE) {
+                    int turntableMouseButtonIndexZeroStart = turntableMouseButtonIndex - 1;
+                    if (propertyEditor.addCombo(
+                            "Mouse Button", &turntableMouseButtonIndexZeroStart, MOUSE_BUTTON_NAMES,
+                            IM_ARRAYSIZE(MOUSE_BUTTON_NAMES))) {
+                        turntableMouseButtonIndex = turntableMouseButtonIndexZeroStart + 1;
+                    }
+                }
+
                 propertyEditor.addSliderFloat("Move Speed", &MOVE_SPEED, 0.02f, 0.5f);
                 propertyEditor.addSliderFloat("Mouse Speed", &MOUSE_ROT_SPEED, 0.01f, 0.10f);
                 if (propertyEditor.addSliderFloat("FoV (y)", &fovDegree, 10.0f, 120.0f)) {
@@ -1017,7 +1030,7 @@ void SciVisApp::moveCameraMouse(float dt) {
         }
     } else if (cameraNavigationMode == CameraNavigationMode::TURNTABLE) {
         // Invert the rotation direction if the camera is upside-down.
-        if (sgl::Mouse->buttonPressed(2)) {
+        if (sgl::Mouse->buttonPressed(turntableMouseButtonIndex)) {
             cameraInitialUpDirection =
                     glm::dot(camera->getCameraUp(), camera->getCameraGlobalUp()) > 0.0f ? 1 : -1;
         }
@@ -1039,7 +1052,7 @@ void SciVisApp::moveCameraMouse(float dt) {
             }
 
             // Mouse rotation.
-            if (sgl::Mouse->isButtonDown(2) && sgl::Mouse->mouseMoved()) {
+            if (sgl::Mouse->isButtonDown(turntableMouseButtonIndex) && sgl::Mouse->mouseMoved()) {
                 sgl::Point2 mouseDiff = sgl::Mouse->mouseMovement();
                 mouseDiff.x *= cameraInitialUpDirection;
 
@@ -1072,7 +1085,7 @@ void SciVisApp::moveCameraMouse(float dt) {
         }
 
         // Move look-at position.
-        if (sgl::Mouse->isButtonDown(2) && sgl::Mouse->mouseMoved()
+        if (sgl::Mouse->isButtonDown(turntableMouseButtonIndex) && sgl::Mouse->mouseMoved()
             && (sgl::Keyboard->getModifier() & KMOD_SHIFT) != 0) {
             sgl::Point2 mouseDiff = sgl::Mouse->mouseMovement();
             glm::vec3 lookAt = camera->getLookAtLocation();
