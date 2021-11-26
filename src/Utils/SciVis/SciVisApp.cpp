@@ -58,6 +58,9 @@
 #include <ImGui/Widgets/ColorLegendWidget.hpp>
 #include <memory>
 
+#include "Navigation/FirstPersonNavigator.hpp"
+#include "Navigation/TurntableNavigator.hpp"
+#include "Navigation/CameraNavigator2D.hpp"
 #include "SciVisApp.hpp"
 
 namespace sgl {
@@ -120,6 +123,7 @@ SciVisApp::SciVisApp(float fovy)
     }
     sgl::AppSettings::get()->getSettings().getValueOpt("turntableMouseButtonIndex", turntableMouseButtonIndex);
     turntableMouseButtonIndex = sgl::clamp(turntableMouseButtonIndex, 1, 5);
+    updateCameraNavigationMode();
 
     camera->setNearClipDistance(0.001f);
     camera->setFarClipDistance(100.0f);
@@ -722,6 +726,7 @@ void SciVisApp::renderGuiPropertyEditorWindow() {
                 if (propertyEditor.addCombo(
                         "Navigation", (int*)&cameraNavigationMode, CAMERA_NAVIGATION_MODE_NAMES,
                         IM_ARRAYSIZE(CAMERA_NAVIGATION_MODE_NAMES))) {
+                    updateCameraNavigationMode();
                 }
                 if (cameraNavigationMode == CameraNavigationMode::TURNTABLE) {
                     int turntableMouseButtonIndexZeroStart = turntableMouseButtonIndex - 1;
@@ -936,184 +941,35 @@ void SciVisApp::updateCameraFlight(bool hasData, bool& usesNewState) {
 }
 
 void SciVisApp::moveCameraKeyboard(float dt) {
-    if (cameraNavigationMode == CameraNavigationMode::FIRST_PERSON) {
-        // Rotate scene around camera origin
-        if (sgl::Keyboard->isKeyDown(SDLK_q)) {
-            camera->rotateYaw(-1.9f*dt*MOVE_SPEED);
+    if (cameraNavigator) {
+        bool cameraMoved = cameraNavigator->moveCameraKeyboard(camera, dt);
+        if (cameraMoved) {
             reRender = true;
             hasMoved();
         }
-        if (sgl::Keyboard->isKeyDown(SDLK_e)) {
-            camera->rotateYaw(1.9f*dt*MOVE_SPEED);
-            reRender = true;
-            hasMoved();
-        }
-        if (sgl::Keyboard->isKeyDown(SDLK_r)) {
-            camera->rotatePitch(1.9f*dt*MOVE_SPEED);
-            reRender = true;
-            hasMoved();
-        }
-        if (sgl::Keyboard->isKeyDown(SDLK_f)) {
-            camera->rotatePitch(-1.9f*dt*MOVE_SPEED);
-            reRender = true;
-            hasMoved();
-        }
-
-        rotationMatrix = camera->getRotationMatrix();
-        invRotationMatrix = glm::inverse(rotationMatrix);
-        if (sgl::Keyboard->isKeyDown(SDLK_PAGEDOWN)) {
-            camera->translate(sgl::transformPoint(
-                    invRotationMatrix, glm::vec3(0.0f, -dt*MOVE_SPEED, 0.0f)));
-            reRender = true;
-            hasMoved();
-        }
-        if (sgl::Keyboard->isKeyDown(SDLK_PAGEUP)) {
-            camera->translate(sgl::transformPoint(
-                    invRotationMatrix, glm::vec3(0.0f, dt*MOVE_SPEED, 0.0f)));
-            reRender = true;
-            hasMoved();
-        }
-        if (sgl::Keyboard->isKeyDown(SDLK_DOWN) || sgl::Keyboard->isKeyDown(SDLK_s)) {
-            camera->translate(sgl::transformPoint(
-                    invRotationMatrix, glm::vec3(0.0f, 0.0f, dt*MOVE_SPEED)));
-            reRender = true;
-            hasMoved();
-        }
-        if (sgl::Keyboard->isKeyDown(SDLK_UP) || sgl::Keyboard->isKeyDown(SDLK_w)) {
-            camera->translate(sgl::transformPoint(
-                    invRotationMatrix, glm::vec3(0.0f, 0.0f, -dt*MOVE_SPEED)));
-            reRender = true;
-            hasMoved();
-        }
-        if (sgl::Keyboard->isKeyDown(SDLK_LEFT) || sgl::Keyboard->isKeyDown(SDLK_a)) {
-            camera->translate(sgl::transformPoint(
-                    invRotationMatrix, glm::vec3(-dt*MOVE_SPEED, 0.0f, 0.0f)));
-            reRender = true;
-            hasMoved();
-        }
-        if (sgl::Keyboard->isKeyDown(SDLK_RIGHT) || sgl::Keyboard->isKeyDown(SDLK_d)) {
-            camera->translate(sgl::transformPoint(
-                    invRotationMatrix, glm::vec3(dt*MOVE_SPEED, 0.0f, 0.0f)));
-            reRender = true;
-            hasMoved();
-        }
-    } else if (cameraNavigationMode == CameraNavigationMode::TURNTABLE) {
-        ;
     }
 }
 
 void SciVisApp::moveCameraMouse(float dt) {
-    if (cameraNavigationMode == CameraNavigationMode::FIRST_PERSON) {
-        if (!(sgl::Keyboard->getModifier() & (KMOD_CTRL | KMOD_SHIFT))) {
-            // Zoom in/out
-            if (sgl::Mouse->getScrollWheel() > 0.1 || sgl::Mouse->getScrollWheel() < -0.1) {
-                float moveAmount = sgl::Mouse->getScrollWheel() * dt * 2.0f;
-                camera->translate(sgl::transformPoint(invRotationMatrix, glm::vec3(0.0f, 0.0f, -moveAmount*MOVE_SPEED)));
-                reRender = true;
-                hasMoved();
-            }
-
-            // Mouse rotation
-            if (sgl::Mouse->isButtonDown(1) && sgl::Mouse->mouseMoved()) {
-                sgl::Point2 pixelMovement = sgl::Mouse->mouseMovement();
-                float yaw = dt * MOUSE_ROT_SPEED * float(pixelMovement.x);
-                float pitch = -dt * MOUSE_ROT_SPEED * float(pixelMovement.y);
-
-                //glm::quat rotYaw = glm::quat(glm::vec3(0.0f, yaw, 0.0f));
-                //glm::quat rotPitch = glm::quat(
-                //        pitch*glm::vec3(rotationMatrix[0][0], rotationMatrix[1][0], rotationMatrix[2][0]));
-                camera->rotateYaw(yaw);
-                camera->rotatePitch(pitch);
-                reRender = true;
-                hasMoved();
-            }
-        }
-    } else if (cameraNavigationMode == CameraNavigationMode::TURNTABLE) {
-        // Invert the rotation direction if the camera is upside-down.
-        if (sgl::Mouse->buttonPressed(turntableMouseButtonIndex)) {
-            cameraInitialUpDirection =
-                    glm::dot(camera->getCameraUp(), camera->getCameraGlobalUp()) > 0.0f ? 1 : -1;
-        }
-
-        if (!(sgl::Keyboard->getModifier() & (KMOD_CTRL | KMOD_SHIFT))) {
-            // Zoom in/out.
-            if (sgl::Mouse->getScrollWheel() > 0.1 || sgl::Mouse->getScrollWheel() < -0.1) {
-                // The scrolling distance depends on the distance between camera and look-at position.
-                float moveAmount =
-                        sgl::Mouse->getScrollWheel() * MOVE_SPEED * dt * 80.0f
-                        * glm::length(camera->getPosition() - camera->getLookAtLocation());
-                camera->translate(moveAmount * normalize(camera->getLookAtLocation() - camera->getPosition()));
-                camera->setLookAtViewMatrix(
-                        camera->getPosition(),
-                        camera->getLookAtLocation(),
-                        camera->getCameraUp());
-                reRender = true;
-                hasMoved();
-            }
-
-            // Mouse rotation.
-            if (sgl::Mouse->isButtonDown(turntableMouseButtonIndex) && sgl::Mouse->mouseMoved()) {
-                sgl::Point2 mouseDiff = sgl::Mouse->mouseMovement();
-                mouseDiff.x *= cameraInitialUpDirection;
-
-                const float pixelsForCompleteRotation =
-                        sgl::ImGuiWrapper::get()->getScaleDependentSize(1000.0f / MOUSE_ROT_SPEED * 0.05f);
-
-                float theta = sgl::TWO_PI * float(mouseDiff.x) / pixelsForCompleteRotation;
-                float phi   = sgl::TWO_PI * float(mouseDiff.y) / pixelsForCompleteRotation;
-
-                glm::mat4 rotTheta = glm::rotate(glm::mat4(1.0f), -theta, {0.0f, 1.0f, 0.0f});
-
-                glm::vec3 rotPhiAxis;
-                glm::vec3 cameraUp = camera->getCameraUp();
-                glm::vec3 cameraLookAt = camera->getLookAtLocation();
-                glm::vec3 cameraPosition = camera->getPosition();
-
-                rotPhiAxis = glm::cross(cameraUp, cameraLookAt - cameraPosition);
-                rotPhiAxis = glm::normalize(rotPhiAxis);
-
-                glm::mat4 rotPhi = glm::rotate(glm::mat4(1.0f), phi, rotPhiAxis);
-
-                cameraPosition = cameraPosition - cameraLookAt;
-                cameraPosition = glm::vec3(rotTheta * rotPhi * glm::vec4(cameraPosition, 1.0f));
-                cameraUp = glm::vec3(rotTheta * rotPhi * glm::vec4(cameraUp, 1.0f));
-                cameraPosition = cameraPosition + cameraLookAt;
-
-                camera->setLookAtViewMatrix(cameraPosition, cameraLookAt, cameraUp);
-                reRender = true;
-                hasMoved();
-            }
-        }
-
-        // Move look-at position.
-        if (sgl::Mouse->isButtonDown(turntableMouseButtonIndex) && sgl::Mouse->mouseMoved()
-            && (sgl::Keyboard->getModifier() & KMOD_SHIFT) != 0) {
-            sgl::Point2 mouseDiff = sgl::Mouse->mouseMovement();
-            glm::vec3 lookAt = camera->getLookAtLocation();
-            glm::vec3 lookOffset = camera->getPosition() - camera->getLookAtLocation();
-            float lookOffsetLength = glm::length(lookOffset);
-
-            auto renderTarget = camera->getRenderTarget();
-            float wPixel;
-            float hPixel;
-            if (renderTarget) {
-                wPixel = float(renderTarget->getWidth());
-                hPixel = float(renderTarget->getHeight());
-            } else {
-                sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
-                wPixel = float(window->getWidth());
-                hPixel = float(window->getHeight());
-            }
-            float wWorld = 2.0f * lookOffsetLength * std::tan(camera->getFOVx() * 0.5f);
-            float hWorld = 2.0f * lookOffsetLength * std::tan(camera->getFOVy() * 0.5f);
-            float shiftX = -float(mouseDiff.x) / wPixel * wWorld;
-            float shiftY = float(mouseDiff.y) / hPixel * hWorld;
-            lookAt = lookAt + camera->getCameraRight() * shiftX + camera->getCameraUp() * shiftY;
-
-            camera->setLookAtViewMatrix(lookOffset + lookAt, lookAt, camera->getCameraUp());
+    if (cameraNavigator) {
+        bool cameraMoved = cameraNavigator->moveCameraMouse(camera, dt);
+        if (cameraMoved) {
             reRender = true;
             hasMoved();
         }
+    }
+}
+
+void SciVisApp::updateCameraNavigationMode() {
+    if (cameraNavigationMode == CameraNavigationMode::FIRST_PERSON) {
+        cameraNavigator = std::make_shared<FirstPersonNavigator>(
+                MOVE_SPEED, MOUSE_ROT_SPEED);
+    } else if (cameraNavigationMode == CameraNavigationMode::TURNTABLE) {
+        cameraNavigator = std::make_shared<TurntableNavigator>(
+                MOVE_SPEED, MOUSE_ROT_SPEED, turntableMouseButtonIndex);
+    } else if (cameraNavigationMode == CameraNavigationMode::CAMERA_2D) {
+        cameraNavigator = std::make_shared<CameraNavigator2D>(
+                MOVE_SPEED, MOUSE_ROT_SPEED);
     }
 }
 

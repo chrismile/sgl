@@ -31,6 +31,7 @@
 
 #include "Utils/AppLogic.hpp"
 #include <Utils/SciVis/CameraPath.hpp>
+#include <Utils/SciVis/Navigation/CameraNavigator.hpp>
 #include <Graphics/Video/VideoWriter.hpp>
 #include <ImGui/Widgets/CheckpointWindow.hpp>
 #include <ImGui/Widgets/PropertyEditor.hpp>
@@ -56,19 +57,6 @@ typedef std::shared_ptr<ScreenshotReadbackHelper> ScreenshotReadbackHelperPtr;
 #endif
 
 namespace sgl {
-
-enum class CameraNavigationMode {
-    // Similar to a FPS game.
-    FIRST_PERSON,
-    // For more details refer to: https://docs.blender.org/manual/en/latest/editors/preferences/navigation.html
-    TURNTABLE
-};
-const char* const CAMERA_NAVIGATION_MODE_NAMES[] = {
-        "First Person", "Turntable"
-};
-const char* const MOUSE_BUTTON_NAMES[] = {
-        "Left Button", "Middle Button", "Right Button"
-};
 
 /**
  * Derived from AppLogic, but has some helper functions for scientific visualization.
@@ -128,8 +116,8 @@ protected:
 
     /// Scene data (e.g., camera, main framebuffer, ...).
     sgl::CameraPtr camera;
+    sgl::CameraNavigatorPtr cameraNavigator;
     CameraNavigationMode cameraNavigationMode = CameraNavigationMode::FIRST_PERSON;
-    int cameraInitialUpDirection = 1;
     int turntableMouseButtonIndex = 1;
 
 #ifdef SUPPORT_OPENGL
@@ -216,6 +204,9 @@ protected:
 #endif
     glm::mat4 rotationMatrix; ///< Camera rotation matrix.
     glm::mat4 invRotationMatrix; ///< Inverse camera rotation matrix.
+
+protected:
+    void updateCameraNavigationMode();
 };
 
 }
