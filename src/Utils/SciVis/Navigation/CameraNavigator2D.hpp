@@ -33,7 +33,7 @@
 
 namespace sgl {
 
-class CameraNavigator2D : public CameraNavigator {
+class DLL_OBJECT CameraNavigator2D : public CameraNavigator {
 public:
     CameraNavigator2D(float& MOVE_SPEED, float& MOUSE_ROT_SPEED)
             : CameraNavigator(MOVE_SPEED, MOUSE_ROT_SPEED) {}

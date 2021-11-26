@@ -39,7 +39,7 @@ namespace sgl {
  * By using the arrow keys or WASD, the camera can be moved in looking direction.
  * Page up and page down can be used to move the camera along its up vector.
  */
-class FirstPersonNavigator : public CameraNavigator {
+class DLL_OBJECT FirstPersonNavigator : public CameraNavigator {
 public:
     FirstPersonNavigator(float& MOVE_SPEED, float& MOUSE_ROT_SPEED)
             : CameraNavigator(MOVE_SPEED, MOUSE_ROT_SPEED) {}

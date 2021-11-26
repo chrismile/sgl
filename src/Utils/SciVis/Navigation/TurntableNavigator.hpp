@@ -38,7 +38,7 @@ namespace sgl {
  * For more details refer to: https://docs.blender.org/manual/en/latest/editors/preferences/navigation.html
  * By default, the left mouse button is used for controlling the camera navigator.
  */
-class TurntableNavigator : public CameraNavigator {
+class DLL_OBJECT TurntableNavigator : public CameraNavigator {
 public:
     TurntableNavigator(float& MOVE_SPEED, float& MOUSE_ROT_SPEED, int& turntableMouseButtonIndex)
             : CameraNavigator(MOVE_SPEED, MOUSE_ROT_SPEED), turntableMouseButtonIndex(turntableMouseButtonIndex) {}
