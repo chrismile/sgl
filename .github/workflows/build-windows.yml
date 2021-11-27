@@ -26,17 +26,21 @@ jobs:
         choco install vulkan-sdk
         refreshenv
 
-    - name: Install vcpkg packages
+    - name: Check vcpkg path
       run: |
-        refreshenv
-        $env:VULKAN_SDK = "C:/VulkanSDK/$(Get-ChildItem -Path C:/VulkanSDK -Name)"
-        vcpkg.exe install boost-core boost-algorithm boost-filesystem boost-locale boost-interprocess libpng sdl2[vulkan] sdl2-image tinyxml2 glew glm libarchive[bzip2,core,lz4,lzma,zstd] vulkan vulkan-headers shaderc --triplet=x64-windows
+        echo $env:VCPKG_ROOT
 
-    - name: Configure CMake
+    #- name: Install vcpkg packages
+    #  run: |
+    #    refreshenv
+    #    $env:VULKAN_SDK = "C:/VulkanSDK/$(Get-ChildItem -Path C:/VulkanSDK -Name)"
+    #    vcpkg.exe install boost-core boost-algorithm boost-filesystem boost-locale boost-interprocess libpng sdl2[vulkan] sdl2-image tinyxml2 glew glm libarchive[bzip2,core,lz4,lzma,zstd] vulkan vulkan-headers shaderc --triplet=x64-windows
+
+    #- name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+    #  run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
-    - name: Build
+    #- name: Build
       # Build your program with the given configuration
-      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+    #  run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
