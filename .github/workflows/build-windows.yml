@@ -28,7 +28,10 @@ jobs:
 
     - name: Print VULKAN_SDK
       run: |
+        refreshenv
+        echo "Test 1"
         echo $env:VULKAN_SDK
+        echo "Test 2"
 
     #- name: Install vcpkg packages
     #  run: |
