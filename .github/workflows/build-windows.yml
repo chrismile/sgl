@@ -28,6 +28,7 @@ jobs:
 
     - name: Install vcpkg packages
       run: |
+        refreshenv
         vcpkg.exe install boost-core boost-algorithm boost-filesystem boost-locale boost-interprocess libpng sdl2[vulkan] sdl2-image tinyxml2 glew glm libarchive[bzip2,core,lz4,lzma,zstd] vulkan vulkan-headers shaderc --triplet=x64-windows
 
     - name: Configure CMake
