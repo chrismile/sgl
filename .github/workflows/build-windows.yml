@@ -21,7 +21,10 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - run: choco install vulkan-sdk
+    - name: Install Vulkan SDK
+      run: |
+        choco install vulkan-sdk
+        refreshenv
 
     - name: Install vcpkg packages
       run: |
