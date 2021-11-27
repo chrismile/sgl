@@ -28,7 +28,7 @@ jobs:
 
     - name: Print VULKAN_SDK
       run: |
-        echo %VULKAN_SDK%
+        echo $env:VULKAN_SDK
 
     #- name: Install vcpkg packages
     #  run: |
