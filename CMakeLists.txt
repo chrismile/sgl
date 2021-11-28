@@ -102,6 +102,8 @@ if (${TRACY_ENABLE})
     target_compile_definitions(sgl INTERFACE TRACY_IMPORTS)
     target_compile_definitions(sgl PRIVATE TRACY_EXPORTS)
     target_include_directories(sgl PRIVATE submodules)
+else()
+    target_include_directories(sgl PRIVATE submodules/fallback)
 endif()
 
 #include_directories(src)
