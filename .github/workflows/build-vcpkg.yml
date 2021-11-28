@@ -25,8 +25,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-      #with:
-      #  submodules: true
+      with:
+        submodules: true
 
     - uses: lukka/get-cmake@latest
 
@@ -38,6 +38,8 @@ jobs:
           sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-1.2.198-focal.list https://packages.lunarg.com/vulkan/1.2.198/lunarg-vulkan-1.2.198-focal.list
           sudo apt update
           sudo apt install vulkan-sdk
+          # Also install the dependencies for building GLEW here.
+          sudo apt install libxmu-dev libxi-dev libgl-dev
         elif [ "$RUNNER_OS" == "Windows" ]; then
           choco install vulkan-sdk
         else

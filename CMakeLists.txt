@@ -30,6 +30,7 @@ option(SUPPORT_OPENGL "Build with OpenGL support" ON)
 option(SUPPORT_VULKAN "Build with Vulkan support" ON)
 option(USE_BOOST_LOCALE "Build with Boost::Locale support" OFF)
 option(USE_LIBARCHIVE "Build with libarchive support" ON)
+option(TRACY_ENABLE "Build with Tracy Profiler support" OFF)
 
 find_package(OpenGL QUIET)
 find_package(GLEW QUIET)
@@ -80,6 +81,10 @@ else()
     list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/Utils/File/Archive.cpp)
 endif()
 
+if (${TRACY_ENABLE})
+    list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/submodules/tracy/TracyClient.cpp)
+endif()
+
 add_library(sgl SHARED ${SOURCES})
 if (MSVC)
     set(DLLIMPORT "__declspec(dllimport)")
@@ -90,6 +95,13 @@ if (MSVC)
     target_compile_definitions(sgl PRIVATE IMGUI_API=${DLLEXPORT})
 else()
     target_compile_definitions(sgl PUBLIC DLL_OBJECT=)
+endif()
+
+if (${TRACY_ENABLE})
+    target_compile_definitions(sgl PUBLIC TRACY_ENABLE)
+    target_compile_definitions(sgl INTERFACE TRACY_IMPORTS)
+    target_compile_definitions(sgl PRIVATE TRACY_EXPORTS)
+    target_include_directories(sgl PRIVATE submodules)
 endif()
 
 #include_directories(src)
@@ -330,6 +342,14 @@ install(
         RUNTIME DESTINATION bin
         INCLUDES DESTINATION include/sgl
 )
+
+if (${TRACY_ENABLE})
+    install(
+            DIRECTORY ${CMAKE_SOURCE_DIR}/submodules/
+            DESTINATION include/sgl
+            FILES_MATCHING PATTERN "*.h*"
+    )
+endif()
 
 install(
         DIRECTORY ${CMAKE_SOURCE_DIR}/src/

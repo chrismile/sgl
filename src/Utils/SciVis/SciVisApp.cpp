@@ -26,6 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <memory>
 #include <Utils/Timer.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
@@ -56,7 +57,8 @@
 #include <ImGui/imgui_internal.h>
 #include <ImGui/imgui_stdlib.h>
 #include <ImGui/Widgets/ColorLegendWidget.hpp>
-#include <memory>
+
+#include <tracy/Tracy.hpp>
 
 #include "Navigation/FirstPersonNavigator.hpp"
 #include "Navigation/TurntableNavigator.hpp"
@@ -178,6 +180,8 @@ SciVisApp::~SciVisApp() {
 }
 
 void SciVisApp::createSceneFramebuffer() {
+    ZoneScoped;
+
 #if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN)
     sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
     int width = window->getWidth();
@@ -350,6 +354,8 @@ void SciVisApp::processSDLEvent(const SDL_Event &event) {
 
 /// Call pre-render in derived classes before the rendering logic, and post-render afterwards.
 void SciVisApp::preRender() {
+    ZoneScoped;
+
     if (videoWriter == nullptr && recording) {
         videoWriter = new sgl::VideoWriter(saveFilenameVideos + ".mp4", FRAME_RATE_VIDEOS);
 #ifdef SUPPORT_VULKAN
@@ -399,6 +405,8 @@ void SciVisApp::preRender() {
 }
 
 void SciVisApp::prepareReRender() {
+    ZoneScoped;
+
 #ifdef SUPPORT_OPENGL
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
         sgl::Renderer->bindFBO(sceneFramebuffer);
@@ -427,8 +435,12 @@ void SciVisApp::prepareReRender() {
 }
 
 void SciVisApp::postRender() {
+    ZoneScoped;
+
 #ifdef SUPPORT_OPENGL
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
+        ZoneScopedN("postRender_RenderScreenOpenGL");
+
         // Render to screen
         sgl::Renderer->unbindFBO();
         sgl::Renderer->setProjectionMatrix(sgl::matrixIdentity());

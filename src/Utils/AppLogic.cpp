@@ -26,6 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <string>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/Timer.hpp>
 #include <Graphics/Window.hpp>
@@ -38,12 +39,13 @@
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
 #include <Graphics/Renderer.hpp>
-#include <string>
+#include <tracy/Tracy.hpp>
 
 #ifdef SUPPORT_VULKAN
 #include "Graphics/Vulkan/Utils/Swapchain.hpp"
 #include "Graphics/Vulkan/Render/Renderer.hpp"
 #endif
+
 
 #include "AppLogic.hpp"
 
@@ -188,6 +190,10 @@ void AppLogic::run()
             Timer->waitForFPSLimit();
             window->flip();
         }
+
+#ifdef TRACY_ENABLE
+        FrameMark;
+#endif
     }
 
     Logfile::get()->write("INFO: End of main loop.", BLUE);

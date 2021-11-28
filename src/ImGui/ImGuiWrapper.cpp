@@ -44,6 +44,9 @@
 #include <Graphics/Vulkan/Utils/Swapchain.hpp>
 #include <Graphics/Vulkan/Render/Renderer.hpp>
 #endif
+
+#include <tracy/Tracy.hpp>
+
 #include "imgui_impl_sdl.h"
 #include "ImGuiFileDialog/CustomFont.cpp"
 #include "ImGuiWrapper.hpp"
@@ -242,6 +245,8 @@ void ImGuiWrapper::onResolutionChanged() {
 }
 
 void ImGuiWrapper::renderStart() {
+    ZoneScopedN("ImGuiWrapper::renderStart");
+
     SDLWindow* window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
 
@@ -296,16 +301,20 @@ void ImGuiWrapper::renderStart() {
 }
 
 void ImGuiWrapper::renderEnd() {
+    ZoneScopedN("ImGuiWrapper::renderEnd");
+
     ImGui::Render();
 
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
 #ifdef SUPPORT_OPENGL
     if (renderSystem == RenderSystem::OPENGL) {
+        ZoneScopedN("ImGui_ImplOpenGL3_RenderDrawData");
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     }
 #endif
 #ifdef SUPPORT_VULKAN
     if (renderSystem == RenderSystem::VULKAN) {
+        ZoneScopedN("ImGui_ImplVulkan_RenderDrawData");
         //vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
         VkCommandBuffer commandBuffer = rendererVk->getVkCommandBuffer();//imguiCommandBuffers.at(swapchain->getImageIndex());
         //vk::FramebufferPtr framebuffer = framebuffers.at(swapchain->getImageIndex());
@@ -343,10 +352,17 @@ void ImGuiWrapper::renderEnd() {
     ImGuiIO &io = ImGui::GetIO();
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
         SDLWindow *sdlWindow = (SDLWindow*)AppSettings::get()->getMainWindow();
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault();
+        {
+            ZoneScopedN("ImGui::UpdatePlatformWindows");
+            ImGui::UpdatePlatformWindows();
+        }
+        {
+            ZoneScopedN("ImGui::RenderPlatformWindowsDefault");
+            ImGui::RenderPlatformWindowsDefault();
+        }
 #ifdef SUPPORT_OPENGL
         if (renderSystem == RenderSystem::OPENGL) {
+            ZoneScopedN("SDL_GL_MakeCurrent");
             SDL_GL_MakeCurrent(sdlWindow->getSDLWindow(), sdlWindow->getGLContext());
         }
 #endif
