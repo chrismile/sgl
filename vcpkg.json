@@ -3,31 +3,31 @@
     "name": "sgl",
     "version": "0.1.0-dev",
     "dependencies": [
-      "boost-core",
-      "boost-algorithm",
-      "boost-filesystem",
-      "boost-locale",
-      "boost-interprocess",
-      {
-          "name": "boost-interprocess",
-          "platform": "windows"
-      },
-      "libpng",
-      {
-          "name": "sdl2",
-          "features": [ "vulkan" ]
-      },
-      "sdl2-image",
-      "tinyxml2",
-      "glew",
-      "glm",
-      {
-          "name": "libarchive",
-          "default-features": false,
-          "features": [ "bzip2", "core", "lz4", "lzma", "zstd" ]
-      },
-      "vulkan",
-      "vulkan-headers",
-      "shaderc"
+        "boost-core",
+        "boost-algorithm",
+        "boost-filesystem",
+        "boost-locale",
+        "boost-interprocess",
+        {
+            "name": "boost-interprocess",
+            "platform": "windows"
+        },
+        "libpng",
+        {
+            "name": "sdl2",
+            "features": [ "vulkan" ]
+        },
+        "sdl2-image",
+        "tinyxml2",
+        "glew",
+        "glm",
+        {
+            "name": "libarchive",
+            "default-features": true,
+            "features": [ "bzip2", "lz4", "lzma", "zstd" ]
+        },
+        "vulkan",
+        "vulkan-headers",
+        "shaderc"
     ]
 }
