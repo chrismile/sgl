@@ -343,12 +343,42 @@ install(
         INCLUDES DESTINATION include/sgl
 )
 
-if (${TRACY_ENABLE})
+if (${TRACY_ENABLE} AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/submodules/tracy/Tracy.hpp")
     install(
-            DIRECTORY ${CMAKE_SOURCE_DIR}/submodules/
-            DESTINATION include/sgl
+            DIRECTORY ${CMAKE_SOURCE_DIR}/submodules/tracy/
+            DESTINATION include/sgl/tracy
             FILES_MATCHING PATTERN "*.h*"
+            PATTERN ".github" EXCLUDE
+            PATTERN ".vscode" EXCLUDE
+            PATTERN "capture" EXCLUDE
+            PATTERN "csvexport" EXCLUDE
+            PATTERN "doc" EXCLUDE
+            PATTERN "examples" EXCLUDE
+            PATTERN "extra" EXCLUDE
+            PATTERN "getopt" EXCLUDE
+            PATTERN "icon" EXCLUDE
+            PATTERN "imgui" EXCLUDE
+            PATTERN "import-chrome" EXCLUDE
+            PATTERN "libbacktrace" EXCLUDE
+            PATTERN "library" EXCLUDE
+            PATTERN "manual" EXCLUDE
+            PATTERN "nfd" EXCLUDE
+            PATTERN "profiler" EXCLUDE
+            PATTERN "server" EXCLUDE
+            PATTERN "test" EXCLUDE
+            PATTERN "update" EXCLUDE
+            PATTERN "vcpkg" EXCLUDE
+            PATTERN "zstd" EXCLUDE
     )
+else()
+    # If the submodule does not exist or Tracy was not enabled, add empty compile definitions as a fallback.
+    if (NOT ${TRACY_ENABLE} OR NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/submodules/tracy/Tracy.hpp")
+        install(
+                DIRECTORY ${CMAKE_SOURCE_DIR}/submodules/fallback/tracy/
+                DESTINATION include/sgl/tracy
+                FILES_MATCHING PATTERN "*.h*"
+        )
+    endif()
 endif()
 
 install(

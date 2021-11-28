@@ -420,8 +420,8 @@ https://github.com/KhronosGroup/SPIRV-Reflect
 
 ----------------------------------------------------------------------------
 
-License of the Tracy Profiler (contained in submodules/tracy):
-https://github.com/wolfpld/tracy
+License of the Tracy Profiler (contained in submodules/fallback/tracy
+and submodules/tracy): https://github.com/wolfpld/tracy
 
 Tracy Profiler (https://github.com/wolfpld/tracy) is licensed under the
 3-clause BSD license.
