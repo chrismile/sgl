@@ -18,29 +18,59 @@ jobs:
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
     runs-on: windows-2022
 
+    env:
+      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg/bincache
+
     steps:
     - uses: actions/checkout@v2
+      #with:
+      #  submodules: true
+
+    - name: "Create directory '${{ env.VCPKG_DEFAULT_BINARY_CACHE }}'"
+      run: mkdir -p $VCPKG_DEFAULT_BINARY_CACHE
+      shell: bash
+
+    - uses: lukka/get-cmake@latest
 
     - name: Install Vulkan SDK
+      shell: bash
       run: |
-        choco install vulkan-sdk
-        refreshenv
-
-    - name: Check vcpkg path
-      run: |
-        echo $env:VCPKG_ROOT
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          choco install vulkan-sdk
+        fi
 
     #- name: Install vcpkg packages
     #  run: |
     #    refreshenv
-    #    $env:VULKAN_SDK = "C:/VulkanSDK/$(Get-ChildItem -Path C:/VulkanSDK -Name)"
+    #    export VULKAN_SDK="C:/VulkanSDK/$(Get-ChildItem -Path C:/VulkanSDK -Name)"
     #    vcpkg.exe install boost-core boost-algorithm boost-filesystem boost-locale boost-interprocess libpng sdl2[vulkan] sdl2-image tinyxml2 glew glm libarchive[bzip2,core,lz4,lzma,zstd] vulkan vulkan-headers shaderc --triplet=x64-windows
 
-    #- name: Configure CMake
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v10
+      with:
+        vcpkgGitCommitId: '3a68454afa67bde8b6e9e741536daa95d3785966'
+
+    #- name: Install vcpkg packages
+    #  shell: bash
+    #  run: |
+    #    #refreshenv
+    #    #export VULKAN_SDK="C:/VulkanSDK/$(Get-ChildItem -Path C:/VulkanSDK -Name)"
+    #    #if [ "$RUNNER_OS" == "Windows" ]; then
+    #    #  export VULKAN_SDK="C:/VulkanSDK/$(ls C:/VulkanSDK)"
+    #    #fi
+    #    #vcpkg install boost-core boost-algorithm boost-filesystem boost-locale boost-interprocess libpng sdl2[vulkan] sdl2-image tinyxml2 glew glm libarchive[bzip2,core,lz4,lzma,zstd] vulkan vulkan-headers shaderc
+
+    - name: Configure CMake
+      shell: bash
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-    #  run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      run: |
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          export VULKAN_SDK="C:/VulkanSDK/$(ls C:/VulkanSDK)"
+        fi
+        cmake -B ${{github.workspace}}/build -DCMAKE_TOOLCHAIN_FILE="$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
-    #- name: Build
+    - name: Build
       # Build your program with the given configuration
-    #  run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
