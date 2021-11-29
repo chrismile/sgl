@@ -170,6 +170,18 @@ ImGui::EditMode PropertyEditor::addSliderFloat2Edit(
     return ImGui::SliderFloat2Edit(internalId.c_str(), value, minVal, maxVal, format, flags);
 }
 
+ImGui::EditMode PropertyEditor::addSliderIntEdit(
+        const std::string& name, int* value, int minVal, int maxVal,
+        const char* format, ImGuiSliderFlags flags) {
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+    ImGui::TreeNodeEx(name.c_str(), treeNodeFlagsLeaf);
+    ImGui::TableNextColumn();
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    std::string internalId = "##" + name;
+    return ImGui::SliderIntEdit(internalId.c_str(), value, minVal, maxVal, format, flags);
+}
+
 
 bool PropertyEditor::addColorEdit3(const std::string& label, float col[3], ImGuiColorEditFlags flags) {
     ImGui::TableNextRow();

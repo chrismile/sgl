@@ -77,6 +77,9 @@ public:
     ImGui::EditMode addSliderFloat2Edit(
             const std::string& name, float* value, float minVal, float maxVal,
             const char* format = "%.3f", ImGuiSliderFlags flags = 0);
+    ImGui::EditMode addSliderIntEdit(
+            const std::string& name, int* value, int minVal, int maxVal,
+            const char* format = "%d", ImGuiSliderFlags flags = 0);
 
     bool addColorEdit3(const std::string& label, float col[3], ImGuiColorEditFlags flags = 0);
     bool addColorEdit4(const std::string& label, float col[4], ImGuiColorEditFlags flags = 0);
