@@ -39,6 +39,13 @@ After that, the environment variable `VULKAN_SDK` needs to be set to the install
 export VULKAN_SDK=/usr
 ```
 
+NOTE: It seems like currently the vcpkg version of GLEW requires some packages to be already installed using the system
+package manager in order to compile it. On Ubuntu for example, the following command can help install all dependencies.
+
+```
+sudo apt install libxmu-dev libxi-dev libgl-dev libglu1-mesa-dev
+```
+
 
 ### Setup on Windows
 
