@@ -50,7 +50,7 @@ jobs:
     - name: Setup vcpkg
       uses: lukka/run-vcpkg@v10
       with:
-        vcpkgGitCommitId: '3a68454afa67bde8b6e9e741536daa95d3785966'
+        vcpkgGitCommitId: '60a8f7971e5b23c329c2bca3b0bb82e7f65a0e35'
 
     - name: Configure CMake
       shell: bash
