@@ -50,7 +50,7 @@ jobs:
     - name: Setup vcpkg
       uses: lukka/run-vcpkg@v10
       with:
-        vcpkgGitCommitId: '60a8f7971e5b23c329c2bca3b0bb82e7f65a0e35'
+        vcpkgGitCommitId: 'd48bae0c50bd1a24612187bd57a4d987eac5b83c'
 
     - name: Configure CMake
       shell: bash
@@ -62,7 +62,7 @@ jobs:
         elif [ "$RUNNER_OS" == "Windows" ]; then
           export VULKAN_SDK="C:/VulkanSDK/$(ls C:/VulkanSDK)"
         fi
-        cmake -B "${{github.workspace}}/build" -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        cmake -B "${{github.workspace}}/build" -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}  -DVCPKG_BUILD_TYPE=release
 
     - name: Build
       run: cmake --build "${{github.workspace}}/build" --config ${{env.BUILD_TYPE}}
