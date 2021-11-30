@@ -7,7 +7,6 @@
         "boost-algorithm",
         "boost-filesystem",
         "boost-locale",
-        "boost-interprocess",
         {
             "name": "boost-interprocess",
             "platform": "windows"

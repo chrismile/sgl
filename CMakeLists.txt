@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.5)
-cmake_policy(VERSION 3.5...3.20)
+cmake_policy(VERSION 3.7...3.20)
 project(sgl)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/CMake)
 include(GenerateExportHeader)
@@ -128,7 +128,9 @@ endif()
 if (${SUPPORT_VULKAN} AND ${Vulkan_FOUND})
     target_compile_definitions(sgl PUBLIC SUPPORT_VULKAN)
     target_compile_definitions(sgl PUBLIC VK_NO_PROTOTYPES)
-    #target_link_libraries(sgl PUBLIC ${Vulkan_LIBRARIES})
+    if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.21.0")
+        target_link_libraries(sgl PUBLIC Vulkan::Headers)
+    endif()
     if(VCPKG_TOOLCHAIN)
         # Fix for CMake generators with debug/release configuration available at the same time (e.g., Visual Studio).
         # For more details see: https://github.com/Microsoft/vcpkg/issues/2979
