@@ -98,7 +98,7 @@ Buffer::Buffer(
             Logfile::get()->throwError("Error in Buffer::Buffer: No suitable memory type index found!");
         }
 
-        if (vkAllocateMemory(device->getVkDevice(), &memoryAllocateInfo, 0, &deviceMemory) != VK_SUCCESS) {
+        if (vkAllocateMemory(device->getVkDevice(), &memoryAllocateInfo, nullptr, &deviceMemory) != VK_SUCCESS) {
             Logfile::get()->throwError("Error in Buffer::Buffer: Could not allocate memory!");
         }
 

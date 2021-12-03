@@ -34,6 +34,7 @@
 #include "../Render/ComputePipeline.hpp"
 #include "../Render/RayTracingPipeline.hpp"
 #include "../Buffers/Buffer.hpp"
+#include "CommandBuffer.hpp"
 #include "Data.hpp"
 #include "Renderer.hpp"
 
@@ -127,37 +128,49 @@ Renderer::~Renderer() {
     vkDestroyDescriptorPool(device->getVkDevice(), matrixBufferDescriptorPool, nullptr);
     vkDestroyDescriptorPool(device->getVkDevice(), globalDescriptorPool, nullptr);
 
-    if (!commandBuffers.empty()) {
+    if (!commandBuffersVk.empty()) {
+        commandBuffers.clear();
         vkFreeCommandBuffers(
                 device->getVkDevice(), commandPool,
-                uint32_t(commandBuffers.size()), commandBuffers.data());
+                uint32_t(commandBuffersVk.size()), commandBuffersVk.data());
+        commandBuffersVk.clear();
     }
-    commandBuffers.clear();
 }
 
 void Renderer::beginCommandBuffer() {
     if (customCommandBuffer == VK_NULL_HANDLE) {
-        Swapchain* swapchain = AppSettings::get()->getSwapchain();
-        size_t numImages = swapchain ? swapchain->getNumImages() : 1;
-        frameIndex = swapchain ? swapchain->getImageIndex() : 0;
-        if (frameCaches.size() != numImages) {
-            frameCaches.resize(numImages);
+        if (frameCommandBuffers.empty()) {
+            Swapchain* swapchain = AppSettings::get()->getSwapchain();
+            size_t numImages = swapchain ? swapchain->getNumImages() : 1;
+            frameIndex = swapchain ? swapchain->getImageIndex() : 0;
+            if (frameCaches.size() != numImages) {
+                frameCaches.resize(numImages);
 
-            if (!commandBuffers.empty()) {
-                vkFreeCommandBuffers(
-                        device->getVkDevice(), commandPool,
-                        uint32_t(commandBuffers.size()), commandBuffers.data());
+                if (!commandBuffersVk.empty()) {
+                    commandBuffers.clear();
+                    vkFreeCommandBuffers(
+                            device->getVkDevice(), commandPool,
+                            uint32_t(commandBuffersVk.size()), commandBuffersVk.data());
+                    commandBuffersVk.clear();
+                }
+                vk::CommandPoolType commandPoolType;
+                commandPoolType.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+                commandBuffersVk = device->allocateCommandBuffers(
+                        commandPoolType, &commandPool, uint32_t(numImages));
+                for (size_t frameIdx = 0; frameIdx < numImages; frameIdx++) {
+                    commandBuffers.push_back(std::make_shared<sgl::vk::CommandBuffer>(
+                            commandBuffersVk.at(frameIdx)));
+                }
             }
-            vk::CommandPoolType commandPoolType;
-            commandPoolType.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-            commandBuffers = device->allocateCommandBuffers(commandPoolType, &commandPool, uint32_t(numImages));
-        }
-        frameCaches.at(frameIndex).freeCameraMatrixBuffers =
-                frameCaches.at(frameIndex).allCameraMatrixBuffers;
-        frameCaches.at(frameIndex).freeMatrixBlockDescriptorSets =
-                frameCaches.at(frameIndex).allMatrixBlockDescriptorSets;
+            frameCaches.at(frameIndex).freeCameraMatrixBuffers =
+                    frameCaches.at(frameIndex).allCameraMatrixBuffers;
+            frameCaches.at(frameIndex).freeMatrixBlockDescriptorSets =
+                    frameCaches.at(frameIndex).allMatrixBlockDescriptorSets;
 
-        commandBuffer = commandBuffers.at(frameIndex);
+            auto commandBufferPtr = commandBuffers.at(frameIndex);
+            frameCommandBuffers.push_back(commandBufferPtr);
+            commandBuffer = commandBufferPtr->getVkCommandBuffer();
+        }
     } else {
         frameIndex = 0;
         commandBuffer = customCommandBuffer;
@@ -194,8 +207,19 @@ void Renderer::setCustomCommandBuffer(VkCommandBuffer commandBuffer, bool useGra
     this->useGraphicsQueue = useGraphicsQueue;
 }
 
+std::vector<sgl::vk::CommandBufferPtr> Renderer::getFrameCommandBuffers() {
+    std::vector<sgl::vk::CommandBufferPtr> frameCommandBuffersCopy = frameCommandBuffers;
+    frameCommandBuffers = {};
+    return frameCommandBuffersCopy;
+}
+
 void Renderer::resetCustomCommandBuffer() {
     setCustomCommandBuffer(VK_NULL_HANDLE);
+}
+
+void Renderer::pushCommandBuffer(sgl::vk::CommandBufferPtr& commandBuffer) {
+    frameCommandBuffers.push_back(commandBuffer);
+    this->commandBuffer = commandBuffer->getVkCommandBuffer();
 }
 
 void Renderer::render(const RasterDataPtr& rasterData) {
@@ -513,6 +537,31 @@ void Renderer::insertBufferMemoryBarrier(
             commandBuffer, srcStageMask, dstStageMask, 0, 1, &memoryBarrier, 1, &bufferMemoryBarrier, 0, nullptr);
 }
 
+
+void Renderer::submitToQueue() {
+    for (sgl::vk::CommandBufferPtr& frameCommandBuffer : frameCommandBuffers) {
+        VkSubmitInfo submitInfo = {};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.waitSemaphoreCount = uint32_t(frameCommandBuffer->getWaitSemaphoresVk().size());
+        submitInfo.pWaitSemaphores = frameCommandBuffer->getWaitSemaphoresVk().data();
+        submitInfo.pWaitDstStageMask = frameCommandBuffer->getWaitDstStageMasks().data();
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = frameCommandBuffer->getVkCommandBufferPtr();
+        submitInfo.signalSemaphoreCount = uint32_t(frameCommandBuffer->getSignalSemaphoresVk().size());
+        submitInfo.pSignalSemaphores = frameCommandBuffer->getSignalSemaphoresVk().data();
+
+        VkQueue queue = useGraphicsQueue ? device->getGraphicsQueue() : device->getComputeQueue();
+        if (vkQueueSubmit(queue, 1, &submitInfo, frameCommandBuffer->getVkFence()) != VK_SUCCESS) {
+            sgl::Logfile::get()->throwError(
+                    "Error in Renderer::submitToQueue: Could not submit to the used queue.");
+        }
+
+        frameCommandBuffer->_clearSyncObjects();
+    }
+
+    frameCommandBuffers = {};
+}
+
 void Renderer::submitToQueue(
         const SemaphorePtr& waitSemaphore, const SemaphorePtr& signalSemaphore, const FencePtr& fence,
         VkPipelineStageFlags waitStage) {
@@ -542,7 +591,7 @@ void Renderer::submitToQueue(
     }
     if (vkQueueSubmit(queue, 1, &submitInfo, fenceVk) != VK_SUCCESS) {
         sgl::Logfile::get()->throwError(
-                "Error in Renderer::submitToQueue: Could not submit to the graphics queue.");
+                "Error in Renderer::submitToQueue: Could not submit to the used queue.");
     }
 }
 
@@ -577,7 +626,7 @@ void Renderer::submitToQueue(
     VkQueue queue = useGraphicsQueue ? device->getGraphicsQueue() : device->getComputeQueue();
     if (vkQueueSubmit(queue, 1, &submitInfo, fenceVk) != VK_SUCCESS) {
         sgl::Logfile::get()->throwError(
-                "Error in Renderer::submitToQueue: Could not submit to the graphics queue.");
+                "Error in Renderer::submitToQueue: Could not submit to the used queue.");
     }
 }
 
@@ -589,7 +638,7 @@ void Renderer::submitToQueueImmediate() {
     VkQueue queue = useGraphicsQueue ? device->getGraphicsQueue() : device->getComputeQueue();
     if (vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
         sgl::Logfile::get()->throwError(
-                "Error in Renderer::submitToQueueImmediate: Could not submit to the graphics queue.");
+                "Error in Renderer::submitToQueueImmediate: Could not submit to the used queue.");
     }
     if (vkQueueWaitIdle(device->getGraphicsQueue()) != VK_SUCCESS) {
         sgl::Logfile::get()->throwError(

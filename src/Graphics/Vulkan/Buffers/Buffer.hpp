@@ -172,6 +172,8 @@ public:
     VkDeviceAddress getVkDeviceAddress();
 
     inline VkBuffer getVkBuffer() { return buffer; }
+    inline VkDeviceMemory getVkDeviceMemory() { return deviceMemory; }
+    inline Device* getDevice() { return device; }
     inline size_t getSizeInBytes() const { return sizeInBytes; }
     inline VkBufferUsageFlags getVkBufferUsageFlags() const { return bufferUsageFlags; }
     inline VmaMemoryUsage getVmaMemoryUsage() const { return memoryUsage; }

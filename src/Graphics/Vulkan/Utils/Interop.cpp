@@ -44,7 +44,7 @@
 
 namespace sgl {
 
-SemaphoreVkGlInterop::SemaphoreVkGlInterop(sgl::vk::Device* device) {
+SemaphoreVkGlInterop::SemaphoreVkGlInterop(sgl::vk::Device* device, VkSemaphoreCreateFlags semaphoreCreateFlags) {
     VkExportSemaphoreCreateInfo exportSemaphoreCreateInfo = {};
     exportSemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO;
 #if defined(_WIN32)
@@ -56,7 +56,9 @@ SemaphoreVkGlInterop::SemaphoreVkGlInterop(sgl::vk::Device* device) {
                 "Error in SemaphoreVkGlInterop::SemaphoreVkGlInterop: External semaphores are only supported on "
                 "Linux, Android and Windows systems!");
 #endif
-    _initialize(device, 0, &exportSemaphoreCreateInfo);
+    _initialize(
+            device, semaphoreCreateFlags, VK_SEMAPHORE_TYPE_BINARY, 0,
+            &exportSemaphoreCreateInfo);
 
     glGenSemaphoresEXT(1, &semaphoreGl);
 #if defined(_WIN32)
@@ -64,7 +66,7 @@ SemaphoreVkGlInterop::SemaphoreVkGlInterop(sgl::vk::Device* device) {
                 device->getVkDevice(), "vkGetSemaphoreWin32HandleKHR");
         if (!_vkGetSemaphoreWin32HandleKHR) {
             Logfile::get()->throwError(
-                    "Error in Buffer::createGlMemoryObject: vkGetSemaphoreWin32HandleKHR was not found!");
+                    "Error in SemaphoreVkGlInterop::SemaphoreVkGlInterop: vkGetSemaphoreWin32HandleKHR was not found!");
         }
 
         VkSemaphoreGetWin32HandleInfoKHR semaphoreGetWin32HandleInfo = {};
@@ -84,7 +86,7 @@ SemaphoreVkGlInterop::SemaphoreVkGlInterop(sgl::vk::Device* device) {
             device->getVkDevice(), "vkGetSemaphoreFdKHR");
     if (!_vkGetSemaphoreFdKHR) {
         Logfile::get()->throwError(
-                "Error in Buffer::createGlMemoryObject: vkGetSemaphoreFdKHR was not found!");
+                "Error in SemaphoreVkGlInterop::SemaphoreVkGlInterop: vkGetSemaphoreFdKHR was not found!");
     }
 
     VkSemaphoreGetFdInfoKHR semaphoreGetFdInfo = {};

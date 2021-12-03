@@ -75,7 +75,6 @@ protected:
 
 #ifdef SUPPORT_VULKAN
     sgl::vk::Renderer* rendererVk = nullptr;
-    std::vector<VkCommandBuffer> commandBuffers;
 #endif
 
 private:

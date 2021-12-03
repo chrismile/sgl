@@ -150,6 +150,13 @@ public:
             const vk::DeviceFeatures& requestedDeviceFeatures = vk::DeviceFeatures());
     inline VulkanInteropCapabilities getVulkanInteropCapabilities() { return vulkanInteropCapabilities; }
 #endif
+//#if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
+//    void initializeCudaInteropSupport(
+//            const std::vector<const char*>& requiredDeviceExtensionNames = {},
+//            const std::vector<const char*>& optionalDeviceExtensionNames = {},
+//            const vk::DeviceFeatures& requestedDeviceFeatures = vk::DeviceFeatures());
+//    inline VulkanInteropCapabilities getVulkanInteropCapabilities() { return vulkanInteropCapabilities; }
+//#endif
 #endif
     void release();
 

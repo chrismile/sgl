@@ -39,6 +39,9 @@ namespace sgl { namespace vk {
 
 class Device;
 
+class CommandBuffer;
+typedef std::shared_ptr<CommandBuffer> CommandBufferPtr;
+
 struct DLL_OBJECT SwapchainSupportInfo {
     VkSurfaceCapabilitiesKHR capabilities;
     std::vector<VkSurfaceFormatKHR> formats;
@@ -63,7 +66,8 @@ public:
      * Updates of buffers etc. can be performed between beginFrame and renderFrame.
      */
     void beginFrame();
-    void renderFrame(std::vector<VkCommandBuffer>& commandBuffers);
+    void renderFrame(const std::vector<VkCommandBuffer>& commandBuffers);
+    void renderFrame(const std::vector<sgl::vk::CommandBufferPtr>& commandBuffers);
 
     /// Called by the window class when the resolution changed.
     inline void windowResolutionChanged() { framebufferResized = true; }

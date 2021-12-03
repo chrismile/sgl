@@ -30,20 +30,34 @@
 
 namespace sgl { namespace vk {
 
-Semaphore::Semaphore(sgl::vk::Device* device, VkSemaphoreCreateFlags semaphoreCreateFlags) {
-    _initialize(device, semaphoreCreateFlags);
+Semaphore::Semaphore(
+        sgl::vk::Device* device, VkSemaphoreCreateFlags semaphoreCreateFlags,
+        VkSemaphoreType semaphoreType, uint64_t timelineSemaphoreInitialValue) {
+    _initialize(device, semaphoreCreateFlags, semaphoreType, timelineSemaphoreInitialValue);
 }
 
 Semaphore::~Semaphore() {
     vkDestroySemaphore(device->getVkDevice(), semaphoreVk, nullptr);
 }
 
-void Semaphore::_initialize(Device* device, VkSemaphoreCreateFlags semaphoreCreateFlags, void* next) {
+void Semaphore::_initialize(
+        Device* device, VkSemaphoreCreateFlags semaphoreCreateFlags,
+        VkSemaphoreType semaphoreType, uint64_t timelineSemaphoreInitialValue,
+        void* next) {
     this->device = device;
-    VkSemaphoreCreateInfo semaphoreCreateInfo = {};
+    VkSemaphoreTypeCreateInfo timelineSemaphoreCreateInfo{};
+    VkSemaphoreCreateInfo semaphoreCreateInfo{};
     semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
     semaphoreCreateInfo.flags = semaphoreCreateFlags;
-    semaphoreCreateInfo.pNext = next;
+    if (semaphoreType == VK_SEMAPHORE_TYPE_TIMELINE) {
+        timelineSemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO;
+        timelineSemaphoreCreateInfo.pNext = next;
+        timelineSemaphoreCreateInfo.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+        timelineSemaphoreCreateInfo.initialValue = timelineSemaphoreInitialValue;
+        semaphoreCreateInfo.pNext = &timelineSemaphoreCreateInfo;
+    } else {
+        semaphoreCreateInfo.pNext = next;
+    }
 
     if (vkCreateSemaphore(
             device->getVkDevice(), &semaphoreCreateInfo, nullptr, &semaphoreVk) != VK_SUCCESS) {
@@ -52,20 +66,20 @@ void Semaphore::_initialize(Device* device, VkSemaphoreCreateFlags semaphoreCrea
     }
 }
 
-void Semaphore::signalSemaphoreVk() {
+void Semaphore::signalSemaphoreVk(uint64_t timelineValue) {
     VkSemaphoreSignalInfo semaphoreSignalInfo = {};
     semaphoreSignalInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO;
     semaphoreSignalInfo.semaphore = semaphoreVk;
-    semaphoreSignalInfo.value = 0;
+    semaphoreSignalInfo.value = timelineValue;
     vkSignalSemaphore(device->getVkDevice(), &semaphoreSignalInfo);
 }
 
-void Semaphore::waitSemaphoreVk() {
+void Semaphore::waitSemaphoreVk(uint64_t timelineValue) {
     VkSemaphoreWaitInfo semaphoreWaitInfo = {};
     semaphoreWaitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
     semaphoreWaitInfo.semaphoreCount = 1;
     semaphoreWaitInfo.pSemaphores = &semaphoreVk;
-    semaphoreWaitInfo.pValues = nullptr;
+    semaphoreWaitInfo.pValues = &timelineValue;
     vkWaitSemaphores(device->getVkDevice(), &semaphoreWaitInfo, 0);
 }
 

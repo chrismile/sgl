@@ -50,6 +50,8 @@ class Image;
 typedef std::shared_ptr<Image> ImagePtr;
 class Framebuffer;
 typedef std::shared_ptr<Framebuffer> FramebufferPtr;
+class CommandBuffer;
+typedef std::shared_ptr<CommandBuffer> CommandBufferPtr;
 class ComputeData;
 typedef std::shared_ptr<ComputeData> ComputeDataPtr;
 class RasterData;
@@ -67,7 +69,7 @@ typedef std::shared_ptr<RayTracingPipeline> RayTracingPipelinePtr;
 
 class DLL_OBJECT Renderer {
 public:
-    Renderer(Device* device, uint32_t numDescriptors = 1000);
+    explicit Renderer(Device* device, uint32_t numDescriptors = 1000);
     ~Renderer();
 
     // @see beginCommandBuffer and @see endCommandBuffer need to be called before calling any other command.
@@ -76,6 +78,11 @@ public:
     /// Use VK_NULL_HANDLE to reset the custom command buffer.
     void setCustomCommandBuffer(VkCommandBuffer commandBuffer, bool useGraphicsQueue = true);
     void resetCustomCommandBuffer();
+    void pushCommandBuffer(sgl::vk::CommandBufferPtr& commandBuffer);
+    std::vector<sgl::vk::CommandBufferPtr> getFrameCommandBuffers();
+    inline sgl::vk::CommandBufferPtr& getCommandBuffer() { return frameCommandBuffers.back(); }
+    inline VkCommandBuffer getVkCommandBuffer() { return commandBuffer; }
+
 
     // Graphics pipeline.
     void render(const RasterDataPtr& rasterData);
@@ -125,7 +132,13 @@ public:
             BufferPtr& buffer);
 
     /**
-     * For headless rendering without a swapchain.
+     * For headless rendering without a swapchain. Submits and then resets all stored frame command buffers.
+     * To store command buffers besides the main command buffer, pushCommandBuffer can be used.
+     */
+    void submitToQueue();
+    /**
+     * For headless rendering without a swapchain. It is recommended to use this function only for custom command
+     * buffers (i.e., not set using pushCommandBuffer, but with setCustomCommandBuffer).
      * @param waitSemaphores Semaphore to wait on before executing the submitted work.
      * @param signalSemaphores Semaphore to signal after executing the submitted work.
      * @param fence Fence to check on the CPU whether the execution is still in-flight.
@@ -135,7 +148,8 @@ public:
             const SemaphorePtr& waitSemaphore, const SemaphorePtr& signalSemaphore, const FencePtr& fence,
             VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
     /**
-     * For headless rendering without a swapchain.
+     * For headless rendering without a swapchain. It is recommended to use this function only for custom command
+     * buffers (i.e., not set using pushCommandBuffer, but with setCustomCommandBuffer).
      * @param waitSemaphores Semaphores to wait on before executing the submitted work.
      * @param signalSemaphores Semaphores to signal after executing the submitted work.
      * @param fence Fence to check on the CPU whether the execution is still in-flight.
@@ -152,7 +166,6 @@ public:
 
     // Access to internal state.
     inline Device* getDevice() { return device; }
-    inline VkCommandBuffer getVkCommandBuffer() { return commandBuffer; }
     inline VkDescriptorPool getVkDescriptorPool() { return globalDescriptorPool; }
     inline void clearGraphicsPipeline() {
         graphicsPipeline = GraphicsPipelinePtr();
@@ -167,7 +180,9 @@ public:
 private:
     Device* device;
     VkCommandPool commandPool = VK_NULL_HANDLE;
-    std::vector<VkCommandBuffer> commandBuffers;
+    std::vector<VkCommandBuffer> commandBuffersVk;
+    std::vector<sgl::vk::CommandBufferPtr> commandBuffers;
+    std::vector<sgl::vk::CommandBufferPtr> frameCommandBuffers;
     VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
     VkCommandBuffer customCommandBuffer = VK_NULL_HANDLE;
     bool useGraphicsQueue = true;
@@ -207,6 +222,7 @@ private:
         CircularQueue<VkDescriptorSet> freeMatrixBlockDescriptorSets;
         CircularQueue<BufferPtr> allCameraMatrixBuffers;
         CircularQueue<VkDescriptorSet> allMatrixBlockDescriptorSets;
+        std::vector<sgl::vk::CommandBufferPtr> frameCommandBuffers;
     };
     const uint32_t maxFrameCacheSize = 1000;
     std::vector<FrameCache> frameCaches;

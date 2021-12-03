@@ -41,20 +41,36 @@ typedef std::shared_ptr<Fence> FencePtr;
 
 class DLL_OBJECT Semaphore {
 public:
-    explicit Semaphore(Device* device, VkSemaphoreCreateFlags semaphoreCreateFlags = 0);
-    ~Semaphore();
+    /**
+     * @param device The device associated with the semaphore.
+     * @param semaphoreCreateFlags The semaphore creation flags.
+     * @param semaphoreType VK_SEMAPHORE_TYPE_BINARY or VK_SEMAPHORE_TYPE_TIMELINE.
+     * @param timelineSemaphoreInitialValue If semaphoreType is set to VK_SEMAPHORE_TYPE_TIMELINE
+     */
+    explicit Semaphore(
+            Device* device, VkSemaphoreCreateFlags semaphoreCreateFlags = 0,
+            VkSemaphoreType semaphoreType = VK_SEMAPHORE_TYPE_BINARY, uint64_t timelineSemaphoreInitialValue = 0);
+    virtual ~Semaphore();
 
-    void signalSemaphoreVk();
-    void waitSemaphoreVk();
+    [[nodiscard]] inline VkSemaphore getVkSemaphore() const { return semaphoreVk; }
+    [[nodiscard]] inline VkSemaphoreType getVkSemaphoreType() const { return semaphoreType; }
+    [[nodiscard]] inline bool isBinarySemaphore() const { return semaphoreType == VK_SEMAPHORE_TYPE_BINARY; }
+    [[nodiscard]] inline bool isTimelineSemaphore() const { return semaphoreType == VK_SEMAPHORE_TYPE_TIMELINE; }
 
-    inline VkSemaphore getVkSemaphore() const { return semaphoreVk; }
+    // --- For timeline semaphores. ---
+    void signalSemaphoreVk(uint64_t timelineValue);
+    void waitSemaphoreVk(uint64_t timelineValue);
 
 protected:
     Semaphore() = default;
-    void _initialize(Device* device, VkSemaphoreCreateFlags semaphoreCreateFlags, void* next = nullptr);
+    void _initialize(
+            Device* device, VkSemaphoreCreateFlags semaphoreCreateFlags,
+            VkSemaphoreType semaphoreType, uint64_t timelineSemaphoreInitialValue,
+            void* next = nullptr);
 
     sgl::vk::Device* device = nullptr;
     VkSemaphore semaphoreVk = VK_NULL_HANDLE;
+    VkSemaphoreType semaphoreType = VK_SEMAPHORE_TYPE_BINARY;
 };
 
 class DLL_OBJECT Fence {

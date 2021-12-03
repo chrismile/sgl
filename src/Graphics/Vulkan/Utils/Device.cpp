@@ -40,6 +40,24 @@
 
 namespace sgl { namespace vk {
 
+std::vector<const char*> Device::getCudaInteropDeviceExtensions() {
+    std::vector<const char*> deviceExtensions;
+    deviceExtensions.push_back(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
+    deviceExtensions.push_back(VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME);
+
+#ifdef _WIN32
+    deviceExtensions.push_back(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
+    deviceExtensions.push_back(VK_KHR_EXTERNAL_FENCE_WIN32_EXTENSION_NAME);
+    deviceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
+#else
+    deviceExtensions.push_back(VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME);
+    deviceExtensions.push_back(VK_KHR_EXTERNAL_FENCE_FD_EXTENSION_NAME);
+    deviceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
+#endif
+
+    return deviceExtensions;
+}
+
 void Device::initializeDeviceExtensionList(VkPhysicalDevice physicalDevice) {
     uint32_t deviceExtensionCount = 0;
     VkResult res = vkEnumerateDeviceExtensionProperties(

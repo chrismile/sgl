@@ -56,7 +56,7 @@ typedef std::shared_ptr<Texture> TexturePtr;
 
 class DLL_OBJECT SemaphoreVkGlInterop : public vk::Semaphore {
 public:
-    explicit SemaphoreVkGlInterop(sgl::vk::Device* device);
+    explicit SemaphoreVkGlInterop(sgl::vk::Device* device, VkSemaphoreCreateFlags semaphoreCreateFlags = 0);
     ~SemaphoreVkGlInterop();
 
     /*

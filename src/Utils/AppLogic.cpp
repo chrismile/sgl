@@ -148,7 +148,6 @@ void AppLogic::run()
             }
         }
         if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
-            commandBuffers.clear();
             rendererVk->beginCommandBuffer();
         }
 #endif
@@ -157,13 +156,10 @@ void AppLogic::run()
 
 #ifdef SUPPORT_VULKAN
         if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
-            commandBuffers.push_back(rendererVk->endCommandBuffer());
+            rendererVk->endCommandBuffer();
             sgl::vk::Swapchain* swapchain = sgl::AppSettings::get()->getSwapchain();
             if (swapchain) {
-                //if (AppSettings::get()->getUseGUI()) {
-                //    commandBuffers.push_back(ImGuiWrapper::get()->getVkCommandBuffers().at(swapchain->getImageIndex()));
-                //}
-                sgl::AppSettings::get()->getSwapchain()->renderFrame(commandBuffers);
+                sgl::AppSettings::get()->getSwapchain()->renderFrame(rendererVk->getFrameCommandBuffers());
             }
         }
 #endif

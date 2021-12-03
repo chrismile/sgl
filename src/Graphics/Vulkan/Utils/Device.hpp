@@ -187,6 +187,9 @@ public:
     void setOpenGlInteropEnabled(bool enabled) { openGlInteropEnabled = true; }
 #endif
 
+    static std::vector<const char*> getCudaInteropDeviceExtensions();
+
+
 private:
     void initializeDeviceExtensionList(VkPhysicalDevice physicalDevice);
     void printAvailableDeviceExtensionList();

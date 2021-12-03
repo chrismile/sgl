@@ -35,6 +35,7 @@
 #include <Graphics/Window.hpp>
 #include <SDL/SDLWindow.hpp>
 
+#include "../Render/CommandBuffer.hpp"
 #include "Device.hpp"
 #include "Swapchain.hpp"
 
@@ -209,9 +210,7 @@ void Swapchain::beginFrame() {
     vkResetFences(device->getVkDevice(), 1, &inFlightFences[currentFrame]);
 }
 
-void Swapchain::renderFrame(std::vector<VkCommandBuffer>& commandBuffers) {
-    //updateUniformBuffer(device, imageIndex);
-
+void Swapchain::renderFrame(const std::vector<VkCommandBuffer>& commandBuffers) {
     VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
     VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
     VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
@@ -226,6 +225,69 @@ void Swapchain::renderFrame(std::vector<VkCommandBuffer>& commandBuffers) {
     submitInfo.pSignalSemaphores = signalSemaphores;
     if (vkQueueSubmit(device->getGraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
         sgl::Logfile::get()->throwError("Error in Swapchain::renderFrame: Could not submit to the graphics queue.");
+    }
+
+    VkPresentInfoKHR presentInfo = {};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = signalSemaphores;
+
+    VkSwapchainKHR swapchains[] = { swapchain };
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = swapchains;
+    presentInfo.pImageIndices = &imageIndex;
+    presentInfo.pResults = nullptr;
+    VkResult result = vkQueuePresentKHR(device->getGraphicsQueue(), &presentInfo);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+        recreateSwapchain();
+    } else if (result != VK_SUCCESS) {
+        sgl::Logfile::get()->writeError("Error in Swapchain::renderFrame: Failed to present swap chain image!");
+    }
+
+    currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+}
+
+void Swapchain::renderFrame(const std::vector<sgl::vk::CommandBufferPtr>& commandBuffers) {
+    if (commandBuffers.empty()) {
+        sgl::Logfile::get()->throwError("Error in Swapchain::renderFrame: Command buffer array empty!");
+    }
+
+    sgl::vk::CommandBufferPtr commandBufferFirst = commandBuffers.front();
+    sgl::vk::CommandBufferPtr commandBufferLast = commandBuffers.back();
+
+    VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
+    VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
+
+    commandBufferFirst->pushWaitSemaphore(waitSemaphores[0]);
+    commandBufferLast->pushSignalSemaphore(signalSemaphores[0]);
+
+    for (size_t cmdBufIdx = 0; cmdBufIdx < commandBuffers.size(); cmdBufIdx++) {
+        const sgl::vk::CommandBufferPtr& commandBuffer = commandBuffers.at(cmdBufIdx);
+
+        VkSubmitInfo submitInfo = {};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.waitSemaphoreCount = uint32_t(commandBuffer->getWaitSemaphoresVk().size());
+        submitInfo.pWaitSemaphores = commandBuffer->getWaitSemaphoresVk().data();
+        submitInfo.pWaitDstStageMask = commandBuffer->getWaitDstStageMasks().data();
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = commandBuffer->getVkCommandBufferPtr();
+        submitInfo.signalSemaphoreCount = uint32_t(commandBuffer->getSignalSemaphoresVk().size());
+        submitInfo.pSignalSemaphores = commandBuffer->getSignalSemaphoresVk().data();
+
+        VkFence fence;
+        if (cmdBufIdx == commandBuffers.size() - 1) {
+            fence = inFlightFences[currentFrame];
+            assert(commandBuffer->getVkFence() == VK_NULL_HANDLE);
+        } else {
+            fence = commandBuffer->getVkFence();
+        }
+        if (vkQueueSubmit(device->getGraphicsQueue(), 1, &submitInfo, fence) != VK_SUCCESS) {
+            sgl::Logfile::get()->throwError(
+                    "Error in Swapchain::renderFrame: Could not submit to the graphics queue.");
+        }
+
+        commandBuffer->_clearSyncObjects();
     }
 
     VkPresentInfoKHR presentInfo = {};
