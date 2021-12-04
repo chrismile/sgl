@@ -26,14 +26,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "InteropCuda.hpp"
+
 #if defined(__linux__)
 #include <dlfcn.h>
 #include <unistd.h>
 #elif defined(_WIN32)
 #include <windows.h>
+#include <vulkan/vulkan_win32.h>
 #endif
-
-#include "InteropCuda.hpp"
 
 namespace sgl { namespace vk {
 
@@ -45,7 +46,7 @@ namespace sgl { namespace vk {
 CudaDeviceApiFunctionTable g_cudaDeviceApiFunctionTable{};
 
 #ifdef _WIN32
-HMODULE* g_cudaLibraryHandle = nullptr;
+HMODULE g_cudaLibraryHandle = nullptr;
 #define dlsym GetProcAddress
 #else
 void* g_cudaLibraryHandle = nullptr;
@@ -123,7 +124,7 @@ bool initializeCudaDeviceApiFunctionTable() {
 }
 
 #ifdef _WIN32
-#undef dlsym GetProcAddress
+#undef dlsym
 #endif
 
 void freeCudaDeviceApiFunctionTable() {
@@ -281,7 +282,7 @@ BufferCudaDriverApiExternalMemoryVk::BufferCudaDriverApiExternalMemoryVk(vk::Buf
     if (!_vkGetMemoryWin32HandleKHR) {
         Logfile::get()->throwError(
                 "Error in Buffer::createGlMemoryObject: vkGetMemoryWin32HandleKHR was not found!");
-        return false;
+        return;
     }
     VkMemoryGetWin32HandleInfoKHR memoryGetWin32HandleInfo = {};
     memoryGetWin32HandleInfo.sType = VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR;

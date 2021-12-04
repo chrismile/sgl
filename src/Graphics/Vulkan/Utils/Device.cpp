@@ -38,6 +38,11 @@
 #include "Interop.hpp"
 #endif
 
+#ifdef _WIN32
+#include <windows.h>
+#include <vulkan/vulkan_win32.h>
+#endif
+
 namespace sgl { namespace vk {
 
 std::vector<const char*> Device::getCudaInteropDeviceExtensions() {

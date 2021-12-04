@@ -39,6 +39,10 @@
 #include "DynlinkCuda.hpp"
 #endif
 
+#ifdef _WIN32
+typedef void* HANDLE;
+#endif
+
 namespace sgl { namespace vk {
 
 /*
