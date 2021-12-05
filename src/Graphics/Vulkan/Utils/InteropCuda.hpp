@@ -73,13 +73,13 @@ struct CudaDeviceApiFunctionTable {
     CUresult ( *cuDestroyExternalSemaphore )( CUexternalSemaphore extSem );
 };
 
-extern CudaDeviceApiFunctionTable g_cudaDeviceApiFunctionTable;
+DLL_OBJECT extern CudaDeviceApiFunctionTable g_cudaDeviceApiFunctionTable;
 
 DLL_OBJECT void _checkCUresult(CUresult cuResult, const char* text, const char* locationText);
 #define checkCUresult(cuResult, text) _checkCUresult(cuResult, text, __FILE__ ":" TOSTRING(__LINE__))
 
-bool initializeCudaDeviceApiFunctionTable();
-void freeCudaDeviceApiFunctionTable();
+DLL_OBJECT bool initializeCudaDeviceApiFunctionTable();
+DLL_OBJECT void freeCudaDeviceApiFunctionTable();
 
 
 /**
