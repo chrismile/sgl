@@ -46,6 +46,7 @@ public:
 
     /// Outputs e.g. "SDL_GetError"
     virtual void errorCheck();
+    static void errorCheckSDL();
 
     /// Returns whether this window uses
     virtual bool isDebugContext() { return windowSettings.debugContext; }

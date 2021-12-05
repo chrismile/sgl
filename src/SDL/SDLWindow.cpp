@@ -82,6 +82,11 @@ SDLWindow::~SDLWindow()
 
 void SDLWindow::errorCheck()
 {
+    errorCheckSDL();
+}
+
+void SDLWindow::errorCheckSDL()
+{
     while (SDL_GetError()[0] != '\0') {
         Logfile::get()->writeError(std::string() + "SDL error: " + SDL_GetError());
         SDL_ClearError();

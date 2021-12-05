@@ -219,6 +219,8 @@ Window *AppSettings::createWindow()
         Logfile::get()->writeError(std::string() + "SDL Error: " + SDL_GetError());
     }
 
+    SDLWindow::errorCheckSDL();
+
 #ifdef SUPPORT_VULKAN
     if (renderSystem == RenderSystem::VULKAN) {
         instance = new vk::Instance;
