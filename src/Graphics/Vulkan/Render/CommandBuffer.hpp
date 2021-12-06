@@ -71,10 +71,19 @@ public:
     void popSignalSemaphore();
     inline void setFence(const sgl::vk::FencePtr& _fence) { this->fence = _fence; }
 
+    bool hasWaitTimelineSemaphore();
+    bool hasSignalTimelineSemaphore();
+    std::vector<uint64_t> getWaitSemaphoreValues();
+    std::vector<uint64_t> getSignalSemaphoreValues();
+
+    inline std::vector<sgl::vk::SemaphorePtr>& getWaitSemaphores() { return waitSemaphores; }
+    inline std::vector<sgl::vk::SemaphorePtr>& getSignalSemaphores() { return signalSemaphores; }
+    inline sgl::vk::FencePtr& getFence() { return fence; }
     inline std::vector<VkSemaphore>& getWaitSemaphoresVk() { return waitSemaphoresVk; }
-    inline std::vector<VkPipelineStageFlags>& getWaitDstStageMasks() { return waitDstStageMasks; }
     inline std::vector<VkSemaphore>& getSignalSemaphoresVk() { return signalSemaphoresVk; }
+    inline std::vector<VkPipelineStageFlags>& getWaitDstStageMasks() { return waitDstStageMasks; }
     inline VkFence getVkFence() { if (fence) { return fence->getVkFence(); } return VK_NULL_HANDLE; }
+
 
 private:
     Device* device = nullptr;

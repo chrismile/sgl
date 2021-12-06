@@ -255,6 +255,17 @@ void Device::createLogicalDeviceAndQueues(
         VkPhysicalDevice physicalDevice, bool useValidationLayer, const std::vector<const char*>& layerNames,
         const std::vector<const char*>& deviceExtensions, const std::set<std::string>& deviceExtensionsSet,
         DeviceFeatures requestedDeviceFeatures, bool computeOnly) {
+    if (deviceExtensionsSet.find(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME) != deviceExtensionsSet.end()) {
+        timelineSemaphoreFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &timelineSemaphoreFeatures;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        if (requestedDeviceFeatures.timelineSemaphoreFeatures.timelineSemaphore == VK_FALSE) {
+            requestedDeviceFeatures.timelineSemaphoreFeatures = timelineSemaphoreFeatures;
+        }
+    }
     if (deviceExtensionsSet.find(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME) != deviceExtensionsSet.end()) {
         bufferDeviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
         VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
@@ -366,6 +377,10 @@ void Device::createLogicalDeviceAndQueues(
     }
 
     const void** pNextPtr = &deviceInfo.pNext;
+    if (requestedDeviceFeatures.timelineSemaphoreFeatures.timelineSemaphore) {
+        *pNextPtr = &requestedDeviceFeatures.timelineSemaphoreFeatures;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.timelineSemaphoreFeatures.pNext);
+    }
     if (requestedDeviceFeatures.bufferDeviceAddressFeatures.bufferDeviceAddress) {
         *pNextPtr = &requestedDeviceFeatures.bufferDeviceAddressFeatures;
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.bufferDeviceAddressFeatures.pNext);

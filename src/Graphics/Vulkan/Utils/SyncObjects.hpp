@@ -58,8 +58,13 @@ public:
     [[nodiscard]] inline bool isTimelineSemaphore() const { return semaphoreType == VK_SEMAPHORE_TYPE_TIMELINE; }
 
     // --- For timeline semaphores. ---
-    void signalSemaphoreVk(uint64_t timelineValue);
     void waitSemaphoreVk(uint64_t timelineValue);
+    void signalSemaphoreVk(uint64_t timelineValue);
+    uint64_t getSemaphoreCounterValue();
+    [[nodiscard]] inline uint64_t getWaitSemaphoreValue() const { return waitSemaphoreValue; }
+    [[nodiscard]] inline uint64_t getSignalSemaphoreValue() const { return signalSemaphoreValue; }
+    inline void setWaitSemaphoreValue(uint64_t value) { waitSemaphoreValue = value; }
+    inline void setSignalSemaphoreValue(uint64_t value) { signalSemaphoreValue = value; }
 
 protected:
     Semaphore() = default;
@@ -71,6 +76,10 @@ protected:
     sgl::vk::Device* device = nullptr;
     VkSemaphore semaphoreVk = VK_NULL_HANDLE;
     VkSemaphoreType semaphoreType = VK_SEMAPHORE_TYPE_BINARY;
+
+    // --- Timeline semaphore data ---
+    uint64_t waitSemaphoreValue = 0;
+    uint64_t signalSemaphoreValue = 0;
 };
 
 class DLL_OBJECT Fence {

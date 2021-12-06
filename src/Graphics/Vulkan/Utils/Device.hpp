@@ -71,6 +71,7 @@ class Instance;
 
 struct DLL_OBJECT DeviceFeatures {
     DeviceFeatures() {
+        timelineSemaphoreFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
         bufferDeviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
         scalarBlockLayoutFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES;
         uniformBufferStandardLayoutFeaturesKhr.sType =
@@ -80,6 +81,7 @@ struct DLL_OBJECT DeviceFeatures {
         rayQueryFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
     }
     VkPhysicalDeviceFeatures requestedPhysicalDeviceFeatures{};
+    VkPhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeatures{};
     VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures{};
     VkPhysicalDeviceScalarBlockLayoutFeatures scalarBlockLayoutFeatures{};
     VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR uniformBufferStandardLayoutFeaturesKhr{};
@@ -247,6 +249,7 @@ private:
     VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties{};
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties{};
 
+    VkPhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeatures{};
     VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures{};
     VkPhysicalDeviceScalarBlockLayoutFeatures scalarBlockLayoutFeatures{};
     VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR uniformBufferStandardLayoutFeaturesKhr{};

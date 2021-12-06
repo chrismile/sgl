@@ -539,9 +539,28 @@ void Renderer::insertBufferMemoryBarrier(
 
 
 void Renderer::submitToQueue() {
+    std::vector<uint64_t> waitSemaphoreValues;
+    std::vector<uint64_t> signalSemaphoreValues;
+
     for (sgl::vk::CommandBufferPtr& frameCommandBuffer : frameCommandBuffers) {
-        VkSubmitInfo submitInfo = {};
+        VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        VkTimelineSemaphoreSubmitInfo timelineSubmitInfo{};
+        timelineSubmitInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
+
+        if (frameCommandBuffer->hasWaitTimelineSemaphore()) {
+            waitSemaphoreValues = frameCommandBuffer->getWaitSemaphoreValues();
+            submitInfo.pNext = &timelineSubmitInfo;
+            timelineSubmitInfo.waitSemaphoreValueCount = uint32_t(waitSemaphoreValues.size());
+            timelineSubmitInfo.pWaitSemaphoreValues = waitSemaphoreValues.data();
+        }
+        if (frameCommandBuffer->hasSignalTimelineSemaphore()) {
+            signalSemaphoreValues = frameCommandBuffer->getSignalSemaphoreValues();
+            submitInfo.pNext = &timelineSubmitInfo;
+            timelineSubmitInfo.signalSemaphoreValueCount = uint32_t(signalSemaphoreValues.size());
+            timelineSubmitInfo.pSignalSemaphoreValues = signalSemaphoreValues.data();
+        }
+
         submitInfo.waitSemaphoreCount = uint32_t(frameCommandBuffer->getWaitSemaphoresVk().size());
         submitInfo.pWaitSemaphores = frameCommandBuffer->getWaitSemaphoresVk().data();
         submitInfo.pWaitDstStageMask = frameCommandBuffer->getWaitDstStageMasks().data();

@@ -262,11 +262,29 @@ void Swapchain::renderFrame(const std::vector<sgl::vk::CommandBufferPtr>& comman
     commandBufferFirst->pushWaitSemaphore(waitSemaphores[0]);
     commandBufferLast->pushSignalSemaphore(signalSemaphores[0]);
 
+    std::vector<uint64_t> waitSemaphoreValues;
+    std::vector<uint64_t> signalSemaphoreValues;
+
     for (size_t cmdBufIdx = 0; cmdBufIdx < commandBuffers.size(); cmdBufIdx++) {
         const sgl::vk::CommandBufferPtr& commandBuffer = commandBuffers.at(cmdBufIdx);
-
         VkSubmitInfo submitInfo = {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        VkTimelineSemaphoreSubmitInfo timelineSubmitInfo{};
+        timelineSubmitInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
+
+        if (commandBuffer->hasWaitTimelineSemaphore()) {
+            waitSemaphoreValues = commandBuffer->getWaitSemaphoreValues();
+            submitInfo.pNext = &timelineSubmitInfo;
+            timelineSubmitInfo.waitSemaphoreValueCount = uint32_t(waitSemaphoreValues.size());
+            timelineSubmitInfo.pWaitSemaphoreValues = waitSemaphoreValues.data();
+        }
+        if (commandBuffer->hasSignalTimelineSemaphore()) {
+            signalSemaphoreValues = commandBuffer->getSignalSemaphoreValues();
+            submitInfo.pNext = &timelineSubmitInfo;
+            timelineSubmitInfo.signalSemaphoreValueCount = uint32_t(signalSemaphoreValues.size());
+            timelineSubmitInfo.pSignalSemaphoreValues = signalSemaphoreValues.data();
+        }
+
         submitInfo.waitSemaphoreCount = uint32_t(commandBuffer->getWaitSemaphoresVk().size());
         submitInfo.pWaitSemaphores = commandBuffer->getWaitSemaphoresVk().data();
         submitInfo.pWaitDstStageMask = commandBuffer->getWaitDstStageMasks().data();

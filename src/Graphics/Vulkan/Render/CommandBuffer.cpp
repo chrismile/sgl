@@ -85,4 +85,44 @@ void CommandBuffer::popSignalSemaphore() {
     signalSemaphoresVk.pop_back();
 }
 
+bool CommandBuffer::hasWaitTimelineSemaphore() {
+    bool hasWaitTimelineSemaphore = false;
+    for (sgl::vk::SemaphorePtr& waitSemaphore : waitSemaphores) {
+        if (waitSemaphore && waitSemaphore->isTimelineSemaphore()) {
+            hasWaitTimelineSemaphore = true;
+            break;
+        }
+    }
+    return hasWaitTimelineSemaphore;
+}
+
+bool CommandBuffer::hasSignalTimelineSemaphore() {
+    bool hasSignalTimelineSemaphore = false;
+    for (sgl::vk::SemaphorePtr& signalSemaphore : signalSemaphores) {
+        if (signalSemaphore && signalSemaphore->isTimelineSemaphore()) {
+            hasSignalTimelineSemaphore = true;
+            break;
+        }
+    }
+    return hasSignalTimelineSemaphore;
+}
+
+std::vector<uint64_t> CommandBuffer::getWaitSemaphoreValues() {
+    std::vector<uint64_t> values;
+    values.reserve(waitSemaphores.size());
+    for (sgl::vk::SemaphorePtr& semaphore : waitSemaphores) {
+        values.push_back(semaphore ? semaphore->getWaitSemaphoreValue() : 0);
+    }
+    return values;
+}
+
+std::vector<uint64_t> CommandBuffer::getSignalSemaphoreValues() {
+    std::vector<uint64_t> values;
+    values.reserve(signalSemaphores.size());
+    for (sgl::vk::SemaphorePtr& semaphore : signalSemaphores) {
+        values.push_back(semaphore ? semaphore->getSignalSemaphoreValue() : 0);
+    }
+    return values;
+}
+
 }}
