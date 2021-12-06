@@ -47,6 +47,7 @@ namespace sgl { namespace vk {
 
 std::vector<const char*> Device::getCudaInteropDeviceExtensions() {
     std::vector<const char*> deviceExtensions;
+    deviceExtensions.push_back(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
     deviceExtensions.push_back(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
     deviceExtensions.push_back(VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME);
 

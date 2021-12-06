@@ -104,7 +104,6 @@ public:
             const std::vector<sgl::TexturePtr>& textures, const std::vector<GLenum>& srcLayouts);
 
 private:
-    sgl::vk::Device* device = nullptr;
     GLuint semaphoreGl = 0;
 };
 typedef std::shared_ptr<SemaphoreVkGlInterop> SemaphoreVkGlInteropPtr;
