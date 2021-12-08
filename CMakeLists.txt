@@ -154,7 +154,7 @@ if (${SUPPORT_VULKAN} AND ${Vulkan_FOUND})
     target_compile_definitions(sgl PUBLIC SUPPORT_VULKAN)
     target_compile_definitions(sgl PUBLIC VK_NO_PROTOTYPES)
     if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.21.0")
-        target_link_libraries(sgl PUBLIC Vulkan::Headers)
+        target_link_libraries(sgl PRIVATE Vulkan::Headers)
     endif()
     if(VCPKG_TOOLCHAIN)
         # Fix for CMake generators with debug/release configuration available at the same time (e.g., Visual Studio).
