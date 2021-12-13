@@ -28,10 +28,13 @@
 
 #include <algorithm>
 #include <cstring>
+#include <memory>
+
+#include <Utils/Convert.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Graphics/Vulkan/Utils/Device.hpp>
 #include <Graphics/Vulkan/Buffers/Buffer.hpp>
-#include <memory>
+
 #include "Helpers.hpp"
 #include "AccelerationStructure.hpp"
 
@@ -45,7 +48,7 @@ BottomLevelAccelerationStructureInput::BottomLevelAccelerationStructureInput(
 
 std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStructuresFromInputsLists(
         const std::vector<BottomLevelAccelerationStructureInputList>& blasInputsList,
-        VkBuildAccelerationStructureFlagsKHR flags) {
+        VkBuildAccelerationStructureFlagsKHR flags, bool debugOutput) {
     Device* device = blasInputsList.front().front()->getDevice();
 
     size_t numBlases = blasInputsList.size();
@@ -85,6 +88,15 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
         vkGetAccelerationStructureBuildSizesKHR(
                 device->getVkDevice(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
                 &buildInfos.at(blasIdx), numPrimitivesList.data(), &buildSizesInfo);
+
+        if (debugOutput) {
+            sgl::Logfile::get()->writeInfo(
+                    "Acceleration structure build scratch size: "
+                    + sgl::toString(double(buildSizesInfo.buildScratchSize) / 1024.0 / 1024.0) + "MiB");
+            sgl::Logfile::get()->writeInfo(
+                    "Acceleration structure size: "
+                    + sgl::toString(double(buildSizesInfo.accelerationStructureSize) / 1024.0 / 1024.0) + "MiB");
+        }
 
         // Create the acceleration structure and the underlying memory.
         BufferPtr accelerationStructureBuffer(new Buffer(
@@ -230,20 +242,23 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
 
 std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStructuresFromInputList(
         const std::vector<BottomLevelAccelerationStructureInputPtr>& blasInputsList,
-        VkBuildAccelerationStructureFlagsKHR flags) {
-    return buildBottomLevelAccelerationStructuresFromInputsLists({ blasInputsList }, flags);
+        VkBuildAccelerationStructureFlagsKHR flags, bool debugOutput) {
+    return buildBottomLevelAccelerationStructuresFromInputsLists(
+            { blasInputsList }, flags, debugOutput);
 }
 
 BottomLevelAccelerationStructurePtr buildBottomLevelAccelerationStructureFromInputs(
         const BottomLevelAccelerationStructureInputList& blasInputs,
-        VkBuildAccelerationStructureFlagsKHR flags) {
-    return buildBottomLevelAccelerationStructuresFromInputsLists({ blasInputs }, flags).front();
+        VkBuildAccelerationStructureFlagsKHR flags, bool debugOutput) {
+    return buildBottomLevelAccelerationStructuresFromInputsLists(
+            { blasInputs }, flags, debugOutput).front();
 }
 
 BottomLevelAccelerationStructurePtr buildBottomLevelAccelerationStructureFromInput(
         const BottomLevelAccelerationStructureInputPtr& blasInput,
-        VkBuildAccelerationStructureFlagsKHR flags) {
-    return buildBottomLevelAccelerationStructuresFromInputsLists({ { blasInput } }, flags).front();
+        VkBuildAccelerationStructureFlagsKHR flags, bool debugOutput) {
+    return buildBottomLevelAccelerationStructuresFromInputsLists(
+            { { blasInput } }, flags, debugOutput).front();
 }
 
 

@@ -142,19 +142,23 @@ typedef std::vector<BottomLevelAccelerationStructureInputPtr> BottomLevelAcceler
 
 DLL_OBJECT std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStructuresFromInputsLists(
         const std::vector<BottomLevelAccelerationStructureInputList>& blasInputsList,
-        VkBuildAccelerationStructureFlagsKHR flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR);
+        VkBuildAccelerationStructureFlagsKHR flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR,
+        bool debugOutput = false);
 
 DLL_OBJECT std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStructuresFromInputList(
         const std::vector<BottomLevelAccelerationStructureInputPtr>& blasInputsList,
-        VkBuildAccelerationStructureFlagsKHR flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR);
+        VkBuildAccelerationStructureFlagsKHR flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR,
+        bool debugOutput = false);
 
 DLL_OBJECT BottomLevelAccelerationStructurePtr buildBottomLevelAccelerationStructureFromInputs(
         const BottomLevelAccelerationStructureInputList& blasInputs,
-        VkBuildAccelerationStructureFlagsKHR flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR);
+        VkBuildAccelerationStructureFlagsKHR flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR,
+        bool debugOutput = false);
 
 DLL_OBJECT BottomLevelAccelerationStructurePtr buildBottomLevelAccelerationStructureFromInput(
         const BottomLevelAccelerationStructureInputPtr& blasInput,
-        VkBuildAccelerationStructureFlagsKHR flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR);
+        VkBuildAccelerationStructureFlagsKHR flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR,
+        bool debugOutput = false);
 
 /**
  * Bottom-level acceleration structure instance.
