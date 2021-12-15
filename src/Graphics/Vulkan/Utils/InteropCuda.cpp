@@ -117,7 +117,9 @@ bool initializeCudaDeviceApiFunctionTable() {
             || !g_cudaDeviceApiFunctionTable.cuSignalExternalSemaphoresAsync
             || !g_cudaDeviceApiFunctionTable.cuWaitExternalSemaphoresAsync
             || !g_cudaDeviceApiFunctionTable.cuDestroyExternalSemaphore) {
-        sgl::Logfile::get()->throwError("Error in initializeCudaDeviceApiFunctionTable: .");
+        sgl::Logfile::get()->throwError(
+                "Error in initializeCudaDeviceApiFunctionTable: "
+                "At least one function pointer could not be loaded.");
     }
 
     return true;
