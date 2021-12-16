@@ -88,7 +88,7 @@ TexturePtr TextureGL::createTextureView() {
     return TexturePtr(new TextureGL(textureViewGL, w, h, d, settings, samples));
 }
 
-#ifdef SUPPORT_VULKAN
+#if defined(SUPPORT_VULKAN) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
 static std::unordered_map<VkFormat, GLenum> vulkanFormatToGlSizedFormatMap = {
         { VK_FORMAT_R8_UNORM, GL_R8 },
         { VK_FORMAT_R8_SNORM, GL_R8_SNORM },

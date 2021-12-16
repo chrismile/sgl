@@ -55,7 +55,7 @@ protected:
     unsigned int texture;
 };
 
-#ifdef SUPPORT_VULKAN
+#if defined(SUPPORT_VULKAN) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
 /**
  * An OpenGL texture object created from external Vulkan memory.
  */
