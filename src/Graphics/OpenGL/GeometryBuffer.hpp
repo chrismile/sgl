@@ -60,7 +60,7 @@ protected:
     unsigned int oglBufferUsage;
 };
 
-#ifdef SUPPORT_VULKAN
+#if defined(SUPPORT_VULKAN) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
 /**
  * An OpenGL geometry buffer object created from external Vulkan memory.
  */

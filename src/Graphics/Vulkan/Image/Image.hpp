@@ -39,7 +39,7 @@
 #include "../libs/volk/volk.h"
 #include "../libs/VMA/vk_mem_alloc.h"
 
-#ifdef SUPPORT_OPENGL
+#if defined(SUPPORT_OPENGL) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
 #include <GL/glew.h>
 #endif
 
@@ -183,7 +183,7 @@ public:
     void* mapMemory();
     void unmapMemory();
 
-#ifdef SUPPORT_OPENGL
+#if defined(SUPPORT_OPENGL) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
     /**
      * Creates an OpenGL memory object from the external Vulkan memory.
      * NOTE: The image must have been created with exportMemory set to true.

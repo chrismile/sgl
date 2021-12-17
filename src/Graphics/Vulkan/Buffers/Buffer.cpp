@@ -295,7 +295,7 @@ VkDeviceAddress Buffer::getVkDeviceAddress() {
     return bufferDeviceAddress;
 }
 
-#ifdef SUPPORT_OPENGL
+#if defined(SUPPORT_OPENGL) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
 bool Buffer::createGlMemoryObject(GLuint& memoryObjectGl) {
     if (!exportMemory) {
         Logfile::get()->throwError(

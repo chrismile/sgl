@@ -137,7 +137,7 @@ void GeometryBufferGL::unbind()
 }
 
 
-#ifdef SUPPORT_VULKAN
+#if defined(SUPPORT_VULKAN) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
 GeometryBufferGLExternalMemoryVk::GeometryBufferGLExternalMemoryVk(vk::BufferPtr &vulkanBuffer, BufferType type)
         : GeometryBufferGL(type), vulkanBuffer(vulkanBuffer) {
     if (!vulkanBuffer->createGlMemoryObject(memoryObject)) {
