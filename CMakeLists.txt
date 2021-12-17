@@ -82,6 +82,11 @@ if (${SUPPORT_OPENGL} AND ${OpenGL_FOUND} AND ${GLEW_FOUND})
         set(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT OFF)
     endif()
 
+    # vcpkg GLEW does not set GLEW_VERSION for some reason.
+    if (VCPKG_TOOLCHAIN)
+        set(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT ON)
+    endif()
+
     if (NOT ${GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT})
         MESSAGE(STATUS "Warning: An old version of GLEW is used (< 2.1.0). Disabling Vulkan interoperability support.")
         list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Vulkan/Utils/Interop.hpp)
