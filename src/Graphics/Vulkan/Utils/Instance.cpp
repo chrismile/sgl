@@ -230,4 +230,14 @@ bool Instance::isInstanceExtensionAvailable(const std::string &extensionName) {
     return availableInstanceExtensionNames.find(extensionName) != availableInstanceExtensionNames.end();
 }
 
+std::string Instance::convertVulkanVersionToString(uint32_t version) {
+    std::string versionString = "Vulkan ";
+    versionString += std::to_string(VK_API_VERSION_MAJOR(version));
+    versionString += ".";
+    versionString += std::to_string(VK_API_VERSION_MINOR(version));
+    versionString += ".";
+    versionString += std::to_string(VK_API_VERSION_PATCH(version));
+    return versionString;
+}
+
 }}

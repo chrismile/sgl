@@ -57,7 +57,7 @@ void Logfile::closeLogfile()
     closedLogfile = true;
 }
 
-void Logfile::createLogfile (const char *filename, const char *appName)
+void Logfile::createLogfile(const std::string& filename, const std::string& appName)
 {
     // Open file and write header
     logfile.open(filename);

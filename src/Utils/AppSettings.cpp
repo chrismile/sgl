@@ -118,7 +118,8 @@ void setDPIAware()
 #endif
 
 AppSettings::AppSettings() {
-    Logfile::get()->createLogfile((FileUtils::get()->getConfigDirectory() + "Logfile.html").c_str(), "ShapeDetector");
+    Logfile::get()->createLogfile(
+            FileUtils::get()->getConfigDirectory() + "Logfile.html", FileUtils::get()->getTitleName());
 
     operatingSystem = OperatingSystem::UNKNOWN;
 #ifdef WIN32

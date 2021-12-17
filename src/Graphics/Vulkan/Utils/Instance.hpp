@@ -29,6 +29,7 @@
 #ifndef SGL_INSTANCE_HPP
 #define SGL_INSTANCE_HPP
 
+#include <utility>
 #include <vector>
 #include <set>
 #include <functional>
@@ -60,13 +61,15 @@ public:
 
     // Access to internal data.
     inline VkInstance getVkInstance() { return instance; }
-    inline uint32_t getInstanceVulkanVersion() { return instanceVulkanVersion; }
-    inline bool getUseValidationLayer() { return useValidationLayer; }
-    inline const std::vector<const char*>& getInstanceLayerNames() const { return instanceLayerNames; }
-    inline void setDebugCallback(std::function<void()> callback) { debugCallback = callback; }
+    [[nodiscard]] inline uint32_t getInstanceVulkanVersion() const { return instanceVulkanVersion; }
+    [[nodiscard]] inline bool getUseValidationLayer() const { return useValidationLayer; }
+    [[nodiscard]] inline const std::vector<const char*>& getInstanceLayerNames() const { return instanceLayerNames; }
+    inline void setDebugCallback(std::function<void()> callback) { debugCallback = std::move(callback); }
     inline void callDebugCallback() { if (debugCallback) { debugCallback(); } }
     inline void setDebugMessageSeverityLevel(MessageSeverity messageSeverity) { messageSeverityLevel = messageSeverity; }
     inline MessageSeverity getDebugMessageSeverityLevel() { return messageSeverityLevel; }
+
+    static std::string convertVulkanVersionToString(uint32_t version);
 
 private:
     // Helper functions.

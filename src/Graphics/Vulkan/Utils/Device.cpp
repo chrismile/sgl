@@ -464,6 +464,28 @@ void Device::_getDeviceInformation() {
     }
 }
 
+void Device::writeDeviceInfoToLog(const std::vector<const char*>& deviceExtensions) {
+    sgl::Logfile::get()->write(
+            std::string() + "Instance Vulkan version: "
+            + Instance::convertVulkanVersionToString(getInstance()->getInstanceVulkanVersion()), BLUE);
+    sgl::Logfile::get()->write(
+            std::string() + "Device Vulkan version: "
+            + Instance::convertVulkanVersionToString(getApiVersion()), BLUE);
+    sgl::Logfile::get()->write(std::string() + "Device name: " + getDeviceName(), BLUE);
+
+    printAvailableDeviceExtensionList();
+
+    std::string deviceExtensionString;
+    for (size_t i = 0; i < deviceExtensions.size(); i++) {
+        deviceExtensionString += deviceExtensions.at(i);
+        if (i != deviceExtensions.size() - 1) {
+            deviceExtensionString += ", ";
+        }
+    }
+    sgl::Logfile::get()->write(
+            std::string() + "Used Vulkan device extensions: " + deviceExtensionString, BLUE);
+}
+
 void Device::createDeviceSwapchain(
         Instance* instance, Window* window,
         std::vector<const char*> requiredDeviceExtensions,
@@ -480,7 +502,6 @@ void Device::createDeviceSwapchain(
             surface, requiredDeviceExtensions, optionalDeviceExtensions,
             deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures, computeOnly);
     initializeDeviceExtensionList(physicalDevice);
-    printAvailableDeviceExtensionList();
 
     _getDeviceInformation();
 
@@ -488,15 +509,7 @@ void Device::createDeviceSwapchain(
             physicalDevice, instance->getUseValidationLayer(), instance->getInstanceLayerNames(), deviceExtensions,
             deviceExtensionsSet, requestedDeviceFeatures, computeOnly);
 
-    std::string deviceExtensionString;
-    for (size_t i = 0; i < deviceExtensions.size(); i++) {
-        deviceExtensionString += deviceExtensions.at(i);
-        if (i != deviceExtensions.size() - 1) {
-            deviceExtensionString += ", ";
-        }
-    }
-    sgl::Logfile::get()->write(
-            std::string() + "Used Vulkan device extensions: " + deviceExtensionString, BLUE);
+    writeDeviceInfoToLog(deviceExtensions);
 
     createVulkanMemoryAllocator();
 }
@@ -514,7 +527,6 @@ void Device::createDeviceHeadless(
             nullptr, requiredDeviceExtensions, optionalDeviceExtensions,
             deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures, computeOnly);
     initializeDeviceExtensionList(physicalDevice);
-    printAvailableDeviceExtensionList();
 
     _getDeviceInformation();
 
@@ -522,15 +534,7 @@ void Device::createDeviceHeadless(
             physicalDevice, instance->getUseValidationLayer(), instance->getInstanceLayerNames(), deviceExtensions,
             deviceExtensionsSet, requestedDeviceFeatures, computeOnly);
 
-    std::string deviceExtensionString;
-    for (size_t i = 0; i < deviceExtensions.size(); i++) {
-        deviceExtensionString += deviceExtensions.at(i);
-        if (i != deviceExtensions.size() - 1) {
-            deviceExtensionString += ", ";
-        }
-    }
-    sgl::Logfile::get()->write(
-            std::string() + "Used Vulkan device extensions: " + deviceExtensionString, BLUE);
+    writeDeviceInfoToLog(deviceExtensions);
 
     createVulkanMemoryAllocator();
 }

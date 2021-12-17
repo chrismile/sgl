@@ -122,13 +122,22 @@ public:
     inline VkQueue getGraphicsQueue() { return graphicsQueue; }
     inline VkQueue getComputeQueue() { return computeQueue; }
     inline VkQueue getWorkerThreadGraphicsQueue() { return workerThreadGraphicsQueue; } ///< For use in another thread.
-    inline uint32_t getGraphicsQueueIndex() { return graphicsQueueIndex; }
-    inline uint32_t getComputeQueueIndex() { return computeQueueIndex; }
+    inline uint32_t getGraphicsQueueIndex() const { return graphicsQueueIndex; }
+    inline uint32_t getComputeQueueIndex() const { return computeQueueIndex; }
 
     inline bool getIsMainThread() const { return mainThreadId == std::this_thread::get_id(); }
 
     // Helpers for querying physical device properties and features.
-    inline VkPhysicalDeviceProperties getPhysicalDeviceProperties() { return physicalDeviceProperties; }
+    inline const VkPhysicalDeviceProperties& getPhysicalDeviceProperties() const { return physicalDeviceProperties; }
+    inline uint32_t getApiVersion() const { return physicalDeviceProperties.apiVersion; }
+    inline uint32_t getDriverVersion() const { return physicalDeviceProperties.driverVersion; }
+    inline uint32_t getVendorId() const { return physicalDeviceProperties.vendorID; }
+    inline uint32_t getDeviceId() const { return physicalDeviceProperties.deviceID; }
+    inline VkPhysicalDeviceType getDeviceType() const { return physicalDeviceProperties.deviceType; }
+    inline const char* getDeviceName() const { return physicalDeviceProperties.deviceName; }
+    inline const uint8_t* getPipelineCacheUuid() const { return physicalDeviceProperties.pipelineCacheUUID; }
+    inline const VkPhysicalDeviceLimits& getLimits() const { return physicalDeviceProperties.limits; }
+    inline const VkPhysicalDeviceSparseProperties& getSparseProperties() const { return physicalDeviceProperties.sparseProperties; }
     inline VkPhysicalDeviceFeatures getPhysicalDeviceFeatures() { return physicalDeviceFeatures; }
     inline VkPhysicalDeviceAccelerationStructurePropertiesKHR getPhysicalDeviceAccelerationStructureProperties() const {
         return accelerationStructureProperties;
@@ -197,6 +206,7 @@ private:
     void printAvailableDeviceExtensionList();
     /// Returns whether the device extension is available in general (not necessarily enabled).
     bool _isDeviceExtensionAvailable(const std::string &extensionName);
+    void writeDeviceInfoToLog(const std::vector<const char*>& deviceExtensions);
 
     void createVulkanMemoryAllocator();
 

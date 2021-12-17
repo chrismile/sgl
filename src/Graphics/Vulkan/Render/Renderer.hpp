@@ -124,12 +124,12 @@ public:
     void insertBufferMemoryBarrier(
             VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
             VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-            BufferPtr& buffer);
+            const BufferPtr& buffer);
     void insertBufferMemoryBarrier(
             VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
             VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
             uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex,
-            BufferPtr& buffer);
+            const BufferPtr& buffer);
 
     /**
      * For headless rendering without a swapchain. Submits and then resets all stored frame command buffers.

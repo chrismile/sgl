@@ -43,8 +43,8 @@ class DLL_OBJECT Logfile : public Singleton<Logfile>
 {
 public:
     Logfile();
-    ~Logfile();
-    void createLogfile(const char *filename, const char *appName);
+    ~Logfile() override;
+    void createLogfile(const std::string& filename, const std::string& appName);
     void closeLogfile();
 
     //! Write to log file.

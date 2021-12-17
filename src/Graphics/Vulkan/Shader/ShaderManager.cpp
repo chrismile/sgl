@@ -218,17 +218,12 @@ ShaderModulePtr ShaderManagerVk::loadAsset(ShaderModuleInfo& shaderInfo) {
 
     if (device->getInstance()->getInstanceVulkanVersion() < VK_API_VERSION_1_1) {
         compileOptions.SetTargetSpirv(shaderc_spirv_version_1_0);
-    } else if (device->getInstance()->getInstanceVulkanVersion() < VK_API_VERSION_1_2) {
+    } else if (device->getInstance()->getInstanceVulkanVersion() < VK_API_VERSION_1_2
+            || device->getApiVersion() < VK_API_VERSION_1_2) {
         compileOptions.SetTargetSpirv(shaderc_spirv_version_1_3);
     } else {
         compileOptions.SetTargetSpirv(shaderc_spirv_version_1_5);
     }
-
-    // Sets the target SPIR-V version.  The generated module will use this version
-    // of SPIR-V.  Each target environment determines what versions of SPIR-V
-    // it can consume.  Defaults to the highest version of SPIR-V 1.0 which is
-    // required to be supported by the target environment.  E.g. Default to SPIR-V
-    // 1.0 for Vulkan 1.0 and SPIR-V 1.3 for Vulkan 1.1.
 
     const std::unordered_map<ShaderModuleType, shaderc_shader_kind> shaderKindLookupTable = {
             { ShaderModuleType::VERTEX,                 shaderc_vertex_shader },

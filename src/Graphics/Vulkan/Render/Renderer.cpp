@@ -497,7 +497,7 @@ void Renderer::insertMemoryBarrier(
 void Renderer::insertBufferMemoryBarrier(
         VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
         VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-        BufferPtr& buffer) {
+        const BufferPtr& buffer) {
     VkMemoryBarrier memoryBarrier{};
     memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
     memoryBarrier.srcAccessMask = srcAccessMask;
@@ -518,7 +518,7 @@ void Renderer::insertBufferMemoryBarrier(
         VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
         VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
         uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex,
-        BufferPtr& buffer) {
+        const BufferPtr& buffer) {
     VkMemoryBarrier memoryBarrier{};
     memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
     memoryBarrier.srcAccessMask = srcAccessMask;
