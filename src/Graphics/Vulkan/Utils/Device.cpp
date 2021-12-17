@@ -154,7 +154,7 @@ bool Device::isDeviceSuitable(
         }
     }
 
-#ifdef SUPPORT_OPENGL
+#if defined(SUPPORT_OPENGL) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
     if (openGlInteropEnabled && !isDeviceCompatibleWithOpenGl(physicalDevice)) {
         return false;
     }
