@@ -36,7 +36,7 @@
 #include "../libs/volk/volk.h"
 #include "../libs/VMA/vk_mem_alloc.h"
 
-#ifdef SUPPORT_OPENGL
+#if defined(SUPPORT_OPENGL) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
 #include <GL/glew.h>
 #endif
 
@@ -178,7 +178,7 @@ public:
     inline VkBufferUsageFlags getVkBufferUsageFlags() const { return bufferUsageFlags; }
     inline VmaMemoryUsage getVmaMemoryUsage() const { return memoryUsage; }
 
-#ifdef SUPPORT_OPENGL
+#if defined(SUPPORT_OPENGL) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
     /**
      * Creates an OpenGL memory object from the external Vulkan memory.
      * NOTE: The buffer must have been created with exportMemory set to true.

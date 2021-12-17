@@ -2,7 +2,7 @@
 
 ### Ubuntu
 
-The build process was tested on Ubuntu 16.04 and Ubuntu 20.04.
+The build process was tested on Ubuntu 18.04 and Ubuntu 20.04.
 
 All obligatory dependencies can be installed using the following command.
 

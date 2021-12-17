@@ -294,8 +294,8 @@ BufferCudaDriverApiExternalMemoryVk::BufferCudaDriverApiExternalMemoryVk(vk::Buf
     HANDLE handle = nullptr;
     if (_vkGetMemoryWin32HandleKHR(device, &memoryGetWin32HandleInfo, &handle) != VK_SUCCESS) {
         Logfile::get()->throwError(
-                "Error in createGlMemoryObjectFromVkDeviceMemory: Could not retrieve the file descriptor from the "
-                "Vulkan  device memory!");
+                "Error in BufferCudaDriverApiExternalMemoryVk::BufferCudaDriverApiExternalMemoryVk: "
+                "Could not retrieve the file descriptor from the Vulkan device memory!");
         return;
     }
 
@@ -306,7 +306,8 @@ BufferCudaDriverApiExternalMemoryVk::BufferCudaDriverApiExternalMemoryVk(vk::Buf
     auto _vkGetMemoryFdKHR = (PFN_vkGetMemoryFdKHR)vkGetDeviceProcAddr(device, "vkGetMemoryFdKHR");
     if (!_vkGetMemoryFdKHR) {
         Logfile::get()->throwError(
-                "Error in Buffer::createGlMemoryObject: vkGetMemoryFdKHR was not found!");
+                "Error in BufferCudaDriverApiExternalMemoryVk::BufferCudaDriverApiExternalMemoryVk: "
+                "vkGetMemoryFdKHR was not found!");
         return;
     }
 
@@ -318,8 +319,8 @@ BufferCudaDriverApiExternalMemoryVk::BufferCudaDriverApiExternalMemoryVk(vk::Buf
     int fileDescriptor = 0;
     if (_vkGetMemoryFdKHR(device, &memoryGetFdInfoKhr, &fileDescriptor) != VK_SUCCESS) {
         Logfile::get()->throwError(
-                "Error in createGlMemoryObjectFromVkDeviceMemory: Could not retrieve the file descriptor from the "
-                "Vulkan device memory!");
+                "Error in BufferCudaDriverApiExternalMemoryVk::BufferCudaDriverApiExternalMemoryVk: "
+                "Could not retrieve the file descriptor from the Vulkan device memory!");
         return;
     }
 
@@ -328,8 +329,8 @@ BufferCudaDriverApiExternalMemoryVk::BufferCudaDriverApiExternalMemoryVk(vk::Buf
     this->fileDescriptor = fileDescriptor;
 #else
     Logfile::get()->throwError(
-            "Error in createGlMemoryObjectFromVkDeviceMemory: External memory is only supported on Linux, Android "
-            "and Windows systems!");
+            "Error in BufferCudaDriverApiExternalMemoryVk::BufferCudaDriverApiExternalMemoryVk: "
+            "External memory is only supported on Linux, Android and Windows systems!");
     return false;
 #endif
 

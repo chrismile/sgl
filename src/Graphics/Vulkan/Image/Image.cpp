@@ -648,7 +648,7 @@ VkSubresourceLayout Image::getSubresourceLayout(
     return subresourceLayout;
 }
 
-#ifdef SUPPORT_OPENGL
+#if defined(SUPPORT_OPENGL) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
 bool Image::createGlMemoryObject(GLuint& memoryObjectGl) {
     if (!imageSettings.exportMemory) {
         Logfile::get()->throwError(
