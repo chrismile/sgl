@@ -29,15 +29,15 @@
 #ifndef SGL_INTEROP_HPP
 #define SGL_INTEROP_HPP
 
+#if defined(SUPPORT_OPENGL) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
+
 #include <algorithm>
 #include <cstring>
 #include <cassert>
 #include <Defs.hpp>
 #include "../libs/volk/volk.h"
 
-#ifdef SUPPORT_OPENGL
 #include <GL/glew.h>
-#endif
 
 #include "SyncObjects.hpp"
 #include "Device.hpp"
@@ -107,7 +107,6 @@ private:
 };
 typedef std::shared_ptr<SemaphoreVkGlInterop> SemaphoreVkGlInteropPtr;
 
-#ifdef SUPPORT_OPENGL
 /**
  * Returns whether the passed Vulkan device is compatible with the currently used OpenGL server.
  * @param physicalDevice The physical Vulkan device.
@@ -127,6 +126,7 @@ DLL_OBJECT bool createGlMemoryObjectFromVkDeviceMemory(
         GLuint& memoryObjectGl, VkDevice device, VkDeviceMemory deviceMemory, size_t sizeInBytes);
 
 }
+
 #endif
 
 #endif //SGL_INTEROP_HPP

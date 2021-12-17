@@ -26,6 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if defined(SUPPORT_OPENGL) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
+
 #include <Utils/File/Logfile.hpp>
 
 #ifdef _WIN32
@@ -34,11 +36,9 @@
 #include <vulkan/vulkan_win32.h>
 #endif
 
-#ifdef SUPPORT_OPENGL
 #include <Graphics/Renderer.hpp>
 #include <Graphics/OpenGL/GeometryBuffer.hpp>
 #include <Graphics/OpenGL/Texture.hpp>
-#endif
 
 #include "Interop.hpp"
 
@@ -223,7 +223,6 @@ void SemaphoreVkGlInterop::waitSemaphoreGl(
 }
 
 
-#ifdef SUPPORT_OPENGL
 bool isDeviceCompatibleWithOpenGl(VkPhysicalDevice physicalDevice) {
     assert(VK_UUID_SIZE == GL_UUID_SIZE_EXT);
     const size_t UUID_SIZE = std::min(size_t(VK_UUID_SIZE), size_t(GL_UUID_SIZE_EXT));
@@ -336,6 +335,7 @@ bool createGlMemoryObjectFromVkDeviceMemory(
     sgl::Renderer->errorCheck();
     return glGetError() == GL_NO_ERROR;
 }
-#endif
 
 }
+
+#endif
