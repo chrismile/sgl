@@ -33,6 +33,7 @@
 #include <Utils/File/Logfile.hpp>
 #include "../Utils/Device.hpp"
 #include "../Utils/Interop.hpp"
+#include "../Utils/Memory.hpp"
 #include "../Buffers/Buffer.hpp"
 #include "Image.hpp"
 

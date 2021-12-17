@@ -223,26 +223,6 @@ void SemaphoreVkGlInterop::waitSemaphoreGl(
 }
 
 
-VkMemoryPropertyFlags convertVmaMemoryUsageToVkMemoryPropertyFlags(VmaMemoryUsage memoryUsage) {
-    VkMemoryPropertyFlags memoryPropertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-
-    if (memoryUsage == VMA_MEMORY_USAGE_GPU_ONLY) {
-        memoryPropertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    } else if (memoryUsage == VMA_MEMORY_USAGE_CPU_ONLY) {
-        memoryPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    } else if (memoryUsage == VMA_MEMORY_USAGE_CPU_TO_GPU) {
-        memoryPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    } else if (memoryUsage == VMA_MEMORY_USAGE_GPU_TO_CPU) {
-        memoryPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    } else if (memoryUsage == VMA_MEMORY_USAGE_CPU_COPY) {
-        memoryPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    } else if (memoryUsage == VMA_MEMORY_USAGE_GPU_LAZILY_ALLOCATED) {
-        memoryPropertyFlags = VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
-    }
-
-    return memoryPropertyFlags;
-}
-
 #ifdef SUPPORT_OPENGL
 bool isDeviceCompatibleWithOpenGl(VkPhysicalDevice physicalDevice) {
     assert(VK_UUID_SIZE == GL_UUID_SIZE_EXT);

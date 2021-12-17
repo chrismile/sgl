@@ -34,7 +34,6 @@
 #include <cassert>
 #include <Defs.hpp>
 #include "../libs/volk/volk.h"
-#include "../libs/VMA/vk_mem_alloc.h"
 
 #ifdef SUPPORT_OPENGL
 #include <GL/glew.h>
@@ -107,16 +106,6 @@ private:
     GLuint semaphoreGl = 0;
 };
 typedef std::shared_ptr<SemaphoreVkGlInterop> SemaphoreVkGlInteropPtr;
-
-/**
- * Converts VmaMemoryUsage to VkMemoryPropertyFlags.
- * For now, all CPU-visible modes use VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT.
- * As this code is only used for exporting memory for external use, e.g., in OpenGL, most memory will probably be
- * allocated using VMA_MEMORY_USAGE_GPU_ONLY anyways.
- * @param memoryUsage The VMA memory usage enum.
- * @return A VkMemoryPropertyFlags bit mask.
- */
-DLL_OBJECT VkMemoryPropertyFlags convertVmaMemoryUsageToVkMemoryPropertyFlags(VmaMemoryUsage memoryUsage);
 
 #ifdef SUPPORT_OPENGL
 /**

@@ -7,8 +7,8 @@ The build process was tested on Ubuntu 16.04 and Ubuntu 20.04.
 All obligatory dependencies can be installed using the following command.
 
 ```
-sudo apt-get install git cmake libglm-dev libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libpng-dev \
-libboost-filesystem-dev libtinyxml2-dev libarchive-dev
+sudo apt-get install git cmake libglm-dev libsdl2-dev libsdl2-image-dev libpng-dev libboost-filesystem-dev \
+libtinyxml2-dev libarchive-dev
 ```
 
 For OpenGL support (which is recommended), you also need the following libraries.
