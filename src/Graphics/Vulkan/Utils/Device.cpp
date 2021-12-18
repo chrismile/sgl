@@ -290,7 +290,7 @@ void Device::createLogicalDeviceAndQueues(
         }
     }
     if (deviceExtensionsSet.find(VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME) != deviceExtensionsSet.end()
-            || instance->getInstanceVulkanVersion() >= VK_API_VERSION_1_2) {
+            || instance->getInstanceVulkanVersion() >= VK_MAKE_API_VERSION(0, 1, 2, 0)) {
         uniformBufferStandardLayoutFeaturesKhr.sType =
                 VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES;
         VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
@@ -446,8 +446,12 @@ void Device::createLogicalDeviceAndQueues(
 }
 
 void Device::createVulkanMemoryAllocator() {
+    uint32_t vulkanApiVersion = std::min(instance->getInstanceVulkanVersion(), getApiVersion());
+    sgl::Logfile::get()->write(
+            "VMA Vulkan API version: " + Instance::convertVulkanVersionToString(vulkanApiVersion), BLUE);
+
     VmaAllocatorCreateInfo allocatorInfo = {};
-    allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_2;
+    allocatorInfo.vulkanApiVersion = vulkanApiVersion;
     allocatorInfo.physicalDevice = physicalDevice;
     allocatorInfo.device = device;
     allocatorInfo.instance = instance->getVkInstance();

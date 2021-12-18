@@ -218,8 +218,8 @@ ShaderModulePtr ShaderManagerVk::loadAsset(ShaderModuleInfo& shaderInfo) {
 
     if (device->getInstance()->getInstanceVulkanVersion() < VK_API_VERSION_1_1) {
         compileOptions.SetTargetSpirv(shaderc_spirv_version_1_0);
-    } else if (device->getInstance()->getInstanceVulkanVersion() < VK_API_VERSION_1_2
-            || device->getApiVersion() < VK_API_VERSION_1_2) {
+    } else if (device->getInstance()->getInstanceVulkanVersion() < VK_MAKE_API_VERSION(0, 1, 2, 0)
+            || device->getApiVersion() < VK_MAKE_API_VERSION(0, 1, 2, 0)) {
         compileOptions.SetTargetSpirv(shaderc_spirv_version_1_3);
     } else {
         compileOptions.SetTargetSpirv(shaderc_spirv_version_1_5);
