@@ -336,12 +336,19 @@ void Device::createLogicalDeviceAndQueues(
         }
     }
 
+    //
+    /*
+     * If computeOnly is not set: Allocate two graphics & compute queues, and one compute-only queue. One of the
+     * graphics queues can be used as a present queue/primary rendering queue, and the other queue can be used in a
+     * worker thread. If the hardware doesn't support compute-only queues, three graphics & compute queues are
+     * allocated instead of two.
+     */
     graphicsQueueIndex = findQueueFamilies(
             physicalDevice, static_cast<VkQueueFlagBits>(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT));
     computeQueueIndex = findQueueFamilies(
             physicalDevice, static_cast<VkQueueFlagBits>(VK_QUEUE_COMPUTE_BIT));
 
-    float queuePriorities[2] = { 1.0, 1.0 };
+    float queuePriorities[] = { 1.0, 1.0, 1.0 };
 
     VkDeviceQueueCreateInfo graphicsQueueInfo = {};
     graphicsQueueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
@@ -358,14 +365,22 @@ void Device::createLogicalDeviceAndQueues(
     computeQueueInfo.pQueuePriorities = queuePriorities;
 
     VkDeviceQueueCreateInfo queueInfos[] = { graphicsQueueInfo, computeQueueInfo };
-    VkDeviceQueueCreateInfo* queueInfosPtr = queueInfos;
+    VkDeviceQueueCreateInfo* queueInfosPtr;
     if (computeOnly) {
+        // Allocate only one compute-only queue.
         queueInfosPtr = &queueInfos[1];
+    } else if (graphicsQueueIndex == computeQueueIndex) {
+        // Allocate three compute & graphics queues.
+        graphicsQueueInfo.queueCount = 3;
+        queueInfosPtr = &queueInfos[0];
+    } else {
+        // Allocate two compute & graphics queues and one compute-only queue.
+        queueInfosPtr = queueInfos;
     }
 
     VkDeviceCreateInfo deviceInfo{};
     deviceInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    deviceInfo.queueCreateInfoCount = computeOnly ? 1 : 2;
+    deviceInfo.queueCreateInfoCount = (computeOnly || graphicsQueueIndex == computeQueueIndex) ? 1 : 2;
     deviceInfo.pQueueCreateInfos = queueInfosPtr;
     deviceInfo.enabledExtensionCount = uint32_t(deviceExtensions.size());
     deviceInfo.ppEnabledExtensionNames = deviceExtensions.data();
@@ -413,13 +428,19 @@ void Device::createLogicalDeviceAndQueues(
     }
 
     graphicsQueue = VK_NULL_HANDLE;
-    computeQueue = VK_NULL_HANDLE;
     workerThreadGraphicsQueue = VK_NULL_HANDLE;
-    if (!computeOnly) {
+    computeQueue = VK_NULL_HANDLE;
+    if (computeOnly) {
+        vkGetDeviceQueue(device, computeQueueIndex, 0, &computeQueue);
+    } else if (graphicsQueueIndex == computeQueueIndex) {
         vkGetDeviceQueue(device, graphicsQueueIndex, 0, &graphicsQueue);
         vkGetDeviceQueue(device, graphicsQueueIndex, 1, &workerThreadGraphicsQueue);
+        vkGetDeviceQueue(device, graphicsQueueIndex, 2, &computeQueue);
+    } else {
+        vkGetDeviceQueue(device, graphicsQueueIndex, 0, &graphicsQueue);
+        vkGetDeviceQueue(device, graphicsQueueIndex, 1, &workerThreadGraphicsQueue);
+        vkGetDeviceQueue(device, computeQueueIndex, 0, &computeQueue);
     }
-    vkGetDeviceQueue(device, computeQueueIndex, 0, &computeQueue);
 
     mainThreadId = std::this_thread::get_id();
 }
