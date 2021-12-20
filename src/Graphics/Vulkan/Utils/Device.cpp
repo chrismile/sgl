@@ -219,16 +219,19 @@ VkPhysicalDevice Device::createPhysicalDeviceBinding(
     VkResult res = vkEnumeratePhysicalDevices(instance->getVkInstance(), &numPhysicalDevices, nullptr);
     if (res != VK_SUCCESS) {
         Logfile::get()->throwError(
-                "Error in createPhysicalDeviceBinding: vkEnumeratePhysicalDevices failed!");
+                "Error in Device::createPhysicalDeviceBinding: vkEnumeratePhysicalDevices failed!");
     }
     if (numPhysicalDevices == 0) {
         Logfile::get()->throwError(
-                "Error in createPhysicalDeviceBinding: vkEnumeratePhysicalDevices returned zero devices!");
+                "Error in Device::createPhysicalDeviceBinding: vkEnumeratePhysicalDevices returned zero devices!");
     }
 
     std::vector<VkPhysicalDevice> physicalDevices(numPhysicalDevices);
     res = vkEnumeratePhysicalDevices(instance->getVkInstance(), &numPhysicalDevices, physicalDevices.data());
-    assert(!res);
+    if (res != VK_SUCCESS) {
+        Logfile::get()->throwError(
+                "Error in Device::createPhysicalDeviceBinding: vkEnumeratePhysicalDevices failed!");
+    }
 
     deviceExtensionsSet = {requiredDeviceExtensions.begin(), requiredDeviceExtensions.end()};
     deviceExtensions.insert(deviceExtensions.end(), requiredDeviceExtensions.begin(), requiredDeviceExtensions.end());

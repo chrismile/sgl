@@ -35,27 +35,58 @@
 
 namespace sgl {
 
-//! Converts strings like "This is a test!" with seperator ' ' to { "This", "is", "a", "test!" }
+/**
+ * Converts strings like "This is a test!" with separator ' ' to { "This", "is", "a", "test!" }.
+ * @tparam InputIterator The list class to use.
+ * @param stringObject The string to split.
+ * @param separator The separator to use for splitting.
+ * @param listObject The split parts.
+ */
 template<class InputIterator>
-void splitString(const char *stringObject, char seperator, InputIterator list) {
-    size_t stringObjectLength = strlen(stringObject);
-    std::string buffer = "";
-    for (size_t i = 0; i < stringObjectLength; ++i) {
-        if (stringObject[i] != seperator) {
-            buffer += stringObject[i];
+void splitString(const std::string &stringObject, char separator, InputIterator listObject) {
+    std::string buffer;
+    for (char c : stringObject) {
+        if (c != separator) {
+            buffer += c;
         } else {
             if (buffer.length() > 0) {
-                list.push_back(buffer);
+                listObject.push_back(buffer);
                 buffer = "";
             }
         }
     }
     if (buffer.length() > 0) {
-        list.push_back(buffer);
+        listObject.push_back(buffer);
         buffer = "";
     }
 }
 
+/**
+ * Converts strings like "This is a test!" with separators ' ' and '\t' to { "This", "is", "a", "test!" }.
+ * @tparam InputIterator The list class to use.
+ * @param stringObject The string to split.
+ * @param listObject The split parts.
+ * NOTE: This is equivalent to
+ * 'boost::algorithm::split(listObject, stringObject, boost::is_any_of("\t "), boost::token_compress_on);'.
+ */
+template<class InputIterator>
+void splitStringWhitespace(const std::string &stringObject, InputIterator listObject) {
+    std::string buffer;
+    for (char c : stringObject) {
+        if (c != ' ' && c != '\t') {
+            buffer += c;
+        } else {
+            if (buffer.length() > 0) {
+                listObject.push_back(buffer);
+                buffer = "";
+            }
+        }
+    }
+    if (buffer.length() > 0) {
+        listObject.push_back(buffer);
+        buffer = "";
+    }
+}
 
 }
 
