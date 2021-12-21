@@ -26,12 +26,18 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_TIMERVK_HPP
-#define SGL_TIMERVK_HPP
+#ifndef SGL_VULKAN_TIMER_HPP
+#define SGL_VULKAN_TIMER_HPP
 
+#include <vector>
 #include <map>
+#include <memory>
 #include <chrono>
 #include "../libs/volk/volk.h"
+
+namespace sgl {
+typedef uint32_t ListenerToken;
+}
 
 namespace sgl { namespace vk {
 
@@ -39,10 +45,10 @@ class Buffer;
 typedef std::shared_ptr<Buffer> BufferPtr;
 class Renderer;
 
-class DLL_OBJECT TimerVk {
+class DLL_OBJECT Timer {
 public:
-    TimerVk(Renderer* renderer);
-    ~TimerVk();
+    explicit Timer(Renderer* renderer);
+    ~Timer();
 
     /// Clears all stored queries.
     void clear();
@@ -83,23 +89,27 @@ public:
     void printTotalAvgTime();
 
 private:
+    void _onSwapchainRecreated();
     void addTimesForFrame(uint32_t frameIdx);
 
     Renderer* renderer;
     Device* device;
 
-    VkQueryPool queryPool;
+    VkQueryPool queryPool{};
+
+    ListenerToken swapchainRecreatedEventListenerToken;
+    uint32_t baseFrameIdx = std::numeric_limits<uint32_t>::max();
 
     const uint32_t maxNumQueries = 100;
     uint32_t currentQueryIdx = 0;
     uint64_t* queryBuffer = nullptr;
     double timestampPeriod = 0.0;
 
-    // Data per-frame (as one should not sync while swapchain images are still unprocessed).
+    // Data per frame (as one should not sync while swap chain images are still unprocessed).
     struct FrameData {
         std::map<std::string, uint32_t> queryStartIndices;
         std::map<std::string, uint32_t> queryEndIndices;
-        uint32_t queryStart = 0;
+        uint32_t queryStart = std::numeric_limits<uint32_t>::max();
         uint32_t numQueries = 0;
     };
     std::vector<FrameData> frameData;
@@ -113,8 +123,8 @@ private:
     std::map<std::string, std::chrono::time_point<std::chrono::system_clock>> startTimesCPU;
 };
 
-typedef std::shared_ptr<RayTracingPipeline> RayTracingPipelinePtr;
+typedef std::shared_ptr<Timer> TimerPtr;
 
 }}
 
-#endif //SGL_TIMERVK_HPP
+#endif //SGL_VULKAN_TIMER_HPP

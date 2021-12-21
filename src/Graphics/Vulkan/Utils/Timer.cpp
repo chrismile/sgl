@@ -28,37 +28,51 @@
 
 #include <iostream>
 #include <Utils/File/Logfile.hpp>
+#include <Utils/Events/EventManager.hpp>
 #include "../Utils/Device.hpp"
 #include "../Utils/Swapchain.hpp"
 #include "../Render/Renderer.hpp"
-#include "TimerVk.hpp"
+#include "Timer.hpp"
 
 namespace sgl { namespace vk {
 
-TimerVk::TimerVk(Renderer* renderer) : renderer(renderer), device(renderer->getDevice()) {
+Timer::Timer(Renderer* renderer) : renderer(renderer), device(renderer->getDevice()) {
     const VkPhysicalDeviceLimits& limits = renderer->getDevice()->getPhysicalDeviceProperties().limits;
     if (!limits.timestampComputeAndGraphics) {
-        Logfile::get()->throwError("Error in TimerVk::TimerVk: Device does not support timestamps.");
+        Logfile::get()->throwError("Error in vk::Timer::Timer: Device does not support timestamps.");
     }
 
     VkQueryPoolCreateInfo queryPoolCreateInfo = {};
+    queryPoolCreateInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
     queryPoolCreateInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
     queryPoolCreateInfo.queryCount = maxNumQueries;
     vkCreateQueryPool(device->getVkDevice(), &queryPoolCreateInfo, nullptr, &queryPool);
+    vkCmdResetQueryPool(renderer->getVkCommandBuffer(), queryPool, 0, maxNumQueries);
 
     queryBuffer = new uint64_t[maxNumQueries];
 
     // Nanoseconds per timestamp step.
     timestampPeriod = double(limits.timestampPeriod);
+
+    swapchainRecreatedEventListenerToken = EventManager::get()->addListener(
+            RESOLUTION_CHANGED_EVENT, [this](const EventPtr&){ this->_onSwapchainRecreated(); });
 }
 
-TimerVk::~TimerVk() {
+Timer::~Timer() {
+    EventManager::get()->removeListener(RESOLUTION_CHANGED_EVENT, swapchainRecreatedEventListenerToken);
+    finishGPU();
     clear();
+    vkDeviceWaitIdle(device->getVkDevice());
     vkDestroyQueryPool(device->getVkDevice(), queryPool, nullptr);
     delete[] queryBuffer;
 }
 
-void TimerVk::startGPU(const std::string& eventName) {
+void Timer::_onSwapchainRecreated() {
+    baseFrameIdx = std::numeric_limits<uint32_t>::max();
+    finishGPU();
+}
+
+void Timer::startGPU(const std::string& eventName) {
     Swapchain* swapchain = AppSettings::get()->getSwapchain();
     uint32_t frameIdx = swapchain ? swapchain->getImageIndex() : 0;
 
@@ -67,50 +81,59 @@ void TimerVk::startGPU(const std::string& eventName) {
     }
 
     FrameData& currentFrameData = frameData.at(frameIdx);
-    auto it = currentFrameData.queryStartIndices.find(eventName);
+    auto itStart = currentFrameData.queryStartIndices.find(eventName);
+    auto itEnd = currentFrameData.queryEndIndices.find(eventName);
 
-    if (it != currentFrameData.queryStartIndices.end()) {
-        if (frameIdx == 0) {
-            currentQueryIdx = 0;
-        }
-
-        if (currentFrameData.numQueries != 0) {
-            addTimesForFrame(frameIdx);
-        }
-
+    if (baseFrameIdx == std::numeric_limits<uint32_t>::max()) {
+        baseFrameIdx = frameIdx;
+    }
+    if (itEnd != currentFrameData.queryEndIndices.end()) {
+        addTimesForFrame(frameIdx);
+        currentFrameData.queryStart = std::numeric_limits<uint32_t>::max();
+        currentFrameData.numQueries = 0;
         currentFrameData.queryStartIndices.clear();
         currentFrameData.queryEndIndices.clear();
+        if (frameIdx == baseFrameIdx) {
+            currentQueryIdx = 0;
+        }
+    }
+    if (currentFrameData.queryStart == std::numeric_limits<uint32_t>::max()) {
         currentFrameData.queryStart = currentQueryIdx;
-        currentFrameData.numQueries = 0;
     }
 
-    vkCmdWriteTimestamp(
-            renderer->getVkCommandBuffer(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-            queryPool, currentQueryIdx);
+    if (currentQueryIdx + 2 > maxNumQueries) {
+        Logfile::get()->throwError("Error in vk::Timer::Timer: Exceeded maximum number of simultaneous queries.");
+    }
+
+    vkCmdWriteTimestamp(renderer->getVkCommandBuffer(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, queryPool, currentQueryIdx);
     currentFrameData.queryStartIndices[eventName] = currentQueryIdx;
-    currentFrameData.numQueries++;
-    currentQueryIdx++;
+    currentFrameData.queryEndIndices[eventName] = currentQueryIdx + 1;
+    currentFrameData.numQueries += 2;
+    currentQueryIdx += 2;
 }
 
-void TimerVk::endGPU(const std::string& eventName) {
+void Timer::endGPU(const std::string& eventName) {
     Swapchain* swapchain = AppSettings::get()->getSwapchain();
     uint32_t frameIdx = swapchain ? swapchain->getImageIndex() : 0;
 
     FrameData& currentFrameData = frameData.at(frameIdx);
-    vkCmdWriteTimestamp(
-            renderer->getVkCommandBuffer(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-            queryPool, currentQueryIdx);
-    currentFrameData.queryStartIndices[eventName] = currentQueryIdx;
-    currentFrameData.numQueries++;
-    currentQueryIdx++;
+    auto it = currentFrameData.queryEndIndices.find(eventName);
+    if (it == currentFrameData.queryEndIndices.end()) {
+        Logfile::get()->throwError(
+                "Error in vk::Timer::endGPU: No call to 'start' before 'end' for event \"" + it->first + "\".");
+    }
+    vkCmdWriteTimestamp(renderer->getVkCommandBuffer(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queryPool, it->second);
 }
 
-void TimerVk::addTimesForFrame(uint32_t frameIdx) {
+void Timer::addTimesForFrame(uint32_t frameIdx) {
     FrameData& currentFrameData = frameData.at(frameIdx);
+    if (currentFrameData.numQueries == 0) {
+        return;
+    }
 
     vkGetQueryPoolResults(
             device->getVkDevice(), queryPool, currentFrameData.queryStart, currentFrameData.numQueries,
-            currentFrameData.numQueries * sizeof(uint64_t), queryBuffer, sizeof(uint64_t),
+            currentFrameData.numQueries * sizeof(uint64_t), queryBuffer + currentFrameData.queryStart, sizeof(uint64_t),
             VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
 
     for (auto startIt = currentFrameData.queryStartIndices.begin();
@@ -118,7 +141,7 @@ void TimerVk::addTimesForFrame(uint32_t frameIdx) {
         auto endIt = currentFrameData.queryEndIndices.find(startIt->first);
         if (endIt == currentFrameData.queryEndIndices.end()) {
             Logfile::get()->throwError(
-                    "Error in TimerVk::addTimesForFrame: No call to 'end' for event \"" + startIt->first + "\".");
+                    "Error in vk::Timer::addTimesForFrame: No call to 'end' for event \"" + startIt->first + "\".");
         }
         uint64_t startTimestamp = queryBuffer[startIt->second];
         uint64_t endTimestamp = queryBuffer[endIt->second];
@@ -128,15 +151,14 @@ void TimerVk::addTimesForFrame(uint32_t frameIdx) {
     }
 
     vkCmdResetQueryPool(
-            renderer->getVkCommandBuffer(), queryPool,
-            currentFrameData.queryStart, currentFrameData.numQueries);
+            renderer->getVkCommandBuffer(), queryPool, currentFrameData.queryStart, currentFrameData.numQueries);
 }
 
-void TimerVk::startCPU(const std::string& eventName) {
+void Timer::startCPU(const std::string& eventName) {
     startTimesCPU[eventName] = std::chrono::system_clock::now();
 }
 
-void TimerVk::endCPU(const std::string& eventName) {
+void Timer::endCPU(const std::string& eventName) {
     auto startTimestamp = startTimesCPU[eventName];
     auto endTimestamp = std::chrono::system_clock::now();
     auto elapsedTime = std::chrono::duration_cast<std::chrono::nanoseconds>(endTimestamp - startTimestamp);
@@ -145,36 +167,47 @@ void TimerVk::endCPU(const std::string& eventName) {
     numSamples[eventName] += 1;
 }
 
-void TimerVk::finishGPU() {
-    for (size_t frameIdx = 0; frameIdx < frameData.size(); frameIdx++) {
-        FrameData& currentFrameData = frameData.at(frameIdx);
-
+void Timer::finishGPU() {
+    bool hasPendingQueries = false;
+    for (auto& currentFrameData : frameData) {
         if (currentFrameData.numQueries != 0) {
-            addTimesForFrame(uint32_t(frameIdx));
+            hasPendingQueries = true;
         }
+    }
 
-        currentFrameData.queryStartIndices.clear();
-        currentFrameData.queryEndIndices.clear();
-        currentFrameData.queryStart = 0;
-        currentFrameData.numQueries = 0;
+    if (hasPendingQueries) {
+        device->waitIdle();
+        for (size_t frameIdx = 0; frameIdx < frameData.size(); frameIdx++) {
+            FrameData& currentFrameData = frameData.at(frameIdx);
+
+            if (currentFrameData.numQueries != 0) {
+                addTimesForFrame(uint32_t(frameIdx));
+            }
+
+            currentFrameData.queryStart = std::numeric_limits<uint32_t>::max();
+            currentFrameData.numQueries = 0;
+            currentFrameData.queryStartIndices.clear();
+            currentFrameData.queryEndIndices.clear();
+            currentQueryIdx = 0;
+        }
     }
 }
 
-void TimerVk::clear() {
+void Timer::clear() {
     elapsedTimeNS.clear();
     numSamples.clear();
 }
 
-double TimerVk::getTimeMS(const std::string &name) {
+double Timer::getTimeMS(const std::string &name) {
     return static_cast<double>(elapsedTimeNS[name]) / static_cast<double>(numSamples[name]) * 1e-6;
 }
 
-void TimerVk::printTimeMS(const std::string &name) {
+void Timer::printTimeMS(const std::string &name) {
     double timeMS = getTimeMS(name);
-    std::cout << "TIMER - " << name << ": " << timeMS << "ms" << std::endl;
+    std::cout << "EVENT - " << name << ": " << timeMS << "ms" << std::endl;
 }
 
-void TimerVk::printTotalAvgTime() {
+void Timer::printTotalAvgTime() {
     double timeMS = 0.0;
     for (auto& it : numSamples) {
         timeMS += static_cast<double>(elapsedTimeNS[it.first]) / static_cast<double>(it.second) * 1e-6;
