@@ -197,6 +197,8 @@ ShaderStagesPtr ShaderManagerVk::createShaderStages(const std::vector<std::strin
 }
 
 ShaderModulePtr ShaderManagerVk::loadAsset(ShaderModuleInfo& shaderInfo) {
+    sourceStringNumber = 0;
+    recursionDepth = 0;
     std::string id = shaderInfo.filename;
     std::string shaderString = getShaderString(id);
 
@@ -274,7 +276,13 @@ std::string ShaderManagerVk::loadHeaderFileString(const std::string &shaderName,
         return "";
     }
     //std::string fileContent((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-    std::string fileContent = "#line 1\n";
+    sourceStringNumber++;
+    std::string fileContent;
+    if (dumpTextDebugStatic) {
+        fileContent = "#line 1\n";
+    } else {
+        fileContent = "#line 1 " + std::to_string(sourceStringNumber) + "\n";
+    }
 
     // Support preprocessor for embedded headers
     std::string linestr;
@@ -291,10 +299,31 @@ std::string ShaderManagerVk::loadHeaderFileString(const std::string &shaderName,
             std::string includedFileName = getShaderFileName(getHeaderName(linestr));
             std::string includedFileContent = loadHeaderFileString(includedFileName, prependContent);
             fileContent += includedFileContent + "\n";
-            fileContent += std::string() + "#line " + toString(lineNum) + "\n";
+            if (dumpTextDebugStatic) {
+                fileContent +=
+                        std::string() + "#line " + toString(lineNum) + " "
+                        + std::to_string(sourceStringNumber) + "\n";
+            } else {
+                fileContent += std::string() + "#line " + toString(lineNum) + "\n";
+            }
+        } else if (boost::starts_with(linestr, "#import")) {
+            std::string importedShaderModuleContent = getImportedShaderString(
+                    getHeaderName(linestr), "", prependContent);
+            fileContent += importedShaderModuleContent + "\n";
+            if (dumpTextDebugStatic) {
+                fileContent +=
+                        std::string() + "#line " + toString(lineNum) + " "
+                        + std::to_string(sourceStringNumber) + "\n";
+            } else {
+                fileContent += std::string() + "#line " + toString(lineNum) + "\n";
+            }
         } else if (boost::starts_with(linestr, "#extension") || boost::starts_with(linestr, "#version")) {
             prependContent += linestr + "\n";
-            fileContent = std::string() + fileContent + "#line " + toString(lineNum) + "\n";
+            if (dumpTextDebugStatic) {
+                fileContent += "#line " + toString(lineNum) + " " + std::to_string(sourceStringNumber) + "\n";
+            } else {
+                fileContent += "#line " + toString(lineNum) + "\n";
+            }
         } else {
             fileContent += std::string() + linestr + "\n";
         }
@@ -309,8 +338,8 @@ std::string ShaderManagerVk::loadHeaderFileString(const std::string &shaderName,
 
 std::string ShaderManagerVk::getHeaderName(const std::string &lineString) {
     // Filename in quotes?
-    auto startFilename = lineString.find("\"");
-    auto endFilename = lineString.find_last_of("\"");
+    auto startFilename = lineString.find('\"');
+    auto endFilename = lineString.find_last_of('\"');
     if (startFilename != std::string::npos && endFilename != std::string::npos) {
         return lineString.substr(startFilename+1, endFilename-startFilename-1);
     } else {
@@ -378,6 +407,54 @@ std::string ShaderManagerVk::getPreprocessorDefines(ShaderModuleType shaderModul
 }
 
 
+std::string ShaderManagerVk::getImportedShaderString(
+        const std::string& moduleName, const std::string& parentModuleName, std::string& prependContent) {
+    recursionDepth++;
+    if (recursionDepth > 1) {
+        sgl::Logfile::get()->throwError(
+                "Error in ShaderManagerVk::getImportedShaderString: Nested/recursive imports are not supported.");
+    }
+
+    if (moduleName.empty()) {
+        sgl::Logfile::get()->throwError(
+                "Error in ShaderManagerVk::getImportedShaderString: Empty import statement in module \""
+                + parentModuleName + "\".");
+    }
+
+    std::string absoluteModuleName;
+    if (moduleName.front() == '.') {
+        // Relative mode.
+        absoluteModuleName = parentModuleName + moduleName;
+    } else {
+        // Absolute mode.
+        absoluteModuleName = moduleName;
+    }
+
+    std::string::size_type filenameEnd = absoluteModuleName.find('.');
+    std::string pureFilename = absoluteModuleName.substr(0, filenameEnd);
+
+    std::string moduleContentString;
+    if (pureFilename != parentModuleName) {
+        getShaderString(absoluteModuleName);
+    }
+
+    // Only allow importing previously defined modules for now.
+    auto itRaw = effectSourcesRaw.find(absoluteModuleName);
+    auto itPrepend = effectSourcesPrepend.find(absoluteModuleName);
+    if (itRaw != effectSourcesRaw.end() || itPrepend != effectSourcesPrepend.end()) {
+        moduleContentString = itRaw->second;
+        prependContent += itPrepend->second;
+    } else {
+        sgl::Logfile::get()->throwError(
+                "Error in ShaderManagerVk::getImportedShaderString: The module \"" + absoluteModuleName
+                + "\" couldn't be found. Hint: Only modules occurring in a file before the importing module can be "
+                  "imported.");
+    }
+
+    recursionDepth--;
+    return moduleContentString;
+}
+
 std::string ShaderManagerVk::getShaderString(const std::string &globalShaderName) {
     auto it = effectSources.find(globalShaderName);
     if (it != effectSources.end()) {
@@ -395,8 +472,16 @@ std::string ShaderManagerVk::getShaderString(const std::string &globalShaderName
                 std::string() + "Error in getShader: Couldn't open the file \"" + shaderFilename + "\".");
     }
 
+    int oldSourceStringNumber = sourceStringNumber;
+
+    std::string shaderContent;
+    if (dumpTextDebugStatic) {
+        shaderContent = "#line 1\n";
+    } else {
+        shaderContent = "#line 1 " + std::to_string(sourceStringNumber) + "\n";
+    }
+
     std::string shaderName;
-    std::string shaderContent = "#line 1\n";
     std::string prependContent;
     int lineNum = 1;
     std::string linestr;
@@ -410,29 +495,64 @@ std::string ShaderManagerVk::getShaderString(const std::string &globalShaderName
 
         if (boost::starts_with(linestr, "-- ")) {
             if (!shaderContent.empty() && !shaderName.empty()) {
+                effectSourcesRaw.insert(make_pair(shaderName, shaderContent));
+                effectSourcesPrepend.insert(make_pair(shaderName, prependContent));
                 shaderContent = prependContent + shaderContent;
                 effectSources.insert(make_pair(shaderName, shaderContent));
             }
 
+            sourceStringNumber = oldSourceStringNumber;
             shaderName = pureFilename + "." + linestr.substr(3);
             ShaderModuleType shaderModuleType = getShaderModuleTypeFromString(shaderName);
-            shaderContent =
-                    std::string() + getPreprocessorDefines(shaderModuleType) + "#line " + toString(lineNum) + "\n";
+            if (dumpTextDebugStatic) {
+                shaderContent =
+                        std::string() + getPreprocessorDefines(shaderModuleType) + "#line " + toString(lineNum)
+                        + " " + std::to_string(sourceStringNumber) + "\n";
+            } else {
+                shaderContent =
+                        std::string() + getPreprocessorDefines(shaderModuleType) + "#line " + toString(lineNum)
+                        + "\n";
+            }
             prependContent = "";
         } else if (boost::starts_with(linestr, "#version") || boost::starts_with(linestr, "#extension")) {
             prependContent += linestr + "\n";
-            shaderContent += "#line " + toString(lineNum) + "\n";
+            if (dumpTextDebugStatic) {
+                shaderContent +=
+                        std::string() + "#line " + toString(lineNum) + " "
+                        + std::to_string(sourceStringNumber) + "\n";
+            } else {
+                shaderContent += std::string() + "#line " + toString(lineNum) + "\n";
+            }
         } else if (boost::starts_with(linestr, "#include")) {
             std::string includedFileName = getShaderFileName(getHeaderName(linestr));
             std::string includedFileContent = loadHeaderFileString(includedFileName, prependContent);
             shaderContent += includedFileContent + "\n";
-            shaderContent += std::string() + "#line " + toString(lineNum) + "\n";
+            if (dumpTextDebugStatic) {
+                shaderContent +=
+                        std::string() + "#line " + toString(lineNum) + " "
+                        + std::to_string(sourceStringNumber) + "\n";
+            } else {
+                shaderContent += std::string() + "#line " + toString(lineNum) + "\n";
+            }
+        } else if (boost::starts_with(linestr, "#import")) {
+            std::string importedShaderModuleContent = getImportedShaderString(
+                    getHeaderName(linestr), pureFilename, prependContent);
+            shaderContent += importedShaderModuleContent + "\n";
+            if (dumpTextDebugStatic) {
+                shaderContent +=
+                        std::string() + "#line " + toString(lineNum) + " "
+                        + std::to_string(sourceStringNumber) + "\n";
+            } else {
+                shaderContent += std::string() + "#line " + toString(lineNum) + "\n";
+            }
         } else {
             shaderContent += std::string() + linestr + "\n";
         }
     }
     shaderContent = prependContent + shaderContent;
     file.close();
+
+    sourceStringNumber = oldSourceStringNumber;
 
     if (!shaderName.empty()) {
         effectSources.insert(make_pair(shaderName, shaderContent));

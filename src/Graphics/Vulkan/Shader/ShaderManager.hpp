@@ -109,6 +109,8 @@ protected:
     /// Internal loading
     std::string loadHeaderFileString(const std::string& shaderName, std::string& prependContent);
     std::string getHeaderName(const std::string& lineString);
+    std::string getImportedShaderString(
+            const std::string& moduleName, const std::string& parentModuleName, std::string& prependContent);
     std::string getShaderString(const std::string& globalShaderName);
     std::string getPreprocessorDefines(ShaderModuleType shaderModuleType);
 
@@ -124,10 +126,14 @@ protected:
 
     /// Maps shader name -> shader source, e.g. "Blur.Fragment" -> "void main() { ... }".
     std::map<std::string, std::string> effectSources;
+    std::map<std::string, std::string> effectSourcesRaw; ///< without prepended header.
+    std::map<std::string, std::string> effectSourcesPrepend; ///< only prepended header.
 
     /// Maps file names without path to full file paths for "*.glsl" shader files,
     /// e.g. "Blur.glsl" -> "Data/Shaders/PostProcessing/Blur.glsl".
     std::map<std::string, std::string> shaderFileMap;
+    int sourceStringNumber = 0;
+    int recursionDepth = 0;
 
     // If a file named "GlobalDefinesVulkan.glsl" is found: Appended to all shaders.
     std::string globalDefines;
