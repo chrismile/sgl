@@ -173,7 +173,7 @@ find_package(GLEW QUIET)
 if (${SUPPORT_OPENGL} AND ${OpenGL_FOUND} AND ${GLEW_FOUND})
     target_compile_definitions(sgl PUBLIC SUPPORT_OPENGL)
     target_link_libraries(sgl PRIVATE ${OPENGL_LIBRARIES} GLEW::GLEW)
-    target_include_directories(sgl PUBLIC ${OPENGL_INCLUDE_DIRS} ${GLEW_INCLUDES})
+    target_include_directories(sgl PUBLIC ${OPENGL_INCLUDE_DIRS} ${GLEW_INCLUDE_DIRS})
 
     if (${GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT})
         target_compile_definitions(sgl PUBLIC GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
