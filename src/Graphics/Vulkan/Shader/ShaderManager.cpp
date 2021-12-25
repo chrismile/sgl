@@ -279,9 +279,9 @@ std::string ShaderManagerVk::loadHeaderFileString(const std::string &shaderName,
     sourceStringNumber++;
     std::string fileContent;
     if (dumpTextDebugStatic) {
-        fileContent = "#line 1\n";
-    } else {
         fileContent = "#line 1 " + std::to_string(sourceStringNumber) + "\n";
+    } else {
+        fileContent = "#line 1\n";
     }
 
     // Support preprocessor for embedded headers
@@ -476,9 +476,9 @@ std::string ShaderManagerVk::getShaderString(const std::string &globalShaderName
 
     std::string shaderContent;
     if (dumpTextDebugStatic) {
-        shaderContent = "#line 1\n";
-    } else {
         shaderContent = "#line 1 " + std::to_string(sourceStringNumber) + "\n";
+    } else {
+        shaderContent = "#line 1\n";
     }
 
     std::string shaderName;
@@ -573,6 +573,8 @@ std::string ShaderManagerVk::getShaderString(const std::string &globalShaderName
 void ShaderManagerVk::invalidateShaderCache() {
     assetMap.clear();
     effectSources.clear();
+    effectSourcesRaw.clear();
+    effectSourcesPrepend.clear();
 }
 
 }}

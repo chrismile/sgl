@@ -81,7 +81,7 @@ void Timer::startGPU(const std::string& eventName) {
     }
 
     FrameData& currentFrameData = frameData.at(frameIdx);
-    auto itStart = currentFrameData.queryStartIndices.find(eventName);
+    //auto itStart = currentFrameData.queryStartIndices.find(eventName);
     auto itEnd = currentFrameData.queryEndIndices.find(eventName);
 
     if (baseFrameIdx == std::numeric_limits<uint32_t>::max()) {
