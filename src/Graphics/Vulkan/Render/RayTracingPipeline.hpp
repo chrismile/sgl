@@ -29,6 +29,7 @@
 #ifndef SGL_RAYTRACINGPIPELINE_HPP
 #define SGL_RAYTRACINGPIPELINE_HPP
 
+#include <string>
 #include <array>
 #include <memory>
 #include <utility>
