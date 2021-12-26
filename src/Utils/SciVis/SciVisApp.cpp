@@ -902,8 +902,6 @@ void SciVisApp::renderGuiCoordinateAxesOverlay() {
     ImVec2 windowSize = ImGuiWrapper::get()->getCurrentWindowSize();
     ImVec2 offset = ImGuiWrapper::get()->getScaleDependentSize(45, 45);
 
-    //ImGui::SetWindowFontScale(0.75f);
-
     // Compute the font sizes. The offset is added as a hack to get perfectly centered text.
     ImFont* fontSmall = ImGuiWrapper::get()->getFontSmall();
     float fontSizeSmall = ImGuiWrapper::get()->getFontSizeSmall();
@@ -937,7 +935,7 @@ void SciVisApp::renderGuiCoordinateAxesOverlay() {
     glm::vec2 up(up3d.x, up3d.y);
     glm::vec2 front(front3d.x, front3d.y);
 
-    const float EPSILON = 1e-6;
+    const float EPSILON = 1e-6f;
 
     ImU32 colorXBright = sgl::Color(255, 51, 82).getColorRGBA();
     ImU32 colorXDark = sgl::Color(148, 54, 68).getColorRGBA();
