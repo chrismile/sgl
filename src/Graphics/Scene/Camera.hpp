@@ -69,18 +69,18 @@ public:
     //! Render target & viewport area
     void setViewport(const AABB2 &_viewport) { viewport = _viewport; }
     //! Relative coordinates
-    AABB2 getViewport() const { return viewport; }
+    [[nodiscard]] AABB2 getViewport() const { return viewport; }
     //! Viewport left, top, width, height for OpenGL/DirectX
     glm::ivec4 getViewportLTWH();
     void setRenderTarget(RenderTargetPtr target, bool bindFramebuffer = true);
     inline RenderTargetPtr getRenderTarget() { return renderTarget; }
 
     //! Frustum data
-    inline float getNearClipDistance() const { return nearDist; }
-    inline float getFarClipDistance()  const { return farDist; }
-    inline float getFOVy()             const { return fovy; }
-    inline float getFOVx()             const { return 2.0f * atanf(tanf(fovy * 0.5f) * aspect); }
-    inline float getAspectRatio()      const { return aspect; }
+    [[nodiscard]] inline float getNearClipDistance() const { return nearDist; }
+    [[nodiscard]] inline float getFarClipDistance()  const { return farDist; }
+    [[nodiscard]] inline float getFOVy()             const { return fovy; }
+    [[nodiscard]] inline float getFOVx()             const { return 2.0f * atanf(tanf(fovy * 0.5f) * aspect); }
+    [[nodiscard]] inline float getAspectRatio()      const { return aspect; }
     void setNearClipDistance(float dist) { nearDist = dist; invalidateFrustum(); }
     void setFarClipDistance(float dist)  { farDist = dist; invalidateFrustum(); }
     void setFOVy(float fov)              { fovy = fov; invalidateFrustum(); }
@@ -92,9 +92,9 @@ public:
     inline void setYaw(float newYaw)            { recalcModelMat = true; yaw = newYaw; }
     inline void rotatePitch(float offset)       { recalcModelMat = true; pitch += offset; isPitchMode = true; }
     inline void setPitch(float newPitch)        { recalcModelMat = true; pitch = newPitch; isPitchMode = true; }
-    [[nodiscard]] inline const glm::vec3 &getCameraFront() const    { return cameraFront; }
-    [[nodiscard]] inline const glm::vec3 &getCameraRight() const    { return cameraRight; }
-    [[nodiscard]] inline const glm::vec3 &getCameraUp() const       { return cameraUp; }
+    [[nodiscard]] inline const glm::vec3 &getCameraFront()          { updateCamera(); return cameraFront; }
+    [[nodiscard]] inline const glm::vec3 &getCameraRight()          { updateCamera(); return cameraRight; }
+    [[nodiscard]] inline const glm::vec3 &getCameraUp()             { updateCamera(); return cameraUp; }
     [[nodiscard]] inline const glm::vec3 &getCameraGlobalUp() const { return globalUp; }
     [[nodiscard]] inline const glm::vec3 &getLookAtLocation() const { return lookAtLocation; }
     inline void resetLookAtLocation() { lookAtLocation = {}; cameraUp = globalUp; }
@@ -129,10 +129,10 @@ public:
     }
 
     //! For frustum culling
-    virtual bool isVisible(const AABB3& bound) const;
-    virtual bool isVisible(const Sphere& bound) const;
-    virtual bool isVisible(const glm::vec2 &vert) const;
-    virtual bool isVisible(const glm::vec3 &vert) const;
+    [[nodiscard]] virtual bool isVisible(const AABB3& bound) const;
+    [[nodiscard]] virtual bool isVisible(const Sphere& bound) const;
+    [[nodiscard]] virtual bool isVisible(const glm::vec2 &vert) const;
+    [[nodiscard]] virtual bool isVisible(const glm::vec3 &vert) const;
 
     //! AABB of a slice of the view frustum in distance planeDistance
     AABB2 getAABB2(float planeDistance = -1.0f);

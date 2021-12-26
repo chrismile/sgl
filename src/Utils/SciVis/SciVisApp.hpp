@@ -94,7 +94,7 @@ protected:
     // Dock space mode.
     void renderGuiPropertyEditorWindow();
     void renderGuiFpsOverlay();
-    void renderGuiCoordinateAxesOverlay();
+    void renderGuiCoordinateAxesOverlay(const sgl::CameraPtr& cam);
     virtual void renderGuiPropertyEditorBegin() {}
     virtual void renderGuiPropertyEditorCustomNodes() {}
     PropertyEditor propertyEditor;

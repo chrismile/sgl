@@ -895,7 +895,10 @@ void SciVisApp::renderGuiFpsOverlay() {
     drawList->AddText(pos, textColorImgui, fpsText.c_str());
 }
 
-void SciVisApp::renderGuiCoordinateAxesOverlay() {
+void SciVisApp::renderGuiCoordinateAxesOverlay(const sgl::CameraPtr& cam) {
+    /*
+     * This function draws a coordinate axes widget similar to what is used in Blender.
+     */
     ImDrawList* drawList = ImGui::GetWindowDrawList();
 
     ImVec2 windowPos = ImGuiWrapper::get()->getCurrentWindowPosition();
@@ -927,9 +930,9 @@ void SciVisApp::renderGuiCoordinateAxesOverlay() {
             windowPos.x + offset.x + radiusOverlay,
             windowPos.y + windowSize.y - offset.y - radiusOverlay);
 
-    glm::vec3 right3d = camera->getCameraRight();
-    glm::vec3 up3d = camera->getCameraUp();
-    glm::vec3 front3d = -camera->getCameraFront();
+    glm::vec3 right3d = cam->getCameraRight();
+    glm::vec3 up3d = cam->getCameraUp();
+    glm::vec3 front3d = -cam->getCameraFront();
     right3d.y *= -1.0f;
     up3d.y *= -1.0f;
     front3d.y *= -1.0f;
