@@ -70,7 +70,12 @@ public:
             const ImWchar* fontRangesData = nullptr, bool useDocking = true, bool useMultiViewport = true,
             float uiScaleFactor = 1.0f);
     void shutdown(); //< to be called by AppSettings
-    inline float getScaleFactor() const { return uiScaleFactor; } //< The UI high DPI scale factor
+    [[nodiscard]] inline float getScaleFactor() const { return uiScaleFactor; } //< The UI high DPI scale factor.
+
+    [[nodiscard]] inline float getFontSizeNormal() const { return fontSizeNormal; }
+    [[nodiscard]] inline float getFontSizeSmall() const { return fontSizeSmall; }
+    inline ImFont* getFontNormal() { return fontNormal; }
+    inline ImFont* getFontSmall() { return fontSmall; }
 
     // Sets the default scale factor.
     inline void setDefaultScaleFactor(float factor) {
@@ -92,7 +97,7 @@ public:
     void onResolutionChanged();
 
     // Utility functions for dock space mode.
-    inline bool getUseDockSpaceMode() const { return useDockSpaceMode; }
+    [[nodiscard]] inline bool getUseDockSpaceMode() const { return useDockSpaceMode; }
     inline void setUseDockSpaceMode(bool _useDockSpaceMode) { useDockSpaceMode = _useDockSpaceMode; }
     ImGuiViewport* getCurrentWindowViewport() { return windowViewports.at(currentWindowIdx); }
     void setWindowViewport(size_t windowIdx, ImGuiViewport* windowViewport) {
@@ -127,6 +132,11 @@ private:
     float uiScaleFactor;
     float defaultUiScaleFactor = 1.875f;
     float sizeScale = 1.0f;
+
+    float fontSizeNormal = 0.0f;
+    float fontSizeSmall = 0.0f;
+    ImFont* fontNormal = nullptr;
+    ImFont* fontSmall = nullptr;
 
     // Dock space mode.
     bool useDockSpaceMode = false;

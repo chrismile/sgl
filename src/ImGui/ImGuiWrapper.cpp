@@ -88,7 +88,7 @@ void ImGuiWrapper::initialize(
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
 #ifdef SUPPORT_OPENGL
     if (renderSystem == RenderSystem::OPENGL) {
-        SDLWindow *window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
+        SDLWindow* window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
         SDL_GLContext context = window->getGLContext();
         ImGui_ImplSDL2_InitForOpenGL(window->getSDLWindow(), context);
         const char* glslVersion = "#version 430";
@@ -100,7 +100,7 @@ void ImGuiWrapper::initialize(
 #endif
 #ifdef SUPPORT_VULKAN
     if (renderSystem == RenderSystem::VULKAN) {
-        SDLWindow *window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
+        SDLWindow* window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
         vk::Device* device = AppSettings::get()->getPrimaryDevice();
 
         VkDescriptorPoolSize poolSizes[] = {
@@ -160,9 +160,18 @@ void ImGuiWrapper::initialize(
     std::string fontFilename = sgl::AppSettings::get()->getDataDirectory() + "Fonts/DroidSans.ttf";
     // For support of more Unicode characters (e.g., also Japanese).
     //std::string fontFilename = sgl::AppSettings::get()->getDataDirectory() + "Fonts/DroidSansFallback.ttf";
-    ImFont *fontTest = io.Fonts->AddFontFromFileTTF(
-            fontFilename.c_str(), 16.0f*fontScaleFactor, nullptr, fontRanges.Data);
-    if (fontTest == nullptr) {
+    fontSizeNormal = 16.0f * fontScaleFactor;
+    fontNormal = io.Fonts->AddFontFromFileTTF(
+            fontFilename.c_str(), fontSizeNormal, nullptr, fontRanges.Data);
+    if (fontNormal == nullptr) {
+        Logfile::get()->throwError(
+                "Error in ImGuiWrapper::initialize: Could not load font from file \"" + fontFilename + "\".");
+    }
+
+    fontSizeSmall = 12.0f * fontScaleFactor;
+    fontSmall = io.Fonts->AddFontFromFileTTF(
+            fontFilename.c_str(), fontSizeSmall, nullptr, fontRanges.Data);
+    if (fontSmall == nullptr) {
         Logfile::get()->throwError(
                 "Error in ImGuiWrapper::initialize: Could not load font from file \"" + fontFilename + "\".");
     }
@@ -170,7 +179,9 @@ void ImGuiWrapper::initialize(
     // Add icon font glyphs from https://github.com/aiekick/ImGuiFileDialog.
     static const ImWchar icons_ranges[] = { ICON_MIN_IGFD, ICON_MAX_IGFD, 0 };
     ImFontConfig icons_config; icons_config.MergeMode = true; icons_config.PixelSnapH = true;
-    ImGui::GetIO().Fonts->AddFontFromMemoryCompressedBase85TTF(FONT_ICON_BUFFER_NAME_IGFD, 15.0f, &icons_config, icons_ranges);
+    ImGui::GetIO().Fonts->AddFontFromMemoryCompressedBase85TTF(
+            FONT_ICON_BUFFER_NAME_IGFD, 15.0f,
+            &icons_config, icons_ranges);
 
     io.Fonts->Build();
 }
@@ -351,7 +362,7 @@ void ImGuiWrapper::renderEnd() {
 
     ImGuiIO &io = ImGui::GetIO();
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        SDLWindow *sdlWindow = (SDLWindow*)AppSettings::get()->getMainWindow();
+        SDLWindow* sdlWindow = (SDLWindow*)AppSettings::get()->getMainWindow();
         {
             ZoneScopedN("ImGui::UpdatePlatformWindows");
             ImGui::UpdatePlatformWindows();

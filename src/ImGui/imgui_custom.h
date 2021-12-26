@@ -62,6 +62,9 @@
 namespace ImGui
 {
 
+// Text Utilities
+IMGUI_API ImVec2 CalcTextSize(ImFont* font, float font_size, const char* text, const char* text_end = NULL, bool hide_text_after_double_hash = false, float wrap_width = -1.0f);
+
 /*
  * - No change: The same as SliderXXX returning false.
  * - Live edit: The user is editing the slider value (either by dragging or by text input).

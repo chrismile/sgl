@@ -94,12 +94,14 @@ protected:
     // Dock space mode.
     void renderGuiPropertyEditorWindow();
     void renderGuiFpsOverlay();
+    void renderGuiCoordinateAxesOverlay();
     virtual void renderGuiPropertyEditorBegin() {}
     virtual void renderGuiPropertyEditorCustomNodes() {}
     PropertyEditor propertyEditor;
     bool showPropertyEditor = false;
     bool useDockSpaceMode = false;
     bool showFpsOverlay = true;
+    bool showCoordinateAxesOverlay = true;
     int customScreenshotWidth = -1, customScreenshotHeight = -1;
 
     /// To be implemented by the sub-class.
