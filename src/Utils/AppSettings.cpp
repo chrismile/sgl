@@ -171,10 +171,10 @@ void SettingsFile::loadFromFile(const char *filename)
             continue;
         }
 
-        size_t string1Start = line.find("\"")+1;
-        size_t string1End = line.find("\"", string1Start);
-        size_t string2Start = line.find("\"", string1End+1)+1;
-        size_t string2End = line.find("\"", string2Start);
+        size_t string1Start = line.find('\"') + 1;
+        size_t string1End = line.find('\"', string1Start);
+        size_t string2Start = line.find('\"', string1End + 1) + 1;
+        size_t string2End = line.find('\"', string2Start);
 
         std::string key = line.substr(string1Start, string1End-string1Start);
         std::string value = line.substr(string2Start, string2End-string2Start);
@@ -211,7 +211,7 @@ Window *AppSettings::createWindow()
     static int i = 0; i++;
     if (i != 1) {
         Logfile::get()->writeError("ERROR: AppSettings::createWindow: More than one instance of a window created!");
-        return NULL;
+        return nullptr;
     }
 
     // Initialize SDL - the only window system for now (support for Qt is planned).

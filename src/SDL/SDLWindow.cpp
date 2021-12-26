@@ -465,6 +465,19 @@ void SDLWindow::serializeSettings(SettingsFile &settings)
 WindowSettings SDLWindow::deserializeSettings(const SettingsFile &settings)
 {
     WindowSettings windowSettings;
+    if (!settings.hasKey("window-width") || !settings.hasKey("window-height")) {
+        int desktopWidth = 1920;
+        int desktopHeight = 1080;
+        int refreshRate = 60;
+        sgl::AppSettings::get()->getDesktopDisplayMode(desktopWidth, desktopHeight, refreshRate);
+        if (desktopWidth < 2560 || desktopHeight < 1440) {
+            windowSettings.width = 1280;
+            windowSettings.height = 720;
+        } else {
+            windowSettings.width = 1920;
+            windowSettings.height = 1080;
+        }
+    }
     settings.getValueOpt("window-width", windowSettings.width);
     settings.getValueOpt("window-height", windowSettings.height);
     settings.getValueOpt("window-fullscreen", windowSettings.fullscreen);

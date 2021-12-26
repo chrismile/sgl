@@ -73,7 +73,7 @@ struct DLL_OBJECT WindowSettings {
     VSyncMode vSyncMode;
     bool debugContext;
     bool savePosition;
-    glm::ivec2 windowPosition;
+    glm::ivec2 windowPosition{};
 
     WindowSettings() {
         width = 1920;
@@ -102,7 +102,7 @@ class SettingsFile;
 class DLL_OBJECT Window
 {
 public:
-    virtual ~Window() {}
+    virtual ~Window() = default;
     /// Outputs e.g. "SDL_GetError"
     virtual void errorCheck() {}
 
@@ -134,7 +134,7 @@ public:
     virtual int getHeight()=0;
     virtual glm::ivec2 getWindowResolution()=0;
     virtual glm::ivec2 getWindowPosition()=0;
-    virtual const WindowSettings& getWindowSettings() const=0;
+    [[nodiscard]] virtual const WindowSettings& getWindowSettings() const=0;
 
 #ifdef SUPPORT_VULKAN
     virtual VkSurfaceKHR getVkSurface()=0;
