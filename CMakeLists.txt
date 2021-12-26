@@ -144,6 +144,9 @@ if (MSVC)
 
 	# Disable warnings concerning fopen. Unfortunately, fopen_s is not system-independent.
     target_compile_definitions(sgl PRIVATE _CRT_SECURE_NO_WARNINGS)
+	
+	# Enable parallel build.
+	target_compile_options(sgl PRIVATE "/MP")
 else()
     target_compile_definitions(sgl PUBLIC DLL_OBJECT=)
 endif()
