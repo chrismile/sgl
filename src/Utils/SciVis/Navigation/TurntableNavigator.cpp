@@ -54,9 +54,11 @@ bool TurntableNavigator::moveCameraMouse(sgl::CameraPtr &camera, float dt) {
             // The scrolling distance depends on the distance between camera and look-at position.
             float lookDist = glm::length(camera->getPosition() - camera->getLookAtLocation());
             float moveAmount = sgl::Mouse->getScrollWheel() * MOVE_SPEED * dt * 80.0f * lookDist;
-            camera->translate(std::min(moveAmount, lookDist - 1e-3f) * normalize(camera->getLookAtLocation() - camera->getPosition()));
+            glm::vec3 translation =
+                    std::min(moveAmount, lookDist - 1e-3f) * normalize(
+                            camera->getLookAtLocation() - camera->getPosition());
             camera->setLookAtViewMatrix(
-                    camera->getPosition(),
+                    camera->getPosition() + translation,
                     camera->getLookAtLocation(),
                     camera->getCameraUp());
             reRender = true;
