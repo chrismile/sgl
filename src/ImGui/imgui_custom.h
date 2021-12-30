@@ -125,6 +125,7 @@ IMGUI_API EditMode SliderScalarNEdit(const char* label, ImGuiDataType data_type,
 IMGUI_API EditMode VSliderFloatEdit(const char* label, const ImVec2& size, float* v, float v_min, float v_max, const char* format = "%.3f", ImGuiSliderFlags flags = 0);
 IMGUI_API EditMode VSliderIntEdit(const char* label, const ImVec2& size, int* v, int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0);
 IMGUI_API EditMode VSliderScalarEdit(const char* label, const ImVec2& size, ImGuiDataType data_type, void* p_data, const void* p_min, const void* p_max, const char* format = NULL, ImGuiSliderFlags flags = 0);
+IMGUI_API EditMode SliderIntPowerOfTwoEdit(const char* label, int* v, int v_min, int v_max, const char* format = NULL, ImGuiSliderFlags flags = 0);
 
 IMGUI_API void HelpMarker(const char* label);
 

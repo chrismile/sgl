@@ -612,6 +612,18 @@ ImGui::EditMode ImGui::VSliderIntEdit(const char* label, const ImVec2& size, int
     return VSliderScalarEdit(label, size, ImGuiDataType_S32, v, &v_min, &v_max, format, flags);
 }
 
+ImGui::EditMode ImGui::SliderIntPowerOfTwoEdit(const char* label, int* v, int v_min, int v_max, const char* format, ImGuiSliderFlags flags)
+{
+    bool isEdited = SliderIntPowerOfTwo(label, v, v_min, v_max, format, flags);
+    if (ImGui::IsItemDeactivatedAfterEdit()) {
+        return EditMode::INPUT_FINISHED;
+    } else if (isEdited) {
+        return EditMode::LIVE_EDIT;
+    } else {
+        return EditMode::NO_CHANGE;
+    }
+}
+
 void ImGui::HelpMarker(const char* label)
 {
     ImGui::TextDisabled("(?)");

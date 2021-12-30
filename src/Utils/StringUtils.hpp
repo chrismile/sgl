@@ -36,6 +36,22 @@
 namespace sgl {
 
 /**
+ * Returns whether @str starts with @prefix.
+ * @param str The full string.
+ * @param prefix The prefix.
+ * @return Returns whether the full string starts with the passed prefix.
+ */
+bool startsWith(const std::string& str, const std::string& prefix);
+
+/**
+ * Returns whether @str ends with @postfix.
+ * @param str The full string.
+ * @param postfix The postfix.
+ * @return Returns whether the full string starts with the passed postfix.
+ */
+bool endsWith(const std::string& str, const std::string& postfix);
+
+/**
  * Converts strings like "This is a test!" with separator ' ' to { "This", "is", "a", "test!" }.
  * @tparam InputIterator The list class to use.
  * @param stringObject The string to split.
