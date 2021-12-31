@@ -35,6 +35,7 @@
 #include <Graphics/Video/VideoWriter.hpp>
 #include <ImGui/Widgets/CheckpointWindow.hpp>
 #include <ImGui/Widgets/PropertyEditor.hpp>
+#include <ImGui/Widgets/CoordinateAxesOverlayWidget.hpp>
 #include <ImGui/imgui.h>
 
 #ifdef SUPPORT_VULKAN
@@ -98,6 +99,7 @@ protected:
     virtual void renderGuiPropertyEditorBegin() {}
     virtual void renderGuiPropertyEditorCustomNodes() {}
     PropertyEditor propertyEditor;
+    CoordinateAxesOverlayWidget coordinateAxesOverlayWidget;
     bool showPropertyEditor = false;
     bool useDockSpaceMode = false;
     bool showFpsOverlay = true;
