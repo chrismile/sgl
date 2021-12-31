@@ -36,7 +36,7 @@ namespace sgl {
 class Camera;
 typedef std::shared_ptr<Camera> CameraPtr;
 
-class CoordinateAxesOverlayWidget {
+class DLL_OBJECT CoordinateAxesOverlayWidget {
 public:
     void setClearColor(const sgl::Color& clearColorSgl);
     void renderGui(const sgl::CameraPtr& cam);
