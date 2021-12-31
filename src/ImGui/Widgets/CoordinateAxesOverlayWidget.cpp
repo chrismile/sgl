@@ -41,6 +41,10 @@ static float computeZoomFactor(float z, float f) {
     return val;
 }
 
+void CoordinateAxesOverlayWidget::setClearColor(const sgl::Color& clearColorSgl) {
+    clearColor = clearColorSgl.getFloatColorRGB();
+}
+
 void CoordinateAxesOverlayWidget::renderGui(const sgl::CameraPtr& cam) {
     /*
      * This function draws a coordinate axes widget similar to what is used in Blender.
@@ -67,12 +71,16 @@ void CoordinateAxesOverlayWidget::renderGui(const sgl::CameraPtr& cam) {
             textSizeAxis.x -= ImGuiWrapper::get()->getScaleDependentSize(1.0f);
         }
         textSize[i] = textSizeAxis;
-        float minRadiusAxis = 0.5f * std::sqrt(textSizeAxis.x * textSizeAxis.x + textSizeAxis.y * textSizeAxis.y);
+        float minRadiusAxis =
+                0.5f * std::sqrt(textSizeAxis.x * textSizeAxis.x + textSizeAxis.y * textSizeAxis.y)
+                + ImGuiWrapper::get()->getScaleDependentSize(1.0f);
         minRadius = std::max(minRadius, minRadiusAxis);
     }
 
     radiusOverlay = ImGuiWrapper::get()->getScaleDependentSize(60.0f);
     radiusBalls = std::max(minRadius, ImGuiWrapper::get()->getScaleDependentSize(10.0f));
+    radiusInnerRing = ImGuiWrapper::get()->getScaleDependentSize(2.0f);
+    radiusBallsInner = radiusBalls - radiusInnerRing;
     lineThickness = ImGuiWrapper::get()->getScaleDependentSize(4.0f);
     ImVec2 center = ImVec2(
             windowPos.x + offset.x + radiusOverlay,
@@ -100,6 +108,7 @@ void CoordinateAxesOverlayWidget::renderGui(const sgl::CameraPtr& cam) {
     ImU32 colorNeg[3];
     float sizeFactorPos[3];
     float sizeFactorNeg[3];
+    ImU32 colorInnerNeg[3];
     for (int i = 0; i < 3; i++) {
         float darkToBrightFactor0 = axes3d[i].z * 0.5f + 0.5f;
         float darkToBrightFactor1 = -axes3d[i].z * 0.5f + 0.5f;
@@ -111,6 +120,11 @@ void CoordinateAxesOverlayWidget::renderGui(const sgl::CameraPtr& cam) {
         sizeFactorNeg[i] = computeZoomFactor(-axes3d[i].z, 10.0f);
         colorPos[i] = sgl::colorFromVec3(colorPosVec).getColorRGBA();
         colorNeg[i] = sgl::colorFromVec3(colorNegVec).getColorRGBA();
+
+        glm::vec3 colorInnerBase = glm::mix(clearColor, colorBright[i], 0.5f);
+        float alphaInner = glm::mix(0.5f, 1.0f, darkToBrightFactor1);
+        colorInnerNeg[i] = sgl::colorFromVec4(glm::vec4(
+                colorInnerBase.x, colorInnerBase.y, colorInnerBase.z, alphaInner)).getColorRGBA();
     }
 
     // Draw coordinate axes (back).
@@ -118,20 +132,43 @@ void CoordinateAxesOverlayWidget::renderGui(const sgl::CameraPtr& cam) {
         if (signAxis[i] < 0.0f) {
             drawList->AddLine(
                     center, ImVec2(
-                            center.x + axes2d[i].x * radiusOverlay * (signAxis[i] < 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i]),
-                            center.y + axes2d[i].y * radiusOverlay * (signAxis[i] < 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i])),
+                            center.x + axes2d[i].x * radiusOverlay
+                                       * (signAxis[i] < 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i]),
+                            center.y + axes2d[i].y * radiusOverlay
+                                       * (signAxis[i] < 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i])),
                     signAxis[i] < 0.0f ? colorPos[i] : colorNeg[i], lineThickness);
         }
     }
 
     // Draw coordinate axis balls (back).
     for (int i = 0; i < 3; i++) {
-        drawList->AddCircleFilled(
-                ImVec2(
-                        center.x - signAxis[i] * axes2d[i].x * radiusOverlay * (signAxis[i] < 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i]),
-                        center.y - signAxis[i] * axes2d[i].y * radiusOverlay * (signAxis[i] < 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i])),
-                radiusBalls * (signAxis[i] < 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i]),
-                signAxis[i] < 0.0f ? colorPos[i] : colorNeg[i]);
+        if (signAxis[i] < 0.0f) {
+            drawList->AddCircleFilled(
+                    ImVec2(
+                            center.x - signAxis[i] * axes2d[i].x * radiusOverlay
+                                       * (signAxis[i] < 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i]),
+                            center.y - signAxis[i] * axes2d[i].y * radiusOverlay
+                                       * (signAxis[i] < 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i])),
+                    radiusBalls * (signAxis[i] < 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i]),
+                    signAxis[i] < 0.0f ? colorPos[i] : colorNeg[i]);
+        } else {
+            drawList->AddCircleFilled(
+                    ImVec2(
+                            center.x - signAxis[i] * axes2d[i].x * radiusOverlay
+                                       * (signAxis[i] < 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i]),
+                            center.y - signAxis[i] * axes2d[i].y * radiusOverlay
+                                       * (signAxis[i] < 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i])),
+                    radiusBalls * (signAxis[i] < 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i]),
+                    colorInnerNeg[i]);
+            drawList->AddCircle(
+                    ImVec2(
+                            center.x - signAxis[i] * axes2d[i].x * radiusOverlay
+                                       * (signAxis[i] < 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i]),
+                            center.y - signAxis[i] * axes2d[i].y * radiusOverlay
+                                       * (signAxis[i] < 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i])),
+                    radiusBalls * (signAxis[i] < 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i]) - radiusInnerRing * 0.5f,
+                    signAxis[i] < 0.0f ? colorPos[i] : colorNeg[i], 0, radiusInnerRing);
+        }
     }
 
     // Draw "X", "Y", "Z" on coordinate axis balls.
@@ -139,8 +176,10 @@ void CoordinateAxesOverlayWidget::renderGui(const sgl::CameraPtr& cam) {
         if (signAxis[i] < 0.0f) {
             drawList->AddText(
                     fontSmall, fontSizeSmall, ImVec2(
-                            center.x + axes2d[i].x * radiusOverlay * (signAxis[i] < 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i]) - textSize[i].x * 0.5f,
-                            center.y + axes2d[i].y * radiusOverlay * (signAxis[i] < 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i]) - textSize[i].y * 0.5f),
+                            center.x + axes2d[i].x * radiusOverlay
+                                       * (signAxis[i] < 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i]) - textSize[i].x * 0.5f,
+                            center.y + axes2d[i].y * radiusOverlay
+                                       * (signAxis[i] < 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i]) - textSize[i].y * 0.5f),
                     textColor[i], AXIS_NAME[i]);
         }
     }
@@ -150,20 +189,43 @@ void CoordinateAxesOverlayWidget::renderGui(const sgl::CameraPtr& cam) {
         if (signAxis[i] > 0.0f) {
             drawList->AddLine(
                     center, ImVec2(
-                            center.x + axes2d[i].x * radiusOverlay * (signAxis[i] > 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i]),
-                            center.y + axes2d[i].y * radiusOverlay * (signAxis[i] > 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i])),
+                            center.x + axes2d[i].x * radiusOverlay
+                                       * (signAxis[i] > 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i]),
+                            center.y + axes2d[i].y * radiusOverlay
+                                       * (signAxis[i] > 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i])),
                     signAxis[i] > 0.0f ? colorPos[i] : colorNeg[i], lineThickness);
         }
     }
 
     // Draw coordinate axis balls (front).
     for (int i = 0; i < 3; i++) {
-        drawList->AddCircleFilled(
-                ImVec2(
-                        center.x + signAxis[i] * axes2d[i].x * radiusOverlay * (signAxis[i] > 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i]),
-                        center.y + signAxis[i] * axes2d[i].y * radiusOverlay * (signAxis[i] > 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i])),
-                radiusBalls * (signAxis[i] > 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i]),
-                signAxis[i] > 0.0f ? colorPos[i] : colorNeg[i]);
+        if (signAxis[i] > 0.0f) {
+            drawList->AddCircleFilled(
+                    ImVec2(
+                            center.x + signAxis[i] * axes2d[i].x * radiusOverlay
+                                       * (signAxis[i] > 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i]),
+                            center.y + signAxis[i] * axes2d[i].y * radiusOverlay
+                                       * (signAxis[i] > 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i])),
+                    radiusBalls * (signAxis[i] > 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i]),
+                    signAxis[i] > 0.0f ? colorPos[i] : colorNeg[i]);
+        } else {
+            drawList->AddCircleFilled(
+                    ImVec2(
+                            center.x + signAxis[i] * axes2d[i].x * radiusOverlay
+                                       * (signAxis[i] > 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i]),
+                            center.y + signAxis[i] * axes2d[i].y * radiusOverlay
+                                       * (signAxis[i] > 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i])),
+                    radiusBalls * (signAxis[i] > 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i]),
+                    colorInnerNeg[i]);
+            drawList->AddCircle(
+                    ImVec2(
+                            center.x + signAxis[i] * axes2d[i].x * radiusOverlay
+                                       * (signAxis[i] > 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i]),
+                            center.y + signAxis[i] * axes2d[i].y * radiusOverlay
+                                       * (signAxis[i] > 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i])),
+                    radiusBalls * (signAxis[i] > 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i]) - radiusInnerRing * 0.5f,
+                    signAxis[i] > 0.0f ? colorPos[i] : colorNeg[i], 0, radiusInnerRing);
+        }
     }
 
     // Draw "X", "Y", "Z" on coordinate axis balls.
@@ -171,8 +233,10 @@ void CoordinateAxesOverlayWidget::renderGui(const sgl::CameraPtr& cam) {
         if (signAxis[i] > 0.0f) {
             drawList->AddText(
                     fontSmall, fontSizeSmall, ImVec2(
-                            center.x + axes2d[i].x * radiusOverlay * (signAxis[i] > 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i]) - textSize[i].x * 0.5f,
-                            center.y + axes2d[i].y * radiusOverlay * (signAxis[i] > 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i]) - textSize[i].y * 0.5f),
+                            center.x + axes2d[i].x * radiusOverlay
+                                       * (signAxis[i] > 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i]) - textSize[i].x * 0.5f,
+                            center.y + axes2d[i].y * radiusOverlay
+                                       * (signAxis[i] > 0.0f ? sizeFactorPos[i] : sizeFactorNeg[i]) - textSize[i].y * 0.5f),
                     textColor[i], AXIS_NAME[i]);
         }
     }
