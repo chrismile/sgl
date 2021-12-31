@@ -168,6 +168,13 @@ void ImGuiWrapper::initialize(
                 "Error in ImGuiWrapper::initialize: Could not load font from file \"" + fontFilename + "\".");
     }
 
+    // Add icon font glyphs from https://github.com/aiekick/ImGuiFileDialog.
+    static const ImWchar icons_ranges[] = { ICON_MIN_IGFD, ICON_MAX_IGFD, 0 };
+    ImFontConfig icons_config; icons_config.MergeMode = true; icons_config.PixelSnapH = true;
+    ImGui::GetIO().Fonts->AddFontFromMemoryCompressedBase85TTF(
+            FONT_ICON_BUFFER_NAME_IGFD, 15.0f,
+            &icons_config, icons_ranges);
+
     fontSizeSmall = 12.0f * fontScaleFactor;
     fontSmall = io.Fonts->AddFontFromFileTTF(
             fontFilename.c_str(), fontSizeSmall, nullptr, fontRanges.Data);
@@ -175,13 +182,6 @@ void ImGuiWrapper::initialize(
         Logfile::get()->throwError(
                 "Error in ImGuiWrapper::initialize: Could not load font from file \"" + fontFilename + "\".");
     }
-
-    // Add icon font glyphs from https://github.com/aiekick/ImGuiFileDialog.
-    static const ImWchar icons_ranges[] = { ICON_MIN_IGFD, ICON_MAX_IGFD, 0 };
-    ImFontConfig icons_config; icons_config.MergeMode = true; icons_config.PixelSnapH = true;
-    ImGui::GetIO().Fonts->AddFontFromMemoryCompressedBase85TTF(
-            FONT_ICON_BUFFER_NAME_IGFD, 15.0f,
-            &icons_config, icons_ranges);
 
     io.Fonts->Build();
 }
