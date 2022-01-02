@@ -88,10 +88,13 @@ void CoordinateAxesOverlayWidget::renderGui(const sgl::CameraPtr& cam) {
 
     glm::vec3 right3d = cam->getCameraRight();
     glm::vec3 up3d = cam->getCameraUp();
-    glm::vec3 front3d = -cam->getCameraFront();
+    glm::vec3 front3d = cam->getCameraFront();
     right3d.y *= -1.0f;
     up3d.y *= -1.0f;
     front3d.y *= -1.0f;
+    right3d.z *= -1.0f;
+    up3d.z *= -1.0f;
+    front3d.z *= -1.0f;
     glm::vec2 right(right3d.x, right3d.y);
     glm::vec2 up(up3d.x, up3d.y);
     glm::vec2 front(front3d.x, front3d.y);
