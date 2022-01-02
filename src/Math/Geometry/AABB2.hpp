@@ -39,27 +39,27 @@ class DLL_OBJECT AABB2 {
 public:
     glm::vec2 min, max;
 
-    AABB2() : min(FLT_MAX), max(-FLT_MAX) {}
+    AABB2() : min(std::numeric_limits<float>::max()), max(std::numeric_limits<float>::lowest()) {}
     AABB2(glm::vec2 min, glm::vec2 max) : min(min), max(max) {}
 
-    inline glm::vec2 getDimensions() const { return max - min; }
-    inline glm::vec2 getExtent() const { return (max - min) / 2.0f; }
-    inline glm::vec2 getCenter() const { return (max + min) / 2.0f; }
-    inline const glm::vec2& getMinimum() const { return min; }
-    inline const glm::vec2& getMaximum() const { return max; }
-    inline float getWidth() const { return max.x - min.x; }
-    inline float getHeight() const { return max.y - min.y; }
+    [[nodiscard]] inline glm::vec2 getDimensions() const { return max - min; }
+    [[nodiscard]] inline glm::vec2 getExtent() const { return (max - min) / 2.0f; }
+    [[nodiscard]] inline glm::vec2 getCenter() const { return (max + min) / 2.0f; }
+    [[nodiscard]] inline const glm::vec2& getMinimum() const { return min; }
+    [[nodiscard]] inline const glm::vec2& getMaximum() const { return max; }
+    [[nodiscard]] inline float getWidth() const { return max.x - min.x; }
+    [[nodiscard]] inline float getHeight() const { return max.y - min.y; }
 
     //! Returns whether the two AABBs intersect.
-    bool intersects(const AABB2& otherAABB);
+    [[nodiscard]] bool intersects(const AABB2& otherAABB) const;
     //! Merge the two AABBs.
     void combine(const AABB2& otherAABB);
     //! Merge AABB with a point.
     void combine(const glm::vec2& pt);
     //! Returns whether the AABB contain the point.
-    bool contains(const glm::vec2& pt);
+    [[nodiscard]] bool contains(const glm::vec2& pt) const;
     //! Transform AABB.
-    AABB2 transformed(const glm::mat4& matrix);
+    [[nodiscard]] AABB2 transformed(const glm::mat4& matrix) const;
 };
 
 }

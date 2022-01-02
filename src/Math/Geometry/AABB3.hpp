@@ -39,25 +39,25 @@ class DLL_OBJECT AABB3 {
 public:
     glm::vec3 min, max;
 
-    AABB3() : min(FLT_MAX), max(-FLT_MAX) {}
+    AABB3() : min(std::numeric_limits<float>::max()), max(std::numeric_limits<float>::lowest()) {}
     AABB3(glm::vec3 min, glm::vec3 max) : min(min), max(max) {}
 
-    inline glm::vec3 getDimensions() const { return max - min; }
-    inline glm::vec3 getExtent() const { return (max - min) / 2.0f; }
-    inline glm::vec3 getCenter() const { return (max + min) / 2.0f; }
-    inline glm::vec3 getMinimum() const { return min; }
-    inline glm::vec3 getMaximum() const { return max; }
+    [[nodiscard]] inline glm::vec3 getDimensions() const { return max - min; }
+    [[nodiscard]] inline glm::vec3 getExtent() const { return (max - min) / 2.0f; }
+    [[nodiscard]] inline glm::vec3 getCenter() const { return (max + min) / 2.0f; }
+    [[nodiscard]] inline glm::vec3 getMinimum() const { return min; }
+    [[nodiscard]] inline glm::vec3 getMaximum() const { return max; }
 
     //! Returns whether the two AABBs intersect.
-    bool intersects(const AABB3& otherAABB);
+    [[nodiscard]] bool intersects(const AABB3& otherAABB) const;
     //! Merge the two AABBs.
     void combine(const AABB3& otherAABB);
     //! Merge AABB with a point.
     void combine(const glm::vec3& pt);
     //! Returns whether the AABB contain the point.
-    bool contains(const glm::vec3& pt);
+    [[nodiscard]] bool contains(const glm::vec3& pt) const;
     //! Transform AABB.
-    AABB3 transformed(const glm::mat4& matrix) const;
+    [[nodiscard]] AABB3 transformed(const glm::mat4& matrix) const;
 };
 
 }
