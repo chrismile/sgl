@@ -38,11 +38,6 @@
 
 namespace sgl { namespace vk {
 
-#ifndef TOSTRING
-#define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
-#endif
-
 CudaDeviceApiFunctionTable g_cudaDeviceApiFunctionTable{};
 
 #ifdef _WIN32

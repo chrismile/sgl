@@ -75,6 +75,11 @@ struct CudaDeviceApiFunctionTable {
 
 DLL_OBJECT extern CudaDeviceApiFunctionTable g_cudaDeviceApiFunctionTable;
 
+#ifndef TOSTRING
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+#endif
+
 DLL_OBJECT void _checkCUresult(CUresult cuResult, const char* text, const char* locationText);
 #define checkCUresult(cuResult, text) _checkCUresult(cuResult, text, __FILE__ ":" TOSTRING(__LINE__))
 
