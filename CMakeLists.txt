@@ -2,7 +2,6 @@ cmake_minimum_required (VERSION 3.7)
 cmake_policy(VERSION 3.7...3.20)
 project(sgl)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/CMake)
-include(GenerateExportHeader)
 #MESSAGE(STATUS "CMAKE_MODULE_PATH: " ${CMAKE_MODULE_PATH})
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_DEBUG_POSTFIX d)
@@ -413,6 +412,7 @@ endif()
 
 
 # For creating sglConfig.cmake.in
+include(GenerateExportHeader)
 generate_export_header(sgl)
 install(
         TARGETS sgl EXPORT sglTargets
