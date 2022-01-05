@@ -85,7 +85,7 @@ void Instance::createInstance(std::vector<const char*> instanceExtensionNames, b
     VkApplicationInfo appInfo = { };
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     appInfo.pNext = NULL;
-    appInfo.pApplicationName = FileUtils::get()->getTitleName().c_str();
+    appInfo.pApplicationName = FileUtils::get()->getAppName().c_str();
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName = "sgl";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);

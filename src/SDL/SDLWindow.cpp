@@ -227,7 +227,7 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
     if (windowSettings.resizable) flags |= SDL_WINDOW_RESIZABLE;
 
     // Create the window
-    sdlWindow = SDL_CreateWindow(FileUtils::get()->getTitleName().c_str(),
+    sdlWindow = SDL_CreateWindow(FileUtils::get()->getAppName().c_str(),
             SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
             windowSettings.width, windowSettings.height, flags);
 

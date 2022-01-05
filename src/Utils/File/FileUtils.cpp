@@ -51,15 +51,24 @@
 
 namespace sgl {
 
-void FileUtils::initialize(const std::string &_titleName, int _argc, char *_argv[])
+void FileUtils::initialize(const std::string &_appName, int _argc, char *_argv[])
 {
     argc = _argc;
     argv = _argv;
     execDir = argv[0];
 
-    titleName = _titleName;
+    appName = _appName;
 #ifdef __unix__
-    configDir = std::string() + getenv("HOME") + "/.config/" + boost::to_lower_copy(titleName) + "/";
+    std::string appNameNoWhitespace;
+    for (char c : appName) {
+        if (c != ' ' && c != '\t') {
+            appNameNoWhitespace += c;
+        } else {
+            appNameNoWhitespace += '-';
+        }
+    }
+    configDir =
+            std::string() + getenv("HOME") + "/.config/" + boost::to_lower_copy(appNameNoWhitespace) + "/";
     userDir = std::string() + getenv("HOME") + "/";
 
     // Use the system-wide path "/var/games" if it is available on the system
@@ -69,6 +78,12 @@ void FileUtils::initialize(const std::string &_titleName, int _argc, char *_argv
         sharedDir = getConfigDirectory();
     }
 #else
+    std::string appNameNoWhitespace;
+    for (char c : appName) {
+        if (c != ' ' && c != '\t') {
+            appNameNoWhitespace += c;
+        }
+    }
     // Use WinAPI to query the AppData folder
     char userDataPath[MAX_PATH];
     SHGetSpecialFolderPathA(NULL, userDataPath, CSIDL_APPDATA, true);
@@ -76,7 +91,7 @@ void FileUtils::initialize(const std::string &_titleName, int _argc, char *_argv
     for (std::string::iterator it = dir.begin(); it != dir.end(); ++it) {
         if (*it == '\\') *it = '/';
     }
-    configDir = dir + titleName + "/";
+    configDir = dir + appNameNoWhitespace + "/";
 
     // For now the configuration directory is also the shared storage.
     // Using the Windows Registry could be a potential better choice.

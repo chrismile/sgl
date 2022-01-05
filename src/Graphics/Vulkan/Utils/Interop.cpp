@@ -37,6 +37,7 @@
 #endif
 
 #include <Graphics/Renderer.hpp>
+#include <Graphics/OpenGL/SystemGL.hpp>
 #include <Graphics/OpenGL/GeometryBuffer.hpp>
 #include <Graphics/OpenGL/Texture.hpp>
 
@@ -249,13 +250,20 @@ bool isDeviceCompatibleWithOpenGl(VkPhysicalDevice physicalDevice) {
     vkGetPhysicalDeviceProperties2(physicalDevice, &physicalDeviceProperties2);
 
     // Get the OpenGL UUID of the driver, and compare all associated device UUIDs with the Vulkan device UUID.
+    if (!sgl::SystemGL::get()->isGLExtensionAvailable("GL_EXT_memory_object")) {
+        sgl::Logfile::get()->write(
+                "Discarding the Vulkan device due to the OpenGL context not supporting the extension "
+                "GL_EXT_memory_object.", BLUE);
+        return false;
+    }
     GLubyte deviceUuid[GL_UUID_SIZE_EXT];
     GLubyte driverUuid[GL_UUID_SIZE_EXT];
     glGetUnsignedBytevEXT(GL_DRIVER_UUID_EXT, driverUuid);
 
     if (strncmp((const char*)driverUuid, (const char*)physicalDeviceIdProperties.driverUUID, UUID_SIZE) != 0) {
         sgl::Logfile::get()->write(
-                "Discarding the Vulkan device due to a mismatch in driver UUIDs with the OpenGL.", BLUE);
+                "Discarding the Vulkan device due to a mismatch in driver UUIDs with the OpenGL context.",
+                BLUE);
         return false;
     }
 

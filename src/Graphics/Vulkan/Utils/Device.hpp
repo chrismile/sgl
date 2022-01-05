@@ -249,7 +249,7 @@ private:
 
     VkDevice device = VK_NULL_HANDLE;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-    VmaAllocator allocator;
+    VmaAllocator allocator = VK_NULL_HANDLE;
 
     VkPhysicalDeviceProperties physicalDeviceProperties{};
     VkPhysicalDeviceMemoryProperties physicalDeviceMemoryProperties{};
@@ -268,6 +268,7 @@ private:
     VkPhysicalDeviceRayQueryFeaturesKHR deviceRayQueryFeatures{};
 
     // Queues for the logical device.
+    std::vector<VkQueueFamilyProperties> queueFamilyProperties;
     uint32_t graphicsQueueIndex;
     uint32_t computeQueueIndex;
     VkQueue graphicsQueue;

@@ -247,9 +247,20 @@ VkPhysicalDevice Device::createPhysicalDeviceBinding(
     }
 
     if (physicalDevice == VK_NULL_HANDLE) {
-        sgl::Logfile::get()->throwError(
+        std::string errorText =
                 "Error in createPhysicalDeviceBinding: No suitable GPU found with all necessary extensions and a "
-                "graphics queue!");
+                "graphics queue!";
+        bool isErrorFatal = true;
+#if defined(SUPPORT_OPENGL) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
+        if (openGlInteropEnabled) {
+            isErrorFatal = false;
+        }
+#endif
+        if (isErrorFatal) {
+            sgl::Logfile::get()->throwError(errorText);
+        } else {
+            sgl::Logfile::get()->writeError(errorText);
+        }
     }
 
     return physicalDevice;
@@ -351,6 +362,11 @@ void Device::createLogicalDeviceAndQueues(
     computeQueueIndex = findQueueFamilies(
             physicalDevice, static_cast<VkQueueFlagBits>(VK_QUEUE_COMPUTE_BIT));
 
+    uint32_t queueFamilyPropertyCount = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyPropertyCount, nullptr);
+    queueFamilyProperties.resize(queueFamilyPropertyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyPropertyCount, queueFamilyProperties.data());
+
     float queuePriorities[] = { 1.0, 1.0, 1.0 };
 
     VkDeviceQueueCreateInfo graphicsQueueInfo = {};
@@ -367,6 +383,17 @@ void Device::createLogicalDeviceAndQueues(
     computeQueueInfo.queueCount = 1;
     computeQueueInfo.pQueuePriorities = queuePriorities;
 
+    if (!computeOnly && graphicsQueueIndex == computeQueueIndex) {
+        graphicsQueueInfo.queueCount = 3;
+    }
+
+    if (!computeOnly && queueFamilyProperties.at(graphicsQueueIndex).queueCount < graphicsQueueInfo.queueCount) {
+        sgl::Logfile::get()->writeInfo(
+                "Warning: The used Vulkan driver does not support enough queues for multi-threaded rendering.");
+        graphicsQueueInfo.queueCount = std::min(
+                queueFamilyProperties.at(graphicsQueueIndex).queueCount, graphicsQueueInfo.queueCount);
+    }
+
     VkDeviceQueueCreateInfo queueInfos[] = { graphicsQueueInfo, computeQueueInfo };
     VkDeviceQueueCreateInfo* queueInfosPtr;
     if (computeOnly) {
@@ -374,7 +401,6 @@ void Device::createLogicalDeviceAndQueues(
         queueInfosPtr = &queueInfos[1];
     } else if (graphicsQueueIndex == computeQueueIndex) {
         // Allocate three compute & graphics queues.
-        graphicsQueueInfo.queueCount = 3;
         queueInfosPtr = &queueInfos[0];
     } else {
         // Allocate two compute & graphics queues and one compute-only queue.
@@ -437,11 +463,23 @@ void Device::createLogicalDeviceAndQueues(
         vkGetDeviceQueue(device, computeQueueIndex, 0, &computeQueue);
     } else if (graphicsQueueIndex == computeQueueIndex) {
         vkGetDeviceQueue(device, graphicsQueueIndex, 0, &graphicsQueue);
-        vkGetDeviceQueue(device, graphicsQueueIndex, 1, &workerThreadGraphicsQueue);
-        vkGetDeviceQueue(device, graphicsQueueIndex, 2, &computeQueue);
+        if (queueFamilyProperties.at(graphicsQueueIndex).queueCount > 1) {
+            vkGetDeviceQueue(device, graphicsQueueIndex, 1, &workerThreadGraphicsQueue);
+        } else {
+            workerThreadGraphicsQueue = graphicsQueue;
+        }
+        if (queueFamilyProperties.at(graphicsQueueIndex).queueCount > 2) {
+            vkGetDeviceQueue(device, graphicsQueueIndex, 2, &computeQueue);
+        } else {
+            computeQueue = graphicsQueue;
+        }
     } else {
         vkGetDeviceQueue(device, graphicsQueueIndex, 0, &graphicsQueue);
-        vkGetDeviceQueue(device, graphicsQueueIndex, 1, &workerThreadGraphicsQueue);
+        if (queueFamilyProperties.at(graphicsQueueIndex).queueCount > 1) {
+            vkGetDeviceQueue(device, graphicsQueueIndex, 1, &workerThreadGraphicsQueue);
+        } else {
+            workerThreadGraphicsQueue = graphicsQueue;
+        }
         vkGetDeviceQueue(device, computeQueueIndex, 0, &computeQueue);
     }
 
@@ -529,6 +567,9 @@ void Device::createDeviceSwapchain(
     physicalDevice = createPhysicalDeviceBinding(
             surface, requiredDeviceExtensions, optionalDeviceExtensions,
             deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures, computeOnly);
+    if (!physicalDevice) {
+        return;
+    }
     initializeDeviceExtensionList(physicalDevice);
 
     _getDeviceInformation();
@@ -554,6 +595,9 @@ void Device::createDeviceHeadless(
     physicalDevice = createPhysicalDeviceBinding(
             nullptr, requiredDeviceExtensions, optionalDeviceExtensions,
             deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures, computeOnly);
+    if (!physicalDevice) {
+        return;
+    }
     initializeDeviceExtensionList(physicalDevice);
 
     _getDeviceInformation();
@@ -573,8 +617,12 @@ Device::~Device() {
     }
     commandPools.clear();
 
-    vmaDestroyAllocator(allocator);
-    vkDestroyDevice(device, nullptr);
+    if (allocator) {
+        vmaDestroyAllocator(allocator);
+    }
+    if (device) {
+        vkDestroyDevice(device, nullptr);
+    }
 }
 
 void Device::waitIdle() {
