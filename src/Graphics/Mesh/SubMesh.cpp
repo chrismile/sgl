@@ -47,14 +47,14 @@ SubMesh::SubMesh(bool textured)
         shader = ShaderManager->getShaderProgram({"Mesh.Vertex.Textured", "Mesh.Fragment.Textured"});
     }
     renderData = ShaderManager->createShaderAttributes(shader);
-    material = MaterialPtr(new Material());
+    material = std::make_shared<Material>();
 }
 
 void SubMesh::render()
 {
     renderData->getShaderProgram()->setUniform("color", material->color);
     if (material->texture) {
-        renderData->getShaderProgram()->setUniform("texture", material->texture);
+        renderData->getShaderProgram()->setUniform("albedoTexture", material->texture);
     }
     Renderer->render(renderData);
 }
@@ -62,7 +62,7 @@ void SubMesh::render()
 void SubMesh::createVertices(VertexPlain *vertices, size_t numVertices)
 {
     GeometryBufferPtr geometryBuffer = Renderer->createGeometryBuffer(sizeof(VertexPlain)*numVertices, vertices);
-    renderData->addGeometryBuffer(geometryBuffer, "position", ATTRIB_FLOAT, 3);
+    renderData->addGeometryBuffer(geometryBuffer, "vertexPosition", ATTRIB_FLOAT, 3);
 
     glm::vec2 minValues, maxValues;
     minValues.x = minValues.y = 1000000000.0f;
@@ -86,8 +86,8 @@ void SubMesh::createVertices(VertexTextured *vertices, size_t numVertices)
 {
     int stride = sizeof(glm::vec3) + sizeof(glm::vec2);
     GeometryBufferPtr geometryBuffer = Renderer->createGeometryBuffer(sizeof(VertexTextured)*numVertices, vertices);
-    renderData->addGeometryBuffer(geometryBuffer, "position", ATTRIB_FLOAT, 3, 0, stride);
-    renderData->addGeometryBuffer(geometryBuffer, "texcoord", ATTRIB_FLOAT, 2, sizeof(glm::vec3), stride);
+    renderData->addGeometryBuffer(geometryBuffer, "vertexPosition", ATTRIB_FLOAT, 3, 0, stride);
+    renderData->addGeometryBuffer(geometryBuffer, "vertexTexCoord", ATTRIB_FLOAT, 2, sizeof(glm::vec3), stride);
 
     glm::vec2 minValues, maxValues;
     minValues.x = minValues.y = 1000000000.0f;

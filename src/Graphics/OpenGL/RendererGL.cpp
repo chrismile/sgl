@@ -667,9 +667,9 @@ void RendererGL::blitTexture(TexturePtr &tex, const AABB2 &renderRect, ShaderPro
     int stride = sizeof(VertexTextured);
     GeometryBufferPtr geomBuffer(new GeometryBufferGL(sizeof(VertexTextured)*fullscreenQuad.size(), &fullscreenQuad.front()));
     ShaderAttributesPtr shaderAttributes = ShaderManager->createShaderAttributes(shader);
-    shaderAttributes->addGeometryBuffer(geomBuffer, "position", ATTRIB_FLOAT, 3, 0, stride);
-    shaderAttributes->addGeometryBuffer(geomBuffer, "texcoord", ATTRIB_FLOAT, 2, sizeof(glm::vec3), stride);
-    shaderAttributes->getShaderProgram()->setUniform("texture", tex);
+    shaderAttributes->addGeometryBuffer(geomBuffer, "vertexPosition", ATTRIB_FLOAT, 3, 0, stride);
+    shaderAttributes->addGeometryBuffer(geomBuffer, "vertexTexCoord", ATTRIB_FLOAT, 2, sizeof(glm::vec3), stride);
+    shaderAttributes->getShaderProgram()->setUniform("inputTexture", tex);
     if (tex->getTextureType() == TEXTURE_2D_MULTISAMPLE) {
         shaderAttributes->getShaderProgram()->setUniform("numSamples", tex->getNumSamples());
     }
@@ -734,9 +734,9 @@ TexturePtr RendererGL::resolveMultisampledTexture(TexturePtr &tex) // Just retur
     int stride = sizeof(VertexTextured);
     GeometryBufferPtr geomBuffer(new GeometryBufferGL(sizeof(VertexTextured)*fullscreenQuad.size(), &fullscreenQuad.front()));
     ShaderAttributesPtr shaderAttributes = ShaderManager->createShaderAttributes(resolveMSAAShader);
-    shaderAttributes->addGeometryBuffer(geomBuffer, "position", ATTRIB_FLOAT, 3, 0, stride);
-    shaderAttributes->addGeometryBuffer(geomBuffer, "texcoord", ATTRIB_FLOAT, 2, sizeof(glm::vec3), stride);
-    shaderAttributes->getShaderProgram()->setUniform("texture", tex);
+    shaderAttributes->addGeometryBuffer(geomBuffer, "vertexPosition", ATTRIB_FLOAT, 3, 0, stride);
+    shaderAttributes->addGeometryBuffer(geomBuffer, "vertexTexCoord", ATTRIB_FLOAT, 2, sizeof(glm::vec3), stride);
+    shaderAttributes->getShaderProgram()->setUniform("inputTexture", tex);
     shaderAttributes->getShaderProgram()->setUniform("numSamples", tex->getNumSamples());
 
     // Now resolve the texture
@@ -766,9 +766,9 @@ void RendererGL::blurTexture(TexturePtr &tex)
     int stride = sizeof(VertexTextured);
     GeometryBufferPtr geomBuffer(new GeometryBufferGL(sizeof(VertexTextured)*fullscreenQuad.size(), &fullscreenQuad.front()));
     ShaderAttributesPtr shaderAttributes = ShaderManager->createShaderAttributes(blurShader);
-    shaderAttributes->addGeometryBuffer(geomBuffer, "position", ATTRIB_FLOAT, 3, 0, stride);
-    shaderAttributes->addGeometryBuffer(geomBuffer, "texcoord", ATTRIB_FLOAT, 2, sizeof(glm::vec3), stride);
-    shaderAttributes->getShaderProgram()->setUniform("texture", tex);
+    shaderAttributes->addGeometryBuffer(geomBuffer, "vertexPosition", ATTRIB_FLOAT, 3, 0, stride);
+    shaderAttributes->addGeometryBuffer(geomBuffer, "vertexTexCoord", ATTRIB_FLOAT, 2, sizeof(glm::vec3), stride);
+    shaderAttributes->getShaderProgram()->setUniform("inputTexture", tex);
     shaderAttributes->getShaderProgram()->setUniform("texSize", glm::vec2(tex->getW(), tex->getH()));
 
     // Perform a horizontal and a vertical blur
@@ -779,7 +779,7 @@ void RendererGL::blurTexture(TexturePtr &tex)
 
     blurFramebuffer->bindTexture(tex);
     bindFBO(blurFramebuffer, true);
-    shaderAttributes->getShaderProgram()->setUniform("texture", tempBlurTexture);
+    shaderAttributes->getShaderProgram()->setUniform("inputTexture", tempBlurTexture);
     shaderAttributes->getShaderProgram()->setUniform("horzBlur", false);
     render(shaderAttributes);
 
