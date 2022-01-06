@@ -194,7 +194,7 @@ public:
 #endif
 
 private:
-    void _generateMipmaps();
+    void _generateMipmaps(VkCommandBuffer commandBuffer);
 
     Device* device = nullptr;
     bool hasImageOwnership = true;

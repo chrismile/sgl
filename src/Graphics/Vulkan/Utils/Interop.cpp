@@ -115,9 +115,19 @@ SemaphoreVkGlInterop::~SemaphoreVkGlInterop() {
     glDeleteSemaphoresEXT(1, &semaphoreGl);
 }
 
+/*
+ * Calling glFlush seems to be necessary after glSignalSemaphoreEXT.
+ * - https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_external_objects.txt
+ * "Calling WaitSemaphore on a semaphore that has not previously had a signal operation flushed to the GL server or submitted
+ * by an external semaphore signaler since the semaphore was created or last waited on results in undefined behavior."
+ * - https://eleni.mutantstargoat.com/hikiko/vk-gl-interop-sema/
+ * "EXT_external_objects extension requires we call glSignalSemaphoreEXT followed by a glFlush."
+ * - Anecdotal evidence: glFlush was needed on Intel ANV Linux driver, but not on NVIDIA driver.
+ */
 
 void SemaphoreVkGlInterop::signalSemaphoreGl() {
     glSignalSemaphoreEXT(semaphoreGl, 0, nullptr, 0, nullptr, nullptr);
+    glFlush();
 }
 
 void SemaphoreVkGlInterop::signalSemaphoreGl(const sgl::GeometryBufferPtr& buffer) {
@@ -132,11 +142,13 @@ void SemaphoreVkGlInterop::signalSemaphoreGl(const std::vector<sgl::GeometryBuff
         buffersGl.push_back(static_cast<sgl::GeometryBufferGL*>(buffer.get())->getBuffer());
     }
     glSignalSemaphoreEXT(semaphoreGl, GLuint(buffersGl.size()), buffersGl.data(), 0, nullptr, nullptr);
+    glFlush();
 }
 
 void SemaphoreVkGlInterop::signalSemaphoreGl(const sgl::TexturePtr& texture, GLenum dstLayout) {
     GLuint textureGl = static_cast<sgl::TextureGL*>(texture.get())->getTexture();
     glSignalSemaphoreEXT(semaphoreGl, 0, nullptr, 1, &textureGl, &dstLayout);
+    glFlush();
 }
 
 void SemaphoreVkGlInterop::signalSemaphoreGl(
@@ -148,6 +160,7 @@ void SemaphoreVkGlInterop::signalSemaphoreGl(
         texturesGl.push_back(static_cast<sgl::TextureGL*>(texture.get())->getTexture());
     }
     glSignalSemaphoreEXT(semaphoreGl, 0, nullptr, GLuint(texturesGl.size()), texturesGl.data(), dstLayouts.data());
+    glFlush();
 }
 
 void SemaphoreVkGlInterop::signalSemaphoreGl(
@@ -167,6 +180,7 @@ void SemaphoreVkGlInterop::signalSemaphoreGl(
     glSignalSemaphoreEXT(
             semaphoreGl, GLuint(buffersGl.size()), buffersGl.data(),
             GLuint(texturesGl.size()), texturesGl.data(), dstLayouts.data());
+    glFlush();
 }
 
 

@@ -186,14 +186,17 @@ void Image::uploadData(VkDeviceSize sizeInBytes, void* data, bool generateMipmap
                 "is not set.");
     }
 
-    transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    copyFromBuffer(stagingBuffer);
+    VkCommandBuffer commandBuffer = device->beginSingleTimeCommands();
 
+    transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, commandBuffer);
+    copyFromBuffer(stagingBuffer, commandBuffer);
     if (generateMipmaps) {
-        _generateMipmaps();
+        _generateMipmaps(commandBuffer);
     } else {
-        transitionImageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        transitionImageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, commandBuffer);
     }
+
+    device->endSingleTimeCommands(commandBuffer);
 }
 
 void Image::copyFromBuffer(BufferPtr& buffer, VkCommandBuffer commandBuffer) {
@@ -526,7 +529,7 @@ void Image::insertMemoryBarrier(
     this->imageLayout = newLayout;
 }
 
-void Image::_generateMipmaps() {
+void Image::_generateMipmaps(VkCommandBuffer commandBuffer) {
     // Does the device support linear filtering for blit operations?
     if (imageSettings.format != cachedFormat) {
         cachedFormat = imageSettings.format;
@@ -537,8 +540,6 @@ void Image::_generateMipmaps() {
         Logfile::get()->throwError(
                 "Error in Image::_generateMipmaps: Texture image format does not support linear blitting!");
     }
-
-    VkCommandBuffer commandBuffer = device->beginSingleTimeCommands();
 
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -613,14 +614,13 @@ void Image::_generateMipmaps() {
 
     this->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-    vkCmdPipelineBarrier(commandBuffer,
-                         VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                         0,
-                         0, nullptr,
-                         0, nullptr,
-                         1, &barrier);
-
-    device->endSingleTimeCommands(commandBuffer);
+    vkCmdPipelineBarrier(
+            commandBuffer,
+            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            0,
+            0, nullptr,
+            0, nullptr,
+            1, &barrier);
 }
 
 void* Image::mapMemory() {
