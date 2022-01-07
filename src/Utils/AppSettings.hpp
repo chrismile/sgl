@@ -64,7 +64,7 @@ public:
     inline bool getBoolValue(const char *key) const { std::string val = getValue(key); if (val == "false" || val == "0") return false; return val.length() > 0; }
     inline void addKeyValue(const std::string &key, const std::string &value) { settings[key] = value; }
     template<class T> inline void addKeyValue(const std::string &key, const T &value) { settings[key] = toString(value); }
-    inline bool hasKey(const std::string &key) const { return settings.find(key) != settings.end(); }
+    [[nodiscard]] inline bool hasKey(const std::string &key) const { return settings.find(key) != settings.end(); }
     inline void removeKey(const std::string &key) { settings.erase(key); }
     inline void clear() { settings.clear(); }
 
@@ -135,6 +135,8 @@ public:
     Window* createWindow();
     /// Only Vulkan supports headless rendering (without a window) for now.
     HeadlessData createHeadless();
+    /// 'initializeDataDirectory' needs to be called when not using 'createWindow' or 'createHeadless'.
+    void initializeDataDirectory();
 #ifdef SUPPORT_VULKAN
     /// Set the primary device (used for, e.g., GUI rendering for ImGui).
     inline void setPrimaryDevice(vk::Device* device) { primaryDevice = device; }
@@ -164,7 +166,7 @@ public:
     void setLoadGUI(
             const unsigned short* fontRangeData = nullptr, bool useDocking = true, bool useMultiViewport = true,
             float uiScaleFactor = 1.0f);
-    inline bool getUseGUI() const { return useGUI; }
+    [[nodiscard]] inline bool getUseGUI() const { return useGUI; }
 
     inline RenderSystem getRenderSystem() { return renderSystem; }
     inline OperatingSystem getOS() { return operatingSystem; }
@@ -181,8 +183,8 @@ public:
     glm::ivec2 getDesktopResolution(int displayIndex = 0);
 
     // Get the directory where the application data is stored.
-    inline const std::string& getDataDirectory() const { return dataDirectory; }
-    inline bool getHasCustomDataDirectory() const { return hasCustomDataDirectory; }
+    [[nodiscard]] inline const std::string& getDataDirectory() const { return dataDirectory; }
+    [[nodiscard]] inline bool getHasCustomDataDirectory() const { return hasCustomDataDirectory; }
     void setDataDirectory(const std::string& dataDirectory);
 
 private:

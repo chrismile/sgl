@@ -184,17 +184,10 @@ void SettingsFile::loadFromFile(const char *filename)
     file.close();
 }
 
-Window *AppSettings::createWindow()
-{
-#ifdef USE_BOOST_LOCALE
-    boost::locale::generator gen;
-    std::locale l = gen("");
-    std::locale::global(l);
-#endif
-
-    // Make sure the "Data" directory exists. If not: Us the "Data" directory in the parent folder if it exists.
+void AppSettings::initializeDataDirectory() {
+    // Make sure the "Data" directory exists. If not: Use the "Data" directory in the parent folder if it exists.
     if (!hasCustomDataDirectory && !sgl::FileUtils::get()->exists("Data")
-            && sgl::FileUtils::get()->directoryExists("../Data")) {
+        && sgl::FileUtils::get()->directoryExists("../Data")) {
         dataDirectory = "../Data/";
         hasCustomDataDirectory = true;
     }
@@ -203,6 +196,17 @@ Window *AppSettings::createWindow()
                 "Error: AppSettings::createWindow: Data directory \"" + dataDirectory + "\" does not exist.");
         exit(1);
     }
+}
+
+Window *AppSettings::createWindow()
+{
+#ifdef USE_BOOST_LOCALE
+    boost::locale::generator gen;
+    std::locale l = gen("");
+    std::locale::global(l);
+#endif
+
+    initializeDataDirectory();
 
     // Disable upscaling on Windows with High-DPI settings
     setDPIAware();
@@ -237,6 +241,8 @@ Window *AppSettings::createWindow()
 }
 
 HeadlessData AppSettings::createHeadless() {
+    initializeDataDirectory();
+
     HeadlessData headlessData;
 #ifdef SUPPORT_VULKAN
     if (renderSystem == RenderSystem::VULKAN) {
