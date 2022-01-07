@@ -141,6 +141,9 @@ public:
     inline uint32_t getDeviceId() const { return physicalDeviceProperties.deviceID; }
     inline VkPhysicalDeviceType getDeviceType() const { return physicalDeviceProperties.deviceType; }
     inline const char* getDeviceName() const { return physicalDeviceProperties.deviceName; }
+    inline VkDriverId getDeviceDriverId() const { return physicalDeviceDriverProperties.driverID; }
+    inline const char* getDeviceDriverName() const { return physicalDeviceDriverProperties.driverName; }
+    inline const char* getDeviceDriverInfo() const { return physicalDeviceDriverProperties.driverInfo; }
     inline const uint8_t* getPipelineCacheUuid() const { return physicalDeviceProperties.pipelineCacheUUID; }
     inline const VkPhysicalDeviceLimits& getLimits() const { return physicalDeviceProperties.limits; }
     inline const VkPhysicalDeviceSparseProperties& getSparseProperties() const { return physicalDeviceProperties.sparseProperties; }
@@ -258,6 +261,7 @@ private:
     VmaAllocator allocator = VK_NULL_HANDLE;
 
     VkPhysicalDeviceProperties physicalDeviceProperties{};
+    VkPhysicalDeviceDriverProperties physicalDeviceDriverProperties{};
     VkPhysicalDeviceMemoryProperties physicalDeviceMemoryProperties{};
     VkPhysicalDeviceFeatures physicalDeviceFeatures{};
 

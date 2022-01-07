@@ -512,6 +512,15 @@ void Device::_getDeviceInformation() {
     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &physicalDeviceMemoryProperties);
     vkGetPhysicalDeviceFeatures(physicalDevice, &physicalDeviceFeatures);
 
+    if (physicalDeviceProperties.apiVersion >= VK_API_VERSION_1_1) {
+        physicalDeviceDriverProperties = {};
+        physicalDeviceDriverProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
+        VkPhysicalDeviceProperties2 deviceProperties2 = {};
+        deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        deviceProperties2.pNext = &physicalDeviceDriverProperties;
+        vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
+    }
+
     if (isDeviceExtensionSupported(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)) {
         accelerationStructureProperties = {};
         accelerationStructureProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
@@ -538,6 +547,12 @@ void Device::writeDeviceInfoToLog(const std::vector<const char*>& deviceExtensio
             std::string() + "Device Vulkan version: "
             + Instance::convertVulkanVersionToString(getApiVersion()), BLUE);
     sgl::Logfile::get()->write(std::string() + "Device name: " + getDeviceName(), BLUE);
+    if (physicalDeviceProperties.apiVersion >= VK_API_VERSION_1_1) {
+        sgl::Logfile::get()->write(std::string() + "Device driver name: " + getDeviceDriverName(), BLUE);
+        sgl::Logfile::get()->write(std::string() + "Device driver info: " + getDeviceDriverInfo(), BLUE);
+        sgl::Logfile::get()->write(
+                std::string() + "Device driver ID: " + sgl::toString(getDeviceDriverId()), BLUE);
+    }
 
     printAvailableDeviceExtensionList();
 
