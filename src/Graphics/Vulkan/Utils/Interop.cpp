@@ -117,11 +117,15 @@ SemaphoreVkGlInterop::~SemaphoreVkGlInterop() {
 
 /*
  * Calling glFlush seems to be necessary after glSignalSemaphoreEXT.
+ *
  * - https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_external_objects.txt
- * "Calling WaitSemaphore on a semaphore that has not previously had a signal operation flushed to the GL server or submitted
- * by an external semaphore signaler since the semaphore was created or last waited on results in undefined behavior."
+ * "Calling WaitSemaphore on a semaphore that has not previously had a signal operation flushed to the GL server or
+ * submitted by an external semaphore signaler since the semaphore was created or last waited on results in undefined
+ * behavior."
+ *
  * - https://eleni.mutantstargoat.com/hikiko/vk-gl-interop-sema/
  * "EXT_external_objects extension requires we call glSignalSemaphoreEXT followed by a glFlush."
+ *
  * - Anecdotal evidence: glFlush was needed on Intel ANV Linux driver, but not on NVIDIA driver.
  */
 
