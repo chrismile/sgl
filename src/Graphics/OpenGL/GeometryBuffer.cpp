@@ -35,7 +35,7 @@
 #endif
 
 #ifdef _WIN32
-#include <handleapi.h>
+#include <windows.h>
 #else
 #include <unistd.h>
 #endif
@@ -49,7 +49,7 @@ GeometryBufferGL::GeometryBufferGL(size_t size, BufferType type /* = VERTEX_BUFF
 
     glGenBuffers(1, &buffer);
     glBindBuffer(oglBufferType, buffer);
-    glBufferData(oglBufferType, size, NULL, oglBufferUsage);
+    glBufferData(oglBufferType, size, nullptr, oglBufferUsage);
 }
 
 GeometryBufferGL::GeometryBufferGL(size_t size, void *data, BufferType type /* = VERTEX_BUFFER*/, BufferUse bufferUse /* = BUFFER_STATIC */)

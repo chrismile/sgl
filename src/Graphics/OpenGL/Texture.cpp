@@ -37,7 +37,7 @@
 #endif
 
 #ifdef _WIN32
-#include <handleapi.h>
+#include <windows.h>
 #else
 #include <unistd.h>
 #endif
