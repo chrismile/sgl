@@ -181,9 +181,9 @@ SemaphoreVkCudaDriverApiInterop::SemaphoreVkCudaDriverApiInterop(
     semaphoreGetWin32HandleInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR;
     semaphoreGetWin32HandleInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
     semaphoreGetWin32HandleInfo.semaphore = semaphoreVk;
-    HANDLE semaphoreHandle = nullptr;
+    handle = nullptr;
     if (_vkGetSemaphoreWin32HandleKHR(
-            device->getVkDevice(), &semaphoreGetWin32HandleInfo, &semaphoreHandle) != VK_SUCCESS) {
+            device->getVkDevice(), &semaphoreGetWin32HandleInfo, &handle) != VK_SUCCESS) {
         Logfile::get()->throwError(
                 "Error in SemaphoreVkCudaDriverApiInterop::SemaphoreVkCudaDriverApiInterop: "
                 "vkGetSemaphoreFdKHR failed!");
@@ -200,7 +200,7 @@ SemaphoreVkCudaDriverApiInterop::SemaphoreVkCudaDriverApiInterop(
     } else {
         externalSemaphoreHandleDesc.type = CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32;
     }
-    externalSemaphoreHandleDesc.handle.win32.handle = (void*)semaphoreHandle;
+    externalSemaphoreHandleDesc.handle.win32.handle = handle;
 #elif defined(__linux__)
     auto _vkGetSemaphoreFdKHR = (PFN_vkGetSemaphoreFdKHR)vkGetDeviceProcAddr(
             device->getVkDevice(), "vkGetSemaphoreFdKHR");
@@ -214,12 +214,13 @@ SemaphoreVkCudaDriverApiInterop::SemaphoreVkCudaDriverApiInterop(
     semaphoreGetFdInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_FD_INFO_KHR;
     semaphoreGetFdInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;
     semaphoreGetFdInfo.semaphore = semaphoreVk;
-    int fileDescriptor = 0;
+    fileDescriptor = 0;
     if (_vkGetSemaphoreFdKHR(device->getVkDevice(), &semaphoreGetFdInfo, &fileDescriptor) != VK_SUCCESS) {
         Logfile::get()->throwError(
                 "Error in SemaphoreVkCudaDriverApiInterop::SemaphoreVkCudaDriverApiInterop: "
                 "vkGetSemaphoreFdKHR failed!");
     }
+
     if (isTimelineSemaphore()) {
 #if CUDA_VERSION >= 11020
         externalSemaphoreHandleDesc.type = CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_TIMELINE_SEMAPHORE_FD;
@@ -243,6 +244,15 @@ SemaphoreVkCudaDriverApiInterop::SemaphoreVkCudaDriverApiInterop(
 SemaphoreVkCudaDriverApiInterop::~SemaphoreVkCudaDriverApiInterop() {
     CUresult cuResult = g_cudaDeviceApiFunctionTable.cuDestroyExternalSemaphore(cuExternalSemaphore);
     checkCUresult(cuResult, "Error in cuDestroyExternalSemaphore: ");
+
+#ifdef _WIN32
+    CloseHandle(handle);
+#else
+    if (fileDescriptor != -1) {
+        close(fileDescriptor);
+        fileDescriptor = -1;
+    }
+#endif
 }
 
 void SemaphoreVkCudaDriverApiInterop::signalSemaphoreCuda(CUstream stream, unsigned long long timelineValue) {

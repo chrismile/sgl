@@ -650,7 +650,7 @@ VkSubresourceLayout Image::getSubresourceLayout(
 }
 
 #if defined(SUPPORT_OPENGL) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
-bool Image::createGlMemoryObject(GLuint& memoryObjectGl) {
+bool Image::createGlMemoryObject(GLuint& memoryObjectGl, InteropMemoryHandle& interopMemoryHandle) {
     if (!imageSettings.exportMemory) {
         Logfile::get()->throwError(
                 "Error in Buffer::createGlMemoryObject: An external memory object can only be created if the "
@@ -658,7 +658,8 @@ bool Image::createGlMemoryObject(GLuint& memoryObjectGl) {
         return false;
     }
     return createGlMemoryObjectFromVkDeviceMemory(
-            memoryObjectGl, device->getVkDevice(), deviceMemory, deviceMemorySizeInBytes);
+            memoryObjectGl, interopMemoryHandle,
+            device->getVkDevice(), deviceMemory, deviceMemorySizeInBytes);
 }
 #endif
 

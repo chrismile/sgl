@@ -68,6 +68,12 @@ public:
 protected:
     vk::ImagePtr vulkanImage;
     GLuint memoryObject = 0;
+
+#ifdef _WIN32
+    void* handle = nullptr;
+#else
+    int fileDescriptor = -1;
+#endif
 };
 #endif
 

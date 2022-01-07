@@ -32,6 +32,16 @@
 #include <Graphics/Renderer.hpp>
 #include "Texture.hpp"
 
+#if defined(SUPPORT_VULKAN) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
+#include <Graphics/Vulkan/Utils/Interop.hpp>
+#endif
+
+#ifdef _WIN32
+#include <handleapi.h>
+#else
+#include <unistd.h>
+#endif
+
 namespace sgl {
 
 TextureGL::TextureGL(unsigned int _texture, int _w, TextureSettings settings, int _samples /* = 0 */)
@@ -217,11 +227,17 @@ GLenum convertFilterVkToFilterGl(VkFilter filterVk, uint32_t mipLevels, VkSample
 
 TextureGLExternalMemoryVk::TextureGLExternalMemoryVk(vk::TexturePtr& vulkanTexture)
         : TextureGL(0, 0, 0, 0, TextureSettings(), 0) {
+    sgl::InteropMemoryHandle interopMemoryHandle{};
     this->vulkanImage = vulkanTexture->getImage();
-    if (!vulkanImage->createGlMemoryObject(memoryObject)) {
+    if (!vulkanImage->createGlMemoryObject(memoryObject, interopMemoryHandle)) {
         Logfile::get()->throwError(
                 "GeometryBufferVkExternalMemoryGL::GeometryBufferVkExternalMemoryGL: createGlMemoryObject failed.");
     }
+#ifdef _WIN32
+    handle = interopMemoryHandle.handle;
+#else
+    fileDescriptor = interopMemoryHandle.fileDescriptor;
+#endif
 
     const vk::ImageSettings& imageSettings = vulkanImage->getImageSettings();
     const vk::ImageSamplerSettings& imageSamplerSettings =
@@ -292,7 +308,6 @@ TextureGLExternalMemoryVk::TextureGLExternalMemoryVk(vk::TexturePtr& vulkanTextu
         glTexParameteri(target, GL_TEXTURE_WRAP_R, settings.textureWrapR);
     }
 
-    vulkanImage->createGlMemoryObject(memoryObject);
     if (imageSettings.imageType == VK_IMAGE_TYPE_1D && imageSettings.numSamples == VK_SAMPLE_COUNT_1_BIT) {
         glTexStorageMem1DEXT(target, GLsizei(imageSettings.mipLevels), format, w, memoryObject, 0);
     } else if (imageSettings.imageType == VK_IMAGE_TYPE_2D && imageSettings.numSamples == VK_SAMPLE_COUNT_1_BIT) {
@@ -306,6 +321,18 @@ TextureGLExternalMemoryVk::TextureGLExternalMemoryVk(vk::TexturePtr& vulkanTextu
 
 TextureGLExternalMemoryVk::~TextureGLExternalMemoryVk() {
     glDeleteMemoryObjectsEXT(1, &memoryObject);
+
+#ifdef _WIN32
+    if (handle) {
+        CloseHandle(handle);
+        handle = nullptr;
+    }
+#else
+    if (fileDescriptor != -1) {
+        close(fileDescriptor);
+        fileDescriptor = -1;
+    }
+#endif
 }
 #endif
 

@@ -296,7 +296,7 @@ VkDeviceAddress Buffer::getVkDeviceAddress() {
 }
 
 #if defined(SUPPORT_OPENGL) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
-bool Buffer::createGlMemoryObject(GLuint& memoryObjectGl) {
+bool Buffer::createGlMemoryObject(GLuint& memoryObjectGl, InteropMemoryHandle& interopMemoryHandle) {
     if (!exportMemory) {
         Logfile::get()->throwError(
                 "Error in Buffer::createGlMemoryObject: An external memory object can only be created if the "
@@ -304,7 +304,8 @@ bool Buffer::createGlMemoryObject(GLuint& memoryObjectGl) {
         return false;
     }
     return createGlMemoryObjectFromVkDeviceMemory(
-            memoryObjectGl, device->getVkDevice(), deviceMemory, sizeInBytes);
+            memoryObjectGl, interopMemoryHandle,
+            device->getVkDevice(), deviceMemory, sizeInBytes);
 }
 #endif
 

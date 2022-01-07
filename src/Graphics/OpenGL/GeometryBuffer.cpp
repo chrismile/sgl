@@ -30,6 +30,16 @@
 #include "GeometryBuffer.hpp"
 #include <Utils/File/Logfile.hpp>
 
+#if defined(SUPPORT_VULKAN) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
+#include <Graphics/Vulkan/Utils/Interop.hpp>
+#endif
+
+#ifdef _WIN32
+#include <handleapi.h>
+#else
+#include <unistd.h>
+#endif
+
 namespace sgl {
 
 GeometryBufferGL::GeometryBufferGL(size_t size, BufferType type /* = VERTEX_BUFFER */, BufferUse bufferUse /* = BUFFER_STATIC */)
@@ -140,10 +150,16 @@ void GeometryBufferGL::unbind()
 #if defined(SUPPORT_VULKAN) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
 GeometryBufferGLExternalMemoryVk::GeometryBufferGLExternalMemoryVk(vk::BufferPtr &vulkanBuffer, BufferType type)
         : GeometryBufferGL(type), vulkanBuffer(vulkanBuffer) {
-    if (!vulkanBuffer->createGlMemoryObject(memoryObject)) {
+    sgl::InteropMemoryHandle interopMemoryHandle{};
+    if (!vulkanBuffer->createGlMemoryObject(memoryObject, interopMemoryHandle)) {
         Logfile::get()->throwError(
                 "GeometryBufferVkExternalMemoryGL::GeometryBufferVkExternalMemoryGL: createGlMemoryObject failed.");
     }
+#ifdef _WIN32
+    handle = interopMemoryHandle.handle;
+#else
+    fileDescriptor = interopMemoryHandle.fileDescriptor;
+#endif
 
     bufferSize = vulkanBuffer->getSizeInBytes();
     glCreateBuffers(1, &buffer);
@@ -152,6 +168,18 @@ GeometryBufferGLExternalMemoryVk::GeometryBufferGLExternalMemoryVk(vk::BufferPtr
 
 GeometryBufferGLExternalMemoryVk::~GeometryBufferGLExternalMemoryVk() {
     glDeleteMemoryObjectsEXT(1, &memoryObject);
+
+#ifdef _WIN32
+    if (handle) {
+        CloseHandle(handle);
+        handle = nullptr;
+    }
+#else
+    if (fileDescriptor != -1) {
+        close(fileDescriptor);
+        fileDescriptor = -1;
+    }
+#endif
 }
 #endif
 

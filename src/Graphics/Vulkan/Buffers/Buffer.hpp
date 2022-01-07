@@ -38,6 +38,9 @@
 
 #if defined(SUPPORT_OPENGL) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
 #include <GL/glew.h>
+namespace sgl {
+union InteropMemoryHandle;
+}
 #endif
 
 namespace sgl { namespace vk {
@@ -183,9 +186,10 @@ public:
      * Creates an OpenGL memory object from the external Vulkan memory.
      * NOTE: The buffer must have been created with exportMemory set to true.
      * @param memoryObjectGl The OpenGL memory object.
+     * @param interopMemoryHandle The handle (Windows) or file descriptor (Unix) to the Vulkan memory object.
      * @return Whether the OpenGL memory object could be created successfully.
      */
-    bool createGlMemoryObject(GLuint& memoryObjectGl);
+    bool createGlMemoryObject(GLuint& memoryObjectGl, InteropMemoryHandle& interopMemoryHandle);
 #endif
 
 private:
@@ -237,7 +241,7 @@ public:
 private:
     Device* device = nullptr;
     BufferPtr buffer;
-    VkBufferView bufferView;
+    VkBufferView bufferView = VK_NULL_HANDLE;
     VkFormat format;
     VkDeviceSize offset;
     VkDeviceSize range;

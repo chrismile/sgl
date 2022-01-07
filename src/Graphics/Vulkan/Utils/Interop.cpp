@@ -298,7 +298,8 @@ bool isDeviceCompatibleWithOpenGl(VkPhysicalDevice physicalDevice) {
 }
 
 bool createGlMemoryObjectFromVkDeviceMemory(
-        GLuint& memoryObjectGl, VkDevice device, VkDeviceMemory deviceMemory, size_t sizeInBytes) {
+        GLuint& memoryObjectGl, InteropMemoryHandle& interopMemoryHandle,
+        VkDevice device, VkDeviceMemory deviceMemory, size_t sizeInBytes) {
 #if defined(_WIN32)
     auto _vkGetMemoryWin32HandleKHR = (PFN_vkGetMemoryWin32HandleKHR)vkGetDeviceProcAddr(
             device, "vkGetMemoryWin32HandleKHR");
@@ -322,6 +323,7 @@ bool createGlMemoryObjectFromVkDeviceMemory(
 
     glCreateMemoryObjectsEXT(1, &memoryObjectGl);
     glImportMemoryWin32HandleEXT(memoryObjectGl, sizeInBytes, GL_HANDLE_TYPE_OPAQUE_WIN32_EXT, handle);
+    interopMemoryHandle.handle = handle;
 #elif defined(__linux__)
     auto _vkGetMemoryFdKHR = (PFN_vkGetMemoryFdKHR)vkGetDeviceProcAddr(device, "vkGetMemoryFdKHR");
     if (!_vkGetMemoryFdKHR) {
@@ -345,6 +347,7 @@ bool createGlMemoryObjectFromVkDeviceMemory(
 
     glCreateMemoryObjectsEXT(1, &memoryObjectGl);
     glImportMemoryFdEXT(memoryObjectGl, sizeInBytes, GL_HANDLE_TYPE_OPAQUE_FD_EXT, fileDescriptor);
+    interopMemoryHandle.fileDescriptor = fileDescriptor;
 #else
     Logfile::get()->throwError(
             "Error in createGlMemoryObjectFromVkDeviceMemory: External memory is only supported on Linux, Android "

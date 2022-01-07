@@ -114,6 +114,11 @@ typedef std::shared_ptr<SemaphoreVkGlInterop> SemaphoreVkGlInteropPtr;
  */
 DLL_OBJECT bool isDeviceCompatibleWithOpenGl(VkPhysicalDevice physicalDevice);
 
+union InteropMemoryHandle {
+    void* handle;
+    int fileDescriptor;
+};
+
 /**
  * Creates an OpenGL memory object from the external Vulkan memory.
  * @param memoryObjectGl The OpenGL memory object.
@@ -123,7 +128,8 @@ DLL_OBJECT bool isDeviceCompatibleWithOpenGl(VkPhysicalDevice physicalDevice);
  * @return Whether the OpenGL memory object could be created successfully.
  */
 DLL_OBJECT bool createGlMemoryObjectFromVkDeviceMemory(
-        GLuint& memoryObjectGl, VkDevice device, VkDeviceMemory deviceMemory, size_t sizeInBytes);
+        GLuint& memoryObjectGl, InteropMemoryHandle& interopMemoryHandle,
+        VkDevice device, VkDeviceMemory deviceMemory, size_t sizeInBytes);
 
 }
 
