@@ -111,7 +111,13 @@ public:
             bool computeOnly = false);
     ~Device();
 
+    /// Waits for the device to become idle.
     void waitIdle();
+    /// Waits for the passed queue to become idle.
+    void waitQueueIdle(VkQueue queue);
+    inline void waitGraphicsQueueIdle() { waitQueueIdle(graphicsQueue); }
+    inline void waitComputeQueueIdle() { waitQueueIdle(computeQueue); }
+    inline void waitWorkerThreadGraphicsQueueIdle() { waitQueueIdle(workerThreadGraphicsQueue); }
 
     /// Returns whether the device extension is supported.
     bool isDeviceExtensionSupported(const std::string& name);

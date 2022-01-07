@@ -629,6 +629,10 @@ void Device::waitIdle() {
     vkDeviceWaitIdle(device);
 }
 
+void Device::waitQueueIdle(VkQueue queue) {
+    vkQueueWaitIdle(queue);
+}
+
 VkSampleCountFlagBits Device::getMaxUsableSampleCount() const {
     VkSampleCountFlags counts =
             physicalDeviceProperties.limits.framebufferColorSampleCounts
