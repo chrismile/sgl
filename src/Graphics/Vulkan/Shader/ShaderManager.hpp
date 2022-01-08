@@ -49,6 +49,13 @@ struct DLL_OBJECT ShaderModuleInfo {
     }
 };
 
+/// Wrapper for shaderc_optimization_level.
+enum class ShaderOptimizationLevel {
+    ZERO, //< No optimization.
+    SIZE, //< Optimize code size.
+    PERFORMANCE //< Optimize performance.
+};
+
 class DLL_OBJECT ShaderManagerVk : public FileManager<ShaderModule, ShaderModuleInfo> {
 public:
     ShaderManagerVk(Device* device);
@@ -90,6 +97,13 @@ public:
             preprocessorDefines.erase(it);
         }
     }
+
+    inline void setGenerateDebugInfo(bool _generateDebugInfo = true) { generateDebugInfo = _generateDebugInfo; }
+    inline void setOptimizationLevel(ShaderOptimizationLevel _shaderOptimizationLevel) {
+        isOptimizationLevelSet = true;
+        shaderOptimizationLevel = _shaderOptimizationLevel;
+    }
+    inline void resetOptimizationLevel() { isOptimizationLevelSet = false; }
 
     /**
      * Deletes all cached shaders in the ShaderManager. This is necessary, e.g., when wanting to switch to a
@@ -149,6 +163,9 @@ protected:
 
     // Shader module compiler.
     shaderc::Compiler* shaderCompiler = nullptr;
+    bool generateDebugInfo = false;
+    bool isOptimizationLevelSet = false;
+    ShaderOptimizationLevel shaderOptimizationLevel = ShaderOptimizationLevel::PERFORMANCE;
 };
 
 DLL_OBJECT extern ShaderManagerVk* ShaderManager;

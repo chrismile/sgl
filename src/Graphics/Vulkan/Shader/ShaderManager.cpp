@@ -217,6 +217,18 @@ ShaderModulePtr ShaderManagerVk::loadAsset(ShaderModuleInfo& shaderInfo) {
     }
     auto includerInterface = new IncluderInterface();
     compileOptions.SetIncluder(std::unique_ptr<shaderc::CompileOptions::IncluderInterface>(includerInterface));
+    if (isOptimizationLevelSet) {
+        if (shaderOptimizationLevel == ShaderOptimizationLevel::ZERO) {
+            compileOptions.SetOptimizationLevel(shaderc_optimization_level_zero);
+        } else if (shaderOptimizationLevel == ShaderOptimizationLevel::SIZE) {
+            compileOptions.SetOptimizationLevel(shaderc_optimization_level_size);
+        } else {
+            compileOptions.SetOptimizationLevel(shaderc_optimization_level_performance);
+        }
+    }
+    if (generateDebugInfo) {
+        compileOptions.SetGenerateDebugInfo();
+    }
 
     if (device->getInstance()->getInstanceVulkanVersion() < VK_API_VERSION_1_1) {
         compileOptions.SetTargetSpirv(shaderc_spirv_version_1_0);
