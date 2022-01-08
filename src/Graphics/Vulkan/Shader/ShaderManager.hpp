@@ -51,15 +51,15 @@ struct DLL_OBJECT ShaderModuleInfo {
 
 /// Wrapper for shaderc_optimization_level.
 enum class ShaderOptimizationLevel {
-    ZERO, //< No optimization.
-    SIZE, //< Optimize code size.
-    PERFORMANCE //< Optimize performance.
+    ZERO, //< No optimization ('-O0' when using glslc).
+    SIZE, //< Optimize code size ('-Os' when using glslc).
+    PERFORMANCE //< Optimize performance ('-O' when using glslc).
 };
 
 class DLL_OBJECT ShaderManagerVk : public FileManager<ShaderModule, ShaderModuleInfo> {
 public:
-    ShaderManagerVk(Device* device);
-    ~ShaderManagerVk();
+    explicit ShaderManagerVk(Device* device);
+    ~ShaderManagerVk() override;
 
     /// Reference-counted loading.
     /// If dumpTextDebug, the pre-processed source will be dumped on the command line.
@@ -98,7 +98,9 @@ public:
         }
     }
 
+    /// Setting generateDebugInfo to true corresponds to the glslc flag '-g'.
     inline void setGenerateDebugInfo(bool _generateDebugInfo = true) { generateDebugInfo = _generateDebugInfo; }
+    /// The different optimization levels correspond to the flags '-O0', '-Os' and '-O' when using glslc.
     inline void setOptimizationLevel(ShaderOptimizationLevel _shaderOptimizationLevel) {
         isOptimizationLevelSet = true;
         shaderOptimizationLevel = _shaderOptimizationLevel;
@@ -113,8 +115,8 @@ public:
     virtual void invalidateShaderCache();
 
     // For use by IncluderInterface.
-    const std::map<std::string, std::string>& getShaderFileMap() const { return shaderFileMap; }
-    const std::string& getShaderPathPrefix() const { return pathPrefix; }
+    [[nodiscard]] const std::map<std::string, std::string>& getShaderFileMap() const { return shaderFileMap; }
+    [[nodiscard]] const std::string& getShaderPathPrefix() const { return pathPrefix; }
 
 protected:
     ShaderModulePtr loadAsset(ShaderModuleInfo& shaderModuleInfo) override;
