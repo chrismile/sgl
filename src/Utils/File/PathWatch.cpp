@@ -90,7 +90,7 @@ void PathWatch::update(std::function<void()> pathChangedCallback) {
         struct pollfd pfd = { data->inotifyFileDesc, POLLIN, 0 };
         int retVal = poll(&pfd, 1, 0);
         if (retVal < 0) {
-            sgl::Logfile::get()->writeError("ERROR in MultiVarTransferFunctionWindow::update: Failed poll.");
+            sgl::Logfile::get()->writeError("Error in PathWatch::update: Failed poll.");
         } else if (retVal > 0) {
             int size = read(data->inotifyFileDesc, data->inotifyEvents, data->inotifyEventBufferSize);
             uint8_t* inotifyBuffer = reinterpret_cast<uint8_t*>(data->inotifyEvents);
@@ -122,7 +122,7 @@ void PathWatch::update(std::function<void()> pathChangedCallback) {
                 inotifyBuffer += sizeof(inotify_event) + inotifyEvent->len;
             }
             if (size == 0) {
-                sgl::Logfile::get()->writeError("ERROR in MultiVarTransferFunctionWindow::update: Failed read.");
+                sgl::Logfile::get()->writeError("Error in PathWatch::update: Failed read.");
             }
         } else {
             break;
@@ -166,26 +166,26 @@ void PathWatch::initialize() {
             OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, nullptr);
 
     if (data->parentHandle == INVALID_HANDLE_VALUE) {
-        sgl::Logfile::get()->writeError("ERROR in PathWatch::initialize: Invalid parent handle.");
+        sgl::Logfile::get()->writeError("Error in PathWatch::initialize: Invalid parent handle.");
         exit(GetLastError());
     }
 
     data->parentOvl = { 0 };
     if ((data->parentOvl.hEvent = ::CreateEvent(NULL, TRUE, FALSE, NULL)) == nullptr) {
-        sgl::Logfile::get()->writeError("ERROR in PathWatch::initialize: CreateEvent failed.");
+        sgl::Logfile::get()->writeError("Error in PathWatch::initialize: CreateEvent failed.");
         exit(GetLastError());
     }
     if (ReadDirectoryChangesW(
             data->parentHandle, data->parentBuffer, MAX_NOTIFY_BUFFER_SIZE, FALSE,
             FILE_NOTIFY_CHANGE_DIR_NAME,
             nullptr, &data->parentOvl, nullptr) == FALSE) {
-        sgl::Logfile::get()->writeError("ERROR in PathWatch::initialize: ReadDirectoryChangesW failed.");
+        sgl::Logfile::get()->writeError("Error in PathWatch::initialize: ReadDirectoryChangesW failed.");
         exit(GetLastError());
     }
 
     data->pathOvl = { 0 };
     if ((data->pathOvl.hEvent = ::CreateEvent(NULL, TRUE, FALSE, NULL)) == nullptr) {
-        sgl::Logfile::get()->writeError("ERROR in PathWatch::initialize: CreateEvent failed.");
+        sgl::Logfile::get()->writeError("Error in PathWatch::initialize: CreateEvent failed.");
         exit(GetLastError());
     }
 
@@ -196,7 +196,7 @@ void PathWatch::initialize() {
                 OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, nullptr);
 
         if (data->pathHandle == INVALID_HANDLE_VALUE) {
-            sgl::Logfile::get()->writeError("ERROR in PathWatch::initialize: Invalid path handle.");
+            sgl::Logfile::get()->writeError("Error in PathWatch::initialize: Invalid path handle.");
             exit(GetLastError());
         }
 
@@ -204,7 +204,7 @@ void PathWatch::initialize() {
                 data->pathHandle, data->pathBuffer, MAX_NOTIFY_BUFFER_SIZE, FALSE,
                 FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_LAST_WRITE,
                 nullptr, &data->pathOvl, nullptr) == FALSE) {
-            sgl::Logfile::get()->writeError("ERROR in PathWatch::initialize: ReadDirectoryChangesW failed.");
+            sgl::Logfile::get()->writeError("Error in PathWatch::initialize: ReadDirectoryChangesW failed.");
             exit(GetLastError());
         }
     }
@@ -227,7 +227,7 @@ void PathWatch::update(std::function<void()> pathChangedCallback) {
     bool shallUseCallback = false;
 
     if (data->parentHandle == INVALID_HANDLE_VALUE) {
-        sgl::Logfile::get()->writeError("ERROR in PathWatch::update: Unexpected invalid handle.");
+        sgl::Logfile::get()->writeError("Error in PathWatch::update: Unexpected invalid handle.");
         exit(GetLastError());
     }
 
@@ -236,7 +236,7 @@ void PathWatch::update(std::function<void()> pathChangedCallback) {
         if (dwWaitStatus == WAIT_OBJECT_0) {
             DWORD lpBytesReturned = 0;
             if (::GetOverlappedResult(data->parentHandle, &data->parentOvl, &lpBytesReturned, TRUE) == FALSE) {
-                sgl::Logfile::get()->writeError("ERROR in PathWatch::update: GetOverlappedResult failed.");
+                sgl::Logfile::get()->writeError("Error in PathWatch::update: GetOverlappedResult failed.");
                 exit(GetLastError());
             }
 
@@ -272,14 +272,14 @@ void PathWatch::update(std::function<void()> pathChangedCallback) {
                                     OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, nullptr);
                             /*data->pathOvl = { 0 };
                             if ((data->pathOvl.hEvent = ::CreateEvent(NULL, TRUE, FALSE, NULL)) == nullptr) {
-                                sgl::Logfile::get()->writeError("ERROR in PathWatch::initialize: CreateEvent failed.");
+                                sgl::Logfile::get()->writeError("Error in PathWatch::initialize: CreateEvent failed.");
                                 exit(GetLastError());
                             }*/
                             if (ReadDirectoryChangesW(
                                     data->pathHandle, data->pathBuffer, MAX_NOTIFY_BUFFER_SIZE, FALSE,
                                     FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_LAST_WRITE,
                                     nullptr, &data->pathOvl, nullptr) == FALSE) {
-                                sgl::Logfile::get()->writeError("ERROR in PathWatch::initialize: ReadDirectoryChangesW failed.");
+                                sgl::Logfile::get()->writeError("Error in PathWatch::initialize: ReadDirectoryChangesW failed.");
                                 exit(GetLastError());
                             }
                         }
@@ -293,7 +293,7 @@ void PathWatch::update(std::function<void()> pathChangedCallback) {
                     notifyBuffer += notifyInfo->NextEntryOffset;
                 }
             } else {
-                sgl::Logfile::get()->writeError("ERROR in PathWatch::update: GetOverlappedResult failed.");
+                sgl::Logfile::get()->writeError("Error in PathWatch::update: GetOverlappedResult failed.");
             }
 
             ResetEvent(data->parentOvl.hEvent);
@@ -302,13 +302,13 @@ void PathWatch::update(std::function<void()> pathChangedCallback) {
                     data->parentHandle, data->parentBuffer, MAX_NOTIFY_BUFFER_SIZE, FALSE,
                     FILE_NOTIFY_CHANGE_DIR_NAME, nullptr,
                     &data->parentOvl, nullptr) == FALSE) {
-                sgl::Logfile::get()->writeError("ERROR in PathWatch::initialize: ReadDirectoryChangesW failed.");
+                sgl::Logfile::get()->writeError("Error in PathWatch::initialize: ReadDirectoryChangesW failed.");
                 exit(GetLastError());
             }
         } else if (dwWaitStatus == WAIT_TIMEOUT) {
             break;
         } else {
-            sgl::Logfile::get()->writeError("ERROR in PathWatch::update: WaitForMultipleObjects failed.");
+            sgl::Logfile::get()->writeError("Error in PathWatch::update: WaitForMultipleObjects failed.");
             exit(GetLastError());
         }
     }
@@ -321,14 +321,14 @@ void PathWatch::update(std::function<void()> pathChangedCallback) {
         if (dwWaitStatus == WAIT_OBJECT_0) {
             DWORD lpBytesReturned = 0;
             if (::GetOverlappedResult(data->pathHandle, &data->pathOvl, &lpBytesReturned, TRUE) == FALSE) {
-                sgl::Logfile::get()->writeError("ERROR in PathWatch::update: GetOverlappedResult failed.");
+                sgl::Logfile::get()->writeError("Error in PathWatch::update: GetOverlappedResult failed.");
                 exit(GetLastError());
             }
 
             if (lpBytesReturned > 0) {
                 shallUseCallback = true;
             } else {
-                sgl::Logfile::get()->writeError("ERROR in PathWatch::update: GetOverlappedResult failed.");
+                sgl::Logfile::get()->writeError("Error in PathWatch::update: GetOverlappedResult failed.");
             }
 
             ResetEvent(data->pathOvl.hEvent);
@@ -337,13 +337,13 @@ void PathWatch::update(std::function<void()> pathChangedCallback) {
                     data->pathHandle, data->pathBuffer, MAX_NOTIFY_BUFFER_SIZE, FALSE,
                     FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_LAST_WRITE,
                     nullptr, &data->pathOvl, nullptr) == FALSE) {
-                sgl::Logfile::get()->writeError("ERROR in PathWatch::initialize: ReadDirectoryChangesW failed.");
+                sgl::Logfile::get()->writeError("Error in PathWatch::initialize: ReadDirectoryChangesW failed.");
                 exit(GetLastError());
             }
         } else if (dwWaitStatus == WAIT_TIMEOUT) {
             break;
         } else {
-            sgl::Logfile::get()->writeError("ERROR in PathWatch::update: WaitForMultipleObjects failed.");
+            sgl::Logfile::get()->writeError("Error in PathWatch::update: WaitForMultipleObjects failed.");
             exit(GetLastError());
         }
     }
@@ -393,7 +393,7 @@ void PathWatch::update(std::function<void()> pathChangedCallback) {
     bool shallUseCallback = false;
 
     if (data->parentChangeHandle == nullptr) {
-        sgl::Logfile::get()->writeError("ERROR in PathWatch::update: Unexpected nullptr handle.");
+        sgl::Logfile::get()->writeError("Error in PathWatch::update: Unexpected nullptr handle.");
         exit(GetLastError());
     }
 
@@ -401,7 +401,7 @@ void PathWatch::update(std::function<void()> pathChangedCallback) {
         DWORD dwWaitStatus = WaitForMultipleObjects(1, &data->parentChangeHandle, FALSE, 0);
         if (dwWaitStatus == WAIT_OBJECT_0) {
             if (FindNextChangeNotification(data->parentChangeHandle) == FALSE) {
-                sgl::Logfile::get()->writeError("ERROR in PathWatch::update: FindNextChangeNotification failed.");
+                sgl::Logfile::get()->writeError("Error in PathWatch::update: FindNextChangeNotification failed.");
                 exit(GetLastError());
             }
 
@@ -419,7 +419,7 @@ void PathWatch::update(std::function<void()> pathChangedCallback) {
         } else if (dwWaitStatus == WAIT_TIMEOUT) {
             break;
         } else {
-            sgl::Logfile::get()->writeError("ERROR in PathWatch::update: WaitForMultipleObjects failed.");
+            sgl::Logfile::get()->writeError("Error in PathWatch::update: WaitForMultipleObjects failed.");
             exit(GetLastError());
         }
     }
@@ -437,7 +437,7 @@ void PathWatch::update(std::function<void()> pathChangedCallback) {
         } else if (dwWaitStatus == WAIT_TIMEOUT) {
             break;
         } else {
-            sgl::Logfile::get()->writeError("ERROR in PathWatch::update: WaitForMultipleObjects failed.");
+            sgl::Logfile::get()->writeError("Error in PathWatch::update: WaitForMultipleObjects failed.");
             exit(GetLastError());
         }
         it++;
