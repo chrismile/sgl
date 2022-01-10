@@ -1080,7 +1080,8 @@ enum ImGuiNextWindowDataFlags_
     ImGuiNextWindowDataFlags_HasScroll          = 1 << 7,
     ImGuiNextWindowDataFlags_HasViewport        = 1 << 8,
     ImGuiNextWindowDataFlags_HasDock            = 1 << 9,
-    ImGuiNextWindowDataFlags_HasWindowClass     = 1 << 10
+    ImGuiNextWindowDataFlags_HasWindowClass     = 1 << 10,
+    ImGuiNextWindowDataFlags_HasTabbarMenu      = 1 << 31 // NOTE(Felix): I added this
 };
 
 // Storage for SetNexWindow** functions
@@ -1106,6 +1107,8 @@ struct ImGuiNextWindowData
     ImGuiID                     DockId;
     ImGuiWindowClass            WindowClass;
     ImVec2                      MenuBarOffsetMinVal;    // (Always on) This is not exposed publicly, so we don't clear it and it doesn't have a corresponding flag (could we? for consistency?)
+
+    std::function<const char*()> TabbarMenu;
 
     ImGuiNextWindowData()       { memset(this, 0, sizeof(*this)); }
     inline void ClearFlags()    { Flags = ImGuiNextWindowDataFlags_None; }
@@ -2253,6 +2256,8 @@ struct IMGUI_API ImGuiWindow
     ImGuiItemStatusFlags    DockTabItemStatusFlags;
     ImRect                  DockTabItemRect;
 
+    std::function<const char*()> TabbarMenu;
+
 public:
     ImGuiWindow(ImGuiContext* context, const char* name);
     ~ImGuiWindow();
@@ -2980,6 +2985,9 @@ namespace ImGui
     IMGUI_API bool          ButtonEx(const char* label, const ImVec2& size_arg = ImVec2(0, 0), ImGuiButtonFlags flags = 0);
     IMGUI_API bool          CloseButton(ImGuiID id, const ImVec2& pos);
     IMGUI_API bool          CollapseButton(ImGuiID id, const ImVec2& pos, ImGuiDockNode* dock_node);
+    // NOTE(Felix): I added the `PlusButton'
+    IMGUI_API bool          PlusButton(ImGuiID id, const ImVec2& pos, ImGuiDockNode* dock_node);
+
     IMGUI_API bool          ArrowButtonEx(const char* str_id, ImGuiDir dir, ImVec2 size_arg, ImGuiButtonFlags flags = 0);
     IMGUI_API void          Scrollbar(ImGuiAxis axis);
     IMGUI_API bool          ScrollbarEx(const ImRect& bb, ImGuiID id, ImGuiAxis axis, float* p_scroll_v, float avail_v, float contents_v, ImDrawFlags flags);

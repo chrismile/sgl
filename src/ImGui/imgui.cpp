@@ -798,6 +798,7 @@ CODE
 #include "imgui_internal.h"
 
 // System includes
+#include <functional>   // NOTE(Felix): for std::function used for tabbarmenus
 #include <ctype.h>      // toupper
 #include <stdio.h>      // vsnprintf, sscanf, printf
 #if defined(_MSC_VER) && _MSC_VER <= 1500 // MSVC 2008 or earlier
@@ -6325,6 +6326,12 @@ bool ImGui::Begin(const char* name, bool* p_open, ImGuiWindowFlags flags)
     if (window->Appearing)
         SetWindowConditionAllowFlags(window, ImGuiCond_Appearing, false);
 
+    // NOTE(Felix): Added for the tabbar menus
+    if (g.NextWindowData.Flags & ImGuiNextWindowDataFlags_HasTabbarMenu) {
+        window->Flags |= ImGuiWindowFlags_TabbarMenu;
+        window->TabbarMenu = g.NextWindowData.TabbarMenu;
+    }
+
     // When reusing window again multiple times a frame, just append content (don't need to setup again)
     if (first_begin_of_the_frame)
     {
@@ -7639,6 +7646,15 @@ void ImGui::SetNextWindowClass(const ImGuiWindowClass* window_class)
     g.NextWindowData.Flags |= ImGuiNextWindowDataFlags_HasWindowClass;
     g.NextWindowData.WindowClass = *window_class;
 }
+
+// NOTE(Felix): added implementation
+void ImGui::SetNextTabbarMenu(std::function<const char*()> hook)
+{
+    ImGuiContext& g = *GImGui;
+    g.NextWindowData.Flags |= ImGuiNextWindowDataFlags_HasTabbarMenu;
+    g.NextWindowData.TabbarMenu = hook;
+}
+
 
 ImDrawList* ImGui::GetWindowDrawList()
 {
@@ -14537,6 +14553,12 @@ static void ImGui::DockNodeUpdateTabBar(ImGuiDockNode* node, ImGuiWindow* host_w
     for (int color_n = 0; color_n < ImGuiWindowDockStyleCol_COUNT; color_n++)
         backup_style_cols[color_n] = g.Style.Colors[GWindowDockStyleColors[color_n]];
 
+    // NOTE(Felix): the x of rightest of all rendered tabs, and the menu
+    //   function if there is one
+    float max_tab_x = 0;
+    bool show_tab_menu = false;
+    std::function<const char*()> tab_menu;
+
     // Submit actual tabs
     node->VisibleWindow = NULL;
     for (int window_n = 0; window_n < node->Windows.Size; window_n++)
@@ -14568,9 +14590,27 @@ static void ImGui::DockNodeUpdateTabBar(ImGuiDockNode* node, ImGuiWindow* host_w
             window->DockTabItemStatusFlags = g.LastItemData.StatusFlags;
             window->DockTabItemRect = g.LastItemData.Rect;
 
+            // NOTE(Felix): Update the max and set the tab menu if one was found
+            max_tab_x = ImMax(max_tab_x, g.LastItemData.Rect.Max.x);
+            if(window->Flags & ImGuiWindowFlags_TabbarMenu) {
+                show_tab_menu = true;
+                tab_menu = window->TabbarMenu;
+            }
+
             // Update navigation ID on menu layer
             if (g.NavWindow && g.NavWindow->RootWindow == window && (window->DC.NavLayersActiveMask & (1 << ImGuiNavLayer_Menu)) == 0)
                 host_window->NavLastIds[1] = window->ID;
+        }
+    }
+
+    // NOTE(Felix): The tabbar hook
+    {
+        if (show_tab_menu) {
+            const char* popup_name = tab_menu();
+            auto new_tab_button_pos = window_menu_button_pos;
+            new_tab_button_pos.x = max_tab_x;
+            if (PlusButton(host_window->GetID("#NEW"), new_tab_button_pos, node))
+                OpenPopup(popup_name);
         }
     }
 

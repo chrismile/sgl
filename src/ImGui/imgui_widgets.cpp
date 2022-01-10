@@ -420,6 +420,7 @@ void ImGui::BulletTextV(const char* fmt, va_list args)
 // - ArrowButton()
 // - CloseButton() [Internal]
 // - CollapseButton() [Internal]
+// - PlusButton() // NOTE(Felix): I Added this here
 // - GetWindowScrollbarID() [Internal]
 // - GetWindowScrollbarRect() [Internal]
 // - Scrollbar() [Internal]
@@ -853,6 +854,46 @@ bool ImGui::CollapseButton(ImGuiID id, const ImVec2& pos, ImGuiDockNode* dock_no
     // Switch to moving the window after mouse is moved beyond the initial drag threshold
     if (IsItemActive() && IsMouseDragging(0))
         StartMouseMovingWindowOrNode(window, dock_node, true);
+
+    return pressed;
+}
+
+bool ImGui::PlusButton(ImGuiID id, const ImVec2& pos, ImGuiDockNode* dock_node)
+{
+    ImGuiContext& g = *GImGui;
+    ImGuiWindow* window = g.CurrentWindow;
+
+    ImRect bb(pos, pos + ImVec2(g.FontSize, g.FontSize) + g.Style.FramePadding * 2.0f);
+    ItemAdd(bb, id);
+    bool hovered, held;
+    bool pressed = ButtonBehavior(bb, id, &hovered, &held, ImGuiButtonFlags_None);
+
+    // Render
+    //bool is_dock_menu = (window->DockNodeAsHost && !window->Collapsed);
+    ImU32 bg_col = GetColorU32((held && hovered) ? ImGuiCol_ButtonActive : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button);
+    ImU32 text_col = GetColorU32(ImGuiCol_Text);
+    ImVec2 center = bb.GetCenter();
+    if (hovered || held) {
+        window->DrawList->AddCircleFilled(center + ImVec2(0,-0.5f), g.FontSize * 0.5f + 1.0f, bg_col, 12);
+    }
+
+    {
+        ImVec2 p_min = bb.Min + g.Style.FramePadding;
+        float sz = g.FontSize;
+        ImU32 col = text_col;
+
+        // parameters for the "plus" symbol
+        const float padding   = 0.2f;
+        const float thickness = 0.15f;
+
+        window->DrawList->AddRectFilled(p_min + ImVec2(sz * padding, sz * (0.5f-thickness/2.0f)), p_min + ImVec2(sz * (1.0f - padding), sz * (0.5f+thickness/2.0f)), col);
+        window->DrawList->AddRectFilled(p_min + ImVec2(sz * (0.5f-thickness/2.0f), sz * padding), p_min + ImVec2(sz * (0.5f+thickness/2.0f), sz * (1.0f - padding)), col);
+    }
+
+    // Switch to moving the window after mouse is moved beyond the initial drag threshold
+    if (IsItemActive() && IsMouseDragging(0))
+        StartMouseMovingWindowOrNode(window, dock_node, true);
+
 
     return pressed;
 }
