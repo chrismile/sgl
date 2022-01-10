@@ -69,7 +69,11 @@ public:
         if (pathList.size() > 1) {
             parentDirectoryPath = "";
             for (size_t i = 0; i < pathList.size() - 1; i++) {
-                parentDirectoryPath += pathList.at(i) + "/";
+                if (i == 0 && pathList.at(0) == "/") {
+                    parentDirectoryPath += "/";
+                } else {
+                    parentDirectoryPath += pathList.at(i) + "/";
+                }
             }
         } else {
             parentDirectoryPath = ".";
@@ -84,6 +88,7 @@ public:
     void update(std::function<void()> pathChangedCallback);
 
 protected:
+    void _freeInternal();
     bool isFolder = false;
     std::string path; // E.g., "Data/TransferFunctions/multivar/" or "Data/DataSets/datasets.json" or "data.xml".
     std::string parentDirectoryPath; // E.g., "Data/TransferFunctions/" or "Data/DataSets/" or ".".

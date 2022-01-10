@@ -132,7 +132,7 @@ SciVisApp::SciVisApp(float fovy)
     camera->setFarClipDistance(100.0f);
     camera->setOrientation(glm::quat(1.0f, 0.0f, 0.0f, 0.0f));
     camera->setFOVy(fovy);
-    camera->setPosition(glm::vec3(0.0f, 0.0f, 0.5f));
+    camera->setPosition(glm::vec3(0.0f, 0.0f, 0.8f));
     fovDegree = fovy / sgl::PI * 180.0f;
     standardFov = fovy;
 

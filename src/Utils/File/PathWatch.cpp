@@ -52,8 +52,16 @@ struct PathWatchImplData {
 };
 
 void PathWatch::initialize() {
-    data = new PathWatchImplData;
+    if (!data) {
+        data = new PathWatchImplData;
+    }
+
     data->inotifyFileDesc = inotify_init();
+    if (data->inotifyFileDesc == -1) {
+        sgl::Logfile::get()->writeError(
+                "Error in PathWatch::initialize: inotify_init returned errno "
+                + std::to_string(errno) + ": " + strerror(errno));
+    }
     /*
      * - IN_DELETE_SELF: Remove watch.
      * - IN_CREATE: File/dir created in this directory.
@@ -62,25 +70,69 @@ void PathWatch::initialize() {
     data->parentWatchDesc = inotify_add_watch(
             data->inotifyFileDesc, parentDirectoryPath.c_str(),
             IN_CREATE | IN_DELETE | IN_DELETE_SELF | IN_MOVED_TO | IN_MOVED_FROM);
+    if (data->parentWatchDesc == -1) {
+        sgl::Logfile::get()->writeError(
+                "Error in PathWatch::initialize: inotify_add_watch (parent) returned errno "
+                + std::to_string(errno) + ": " + strerror(errno));
+    }
     data->pathWatchDesc = inotify_add_watch(
             data->inotifyFileDesc, path.c_str(),
             IN_CREATE | IN_DELETE | IN_DELETE_SELF | IN_MOVED_TO | IN_MOVED_FROM);
-    data->inotifyEvents = (inotify_event*)malloc(data->inotifyEventBufferSize);
+    if (data->pathWatchDesc == -1) {
+        sgl::Logfile::get()->writeError(
+                "Error in PathWatch::initialize: inotify_add_watch (path) returned errno "
+                + std::to_string(errno) + ": " + strerror(errno));
+    }
+
+    if (!data->inotifyEvents) {
+        data->inotifyEvents = (inotify_event*)malloc(data->inotifyEventBufferSize);
+    }
+}
+
+void PathWatch::_freeInternal() {
+    if (data->inotifyEvents) {
+        free(data->inotifyEvents);
+        data->inotifyEvents = nullptr;
+    }
+
+    if (data->parentWatchDesc >= 0) {
+        int retVal = inotify_rm_watch(data->inotifyFileDesc, data->parentWatchDesc);
+        data->parentWatchDesc = -1;
+        if (retVal == -1) {
+            sgl::Logfile::get()->writeError(
+                    "Error in PathWatch::~PathWatch: inotify_rm_watch (parent) returned errno "
+                    + std::to_string(errno) + ": " + strerror(errno));
+            return;
+        }
+    }
+    if (data->pathWatchDesc >= 0) {
+        int retVal = inotify_rm_watch(data->inotifyFileDesc, data->pathWatchDesc);
+        data->pathWatchDesc = -1;
+        if (retVal == -1) {
+            sgl::Logfile::get()->writeError(
+                    "Error in PathWatch::~PathWatch: inotify_rm_watch (path) returned errno "
+                    + std::to_string(errno) + ": " + strerror(errno));
+            return;
+        }
+    }
+
+    int retValClose = close(data->inotifyFileDesc);
+    data->inotifyFileDesc = -1;
+    if (retValClose == -1) {
+        sgl::Logfile::get()->writeError(
+                "Error in PathWatch::~PathWatch: close returned errno " + std::to_string(errno) + ": "
+                + strerror(errno));
+        return;
+    }
+
+    if (data) {
+        delete data;
+        data = nullptr;
+    }
 }
 
 PathWatch::~PathWatch() {
-    free(data->inotifyEvents);
-    data->inotifyEvents = nullptr;
-    if (data->parentWatchDesc >= 0) {
-        inotify_rm_watch(data->inotifyFileDesc, data->parentWatchDesc);
-    }
-    if (data->pathWatchDesc >= 0) {
-        inotify_rm_watch(data->inotifyFileDesc, data->pathWatchDesc);
-    }
-    close(data->inotifyFileDesc);
-
-    delete data;
-    data = nullptr;
+    _freeInternal();
 }
 
 void PathWatch::update(std::function<void()> pathChangedCallback) {
@@ -89,10 +141,29 @@ void PathWatch::update(std::function<void()> pathChangedCallback) {
     while (true) {
         struct pollfd pfd = { data->inotifyFileDesc, POLLIN, 0 };
         int retVal = poll(&pfd, 1, 0);
+        if (pfd.revents == POLLERR) {
+            sgl::Logfile::get()->writeError("Error in PathWatch::update: poll returned POLLERR.");
+            return;
+        } else if (pfd.revents == POLLHUP) {
+            sgl::Logfile::get()->writeError("Error in PathWatch::update: poll returned POLLHUP.");
+            return;
+        } else if (pfd.revents == POLLNVAL) {
+            // TODO: Why can this error occur when recreating a path watch?
+            //sgl::Logfile::get()->writeError("Error in PathWatch::update: poll returned POLLNVAL.");
+            sgl::Logfile::get()->write("Warning in PathWatch::update: poll returned POLLNVAL.", sgl::ORANGE);
+            initialize();
+            return;
+        }
         if (retVal < 0) {
             sgl::Logfile::get()->writeError("Error in PathWatch::update: Failed poll.");
         } else if (retVal > 0) {
             int size = read(data->inotifyFileDesc, data->inotifyEvents, data->inotifyEventBufferSize);
+            if (size == -1) {
+                sgl::Logfile::get()->writeError(
+                        "Error in PathWatch::update: read returned errno " + std::to_string(errno) + ": "
+                        + strerror(errno));
+                return;
+            }
             uint8_t* inotifyBuffer = reinterpret_cast<uint8_t*>(data->inotifyEvents);
             const uint8_t* inotifyBufferEnd = inotifyBuffer + size;
             while (inotifyBuffer < inotifyBufferEnd) {
@@ -100,14 +171,26 @@ void PathWatch::update(std::function<void()> pathChangedCallback) {
 
                 if (inotifyEvent->wd == data->parentWatchDesc) {
                     if (inotifyEvent->mask & IN_CREATE || inotifyEvent->mask & IN_DELETE
-                        || inotifyEvent->mask & IN_MOVED_FROM || inotifyEvent->mask & IN_MOVED_TO) {
+                            || inotifyEvent->mask & IN_MOVED_FROM || inotifyEvent->mask & IN_MOVED_TO) {
                         if (strcmp(inotifyEvent->name, watchedNodeName.c_str()) == 0) {
                             if (data->pathWatchDesc >= 0) {
-                                inotify_rm_watch(data->inotifyFileDesc, data->pathWatchDesc);
+                                int retValRm = inotify_rm_watch(data->inotifyFileDesc, data->pathWatchDesc);
+                                if (retValRm == -1) {
+                                    sgl::Logfile::get()->writeError(
+                                            "Error in PathWatch::update: inotify_rm_watch (path) returned errno "
+                                            + std::to_string(errno) + ": " + strerror(errno));
+                                    return;
+                                }
                             }
                             data->pathWatchDesc = inotify_add_watch(
                                     data->inotifyFileDesc, path.c_str(),
                                     IN_CREATE | IN_DELETE | IN_DELETE_SELF | IN_MOVED_TO | IN_MOVED_FROM);
+                            if (data->pathWatchDesc == -1) {
+                                sgl::Logfile::get()->writeError(
+                                        "Error in PathWatch::update: inotify_add_watch returned errno "
+                                        + std::to_string(errno) + ": " + strerror(errno));
+                                return;
+                            }
                         }
                     }
 
@@ -123,6 +206,7 @@ void PathWatch::update(std::function<void()> pathChangedCallback) {
             }
             if (size == 0) {
                 sgl::Logfile::get()->writeError("Error in PathWatch::update: Failed read.");
+                return;
             }
         } else {
             break;
@@ -210,7 +294,7 @@ void PathWatch::initialize() {
     }
 }
 
-PathWatch::~PathWatch() {
+void PathWatch::_freeInternal() {
     if (data->parentHandle != INVALID_HANDLE_VALUE) {
         CloseHandle(data->parentHandle);
         data->parentHandle = INVALID_HANDLE_VALUE;
@@ -219,8 +303,14 @@ PathWatch::~PathWatch() {
         CloseHandle(data->pathHandle);
         data->pathHandle = INVALID_HANDLE_VALUE;
     }
-    delete data;
-    data = nullptr;
+    if (data) {
+        delete data;
+        data = nullptr;
+    }
+}
+
+PathWatch::~PathWatch() {
+    PathWatch::_freeInternal();
 }
 
 void PathWatch::update(std::function<void()> pathChangedCallback) {
@@ -376,7 +466,7 @@ void PathWatch::initialize() {
             FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_LAST_WRITE);
 }
 
-PathWatch::~PathWatch() {
+void PathWatch::_freeInternal() {
     if (data->parentChangeHandle) {
         FindCloseChangeNotification(data->parentChangeHandle);
         data->parentChangeHandle = nullptr;
@@ -385,8 +475,14 @@ PathWatch::~PathWatch() {
         FindCloseChangeNotification(data->pathChangeHandle);
         data->pathChangeHandle = nullptr;
     }
-    delete data;
-    data = nullptr;
+    if (data) {
+        delete data;
+        data = nullptr;
+    }
+}
+
+PathWatch::~PathWatch() {
+    PathWatch::_freeInternal();
 }
 
 void PathWatch::update(std::function<void()> pathChangedCallback) {
@@ -569,9 +665,15 @@ void PathWatch::initialize() {
     data->fileWatcher.watch();
 }
 
+void PathWatch::_freeInternal() {
+    if (data) {
+        delete data;
+        data = nullptr;
+    }
+}
+
 PathWatch::~PathWatch() {
-    delete data;
-    data = nullptr;
+    _freeInternal();
 }
 
 void PathWatch::update(std::function<void()> pathChangedCallback) {
@@ -598,6 +700,9 @@ void PathWatch::update(std::function<void()> pathChangedCallback) {
 namespace sgl {
 
 void PathWatch::initialize() {
+}
+
+void PathWatch::_freeInternal() {
 }
 
 PathWatch::~PathWatch() {
