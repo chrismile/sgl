@@ -63,76 +63,76 @@ class DLL_OBJECT ShaderProgramGL : public ShaderProgram
 {
 public:
     ShaderProgramGL();
-    ~ShaderProgramGL();
+    ~ShaderProgramGL() override;
 
-    bool linkProgram();
-    bool validateProgram();
-    void attachShader(ShaderPtr shader);
-    void detachShader(ShaderPtr shader);
-    void bind();
+    bool linkProgram() override;
+    bool validateProgram() override;
+    void attachShader(ShaderPtr shader) override;
+    void detachShader(ShaderPtr shader) override;
+    void bind() override;
 
     // Compute shader interface
-    void dispatchCompute(int numGroupsX, int numGroupsY = 1, int numGroupsZ = 1);
+    void dispatchCompute(int numGroupsX, int numGroupsY = 1, int numGroupsZ = 1) override;
 
-    bool hasUniform(const char *name);
-    int getUniformLoc(const char *name);
-    bool setUniform(const char *name, int value);
-    bool setUniform(const char *name, const glm::ivec2 &value);
-    bool setUniform(const char *name, const glm::ivec3 &value);
-    bool setUniform(const char *name, const glm::ivec4 &value);
-    bool setUniform(const char *name, unsigned int value);
-    bool setUniform(const char *name, const glm::uvec2 &value);
-    bool setUniform(const char *name, const glm::uvec3 &value);
-    bool setUniform(const char *name, const glm::uvec4 &value);
-    bool setUniform(const char *name, bool value);
-    bool setUniform(const char *name, const glm::bvec2 &value);
-    bool setUniform(const char *name, const glm::bvec3 &value);
-    bool setUniform(const char *name, const glm::bvec4 &value);
-    bool setUniform(const char *name, float value);
-    bool setUniform(const char *name, const glm::vec2 &value);
-    bool setUniform(const char *name, const glm::vec3 &value);
-    bool setUniform(const char *name, const glm::vec4 &value);
-    bool setUniform(const char *name, const glm::mat3 &value);
-    bool setUniform(const char *name, const glm::mat3x4 &value);
-    bool setUniform(const char *name, const glm::mat4 &value);
-    bool setUniform(const char *name, TexturePtr &value, int textureUnit = 0);
-    bool setUniform(const char *name, const Color &value);
-    bool setUniformArray(const char *name, const int *value, size_t num);
-    bool setUniformArray(const char *name, const unsigned int *value, size_t num);
-    bool setUniformArray(const char *name, const bool *value, size_t num);
-    bool setUniformArray(const char *name, const float *value, size_t num);
-    bool setUniformArray(const char *name, const glm::vec2 *value, size_t num);
-    bool setUniformArray(const char *name, const glm::vec3 *value, size_t num);
-    bool setUniformArray(const char *name, const glm::vec4 *value, size_t num);
+    bool hasUniform(const char *name) override;
+    int getUniformLoc(const char *name) override;
+    bool setUniform(const char *name, int value) override;
+    bool setUniform(const char *name, const glm::ivec2 &value) override;
+    bool setUniform(const char *name, const glm::ivec3 &value) override;
+    bool setUniform(const char *name, const glm::ivec4 &value) override;
+    bool setUniform(const char *name, unsigned int value) override;
+    bool setUniform(const char *name, const glm::uvec2 &value) override;
+    bool setUniform(const char *name, const glm::uvec3 &value) override;
+    bool setUniform(const char *name, const glm::uvec4 &value) override;
+    bool setUniform(const char *name, bool value) override;
+    bool setUniform(const char *name, const glm::bvec2 &value) override;
+    bool setUniform(const char *name, const glm::bvec3 &value) override;
+    bool setUniform(const char *name, const glm::bvec4 &value) override;
+    bool setUniform(const char *name, float value) override;
+    bool setUniform(const char *name, const glm::vec2 &value) override;
+    bool setUniform(const char *name, const glm::vec3 &value) override;
+    bool setUniform(const char *name, const glm::vec4 &value) override;
+    bool setUniform(const char *name, const glm::mat3 &value) override;
+    bool setUniform(const char *name, const glm::mat3x4 &value) override;
+    bool setUniform(const char *name, const glm::mat4 &value) override;
+    bool setUniform(const char *name, const TexturePtr &value, int textureUnit = 0) override;
+    bool setUniform(const char *name, const Color &value) override;
+    bool setUniformArray(const char *name, const int *value, size_t num) override;
+    bool setUniformArray(const char *name, const unsigned int *value, size_t num) override;
+    bool setUniformArray(const char *name, const bool *value, size_t num) override;
+    bool setUniformArray(const char *name, const float *value, size_t num) override;
+    bool setUniformArray(const char *name, const glm::vec2 *value, size_t num) override;
+    bool setUniformArray(const char *name, const glm::vec3 *value, size_t num) override;
+    bool setUniformArray(const char *name, const glm::vec4 *value, size_t num) override;
 
-    bool setUniform(int location, int value);
-    bool setUniform(int location, const glm::ivec2 &value);
-    bool setUniform(int location, const glm::ivec3 &value);
-    bool setUniform(int location, const glm::ivec4 &value);
-    bool setUniform(int location, unsigned int value);
-    bool setUniform(int location, const glm::uvec2 &value);
-    bool setUniform(int location, const glm::uvec3 &value);
-    bool setUniform(int location, const glm::uvec4 &value);
-    bool setUniform(int location, bool value);
-    bool setUniform(int location, const glm::bvec2 &value);
-    bool setUniform(int location, const glm::bvec3 &value);
-    bool setUniform(int location, const glm::bvec4 &value);
-    bool setUniform(int location, float value);
-    bool setUniform(int location, const glm::vec2 &value);
-    bool setUniform(int location, const glm::vec3 &value);
-    bool setUniform(int location, const glm::vec4 &value);
-    bool setUniform(int location, const glm::mat3 &value);
-    bool setUniform(int location, const glm::mat3x4 &value);
-    bool setUniform(int location, const glm::mat4 &value);
-    bool setUniform(int location, TexturePtr &value, int textureUnit = 0);
-    bool setUniform(int location, const Color &value);
-    bool setUniformArray(int location, const int *value, size_t num);
-    bool setUniformArray(int location, const unsigned int *value, size_t num);
-    bool setUniformArray(int location, const bool *value, size_t num);
-    bool setUniformArray(int location, const float *value, size_t num);
-    bool setUniformArray(int location, const glm::vec2 *value, size_t num);
-    bool setUniformArray(int location, const glm::vec3 *value, size_t num);
-    bool setUniformArray(int location, const glm::vec4 *value, size_t num);
+    bool setUniform(int location, int value) override;
+    bool setUniform(int location, const glm::ivec2 &value) override;
+    bool setUniform(int location, const glm::ivec3 &value) override;
+    bool setUniform(int location, const glm::ivec4 &value) override;
+    bool setUniform(int location, unsigned int value) override;
+    bool setUniform(int location, const glm::uvec2 &value) override;
+    bool setUniform(int location, const glm::uvec3 &value) override;
+    bool setUniform(int location, const glm::uvec4 &value) override;
+    bool setUniform(int location, bool value) override;
+    bool setUniform(int location, const glm::bvec2 &value) override;
+    bool setUniform(int location, const glm::bvec3 &value) override;
+    bool setUniform(int location, const glm::bvec4 &value) override;
+    bool setUniform(int location, float value) override;
+    bool setUniform(int location, const glm::vec2 &value) override;
+    bool setUniform(int location, const glm::vec3 &value) override;
+    bool setUniform(int location, const glm::vec4 &value) override;
+    bool setUniform(int location, const glm::mat3 &value) override;
+    bool setUniform(int location, const glm::mat3x4 &value) override;
+    bool setUniform(int location, const glm::mat4 &value) override;
+    bool setUniform(int location, const TexturePtr &value, int textureUnit = 0) override;
+    bool setUniform(int location, const Color &value) override;
+    bool setUniformArray(int location, const int *value, size_t num) override;
+    bool setUniformArray(int location, const unsigned int *value, size_t num) override;
+    bool setUniformArray(int location, const bool *value, size_t num) override;
+    bool setUniformArray(int location, const float *value, size_t num) override;
+    bool setUniformArray(int location, const glm::vec2 *value, size_t num) override;
+    bool setUniformArray(int location, const glm::vec3 *value, size_t num) override;
+    bool setUniformArray(int location, const glm::vec4 *value, size_t num) override;
 
 
     // Image Load and Store
@@ -148,9 +148,10 @@ public:
      * @param layered: When using a layered texture (e.g. GL_TEXTURE_2D_ARRAY) whether all layers should be bound.
      * @param layer: The layer to bind if "layered" is false.
      */
-    void setUniformImageTexture(unsigned int unit, TexturePtr texture, unsigned int format = GL_RGBA8,
-                                unsigned int access = GL_READ_WRITE, unsigned int level = 0,
-                                bool layered = false, unsigned int layer = 0);
+    void setUniformImageTexture(
+            unsigned int unit, const TexturePtr& texture, unsigned int format = GL_RGBA8,
+            unsigned int access = GL_READ_WRITE, unsigned int level = 0,
+            bool layered = false, unsigned int layer = 0) override;
 
 
     // OpenGL 3 Uniform Buffers & OpenGL 4 Shader Storage Buffers
@@ -162,8 +163,8 @@ public:
      * Instead of location, one can also use the name of the UBO within the shader to reference it.
      * TODO: Outsource binding to Shader Manager (as shader programs have shared bindings).
      */
-    bool setUniformBuffer(int binding, int location, GeometryBufferPtr &geometryBuffer);
-    bool setUniformBuffer(int binding, const char *name, GeometryBufferPtr &geometryBuffer);
+    bool setUniformBuffer(int binding, int location, const GeometryBufferPtr &geometryBuffer) override;
+    bool setUniformBuffer(int binding, const char *name, const GeometryBufferPtr &geometryBuffer) override;
 
     /**
      * Atomic counters (GL_ATOMIC_COUNTER_BUFFER)
@@ -172,8 +173,8 @@ public:
      * - Location: Not possible to specify. Oddly, only supported for uniform buffers and SSBOs in OpenGl specification.
      * TODO: Outsource binding to Shader Manager (as shader programs have shared bindings).
      */
-    bool setAtomicCounterBuffer(int binding, GeometryBufferPtr &geometryBuffer);
-    //bool setAtomicCounterBuffer(int binding, const char *name, GeometryBufferPtr &geometryBuffer);
+    bool setAtomicCounterBuffer(int binding, const GeometryBufferPtr &geometryBuffer) override;
+    //bool setAtomicCounterBuffer(int binding, const char *name, const GeometryBufferPtr &geometryBuffer) override;
 
     /**
      * SSBOs:
@@ -182,8 +183,8 @@ public:
      * Instead of location, one can also use the name of the SSBO within the shader to reference it.
      * TODO: Outsource binding to Shader Manager (as shader programs have shared bindings).
      */
-    bool setShaderStorageBuffer(int binding, int location, GeometryBufferPtr &geometryBuffer);
-    bool setShaderStorageBuffer(int binding, const char *name, GeometryBufferPtr &geometryBuffer);
+    bool setShaderStorageBuffer(int binding, int location, const GeometryBufferPtr &geometryBuffer) override;
+    bool setShaderStorageBuffer(int binding, const char *name, const GeometryBufferPtr &geometryBuffer) override;
 
     inline GLuint getShaderProgramID() { return shaderProgramID; }
 

@@ -87,7 +87,7 @@ enum DebugVerbosity {
 class DLL_OBJECT RendererInterface
 {
 public:
-    virtual ~RendererInterface() {}
+    virtual ~RendererInterface() = default;
 
     /// Outputs e.g. "glGetError" (only necessary if no debug context was created)
     virtual void errorCheck()=0;
@@ -114,7 +114,7 @@ public:
     virtual CameraPtr getCamera()=0;
 
     //! State changes
-    virtual void bindTexture(TexturePtr &tex, unsigned int textureUnit = 0)=0;
+    virtual void bindTexture(const TexturePtr &tex, unsigned int textureUnit = 0)=0;
     virtual void setBlendMode(BlendMode mode)=0;
     virtual void setModelMatrix(const glm::mat4 &matrix)=0;
     virtual void setViewMatrix(const glm::mat4 &matrix)=0;

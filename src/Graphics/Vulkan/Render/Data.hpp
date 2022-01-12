@@ -78,7 +78,7 @@ class DLL_OBJECT RenderData {
 public:
     RenderData(Renderer* renderer, ShaderStagesPtr& shaderStages);
     virtual ~RenderData();
-    virtual RenderDataType getRenderDataType() const=0;
+    [[nodiscard]] virtual RenderDataType getRenderDataType() const = 0;
 
     inline const ShaderStagesPtr& getShaderStages() { return shaderStages; }
 
@@ -180,7 +180,7 @@ private:
 class DLL_OBJECT ComputeData : public RenderData {
 public:
     explicit ComputeData(Renderer* renderer, ComputePipelinePtr& computePipeline);
-    RenderDataType getRenderDataType() const override { return RenderDataType::COMPUTE; }
+    [[nodiscard]] RenderDataType getRenderDataType() const override { return RenderDataType::COMPUTE; }
 
     inline ComputePipelinePtr getComputePipeline() { return computePipeline; }
 
@@ -191,24 +191,24 @@ protected:
 class DLL_OBJECT RasterData : public RenderData {
 public:
     RasterData(Renderer* renderer, GraphicsPipelinePtr& graphicsPipeline);
-    RenderDataType getRenderDataType() const override { return RenderDataType::RASTER; }
+    [[nodiscard]] RenderDataType getRenderDataType() const override { return RenderDataType::RASTER; }
 
     void setIndexBuffer(const BufferPtr& buffer, VkIndexType indexType = VK_INDEX_TYPE_UINT32);
     void setVertexBuffer(const BufferPtr& buffer, uint32_t binding);
     void setVertexBuffer(const BufferPtr& buffer, const std::string& name);
 
     inline void setNumInstances(size_t numInstances) { this->numInstances = numInstances; }
-    inline size_t getNumInstances() const { return numInstances; }
+    [[nodiscard]] inline size_t getNumInstances() const { return numInstances; }
 
-    inline bool hasIndexBuffer() const { return indexBuffer.get(); }
-    inline size_t getNumIndices() const { return numIndices; }
-    inline VkIndexType getIndexType() const { return indexType; }
-    inline VkBuffer getVkIndexBuffer() { return indexBuffer->getVkBuffer(); }
+    [[nodiscard]] inline bool hasIndexBuffer() const { return indexBuffer.get(); }
+    [[nodiscard]] inline size_t getNumIndices() const { return numIndices; }
+    [[nodiscard]] inline VkIndexType getIndexType() const { return indexType; }
+    [[nodiscard]] inline VkBuffer getVkIndexBuffer() { return indexBuffer->getVkBuffer(); }
 
-    inline size_t getNumVertices() const { return numVertices; }
-    inline const std::vector<VkBuffer>& getVkVertexBuffers() { return vulkanVertexBuffers; }
+    [[nodiscard]] inline size_t getNumVertices() const { return numVertices; }
+    [[nodiscard]]  inline const std::vector<VkBuffer>& getVkVertexBuffers() { return vulkanVertexBuffers; }
 
-    inline GraphicsPipelinePtr getGraphicsPipeline() { return graphicsPipeline; }
+    [[nodiscard]]  inline GraphicsPipelinePtr getGraphicsPipeline() { return graphicsPipeline; }
 
 protected:
     GraphicsPipelinePtr graphicsPipeline;
@@ -229,13 +229,13 @@ public:
     RayTracingData(
             Renderer* renderer, RayTracingPipelinePtr& rayTracingPipeline,
             const ShaderGroupSettings& settings = ShaderGroupSettings());
-    RenderDataType getRenderDataType() const override { return RenderDataType::RAYTRACING; }
+    [[nodiscard]]  RenderDataType getRenderDataType() const override { return RenderDataType::RAYTRACING; }
 
     void setShaderGroupSettings(const ShaderGroupSettings& settings);
-    inline ShaderGroupSettings& getShaderGroupSettings() { return shaderGroupSettings; }
-    inline const ShaderGroupSettings& getShaderGroupSettings() const { return shaderGroupSettings; }
+    [[nodiscard]] inline ShaderGroupSettings& getShaderGroupSettings() { return shaderGroupSettings; }
+    [[nodiscard]] inline const ShaderGroupSettings& getShaderGroupSettings() const { return shaderGroupSettings; }
 
-    inline RayTracingPipelinePtr getRayTracingPipeline() { return rayTracingPipeline; }
+    [[nodiscard]] inline RayTracingPipelinePtr getRayTracingPipeline() { return rayTracingPipeline; }
     inline const std::array<VkStridedDeviceAddressRegionKHR, 4>& getStridedDeviceAddressRegions() {
         return stridedDeviceAddressRegions;
     }

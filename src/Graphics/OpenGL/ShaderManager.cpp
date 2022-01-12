@@ -107,7 +107,7 @@ void ShaderManagerGL::invalidateBindings()
 }
 
 
-void ShaderManagerGL::bindUniformBuffer(int binding, GeometryBufferPtr &geometryBuffer)
+void ShaderManagerGL::bindUniformBuffer(int binding, const GeometryBufferPtr &geometryBuffer)
 {
     GLuint bufferID = static_cast<GeometryBufferGL*>(geometryBuffer.get())->getBuffer();
 
@@ -123,7 +123,7 @@ void ShaderManagerGL::bindUniformBuffer(int binding, GeometryBufferPtr &geometry
     uniformBuffers[binding] = geometryBuffer;
 }
 
-void ShaderManagerGL::bindAtomicCounterBuffer(int binding, GeometryBufferPtr &geometryBuffer)
+void ShaderManagerGL::bindAtomicCounterBuffer(int binding, const GeometryBufferPtr &geometryBuffer)
 {
     GLuint bufferID = static_cast<GeometryBufferGL*>(geometryBuffer.get())->getBuffer();
 
@@ -139,7 +139,7 @@ void ShaderManagerGL::bindAtomicCounterBuffer(int binding, GeometryBufferPtr &ge
     atomicCounterBuffers[binding] = geometryBuffer;
 }
 
-void ShaderManagerGL::bindShaderStorageBuffer(int binding, GeometryBufferPtr &geometryBuffer)
+void ShaderManagerGL::bindShaderStorageBuffer(int binding, const GeometryBufferPtr &geometryBuffer)
 {
     GLuint bufferID = static_cast<GeometryBufferGL*>(geometryBuffer.get())->getBuffer();
 

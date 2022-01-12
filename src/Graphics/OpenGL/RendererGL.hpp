@@ -56,68 +56,71 @@ public:
     RendererGL();
 
     //! Outputs e.g. "glGetError"
-    virtual void errorCheck();
+    void errorCheck() override;
     // The functions below only work in an OpenGL debug context
     /// Sets a callback function that is called (synchronously) when an error in the OpenGL context occurs
-    virtual void setErrorCallback(std::function<void()> callback);
-    virtual void callApplicationErrorCallback();
+    void setErrorCallback(std::function<void()> callback) override;
+    void callApplicationErrorCallback() override;
     /// Set how much error reporting the program wants
-    virtual void setDebugVerbosity(DebugVerbosity verbosity);
+    void setDebugVerbosity(DebugVerbosity verbosity) override;
 
     //! Creation functions
-    virtual FramebufferObjectPtr createFBO();
-    virtual RenderbufferObjectPtr createRBO(int _width, int _height, RenderbufferType rboType, int _samples = 0);
-    virtual GeometryBufferPtr createGeometryBuffer(size_t size, BufferType type = VERTEX_BUFFER, BufferUse bufferUse = BUFFER_STATIC);
-    virtual GeometryBufferPtr createGeometryBuffer(size_t size, void *data, BufferType type = VERTEX_BUFFER, BufferUse bufferUse = BUFFER_STATIC);
+    FramebufferObjectPtr createFBO() override;
+    RenderbufferObjectPtr createRBO(
+            int _width, int _height, RenderbufferType rboType, int _samples = 0) override;
+    GeometryBufferPtr createGeometryBuffer(
+            size_t size, BufferType type = VERTEX_BUFFER, BufferUse bufferUse = BUFFER_STATIC) override;
+    GeometryBufferPtr createGeometryBuffer(
+            size_t size, void *data, BufferType type = VERTEX_BUFFER, BufferUse bufferUse = BUFFER_STATIC) override;
 
     //! Functions for managing viewports/render targets
-    virtual void bindFBO(FramebufferObjectPtr _fbo, bool force = false);
-    virtual void unbindFBO(bool force = false);
-    virtual FramebufferObjectPtr getFBO();
-    virtual void clearFramebuffer(unsigned int buffers = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT,
-            const Color& col = Color(0, 0, 0), float depth = 1.0f, unsigned short stencil = 0);
-    virtual void setCamera(CameraPtr _viewport, bool force = false);
-    virtual CameraPtr getCamera();
+    void bindFBO(FramebufferObjectPtr _fbo, bool force = false) override;
+    void unbindFBO(bool force = false) override;
+    FramebufferObjectPtr getFBO() override;
+    void clearFramebuffer(unsigned int buffers = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT,
+            const Color& col = Color(0, 0, 0), float depth = 1.0f, unsigned short stencil = 0) override;
+    void setCamera(CameraPtr _viewport, bool force = false) override;
+    CameraPtr getCamera() override;
 
     //! State changes
-    virtual void bindTexture(TexturePtr &tex, unsigned int textureUnit = 0);
-    virtual void setBlendMode(BlendMode mode);
-    virtual void setModelMatrix(const glm::mat4 &matrix);
-    virtual void setViewMatrix(const glm::mat4 &matrix);
-    virtual void setProjectionMatrix(const glm::mat4 &matrix);
-    virtual void setLineWidth(float width);
-    virtual void setPointSize(float size);
+    void bindTexture(const TexturePtr &tex, unsigned int textureUnit = 0) override;
+    void setBlendMode(BlendMode mode) override;
+    void setModelMatrix(const glm::mat4 &matrix) override;
+    void setViewMatrix(const glm::mat4 &matrix) override;
+    void setProjectionMatrix(const glm::mat4 &matrix) override;
+    void setLineWidth(float width) override;
+    void setPointSize(float size) override;
 
     //! Stencil buffer
-    virtual void enableStencilTest();
-    virtual void disableStencilTest();
-    virtual void setStencilMask(unsigned int mask);
-    virtual void clearStencilBuffer();
-    virtual void setStencilFunc(unsigned int func, int ref, unsigned int mask);
-    virtual void setStencilOp(unsigned int sfail, unsigned int dpfail, unsigned int dppass);
+    void enableStencilTest() override;
+    void disableStencilTest() override;
+    void setStencilMask(unsigned int mask) override;
+    void clearStencilBuffer() override;
+    void setStencilFunc(unsigned int func, int ref, unsigned int mask) override;
+    void setStencilOp(unsigned int sfail, unsigned int dpfail, unsigned int dppass) override;
 
     //! Rendering
-    virtual void render(ShaderAttributesPtr &shaderAttributes);
+    void render(ShaderAttributesPtr &shaderAttributes) override;
     //! Rendering with overwritten shader (e.g. for multi-pass rendering without calling copy()).
-    virtual void render(ShaderAttributesPtr &shaderAttributes, ShaderProgramPtr &passShader);
+    void render(ShaderAttributesPtr &shaderAttributes, ShaderProgramPtr &passShader) override;
 
     //! For debugging purposes
-    virtual void setPolygonMode(unsigned int polygonMode);
+    void setPolygonMode(unsigned int polygonMode) override;
     //! For debugging purposes
-    virtual void enableWireframeMode(const Color &_wireframeColor = Color(255, 255, 255));
+    void enableWireframeMode(const Color &_wireframeColor = Color(255, 255, 255)) override;
     //! For debugging purposes
-    virtual void disableWireframeMode();
+    void disableWireframeMode() override;
 
     // Utility functions
-    virtual void blitTexture(TexturePtr &tex, const AABB2 &renderRect, bool mirrored = false);
-    virtual void blitTexture(TexturePtr &tex, const AABB2 &renderRect, ShaderProgramPtr &shader, bool mirrored = false);
+    void blitTexture(TexturePtr &tex, const AABB2 &renderRect, bool mirrored = false) override;
+    void blitTexture(TexturePtr &tex, const AABB2 &renderRect, ShaderProgramPtr &shader, bool mirrored = false) override;
     //! Just returns tex if not multisampled
-    virtual TexturePtr resolveMultisampledTexture(TexturePtr &tex);
+    TexturePtr resolveMultisampledTexture(TexturePtr &tex) override;
     //! Texture needs GL_LINEAR filter for best results!
-    virtual void blurTexture(TexturePtr &tex);
-    virtual TexturePtr getScaledTexture(TexturePtr &tex, Point2 newSize);
-    virtual void blitTextureFXAAAntialiased(TexturePtr &tex);
-    virtual std::vector<VertexTextured> createTexturedQuad(const AABB2 &renderRect, bool mirrored = false);
+    void blurTexture(TexturePtr &tex) override;
+    TexturePtr getScaledTexture(TexturePtr &tex, Point2 newSize) override;
+    void blitTextureFXAAAntialiased(TexturePtr &tex) override;
+    std::vector<VertexTextured> createTexturedQuad(const AABB2 &renderRect, bool mirrored = false) override;
 
     // OpenGL-specific calls
     void bindVAO(GLuint vao);

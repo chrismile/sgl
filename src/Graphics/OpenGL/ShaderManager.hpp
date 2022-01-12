@@ -58,30 +58,30 @@ public:
     }
 
     /// Invalidates all uniform, atomic counter and shader storage buffer bindings.
-    void invalidateBindings();
+    void invalidateBindings() override;
 
 
     // --- Compute shader interface ---
 
     /// Array containing maximum work-group count in x,y,z that can be passed to glDispatchCompute.
-    virtual const std::vector<int> &getMaxComputeWorkGroupCount();
+    virtual const std::vector<int> &getMaxComputeWorkGroupCount() override;
     /// Array containing maximum local work-group size (defined in shader with layout qualifier).
-    virtual const std::vector<int> &getMaxComputeWorkGroupSize();
+    virtual const std::vector<int> &getMaxComputeWorkGroupSize() override;
     /// Maximum number of work group units of a local work group, e.g. 1024 local work items.
-    virtual int getMaxWorkGroupInvocations();
+    virtual int getMaxWorkGroupInvocations() override;
 
 
     // --- Shader program resources ---
 
     // Binding points are shared by all shader programs (specified in shader by "layout(binding = x) ...").
-    virtual void bindUniformBuffer(int binding, GeometryBufferPtr &geometryBuffer);
-    virtual void bindAtomicCounterBuffer(int binding, GeometryBufferPtr &geometryBuffer);
-    virtual void bindShaderStorageBuffer(int binding, GeometryBufferPtr &geometryBuffer);
+    virtual void bindUniformBuffer(int binding, const GeometryBufferPtr &geometryBuffer) override;
+    virtual void bindAtomicCounterBuffer(int binding, const GeometryBufferPtr &geometryBuffer) override;
+    virtual void bindShaderStorageBuffer(int binding, const GeometryBufferPtr &geometryBuffer) override;
 
 
 protected:
-    ShaderPtr loadAsset(ShaderInfo &shaderInfo);
-    ShaderProgramPtr createShaderProgram(const std::vector<std::string> &shaderIDs, bool dumpTextDebug);
+    ShaderPtr loadAsset(ShaderInfo &shaderInfo) override;
+    ShaderProgramPtr createShaderProgram(const std::vector<std::string> &shaderIDs, bool dumpTextDebug) override;
 
     /// Internal loading
     std::string loadHeaderFileString(const std::string &shaderName, std::string &prependContent);

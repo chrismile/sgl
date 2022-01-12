@@ -109,7 +109,7 @@ public:
     virtual bool setUniform(const char *name, const glm::mat3 &value)=0;
     virtual bool setUniform(const char *name, const glm::mat3x4 &value)=0;
     virtual bool setUniform(const char *name, const glm::mat4 &value)=0;
-    virtual bool setUniform(const char *name, TexturePtr &value, int textureUnit = 0)=0;
+    virtual bool setUniform(const char *name, const TexturePtr &value, int textureUnit = 0)=0;
     virtual bool setUniform(const char *name, const Color &value)=0;
     virtual bool setUniformArray(const char *name, const int *value, size_t num)=0;
     virtual bool setUniformArray(const char *name, const unsigned int *value, size_t num)=0;
@@ -138,7 +138,7 @@ public:
     virtual bool setUniform(int location, const glm::mat3 &value)=0;
     virtual bool setUniform(int location, const glm::mat3x4 &value)=0;
     virtual bool setUniform(int location, const glm::mat4 &value)=0;
-    virtual bool setUniform(int location, TexturePtr &value, int textureUnit = 0)=0;
+    virtual bool setUniform(int location, const TexturePtr &value, int textureUnit = 0)=0;
     virtual bool setUniform(int location, const Color &value)=0;
     virtual bool setUniformArray(int location, const int *value, size_t num)=0;
     virtual bool setUniformArray(int location, const unsigned int *value, size_t num)=0;
@@ -155,7 +155,7 @@ public:
         }
         return false;
     }
-    inline bool setUniformOptional(const char *name, TexturePtr &value, int textureUnit) {
+    inline bool setUniformOptional(const char *name, const TexturePtr &value, int textureUnit) {
         if (hasUniform(name)) {
             return setUniform(name, value, textureUnit);
         }
@@ -183,9 +183,10 @@ public:
      * @param layered: When using a layered texture (e.g. GL_TEXTURE_2D_ARRAY) whether all layers should be bound.
      * @param layer: The layer to bind if "layered" is false.
      */
-    virtual void setUniformImageTexture(unsigned int unit, TexturePtr texture, unsigned int format = 0x8058 /*GL_RGBA8*/,
-                                unsigned int access = 0x88BA /*GL_READ_WRITE*/, unsigned int level = 0,
-                                bool layered = false, unsigned int layer = 0)=0;
+    virtual void setUniformImageTexture(
+            unsigned int unit, const TexturePtr& texture, unsigned int format = 0x8058 /*GL_RGBA8*/,
+            unsigned int access = 0x88BA /*GL_READ_WRITE*/, unsigned int level = 0,
+            bool layered = false, unsigned int layer = 0)=0;
 
 
     // OpenGL 3 Uniform Buffers & OpenGL 4 Shader Storage Buffers
@@ -197,8 +198,8 @@ public:
      * Instead of location, one can also use the name of the UBO within the shader to reference it.
      * TODO: Outsource binding to Shader Manager (as shader programs have shared bindings).
      */
-    virtual bool setUniformBuffer(int binding, int location, GeometryBufferPtr &geometryBuffer)=0;
-    virtual bool setUniformBuffer(int binding, const char *name, GeometryBufferPtr &geometryBuffer)=0;
+    virtual bool setUniformBuffer(int binding, int location, const GeometryBufferPtr &geometryBuffer)=0;
+    virtual bool setUniformBuffer(int binding, const char *name, const GeometryBufferPtr &geometryBuffer)=0;
 
     /**
      * Atomic counters (GL_ATOMIC_COUNTER_BUFFER)
@@ -207,8 +208,8 @@ public:
      * - Location: Not possible to specify. Oddly, only supported for uniform buffers and SSBOs in OpenGl specification.
      * TODO: Outsource binding to Shader Manager (as shader programs have shared bindings).
      */
-    virtual bool setAtomicCounterBuffer(int binding, GeometryBufferPtr &geometryBuffer)=0;
-    //virtual bool setAtomicCounterBuffer(int binding, const char *name, GeometryBufferPtr &geometryBuffer)=0;
+    virtual bool setAtomicCounterBuffer(int binding, const GeometryBufferPtr &geometryBuffer)=0;
+    //virtual bool setAtomicCounterBuffer(int binding, const char *name, const GeometryBufferPtr &geometryBuffer)=0;
 
     /**
      * SSBOs:
@@ -217,8 +218,8 @@ public:
      * Instead of location, one can also use the name of the SSBO within the shader to reference it.
      * TODO: Outsource binding to Shader Manager (as shader programs have shared bindings).
      */
-    virtual bool setShaderStorageBuffer(int binding, int location, GeometryBufferPtr &geometryBuffer)=0;
-    virtual bool setShaderStorageBuffer(int binding, const char *name, GeometryBufferPtr &geometryBuffer)=0;
+    virtual bool setShaderStorageBuffer(int binding, int location, const GeometryBufferPtr &geometryBuffer)=0;
+    virtual bool setShaderStorageBuffer(int binding, const char *name, const GeometryBufferPtr &geometryBuffer)=0;
 
 protected:
     std::vector<ShaderPtr> shaders;

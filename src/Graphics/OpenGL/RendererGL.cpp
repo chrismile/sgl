@@ -312,7 +312,7 @@ CameraPtr RendererGL::getCamera()
 
 
 // State changes
-void RendererGL::bindTexture(TexturePtr &tex, unsigned int textureUnit /* = 0 */)
+void RendererGL::bindTexture(const TexturePtr &tex, unsigned int textureUnit /* = 0 */)
 {
     TextureGL *textureGL = (TextureGL*)tex.get();
 

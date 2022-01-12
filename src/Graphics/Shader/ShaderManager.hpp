@@ -113,9 +113,9 @@ public:
 
     // --- Shader program resources ---
 
-    virtual void bindUniformBuffer(int binding, GeometryBufferPtr &geometryBuffer)=0;
-    virtual void bindAtomicCounterBuffer(int binding, GeometryBufferPtr &geometryBuffer)=0;
-    virtual void bindShaderStorageBuffer(int binding, GeometryBufferPtr &geometryBuffer)=0;
+    virtual void bindUniformBuffer(int binding, const GeometryBufferPtr &geometryBuffer)=0;
+    virtual void bindAtomicCounterBuffer(int binding, const GeometryBufferPtr &geometryBuffer)=0;
+    virtual void bindShaderStorageBuffer(int binding, const GeometryBufferPtr &geometryBuffer)=0;
 
 
 protected:

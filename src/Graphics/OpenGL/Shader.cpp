@@ -334,7 +334,7 @@ bool ShaderProgramGL::setUniform(const char *name, const glm::mat3x4 &value)
     return setUniform(getUniformLoc_error(name), value);
 }
 
-bool ShaderProgramGL::setUniform(const char *name, TexturePtr &value, int textureUnit /* = 0 */)
+bool ShaderProgramGL::setUniform(const char *name, const TexturePtr &value, int textureUnit /* = 0 */)
 {
     return setUniform(getUniformLoc_error(name), value, textureUnit);
 }
@@ -515,7 +515,7 @@ bool ShaderProgramGL::setUniform(int location, const glm::mat4 &value)
     return true;
 }
 
-bool ShaderProgramGL::setUniform(int location, TexturePtr &value, int textureUnit /* = 0 */)
+bool ShaderProgramGL::setUniform(int location, const TexturePtr &value, int textureUnit /* = 0 */)
 {
     bind();
     Renderer->bindTexture(value, textureUnit);
@@ -584,9 +584,10 @@ bool ShaderProgramGL::setUniformArray(int location, const glm::vec4 *value, size
 
 
 
-void ShaderProgramGL::setUniformImageTexture(unsigned int unit, TexturePtr texture, unsigned int format /*= GL_RGBA8 */,
-                            unsigned int access /* = GL_READ_WRITE */, unsigned int level /* = 0 */,
-                            bool layered /* = false */, unsigned int layer /* = 0 */)
+void ShaderProgramGL::setUniformImageTexture(
+        unsigned int unit, const TexturePtr& texture, unsigned int format /*= GL_RGBA8 */,
+        unsigned int access /* = GL_READ_WRITE */, unsigned int level /* = 0 */,
+        bool layered /* = false */, unsigned int layer /* = 0 */)
 {
     glBindImageTexture(
             unit, ((TextureGL*)texture.get())->getTexture(),
@@ -596,7 +597,7 @@ void ShaderProgramGL::setUniformImageTexture(unsigned int unit, TexturePtr textu
 
 
 // OpenGL 3 Uniform Buffers & OpenGL 4 Shader Storage Buffers
-bool ShaderProgramGL::setUniformBuffer(int binding, int location, GeometryBufferPtr &geometryBuffer)
+bool ShaderProgramGL::setUniformBuffer(int binding, int location, const GeometryBufferPtr &geometryBuffer)
 {
     // Binding point is unique for _all_ shaders
     ShaderManager->bindUniformBuffer(binding, geometryBuffer);
@@ -607,7 +608,7 @@ bool ShaderProgramGL::setUniformBuffer(int binding, int location, GeometryBuffer
     return true;
 }
 
-bool ShaderProgramGL::setUniformBuffer(int binding, const char *name, GeometryBufferPtr &geometryBuffer)
+bool ShaderProgramGL::setUniformBuffer(int binding, const char *name, const GeometryBufferPtr &geometryBuffer)
 {
     // Block index (aka location in the shader) can be queried by name in the shader
     unsigned int blockIndex = glGetUniformBlockIndex(shaderProgramID, name);
@@ -619,7 +620,7 @@ bool ShaderProgramGL::setUniformBuffer(int binding, const char *name, GeometryBu
 }
 
 
-bool ShaderProgramGL::setAtomicCounterBuffer(int binding, GeometryBufferPtr &geometryBuffer)
+bool ShaderProgramGL::setAtomicCounterBuffer(int binding, const GeometryBufferPtr &geometryBuffer)
 {
     // Binding point is unique for _all_ shaders
     ShaderManager->bindAtomicCounterBuffer(binding, geometryBuffer);
@@ -629,7 +630,7 @@ bool ShaderProgramGL::setAtomicCounterBuffer(int binding, GeometryBufferPtr &geo
     return true;
 }
 
-/*bool ShaderProgramGL::setAtomicCounterBuffer(int binding, const char *name, GeometryBufferPtr &geometryBuffer)
+/*bool ShaderProgramGL::setAtomicCounterBuffer(int binding, const char *name, const GeometryBufferPtr &geometryBuffer)
 {
     // Resource index (aka location in the shader) can be queried by name in the shader
     unsigned int resourceIndex = glGetProgramResourceIndex(shaderProgramID, GL_ATOMIC_COUNTER_BUFFER, name);
@@ -637,7 +638,7 @@ bool ShaderProgramGL::setAtomicCounterBuffer(int binding, GeometryBufferPtr &geo
 }*/
 
 
-bool ShaderProgramGL::setShaderStorageBuffer(int binding, int location, GeometryBufferPtr &geometryBuffer)
+bool ShaderProgramGL::setShaderStorageBuffer(int binding, int location, const GeometryBufferPtr &geometryBuffer)
 {
     // Binding point is unique for _all_ shaders
     ShaderManager->bindShaderStorageBuffer(binding, geometryBuffer);
@@ -648,7 +649,7 @@ bool ShaderProgramGL::setShaderStorageBuffer(int binding, int location, Geometry
     return true;
 }
 
-bool ShaderProgramGL::setShaderStorageBuffer(int binding, const char *name, GeometryBufferPtr &geometryBuffer)
+bool ShaderProgramGL::setShaderStorageBuffer(int binding, const char *name, const GeometryBufferPtr &geometryBuffer)
 {
     // Resource index (aka location in the shader) can be queried by name in the shader
     unsigned int resourceIndex = glGetProgramResourceIndex(shaderProgramID, GL_SHADER_STORAGE_BLOCK, name);
