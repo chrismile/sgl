@@ -61,6 +61,9 @@ public:
     bool addSliderInt(
             const std::string& name, int* value, int minVal, int maxVal,
             const char* format = "%d", ImGuiSliderFlags flags = 0);
+    bool addSliderInt2(
+            const std::string& name, int* value, int minVal, int maxVal,
+            const char* format = "%d", ImGuiSliderFlags flags = 0);
     bool addSliderIntPowerOfTwo(
             const std::string& name, int* value, int minVal, int maxVal,
             const char* format = "%d", ImGuiSliderFlags flags = 0);
@@ -78,6 +81,9 @@ public:
             const std::string& name, float* value, float minVal, float maxVal,
             const char* format = "%.3f", ImGuiSliderFlags flags = 0);
     ImGui::EditMode addSliderIntEdit(
+            const std::string& name, int* value, int minVal, int maxVal,
+            const char* format = "%d", ImGuiSliderFlags flags = 0);
+    ImGui::EditMode addSliderInt2Edit(
             const std::string& name, int* value, int minVal, int maxVal,
             const char* format = "%d", ImGuiSliderFlags flags = 0);
 

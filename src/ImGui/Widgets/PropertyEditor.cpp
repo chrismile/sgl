@@ -109,6 +109,18 @@ bool PropertyEditor::addSliderInt(
     return ImGui::SliderInt(internalId.c_str(), value, minVal, maxVal, format, flags);
 }
 
+bool PropertyEditor::addSliderInt2(
+        const std::string& name, int* value, int minVal, int maxVal,
+        const char* format, ImGuiSliderFlags flags) {
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+    ImGui::TreeNodeEx(name.c_str(), treeNodeFlagsLeaf);
+    ImGui::TableNextColumn();
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    std::string internalId = "##" + name;
+    return ImGui::SliderInt2(internalId.c_str(), value, minVal, maxVal, format, flags);
+}
+
 bool PropertyEditor::addSliderIntPowerOfTwo(
         const std::string& name, int* value, int minVal, int maxVal,
         const char* format, ImGuiSliderFlags flags) {
@@ -180,6 +192,18 @@ ImGui::EditMode PropertyEditor::addSliderIntEdit(
     ImGui::SetNextItemWidth(-FLT_MIN);
     std::string internalId = "##" + name;
     return ImGui::SliderIntEdit(internalId.c_str(), value, minVal, maxVal, format, flags);
+}
+
+ImGui::EditMode PropertyEditor::addSliderInt2Edit(
+        const std::string& name, int* value, int minVal, int maxVal,
+        const char* format, ImGuiSliderFlags flags) {
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+    ImGui::TreeNodeEx(name.c_str(), treeNodeFlagsLeaf);
+    ImGui::TableNextColumn();
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    std::string internalId = "##" + name;
+    return ImGui::SliderInt2Edit(internalId.c_str(), value, minVal, maxVal, format, flags);
 }
 
 
