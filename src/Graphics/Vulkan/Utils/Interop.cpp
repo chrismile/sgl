@@ -242,6 +242,45 @@ void SemaphoreVkGlInterop::waitSemaphoreGl(
 }
 
 
+
+InteropSyncVkGl::InteropSyncVkGl(sgl::vk::Device* device, int numFramesInFlight) {
+    frameIdx = 0;
+    renderReadySemaphores.resize(numFramesInFlight);
+    renderFinishedSemaphores.resize(numFramesInFlight);
+    for (int i = 0; i < numFramesInFlight; i++) {
+        renderReadySemaphores.at(i) = std::make_shared<sgl::SemaphoreVkGlInterop>(device);
+        renderFinishedSemaphores.at(i) = std::make_shared<sgl::SemaphoreVkGlInterop>(device);
+    }
+}
+
+const SemaphoreVkGlInteropPtr& InteropSyncVkGl::getRenderReadySemaphore() {
+    return renderReadySemaphores.at(frameIdx);
+}
+
+const SemaphoreVkGlInteropPtr& InteropSyncVkGl::getRenderFinishedSemaphore() {
+    return renderFinishedSemaphores.at(frameIdx);
+}
+
+vk::SemaphorePtr InteropSyncVkGl::getRenderReadySemaphoreVk() {
+    return std::static_pointer_cast<sgl::vk::Semaphore, sgl::SemaphoreVkGlInterop>(
+            renderReadySemaphores.at(frameIdx));
+}
+
+vk::SemaphorePtr InteropSyncVkGl::getRenderFinishedSemaphoreVk() {
+    return std::static_pointer_cast<sgl::vk::Semaphore, sgl::SemaphoreVkGlInterop>(
+            renderFinishedSemaphores.at(frameIdx));
+}
+
+void InteropSyncVkGl::frameFinished() {
+    frameIdx = (frameIdx + 1) % int(renderReadySemaphores.size());
+}
+
+void InteropSyncVkGl::setFrameIndex(int frame) {
+    frameIdx = frame;
+}
+
+
+
 bool isDeviceCompatibleWithOpenGl(VkPhysicalDevice physicalDevice) {
     assert(VK_UUID_SIZE == GL_UUID_SIZE_EXT);
     const size_t UUID_SIZE = std::min(size_t(VK_UUID_SIZE), size_t(GL_UUID_SIZE_EXT));

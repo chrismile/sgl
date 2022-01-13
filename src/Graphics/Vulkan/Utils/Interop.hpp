@@ -56,7 +56,7 @@ typedef std::shared_ptr<Texture> TexturePtr;
 class DLL_OBJECT SemaphoreVkGlInterop : public vk::Semaphore {
 public:
     explicit SemaphoreVkGlInterop(sgl::vk::Device* device, VkSemaphoreCreateFlags semaphoreCreateFlags = 0);
-    ~SemaphoreVkGlInterop();
+    ~SemaphoreVkGlInterop() override;
 
     /*
      * @param srcLayout and dstLayout One value out of:
@@ -106,6 +106,45 @@ private:
     GLuint semaphoreGl = 0;
 };
 typedef std::shared_ptr<SemaphoreVkGlInterop> SemaphoreVkGlInteropPtr;
+
+/**
+ * A synchronization wrapper for OpenGL <-> Vulkan interoperability. It creates a set of shared semaphores.
+ * Unfortunately, using only one semaphore can lead to problems when the OpenGL context is faster at executing one frame
+ * than the Vulkan context.
+ *
+ * If using Vulkan inside an OpenGL context:
+ * - Use 'signalSemaphoreGl' on getRenderReadySemaphore() to let OpenGL signal that Vulkan can start rendering.
+ * - Use 'pushWaitSemaphore(getRenderReadySemaphoreVk(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT)' on the command buffer of
+ *   your sgl::vk::Renderer object (which you can query using renderer->getCommandBuffer()).
+ * - Use 'pushWaitSemaphore(getRenderFinishedSemaphoreVk())' on the command buffer of your sgl::vk::Renderer object.
+ * - Submit your finished command buffer to the GPU driver using "renderer->submitToQueue()".
+ * - Use 'waitSemaphoreGl' on getRenderFinishedSemaphore() to let OpenGL wait for Vulkan to have stopped rendering.
+ */
+class DLL_OBJECT InteropSyncVkGl {
+public:
+    /**
+     * Creates a set of render ready and render finished semaphore.
+     * @param device The Vulkan device to use.
+     * @param numFramesInFlight The assumed number of frames in flight.
+     *
+     * NOTE: If using Vulkan inside an OpenGL context, it is not clear how many frames in flight the OpenGL driver might
+     * keep. Thus, the standard value of 4 is used, but 3 might also be sufficient in case of triple buffering.
+     */
+    InteropSyncVkGl(sgl::vk::Device* device, int numFramesInFlight = 4);
+
+    const SemaphoreVkGlInteropPtr& getRenderReadySemaphore();
+    const SemaphoreVkGlInteropPtr& getRenderFinishedSemaphore();
+    vk::SemaphorePtr getRenderReadySemaphoreVk();
+    vk::SemaphorePtr getRenderFinishedSemaphoreVk();
+    void frameFinished();
+    void setFrameIndex(int frame);
+
+private:
+    int frameIdx = 0;
+    std::vector<SemaphoreVkGlInteropPtr> renderReadySemaphores;
+    std::vector<SemaphoreVkGlInteropPtr> renderFinishedSemaphores;
+};
+typedef std::shared_ptr<InteropSyncVkGl> InteropSyncVkGlPtr;
 
 /**
  * Returns whether the passed Vulkan device is compatible with the currently used OpenGL server.
