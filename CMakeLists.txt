@@ -81,8 +81,8 @@ if (${SUPPORT_OPENGL} AND ${OpenGL_FOUND} AND ${GLEW_FOUND})
         set(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT OFF)
     endif()
 
-    # vcpkg GLEW does not set GLEW_VERSION for some reason.
-    if (VCPKG_TOOLCHAIN)
+    # vcpkg and MSYS2 GLEW does not set GLEW_VERSION, probably as config mode is used instead of module mode.
+    if (VCPKG_TOOLCHAIN OR MSYS)
         set(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT ON)
     endif()
 
