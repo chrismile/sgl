@@ -35,12 +35,30 @@
 
 namespace sgl {
 
+class AABB3;
+
 class DLL_OBJECT Sphere {
 public:
-    Sphere() : radius(0.0f) {}
-    Sphere(glm::vec3 center, float radius) : center(center), radius(radius) {}
     glm::vec3 center;
     float radius;
+
+    Sphere() : center(0.0f), radius(0.0f) {}
+    Sphere(glm::vec3 center, float radius) : center(center), radius(radius) {}
+
+    /// Returns whether the two spheres intersect.
+    [[nodiscard]] bool intersects(const Sphere& otherSphere) const;
+    /// Returns whether the sphere contains the passed sphere.
+    [[nodiscard]] bool contains(const Sphere& otherSphere) const;
+    /// Returns whether the sphere contain the point.
+    [[nodiscard]] bool contains(const glm::vec3& pt) const;
+    /// Returns whether the sphere intersects the passed AABB.
+    [[nodiscard]] bool intersects(const AABB3& aabb) const;
+    /// Returns whether the sphere contains the passed AABB.
+    [[nodiscard]] bool contains(const AABB3& aabb) const;
+    /// Merge the two bounding spheres.
+    void combine(const Sphere& otherSphere);
+    /// Merge the bounding sphere with a point.
+    void combine(const glm::vec3& pt);
 };
 
 }
