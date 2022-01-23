@@ -26,6 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <algorithm>
 #include <Input/Keyboard.hpp>
 #include <Input/Mouse.hpp>
 #include <Math/Geometry/MatrixUtil.hpp>
