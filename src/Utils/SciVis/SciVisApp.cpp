@@ -276,13 +276,12 @@ void SciVisApp::resolutionChanged(sgl::EventPtr event) {
     }
 #endif
 
-    // Buffers for off-screen rendering
+    // Create buffers for off-screen rendering.
     createSceneFramebuffer();
 
 #ifdef SUPPORT_VULKAN
     sgl::vk::Swapchain* swapchain = sgl::AppSettings::get()->getSwapchain();
     if (swapchain && AppSettings::get()->getUseGUI()) {
-        //sgl::ImGuiWrapper::get()->setVkRenderTargets(swapchain->getSwapchainImageViews());
         sgl::ImGuiWrapper::get()->setVkRenderTarget(compositedTextureVk->getImageView());
         sgl::ImGuiWrapper::get()->onResolutionChanged();
     }
@@ -339,7 +338,18 @@ void SciVisApp::saveScreenshot(const std::string &filename) {
 }
 
 void SciVisApp::updateColorSpaceMode() {
-    createSceneFramebuffer();
+#ifdef SUPPORT_VULKAN
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+        recreateFramebuffersAtStartOfNextFrame = true;
+    }
+#endif
+
+#ifdef SUPPORT_OPENGL
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
+        // Create buffers for off-screen rendering.
+        createSceneFramebuffer();
+    }
+#endif
 }
 
 void SciVisApp::processSDLEvent(const SDL_Event &event) {
@@ -356,6 +366,11 @@ void SciVisApp::processSDLEvent(const SDL_Event &event) {
 /// Call pre-render in derived classes before the rendering logic, and post-render afterwards.
 void SciVisApp::preRender() {
     ZoneScoped;
+
+    if (recreateFramebuffersAtStartOfNextFrame) {
+        resolutionChanged({});
+        recreateFramebuffersAtStartOfNextFrame = false;
+    }
 
     if (videoWriter == nullptr && recording) {
         videoWriter = new sgl::VideoWriter(saveFilenameVideos + ".mp4", FRAME_RATE_VIDEOS);

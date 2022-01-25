@@ -151,6 +151,8 @@ protected:
     sgl::Color clearColor;
     ImVec4 clearColorSelection = ImColor(255, 255, 255, 255);
     bool useLinearRGB = true;
+    /// For changing linear RGB mode after current frame has finished.
+    bool recreateFramebuffersAtStartOfNextFrame = false;
     bool screenshotTransparentBackground = false;
     std::string saveDirectoryScreenshots;
     std::string saveFilenameScreenshots = "Screenshot";
