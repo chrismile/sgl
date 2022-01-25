@@ -32,6 +32,7 @@
 #include <SDL2/SDL.h>
 
 #include <Math/Math.hpp>
+#include <Utils/StringUtils.hpp>
 #include <Utils/AppSettings.hpp>
 #include <Utils/File/FileUtils.hpp>
 #include <Utils/File/Logfile.hpp>
@@ -89,6 +90,17 @@ void SDLWindow::errorCheckSDL()
 {
     while (SDL_GetError()[0] != '\0') {
         Logfile::get()->writeError(std::string() + "SDL error: " + SDL_GetError());
+        SDL_ClearError();
+    }
+}
+
+void SDLWindow::errorCheckSDLCritical()
+{
+    while (SDL_GetError()[0] != '\0') {
+        std::string errorString = SDL_GetError();
+        Logfile::get()->writeError(std::string() + "SDL error: " + SDL_GetError());
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "SDL Error", SDL_GetError(), sdlWindow);
+        exit(1);
         SDL_ClearError();
     }
 }
@@ -177,6 +189,8 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
     this->renderSystem = renderSystem;
     this->windowSettings = settings;
 
+    errorCheck();
+
 #ifdef SUPPORT_OPENGL
     if (renderSystem == RenderSystem::OPENGL) {
         // Set the window attributes
@@ -205,12 +219,11 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
         if (windowSettings.multisamples != 0) {
             SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
             SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, windowSettings.multisamples);
-            glEnable(GL_MULTISAMPLE);
         }
     }
 #endif
 
-    errorCheck();
+    errorCheckSDLCritical();
 
     Uint32 flags = SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI;
 #ifdef SUPPORT_OPENGL
@@ -231,11 +244,11 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
             SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
             windowSettings.width, windowSettings.height, flags);
 
-    errorCheck();
+    errorCheckSDLCritical();
 #ifdef SUPPORT_OPENGL
     if (renderSystem == RenderSystem::OPENGL) {
         glContext = SDL_GL_CreateContext(sdlWindow);
-        errorCheck();
+        errorCheckSDLCritical();
         SDL_GL_MakeCurrent(sdlWindow, glContext);
     }
 #endif
@@ -264,7 +277,7 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
         }
     }
 #endif
-    errorCheck();
+    errorCheckSDLCritical();
 
 #ifdef SUPPORT_OPENGL
     if (renderSystem == RenderSystem::OPENGL && windowSettings.multisamples != 0) {
