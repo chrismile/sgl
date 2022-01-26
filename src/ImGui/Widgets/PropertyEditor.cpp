@@ -28,6 +28,7 @@
 
 #include <ImGui/ImGuiWrapper.hpp>
 #include <ImGui/imgui_custom.h>
+#include <ImGui/imgui_stdlib.h>
 #include "PropertyEditor.hpp"
 
 namespace sgl {
@@ -250,11 +251,11 @@ bool PropertyEditor::addButton(const std::string& labelText, const std::string& 
 bool PropertyEditor::addInputAction(const std::string& name, std::string* text) {
     ImGui::TableNextRow();
     ImGui::TableNextColumn();
-    bool clicked = ImGui::TreeNodeEx(name.c_str(), treeNodeFlagsLeaf);
+    ImGui::TreeNodeEx(name.c_str(), treeNodeFlagsLeaf);
     ImGui::TableNextColumn();
     ImGui::SetNextItemWidth(-FLT_MIN);
     std::string internalId = "##" + name;
-    return ImGui::Button(internalId.c_str()) || clicked;
+    return ImGui::InputText(internalId.c_str(), text);
 }
 
 bool PropertyEditor::addCombo(

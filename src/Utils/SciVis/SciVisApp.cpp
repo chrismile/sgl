@@ -791,6 +791,10 @@ void SciVisApp::renderGuiPropertyEditorWindow() {
 
             if (propertyEditor.beginNode("General Settings")) {
                 propertyEditor.addCheckbox("Continuous Rendering", &continuousRendering);
+                if (propertyEditor.addCheckbox("Use Linear RGB", &useLinearRGB)) {
+                    updateColorSpaceMode();
+                    reRender = true;
+                }
                 renderGuiGeneralSettingsPropertyEditor();
 
                 propertyEditor.endNode();
