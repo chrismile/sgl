@@ -96,10 +96,14 @@ void Instance::createInstance(std::vector<const char*> instanceExtensionNames, b
     if (useValidationLayer) {
         instanceLayerNames.push_back("VK_LAYER_KHRONOS_validation"); // VK_LAYER_LUNARG_standard_validation
         if (!checkRequestedLayersAvailable(instanceLayerNames)) {
+            sgl::Logfile::get()->write(
+                    "Instance::createInstance: Disabling validation layer, as VK_LAYER_KHRONOS_validation is not "
+                    "available.");
             useValidationLayer = false;
             instanceLayerNames.clear();
+        } else {
+            instanceExtensionNames.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         }
-        instanceExtensionNames.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
 
     VkInstanceCreateInfo instanceInfo = { };

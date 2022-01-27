@@ -234,7 +234,8 @@ VkPhysicalDevice Device::createPhysicalDeviceBinding(
     }
 
     deviceExtensionsSet = {requiredDeviceExtensions.begin(), requiredDeviceExtensions.end()};
-    deviceExtensions.insert(deviceExtensions.end(), requiredDeviceExtensions.begin(), requiredDeviceExtensions.end());
+    deviceExtensions.insert(
+            deviceExtensions.end(), requiredDeviceExtensions.begin(), requiredDeviceExtensions.end());
 
     physicalDevice = VK_NULL_HANDLE;
     for (const auto &physicalDeviceIt : physicalDevices) {
@@ -489,7 +490,8 @@ void Device::createLogicalDeviceAndQueues(
 void Device::createVulkanMemoryAllocator() {
     uint32_t vulkanApiVersion = std::min(instance->getInstanceVulkanVersion(), getApiVersion());
     sgl::Logfile::get()->write(
-            "VMA Vulkan API version: " + Instance::convertVulkanVersionToString(vulkanApiVersion), BLUE);
+            "VMA Vulkan API version: " + Instance::convertVulkanVersionToString(vulkanApiVersion),
+            BLUE);
 
     VmaAllocatorCreateInfo allocatorInfo = {};
     allocatorInfo.vulkanApiVersion = vulkanApiVersion;
@@ -590,7 +592,8 @@ void Device::createDeviceSwapchain(
     _getDeviceInformation();
 
     createLogicalDeviceAndQueues(
-            physicalDevice, instance->getUseValidationLayer(), instance->getInstanceLayerNames(), deviceExtensions,
+            physicalDevice, instance->getUseValidationLayer(),
+            instance->getInstanceLayerNames(), deviceExtensions,
             deviceExtensionsSet, requestedDeviceFeatures, computeOnly);
 
     writeDeviceInfoToLog(deviceExtensions);
@@ -618,7 +621,8 @@ void Device::createDeviceHeadless(
     _getDeviceInformation();
 
     createLogicalDeviceAndQueues(
-            physicalDevice, instance->getUseValidationLayer(), instance->getInstanceLayerNames(), deviceExtensions,
+            physicalDevice, instance->getUseValidationLayer(),
+            instance->getInstanceLayerNames(), deviceExtensions,
             deviceExtensionsSet, requestedDeviceFeatures, computeOnly);
 
     writeDeviceInfoToLog(deviceExtensions);
@@ -867,7 +871,8 @@ std::vector<VkCommandBuffer> Device::beginSingleTimeMultipleCommands(
     commandPoolType.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
     commandPoolType.queueFamilyIndex = queueIndex;
     VkCommandPool pool;
-    std::vector<VkCommandBuffer> commandBuffers = allocateCommandBuffers(commandPoolType, &pool, numCommandBuffers);
+    std::vector<VkCommandBuffer> commandBuffers = allocateCommandBuffers(
+            commandPoolType, &pool, numCommandBuffers);
 
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;

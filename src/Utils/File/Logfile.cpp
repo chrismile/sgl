@@ -52,14 +52,14 @@ void Logfile::closeLogfile()
         std::cerr << "Tried to close logfile multiple times!" << std::endl;
         return;
     }
-    write("<br><br>End of file</font></body></html>");
+    write("<br><br>End of file.</font></body></html>");
     logfile.close();
     closedLogfile = true;
 }
 
 void Logfile::createLogfile(const std::string& filename, const std::string& appName)
 {
-    // Open file and write header
+    // Open the file and write the header.
     logfile.open(filename);
     write(std::string() + "<html><head><title>Logfile (" + appName + ")</title></head>");
     write("<body><font face='courier new'>");
@@ -67,22 +67,44 @@ void Logfile::createLogfile(const std::string& filename, const std::string& appN
 
     // Log information on build configuration
 #ifdef _DEBUG
-    std::string build = "DEBUG";
+    std::string build = "Debug";
 #else
-    std::string build = "RELEASE";
+    std::string build = "Release";
 #endif
-    write(std::string() + "Build: " + build + "<br>");
+    write(std::string() + "Build type: " + build + "<br>");
+
+#if defined(_WIN32)
+    write("Operating system: Windows<br>");
+#elif defined(__linux__)
+    write("Operating system: Linux<br>");
+#elif defined(__unix__)
+    write("Operating system: Unix<br>");
+#else
+    write("Operating system: Unknown<br>");
+#endif
+
+#if defined(__MINGW32__)
+    write("Compiler: MinGW<br>");
+#elif defined(_MSC_VER)
+    write("Compiler: MSVC<br>");
+#elif defined(__GNUC__)
+    write("Compiler: GCC<br>");
+#elif defined(__clang__)
+    write("Compiler: Clang<br>");
+#else
+    write("Compiler: Unknown<br>");
+#endif
 
 #ifdef __unix__
     std::string sysinfo = exec("uname -a");
     write(std::string() + "System info: " + sysinfo + "<br>");
 #endif
 
-    // Write link to project page
+    // Write a link to the issues section of the project.
     write("<br><a href='https://github.com/chrismile/sgl/issues'>Inform the developers about issues</a><br><br>");
 }
 
-// Create the heading
+// Writes the header.
 void Logfile::writeTopic (const std::string &text, int size)
 {
     write("<table width='100%%' ");
@@ -92,14 +114,14 @@ void Logfile::writeTopic (const std::string &text, int size)
     write("</font></td></tr></table>\n<br>");
 }
 
-// Write black text to the file
+// Writes black text to the file.
 void Logfile::write(const std::string &text)
 {
     logfile.write(text.c_str(), text.size());
     logfile.flush();
 }
 
-// Write colored text to the logfile
+// Writes colored text to the logfile.
 void Logfile::write(const std::string &text, int color)
 {
     switch (color) {
