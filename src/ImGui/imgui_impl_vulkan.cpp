@@ -1074,7 +1074,7 @@ bool    ImGui_ImplVulkan_Init(ImGui_ImplVulkan_InitInfo* info, VkRenderPass rend
     IM_ASSERT(info->Device != VK_NULL_HANDLE);
     IM_ASSERT(info->Queue != VK_NULL_HANDLE);
     IM_ASSERT(info->DescriptorPool != VK_NULL_HANDLE);
-    IM_ASSERT(info->MinImageCount >= 2);
+    IM_ASSERT(info->MinImageCount >= 1);
     IM_ASSERT(info->ImageCount >= info->MinImageCount);
     IM_ASSERT(render_pass != VK_NULL_HANDLE);
 
@@ -1127,7 +1127,7 @@ void ImGui_ImplVulkan_NewFrame()
 void ImGui_ImplVulkan_SetMinImageCount(uint32_t min_image_count)
 {
     ImGui_ImplVulkan_Data* bd = ImGui_ImplVulkan_GetBackendData();
-    IM_ASSERT(min_image_count >= 2);
+    IM_ASSERT(min_image_count >= 1);
     if (bd->VulkanInitInfo.MinImageCount == min_image_count)
         return;
 
