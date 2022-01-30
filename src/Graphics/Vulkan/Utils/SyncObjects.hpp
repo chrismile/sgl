@@ -84,7 +84,7 @@ protected:
 
 class DLL_OBJECT Fence {
 public:
-    explicit Fence(Device* device, VkFenceCreateFlags fenceCreateFlags = VK_FENCE_CREATE_SIGNALED_BIT);
+    explicit Fence(Device* device, VkFenceCreateFlags fenceCreateFlags = 0);
     ~Fence();
 
     /**
@@ -93,7 +93,7 @@ public:
      * signaled.
      * @return True if the fence became signaled, and false if a timeout occurred.
      */
-    bool wait(uint64_t timeoutNanoseconds);
+    bool wait(uint64_t timeoutNanoseconds = UINT64_MAX);
     void reset();
 
     inline VkFence getVkFence() { return fence; }

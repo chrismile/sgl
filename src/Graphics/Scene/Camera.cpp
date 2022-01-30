@@ -164,6 +164,11 @@ void Camera::onResolutionChanged(const EventPtr& event) {
     invalidateFrustum();
 }
 
+void Camera::onResolutionChanged(const uint32_t width, const uint32_t height) {
+    aspect = float(width) / float(height);
+    invalidateFrustum();
+}
+
 
 AABB2 Camera::getAABB2(float planeDistance) {
     updateCamera();

@@ -248,6 +248,7 @@ HeadlessData AppSettings::createHeadless() {
     if (renderSystem == RenderSystem::VULKAN) {
         bool debugContext = false;
         settings.getValueOpt("window-debugContext", debugContext);
+        instance = new vk::Instance;
         instance->createInstance({}, debugContext);
         headlessData.instance = instance;
     } else {
@@ -447,8 +448,12 @@ void AppSettings::release()
     }
 #endif
 
-    mainWindow->serializeSettings(settings);
-    settings.saveToFile(settingsFilename.c_str());
+    if (mainWindow) {
+        mainWindow->serializeSettings(settings);
+    }
+    if (saveSettings) {
+        settings.saveToFile(settingsFilename.c_str());
+    }
 
     if (useGUI) {
         ImGuiWrapper::get()->shutdown();

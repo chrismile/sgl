@@ -64,7 +64,7 @@ namespace sgl {
  */
 class DLL_OBJECT SciVisApp : public sgl::AppLogic {
 public:
-    explicit SciVisApp(float fovy = atanf(1.0f / 2.0f) * 2.0f);
+    explicit SciVisApp(float fovy = std::atan(1.0f / 2.0f) * 2.0f);
     ~SciVisApp() override;
     //void render();
     void update(float dt) override;

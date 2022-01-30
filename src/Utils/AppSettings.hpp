@@ -127,7 +127,8 @@ class DLL_OBJECT AppSettings : public Singleton<AppSettings>
 public:
     AppSettings();
     void loadSettings(const char *filename);
-    SettingsFile &getSettings() { return settings; }
+    inline void setSaveSettings(bool _saveSettings) { saveSettings = _saveSettings; }
+    inline SettingsFile &getSettings() { return settings; }
 
     /// setRenderSystem must be called before calling initializeSubsystems and createWindow.
     void setRenderSystem(RenderSystem renderSystem);
@@ -190,6 +191,7 @@ public:
 private:
     SettingsFile settings;
     std::string settingsFilename;
+    bool saveSettings = true; ///< Whether to save the settings to a filename.
     RenderSystem renderSystem = RenderSystem::OPENGL;
     OperatingSystem operatingSystem;
     Window* mainWindow = nullptr;

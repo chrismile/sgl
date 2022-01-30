@@ -116,7 +116,8 @@ void ScreenshotReadbackHelper::saveDataIfAvailable(uint32_t imageIndex) {
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 int writeLocation = (x + y * width) * 4;
-                int readLocation = int(subresourceLayout.offset) + x * 4 + int(subresourceLayout.rowPitch) * y;
+                // We don't need to add "int(subresourceLayout.offset)" here, as this is automatically done by VMA.
+                int readLocation = x * 4 + int(subresourceLayout.rowPitch) * y;
                 for (int c = 0; c < 4; c++) {
                     bitmapPixels[writeLocation + c] = mappedData[readLocation + c];
                 }

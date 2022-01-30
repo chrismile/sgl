@@ -53,6 +53,7 @@ public:
     Camera();
     virtual ~Camera() {}
     void onResolutionChanged(const EventPtr& event);
+    void onResolutionChanged(const uint32_t width, const uint32_t height);
 
     enum class ProjectionType {
         ORTHOGRAPHIC, PERSPECTIVE
