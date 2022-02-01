@@ -34,12 +34,12 @@ namespace sgl {
 RaycastResult Ray3::intersects(const Plane &plane) const {
     glm::vec3 planeNormal = plane.getNormal();
     float ln = glm::dot(planeNormal, this->direction);
-    if (fabs(ln) < 10e-4) {
+    if (std::abs(ln) < 1e-5f) {
         // Plane and ray are parallel
         return RaycastResult(false, 0.0f);
     } else {
         float pos = glm::dot(planeNormal, this->origin) + plane.getOffset();
-        float t = -pos/ln;
+        float t = -pos / ln;
         bool positiveIntersection = t >= 0;
         return RaycastResult(positiveIntersection, t);
     }

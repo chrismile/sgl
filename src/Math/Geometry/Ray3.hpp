@@ -47,9 +47,9 @@ class DLL_OBJECT Ray3 {
 public:
     Ray3(const glm::vec3 &origin, const glm::vec3 &direction) : origin(origin), direction(direction) {}
 
-    RaycastResult intersects(const Plane &plane) const;
-    inline glm::vec3 getPoint(float t) const { return origin + direction * t; }
-    inline glm::vec2 getPoint2D(float t) const { glm::vec3 pt3d = getPoint(t); return glm::vec2(pt3d.x, pt3d.y); }
+    [[nodiscard]] RaycastResult intersects(const Plane &plane) const;
+    [[nodiscard]] inline glm::vec3 getPoint(float t) const { return origin + direction * t; }
+    [[nodiscard]] inline glm::vec2 getPoint2D(float t) const { glm::vec3 pt3d = getPoint(t); return glm::vec2(pt3d.x, pt3d.y); }
 
 private:
     glm::vec3 origin, direction;
