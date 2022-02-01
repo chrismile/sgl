@@ -622,6 +622,20 @@ void SciVisApp::renderSceneSettingsGuiPre() {
     }
     ImGui::SameLine();
     ImGui::Checkbox("Continuous Rendering", &continuousRendering);
+
+    if (ImGui::Combo(
+            "Navigation", (int*)&cameraNavigationMode, CAMERA_NAVIGATION_MODE_NAMES,
+            IM_ARRAYSIZE(CAMERA_NAVIGATION_MODE_NAMES))) {
+        updateCameraNavigationMode();
+    }
+    if (cameraNavigationMode == CameraNavigationMode::TURNTABLE) {
+        int turntableMouseButtonIndexZeroStart = turntableMouseButtonIndex - 1;
+        if (ImGui::Combo(
+                "Mouse Button", &turntableMouseButtonIndexZeroStart, MOUSE_BUTTON_NAMES,
+                IM_ARRAYSIZE(MOUSE_BUTTON_NAMES))) {
+            turntableMouseButtonIndex = turntableMouseButtonIndexZeroStart + 1;
+        }
+    }
     ImGui::Checkbox("UI on Screenshot", &uiOnScreenshot);
     ImGui::SameLine();
     if (ImGui::Checkbox("Use Linear RGB", &useLinearRGB)) {
