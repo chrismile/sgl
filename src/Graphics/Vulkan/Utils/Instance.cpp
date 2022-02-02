@@ -26,6 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <cstring>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
 #include "Instance.hpp"
@@ -170,8 +171,14 @@ bool Instance::checkRequestedLayersAvailable(const std::vector<const char*> &req
 
     for (const char *requestedLayer : requestedLayers) {
         if (availableLayers.find(requestedLayer) == availableLayers.end()) {
-            sgl::Logfile::get()->writeError(
-                    std::string() + "Error: Invalid Vulkan layer name \"" + requestedLayer + "\".");
+            if (strcmp(requestedLayer, "VK_LAYER_KHRONOS_validation") == 0) {
+                sgl::Logfile::get()->writeError(
+                        std::string() + "Warning: Invalid Vulkan layer name \"" + requestedLayer + "\".",
+                        true);
+            } else {
+                sgl::Logfile::get()->writeError(
+                        std::string() + "Error: Invalid Vulkan layer name \"" + requestedLayer + "\".");
+            }
             return false;
         }
     }

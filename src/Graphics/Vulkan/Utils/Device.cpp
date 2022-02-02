@@ -253,8 +253,8 @@ VkPhysicalDevice Device::createPhysicalDeviceBinding(
 
     if (physicalDevice == VK_NULL_HANDLE) {
         std::string errorText =
-                "Error in createPhysicalDeviceBinding: No suitable GPU found with all necessary extensions and a "
-                "graphics queue!";
+                "Error in Device::createPhysicalDeviceBinding: No suitable GPU found with all necessary extensions "
+                "and a graphics queue!";
         bool isErrorFatal = true;
 #if defined(SUPPORT_OPENGL) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
         if (openGlInteropEnabled) {
@@ -264,7 +264,7 @@ VkPhysicalDevice Device::createPhysicalDeviceBinding(
         if (isErrorFatal) {
             sgl::Logfile::get()->throwError(errorText);
         } else {
-            sgl::Logfile::get()->writeError(errorText);
+            sgl::Logfile::get()->writeError(errorText, false);
         }
     }
 

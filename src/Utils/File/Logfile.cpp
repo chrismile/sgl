@@ -139,7 +139,7 @@ void Logfile::write(const std::string &text, int color)
     case PURPLE:
         write("<font color=purple>"); break;
     case ORANGE:
-        write("<font color=FF6A00>"); break;
+        write("<font color=FF9200>"); break;
     };
 
     write(text);
