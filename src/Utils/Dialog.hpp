@@ -33,6 +33,11 @@
 #include <vector>
 #include <memory>
 
+// Avoid windows.h defining "ERROR".
+#ifdef _WIN32
+#define NOGDI
+#endif
+
 namespace sgl {
 class Window;
 }

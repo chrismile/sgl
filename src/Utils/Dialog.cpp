@@ -30,7 +30,18 @@
 
 #include "SDL/SDLWindow.hpp"
 #include "Dialog.hpp"
+
+// Avoid commdlg.h needs GDI, but GDI defined ERROR.
+#if defined(_WIN32) && defined(NOGDI)
+#undef NOGDI
+#endif
+
 #include "libs/portable-file-dialogs.h"
+
+// Avoid windows.h defining "ERROR".
+#if defined(_WIN32) && defined(ERROR)
+#undef ERROR
+#endif
 
 namespace sgl { namespace dialog {
 
