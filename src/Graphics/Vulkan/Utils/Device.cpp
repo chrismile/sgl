@@ -26,6 +26,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef _WIN32
+#define NOMINMAX
+#endif
+
 #define VMA_IMPLEMENTATION
 #include <Utils/File/Logfile.hpp>
 #include <Math/Math.hpp>
