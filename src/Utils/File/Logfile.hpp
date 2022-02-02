@@ -35,12 +35,11 @@
 namespace sgl {
 
 //! Colors for the output text.
-enum FONTCOLORS {
+enum FontColors {
     BLACK, WHITE, RED, GREEN, BLUE, PURPLE, ORANGE
 };
 
-class DLL_OBJECT Logfile : public Singleton<Logfile>
-{
+class DLL_OBJECT Logfile : public Singleton<Logfile> {
 public:
     Logfile();
     ~Logfile();
@@ -52,9 +51,11 @@ public:
     void write(const std::string &text);
     void write(const std::string &text, int color);
     //! Outputs text on stderr, too.
-    void writeError(const std::string &text);
+    void writeWarning(const std::string &text, bool openMessageBox = false);
+    //! Outputs text on stderr, too.
+    void writeError(const std::string &text, bool openMessageBox = true);
     //! Writes to log file, stderr, and throws an error.
-    void throwError(const std::string &text);
+    void throwError(const std::string &text, bool openMessageBox = true);
     //! Outputs text on stdout, too.
     void writeInfo(const std::string &text);
 

@@ -89,7 +89,13 @@ void SDLWindow::errorCheck()
 void SDLWindow::errorCheckSDL()
 {
     while (SDL_GetError()[0] != '\0') {
-        Logfile::get()->writeError(std::string() + "SDL error: " + SDL_GetError());
+        std::string errorString = SDL_GetError();
+        bool openMessageBox = true;
+        // This error somehow can occur on some Window systems. Ignore it, as it is probably harmless.
+        if (boost::contains(errorString, "Unknown sensor type")) {
+            openMessageBox = false;
+        }
+        Logfile::get()->writeError(std::string() + "SDL error: " + errorString, openMessageBox);
         SDL_ClearError();
     }
 }
@@ -97,11 +103,7 @@ void SDLWindow::errorCheckSDL()
 void SDLWindow::errorCheckSDLCritical()
 {
     while (SDL_GetError()[0] != '\0') {
-        std::string errorString = SDL_GetError();
-        Logfile::get()->writeError(std::string() + "SDL error: " + SDL_GetError());
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "SDL Error", SDL_GetError(), sdlWindow);
-        exit(1);
-        SDL_ClearError();
+        Logfile::get()->throwError(std::string() + "SDL error: " + SDL_GetError());
     }
 }
 

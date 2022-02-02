@@ -278,24 +278,25 @@ void AppSettings::initializeVulkanInteropSupport(
 
     if (operatingSystem != sgl::OperatingSystem::LINUX && operatingSystem != sgl::OperatingSystem::ANDROID
             && operatingSystem != sgl::OperatingSystem::WINDOWS) {
-        sgl::Logfile::get()->writeError(
+        sgl::Logfile::get()->writeWarning(
                 "Warning in AppSettings::initializeVulkanInteropSupport: Only Windows and Linux-based systems "
-                "support sharing memory objects and semaphores between OpenGL and Vulkan applications.");
+                "support sharing memory objects and semaphores between OpenGL and Vulkan applications.",
+                false);
         vulkanInteropCapabilities = VulkanInteropCapabilities::NO_INTEROP;
     }
 
     instance = new vk::Instance;
 
     if (!sgl::SystemGL::get()->isGLExtensionAvailable("GL_EXT_memory_object")) {
-        sgl::Logfile::get()->writeError(
+        sgl::Logfile::get()->writeWarning(
                 "Warning in AppSettings::initializeVulkanInteropSupport: The OpenGL extension GL_EXT_memory_object "
-                "is not supported on this system. Disabling external memory support.");
+                "is not supported on this system. Disabling external memory support.", false);
         vulkanInteropCapabilities = VulkanInteropCapabilities::NO_INTEROP;
     }
     if (!sgl::SystemGL::get()->isGLExtensionAvailable("GL_EXT_semaphore")) {
-        sgl::Logfile::get()->writeError(
+        sgl::Logfile::get()->writeWarning(
                 "Warning in AppSettings::initializeVulkanInteropSupport: The OpenGL extension GL_EXT_semaphore "
-                "is not supported on this system. Disabling external memory support.");
+                "is not supported on this system. Disabling external memory support.", false);
         vulkanInteropCapabilities = VulkanInteropCapabilities::NO_INTEROP;
     }
     std::vector<const char*> openglExtensionNames = {
@@ -324,10 +325,10 @@ void AppSettings::initializeVulkanInteropSupport(
                 VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME
         };
         if (!instance->getInstanceExtensionsAvailable(instanceExtensionNames)) {
-            sgl::Logfile::get()->writeError(
+            sgl::Logfile::get()->writeWarning(
                     "Warning in AppSettings::initializeVulkanInteropSupport: The Vulkan instance extensions "
                     "VK_KHR_external_memory_capabilities or VK_KHR_external_semaphore_capabilities are not supported "
-                    "on this system. Disabling external memory support.");
+                    "on this system. Disabling external memory support.", false);
             vulkanInteropCapabilities = VulkanInteropCapabilities::NO_INTEROP;
             instanceExtensionNames = {};
         }
@@ -361,9 +362,9 @@ void AppSettings::initializeVulkanInteropSupport(
             instance, requiredDeviceExtensionNames,
             optionalDeviceExtensionNamesAll, requestedDeviceFeatures);
     if (primaryDevice->getVkPhysicalDevice() == VK_NULL_HANDLE) {
-        sgl::Logfile::get()->writeError(
+        sgl::Logfile::get()->writeWarning(
                 "Warning in AppSettings::initializeVulkanInteropSupport: Disabling Vulkan interoperability "
-                "support, as no suitable physical device was found.");
+                "support, as no suitable physical device was found.", false);
         delete primaryDevice;
         primaryDevice = nullptr;
         vulkanInteropCapabilities = VulkanInteropCapabilities::NO_INTEROP;
@@ -372,11 +373,11 @@ void AppSettings::initializeVulkanInteropSupport(
 
     for (const char* deviceExtension : externalMemoryDeviceExtensionNames) {
         if (!primaryDevice->isDeviceExtensionSupported(deviceExtension)) {
-            // TODO: "Please update your GPU drivers if you are using the old version of the INTEL iGPU i965 Linux drivers."
-            sgl::Logfile::get()->writeError(
+            // "Please update your GPU drivers if you are using the old version of the INTEL iGPU i965 Linux drivers."
+            sgl::Logfile::get()->writeWarning(
                     std::string() + "Warning in AppSettings::initializeVulkanInteropSupport: The Vulkan device "
                     "extension " + deviceExtension + " is not supported on this system. Disabling external memory "
-                    "support.");
+                    "support. Please try updating your GPU drivers.", false);
             delete primaryDevice;
             primaryDevice = nullptr;
             vulkanInteropCapabilities = VulkanInteropCapabilities::NO_INTEROP;

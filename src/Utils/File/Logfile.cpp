@@ -31,6 +31,7 @@
 #include <iostream>
 #include <fstream>
 #include <Utils/Convert.hpp>
+#include <Utils/Dialog.hpp>
 #ifdef __unix__
 #include <Utils/File/Execute.hpp>
 #endif
@@ -146,20 +147,32 @@ void Logfile::write(const std::string &text, int color)
     write("<br>");
 }
 
-void Logfile::writeError(const std::string &text)
+void Logfile::writeWarning(const std::string &text, bool openMessageBox)
 {
     std::cerr << text << std::endl;
-    write(text, RED);
+    write(text, ORANGE);
+    if (openMessageBox) {
+        dialog::openMessageBox("Warning", text, dialog::Icon::WARNING);
+    }
 }
 
-void Logfile::throwError(const std::string &text)
-{
+void Logfile::writeError(const std::string &text, bool openMessageBox) {
+    std::cerr << text << std::endl;
     write(text, RED);
+    if (openMessageBox) {
+        dialog::openMessageBoxBlocking("Error occurred", text, dialog::Icon::ERROR);
+    }
+}
+
+void Logfile::throwError(const std::string &text, bool openMessageBox) {
+    write(text, RED);
+    if (openMessageBox) {
+        dialog::openMessageBoxBlocking("Fatal error occurred", text, dialog::Icon::ERROR);
+    }
     throw std::runtime_error(text);
 }
 
-void Logfile::writeInfo(const std::string &text)
-{
+void Logfile::writeInfo(const std::string &text) {
     std::cout << text << std::endl;
     write(text, BLUE);
 }

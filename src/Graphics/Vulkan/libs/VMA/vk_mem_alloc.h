@@ -6408,7 +6408,7 @@ uint32_t VmaBlockBufferImageGranularity::OffsetToPageIndex(VkDeviceSize offset) 
 void VmaBlockBufferImageGranularity::AllocPage(RegionInfo& page, uint8_t allocType)
 {
     // When current alloc type is free then it can be overriden by new type
-    if (page.allocCount == 0 || page.allocCount > 0 && page.allocType == VMA_SUBALLOCATION_TYPE_FREE)
+    if (page.allocCount == 0 || (page.allocCount > 0 && page.allocType == VMA_SUBALLOCATION_TYPE_FREE))
         page.allocType = allocType;
 
     ++page.allocCount;
@@ -6615,6 +6615,7 @@ bool VmaBlockMetadata_Generic::Validate() const
 void VmaBlockMetadata_Generic::CalcAllocationStatInfo(VmaStatInfo& outInfo) const
 {
     const uint32_t rangeCount = (uint32_t)m_Suballocations.size();
+    (void)rangeCount;
     VmaInitStatInfo(outInfo);
     outInfo.blockCount = 1;
 
@@ -8274,6 +8275,7 @@ void VmaBlockMetadata_Linear::Alloc(
     case VmaAllocationRequestType::EndOf2nd:
     {
         SuballocationVectorType& suballocations1st = AccessSuballocations1st();
+        (void)suballocations1st;
         // New allocation at the end of 2-part ring buffer, so before first allocation from 1st vector.
         VMA_ASSERT(!suballocations1st.empty() &&
             (VkDeviceSize)request.allocHandle + request.size <= suballocations1st[m_1stNullItemsBeginCount].offset);
@@ -9307,6 +9309,7 @@ void VmaBlockMetadata_Buddy::DeleteNodeChildren(Node* node)
         DeleteNodeChildren(node->split.leftChild->buddy);
         DeleteNodeChildren(node->split.leftChild);
         const VkAllocationCallbacks* allocationCallbacks = GetAllocationCallbacks();
+        (void)allocationCallbacks;
         m_NodeAllocator.Free(node->split.leftChild->buddy);
         m_NodeAllocator.Free(node->split.leftChild);
     }
@@ -12233,6 +12236,8 @@ VkResult VmaBlockVector::AllocatePage(
     const bool isUpperAddress = (createInfo.flags & VMA_ALLOCATION_CREATE_UPPER_ADDRESS_BIT) != 0;
     const bool mapped = (createInfo.flags & VMA_ALLOCATION_CREATE_MAPPED_BIT) != 0;
     const bool isUserDataString = (createInfo.flags & VMA_ALLOCATION_CREATE_USER_DATA_COPY_STRING_BIT) != 0;
+    (void)mapped;
+    (void)isUserDataString;
 
     VkDeviceSize freeMemory;
     {
@@ -12439,6 +12444,7 @@ void VmaBlockVector::Free(
         {
             VkResult res = pBlock->ValidateMagicValueAfterAllocation(m_hAllocator, hAllocation->GetOffset(), hAllocation->GetSize());
             VMA_ASSERT(res == VK_SUCCESS && "Couldn't map block memory to validate magic value.");
+            (void)res;
         }
 
         if (hAllocation->IsPersistentMap())
@@ -12587,6 +12593,7 @@ VkResult VmaBlockVector::AllocateFromBlock(
         {
             VkResult res = pBlock->WriteMagicValueAfterAllocation(m_hAllocator, (*pAllocation)->GetOffset(), currRequest.size);
             VMA_ASSERT(res == VK_SUCCESS && "Couldn't map block memory to write magic value.");
+            (void)res;
         }
         return VK_SUCCESS;
     }
@@ -13228,11 +13235,11 @@ VmaDefragmentationAlgorithm_Generic::VmaDefragmentationAlgorithm_Generic(
     VmaBlockVector* pBlockVector,
     bool overlappingMoveSupported)
     : VmaDefragmentationAlgorithm(hAllocator, pBlockVector),
+    m_Blocks(VmaStlAllocator<BlockInfo*>(hAllocator->GetAllocationCallbacks())),
     m_AllocationCount(0),
     m_AllAllocations(false),
     m_BytesMoved(0),
-    m_AllocationsMoved(0),
-    m_Blocks(VmaStlAllocator<BlockInfo*>(hAllocator->GetAllocationCallbacks()))
+    m_AllocationsMoved(0)
 {
     // Create block info for each block.
     const size_t blockCount = m_pBlockVector->m_Blocks.size();
@@ -15831,6 +15838,7 @@ VkResult VmaAllocator_T::AllocateVulkanMemory(const VkMemoryAllocateInfo* pAlloc
 {
     AtomicTransactionalIncrement<uint32_t> deviceMemoryCountIncrement;
     const uint64_t prevDeviceMemoryCount = deviceMemoryCountIncrement.Increment(&m_DeviceMemoryCount);
+    (void)prevDeviceMemoryCount;
 #if VMA_DEBUG_DONT_EXCEED_MAX_MEMORY_ALLOCATION_COUNT
     if(prevDeviceMemoryCount >= m_PhysicalDeviceProperties.limits.maxMemoryAllocationCount)
     {
