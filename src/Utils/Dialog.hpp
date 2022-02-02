@@ -89,15 +89,15 @@ enum class Opt : uint8_t {
 /**
  * @return Whether dialog functionality is available on the used system.
  */
-bool getIsAvailable();
+DLL_OBJECT bool getIsAvailable();
 
 /**
  * @return Forces a rescan of the used file/folder dialogs.
  */
-void forceDialogRescan();
+DLL_OBJECT void forceDialogRescan();
 
 
-class MsgBoxHandle {
+class DLL_OBJECT MsgBoxHandle {
 public:
     virtual ~MsgBoxHandle() = default;
     virtual Button result() = 0;
@@ -115,7 +115,7 @@ typedef std::shared_ptr<MsgBoxHandle> MsgBoxHandlePtr;
  * @param icon The icon displayed for the message box (i.e., info, warning, error).
  * @return A handle to the message box. Can be ignored if the message box dialog should be non-blocking.
  */
-MsgBoxHandlePtr openMessageBox(
+DLL_OBJECT MsgBoxHandlePtr openMessageBox(
         std::string const& title,
         std::string const& text,
         Choice choice = Choice::OK,
@@ -150,18 +150,18 @@ inline Button openMessageBoxBlocking(
  * @param window The application window, which should be blocked during execution.
  * @param icon The icon displayed for the message box (i.e., info, warning, error).
  */
-void openMessageBoxModal(
+DLL_OBJECT void openMessageBoxModal(
         std::string const& title,
         std::string const& text,
         sgl::Window* window,
         Icon icon = Icon::INFO);
-void openMessageBoxModal(
+DLL_OBJECT void openMessageBoxModal(
         std::string const& title,
         std::string const& text,
         Icon icon = Icon::INFO);
 
 
-class FolderDialogHandle {
+class DLL_OBJECT FolderDialogHandle {
 public:
     virtual ~FolderDialogHandle() = default;
     virtual std::string result() = 0;
@@ -178,7 +178,7 @@ typedef std::shared_ptr<FolderDialogHandle> FolderDialogHandlePtr;
  * @param options Options for the folder selection dialog.
  * @return A handle to folder selection dialog.
  */
-FolderDialogHandlePtr selectFolder(
+DLL_OBJECT FolderDialogHandlePtr selectFolder(
         std::string const& title,
         std::string const& defaultPath = "",
         Opt options = Opt::NONE);
@@ -191,7 +191,7 @@ inline std::string selectFolderBlocking(
 }
 
 
-class FileDialogHandle {
+class DLL_OBJECT FileDialogHandle {
 public:
     virtual ~FileDialogHandle() = default;
     virtual std::vector<std::string> result() = 0;
@@ -209,7 +209,7 @@ typedef std::shared_ptr<FileDialogHandle> FileDialogHandlePtr;
  * @param options Options for the folder selection dialog.
  * @return A handle to file selection dialog.
  */
-FileDialogHandlePtr openFile(
+DLL_OBJECT FileDialogHandlePtr openFile(
         std::string const& title,
         std::string const& defaultPath = "",
         std::vector<std::string> const& filters = { "All Files", "*" },
@@ -224,7 +224,7 @@ inline std::vector<std::string> openFileBlocking(
 }
 
 
-class NotifyHandle {
+class DLL_OBJECT NotifyHandle {
 public:
     virtual ~NotifyHandle() = default;
     virtual bool ready() = 0;  //< Uses default_wait_timeout (20ms).
@@ -240,7 +240,7 @@ typedef std::shared_ptr<NotifyHandle> NotifyHandlePtr;
  * @param icon The icon displayed for the message (i.e., info, warning, error).
  * @return A handle to the notification. Can be ignored if the notification should be non-blocking.
  */
-NotifyHandlePtr notify(
+DLL_OBJECT NotifyHandlePtr notify(
         std::string const& title,
         std::string const& message,
         Icon icon = Icon::INFO);
