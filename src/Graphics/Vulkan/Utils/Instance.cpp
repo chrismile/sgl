@@ -172,9 +172,9 @@ bool Instance::checkRequestedLayersAvailable(const std::vector<const char*> &req
     for (const char *requestedLayer : requestedLayers) {
         if (availableLayers.find(requestedLayer) == availableLayers.end()) {
             if (strcmp(requestedLayer, "VK_LAYER_KHRONOS_validation") == 0) {
-                sgl::Logfile::get()->writeError(
+                sgl::Logfile::get()->writeWarning(
                         std::string() + "Warning: Invalid Vulkan layer name \"" + requestedLayer + "\".",
-                        true);
+                        false);
             } else {
                 sgl::Logfile::get()->writeError(
                         std::string() + "Error: Invalid Vulkan layer name \"" + requestedLayer + "\".");
