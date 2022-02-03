@@ -77,6 +77,7 @@ public:
             float uiScaleFactor = 1.0f);
     void shutdown(); //< to be called by AppSettings
     [[nodiscard]] inline float getScaleFactor() const { return uiScaleFactor; } //< The UI high DPI scale factor.
+    [[nodiscard]] inline float getSizeScale() const { return sizeScale; } //< The normalized UI high DPI scale factor.
 
     [[nodiscard]] inline float getFontSizeNormal() const { return fontSizeNormal; }
     [[nodiscard]] inline float getFontSizeSmall() const { return fontSizeSmall; }
