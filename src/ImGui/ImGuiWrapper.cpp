@@ -397,6 +397,27 @@ void ImGuiWrapper::setNextWindowStandardPosSize(int x, int y, int width, int hei
             float(width) * sizeScale, float(height) * sizeScale), ImGuiCond_FirstUseEver);
 }
 
+void ImGuiWrapper::setNextWindowStandardPosSizeLocation(int location, int offsetX, int offsetY, int width, int height) {
+    ImVec2 mainSize = ImGui::GetMainViewport()->Size;
+    ImVec2 position = ImGui::GetMainViewport()->Pos;
+    if ((location & LOCATION_LEFT) != 0) {
+        position.x += float(offsetX) * sizeScale;
+    }
+    if ((location & LOCATION_RIGHT) != 0) {
+        position.x += mainSize.x - float(offsetX + width) * sizeScale;
+    }
+    if ((location & LOCATION_TOP) != 0) {
+        position.y += float(offsetY) * sizeScale;
+    }
+    if ((location & LOCATION_BOTTOM) != 0) {
+        position.y += mainSize.y - float(offsetY + height) * sizeScale;
+    }
+
+    ImGui::SetNextWindowPos(position, ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(
+            float(width) * sizeScale, float(height) * sizeScale), ImGuiCond_FirstUseEver);
+}
+
 float ImGuiWrapper::getScaleDependentSize(float width) {
     return width * sizeScale;
 }

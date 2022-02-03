@@ -51,6 +51,12 @@ union SDL_Event;
 namespace sgl
 {
 
+// For calls to @see ImGuiWrapper::setNextWindowStandardPosSizeLocation.
+const int LOCATION_LEFT = 0x1;
+const int LOCATION_RIGHT = 0x2;
+const int LOCATION_TOP = 0x4;
+const int LOCATION_BOTTOM = 0x8;
+
 class DLL_OBJECT ImGuiWrapper : public Singleton<ImGuiWrapper>
 {
 public:
@@ -87,6 +93,7 @@ public:
     void setNextWindowStandardPos(int x, int y);
     void setNextWindowStandardSize(int width, int height);
     void setNextWindowStandardPosSize(int x, int y, int width, int height);
+    void setNextWindowStandardPosSizeLocation(int location, int offsetX, int offsetY, int width, int height);
     float getScaleDependentSize(float width);
     ImVec2 getScaleDependentSize(int width, int height);
 
