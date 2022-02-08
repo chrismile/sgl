@@ -79,7 +79,7 @@ public:
      * Makes sure all time measurements finish on the GPU.
      * This function should be called before calling @see getTimeMS, @see printTimeMS or @see printTotalAvgTime.
      */
-    void finishGPU();
+    void finishGPU(VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 
     /// Get the (average) time the event with the specified name took.
     double getTimeMS(const std::string& eventName);
@@ -90,7 +90,7 @@ public:
 
 private:
     void _onSwapchainRecreated();
-    void addTimesForFrame(uint32_t frameIdx);
+    void addTimesForFrame(uint32_t frameIdx, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 
     Renderer* renderer;
     Device* device;

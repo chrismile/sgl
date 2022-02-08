@@ -186,7 +186,7 @@ protected:
     bool recording = false;
     bool isFirstRecordingFrame = true;
     glm::ivec2 recordingResolution = glm::ivec2(3840, 2160); // (2560, 1440), (1920, 1080)
-    bool useRecordingResolution = true;
+    bool useRecordingResolution = false;
     sgl::VideoWriter* videoWriter = nullptr;
     const int FRAME_RATE_VIDEOS = 30;
     float recordingTime = 0.0f;

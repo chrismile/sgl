@@ -31,6 +31,7 @@
 #include <Math/Geometry/Point2.hpp>
 #include <Math/Geometry/MatrixUtil.hpp>
 #include <Utils/Convert.hpp>
+#include <Utils/Dialog.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
 #include <Utils/AppSettings.hpp>
@@ -92,14 +93,16 @@ std::string getErrorTypeString(GLenum type)
 void openglErrorCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message,
         const void* userParam)
 {
-    Logfile::get()->writeError("OpenGL Error:");
-    Logfile::get()->writeError("=============");
-    Logfile::get()->writeError(std::string() + " Message ID: " + sgl::toString(id));
-    Logfile::get()->writeError(std::string() + " Severity: " + getErrorSeverityString(severity));
-    Logfile::get()->writeError(std::string() + " Type: " + getErrorTypeString(type));
-    Logfile::get()->writeError(std::string() + " Source: " + getErrorSourceString(source));
-    Logfile::get()->writeError(std::string() + " Message: " + message);
-    Logfile::get()->writeError("");
+    Logfile::get()->writeError("OpenGL Error:", false);
+    Logfile::get()->writeError("=============", false);
+    Logfile::get()->writeError(std::string() + " Message ID: " + sgl::toString(id), false);
+    Logfile::get()->writeError(std::string() + " Severity: " + getErrorSeverityString(severity), false);
+    Logfile::get()->writeError(std::string() + " Type: " + getErrorTypeString(type), false);
+    Logfile::get()->writeError(std::string() + " Source: " + getErrorSourceString(source), false);
+    Logfile::get()->writeError(std::string() + " Message: " + message, false);
+    Logfile::get()->writeError("", false);
+    dialog::openMessageBoxBlocking(
+            "OpenGL error (" + getErrorTypeString(type) + ")", message, dialog::Icon::ERROR);
 
     Renderer->callApplicationErrorCallback();
 }
@@ -107,7 +110,7 @@ void openglErrorCallback(GLenum source, GLenum type, GLuint id, GLenum severity,
 RendererGL::RendererGL()
 {
     blendMode = BLEND_OVERWRITE;
-    setBlendMode(BLEND_ALPHA);
+    RendererGL::setBlendMode(BLEND_ALPHA);
     boundTextureID.resize(32, 0);
 
     modelMatrix = viewMatrix = projectionMatrix = mvpMatrix = matrixIdentity();
@@ -138,8 +141,8 @@ RendererGL::RendererGL()
             && AppSettings::get()->getMainWindow()->isDebugContext()) {
         glEnable(GL_DEBUG_OUTPUT);
         glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-        setDebugVerbosity(DEBUG_OUTPUT_MEDIUM_AND_ABOVE);
-        glDebugMessageCallback((GLDEBUGPROC)openglErrorCallback, NULL);
+        RendererGL::setDebugVerbosity(DEBUG_OUTPUT_MEDIUM_AND_ABOVE);
+        glDebugMessageCallback((GLDEBUGPROC)openglErrorCallback, nullptr);
         debugOutputExtEnabled = true;
     }
 }
@@ -168,10 +171,10 @@ void RendererGL::setDebugVerbosity(DebugVerbosity verbosity)
     if ((int)verbosity > 2) {
         activeNotification = GL_TRUE;
     }
-    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_HIGH, 0, NULL, activeHigh);
-    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_MEDIUM, 0, NULL, activeMedium);
-    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_LOW, 0, NULL, activeLow);
-    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, NULL, activeNotification);
+    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_HIGH, 0, nullptr, activeHigh);
+    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_MEDIUM, 0, nullptr, activeMedium);
+    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_LOW, 0, nullptr, activeLow);
+    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, nullptr, activeNotification);
 }
 
 std::vector<std::string> getErrorMessages() {
@@ -518,7 +521,7 @@ void RendererGL::render(ShaderAttributesPtr &shaderAttributes)
         if (attr->getInstanceCount() == 0) {
             // Indices, no instancing
             /*glDrawRangeElements((GLuint)attr->getVertexMode(), 0, attr->getNumVertices()-1,
-                    attr->getNumIndices(), attr->getIndexFormat(), NULL);*/
+                    attr->getNumIndices(), attr->getIndexFormat(), nullptr);*/
             glDrawElements(
                     GLuint(attr->getVertexMode()), GLsizei(attr->getNumIndices()), attr->getIndexFormat(),
                     nullptr);
@@ -557,7 +560,7 @@ void RendererGL::render(ShaderAttributesPtr &shaderAttributes, ShaderProgramPtr 
         if (attr->getInstanceCount() == 0) {
             // Indices, no instancing
             /*glDrawRangeElements((GLuint)attr->getVertexMode(), 0, attr->getNumVertices()-1,
-                    attr->getNumIndices(), attr->getIndexFormat(), NULL);*/
+                    attr->getNumIndices(), attr->getIndexFormat(), nullptr);*/
             glDrawElements(
                     GLuint(attr->getVertexMode()), GLsizei(attr->getNumIndices()), attr->getIndexFormat(),
                     nullptr);

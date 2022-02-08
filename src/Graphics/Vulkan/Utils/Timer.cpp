@@ -60,7 +60,22 @@ Timer::Timer(Renderer* renderer) : renderer(renderer), device(renderer->getDevic
 
 Timer::~Timer() {
     EventManager::get()->removeListener(RESOLUTION_CHANGED_EVENT, swapchainRecreatedEventListenerToken);
-    finishGPU();
+
+    bool hasPendingQueries = false;
+    for (auto& currentFrameData : frameData) {
+        if (currentFrameData.numQueries != 0) {
+            hasPendingQueries = true;
+        }
+    }
+    VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
+    if (hasPendingQueries) {
+        commandBuffer = device->beginSingleTimeCommands();
+    }
+    finishGPU(commandBuffer);
+    if (hasPendingQueries) {
+        device->endSingleTimeCommands(commandBuffer);
+    }
+
     clear();
     vkDeviceWaitIdle(device->getVkDevice());
     vkDestroyQueryPool(device->getVkDevice(), queryPool, nullptr);
@@ -125,7 +140,7 @@ void Timer::endGPU(const std::string& eventName) {
     vkCmdWriteTimestamp(renderer->getVkCommandBuffer(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queryPool, it->second);
 }
 
-void Timer::addTimesForFrame(uint32_t frameIdx) {
+void Timer::addTimesForFrame(uint32_t frameIdx, VkCommandBuffer commandBuffer) {
     FrameData& currentFrameData = frameData.at(frameIdx);
     if (currentFrameData.numQueries == 0) {
         return;
@@ -150,8 +165,10 @@ void Timer::addTimesForFrame(uint32_t frameIdx) {
         numSamples[startIt->first] += 1;
     }
 
-    vkCmdResetQueryPool(
-            renderer->getVkCommandBuffer(), queryPool, currentFrameData.queryStart, currentFrameData.numQueries);
+    if (commandBuffer == VK_NULL_HANDLE) {
+        commandBuffer = renderer->getVkCommandBuffer();
+    }
+    vkCmdResetQueryPool(commandBuffer, queryPool, currentFrameData.queryStart, currentFrameData.numQueries);
 }
 
 void Timer::startCPU(const std::string& eventName) {
@@ -167,7 +184,7 @@ void Timer::endCPU(const std::string& eventName) {
     numSamples[eventName] += 1;
 }
 
-void Timer::finishGPU() {
+void Timer::finishGPU(VkCommandBuffer commandBuffer) {
     bool hasPendingQueries = false;
     for (auto& currentFrameData : frameData) {
         if (currentFrameData.numQueries != 0) {
@@ -181,7 +198,7 @@ void Timer::finishGPU() {
             FrameData& currentFrameData = frameData.at(frameIdx);
 
             if (currentFrameData.numQueries != 0) {
-                addTimesForFrame(uint32_t(frameIdx));
+                addTimesForFrame(uint32_t(frameIdx), commandBuffer);
             }
 
             currentFrameData.queryStart = std::numeric_limits<uint32_t>::max();
