@@ -53,9 +53,11 @@ Camera::Camera() :  projType(Camera::ProjectionType::PERSPECTIVE),
 
 void Camera::setRenderTarget(RenderTargetPtr target, bool bindFramebuffer) {
     renderTarget = target;
-    if (Renderer->getCamera().get() == this) {
+#ifdef SUPPORT_OPENGL
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL && Renderer->getCamera().get() == this) {
         Renderer->setCamera(Renderer->getCamera(), true);
     }
+#endif
 }
 
 // Viewport left, top, width, height for OpenGL/DirectX

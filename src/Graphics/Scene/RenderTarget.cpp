@@ -40,6 +40,10 @@ RenderTarget::RenderTarget(FramebufferObjectPtr _framebuffer)
     framebuffer = std::move(_framebuffer);
 }
 
+RenderTarget::RenderTarget(int width, int height) : width(width), height(height)
+{
+}
+
 void RenderTarget::bindFramebufferObject(FramebufferObjectPtr _framebuffer)
 {
     framebuffer = std::move(_framebuffer);
@@ -68,6 +72,8 @@ int RenderTarget::getWidth()
 {
     if (framebuffer) {
         return framebuffer->getWidth();
+    } else if (width > 0) {
+        return width;
     } else {
         return AppSettings::get()->getMainWindow()->getWidth();
     }
@@ -77,6 +83,8 @@ int RenderTarget::getHeight()
 {
     if (framebuffer) {
         return framebuffer->getHeight();
+    } else if (height > 0) {
+        return height;
     } else {
         return AppSettings::get()->getMainWindow()->getHeight();
     }

@@ -43,6 +43,13 @@ ScreenshotReadbackHelper::~ScreenshotReadbackHelper() {
 }
 
 void ScreenshotReadbackHelper::onSwapchainRecreated() {
+    sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
+    auto width = uint32_t(window->getWidth());
+    auto height = uint32_t(window->getHeight());
+    onSwapchainRecreated(width, height);
+}
+
+void ScreenshotReadbackHelper::onSwapchainRecreated(uint32_t width, uint32_t height) {
     for (size_t i = 0; i < frameDataList.size(); i++) {
         saveDataIfAvailable(uint32_t(i));
     }
@@ -50,18 +57,14 @@ void ScreenshotReadbackHelper::onSwapchainRecreated() {
     vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
     size_t numSwapchainImages = swapchain ? swapchain->getNumImages() : 1;
 
-    sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
-    uint32_t frameW = uint32_t(window->getWidth());
-    uint32_t frameH = uint32_t(window->getHeight());
-
     frameDataList.clear();
     frameDataList.reserve(numSwapchainImages);
 
     vk::Device* device = renderer->getDevice();
     while (numSwapchainImages > frameDataList.size()) {
         vk::ImageSettings imageSettings;
-        imageSettings.width = frameW;
-        imageSettings.height = frameH;
+        imageSettings.width = width;
+        imageSettings.height = height;
         imageSettings.format = VK_FORMAT_R8G8B8A8_UINT;
         imageSettings.tiling = VK_IMAGE_TILING_LINEAR;
         imageSettings.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;

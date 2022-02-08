@@ -31,10 +31,13 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 
 namespace sgl { namespace vk {
 
 class Renderer;
+class Image;
+typedef std::shared_ptr<Image> ImagePtr;
 
 class DLL_OBJECT ScreenshotReadbackHelper {
 public:
@@ -42,6 +45,7 @@ public:
     ~ScreenshotReadbackHelper();
 
     void onSwapchainRecreated();
+    void onSwapchainRecreated(uint32_t width, uint32_t height);
     void requestScreenshotReadback(vk::ImagePtr& image, const std::string& filename);
     void saveDataIfAvailable(uint32_t imageIndex);
     void setScreenshotTransparentBackground(bool transparentBackground);
@@ -57,6 +61,8 @@ private:
     std::vector<FrameData> frameDataList;
     bool screenshotTransparentBackground = false;
 };
+
+typedef std::shared_ptr<ScreenshotReadbackHelper> ScreenshotReadbackHelperPtr;
 
 }}
 

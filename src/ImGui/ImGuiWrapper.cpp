@@ -232,6 +232,10 @@ void ImGuiWrapper::setVkRenderTarget(vk::ImageViewPtr &imageView) {
             device, window->getWidth(), window->getHeight()));
     framebuffer->setColorAttachment(imageView, 0, attachmentState);
 }
+
+void ImGuiWrapper::freeDescriptorSet(VkDescriptorSet descriptorSet) {
+    vkFreeDescriptorSets(rendererVk->getDevice()->getVkDevice(), imguiDescriptorPool, 1, &descriptorSet);
+}
 #endif
 
 void ImGuiWrapper::onResolutionChanged() {

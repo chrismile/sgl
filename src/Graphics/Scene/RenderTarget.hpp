@@ -44,6 +44,7 @@ class DLL_OBJECT RenderTarget
 public:
     RenderTarget() = default;
     explicit RenderTarget(FramebufferObjectPtr _framebuffer);
+    RenderTarget(int width, int height);
     void bindFramebufferObject(FramebufferObjectPtr _framebuffer);
     void bindWindowFramebuffer();
     FramebufferObjectPtr getFramebufferObject();
@@ -53,6 +54,7 @@ public:
 
 private:
     FramebufferObjectPtr framebuffer;
+    int width = 0, height = 0;
 };
 
 }

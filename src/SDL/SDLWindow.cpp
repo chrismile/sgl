@@ -91,8 +91,9 @@ void SDLWindow::errorCheckSDL()
     while (SDL_GetError()[0] != '\0') {
         std::string errorString = SDL_GetError();
         bool openMessageBox = true;
-        // This error somehow can occur on some Window systems. Ignore it, as it is probably harmless.
-        if (boost::contains(errorString, "Unknown sensor type")) {
+        // "Unknown sensor type" can somehow can occur some Windows systems. Ignore it, as it is probably harmless.
+        if (boost::contains(errorString, "Unknown sensor type")
+                || boost::contains(errorString, "No window has focus")) {
             openMessageBox = false;
         }
         Logfile::get()->writeError(std::string() + "SDL error: " + errorString, openMessageBox);

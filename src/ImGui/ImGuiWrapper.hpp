@@ -134,6 +134,8 @@ public:
     void setVkRenderTarget(vk::ImageViewPtr& imageView);
     void setRendererVk(vk::Renderer* renderer) { rendererVk = renderer; }
     std::vector<VkCommandBuffer>& getVkCommandBuffers() { return imguiCommandBuffers; }
+    VkDescriptorPool getVkDescriptorPool() { return imguiDescriptorPool; }
+    void freeDescriptorSet(VkDescriptorSet descriptorSet);
 #endif
 
 private:
