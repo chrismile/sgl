@@ -784,6 +784,7 @@ void SciVisApp::renderGuiPropertyEditorWindow() {
                 if (propertyEditor.addSliderFloat("FoV (y)", &fovDegree, 10.0f, 120.0f)) {
                     camera->setFOVy(fovDegree / 180.0f * sgl::PI);
                     reRender = true;
+                    hasMoved();
                 }
 
                 if (propertyEditor.addSliderFloat3("Rotation Axis", &modelRotationAxis.x, 0.0f, 1.0f)) {
