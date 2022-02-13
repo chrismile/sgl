@@ -650,6 +650,7 @@ void SciVisApp::renderSceneSettingsGuiPost() {
     if (ImGui::SliderFloat("FoV (y)", &fovDegree, 10.0f, 120.0f)) {
         camera->setFOVy(fovDegree / 180.0f * sgl::PI);
         reRender = true;
+        hasMoved();
     }
     if (ImGui::SliderFloat3("Rotation Axis", &modelRotationAxis.x, 0.0f, 1.0f)) {
         if (rotateModelBy90DegreeTurns != 0) {
