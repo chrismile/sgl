@@ -84,6 +84,7 @@ DLL_OBJECT void _checkCUresult(CUresult cuResult, const char* text, const char* 
 #define checkCUresult(cuResult, text) _checkCUresult(cuResult, text, __FILE__ ":" TOSTRING(__LINE__))
 
 DLL_OBJECT bool initializeCudaDeviceApiFunctionTable();
+DLL_OBJECT bool getIsCudaDeviceApiFunctionTableInitialized();
 DLL_OBJECT void freeCudaDeviceApiFunctionTable();
 
 

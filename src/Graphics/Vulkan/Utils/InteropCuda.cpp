@@ -124,6 +124,10 @@ bool initializeCudaDeviceApiFunctionTable() {
 #undef dlsym
 #endif
 
+bool getIsCudaDeviceApiFunctionTableInitialized() {
+    return g_cudaLibraryHandle != nullptr;
+}
+
 void freeCudaDeviceApiFunctionTable() {
     if (g_cudaLibraryHandle) {
 #if defined(__linux__)

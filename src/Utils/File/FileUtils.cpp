@@ -53,6 +53,11 @@ namespace sgl {
 
 void FileUtils::initialize(const std::string &_appName, int _argc, char *_argv[])
 {
+    initialize(_appName, _argc, const_cast<const char**>(_argv));
+}
+
+void FileUtils::initialize(const std::string &_appName, int _argc, const char *_argv[])
+{
     argc = _argc;
     argv = _argv;
     execDir = argv[0];

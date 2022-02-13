@@ -46,9 +46,10 @@ class DLL_OBJECT FileUtils : public Singleton<FileUtils>
 public:
     /// Title name is the name of the application and argc/argv are the arguments passed to the main function
     void initialize(const std::string &_appName, int argc, char *argv[]);
+    void initialize(const std::string &_appName, int argc, const char *argv[]);
     inline const std::string &getAppName() { return appName; }
-    inline int get_argc() { return argc; }
-    inline char **get_argv() { return argv; }
+    [[nodiscard]] inline int get_argc() const { return argc; }
+    inline const char **get_argv() { return argv; }
 
     /// Directory containing the application
     inline std::string getExecutableDirectory() { return execDir + "/"; }
@@ -96,7 +97,7 @@ public:
 
 private:
     int argc;
-    char **argv;
+    const char **argv;
     /// Name of the application
     std::string appName;
     /// Directory containing the application
