@@ -139,11 +139,17 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
     queryPoolCreateInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
     queryPoolCreateInfo.queryCount = uint32_t(numBlases);
     queryPoolCreateInfo.queryType  = VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR;
-
     VkQueryPool queryPool = VK_NULL_HANDLE;
     vkCreateQueryPool(device->getVkDevice(), &queryPoolCreateInfo, nullptr, &queryPool);
+    //vkResetQueryPool(device->getVkDevice(), queryPool, 0, uint32_t(numBlases));
+    if (shallDoCompaction) {
+        VkCommandBuffer commandBuffer = device->beginSingleTimeCommands();
+        vkCmdResetQueryPool(commandBuffer, queryPool, 0, uint32_t(numBlases));
+        device->endSingleTimeCommands(commandBuffer);
+    }
 
-    std::vector<VkCommandBuffer> commandBuffers = device->beginSingleTimeMultipleCommands(uint32_t(numBlases));
+    std::vector<VkCommandBuffer> commandBuffers = device->beginSingleTimeMultipleCommands(
+            uint32_t(numBlases));
     for (size_t blasIdx = 0; blasIdx < numBlases; blasIdx++) {
         VkCommandBuffer commandBuffer = commandBuffers.at(blasIdx);
         const BottomLevelAccelerationStructureInputList& blasInputs = blasInputsList.at(blasIdx);
@@ -190,10 +196,10 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
                 compactSizes.data(), sizeof(VkDeviceSize), VK_QUERY_RESULT_WAIT_BIT);
 
         std::vector<BottomLevelAccelerationStructurePtr> blasesOld(numBlases);
-        uint32_t totalUncompactedSize = 0, totalCompactedSize = 0;
+        size_t totalUncompactedSize = 0, totalCompactedSize = 0;
         for (size_t blasIdx = 0; blasIdx < numBlases; blasIdx++) {
-            totalUncompactedSize += uint32_t(uncompactedSizes.at(blasIdx));
-            totalCompactedSize += uint32_t(compactSizes.at(blasIdx));
+            totalUncompactedSize += uncompactedSizes.at(blasIdx);
+            totalCompactedSize += compactSizes.at(blasIdx);
 
             // Create the compacted acceleration structure and the underlying memory.
             BufferPtr accelerationStructureBuffer(new Buffer(
@@ -231,8 +237,8 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
         blasesOld.clear();
 
         Logfile::get()->writeInfo(
-                "BLAS: Reducing from " + std::to_string(totalUncompactedSize) + " to "
-                + std::to_string(totalCompactedSize) + ".");
+                "BLAS: Reducing from " + sgl::toString(double(totalUncompactedSize) / 1024.0 / 1024.0)
+                + "MiB to " + sgl::toString(double(totalCompactedSize) / 1024.0 / 1024.0) + "MiB.");
     }
 
     vkDestroyQueryPool(device->getVkDevice(), queryPool, nullptr);
