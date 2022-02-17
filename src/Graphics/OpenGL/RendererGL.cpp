@@ -101,8 +101,11 @@ void openglErrorCallback(GLenum source, GLenum type, GLuint id, GLenum severity,
     Logfile::get()->writeError(std::string() + " Source: " + getErrorSourceString(source), false);
     Logfile::get()->writeError(std::string() + " Message: " + message, false);
     Logfile::get()->writeError("", false);
-    dialog::openMessageBoxBlocking(
-            "OpenGL error (" + getErrorTypeString(type) + ")", message, dialog::Icon::ERROR);
+
+    if (severity == GL_DEBUG_SEVERITY_MEDIUM || severity == GL_DEBUG_SEVERITY_HIGH) {
+        dialog::openMessageBoxBlocking(
+                "OpenGL error (" + getErrorTypeString(type) + ")", message, dialog::Icon::ERROR);
+    }
 
     Renderer->callApplicationErrorCallback();
 }

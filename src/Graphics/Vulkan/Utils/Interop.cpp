@@ -251,6 +251,11 @@ InteropSyncVkGl::InteropSyncVkGl(sgl::vk::Device* device, int numFramesInFlight)
         renderReadySemaphores.at(i) = std::make_shared<sgl::SemaphoreVkGlInterop>(device);
         renderFinishedSemaphores.at(i) = std::make_shared<sgl::SemaphoreVkGlInterop>(device);
     }
+    interFrameTimelineSemaphore = std::make_shared<sgl::vk::Semaphore>(
+            device, 0, VK_SEMAPHORE_TYPE_TIMELINE,
+            timelineValue);
+    interFrameTimelineSemaphore->setWaitSemaphoreValue(timelineValue);
+    interFrameTimelineSemaphore->setSignalSemaphoreValue(timelineValue + 1);
 }
 
 const SemaphoreVkGlInteropPtr& InteropSyncVkGl::getRenderReadySemaphore() {
@@ -273,10 +278,16 @@ vk::SemaphorePtr InteropSyncVkGl::getRenderFinishedSemaphoreVk() {
 
 void InteropSyncVkGl::frameFinished() {
     frameIdx = (frameIdx + 1) % int(renderReadySemaphores.size());
+    timelineValue++;
+    interFrameTimelineSemaphore->setWaitSemaphoreValue(timelineValue);
+    interFrameTimelineSemaphore->setSignalSemaphoreValue(timelineValue + 1);
 }
 
 void InteropSyncVkGl::setFrameIndex(int frame) {
     frameIdx = frame;
+    timelineValue++;
+    interFrameTimelineSemaphore->setWaitSemaphoreValue(timelineValue);
+    interFrameTimelineSemaphore->setSignalSemaphoreValue(timelineValue + 1);
 }
 
 

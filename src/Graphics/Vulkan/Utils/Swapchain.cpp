@@ -26,6 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <memory>
 #include <set>
 #include <iostream>
 
@@ -155,15 +156,15 @@ void Swapchain::createSwapchainImages() {
     imageSettings.height = swapchainExtent.height;
     imageSettings.format = swapchainImageFormat;
     for (VkImage image : swapchainVkImages) {
-        swapchainImages.push_back(ImagePtr(new Image(device, imageSettings, image, false)));
+        swapchainImages.push_back(std::make_shared<Image>(device, imageSettings, image, false));
     }
 }
 
 void Swapchain::createSwapchainImageViews() {
     swapchainImageViews.reserve(swapchainImages.size());
     for (size_t i = 0; i < swapchainImages.size(); i++) {
-        swapchainImageViews.push_back(ImageViewPtr(new ImageView(
-                swapchainImages.at(i), VK_IMAGE_ASPECT_COLOR_BIT)));
+        swapchainImageViews.push_back(std::make_shared<ImageView>(
+                swapchainImages.at(i), VK_IMAGE_ASPECT_COLOR_BIT));
     }
 }
 
@@ -184,7 +185,7 @@ void Swapchain::recreateSwapchain() {
 
     // Recreate framebuffer, pipeline, ...
     // For the moment, a resolution changed event is additionally triggered to be compatible with OpenGL.
-    EventManager::get()->triggerEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
+    EventManager::get()->triggerEvent(std::make_shared<Event>(RESOLUTION_CHANGED_EVENT));
 }
 
 void Swapchain::beginFrame() {

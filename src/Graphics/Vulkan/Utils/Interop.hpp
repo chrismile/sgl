@@ -130,7 +130,7 @@ public:
      * NOTE: If using Vulkan inside an OpenGL context, it is not clear how many frames in flight the OpenGL driver might
      * keep. Thus, the standard value of 4 is used, but 3 might also be sufficient in case of triple buffering.
      */
-    InteropSyncVkGl(sgl::vk::Device* device, int numFramesInFlight = 4);
+    explicit InteropSyncVkGl(sgl::vk::Device* device, int numFramesInFlight = 4);
 
     const SemaphoreVkGlInteropPtr& getRenderReadySemaphore();
     const SemaphoreVkGlInteropPtr& getRenderFinishedSemaphore();
@@ -139,10 +139,18 @@ public:
     void frameFinished();
     void setFrameIndex(int frame);
 
+    // Inter-frame synchronization.
+    [[nodiscard]] inline bool getIsFirstFrame() const { return timelineValue == 0; }
+    [[nodiscard]] inline const sgl::vk::SemaphorePtr& getInterFrameTimelineSemaphore() const { return interFrameTimelineSemaphore; }
+
 private:
     int frameIdx = 0;
     std::vector<SemaphoreVkGlInteropPtr> renderReadySemaphores;
     std::vector<SemaphoreVkGlInteropPtr> renderFinishedSemaphores;
+
+    // Inter-frame synchronization.
+    uint64_t timelineValue = 0;
+    sgl::vk::SemaphorePtr interFrameTimelineSemaphore;
 };
 typedef std::shared_ptr<InteropSyncVkGl> InteropSyncVkGlPtr;
 
