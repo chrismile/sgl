@@ -134,6 +134,7 @@ protected:
 #endif
 #ifdef SUPPORT_VULKAN
     // Off-screen rendering
+    VkFormat sceneDepthTextureVkFormat = VK_FORMAT_D32_SFLOAT;
     sgl::vk::TexturePtr sceneTextureVk; ///< Can be 8 or 16 bits per pixel.
     sgl::vk::TexturePtr sceneDepthTextureVk;
     sgl::vk::TexturePtr compositedTextureVk; ///< The final RGBA8 texture.

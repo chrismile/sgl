@@ -140,6 +140,10 @@ ShaderModuleType getShaderModuleTypeFromString(const std::string& shaderId) {
         shaderModuleType = ShaderModuleType::INTERSECTION;
     } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "callable")) {
         shaderModuleType = ShaderModuleType::CALLABLE;
+    } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "task")) {
+        shaderModuleType = ShaderModuleType::TASK;
+    } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "mesh")) {
+        shaderModuleType = ShaderModuleType::MESH;
     } else {
         if (boost::algorithm::contains(shaderIdLower.c_str(), "vert")) {
             shaderModuleType = ShaderModuleType::VERTEX;
@@ -167,6 +171,10 @@ ShaderModuleType getShaderModuleTypeFromString(const std::string& shaderId) {
             shaderModuleType = ShaderModuleType::INTERSECTION;
         } else if (boost::algorithm::contains(shaderIdLower.c_str(), "callable")) {
             shaderModuleType = ShaderModuleType::CALLABLE;
+        } else if (boost::algorithm::contains(shaderIdLower.c_str(), "task")) {
+            shaderModuleType = ShaderModuleType::TASK;
+        } else if (boost::algorithm::contains(shaderIdLower.c_str(), "mesh")) {
+            shaderModuleType = ShaderModuleType::MESH;
         } else {
             Logfile::get()->throwError(
                     std::string() + "ERROR: ShaderManagerVk::createShaderProgram: "
@@ -364,7 +372,12 @@ std::string ShaderManagerVk::getHeaderName(const std::string &lineString) {
         }
 
         auto it = preprocessorDefines.find(line.at(1));
-        if (it != preprocessorDefines.end()) {
+        auto itTemp = tempPreprocessorDefines.find(line.at(1));
+        if (itTemp != tempPreprocessorDefines.end()) {
+            std::string::size_type startFilename = itTemp->second.find('\"');
+            std::string::size_type endFilename = itTemp->second.find_last_of('\"');
+            return itTemp->second.substr(startFilename+1, endFilename-startFilename-1);
+        } else if (it != preprocessorDefines.end()) {
             std::string::size_type startFilename = it->second.find('\"');
             std::string::size_type endFilename = it->second.find_last_of('\"');
             return it->second.substr(startFilename+1, endFilename-startFilename-1);
@@ -411,7 +424,8 @@ std::string ShaderManagerVk::getPreprocessorDefines(ShaderModuleType shaderModul
     for (auto it = preprocessorDefines.begin(); it != preprocessorDefines.end(); it++) {
         preprocessorStatements += std::string() + "#define " + it->first + " " + it->second + "\n";
     }
-    if (shaderModuleType == ShaderModuleType::VERTEX || shaderModuleType == ShaderModuleType::GEOMETRY) {
+    if (shaderModuleType == ShaderModuleType::VERTEX || shaderModuleType == ShaderModuleType::GEOMETRY
+            || shaderModuleType == ShaderModuleType::FRAGMENT) {
         preprocessorStatements += globalDefinesMvpMatrices;
     }
     preprocessorStatements += globalDefines;

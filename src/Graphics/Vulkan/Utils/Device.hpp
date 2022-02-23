@@ -81,6 +81,7 @@ struct DLL_OBJECT DeviceFeatures {
         rayQueryFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
     }
     VkPhysicalDeviceFeatures requestedPhysicalDeviceFeatures{};
+    VkPhysicalDeviceFeatures optionalPhysicalDeviceFeatures{};
     VkPhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeatures{};
     VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures{};
     VkPhysicalDeviceScalarBlockLayoutFeatures scalarBlockLayoutFeatures{};

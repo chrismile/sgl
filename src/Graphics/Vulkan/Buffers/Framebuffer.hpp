@@ -184,24 +184,27 @@ public:
     void transitionAttachmentImageLayouts(uint32_t subpassIndex);
 
     // Get size of the framebuffer attachments.
-    inline uint32_t getWidth() const { return width; }
-    inline uint32_t getHeight() const { return height; }
-    inline uint32_t getLayers() const { return layers; }
-    inline VkExtent2D getExtent2D() const { return { width, height }; }
+    [[nodiscard]] inline uint32_t getWidth() const { return width; }
+    [[nodiscard]] inline uint32_t getHeight() const { return height; }
+    [[nodiscard]] inline uint32_t getLayers() const { return layers; }
+    [[nodiscard]] inline VkExtent2D getExtent2D() const { return { width, height }; }
+
+    /// Returns the number of color attachments.
+    [[nodiscard]] inline size_t getColorAttachmentCount() const { return colorAttachments.size(); }
 
     /// Returns whether this framebuffer has a depth-stencil attachment.
-    inline bool getHasDepthStencilAttachment() const { return depthStencilAttachment.get() != nullptr; }
+    [[nodiscard]] inline bool getHasDepthStencilAttachment() const { return depthStencilAttachment.get() != nullptr; }
 
     /// Returns the number of multisamples used by the attachments.
     inline VkSampleCountFlagBits getSampleCount() { if (framebuffer == VK_NULL_HANDLE) build(); return sampleCount; }
 
     /// Returns the number of subpasses.
-    inline uint32_t getNumSubpasses() { return 1; }
+    [[nodiscard]] inline uint32_t getNumSubpasses() { return 1; }
 
     inline VkFramebuffer getVkFramebuffer() { if (framebuffer == VK_NULL_HANDLE) build(); return framebuffer; }
     inline VkRenderPass getVkRenderPass() { if (renderPass == VK_NULL_HANDLE) build(); return renderPass; }
     inline bool getUseClear() { if (renderPass == VK_NULL_HANDLE) build(); return useClear; }
-    inline const std::vector<VkClearValue>& getVkClearValues() const { return clearValues; }
+    [[nodiscard]] inline const std::vector<VkClearValue>& getVkClearValues() const { return clearValues; }
 
 private:
     Device* device;

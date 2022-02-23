@@ -58,12 +58,14 @@ class Framebuffer;
 typedef std::shared_ptr<Framebuffer> FramebufferPtr;
 
 enum class BlendMode {
-    // No blending
+    // No blending.
     OVERWRITE,
-    // Alpha blending
+    // Alpha blending.
     BACK_TO_FRONT_STRAIGHT_ALPHA, BACK_TO_FRONT_PREMUL_ALPHA, FRONT_TO_BACK_PREMUL_ALPHA,
-    // Additive blending modes & multiplicative blending
-    BACK_ADDITIVE, BACK_SUBTRACTIVE, BACK_MULTIPLICATIVE
+    // Additive blending modes & multiplicative blending.
+    BACK_ADDITIVE, BACK_SUBTRACTIVE, BACK_MULTIPLICATIVE,
+    // Custom blend mode specified manually.
+    CUSTOM
 };
 
 /// @see VkPrimitiveTopology
@@ -104,13 +106,21 @@ public:
     void reset();
 
     /// Sets the specified framebuffer (REQUIRED).
-    void setFramebuffer(FramebufferPtr framebuffer, uint32_t subpassIndex = 0);
+    void setFramebuffer(const FramebufferPtr& framebuffer, uint32_t subpassIndex = 0);
 
     // Color info.
-    void setColorWriteEnabled(bool enableColorWrite);
-    void setBlendMode(BlendMode blendMode);
-    inline BlendMode getBlendMode() { return currentBlendMode; }
-    inline bool getIsBlendEnabled() { return currentBlendMode != BlendMode::OVERWRITE; }
+    void setColorWriteEnabled(bool enableColorWrite, uint32_t colorAttachmentIndex = 0);
+    void setBlendMode(BlendMode blendMode, uint32_t colorAttachmentIndex = 0);
+    void setBlendModeCustom(
+            VkBlendFactor srcColorBlendFactor, VkBlendFactor dstColorBlendFactor, VkBlendOp colorBlendOp,
+            VkBlendFactor srcAlphaBlendFactor, VkBlendFactor dstAlphaBlendFactor, VkBlendOp alphaBlendOp,
+            uint32_t colorAttachmentIndex = 0);
+    inline BlendMode getBlendMode(uint32_t colorAttachmentIndex = 0) {
+        return currentBlendModes.at(colorAttachmentIndex);
+    }
+    [[nodiscard]] inline bool getIsBlendEnabled(uint32_t colorAttachmentIndex = 0) const {
+        return currentBlendModes.at(colorAttachmentIndex) != BlendMode::OVERWRITE;
+    }
 
     void setInputAssemblyTopology(PrimitiveTopology primitiveTopology, bool primitiveRestartEnable = false);
     void setCullMode(CullMode cullMode);
@@ -123,15 +133,15 @@ public:
      * In this case,
      */
     void setUseCoordinateOriginBottomLeft(bool bottomLeft);
-    inline bool getUseCoordinateOriginBottomLeft() const { return coordinateOriginBottomLeft; }
+    [[nodiscard]] inline bool getUseCoordinateOriginBottomLeft() const { return coordinateOriginBottomLeft; }
 
     // Depth-stencil info.
     void setDepthTestEnabled(bool enableDepthTest);
     void setDepthWriteEnabled(bool enableDepthWrite);
     void setStencilTestEnabled(bool enableStencilTest);
-    inline bool getDepthTestEnabled() const { return depthStencilInfo.depthTestEnable; }
-    inline bool getDepthWriteEnabled() const { return depthStencilInfo.depthWriteEnable; }
-    inline bool getStencilTestEnabled() const { return depthStencilInfo.stencilTestEnable; }
+    [[nodiscard]] inline bool getDepthTestEnabled() const { return depthStencilInfo.depthTestEnable; }
+    [[nodiscard]] inline bool getDepthWriteEnabled() const { return depthStencilInfo.depthWriteEnable; }
+    [[nodiscard]] inline bool getStencilTestEnabled() const { return depthStencilInfo.stencilTestEnable; }
 
     /**
      * E.g., if we have struct Vertex { vec3 vertexPosition; float vertexAttribute; };
@@ -165,15 +175,25 @@ public:
      */
     void setInputAttributeDescription(uint32_t bufferBinding, uint32_t bufferOffset, const std::string& attributeName);
 
+    void setVertexBufferBindingByLocation(
+            const std::string& attributeName, uint32_t stride,
+            VkVertexInputRate inputRate = VK_VERTEX_INPUT_RATE_VERTEX);
+
+    void setVertexBufferBindingByLocationOptional(
+            const std::string& attributeName, uint32_t stride,
+            VkVertexInputRate inputRate = VK_VERTEX_INPUT_RATE_VERTEX);
+
     // Getters for VkPipeline*StateCreateInfo data.
     VkPipelineViewportStateCreateInfo& getViewportStateCreateInfo() { return viewportStateInfo; }
 
 protected:
+    void _resizeColorAttachments(size_t newCount);
+
     ShaderStagesPtr shaderStages;
     FramebufferPtr framebuffer;
     uint32_t subpassIndex = 0;
     VkRenderPassCreateInfo renderPassInfo = {};
-    BlendMode currentBlendMode = BlendMode::OVERWRITE;
+    std::vector<BlendMode> currentBlendModes;
 
     std::vector<VkVertexInputBindingDescription> vertexInputBindingDescriptions;
     std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions;
@@ -192,7 +212,7 @@ protected:
     VkPipelineRasterizationStateCreateInfo rasterizerInfo = {};
     VkPipelineMultisampleStateCreateInfo multisamplingInfo = {};
     VkPipelineDepthStencilStateCreateInfo depthStencilInfo = {};
-    VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
+    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments = {};
     VkPipelineColorBlendStateCreateInfo colorBlendInfo = {};
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
 };

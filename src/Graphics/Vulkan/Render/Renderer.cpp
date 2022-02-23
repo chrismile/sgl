@@ -78,7 +78,10 @@ Renderer::Renderer(Device* device, uint32_t numDescriptors) : device(device) {
     uboLayoutBinding.binding = 0;
     uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     uboLayoutBinding.descriptorCount = 1;
-    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT;
+    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    if (device->getPhysicalDeviceFeatures().geometryShader) {
+        uboLayoutBinding.stageFlags |= VK_SHADER_STAGE_GEOMETRY_BIT;
+    }
 
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo{};
     descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -127,6 +130,9 @@ Renderer::~Renderer() {
     vkDestroyDescriptorSetLayout(device->getVkDevice(), matrixBufferDesciptorSetLayout, nullptr);
     vkDestroyDescriptorPool(device->getVkDevice(), matrixBufferDescriptorPool, nullptr);
     vkDestroyDescriptorPool(device->getVkDevice(), globalDescriptorPool, nullptr);
+    matrixBufferDesciptorSetLayout = {};
+    matrixBufferDescriptorPool = {};
+    globalDescriptorPool = {};
 
     if (!commandBuffersVk.empty()) {
         commandBuffers.clear();
@@ -283,13 +289,17 @@ void Renderer::render(const RasterDataPtr& rasterData, const FramebufferPtr& fra
                 graphicsPipeline->getVkPipeline());
     }
 
-    std::vector<VkBuffer> vertexBuffers = rasterData->getVkVertexBuffers();
-    VkDeviceSize offsets[] = { 0 };
     if (rasterData->hasIndexBuffer()) {
         VkBuffer indexBuffer = rasterData->getVkIndexBuffer();
         vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, rasterData->getIndexType());
     }
-    vkCmdBindVertexBuffers(commandBuffer, 0, uint32_t(vertexBuffers.size()), vertexBuffers.data(), offsets);
+
+    std::vector<VkBuffer> vertexBuffers = rasterData->getVkVertexBuffers();
+    if (!vertexBuffers.empty()) {
+        std::vector<VkDeviceSize> offsets;
+        offsets.resize(vertexBuffers.size(), 0);
+        vkCmdBindVertexBuffers(commandBuffer, 0, uint32_t(vertexBuffers.size()), vertexBuffers.data(), offsets.data());
+    }
 
     rasterData->_updateDescriptorSets();
     VkDescriptorSet descriptorSet = rasterData->getVkDescriptorSet();
@@ -481,6 +491,26 @@ void Renderer::pushConstants(
         const PipelinePtr& pipeline, VkShaderStageFlagBits shaderStageFlagBits,
         uint32_t offset, uint32_t size, const void* data) {
     vkCmdPushConstants(commandBuffer, pipeline->getVkPipelineLayout(), shaderStageFlagBits, offset, size, data);
+}
+
+void Renderer::resolveImage(const sgl::vk::ImageViewPtr& sourceImage, const sgl::vk::ImageViewPtr& destImage) {
+    const auto& sourceImageSettings = sourceImage->getImage()->getImageSettings();
+    const auto& destImageSettings = destImage->getImage()->getImageSettings();
+
+    VkImageResolve imageResolve{};
+    imageResolve.extent = {
+            sourceImageSettings.width, sourceImageSettings.height, sourceImageSettings.depth
+    };
+    imageResolve.srcSubresource.layerCount = sourceImageSettings.arrayLayers;
+    imageResolve.srcSubresource.aspectMask = sourceImage->getVkImageAspectFlags();
+    imageResolve.dstSubresource.layerCount = destImageSettings.arrayLayers;
+    imageResolve.dstSubresource.aspectMask = destImage->getVkImageAspectFlags();
+
+    vkCmdResolveImage(
+            commandBuffer,
+            sourceImage->getImage()->getVkImage(), sourceImage->getImage()->getVkImageLayout(),
+            destImage->getImage()->getVkImage(), destImage->getImage()->getVkImageLayout(),
+            1, &imageResolve);
 }
 
 void Renderer::insertMemoryBarrier(

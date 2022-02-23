@@ -265,7 +265,10 @@ void ShaderStages::mergeDescriptorSetsInfo(const std::map<uint32_t, std::vector<
             }
             if (itNew.first == 1 && descInfo.binding == 0 && descInfo.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
                 // Hard-coded: MVP matrix block.
-                it->second.shaderStageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT;
+                it->second.shaderStageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+                if (device->getPhysicalDeviceFeatures().geometryShader) {
+                    it->second.shaderStageFlags |= VK_SHADER_STAGE_GEOMETRY_BIT;
+                }
             }
         }
 
@@ -349,6 +352,16 @@ const std::vector<InterfaceVariableDescriptor>& ShaderStages::getInputVariableDe
     }
 
     return vertexShaderModule->getInputVariableDescriptors();
+}
+
+bool ShaderStages::getHasInputVariableLocation(const std::string& varName) const {
+    if (!vertexShaderModule) {
+        sgl::Logfile::get()->writeError(
+                "Error in ShaderStages::getInputVariableLocation: No vertex shader exists!");
+        return -1;
+    }
+
+    return inputVariableNameMap.find(varName) != inputVariableNameMap.end();
 }
 
 uint32_t ShaderStages::getInputVariableLocation(const std::string& varName) const {

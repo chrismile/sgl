@@ -566,6 +566,13 @@ void RasterData::setVertexBuffer(const BufferPtr& buffer, const std::string& nam
     setVertexBuffer(buffer, location);
 }
 
+void RasterData::setVertexBufferOptional(const BufferPtr& buffer, const std::string& name) {
+    if (graphicsPipeline->getShaderStages()->getHasInputVariableLocation(name)) {
+        uint32_t location = graphicsPipeline->getShaderStages()->getInputVariableLocation(name);
+        setVertexBuffer(buffer, location);
+    }
+}
+
 
 RayTracingData::RayTracingData(
         Renderer* renderer, RayTracingPipelinePtr& rayTracingPipeline, const ShaderGroupSettings& settings)

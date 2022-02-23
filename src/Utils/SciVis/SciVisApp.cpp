@@ -173,6 +173,14 @@ SciVisApp::~SciVisApp() {
             "cameraNavigationMode", CAMERA_NAVIGATION_MODE_NAMES[int(cameraNavigationMode)]);
     sgl::AppSettings::get()->getSettings().addKeyValue("turntableMouseButtonIndex", turntableMouseButtonIndex);
 
+#ifdef SUPPORT_VULKAN
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+        sceneTextureBlitPass = {};
+        sceneTextureGammaCorrectionPass = {};
+        compositedTextureBlitPass = {};
+        readbackHelperVk = {};
+    }
+#endif
 
     if (videoWriter != nullptr) {
         delete videoWriter;
@@ -226,7 +234,7 @@ void SciVisApp::createSceneFramebuffer() {
 
         // Create scene depth texture.
         imageSettings.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        imageSettings.format = VK_FORMAT_D32_SFLOAT;
+        imageSettings.format = sceneDepthTextureVkFormat;
         sceneDepthTextureVk = std::make_shared<sgl::vk::Texture>(
                 device, imageSettings, sgl::vk::ImageSamplerSettings(),
                 VK_IMAGE_ASPECT_DEPTH_BIT);

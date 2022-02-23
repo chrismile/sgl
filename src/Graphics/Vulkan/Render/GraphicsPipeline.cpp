@@ -52,17 +52,20 @@ void GraphicsPipelineInfo::reset() {
     vertexInputInfo = {};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
+    colorBlendAttachments.resize(1);
+    VkPipelineColorBlendAttachmentState& colorBlendAttachment = colorBlendAttachments.front();
     colorBlendAttachment = {};
     colorBlendAttachment.colorWriteMask =
             VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    currentBlendModes = { BlendMode::CUSTOM };
     setBlendMode(BlendMode::OVERWRITE);
 
     colorBlendInfo = {};
     colorBlendInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlendInfo.logicOpEnable = VK_FALSE;
     colorBlendInfo.logicOp = VK_LOGIC_OP_COPY;
-    colorBlendInfo.attachmentCount = 1;
-    colorBlendInfo.pAttachments = &colorBlendAttachment;
+    colorBlendInfo.attachmentCount = uint32_t(colorBlendAttachments.size());
+    colorBlendInfo.pAttachments = colorBlendAttachments.data();
     colorBlendInfo.blendConstants[0] = 0.0f;
     colorBlendInfo.blendConstants[1] = 0.0f;
     colorBlendInfo.blendConstants[2] = 0.0f;
@@ -101,22 +104,30 @@ void GraphicsPipelineInfo::reset() {
     depthStencilInfo.stencilTestEnable = VK_FALSE;
     depthStencilInfo.front = {};
     depthStencilInfo.back = {};
-
-    colorBlendInfo = {};
-    colorBlendInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    colorBlendInfo.logicOpEnable = VK_FALSE;
-    colorBlendInfo.logicOp = VK_LOGIC_OP_COPY;
-    colorBlendInfo.attachmentCount = 1;
-    colorBlendInfo.pAttachments = &colorBlendAttachment;
-    colorBlendInfo.blendConstants[0] = 0.0f;
-    colorBlendInfo.blendConstants[1] = 0.0f;
-    colorBlendInfo.blendConstants[2] = 0.0f;
-    colorBlendInfo.blendConstants[3] = 0.0f;
 }
 
-void GraphicsPipelineInfo::setFramebuffer(FramebufferPtr framebuffer, uint32_t subpassIndex) {
+void GraphicsPipelineInfo::_resizeColorAttachments(size_t newCount) {
+    if (colorBlendAttachments.size() != newCount) {
+        size_t oldSize = colorBlendAttachments.size();
+        colorBlendAttachments.resize(newCount);
+        currentBlendModes.resize(newCount);
+        for (size_t attachmentIdx = oldSize; attachmentIdx < newCount; attachmentIdx++) {
+            VkPipelineColorBlendAttachmentState& colorBlendAttachment = colorBlendAttachments.at(attachmentIdx);
+            colorBlendAttachment = {};
+            colorBlendAttachment.colorWriteMask =
+                    VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT
+                    | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+            setBlendMode(BlendMode::OVERWRITE, attachmentIdx);
+        }
+        colorBlendInfo.attachmentCount = uint32_t(colorBlendAttachments.size());
+        colorBlendInfo.pAttachments = colorBlendAttachments.data();
+    }
+}
+
+void GraphicsPipelineInfo::setFramebuffer(const FramebufferPtr& framebuffer, uint32_t subpassIndex) {
     this->framebuffer = framebuffer;
     this->subpassIndex = subpassIndex;
+    _resizeColorAttachments(framebuffer->getColorAttachmentCount());
 
     multisamplingInfo.rasterizationSamples = framebuffer->getSampleCount();
 
@@ -145,7 +156,11 @@ void GraphicsPipelineInfo::setFramebuffer(FramebufferPtr framebuffer, uint32_t s
     viewportStateInfo.pScissors = &scissor;
 }
 
-void GraphicsPipelineInfo::setColorWriteEnabled(bool enableColorWrite) {
+void GraphicsPipelineInfo::setColorWriteEnabled(bool enableColorWrite, uint32_t colorAttachmentIndex) {
+    if (colorAttachmentIndex >= colorBlendAttachments.size()) {
+        _resizeColorAttachments(colorAttachmentIndex + 1);
+    }
+    VkPipelineColorBlendAttachmentState& colorBlendAttachment = colorBlendAttachments.at(colorAttachmentIndex);
     if (enableColorWrite) {
         colorBlendAttachment.colorWriteMask =
                 VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT
@@ -155,8 +170,14 @@ void GraphicsPipelineInfo::setColorWriteEnabled(bool enableColorWrite) {
     }
 }
 
-void GraphicsPipelineInfo::setBlendMode(BlendMode blendMode) {
-    this->currentBlendMode = blendMode;
+void GraphicsPipelineInfo::setBlendMode(BlendMode blendMode, uint32_t colorAttachmentIndex) {
+    if (colorAttachmentIndex >= currentBlendModes.size()) {
+        _resizeColorAttachments(colorAttachmentIndex + 1);
+    }
+    VkPipelineColorBlendAttachmentState& colorBlendAttachment = colorBlendAttachments.at(colorAttachmentIndex);
+    BlendMode& currentBlendMode = currentBlendModes.at(colorAttachmentIndex);
+
+    currentBlendMode = blendMode;
     if (blendMode == BlendMode::OVERWRITE) {
         colorBlendAttachment.blendEnable = VK_FALSE;
     } else {
@@ -219,6 +240,26 @@ void GraphicsPipelineInfo::setBlendMode(BlendMode blendMode) {
         colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
         colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
     }
+}
+
+void GraphicsPipelineInfo::setBlendModeCustom(
+        VkBlendFactor srcColorBlendFactor, VkBlendFactor dstColorBlendFactor, VkBlendOp colorBlendOp,
+        VkBlendFactor srcAlphaBlendFactor, VkBlendFactor dstAlphaBlendFactor, VkBlendOp alphaBlendOp,
+        uint32_t colorAttachmentIndex) {
+    if (colorAttachmentIndex >= currentBlendModes.size()) {
+        _resizeColorAttachments(colorAttachmentIndex + 1);
+    }
+    VkPipelineColorBlendAttachmentState& colorBlendAttachment = colorBlendAttachments.at(colorAttachmentIndex);
+    BlendMode& currentBlendMode = currentBlendModes.at(colorAttachmentIndex);
+
+    currentBlendMode = BlendMode::CUSTOM;
+    colorBlendAttachment.blendEnable = VK_TRUE;
+    colorBlendAttachment.srcColorBlendFactor = srcColorBlendFactor;
+    colorBlendAttachment.dstColorBlendFactor = dstColorBlendFactor;
+    colorBlendAttachment.colorBlendOp = colorBlendOp;
+    colorBlendAttachment.srcAlphaBlendFactor = srcAlphaBlendFactor;
+    colorBlendAttachment.dstAlphaBlendFactor = dstAlphaBlendFactor;
+    colorBlendAttachment.alphaBlendOp = alphaBlendOp;
 }
 
 void GraphicsPipelineInfo::setInputAssemblyTopology(PrimitiveTopology primitiveTopology, bool primitiveRestartEnable) {
@@ -318,6 +359,21 @@ void GraphicsPipelineInfo::setInputAttributeDescription(
     vertexInputInfo.pVertexAttributeDescriptions = vertexInputAttributeDescriptions.data();
 }
 
+void GraphicsPipelineInfo::setVertexBufferBindingByLocation(
+        const std::string& attributeName, uint32_t stride, VkVertexInputRate inputRate) {
+    uint32_t vertexAttributeBinding = shaderStages->getInputVariableLocation(attributeName);
+    setVertexBufferBinding(vertexAttributeBinding, stride, inputRate);
+    setInputAttributeDescription(vertexAttributeBinding, 0, attributeName);
+}
+
+void GraphicsPipelineInfo::setVertexBufferBindingByLocationOptional(
+        const std::string& attributeName, uint32_t stride, VkVertexInputRate inputRate) {
+    if (shaderStages->getHasInputVariableLocation(attributeName)) {
+        uint32_t vertexNormalBinding = shaderStages->getInputVariableLocation(attributeName);
+        setVertexBufferBinding(vertexNormalBinding, stride, inputRate);
+        setInputAttributeDescription(vertexNormalBinding, 0, attributeName);
+    }
+}
 
 
 

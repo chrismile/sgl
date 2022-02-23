@@ -48,6 +48,8 @@ class Buffer;
 typedef std::shared_ptr<Buffer> BufferPtr;
 class Image;
 typedef std::shared_ptr<Image> ImagePtr;
+class ImageView;
+typedef std::shared_ptr<ImageView> ImageViewPtr;
 class Framebuffer;
 typedef std::shared_ptr<Framebuffer> FramebufferPtr;
 class CommandBuffer;
@@ -116,6 +118,13 @@ public:
             uint32_t offset, const T& data) {
         pushConstants(pipeline, shaderStageFlagBits, offset, sizeof(T), &data);
     }
+
+    /**
+     * Resolves a multisampled image.
+     * @param sourceImage The multisampled source image.
+     * @param destImage The destination image.
+     */
+    void resolveImage(const sgl::vk::ImageViewPtr& sourceImage, const sgl::vk::ImageViewPtr& destImage);
 
     // Synchronization primitives.
     void insertMemoryBarrier(

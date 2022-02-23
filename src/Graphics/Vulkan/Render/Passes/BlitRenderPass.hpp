@@ -58,6 +58,7 @@ public:
     virtual void setOutputImage(sgl::vk::ImageViewPtr& imageView);
     virtual void setOutputImages(std::vector<sgl::vk::ImageViewPtr>& imageViews);
     virtual void setOutputImageLayout(VkImageLayout layout);
+    virtual void setBlendMode(BlendMode mode) { blendMode = mode; setDataDirty(); }
 
     void recreateSwapchain(uint32_t width, uint32_t height) override;
 
@@ -69,6 +70,7 @@ protected:
 
     void setupGeometryBuffers();
     std::vector<std::string> shaderIds;
+    BlendMode blendMode = BlendMode::OVERWRITE;
 
     VkImageLayout finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     sgl::vk::TexturePtr inputTexture;

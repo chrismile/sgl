@@ -412,6 +412,20 @@ void Device::createLogicalDeviceAndQueues(
         queueInfosPtr = queueInfos;
     }
 
+    // Check if all requested features are available.
+    constexpr size_t numFeatures = sizeof(VkPhysicalDeviceFeatures) / sizeof(VkBool32);
+    auto requestedPhysicalDeviceFeaturesArray = reinterpret_cast<VkBool32*>(
+            &requestedDeviceFeatures.requestedPhysicalDeviceFeatures);
+    auto optionalPhysicalDeviceFeaturesArray = reinterpret_cast<const VkBool32*>(
+            &requestedDeviceFeatures.optionalPhysicalDeviceFeatures);
+    auto physicalDeviceFeaturesArray = reinterpret_cast<VkBool32*>(&physicalDeviceFeatures);
+    for (size_t i = 0; i < numFeatures; i++) {
+        if (optionalPhysicalDeviceFeaturesArray[i] && physicalDeviceFeaturesArray[i]) {
+            requestedPhysicalDeviceFeaturesArray[i] = VK_TRUE;
+        }
+    }
+
+
     VkDeviceCreateInfo deviceInfo{};
     deviceInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     deviceInfo.queueCreateInfoCount = (computeOnly || graphicsQueueIndex == computeQueueIndex) ? 1 : 2;

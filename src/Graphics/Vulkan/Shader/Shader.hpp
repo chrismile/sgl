@@ -142,6 +142,7 @@ public:
 
     /// Returns the input variable descriptors of the vertex shader. NOTE: A vertex shader must exist for this to work!
     const std::vector<InterfaceVariableDescriptor>& getInputVariableDescriptors() const;
+    bool getHasInputVariableLocation(const std::string& varName) const;
     uint32_t getInputVariableLocation(const std::string& varName) const;
     const InterfaceVariableDescriptor& getInputVariableDescriptorFromLocation(uint32_t location);
     const InterfaceVariableDescriptor& getInputVariableDescriptorFromName(const std::string& name);

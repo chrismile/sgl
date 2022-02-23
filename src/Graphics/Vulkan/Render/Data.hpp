@@ -196,6 +196,7 @@ public:
     void setIndexBuffer(const BufferPtr& buffer, VkIndexType indexType = VK_INDEX_TYPE_UINT32);
     void setVertexBuffer(const BufferPtr& buffer, uint32_t binding);
     void setVertexBuffer(const BufferPtr& buffer, const std::string& name);
+    void setVertexBufferOptional(const BufferPtr& buffer, const std::string& name);
 
     inline void setNumInstances(size_t numInstances) { this->numInstances = numInstances; }
     [[nodiscard]] inline size_t getNumInstances() const { return numInstances; }

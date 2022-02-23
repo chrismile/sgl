@@ -143,6 +143,7 @@ void BlitRenderPass::setGraphicsPipelineInfo(sgl::vk::GraphicsPipelineInfo& grap
             0, 0, "vertexPosition");
     graphicsPipelineInfo.setInputAttributeDescription(
             0, sizeof(float) * 3, "vertexTexCoord");
+    graphicsPipelineInfo.setBlendMode(blendMode);
 }
 
 }}
