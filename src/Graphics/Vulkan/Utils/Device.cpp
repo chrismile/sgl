@@ -507,6 +507,12 @@ void Device::createLogicalDeviceAndQueues(
 
 void Device::createVulkanMemoryAllocator() {
     uint32_t vulkanApiVersion = std::min(instance->getInstanceVulkanVersion(), getApiVersion());
+
+    // The shipped version of VMA only supports up to Vulkan 1.3 at the moment.
+    if (vulkanApiVersion >= VK_MAKE_API_VERSION(0, 1, 4, 0)) {
+        vulkanApiVersion = VK_MAKE_API_VERSION(0, 1, 3, 204);
+    }
+
     sgl::Logfile::get()->write(
             "VMA Vulkan API version: " + Instance::convertVulkanVersionToString(vulkanApiVersion),
             BLUE);
@@ -520,6 +526,12 @@ void Device::createVulkanMemoryAllocator() {
     VmaVulkanFunctions vulkanFunctions = {};
     vulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
     vulkanFunctions.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
+#if defined(VK_VERSION_1_3)
+    if (vulkanApiVersion >= VK_API_VERSION_1_3) {
+        vulkanFunctions.vkGetDeviceBufferMemoryRequirements = vkGetDeviceBufferMemoryRequirements;
+        vulkanFunctions.vkGetDeviceImageMemoryRequirements = vkGetDeviceImageMemoryRequirements;
+    }
+#endif
     allocatorInfo.pVulkanFunctions = &vulkanFunctions;
 #endif
     if (isDeviceExtensionSupported(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) {
