@@ -68,15 +68,34 @@ void BlitRenderPass::setOutputImageLayout(VkImageLayout layout) {
     finalLayout = layout;
 }
 
+void BlitRenderPass::setAttachmentLoadOp(VkAttachmentLoadOp op) {
+    attachmentLoadOp = op;
+    if (!framebuffers.empty()) {
+        recreateSwapchain(framebuffers.front()->getWidth(), framebuffers.front()->getHeight());
+    }
+    setDataDirty();
+}
+
+void BlitRenderPass::setAttachmentClearColor(const glm::vec4& color) {
+    clearColor = color;
+    if (!outputImageViews.empty()) {
+        bool dataDirtyOld = dataDirty;
+        recreateSwapchain(framebuffers.front()->getWidth(), framebuffers.front()->getHeight());
+        dataDirty = dataDirtyOld;
+    } else {
+        setDataDirty();
+    }
+}
+
 void BlitRenderPass::recreateSwapchain(uint32_t width, uint32_t height) {
     AttachmentState attachmentState;
-    attachmentState.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachmentState.loadOp = attachmentLoadOp;
     attachmentState.finalLayout = finalLayout;
 
     framebuffers.clear();
     for (size_t i = 0; i < outputImageViews.size(); i++) {
         FramebufferPtr framebuffer = std::make_shared<sgl::vk::Framebuffer>(device, width, height);
-        framebuffer->setColorAttachment(outputImageViews.at(i), 0, attachmentState);
+        framebuffer->setColorAttachment(outputImageViews.at(i), 0, attachmentState, clearColor);
         framebuffers.push_back(framebuffer);
     }
     framebuffer = framebuffers.front();

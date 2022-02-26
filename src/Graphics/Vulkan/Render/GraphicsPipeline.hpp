@@ -221,14 +221,16 @@ class DLL_OBJECT GraphicsPipeline : public Pipeline {
 public:
     GraphicsPipeline(Device* device, const GraphicsPipelineInfo& pipelineInfo);
 
-    inline const FramebufferPtr& getFramebuffer() const { return framebuffer; }
-    inline uint32_t getSubpassIndex() const { return subpassIndex; }
+    [[nodiscard]] inline uint32_t getSubpassIndex() const { return subpassIndex; }
+    [[nodiscard]] inline const FramebufferPtr& getFramebuffer() const { return framebuffer; }
+    // Framebuffer must be compatible with the render pass.
+    inline void setCompatibleFramebuffer(const FramebufferPtr& _framebuffer) { framebuffer = _framebuffer; }
 
     // Used by RasterData to make deduce number of vertices from buffer byte size.
-    inline const std::vector<VkVertexInputBindingDescription>& getVertexInputBindingDescriptions() const {
+    [[nodiscard]] inline const std::vector<VkVertexInputBindingDescription>& getVertexInputBindingDescriptions() const {
         return vertexInputBindingDescriptions;
     }
-    inline const std::vector<VkVertexInputAttributeDescription>& getVertexBindingAttributeDescriptions() const {
+    [[nodiscard]] inline const std::vector<VkVertexInputAttributeDescription>& getVertexBindingAttributeDescriptions() const {
         return vertexInputAttributeDescriptions;
     }
 

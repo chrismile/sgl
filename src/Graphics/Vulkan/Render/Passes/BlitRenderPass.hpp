@@ -58,7 +58,9 @@ public:
     virtual void setOutputImage(sgl::vk::ImageViewPtr& imageView);
     virtual void setOutputImages(std::vector<sgl::vk::ImageViewPtr>& imageViews);
     virtual void setOutputImageLayout(VkImageLayout layout);
-    virtual void setBlendMode(BlendMode mode) { blendMode = mode; setDataDirty(); }
+    inline void setBlendMode(BlendMode mode) { blendMode = mode; setDataDirty(); }
+    void setAttachmentLoadOp(VkAttachmentLoadOp op);
+    void setAttachmentClearColor(const glm::vec4& color);
 
     void recreateSwapchain(uint32_t width, uint32_t height) override;
 
@@ -73,6 +75,8 @@ protected:
     BlendMode blendMode = BlendMode::OVERWRITE;
 
     VkImageLayout finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    VkAttachmentLoadOp attachmentLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    glm::vec4 clearColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
     sgl::vk::TexturePtr inputTexture;
     std::vector<sgl::vk::ImageViewPtr> outputImageViews;
     std::vector<sgl::vk::FramebufferPtr> framebuffers;
