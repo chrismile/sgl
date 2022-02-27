@@ -175,11 +175,11 @@ public:
      */
     void setInputAttributeDescription(uint32_t bufferBinding, uint32_t bufferOffset, const std::string& attributeName);
 
-    void setVertexBufferBindingByLocation(
+    void setVertexBufferBindingByLocationIndex(
             const std::string& attributeName, uint32_t stride,
             VkVertexInputRate inputRate = VK_VERTEX_INPUT_RATE_VERTEX);
 
-    void setVertexBufferBindingByLocationOptional(
+    void setVertexBufferBindingByLocationIndexOptional(
             const std::string& attributeName, uint32_t stride,
             VkVertexInputRate inputRate = VK_VERTEX_INPUT_RATE_VERTEX);
 
@@ -196,7 +196,11 @@ protected:
     std::vector<BlendMode> currentBlendModes;
 
     std::vector<VkVertexInputBindingDescription> vertexInputBindingDescriptions;
+    std::vector<VkVertexInputBindingDescription> vertexInputBindingDescriptionsUnsorted;
+    std::vector<bool> vertexInputBindingDescriptionsUsed;
     std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions;
+    std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptionsUnsorted;
+    std::vector<bool> vertexInputAttributeDescriptionsUsed;
 
     VkViewport viewport = {};
     VkRect2D scissor = {};

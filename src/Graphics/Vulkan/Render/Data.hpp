@@ -207,9 +207,9 @@ public:
     [[nodiscard]] inline VkBuffer getVkIndexBuffer() { return indexBuffer->getVkBuffer(); }
 
     [[nodiscard]] inline size_t getNumVertices() const { return numVertices; }
-    [[nodiscard]]  inline const std::vector<VkBuffer>& getVkVertexBuffers() { return vulkanVertexBuffers; }
+    [[nodiscard]] inline const std::vector<VkBuffer>& getVkVertexBuffers() { return vulkanVertexBuffers; }
 
-    [[nodiscard]]  inline GraphicsPipelinePtr getGraphicsPipeline() { return graphicsPipeline; }
+    [[nodiscard]] inline GraphicsPipelinePtr getGraphicsPipeline() { return graphicsPipeline; }
 
 protected:
     GraphicsPipelinePtr graphicsPipeline;

@@ -562,13 +562,13 @@ void RasterData::setVertexBuffer(const BufferPtr& buffer, uint32_t binding) {
 }
 
 void RasterData::setVertexBuffer(const BufferPtr& buffer, const std::string& name) {
-    uint32_t location = graphicsPipeline->getShaderStages()->getInputVariableLocation(name);
+    uint32_t location = graphicsPipeline->getShaderStages()->getInputVariableLocationIndex(name);
     setVertexBuffer(buffer, location);
 }
 
 void RasterData::setVertexBufferOptional(const BufferPtr& buffer, const std::string& name) {
-    if (graphicsPipeline->getShaderStages()->getHasInputVariableLocation(name)) {
-        uint32_t location = graphicsPipeline->getShaderStages()->getInputVariableLocation(name);
+    if (graphicsPipeline->getShaderStages()->getHasInputVariable(name)) {
+        uint32_t location = graphicsPipeline->getShaderStages()->getInputVariableLocationIndex(name);
         setVertexBuffer(buffer, location);
     }
 }

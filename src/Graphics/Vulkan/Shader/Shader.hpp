@@ -141,29 +141,36 @@ public:
     ~ShaderStages();
 
     /// Returns the input variable descriptors of the vertex shader. NOTE: A vertex shader must exist for this to work!
-    const std::vector<InterfaceVariableDescriptor>& getInputVariableDescriptors() const;
-    bool getHasInputVariableLocation(const std::string& varName) const;
-    uint32_t getInputVariableLocation(const std::string& varName) const;
+    [[nodiscard]] const std::vector<InterfaceVariableDescriptor>& getInputVariableDescriptors() const;
+    [[nodiscard]] bool getHasInputVariable(const std::string& varName) const;
+    [[nodiscard]] uint32_t getInputVariableLocation(const std::string& varName) const;
+    [[nodiscard]] uint32_t getInputVariableLocationIndex(const std::string& varName) const;
     const InterfaceVariableDescriptor& getInputVariableDescriptorFromLocation(uint32_t location);
     const InterfaceVariableDescriptor& getInputVariableDescriptorFromName(const std::string& name);
-    const std::map<uint32_t, std::vector<DescriptorInfo>>& getDescriptorSetsInfo() const;
-    bool hasDescriptorBinding(uint32_t setIdx, const std::string& descName) const;
-    const DescriptorInfo& getDescriptorInfoByName(uint32_t setIdx, const std::string& descName) const;
-    const DescriptorInfo& getDescriptorInfoByBinding(uint32_t setIdx, uint32_t binding) const;
-    uint32_t getDescriptorBindingByName(uint32_t setIdx, const std::string& descName) const;
+    [[nodiscard]] const std::map<uint32_t, std::vector<DescriptorInfo>>& getDescriptorSetsInfo() const;
+    [[nodiscard]] bool hasDescriptorBinding(uint32_t setIdx, const std::string& descName) const;
+    [[nodiscard]] const DescriptorInfo& getDescriptorInfoByName(uint32_t setIdx, const std::string& descName) const;
+    [[nodiscard]] const DescriptorInfo& getDescriptorInfoByBinding(uint32_t setIdx, uint32_t binding) const;
+    [[nodiscard]] uint32_t getDescriptorBindingByName(uint32_t setIdx, const std::string& descName) const;
     bool getDescriptorBindingByNameOptional(uint32_t setIdx, const std::string& descName, uint32_t& binding) const;
 
     /// Finds a certain module based on its ID.
     ShaderModulePtr findModuleId(const std::string& shaderModuleId);
-    size_t findModuleIndexFromId(const std::string& shaderModuleId) const;
+    [[nodiscard]] size_t findModuleIndexFromId(const std::string& shaderModuleId) const;
 
     inline std::vector<ShaderModulePtr>& getShaderModules() { return shaderModules; }
-    inline const std::vector<ShaderModulePtr>& getShaderModules() const { return shaderModules; }
-    inline Device* getDevice() const { return device; }
+    [[nodiscard]] inline const std::vector<ShaderModulePtr>& getShaderModules() const { return shaderModules; }
+    [[nodiscard]] inline Device* getDevice() const { return device; }
 
-    inline const std::vector<VkPipelineShaderStageCreateInfo>& getVkShaderStages() const { return vkShaderStages; }
-    inline const std::vector<VkDescriptorSetLayout>& getVkDescriptorSetLayouts() const { return descriptorSetLayouts; }
-    inline const std::vector<VkPushConstantRange>& getVkPushConstantRanges() const { return pushConstantRanges; }
+    [[nodiscard]] inline const std::vector<VkPipelineShaderStageCreateInfo>& getVkShaderStages() const {
+        return vkShaderStages;
+    }
+    [[nodiscard]] inline const std::vector<VkDescriptorSetLayout>& getVkDescriptorSetLayouts() const {
+        return descriptorSetLayouts;
+    }
+    [[nodiscard]] inline const std::vector<VkPushConstantRange>& getVkPushConstantRanges() const {
+        return pushConstantRanges;
+    }
 
 private:
     void mergeDescriptorSetsInfo(const std::map<uint32_t, std::vector<DescriptorInfo>>& newDescriptorSetsInfo);
@@ -175,7 +182,9 @@ private:
     ShaderModulePtr vertexShaderModule; // Optional
     std::map<uint32_t, std::vector<DescriptorInfo>> descriptorSetsInfo; ///< set index -> descriptor set info
     std::map<std::string, std::vector<DescriptorInfo>> descriptorSetNameBindingMap; ///< name -> binding
-    std::map<std::string, uint32_t> inputVariableNameMap; ///< input interface variable name -> location
+    std::map<std::string, uint32_t> inputVariableNameLocationMap; ///< input interface variable name -> location
+    std::map<uint32_t, std::string> inputLocationVariableNameMap; ///< input interface variable location -> name
+    std::map<std::string, uint32_t> inputVariableNameLocationIndexMap; ///< input interface variable name -> loc. index
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts; ///< created from descriptorSetsInfo for use in Vulkan
     std::vector<VkPushConstantRange> pushConstantRanges;
     uint32_t numDescriptorSets = 0;

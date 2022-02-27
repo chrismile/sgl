@@ -308,27 +308,46 @@ void GraphicsPipelineInfo::setStencilTestEnabled(bool enableStencilTest) {
 
 void GraphicsPipelineInfo::setVertexBufferBinding(
         uint32_t binding, uint32_t stride, VkVertexInputRate inputRate) {
+    bool isAlreadySet =
+            binding < vertexInputBindingDescriptions.size() && vertexInputBindingDescriptionsUsed.at(binding);
     if (vertexInputBindingDescriptions.size() <= binding) {
         vertexInputBindingDescriptions.resize(binding + 1);
+        vertexInputBindingDescriptionsUsed.resize(binding + 1);
     }
     VkVertexInputBindingDescription bindingDescription = {};
     bindingDescription.binding = binding;
     bindingDescription.stride = stride;
     bindingDescription.inputRate = inputRate;
     vertexInputBindingDescriptions.at(binding) = bindingDescription;
+    vertexInputBindingDescriptionsUsed.at(binding) = true;
 
-    vertexInputInfo.vertexBindingDescriptionCount = uint32_t(vertexInputBindingDescriptions.size());
-    vertexInputInfo.pVertexBindingDescriptions = vertexInputBindingDescriptions.data();
+    if (isAlreadySet) {
+        vertexInputBindingDescriptionsUnsorted.clear();
+        for (size_t i = 0; i < vertexInputBindingDescriptions.size(); i++) {
+            if (vertexInputBindingDescriptionsUsed.at(i)) {
+                vertexInputBindingDescriptionsUnsorted.push_back(vertexInputBindingDescriptions.at(i));
+            }
+        }
+    } else {
+        vertexInputBindingDescriptionsUnsorted.push_back(bindingDescription);
+    }
+
+    vertexInputInfo.vertexBindingDescriptionCount = uint32_t(vertexInputBindingDescriptionsUnsorted.size());
+    vertexInputInfo.pVertexBindingDescriptions = vertexInputBindingDescriptionsUnsorted.data();
 }
 
 void GraphicsPipelineInfo::setInputAttributeDescription(
         uint32_t bufferBinding, uint32_t bufferOffset, uint32_t attributeLocation) {
+    bool isAlreadySet =
+            attributeLocation < vertexInputAttributeDescriptions.size()
+            && vertexInputAttributeDescriptionsUsed.at(attributeLocation);
     if (vertexInputAttributeDescriptions.size() <= attributeLocation) {
         vertexInputAttributeDescriptions.resize(attributeLocation + 1);
+        vertexInputAttributeDescriptionsUsed.resize(attributeLocation + 1);
     }
 
-    const InterfaceVariableDescriptor& inputVariableDescriptor = shaderStages->getInputVariableDescriptorFromLocation(
-            attributeLocation);
+    const InterfaceVariableDescriptor& inputVariableDescriptor =
+            shaderStages->getInputVariableDescriptorFromLocation(attributeLocation);
 
     VkVertexInputAttributeDescription attributeDescription = {};
     attributeDescription.location = attributeLocation;
@@ -336,6 +355,21 @@ void GraphicsPipelineInfo::setInputAttributeDescription(
     attributeDescription.format = VkFormat(inputVariableDescriptor.format);
     attributeDescription.offset = bufferOffset;
     vertexInputAttributeDescriptions.at(attributeLocation) = attributeDescription;
+    vertexInputAttributeDescriptionsUsed.at(attributeLocation) = true;
+
+    if (isAlreadySet) {
+        vertexInputAttributeDescriptionsUnsorted.clear();
+        for (size_t i = 0; i < vertexInputAttributeDescriptions.size(); i++) {
+            if (vertexInputAttributeDescriptionsUsed.at(i)) {
+                vertexInputAttributeDescriptionsUnsorted.push_back(vertexInputAttributeDescriptions.at(i));
+            }
+        }
+    } else {
+        vertexInputAttributeDescriptionsUnsorted.push_back(attributeDescription);
+    }
+
+    vertexInputInfo.vertexAttributeDescriptionCount = uint32_t(vertexInputAttributeDescriptionsUnsorted.size());
+    vertexInputInfo.pVertexAttributeDescriptions = vertexInputAttributeDescriptionsUnsorted.data();
 }
 
 void GraphicsPipelineInfo::setInputAttributeDescription(
@@ -344,8 +378,12 @@ void GraphicsPipelineInfo::setInputAttributeDescription(
             attributeName);
     uint32_t attributeLocation = inputVariableDescriptor.location;
 
+    bool isAlreadySet =
+            attributeLocation < vertexInputAttributeDescriptions.size()
+            && vertexInputAttributeDescriptionsUsed.at(attributeLocation);
     if (vertexInputAttributeDescriptions.size() <= attributeLocation) {
         vertexInputAttributeDescriptions.resize(attributeLocation + 1);
+        vertexInputAttributeDescriptionsUsed.resize(attributeLocation + 1);
     }
 
     VkVertexInputAttributeDescription attributeDescription = {};
@@ -354,22 +392,34 @@ void GraphicsPipelineInfo::setInputAttributeDescription(
     attributeDescription.format = VkFormat(inputVariableDescriptor.format);
     attributeDescription.offset = bufferOffset;
     vertexInputAttributeDescriptions.at(attributeLocation) = attributeDescription;
+    vertexInputAttributeDescriptionsUsed.at(attributeLocation) = true;
 
-    vertexInputInfo.vertexAttributeDescriptionCount = uint32_t(vertexInputAttributeDescriptions.size());
-    vertexInputInfo.pVertexAttributeDescriptions = vertexInputAttributeDescriptions.data();
+    if (isAlreadySet) {
+        vertexInputAttributeDescriptionsUnsorted.clear();
+        for (size_t i = 0; i < vertexInputAttributeDescriptions.size(); i++) {
+            if (vertexInputAttributeDescriptionsUsed.at(i)) {
+                vertexInputAttributeDescriptionsUnsorted.push_back(vertexInputAttributeDescriptions.at(i));
+            }
+        }
+    } else {
+        vertexInputAttributeDescriptionsUnsorted.push_back(attributeDescription);
+    }
+
+    vertexInputInfo.vertexAttributeDescriptionCount = uint32_t(vertexInputAttributeDescriptionsUnsorted.size());
+    vertexInputInfo.pVertexAttributeDescriptions = vertexInputAttributeDescriptionsUnsorted.data();
 }
 
-void GraphicsPipelineInfo::setVertexBufferBindingByLocation(
+void GraphicsPipelineInfo::setVertexBufferBindingByLocationIndex(
         const std::string& attributeName, uint32_t stride, VkVertexInputRate inputRate) {
-    uint32_t vertexAttributeBinding = shaderStages->getInputVariableLocation(attributeName);
+    uint32_t vertexAttributeBinding = shaderStages->getInputVariableLocationIndex(attributeName);
     setVertexBufferBinding(vertexAttributeBinding, stride, inputRate);
     setInputAttributeDescription(vertexAttributeBinding, 0, attributeName);
 }
 
-void GraphicsPipelineInfo::setVertexBufferBindingByLocationOptional(
+void GraphicsPipelineInfo::setVertexBufferBindingByLocationIndexOptional(
         const std::string& attributeName, uint32_t stride, VkVertexInputRate inputRate) {
-    if (shaderStages->getHasInputVariableLocation(attributeName)) {
-        uint32_t vertexNormalBinding = shaderStages->getInputVariableLocation(attributeName);
+    if (shaderStages->getHasInputVariable(attributeName)) {
+        uint32_t vertexNormalBinding = shaderStages->getInputVariableLocationIndex(attributeName);
         setVertexBufferBinding(vertexNormalBinding, stride, inputRate);
         setInputAttributeDescription(vertexNormalBinding, 0, attributeName);
     }

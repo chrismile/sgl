@@ -38,7 +38,8 @@ namespace sgl { namespace vk {
 
 ShaderModule::ShaderModule(
         Device* device, const std::string& shaderModuleId, ShaderModuleType shaderModuleType,
-        const std::vector<uint32_t>& spirvCode) : device(device), shaderModuleType(shaderModuleType) {
+        const std::vector<uint32_t>& spirvCode)
+        : device(device), shaderModuleId(shaderModuleId), shaderModuleType(shaderModuleType) {
     VkShaderModuleCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     createInfo.codeSize = spirvCode.size() * sizeof(uint32_t);
@@ -196,8 +197,18 @@ ShaderStages::ShaderStages(
 
         if (shaderModule->getShaderModuleType() == ShaderModuleType::VERTEX) {
             vertexShaderModule = shaderModule;
+            std::vector<uint32_t> locationIndices;
             for (const InterfaceVariableDescriptor& varDesc : vertexShaderModule->getInputVariableDescriptors()) {
-                inputVariableNameMap.insert(std::make_pair(varDesc.name, varDesc.location));
+                inputVariableNameLocationMap.insert(std::make_pair(varDesc.name, varDesc.location));
+                inputLocationVariableNameMap.insert(std::make_pair(varDesc.location, varDesc.name));
+                locationIndices.push_back(varDesc.location);
+            }
+
+            std::sort(locationIndices.begin(), locationIndices.end());
+            for (uint32_t locationIndex = 0; locationIndex < uint32_t(locationIndices.size()); locationIndex++) {
+                uint32_t location = locationIndices.at(locationIndex);
+                inputVariableNameLocationIndexMap.insert(std::make_pair(
+                        inputLocationVariableNameMap[location], locationIndex));
             }
         }
 
@@ -222,8 +233,18 @@ ShaderStages::ShaderStages(
 
         if (shaderModule->getShaderModuleType() == ShaderModuleType::VERTEX) {
             vertexShaderModule = shaderModule;
+            std::vector<uint32_t> locationIndices;
             for (const InterfaceVariableDescriptor& varDesc : vertexShaderModule->getInputVariableDescriptors()) {
-                inputVariableNameMap.insert(std::make_pair(varDesc.name, varDesc.location));
+                inputVariableNameLocationMap.insert(std::make_pair(varDesc.name, varDesc.location));
+                inputLocationVariableNameMap.insert(std::make_pair(varDesc.location, varDesc.name));
+                locationIndices.push_back(varDesc.location);
+            }
+
+            std::sort(locationIndices.begin(), locationIndices.end());
+            for (uint32_t locationIndex = 0; locationIndex < uint32_t(locationIndices.size()); locationIndex++) {
+                uint32_t location = locationIndices.at(locationIndex);
+                inputVariableNameLocationIndexMap.insert(std::make_pair(
+                        inputLocationVariableNameMap[location], locationIndex));
             }
         }
 
@@ -354,14 +375,14 @@ const std::vector<InterfaceVariableDescriptor>& ShaderStages::getInputVariableDe
     return vertexShaderModule->getInputVariableDescriptors();
 }
 
-bool ShaderStages::getHasInputVariableLocation(const std::string& varName) const {
+bool ShaderStages::getHasInputVariable(const std::string& varName) const {
     if (!vertexShaderModule) {
         sgl::Logfile::get()->writeError(
                 "Error in ShaderStages::getInputVariableLocation: No vertex shader exists!");
         return -1;
     }
 
-    return inputVariableNameMap.find(varName) != inputVariableNameMap.end();
+    return inputVariableNameLocationMap.find(varName) != inputVariableNameLocationMap.end();
 }
 
 uint32_t ShaderStages::getInputVariableLocation(const std::string& varName) const {
@@ -371,10 +392,27 @@ uint32_t ShaderStages::getInputVariableLocation(const std::string& varName) cons
         return -1;
     }
 
-    auto it = inputVariableNameMap.find(varName);
-    if (it == inputVariableNameMap.end()) {
+    auto it = inputVariableNameLocationMap.find(varName);
+    if (it == inputVariableNameLocationMap.end()) {
         sgl::Logfile::get()->writeError(
                 "Error in ShaderStages::getInputVariableLocation: Unknown variable name \"" + varName + "\"!");
+        return -1;
+    }
+
+    return it->second;
+}
+
+uint32_t ShaderStages::getInputVariableLocationIndex(const std::string& varName) const {
+    if (!vertexShaderModule) {
+        sgl::Logfile::get()->writeError(
+                "Error in ShaderStages::getInputVariableLocationIndex: No vertex shader exists!");
+        return -1;
+    }
+
+    auto it = inputVariableNameLocationIndexMap.find(varName);
+    if (it == inputVariableNameLocationIndexMap.end()) {
+        sgl::Logfile::get()->writeError(
+                "Error in ShaderStages::getInputVariableLocationIndex: Unknown variable name \"" + varName + "\"!");
         return -1;
     }
 
