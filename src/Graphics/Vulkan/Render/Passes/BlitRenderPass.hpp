@@ -32,6 +32,7 @@
 #include <vector>
 #include <string>
 #include <glm/glm.hpp>
+#include <Math/Geometry/AABB2.hpp>
 #include <Graphics/Vulkan/Image/Image.hpp>
 #include "Pass.hpp"
 
@@ -54,13 +55,17 @@ public:
     BlitRenderPass(sgl::vk::Renderer* renderer, std::vector<std::string> customShaderIds);
 
     // Public interface.
+    void setNormalizedCoordinatesAabb(const sgl::AABB2& aabb);
     virtual void setInputTexture(sgl::vk::TexturePtr& texture);
     virtual void setOutputImage(sgl::vk::ImageViewPtr& imageView);
     virtual void setOutputImages(std::vector<sgl::vk::ImageViewPtr>& imageViews);
-    virtual void setOutputImageLayout(VkImageLayout layout);
+    virtual void setOutputImageInitialLayout(VkImageLayout layout);
+    virtual void setOutputImageFinalLayout(VkImageLayout layout);
     inline void setBlendMode(BlendMode mode) { blendMode = mode; setDataDirty(); }
     void setAttachmentLoadOp(VkAttachmentLoadOp op);
+    void setAttachmentStoreOp(VkAttachmentStoreOp op);
     void setAttachmentClearColor(const glm::vec4& color);
+    void setColorWriteEnabled(bool enable);
 
     void recreateSwapchain(uint32_t width, uint32_t height) override;
 
@@ -73,9 +78,12 @@ protected:
     void setupGeometryBuffers();
     std::vector<std::string> shaderIds;
     BlendMode blendMode = BlendMode::OVERWRITE;
+    bool enableColorWrite = true;
 
+    VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     VkImageLayout finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     VkAttachmentLoadOp attachmentLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    VkAttachmentStoreOp attachmentStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
     glm::vec4 clearColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
     sgl::vk::TexturePtr inputTexture;
     std::vector<sgl::vk::ImageViewPtr> outputImageViews;

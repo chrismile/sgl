@@ -64,12 +64,24 @@ void BlitRenderPass::setOutputImages(std::vector<sgl::vk::ImageViewPtr>& imageVi
     outputImageViews = imageViews;
 }
 
-void BlitRenderPass::setOutputImageLayout(VkImageLayout layout) {
+void BlitRenderPass::setOutputImageInitialLayout(VkImageLayout layout) {
+    initialLayout = layout;
+}
+
+void BlitRenderPass::setOutputImageFinalLayout(VkImageLayout layout) {
     finalLayout = layout;
 }
 
 void BlitRenderPass::setAttachmentLoadOp(VkAttachmentLoadOp op) {
     attachmentLoadOp = op;
+    if (!framebuffers.empty()) {
+        recreateSwapchain(framebuffers.front()->getWidth(), framebuffers.front()->getHeight());
+    }
+    setDataDirty();
+}
+
+void BlitRenderPass::setAttachmentStoreOp(VkAttachmentStoreOp op) {
+    attachmentStoreOp = op;
     if (!framebuffers.empty()) {
         recreateSwapchain(framebuffers.front()->getWidth(), framebuffers.front()->getHeight());
     }
@@ -87,9 +99,16 @@ void BlitRenderPass::setAttachmentClearColor(const glm::vec4& color) {
     }
 }
 
+void BlitRenderPass::setColorWriteEnabled(bool enable) {
+    enableColorWrite = enable;
+    setDataDirty();
+}
+
 void BlitRenderPass::recreateSwapchain(uint32_t width, uint32_t height) {
     AttachmentState attachmentState;
     attachmentState.loadOp = attachmentLoadOp;
+    attachmentState.storeOp = attachmentStoreOp;
+    attachmentState.initialLayout = initialLayout;
     attachmentState.finalLayout = finalLayout;
 
     framebuffers.clear();
@@ -144,6 +163,22 @@ void BlitRenderPass::setupGeometryBuffers() {
             VMA_MEMORY_USAGE_GPU_ONLY);
 }
 
+void BlitRenderPass::setNormalizedCoordinatesAabb(const sgl::AABB2& aabb) {
+    std::vector<float> vertexData = {
+            aabb.min.x, aabb.max.y, 0.0f, 0.0f, 1.0f,
+            aabb.max.x, aabb.max.y, 0.0f, 1.0f, 1.0f,
+            aabb.max.x, aabb.min.y, 0.0f, 1.0f, 0.0f,
+            aabb.min.x, aabb.min.y, 0.0f, 0.0f, 0.0f,
+    };
+    vertexBuffer->updateData(
+            vertexData.size() * sizeof(float), vertexData.data(),
+            renderer->getVkCommandBuffer());
+    renderer->insertBufferMemoryBarrier(
+            VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
+            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
+            vertexBuffer);
+}
+
 void BlitRenderPass::loadShader() {
     shaderStages = sgl::vk::ShaderManager->getShaderStages(shaderIds);
 }
@@ -160,9 +195,12 @@ void BlitRenderPass::setGraphicsPipelineInfo(sgl::vk::GraphicsPipelineInfo& grap
     graphicsPipelineInfo.setVertexBufferBinding(0, sizeof(float) * 5);
     graphicsPipelineInfo.setInputAttributeDescription(
             0, 0, "vertexPosition");
-    graphicsPipelineInfo.setInputAttributeDescription(
-            0, sizeof(float) * 3, "vertexTexCoord");
+    if (shaderStages->getHasInputVariable("vertexTexCoord")) {
+        graphicsPipelineInfo.setInputAttributeDescription(
+                0, sizeof(float) * 3, "vertexTexCoord");
+    }
     graphicsPipelineInfo.setBlendMode(blendMode);
+    graphicsPipelineInfo.setColorWriteEnabled(enableColorWrite);
 }
 
 }}

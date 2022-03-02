@@ -177,9 +177,9 @@ public:
     inline VkBuffer getVkBuffer() { return buffer; }
     inline VkDeviceMemory getVkDeviceMemory() { return deviceMemory; }
     inline Device* getDevice() { return device; }
-    inline size_t getSizeInBytes() const { return sizeInBytes; }
-    inline VkBufferUsageFlags getVkBufferUsageFlags() const { return bufferUsageFlags; }
-    inline VmaMemoryUsage getVmaMemoryUsage() const { return memoryUsage; }
+    [[nodiscard]] inline size_t getSizeInBytes() const { return sizeInBytes; }
+    [[nodiscard]] inline VkBufferUsageFlags getVkBufferUsageFlags() const { return bufferUsageFlags; }
+    [[nodiscard]] inline VmaMemoryUsage getVmaMemoryUsage() const { return memoryUsage; }
 
 #if defined(SUPPORT_OPENGL) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
     /**
