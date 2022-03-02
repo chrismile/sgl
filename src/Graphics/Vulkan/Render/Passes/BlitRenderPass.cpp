@@ -201,6 +201,7 @@ void BlitRenderPass::setGraphicsPipelineInfo(sgl::vk::GraphicsPipelineInfo& grap
     }
     graphicsPipelineInfo.setBlendMode(blendMode);
     graphicsPipelineInfo.setColorWriteEnabled(enableColorWrite);
+    graphicsPipelineInfo.setCullMode(cullMode);
 }
 
 }}

@@ -61,6 +61,8 @@ public:
     virtual void setOutputImages(std::vector<sgl::vk::ImageViewPtr>& imageViews);
     virtual void setOutputImageInitialLayout(VkImageLayout layout);
     virtual void setOutputImageFinalLayout(VkImageLayout layout);
+    inline void setCullMode(sgl::vk::CullMode mode) { cullMode = mode; }
+
     inline void setBlendMode(BlendMode mode) { blendMode = mode; setDataDirty(); }
     void setAttachmentLoadOp(VkAttachmentLoadOp op);
     void setAttachmentStoreOp(VkAttachmentStoreOp op);
@@ -77,6 +79,7 @@ protected:
 
     void setupGeometryBuffers();
     std::vector<std::string> shaderIds;
+    sgl::vk::CullMode cullMode = sgl::vk::CullMode::CULL_BACK;
     BlendMode blendMode = BlendMode::OVERWRITE;
     bool enableColorWrite = true;
 
