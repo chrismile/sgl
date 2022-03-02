@@ -62,7 +62,6 @@ public:
     virtual void setOutputImageInitialLayout(VkImageLayout layout);
     virtual void setOutputImageFinalLayout(VkImageLayout layout);
     inline void setCullMode(sgl::vk::CullMode mode) { cullMode = mode; }
-
     inline void setBlendMode(BlendMode mode) { blendMode = mode; setDataDirty(); }
     void setAttachmentLoadOp(VkAttachmentLoadOp op);
     void setAttachmentStoreOp(VkAttachmentStoreOp op);

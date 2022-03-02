@@ -172,11 +172,11 @@ public:
             VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask);
 
     /// The subresource layout contains information necessary when accessing the image data on the CPU (e.g., stride).
-    VkSubresourceLayout getSubresourceLayout(
+    [[nodiscard]] VkSubresourceLayout getSubresourceLayout(
             VkImageAspectFlags aspectFlags, uint32_t mipLevel = 0, uint32_t arrayLayer = 0) const;
 
     /// Transitions the image layout from the old layout to the new layout.
-    inline VkImageLayout getVkImageLayout() const { return imageLayout; }
+    [[nodiscard]] inline VkImageLayout getVkImageLayout() const { return imageLayout; }
 
     /// For access from the framebuffer after a subpass has finished.
     inline void _updateLayout(VkImageLayout newLayout) { imageLayout = newLayout; }
