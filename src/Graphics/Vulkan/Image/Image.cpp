@@ -168,7 +168,7 @@ ImagePtr Image::copy(bool copyContent, VkImageAspectFlags aspectFlags) {
     return newImage;
 }
 
-void Image::uploadData(VkDeviceSize sizeInBytes, void* data, bool generateMipmaps) {
+void Image::uploadData(VkDeviceSize sizeInBytes, void* data, bool generateMipmaps, VkCommandBuffer commandBuffer) {
     if (imageSettings.mipLevels <= 1) {
         generateMipmaps = false;
     }
@@ -182,11 +182,14 @@ void Image::uploadData(VkDeviceSize sizeInBytes, void* data, bool generateMipmap
 
     if (generateMipmaps && (imageSettings.memoryUsage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) == 0) {
         Logfile::get()->throwError(
-                "Error in Image::uploadData: Generating mipmaps is requested, but VK_IMAGE_USAGE_TRANSFER_SRC_BIT "
-                "is not set.");
+                "Error in Image::uploadData: Generating mipmaps is requested, but "
+                "VK_IMAGE_USAGE_TRANSFER_SRC_BIT is not set.");
     }
 
-    VkCommandBuffer commandBuffer = device->beginSingleTimeCommands();
+    bool transientCommandBuffer = commandBuffer == VK_NULL_HANDLE;
+    if (transientCommandBuffer) {
+        commandBuffer = device->beginSingleTimeCommands();
+    }
 
     transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, commandBuffer);
     copyFromBuffer(stagingBuffer, commandBuffer);
@@ -196,7 +199,29 @@ void Image::uploadData(VkDeviceSize sizeInBytes, void* data, bool generateMipmap
         transitionImageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, commandBuffer);
     }
 
-    device->endSingleTimeCommands(commandBuffer);
+    if (transientCommandBuffer) {
+        device->endSingleTimeCommands(commandBuffer);
+    }
+}
+
+void Image::generateMipmaps(VkCommandBuffer commandBuffer) {
+    bool transientCommandBuffer = commandBuffer == VK_NULL_HANDLE;
+    if (transientCommandBuffer) {
+        commandBuffer = device->beginSingleTimeCommands();
+    }
+
+    if ((imageSettings.memoryUsage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) == 0) {
+        Logfile::get()->throwError(
+                "Error in Image::generateMipmaps: Generating mipmaps is requested, but "
+                "VK_IMAGE_USAGE_TRANSFER_SRC_BIT is not set.");
+    }
+
+    transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, commandBuffer);
+    _generateMipmaps(commandBuffer);
+
+    if (transientCommandBuffer) {
+        device->endSingleTimeCommands(commandBuffer);
+    }
 }
 
 void Image::copyFromBuffer(BufferPtr& buffer, VkCommandBuffer commandBuffer) {
@@ -551,8 +576,8 @@ void Image::_generateMipmaps(VkCommandBuffer commandBuffer) {
     barrier.subresourceRange.layerCount = 1;
     barrier.subresourceRange.levelCount = 1;
 
-    int32_t mipWidth = int32_t(imageSettings.width);
-    int32_t mipHeight = int32_t(imageSettings.height);
+    auto mipWidth = int32_t(imageSettings.width);
+    auto mipHeight = int32_t(imageSettings.height);
 
     for (uint32_t i = 1; i < imageSettings.mipLevels; i++) {
         barrier.subresourceRange.baseMipLevel = i - 1;

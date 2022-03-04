@@ -113,11 +113,24 @@ public:
      * @param sizeInBytes The size of the data to upload in bytes.
      * @param data A pointer to the data on the CPU.
      * @param generateMipmaps Whether to generate mipmaps (if imageSettings.mipLevels > 1).
+     * @param commandBuffer The command buffer. If VK_NULL_HANDLE is specified, a transient command buffer is used and
+     * the function will wait with vkQueueWaitIdle for the command to finish on the GPU.
+     *
      * NOTE: If generateMipmaps is true, VK_IMAGE_USAGE_TRANSFER_SRC_BIT must be specified in ImageSettings::usage.
      * Please also note that using this command only really makes sense if the texture was created with the mode
      * VMA_MEMORY_USAGE_GPU_ONLY.
      */
-    void uploadData(VkDeviceSize sizeInBytes, void* data, bool generateMipmaps = true);
+    void uploadData(
+            VkDeviceSize sizeInBytes, void* data, bool generateMipmaps = true,
+            VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
+
+    /**
+     * Generates mipmaps for the image (if imageSettings.mipLevels > 1).
+     * @param commandBuffer The command buffer. If VK_NULL_HANDLE is specified, a transient command buffer is used and
+     * the function will wait with vkQueueWaitIdle for the command to finish on the GPU.
+     * NOTE: VK_IMAGE_USAGE_TRANSFER_SRC_BIT must be specified in ImageSettings::usage.
+     */
+    void generateMipmaps(VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 
     /**
      * Copies the content of a buffer to this image.

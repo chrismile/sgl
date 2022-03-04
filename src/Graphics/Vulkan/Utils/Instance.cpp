@@ -90,7 +90,8 @@ void Instance::createInstance(std::vector<const char*> instanceExtensionNames, b
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName = "sgl";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VK_MAKE_API_VERSION(0, 1, 2, 0);
+    //appInfo.apiVersion = VK_MAKE_API_VERSION(0, 1, 2, 0);
+    appInfo.apiVersion = std::min(instanceVulkanVersion, VK_MAKE_API_VERSION(0, 1, 3, 0));
 
     // Add a validation layer if requested.
     instanceLayerNames = {};

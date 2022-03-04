@@ -35,6 +35,7 @@
 #include "../libs/volk/volk.h"
 
 #include <Utils/Convert.hpp>
+#include <Utils/StringUtils.hpp>
 #include <Utils/AppSettings.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
@@ -243,9 +244,19 @@ ShaderModulePtr ShaderManagerVk::loadAsset(ShaderModuleInfo& shaderInfo) {
     } else if (device->getInstance()->getInstanceVulkanVersion() < VK_MAKE_API_VERSION(0, 1, 2, 0)
             || device->getApiVersion() < VK_MAKE_API_VERSION(0, 1, 2, 0)) {
         compileOptions.SetTargetSpirv(shaderc_spirv_version_1_3);
+    }
+#if VK_VERSION_1_3 && VK_HEADER_VERSION >= 204
+    else if (device->getInstance()->getInstanceVulkanVersion() < VK_MAKE_API_VERSION(0, 1, 3, 0)
+               || device->getApiVersion() < VK_MAKE_API_VERSION(0, 1, 3, 0)) {
+        compileOptions.SetTargetSpirv(shaderc_spirv_version_1_5);
     } else {
+        compileOptions.SetTargetSpirv(shaderc_spirv_version_1_6);
+    }
+#else
+    else {
         compileOptions.SetTargetSpirv(shaderc_spirv_version_1_5);
     }
+#endif
 
     const std::unordered_map<ShaderModuleType, shaderc_shader_kind> shaderKindLookupTable = {
             { ShaderModuleType::VERTEX,                 shaderc_vertex_shader },
@@ -365,7 +376,8 @@ std::string ShaderManagerVk::getHeaderName(const std::string &lineString) {
     } else {
         // Filename is user-specified #define directive?
         std::vector<std::string> line;
-        boost::algorithm::split(line, lineString, boost::is_any_of("\t "), boost::token_compress_on);
+        boost::algorithm::split(
+                line, lineString, boost::is_any_of("\t "), boost::token_compress_on);
         if (line.size() < 2) {
             Logfile::get()->writeError("Error in ShaderManagerVk::getHeaderFilename: Too few tokens.");
             return "";
@@ -481,6 +493,19 @@ std::string ShaderManagerVk::getImportedShaderString(
     return moduleContentString;
 }
 
+void ShaderManagerVk::addExtensions(std::string& prependContent, const std::map<std::string, std::string>& defines) {
+    auto extensionsIt = defines.find("__extensions");
+    if (extensionsIt != defines.end()) {
+        std::vector<std::string> extensions;
+        boost::algorithm::split(
+                extensions, extensionsIt->second, boost::is_any_of(";,"),
+                boost::token_compress_on);
+        for (const std::string& extension : extensions) {
+            prependContent += "#extension " + extension + " : require\n";
+        }
+    }
+}
+
 std::string ShaderManagerVk::getShaderString(const std::string &globalShaderName) {
     auto it = effectSources.find(globalShaderName);
     if (it != effectSources.end()) {
@@ -509,6 +534,9 @@ std::string ShaderManagerVk::getShaderString(const std::string &globalShaderName
 
     std::string shaderName;
     std::string prependContent;
+    addExtensions(prependContent, preprocessorDefines);
+    addExtensions(prependContent, tempPreprocessorDefines);
+
     int lineNum = 1;
     std::string linestr;
     while (getline(file, linestr)) {

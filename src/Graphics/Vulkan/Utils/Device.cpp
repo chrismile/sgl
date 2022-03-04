@@ -344,14 +344,26 @@ void Device::createLogicalDeviceAndQueues(
         }
     }
     if (deviceExtensionsSet.find(VK_KHR_RAY_QUERY_EXTENSION_NAME) != deviceExtensionsSet.end()) {
-        deviceRayQueryFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
+        rayQueryFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
         VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
         deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-        deviceFeatures2.pNext = &deviceRayQueryFeatures;
+        deviceFeatures2.pNext = &rayQueryFeatures;
         vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
 
         if (requestedDeviceFeatures.rayQueryFeatures.rayQuery == VK_FALSE) {
-            requestedDeviceFeatures.rayQueryFeatures = deviceRayQueryFeatures;
+            requestedDeviceFeatures.rayQueryFeatures = rayQueryFeatures;
+        }
+    }
+    if (deviceExtensionsSet.find(VK_EXT_FRAGMENT_SHADER_INTERLOCK_EXTENSION_NAME) != deviceExtensionsSet.end()) {
+        fragmentShaderInterlockFeatures.sType =
+                VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_INTERLOCK_FEATURES_EXT;
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &fragmentShaderInterlockFeatures;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        if (requestedDeviceFeatures.fragmentShaderInterlockFeatures.fragmentShaderPixelInterlock == VK_FALSE) {
+            requestedDeviceFeatures.fragmentShaderInterlockFeatures = fragmentShaderInterlockFeatures;
         }
     }
 
@@ -468,6 +480,10 @@ void Device::createLogicalDeviceAndQueues(
     if (requestedDeviceFeatures.rayQueryFeatures.rayQuery) {
         *pNextPtr = &requestedDeviceFeatures.rayQueryFeatures;
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.rayQueryFeatures.pNext);
+    }
+    if (requestedDeviceFeatures.fragmentShaderInterlockFeatures.fragmentShaderPixelInterlock) {
+        *pNextPtr = &requestedDeviceFeatures.fragmentShaderInterlockFeatures;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.fragmentShaderInterlockFeatures.pNext);
     }
 
     VkResult res = vkCreateDevice(physicalDevice, &deviceInfo, nullptr, &device);

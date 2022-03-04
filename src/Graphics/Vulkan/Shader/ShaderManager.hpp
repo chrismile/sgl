@@ -129,6 +129,7 @@ protected:
             const std::string& moduleName, const std::string& parentModuleName, std::string& prependContent);
     std::string getShaderString(const std::string& globalShaderName);
     std::string getPreprocessorDefines(ShaderModuleType shaderModuleType);
+    static void addExtensions(std::string& prependContent, const std::map<std::string, std::string>& defines);
 
     /**
      * Indexes all ".glsl" files in the directory pathPrefix (and its sub-directories recursively) to create
