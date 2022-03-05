@@ -63,7 +63,7 @@ enum class BlendMode {
     // Alpha blending.
     BACK_TO_FRONT_STRAIGHT_ALPHA, BACK_TO_FRONT_PREMUL_ALPHA, FRONT_TO_BACK_PREMUL_ALPHA,
     // Additive blending modes & multiplicative blending.
-    BACK_ADDITIVE, BACK_SUBTRACTIVE, BACK_MULTIPLICATIVE,
+    BACK_ADDITIVE, ONE, BACK_SUBTRACTIVE, BACK_MULTIPLICATIVE,
     // Custom blend mode specified manually.
     CUSTOM
 };

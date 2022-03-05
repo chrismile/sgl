@@ -242,12 +242,14 @@ ShaderModulePtr ShaderManagerVk::loadAsset(ShaderModuleInfo& shaderInfo) {
     if (device->getInstance()->getInstanceVulkanVersion() < VK_API_VERSION_1_1) {
         compileOptions.SetTargetSpirv(shaderc_spirv_version_1_0);
     } else if (device->getInstance()->getInstanceVulkanVersion() < VK_MAKE_API_VERSION(0, 1, 2, 0)
-            || device->getApiVersion() < VK_MAKE_API_VERSION(0, 1, 2, 0)) {
+            || device->getApiVersion() < VK_MAKE_API_VERSION(0, 1, 2, 0)
+            || device->getInstance()->getApplicationInfo().apiVersion < VK_MAKE_API_VERSION(0, 1, 2, 0)) {
         compileOptions.SetTargetSpirv(shaderc_spirv_version_1_3);
     }
 #if VK_VERSION_1_3 && VK_HEADER_VERSION >= 204
     else if (device->getInstance()->getInstanceVulkanVersion() < VK_MAKE_API_VERSION(0, 1, 3, 0)
-               || device->getApiVersion() < VK_MAKE_API_VERSION(0, 1, 3, 0)) {
+               || device->getApiVersion() < VK_MAKE_API_VERSION(0, 1, 3, 0)
+               || device->getInstance()->getApplicationInfo().apiVersion < VK_MAKE_API_VERSION(0, 1, 3, 0)) {
         compileOptions.SetTargetSpirv(shaderc_spirv_version_1_5);
     } else {
         compileOptions.SetTargetSpirv(shaderc_spirv_version_1_6);
@@ -532,10 +534,11 @@ std::string ShaderManagerVk::getShaderString(const std::string &globalShaderName
         shaderContent = "#line 1\n";
     }
 
+    std::string extensionsString;
+    addExtensions(extensionsString, preprocessorDefines);
+    addExtensions(extensionsString, tempPreprocessorDefines);
     std::string shaderName;
     std::string prependContent;
-    addExtensions(prependContent, preprocessorDefines);
-    addExtensions(prependContent, tempPreprocessorDefines);
 
     int lineNum = 1;
     std::string linestr;
@@ -567,9 +570,18 @@ std::string ShaderManagerVk::getShaderString(const std::string &globalShaderName
                         std::string() + getPreprocessorDefines(shaderModuleType) + "#line " + toString(lineNum)
                         + "\n";
             }
-            prependContent = "";
+            if (shaderModuleType == ShaderModuleType::FRAGMENT
+                    || extensionsString != "#extension GL_ARB_fragment_shader_interlock : require\n") {
+                prependContent = extensionsString;
+            } else {
+                prependContent.clear();
+            }
         } else if (boost::starts_with(linestr, "#version") || boost::starts_with(linestr, "#extension")) {
-            prependContent += linestr + "\n";
+            if (boost::starts_with(linestr, "#version")) {
+                prependContent = linestr + "\n" + prependContent;
+            } else {
+                prependContent += linestr + "\n";
+            }
             if (dumpTextDebugStatic) {
                 shaderContent +=
                         std::string() + "#line " + toString(lineNum) + " "

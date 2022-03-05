@@ -64,6 +64,7 @@ public:
     [[nodiscard]] inline uint32_t getInstanceVulkanVersion() const { return instanceVulkanVersion; }
     [[nodiscard]] inline bool getUseValidationLayer() const { return useValidationLayer; }
     [[nodiscard]] inline const std::vector<const char*>& getInstanceLayerNames() const { return instanceLayerNames; }
+    inline const VkApplicationInfo& getApplicationInfo() { return appInfo; }
     inline void setDebugCallback(std::function<void()> callback) { debugCallback = std::move(callback); }
     inline void callDebugCallback() { if (debugCallback) { debugCallback(); } }
     inline void setDebugMessageSeverityLevel(MessageSeverity messageSeverity) { messageSeverityLevel = messageSeverity; }
@@ -81,6 +82,7 @@ private:
     VkInstance instance = VK_NULL_HANDLE;
     VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
     uint32_t instanceVulkanVersion = VK_API_VERSION_1_0;
+    VkApplicationInfo appInfo = { };
 
     bool useValidationLayer = false;
     MessageSeverity messageSeverityLevel = MESSAGE_SEVERITY_WARNING;

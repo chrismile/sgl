@@ -481,10 +481,53 @@ void Renderer::transitionImageLayout(vk::ImagePtr& image, VkImageLayout newLayou
 }
 
 void Renderer::insertImageMemoryBarrier(
-        vk::ImagePtr& image, VkImageLayout oldLayout, VkImageLayout newLayout,
+        const vk::ImagePtr& image, VkImageLayout oldLayout, VkImageLayout newLayout,
         VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
         VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask) {
     image->insertMemoryBarrier(commandBuffer, oldLayout, newLayout, srcStage, dstStage, srcAccessMask, dstAccessMask);
+}
+
+void Renderer::insertImageMemoryBarriers(
+        const std::vector<vk::ImagePtr>& images, VkImageLayout oldLayout, VkImageLayout newLayout,
+        VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
+        VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask) {
+    VkImageMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout = oldLayout;
+    barrier.newLayout = newLayout;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.srcAccessMask = srcAccessMask;
+    barrier.dstAccessMask = dstAccessMask;
+
+    std::vector<VkImageMemoryBarrier> barriers(images.size());
+    for (size_t i = 0; i < images.size(); i++) {
+        const ImagePtr& image = images.at(i);
+        barrier.image = image->getVkImage();
+        barrier.subresourceRange.levelCount = image->getImageSettings().mipLevels;
+        barrier.subresourceRange.layerCount = image->getImageSettings().arrayLayers;
+        if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+            barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+            if (hasStencilComponent(image->getImageSettings().format)) {
+                barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+            }
+        } else {
+            barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        }
+        barriers.at(i) = barrier;
+        image->imageLayout = newLayout;
+    }
+
+    vkCmdPipelineBarrier(
+            commandBuffer,
+            srcStage, dstStage,
+            0, // 0 or VK_DEPENDENCY_BY_REGION_BIT
+            0, nullptr,
+            0, nullptr,
+            uint32_t(images.size()), barriers.data()
+    );
 }
 
 void Renderer::pushConstants(

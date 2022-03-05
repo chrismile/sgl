@@ -104,7 +104,11 @@ public:
     // Image pipeline barrier.
     void transitionImageLayout(vk::ImagePtr& image, VkImageLayout newLayout);
     void insertImageMemoryBarrier(
-            vk::ImagePtr& image, VkImageLayout oldLayout, VkImageLayout newLayout,
+            const vk::ImagePtr& image, VkImageLayout oldLayout, VkImageLayout newLayout,
+            VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
+            VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask);
+    void insertImageMemoryBarriers(
+            const std::vector<vk::ImagePtr>& images, VkImageLayout oldLayout, VkImageLayout newLayout,
             VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
             VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask);
 
