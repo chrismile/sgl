@@ -310,6 +310,10 @@ void GraphicsPipelineInfo::setDepthWriteEnabled(bool enableDepthWrite) {
     depthStencilInfo.depthWriteEnable = enableDepthWrite;
 }
 
+void GraphicsPipelineInfo::setDepthCompareOp(VkCompareOp compareOp) {
+    depthStencilInfo.depthCompareOp = compareOp;
+}
+
 void GraphicsPipelineInfo::setStencilTestEnabled(bool enableStencilTest) {
     depthStencilInfo.stencilTestEnable = enableStencilTest;
 }

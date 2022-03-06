@@ -182,7 +182,7 @@ public:
     explicit ComputeData(Renderer* renderer, ComputePipelinePtr& computePipeline);
     [[nodiscard]] RenderDataType getRenderDataType() const override { return RenderDataType::COMPUTE; }
 
-    inline ComputePipelinePtr getComputePipeline() { return computePipeline; }
+    inline const ComputePipelinePtr& getComputePipeline() { return computePipeline; }
 
 protected:
     ComputePipelinePtr computePipeline;
@@ -209,7 +209,7 @@ public:
     [[nodiscard]] inline size_t getNumVertices() const { return numVertices; }
     [[nodiscard]] inline const std::vector<VkBuffer>& getVkVertexBuffers() { return vulkanVertexBuffers; }
 
-    [[nodiscard]] inline GraphicsPipelinePtr getGraphicsPipeline() { return graphicsPipeline; }
+    [[nodiscard]] inline const GraphicsPipelinePtr& getGraphicsPipeline() { return graphicsPipeline; }
 
 protected:
     GraphicsPipelinePtr graphicsPipeline;
@@ -236,7 +236,7 @@ public:
     [[nodiscard]] inline ShaderGroupSettings& getShaderGroupSettings() { return shaderGroupSettings; }
     [[nodiscard]] inline const ShaderGroupSettings& getShaderGroupSettings() const { return shaderGroupSettings; }
 
-    [[nodiscard]] inline RayTracingPipelinePtr getRayTracingPipeline() { return rayTracingPipeline; }
+    [[nodiscard]] inline const RayTracingPipelinePtr& getRayTracingPipeline() { return rayTracingPipeline; }
     inline const std::array<VkStridedDeviceAddressRegionKHR, 4>& getStridedDeviceAddressRegions() {
         return stridedDeviceAddressRegions;
     }

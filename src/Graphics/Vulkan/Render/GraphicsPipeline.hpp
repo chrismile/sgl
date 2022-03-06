@@ -138,9 +138,11 @@ public:
     // Depth-stencil info.
     void setDepthTestEnabled(bool enableDepthTest);
     void setDepthWriteEnabled(bool enableDepthWrite);
+    void setDepthCompareOp(VkCompareOp compareOp);
     void setStencilTestEnabled(bool enableStencilTest);
     [[nodiscard]] inline bool getDepthTestEnabled() const { return depthStencilInfo.depthTestEnable; }
     [[nodiscard]] inline bool getDepthWriteEnabled() const { return depthStencilInfo.depthWriteEnable; }
+    [[nodiscard]] inline VkCompareOp getDepthCompareOp() const { return depthStencilInfo.depthCompareOp; }
     [[nodiscard]] inline bool getStencilTestEnabled() const { return depthStencilInfo.stencilTestEnable; }
 
     /**

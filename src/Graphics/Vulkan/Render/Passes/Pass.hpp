@@ -72,6 +72,9 @@ class DLL_OBJECT ComputePass : public Pass {
 public:
     explicit ComputePass(sgl::vk::Renderer* renderer) : Pass(renderer) {}
     PassType getPassType() override { return PassType::RASTER_PASS; }
+    [[nodiscard]] inline const sgl::vk::ComputePipelinePtr& getComputePipeline() const {
+        return computeData->getComputePipeline();
+    }
 
     inline sgl::vk::ShaderModulePtr& getShaderModule() { return shaderStages->getShaderModules().front(); }
 
@@ -96,6 +99,9 @@ class DLL_OBJECT RasterPass : public Pass {
 public:
     explicit RasterPass(sgl::vk::Renderer* renderer) : Pass(renderer) {}
     PassType getPassType() override { return PassType::RASTER_PASS; }
+    [[nodiscard]] inline const sgl::vk::GraphicsPipelinePtr& getGraphicsPipeline() const {
+        return rasterData->getGraphicsPipeline();
+    }
 
     void render() final;
     void buildIfNecessary() final;
@@ -117,6 +123,9 @@ class DLL_OBJECT RayTracingPass : public Pass {
 public:
     explicit RayTracingPass(sgl::vk::Renderer* renderer) : Pass(renderer) {}
     PassType getPassType() override { return PassType::RAYTRACING_PASS; }
+    [[nodiscard]] inline const sgl::vk::RayTracingPipelinePtr& getRayTracingPipeline() const {
+        return rayTracingData->getRayTracingPipeline();
+    }
 
     void render() final;
     void buildIfNecessary() final;
