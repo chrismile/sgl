@@ -540,6 +540,11 @@ void ComputeData::dispatch(
     vkCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
 }
 
+void ComputeData::pushConstants(uint32_t offset, uint32_t size, const void* data, VkCommandBuffer commandBuffer) {
+    vkCmdPushConstants(
+            commandBuffer, computePipeline->getVkPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, offset, size, data);
+}
+
 
 RasterData::RasterData(Renderer* renderer, GraphicsPipelinePtr& graphicsPipeline)
         : RenderData(renderer, graphicsPipeline->getShaderStages()),

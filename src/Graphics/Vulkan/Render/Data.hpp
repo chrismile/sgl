@@ -188,12 +188,20 @@ public:
 
      /**
       * Dispatches the compute shader using the passed command buffer.
+      * NOTE: The preferred way for this is using @see sgl::vk::Renderer.
       * @param groupCountX The group count in x direction.
       * @param groupCountY The group count in x direction.
       * @param groupCountZ The group count in x direction.
       * @param commandBuffer The command buffer in which to enqueue the dispatched compute shader.
       */
     void dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ, VkCommandBuffer commandBuffer);
+
+    // Push constants for @see dispatch.
+    void pushConstants(uint32_t offset, uint32_t size, const void* data, VkCommandBuffer commandBuffer);
+    template<class T>
+    void pushConstants(uint32_t offset, const T& data, VkCommandBuffer commandBuffer) {
+        pushConstants(offset, sizeof(T), &data, commandBuffer);
+    }
 
 protected:
     ComputePipelinePtr computePipeline;
