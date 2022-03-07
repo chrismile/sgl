@@ -160,8 +160,10 @@ public:
     };
     inline FrameData& getFrameData(uint32_t frameIdx) { return frameDataList.at(frameIdx); }
 
-private:
+protected:
     void _updateDescriptorSets();
+
+private:
     ListenerToken swapchainRecreatedEventListenerToken;
     bool isDirty = false;
 
@@ -183,6 +185,15 @@ public:
     [[nodiscard]] RenderDataType getRenderDataType() const override { return RenderDataType::COMPUTE; }
 
     inline const ComputePipelinePtr& getComputePipeline() { return computePipeline; }
+
+     /**
+      * Dispatches the compute shader using the passed command buffer.
+      * @param groupCountX The group count in x direction.
+      * @param groupCountY The group count in x direction.
+      * @param groupCountZ The group count in x direction.
+      * @param commandBuffer The command buffer in which to enqueue the dispatched compute shader.
+      */
+    void dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ, VkCommandBuffer commandBuffer);
 
 protected:
     ComputePipelinePtr computePipeline;

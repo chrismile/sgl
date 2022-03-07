@@ -522,6 +522,24 @@ ComputeData::ComputeData(Renderer* renderer, ComputePipelinePtr& computePipeline
         : RenderData(renderer, computePipeline->getShaderStages()), computePipeline(computePipeline) {
 }
 
+void ComputeData::dispatch(
+        uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ, VkCommandBuffer commandBuffer) {
+    vkCmdBindPipeline(
+            commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+            computePipeline->getVkPipeline());
+
+    _updateDescriptorSets();
+    VkDescriptorSet descriptorSet = getVkDescriptorSet();
+    if (descriptorSet != VK_NULL_HANDLE) {
+        vkCmdBindDescriptorSets(
+                commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                computePipeline->getVkPipelineLayout(),
+                0, 1, &descriptorSet, 0, nullptr);
+    }
+
+    vkCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
+}
+
 
 RasterData::RasterData(Renderer* renderer, GraphicsPipelinePtr& graphicsPipeline)
         : RenderData(renderer, graphicsPipeline->getShaderStages()),
