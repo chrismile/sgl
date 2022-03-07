@@ -257,10 +257,11 @@ void Swapchain::renderFrame(const std::vector<sgl::vk::CommandBufferPtr>& comman
     sgl::vk::CommandBufferPtr commandBufferFirst = commandBuffers.front();
     sgl::vk::CommandBufferPtr commandBufferLast = commandBuffers.back();
 
-    VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
+    //VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
     VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
 
-    commandBufferFirst->pushWaitSemaphore(waitSemaphores[0]);
+    // The wait semaphore is added by sgl::vk::Renderer to ensure it GPU-CPU syncing is possible.
+    //commandBufferFirst->pushWaitSemaphore(waitSemaphores[0]);
     commandBufferLast->pushSignalSemaphore(signalSemaphores[0]);
 
     std::vector<uint64_t> waitSemaphoreValues;

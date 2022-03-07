@@ -176,6 +176,11 @@ void Renderer::beginCommandBuffer() {
             auto commandBufferPtr = commandBuffers.at(frameIndex);
             frameCommandBuffers.push_back(commandBufferPtr);
             commandBuffer = commandBufferPtr->getVkCommandBuffer();
+
+            if (swapchain) {
+                commandBufferPtr->pushWaitSemaphore(
+                        swapchain->getImageAvailableSemaphores()[swapchain->getCurrentFrame()]);
+            }
         }
     } else {
         frameIndex = 0;
@@ -227,6 +232,34 @@ void Renderer::pushCommandBuffer(sgl::vk::CommandBufferPtr& commandBuffer) {
     frameCommandBuffers.push_back(commandBuffer);
     this->commandBuffer = commandBuffer->getVkCommandBuffer();
 }
+
+void Renderer::syncWithCpu() {
+    if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+        Logfile::get()->throwError(
+                "Error in Renderer::beginCommandBuffer: Could not record a command buffer.");
+    }
+
+    submitToQueue();
+    if (useGraphicsQueue) {
+        device->waitGraphicsQueueIdle();
+    } else {
+        device->waitComputeQueueIdle();
+    }
+
+    auto commandBufferPtr = commandBuffers.at(frameIndex);
+    frameCommandBuffers.push_back(commandBufferPtr);
+    commandBuffer = commandBufferPtr->getVkCommandBuffer();
+
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = 0;
+    beginInfo.pInheritanceInfo = nullptr;
+    if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+        Logfile::get()->throwError(
+                "Error in Renderer::beginCommandBuffer: Could not begin recording a command buffer.");
+    }
+}
+
 
 void Renderer::render(const RasterDataPtr& rasterData) {
     const FramebufferPtr& framebuffer = rasterData->getGraphicsPipeline()->getFramebuffer();
@@ -732,7 +765,7 @@ void Renderer::submitToQueueImmediate() {
         sgl::Logfile::get()->throwError(
                 "Error in Renderer::submitToQueueImmediate: Could not submit to the used queue.");
     }
-    if (vkQueueWaitIdle(device->getGraphicsQueue()) != VK_SUCCESS) {
+    if (vkQueueWaitIdle(queue) != VK_SUCCESS) {
         sgl::Logfile::get()->throwError(
                 "Error in Renderer::submitToQueueImmediate: vkQueueWaitIdle failed.");
     }

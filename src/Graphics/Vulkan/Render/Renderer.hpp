@@ -82,6 +82,8 @@ public:
     void resetCustomCommandBuffer();
     void pushCommandBuffer(sgl::vk::CommandBufferPtr& commandBuffer);
     std::vector<sgl::vk::CommandBufferPtr> getFrameCommandBuffers();
+    /// Submits all previously queued work to the GPU and syncs with the CPU.
+    void syncWithCpu();
     inline sgl::vk::CommandBufferPtr& getCommandBuffer() { return frameCommandBuffers.back(); }
     inline VkCommandBuffer getVkCommandBuffer() { return commandBuffer; }
 

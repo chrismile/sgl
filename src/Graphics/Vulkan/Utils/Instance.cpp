@@ -83,15 +83,15 @@ void Instance::createInstance(std::vector<const char*> instanceExtensionNames, b
     sgl::Logfile::get()->write(
             std::string() + "Used Vulkan instance extensions: " + instanceExtensionString, BLUE);
 
-    VkApplicationInfo appInfo = { };
+    appInfo = { };
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.pNext = NULL;
+    appInfo.pNext = nullptr;
     appInfo.pApplicationName = FileUtils::get()->getAppName().c_str();
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName = "sgl";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
     //appInfo.apiVersion = VK_MAKE_API_VERSION(0, 1, 2, 0);
-    appInfo.apiVersion = std::min(instanceVulkanVersion, VK_MAKE_API_VERSION(0, 1, 3, 0));
+    appInfo.apiVersion = std::min(instanceVulkanVersion, VK_MAKE_API_VERSION(0, 1, 3, 204));
 
     // Add a validation layer if requested.
     instanceLayerNames = {};

@@ -71,14 +71,15 @@ public:
 
     /// Called by the window class when the resolution changed.
     inline void windowResolutionChanged() { framebufferResized = true; }
-    inline bool getIsWaitingForResizeEnd() const { return isWaitingForResizeEnd; }
+    [[nodiscard]]  inline bool getIsWaitingForResizeEnd() const { return isWaitingForResizeEnd; }
 
-    inline size_t getNumImages() { return swapchainImageViews.size(); }
-    inline uint32_t getMinImageCount() { return minImageCount; }
-    inline std::vector<ImageViewPtr>& getSwapchainImageViews() { return swapchainImageViews; }
-    inline const VkExtent2D& getSwapchainExtent() const { return swapchainExtent; }
-    inline size_t getCurrentFrame() const { return currentFrame; }
-    inline uint32_t getImageIndex() const { return imageIndex; }
+    [[nodiscard]] inline size_t getNumImages() { return swapchainImageViews.size(); }
+    [[nodiscard]] inline uint32_t getMinImageCount() { return minImageCount; }
+    [[nodiscard]] inline std::vector<ImageViewPtr>& getSwapchainImageViews() { return swapchainImageViews; }
+    [[nodiscard]] inline const VkExtent2D& getSwapchainExtent() const { return swapchainExtent; }
+    [[nodiscard]] inline size_t getCurrentFrame() const { return currentFrame; }
+    [[nodiscard]] inline uint32_t getImageIndex() const { return imageIndex; }
+    [[nodiscard]] inline const std::vector<VkSemaphore>& getImageAvailableSemaphores() { return imageAvailableSemaphores; }
 
 private:
     void createSwapchainImages();

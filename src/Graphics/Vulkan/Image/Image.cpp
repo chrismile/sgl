@@ -442,9 +442,8 @@ void Image::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayo
     barrier.subresourceRange.levelCount = imageSettings.mipLevels;
     barrier.subresourceRange.baseArrayLayer = 0;
     barrier.subresourceRange.layerCount = imageSettings.arrayLayers;
-    if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+    if (isDepthStencilFormat(imageSettings.format)) {
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-
         if (hasStencilComponent(imageSettings.format)) {
             barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
         }
@@ -530,9 +529,8 @@ void Image::insertMemoryBarrier(
     barrier.subresourceRange.levelCount = this->getImageSettings().mipLevels;
     barrier.subresourceRange.baseArrayLayer = 0;
     barrier.subresourceRange.layerCount = this->getImageSettings().arrayLayers;
-    if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+    if (isDepthStencilFormat(this->getImageSettings().format)) {
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-
         if (hasStencilComponent(this->getImageSettings().format)) {
             barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
         }
