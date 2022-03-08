@@ -37,7 +37,7 @@
 #include "../libs/VMA/vk_mem_alloc.h"
 
 #if defined(SUPPORT_OPENGL) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
-#include <GL/glew.h>
+typedef unsigned int GLuint;
 namespace sgl {
 union InteropMemoryHandle;
 }
@@ -78,6 +78,11 @@ public:
     Buffer(
             Device* device, size_t sizeInBytes, void* dataPtr, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
             bool queueExclusive = true, bool exportMemory = false);
+    /**
+     * Does not allocate any memory and buffer. This constructor is mainly needed when later calling
+     * @see createFromD3D12SharedResourceHandle.
+     */
+    explicit Buffer(Device* device) : device(device) {}
 
     ~Buffer();
 
@@ -192,6 +197,21 @@ public:
     bool createGlMemoryObject(GLuint& memoryObjectGl, InteropMemoryHandle& interopMemoryHandle);
 #endif
 
+#ifdef _WIN32
+    /**
+     * Imports a Direct3D 12 shared resource handle. The object must have been created using the standard constructor.
+     * The handle is expected to point to device-local memory. The object will take ownership of the handle and close
+     * it on destruction. Below, an example of how to create the shared handle can be found.
+     *
+     * HANDLE resourceHandle;
+     * std::wstring sharedHandleNameString = std::wstring(L"Local\\D3D12ResourceHandle") + std::to_wstring(resourceIdx);
+     * ID3D12Device::CreateSharedHandle(dxObject, nullptr, GENERIC_ALL, sharedHandleNameString.data(), &resourceHandle);
+     *
+     * If the passed handle name already exists, the function will fail with DXGI_ERROR_NAME_ALREADY_EXISTS.
+     */
+    void createFromD3D12SharedResourceHandle(HANDLE resourceHandle, size_t sizeInBytesData, VkBufferUsageFlags usage);
+#endif
+
 private:
     Device* device = nullptr;
     size_t sizeInBytes = 0;
@@ -204,10 +224,14 @@ private:
     // Exported memory for external use.
     VkDeviceMemory deviceMemory = VK_NULL_HANDLE;
 
-    VkBufferUsageFlags bufferUsageFlags;
-    VmaMemoryUsage memoryUsage;
-    bool queueExclusive;
-    bool exportMemory;
+    VkBufferUsageFlags bufferUsageFlags = 0;
+    VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    bool queueExclusive = true;
+    bool exportMemory = false;
+
+#ifdef _WIN32
+    HANDLE handle = nullptr;
+#endif
 };
 
 class DLL_OBJECT BufferView {

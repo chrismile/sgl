@@ -141,8 +141,105 @@ Image::~Image() {
             vkDestroyImage(device->getVkDevice(), image, nullptr);
             vkFreeMemory(device->getVkDevice(), deviceMemory, nullptr);
         }
+#ifdef _WIN32
+        if (handle != nullptr) {
+            CloseHandle(handle);
+            handle = nullptr;
+        }
+#endif
     }
 }
+
+#if defined(_WIN32)
+void Image::createFromD3D12SharedResourceHandle(HANDLE resourceHandle, const ImageSettings& imageSettings) {
+    this->handle = resourceHandle;
+    this->imageSettings = imageSettings;
+
+    VkImageCreateInfo imageCreateInfo{};
+    imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageCreateInfo.extent.width = imageSettings.width;
+    imageCreateInfo.extent.height = imageSettings.height;
+    imageCreateInfo.extent.depth = imageSettings.depth;
+    imageCreateInfo.imageType = imageSettings.imageType;
+    imageCreateInfo.mipLevels = imageSettings.mipLevels;
+    imageCreateInfo.arrayLayers = imageSettings.arrayLayers;
+    imageCreateInfo.format = imageSettings.format;
+    imageCreateInfo.tiling = imageSettings.tiling;
+    imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageCreateInfo.usage = imageSettings.usage;
+    imageCreateInfo.sharingMode = imageSettings.sharingMode;
+    imageCreateInfo.samples = imageSettings.numSamples;
+    imageCreateInfo.flags = 0;
+
+    VkExternalMemoryImageCreateInfo externalMemoryImageCreateInfo = {};
+    externalMemoryImageCreateInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;
+    externalMemoryImageCreateInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_RESOURCE_BIT;
+    imageCreateInfo.pNext = &externalMemoryImageCreateInfo;
+
+    if (vkCreateImage(device->getVkDevice(), &imageCreateInfo, nullptr, &image) != VK_SUCCESS) {
+        Logfile::get()->throwError(
+                "Error in Image::createFromD3D12SharedResourceHandle: Failed to create an image!");
+    }
+
+    VkMemoryWin32HandlePropertiesKHR memoryWin32HandleProperties{};
+    memoryWin32HandleProperties.sType = VK_STRUCTURE_TYPE_MEMORY_WIN32_HANDLE_PROPERTIES_KHR;
+    memoryWin32HandleProperties.memoryTypeBits = 0xcdcdcdcd;
+    if (vkGetMemoryWin32HandlePropertiesKHR(
+            device->getVkDevice(), VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_RESOURCE_BIT, resourceHandle,
+            &memoryWin32HandleProperties) != VK_SUCCESS) {
+        Logfile::get()->throwError(
+                "Error in Image::createFromD3D12SharedResourceHandle: "
+                "Calling vkGetMemoryWin32HandlePropertiesKHR failed!");
+    }
+
+    VkMemoryRequirements memoryRequirements{};
+    vkGetImageMemoryRequirements(device->getVkDevice(), image, &memoryRequirements);
+    deviceMemorySizeInBytes = memoryRequirements.size;
+
+    /**
+     * According to this code (https://github.com/krOoze/Hello_Triangle/blob/dxgi_interop/src/WSI/DxgiWsi.h), it seems
+     * like there is some faulty behavior on AMD drivers, where memoryTypeBits may not be set.
+     */
+    if (memoryWin32HandleProperties.memoryTypeBits == 0xcdcdcdcd) {
+        memoryWin32HandleProperties.memoryTypeBits = memoryRequirements.memoryTypeBits;
+    } else {
+        memoryWin32HandleProperties.memoryTypeBits &= memoryRequirements.memoryTypeBits;
+    }
+
+    VkPhysicalDeviceMemoryProperties memoryProperties;
+    vkGetPhysicalDeviceMemoryProperties(device->getVkPhysicalDevice(), &memoryProperties);
+
+    VkMemoryDedicatedAllocateInfo memoryDedicatedAllocateInfo{};
+    memoryDedicatedAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO;
+    memoryDedicatedAllocateInfo.buffer = buffer;
+
+    VkImportMemoryWin32HandleInfoKHR importMemoryWin32HandleInfo{};
+    importMemoryWin32HandleInfo.sType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR;
+    importMemoryWin32HandleInfo.pNext = &memoryDedicatedAllocateInfo;
+    importMemoryWin32HandleInfo.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_RESOURCE_BIT_KHR;
+    importMemoryWin32HandleInfo.handle = resourceHandle;
+    importMemoryWin32HandleInfo.name = nullptr;
+
+    VkMemoryAllocateInfo memoryAllocateInfo{};
+    memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    memoryAllocateInfo.allocationSize = memoryRequirements.size;
+    memoryAllocateInfo.memoryTypeIndex = device->findMemoryTypeIndex(
+            memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    memoryAllocateInfo.pNext = &importMemoryWin32HandleInfo;
+
+    if (memoryAllocateInfo.memoryTypeIndex == std::numeric_limits<uint32_t>::max()) {
+        Logfile::get()->throwError(
+                "Error in Image::createFromD3D12SharedResourceHandle: No suitable memory type index found!");
+    }
+
+    if (vkAllocateMemory(device->getVkDevice(), &memoryAllocateInfo, nullptr, &deviceMemory) != VK_SUCCESS) {
+        Logfile::get()->throwError(
+                "Error in Image::createFromD3D12SharedResourceHandle: Could not allocate memory!");
+    }
+
+    vkBindImageMemory(device->getVkDevice(), image, deviceMemory, 0);
+}
+#endif
 
 ImagePtr Image::copy(bool copyContent, VkImageAspectFlags aspectFlags) {
     ImagePtr newImage(new Image(device, imageSettings));

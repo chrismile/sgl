@@ -35,9 +35,12 @@
 #include <functional>
 #include <unordered_map>
 #include <thread>
+//#include <boost/container_hash/hash_fwd.hpp>
+
 #include <Defs.hpp>
 #include "../libs/volk/volk.h"
 #include "../libs/VMA/vk_mem_alloc.h"
+#		include <vulkan/vk_platform.h>
 
 namespace sgl { class Window; }
 
@@ -48,19 +51,32 @@ namespace sgl { namespace vk {
 struct DLL_OBJECT CommandPoolType {
     VkCommandPoolCreateFlags flags = 0;
     uint32_t queueFamilyIndex = 0xFFFFFFFF; // 0xFFFFFFFF encodes standard (graphics queue).
+    uint32_t threadIndex = 0;
 
     bool operator==(const CommandPoolType& other) const {
-        return flags == other.flags && queueFamilyIndex == other.queueFamilyIndex;
+        return flags == other.flags && queueFamilyIndex == other.queueFamilyIndex && other.threadIndex == threadIndex;
     }
 };
 }}
 
+// See: https://stackoverflow.com/questions/4948780/magic-number-in-boosthash-combine
+template <class T>
+inline void hash_combine(std::size_t & s, const T & v) {
+    std::hash<T> h;
+    s ^= h(v) + 0x9e3779b9 + (s << 6) + (s >> 2);
+}
+
 namespace std {
 template<> struct hash<sgl::vk::CommandPoolType> {
     std::size_t operator()(sgl::vk::CommandPoolType const& s) const noexcept {
-        std::size_t h1 = std::hash<uint32_t>{}(s.flags);
-        std::size_t h2 = std::hash<uint32_t>{}(s.queueFamilyIndex);
-        return h1 ^ (h2 << 1); // or use boost::hash_combine
+        //std::size_t h1 = std::hash<uint32_t>{}(s.flags);
+        //std::size_t h2 = std::hash<uint32_t>{}(s.queueFamilyIndex);
+        //return h1 ^ (h2 << 1); // or use boost::hash_combine
+        std::size_t result = 0;
+        hash_combine(result, s.flags);
+        hash_combine(result, s.queueFamilyIndex);
+        hash_combine(result, s.threadIndex);
+        return result;
     }
 };
 }
@@ -134,6 +150,7 @@ public:
     inline VkQueue getWorkerThreadGraphicsQueue() { return workerThreadGraphicsQueue; } ///< For use in another thread.
     inline uint32_t getGraphicsQueueIndex() const { return graphicsQueueIndex; }
     inline uint32_t getComputeQueueIndex() const { return computeQueueIndex; }
+    inline uint32_t getWorkerThreadGraphicsQueueIndex() const { return workerThreadGraphicsQueueIndex; }
 
     inline bool getIsMainThread() const { return mainThreadId == std::this_thread::get_id(); }
 
@@ -148,6 +165,7 @@ public:
     inline VkDriverId getDeviceDriverId() const { return physicalDeviceDriverProperties.driverID; }
     inline const char* getDeviceDriverName() const { return physicalDeviceDriverProperties.driverName; }
     inline const char* getDeviceDriverInfo() const { return physicalDeviceDriverProperties.driverInfo; }
+    inline const VkPhysicalDeviceIDProperties& getDeviceIDProperties() const { return physicalDeviceIDProperties; }
     inline const uint8_t* getPipelineCacheUuid() const { return physicalDeviceProperties.pipelineCacheUUID; }
     inline const VkPhysicalDeviceLimits& getLimits() const { return physicalDeviceProperties.limits; }
     inline const VkPhysicalDeviceSparseProperties& getSparseProperties() const { return physicalDeviceProperties.sparseProperties; }
@@ -212,7 +230,9 @@ public:
 #endif
 
     static std::vector<const char*> getCudaInteropDeviceExtensions();
-
+#ifdef _WIN32
+    static std::vector<const char*> getD3D12InteropDeviceExtensions();
+#endif
 
 private:
     void initializeDeviceExtensionList(VkPhysicalDevice physicalDevice);
@@ -266,6 +286,7 @@ private:
 
     VkPhysicalDeviceProperties physicalDeviceProperties{};
     VkPhysicalDeviceDriverProperties physicalDeviceDriverProperties{};
+    VkPhysicalDeviceIDProperties physicalDeviceIDProperties{};
     VkPhysicalDeviceMemoryProperties physicalDeviceMemoryProperties{};
     VkPhysicalDeviceFeatures physicalDeviceFeatures{};
 
@@ -286,6 +307,7 @@ private:
     std::vector<VkQueueFamilyProperties> queueFamilyProperties;
     uint32_t graphicsQueueIndex;
     uint32_t computeQueueIndex;
+    uint32_t workerThreadGraphicsQueueIndex;
     VkQueue graphicsQueue;
     VkQueue computeQueue;
     VkQueue workerThreadGraphicsQueue; ///< For use in another thread.

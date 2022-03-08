@@ -36,6 +36,11 @@
 #include "../Utils/Memory.hpp"
 #include "Buffer.hpp"
 
+#ifdef _WIN32
+#include <windows.h>
+#include <vulkan/vulkan_win32.h>
+#endif
+
 namespace sgl { namespace vk {
 
 Buffer::Buffer(
@@ -51,7 +56,7 @@ Buffer::Buffer(
 
     if (!exportMemory) {
         // When the memory does not need to be exported, we can use the library VMA for allocations.
-        VmaAllocationCreateInfo allocCreateInfo = {};
+        VmaAllocationCreateInfo allocCreateInfo{};
         allocCreateInfo.usage = memoryUsage;
 
         if (vmaCreateBuffer(
@@ -69,7 +74,7 @@ Buffer::Buffer(
                 "Error in Buffer::Buffer: External memory is only supported on Linux, Android and Windows systems!");
 #endif
 
-        VkExternalMemoryBufferCreateInfo externalMemoryBufferCreateInfo = {};
+        VkExternalMemoryBufferCreateInfo externalMemoryBufferCreateInfo{};
         externalMemoryBufferCreateInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO;
         externalMemoryBufferCreateInfo.handleTypes = handleTypes;
         bufferCreateInfo.pNext = &externalMemoryBufferCreateInfo;
@@ -82,13 +87,13 @@ Buffer::Buffer(
         VkMemoryRequirements memoryRequirements;
         vkGetBufferMemoryRequirements(device->getVkDevice(), buffer, &memoryRequirements);
 
-        VkExportMemoryAllocateInfo exportMemoryAllocateInfo = {};
+        VkExportMemoryAllocateInfo exportMemoryAllocateInfo{};
         exportMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;
         exportMemoryAllocateInfo.handleTypes = handleTypes;
 
         VkMemoryPropertyFlags memoryPropertyFlags = convertVmaMemoryUsageToVkMemoryPropertyFlags(memoryUsage);
 
-        VkMemoryAllocateInfo memoryAllocateInfo = {};
+        VkMemoryAllocateInfo memoryAllocateInfo{};
         memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         memoryAllocateInfo.allocationSize = memoryRequirements.size;
         memoryAllocateInfo.memoryTypeIndex = device->findMemoryTypeIndex(
@@ -122,7 +127,96 @@ Buffer::~Buffer() {
         vkDestroyBuffer(device->getVkDevice(), buffer, nullptr);
         vkFreeMemory(device->getVkDevice(), deviceMemory, nullptr);
     }
+#ifdef _WIN32
+    if (handle != nullptr) {
+        CloseHandle(handle);
+        handle = nullptr;
+    }
+#endif
 }
+
+#if defined(_WIN32)
+void Buffer::createFromD3D12SharedResourceHandle(
+        HANDLE resourceHandle, size_t sizeInBytesData, VkBufferUsageFlags usage) {
+    this->handle = resourceHandle;
+    this->exportMemory = true;
+    this->sizeInBytes = sizeInBytesData;
+    this->bufferUsageFlags = usage;
+
+    VkBufferCreateInfo bufferCreateInfo{};
+    bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferCreateInfo.size = sizeInBytes;
+    bufferCreateInfo.usage = usage;
+    bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VkExternalMemoryBufferCreateInfo externalMemoryBufferCreateInfo{};
+    externalMemoryBufferCreateInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO;
+    externalMemoryBufferCreateInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_RESOURCE_BIT;
+    bufferCreateInfo.pNext = &externalMemoryBufferCreateInfo;
+
+    if (vkCreateBuffer(device->getVkDevice(), &bufferCreateInfo, nullptr, &buffer) != VK_SUCCESS) {
+        Logfile::get()->throwError(
+                "Error in Buffer::createFromD3D12SharedResourceHandle: Failed to create a buffer!");
+    }
+
+    VkMemoryWin32HandlePropertiesKHR memoryWin32HandleProperties{};
+    memoryWin32HandleProperties.sType = VK_STRUCTURE_TYPE_MEMORY_WIN32_HANDLE_PROPERTIES_KHR;
+    memoryWin32HandleProperties.memoryTypeBits = 0xcdcdcdcd;
+    if (vkGetMemoryWin32HandlePropertiesKHR(
+            device->getVkDevice(), VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_RESOURCE_BIT, resourceHandle,
+            &memoryWin32HandleProperties) != VK_SUCCESS) {
+        Logfile::get()->throwError(
+                "Error in Buffer::createFromD3D12SharedResourceHandle: "
+                "Calling vkGetMemoryWin32HandlePropertiesKHR failed!");
+    }
+
+    VkMemoryRequirements memoryRequirements{};
+    vkGetBufferMemoryRequirements(device->getVkDevice(), buffer, &memoryRequirements);
+
+    /**
+     * According to this code (https://github.com/krOoze/Hello_Triangle/blob/dxgi_interop/src/WSI/DxgiWsi.h), it seems
+     * like there is some faulty behavior on AMD drivers, where memoryTypeBits may not be set.
+     */
+    if (memoryWin32HandleProperties.memoryTypeBits == 0xcdcdcdcd) {
+        memoryWin32HandleProperties.memoryTypeBits = memoryRequirements.memoryTypeBits;
+    } else {
+        memoryWin32HandleProperties.memoryTypeBits &= memoryRequirements.memoryTypeBits;
+    }
+
+    VkPhysicalDeviceMemoryProperties memoryProperties;
+    vkGetPhysicalDeviceMemoryProperties(device->getVkPhysicalDevice(), &memoryProperties);
+
+    VkMemoryDedicatedAllocateInfo memoryDedicatedAllocateInfo{};
+    memoryDedicatedAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO;
+    memoryDedicatedAllocateInfo.buffer = buffer;
+
+    VkImportMemoryWin32HandleInfoKHR importMemoryWin32HandleInfo{};
+    importMemoryWin32HandleInfo.sType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR;
+    importMemoryWin32HandleInfo.pNext = &memoryDedicatedAllocateInfo;
+    importMemoryWin32HandleInfo.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_RESOURCE_BIT_KHR;
+    importMemoryWin32HandleInfo.handle = resourceHandle;
+    importMemoryWin32HandleInfo.name = nullptr;
+
+    VkMemoryAllocateInfo memoryAllocateInfo{};
+    memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    memoryAllocateInfo.allocationSize = memoryRequirements.size;
+    memoryAllocateInfo.memoryTypeIndex = device->findMemoryTypeIndex(
+            memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    memoryAllocateInfo.pNext = &importMemoryWin32HandleInfo;
+
+    if (memoryAllocateInfo.memoryTypeIndex == std::numeric_limits<uint32_t>::max()) {
+        Logfile::get()->throwError(
+                "Error in Buffer::createFromD3D12SharedResourceHandle: No suitable memory type index found!");
+    }
+
+    if (vkAllocateMemory(device->getVkDevice(), &memoryAllocateInfo, nullptr, &deviceMemory) != VK_SUCCESS) {
+        Logfile::get()->throwError(
+                "Error in Buffer::createFromD3D12SharedResourceHandle: Could not allocate memory!");
+    }
+
+    vkBindBufferMemory(device->getVkDevice(), buffer, deviceMemory, 0);
+}
+#endif
 
 BufferPtr Buffer::copy(bool copyContent) {
     BufferPtr newBuffer(new Buffer(device, sizeInBytes, bufferUsageFlags, memoryUsage, queueExclusive));

@@ -110,7 +110,7 @@ void Instance::createInstance(std::vector<const char*> instanceExtensionNames, b
 
     VkInstanceCreateInfo instanceInfo = { };
     instanceInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    instanceInfo.pNext = NULL;
+    instanceInfo.pNext = nullptr;
     instanceInfo.pApplicationInfo = &appInfo;
     instanceInfo.enabledLayerCount = static_cast<uint32_t>(instanceLayerNames.size());
     instanceInfo.ppEnabledLayerNames = instanceLayerNames.data();

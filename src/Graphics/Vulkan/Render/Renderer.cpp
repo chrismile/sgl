@@ -228,7 +228,7 @@ void Renderer::resetCustomCommandBuffer() {
     setCustomCommandBuffer(VK_NULL_HANDLE);
 }
 
-void Renderer::pushCommandBuffer(sgl::vk::CommandBufferPtr& commandBuffer) {
+void Renderer::pushCommandBuffer(const sgl::vk::CommandBufferPtr& commandBuffer) {
     frameCommandBuffers.push_back(commandBuffer);
     this->commandBuffer = commandBuffer->getVkCommandBuffer();
 }

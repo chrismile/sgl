@@ -68,6 +68,22 @@ std::vector<const char*> Device::getCudaInteropDeviceExtensions() {
     return deviceExtensions;
 }
 
+#ifdef _WIN32
+std::vector<const char*> Device::getD3D12InteropDeviceExtensions() {
+    std::vector<const char*> deviceExtensions;
+    deviceExtensions.push_back(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+    deviceExtensions.push_back(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
+    deviceExtensions.push_back(VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME);
+    deviceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+    deviceExtensions.push_back(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
+    deviceExtensions.push_back(VK_KHR_EXTERNAL_FENCE_WIN32_EXTENSION_NAME);
+    deviceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
+    deviceExtensions.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
+    deviceExtensions.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    return deviceExtensions;
+}
+#endif
+
 void Device::initializeDeviceExtensionList(VkPhysicalDevice physicalDevice) {
     uint32_t deviceExtensionCount = 0;
     VkResult res = vkEnumerateDeviceExtensionProperties(
@@ -378,6 +394,7 @@ void Device::createLogicalDeviceAndQueues(
             physicalDevice, static_cast<VkQueueFlagBits>(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT));
     computeQueueIndex = findQueueFamilies(
             physicalDevice, static_cast<VkQueueFlagBits>(VK_QUEUE_COMPUTE_BIT));
+    workerThreadGraphicsQueueIndex = graphicsQueueIndex;
 
     uint32_t queueFamilyPropertyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyPropertyCount, nullptr);
@@ -572,6 +589,16 @@ void Device::_getDeviceInformation() {
         VkPhysicalDeviceProperties2 deviceProperties2 = {};
         deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
         deviceProperties2.pNext = &physicalDeviceDriverProperties;
+        vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
+    }
+    if (physicalDeviceProperties.apiVersion >= VK_API_VERSION_1_1
+            || isDeviceExtensionSupported(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME)
+            || isDeviceExtensionSupported(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME)) {
+        physicalDeviceIDProperties = {};
+        physicalDeviceIDProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES;
+        VkPhysicalDeviceProperties2 deviceProperties2 = {};
+        deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        deviceProperties2.pNext = &physicalDeviceIDProperties;
         vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
     }
 

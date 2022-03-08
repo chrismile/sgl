@@ -80,7 +80,7 @@ public:
     /// Use VK_NULL_HANDLE to reset the custom command buffer.
     void setCustomCommandBuffer(VkCommandBuffer commandBuffer, bool useGraphicsQueue = true);
     void resetCustomCommandBuffer();
-    void pushCommandBuffer(sgl::vk::CommandBufferPtr& commandBuffer);
+    void pushCommandBuffer(const sgl::vk::CommandBufferPtr& commandBuffer);
     std::vector<sgl::vk::CommandBufferPtr> getFrameCommandBuffers();
     /// Submits all previously queued work to the GPU and syncs with the CPU.
     void syncWithCpu();
