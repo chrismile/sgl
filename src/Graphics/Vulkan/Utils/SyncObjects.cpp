@@ -32,6 +32,7 @@
 #include <dlfcn.h>
 #include <unistd.h>
 #elif defined(_WIN32)
+#define NOMINMAX
 #include <windows.h>
 #include <vulkan/vulkan_win32.h>
 #endif
@@ -126,7 +127,15 @@ void Semaphore::importD3D12SharedResourceHandle(HANDLE resourceHandle) {
         importSemaphoreWin32HandleInfo.flags = VK_SEMAPHORE_IMPORT_TEMPORARY_BIT;
     }
 
-    if (vkImportSemaphoreWin32HandleKHR(
+    auto _vkImportSemaphoreWin32HandleKHR = (PFN_vkImportSemaphoreWin32HandleKHR)vkGetDeviceProcAddr(
+            device->getVkDevice(), "vkImportSemaphoreWin32HandleKHR");
+    if (!_vkImportSemaphoreWin32HandleKHR) {
+        Logfile::get()->throwError(
+                "Error in Semaphore::importD3D12SharedResourceHandle: "
+                "vkImportSemaphoreWin32HandleKHR was not found!");
+    }
+
+    if (_vkImportSemaphoreWin32HandleKHR(
             device->getVkDevice(), &importSemaphoreWin32HandleInfo) != VK_SUCCESS) {
         sgl::Logfile::get()->throwError(
                 "Error in Semaphore::importD3D12SharedResourceHandle: "

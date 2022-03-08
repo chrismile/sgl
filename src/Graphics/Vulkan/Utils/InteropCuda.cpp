@@ -32,6 +32,7 @@
 #include <dlfcn.h>
 #include <unistd.h>
 #elif defined(_WIN32)
+#define NOMINMAX
 #include <windows.h>
 #include <vulkan/vulkan_win32.h>
 #endif

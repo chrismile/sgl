@@ -37,6 +37,7 @@
 #include "Buffer.hpp"
 
 #ifdef _WIN32
+#define NOMINMAX
 #include <windows.h>
 #include <vulkan/vulkan_win32.h>
 #endif
@@ -159,10 +160,18 @@ void Buffer::createFromD3D12SharedResourceHandle(
                 "Error in Buffer::createFromD3D12SharedResourceHandle: Failed to create a buffer!");
     }
 
+    auto _vkGetMemoryWin32HandlePropertiesKHR = (PFN_vkGetMemoryWin32HandlePropertiesKHR)vkGetDeviceProcAddr(
+            device->getVkDevice(), "vkGetMemoryWin32HandlePropertiesKHR");
+    if (!_vkGetMemoryWin32HandlePropertiesKHR) {
+        Logfile::get()->throwError(
+                "Error in Buffer::createFromD3D12SharedResourceHandle: "
+                "vkGetMemoryWin32HandlePropertiesKHR was not found!");
+    }
+
     VkMemoryWin32HandlePropertiesKHR memoryWin32HandleProperties{};
     memoryWin32HandleProperties.sType = VK_STRUCTURE_TYPE_MEMORY_WIN32_HANDLE_PROPERTIES_KHR;
     memoryWin32HandleProperties.memoryTypeBits = 0xcdcdcdcd;
-    if (vkGetMemoryWin32HandlePropertiesKHR(
+    if (_vkGetMemoryWin32HandlePropertiesKHR(
             device->getVkDevice(), VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_RESOURCE_BIT, resourceHandle,
             &memoryWin32HandleProperties) != VK_SUCCESS) {
         Logfile::get()->throwError(
