@@ -28,6 +28,14 @@
 
 #include "SyncObjects.hpp"
 
+#if defined(__linux__)
+#include <dlfcn.h>
+#include <unistd.h>
+#elif defined(_WIN32)
+#include <windows.h>
+#include <vulkan/vulkan_win32.h>
+#endif
+
 namespace sgl { namespace vk {
 
 Semaphore::Semaphore(
@@ -38,6 +46,18 @@ Semaphore::Semaphore(
 
 Semaphore::~Semaphore() {
     vkDestroySemaphore(device->getVkDevice(), semaphoreVk, nullptr);
+
+#ifdef _WIN32
+    if (handle != nullptr) {
+        CloseHandle(handle);
+        handle = nullptr;
+    }
+#else
+    if (fileDescriptor != -1) {
+        close(fileDescriptor);
+        fileDescriptor = -1;
+    }
+#endif
 }
 
 void Semaphore::_initialize(
@@ -91,6 +111,30 @@ uint64_t Semaphore::getSemaphoreCounterValue() {
     vkGetSemaphoreCounterValue(device->getVkDevice(), semaphoreVk, &value);
     return value;
 }
+
+#ifdef _WIN32
+void Semaphore::importD3D12SharedResourceHandle(HANDLE resourceHandle) {
+    this->handle = resourceHandle;
+
+    VkImportSemaphoreWin32HandleInfoKHR importSemaphoreWin32HandleInfo{};
+    importSemaphoreWin32HandleInfo.sType = VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHR;
+    importSemaphoreWin32HandleInfo.semaphore = semaphore;
+    importSemaphoreWin32HandleInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_D3D12_FENCE_BIT;
+    importSemaphoreWin32HandleInfo.handle = resourceHandle;
+
+    if (semaphoreType == VK_SEMAPHORE_TYPE_TIMELINE) {
+        importSemaphoreWin32HandleInfo.flags = VK_SEMAPHORE_IMPORT_TEMPORARY_BIT;
+    }
+
+    if (vkImportSemaphoreWin32HandleKHR(
+            device->getVkDevice(), &importSemaphoreWin32HandleInfo) != VK_SUCCESS) {
+        sgl::Logfile::get()->throwError(
+                "Error in Semaphore::importD3D12SharedResourceHandle: "
+                "Could not import the Direct3D 12 fence shared resource.");
+    }
+}
+#endif
+
 
 
 Fence::Fence(Device* device, VkFenceCreateFlags fenceCreateFlags) : device(device) {

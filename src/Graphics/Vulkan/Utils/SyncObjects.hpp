@@ -32,6 +32,10 @@
 #include <Utils/File/Logfile.hpp>
 #include "Device.hpp"
 
+#ifdef _WIN32
+typedef void* HANDLE;
+#endif
+
 namespace sgl { namespace vk {
 
 class Semaphore;
@@ -66,6 +70,18 @@ public:
     inline void setWaitSemaphoreValue(uint64_t value) { waitSemaphoreValue = value; }
     inline void setSignalSemaphoreValue(uint64_t value) { signalSemaphoreValue = value; }
 
+#ifdef _WIN32
+    /**
+     * Imports a Direct3D 12 fence shared resource handle. The object will take ownership of the handle and close it on
+     * destruction. Below, an example of how to create the shared handle can be found.
+     *
+     * HANDLE resourceHandle;
+     * std::wstring sharedHandleNameString = std::wstring(L"Local\\D3D12ResourceHandle") + std::to_wstring(resourceIdx);
+     * ID3D12Device::CreateSharedHandle(dxObject, nullptr, GENERIC_ALL, sharedHandleNameString.data(), &resourceHandle);
+     */
+    void importD3D12SharedResourceHandle(HANDLE resourceHandle);
+#endif
+
 protected:
     Semaphore() = default;
     void _initialize(
@@ -80,6 +96,12 @@ protected:
     // --- Timeline semaphore data ---
     uint64_t waitSemaphoreValue = 0;
     uint64_t signalSemaphoreValue = 0;
+
+#ifdef _WIN32
+    HANDLE handle = nullptr;
+#else
+    int fileDescriptor = -1;
+#endif
 };
 
 class DLL_OBJECT Fence {

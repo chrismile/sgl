@@ -39,6 +39,10 @@
 #include "../libs/volk/volk.h"
 #include "../libs/VMA/vk_mem_alloc.h"
 
+#ifdef _WIN32
+typedef void* HANDLE;
+#endif
+
 #if defined(SUPPORT_OPENGL) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
 typedef unsigned int GLuint;
 namespace sgl {

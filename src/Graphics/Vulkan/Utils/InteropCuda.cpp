@@ -248,15 +248,6 @@ SemaphoreVkCudaDriverApiInterop::SemaphoreVkCudaDriverApiInterop(
 SemaphoreVkCudaDriverApiInterop::~SemaphoreVkCudaDriverApiInterop() {
     CUresult cuResult = g_cudaDeviceApiFunctionTable.cuDestroyExternalSemaphore(cuExternalSemaphore);
     checkCUresult(cuResult, "Error in cuDestroyExternalSemaphore: ");
-
-#ifdef _WIN32
-    CloseHandle(handle);
-#else
-    if (fileDescriptor != -1) {
-        close(fileDescriptor);
-        fileDescriptor = -1;
-    }
-#endif
 }
 
 void SemaphoreVkCudaDriverApiInterop::signalSemaphoreCuda(CUstream stream, unsigned long long timelineValue) {

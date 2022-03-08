@@ -107,12 +107,6 @@ public:
 
 private:
     CUexternalSemaphore cuExternalSemaphore = {};
-
-#ifdef _WIN32
-    HANDLE handle = nullptr;
-#else
-    int fileDescriptor = -1;
-#endif
 };
 
 typedef std::shared_ptr<SemaphoreVkCudaDriverApiInterop> SemaphoreVkCudaDriverApiInteropPtr;
