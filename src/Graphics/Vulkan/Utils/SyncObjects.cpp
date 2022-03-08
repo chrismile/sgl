@@ -119,7 +119,7 @@ void Semaphore::importD3D12SharedResourceHandle(HANDLE resourceHandle) {
 
     VkImportSemaphoreWin32HandleInfoKHR importSemaphoreWin32HandleInfo{};
     importSemaphoreWin32HandleInfo.sType = VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHR;
-    importSemaphoreWin32HandleInfo.semaphore = semaphore;
+    importSemaphoreWin32HandleInfo.semaphore = semaphoreVk;
     importSemaphoreWin32HandleInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_D3D12_FENCE_BIT;
     importSemaphoreWin32HandleInfo.handle = resourceHandle;
 

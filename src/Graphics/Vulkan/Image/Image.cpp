@@ -225,7 +225,7 @@ void Image::createFromD3D12SharedResourceHandle(HANDLE resourceHandle, const Ima
 
     VkMemoryDedicatedAllocateInfo memoryDedicatedAllocateInfo{};
     memoryDedicatedAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO;
-    memoryDedicatedAllocateInfo.buffer = buffer;
+    memoryDedicatedAllocateInfo.image = image;
 
     VkImportMemoryWin32HandleInfoKHR importMemoryWin32HandleInfo{};
     importMemoryWin32HandleInfo.sType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR;
