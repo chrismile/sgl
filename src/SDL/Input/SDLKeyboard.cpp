@@ -31,8 +31,7 @@
 
 namespace sgl {
 
-SDLKeyboard::SDLKeyboard()
-{
+SDLKeyboard::SDLKeyboard() {
     // Get the number of keys
     SDL_GetKeyboardState(&numKeys);
 
@@ -44,14 +43,12 @@ SDLKeyboard::SDLKeyboard()
     modifier = KMOD_NONE;
 }
 
-SDLKeyboard::~SDLKeyboard()
-{
+SDLKeyboard::~SDLKeyboard() {
     delete[] oldKeystate;
     delete[] keystate;
 }
 
-void SDLKeyboard::update(float dt)
-{
+void SDLKeyboard::update(float dt) {
     // Copy the the keystates to the oldKeystate array
     memcpy((void*)oldKeystate, keystate, numKeys);
 
@@ -63,53 +60,43 @@ void SDLKeyboard::update(float dt)
 
 
 // Keyboard keys
-bool SDLKeyboard::isKeyDown(int button)
-{
+bool SDLKeyboard::isKeyDown(int button) {
     return keystate[SDL_GetScancodeFromKey(button)];
 }
 
-bool SDLKeyboard::isKeyUp(int button)
-{
+bool SDLKeyboard::isKeyUp(int button) {
     return !keystate[SDL_GetScancodeFromKey(button)];
 }
 
-bool SDLKeyboard::keyPressed(int button)
-{
+bool SDLKeyboard::keyPressed(int button) {
     return keystate[SDL_GetScancodeFromKey(button)] && !oldKeystate[SDL_GetScancodeFromKey(button)];
 }
 
-bool SDLKeyboard::keyReleased(int button)
-{
+bool SDLKeyboard::keyReleased(int button) {
     return !keystate[SDL_GetScancodeFromKey(button)] && oldKeystate[SDL_GetScancodeFromKey(button)];
 }
 
-bool SDLKeyboard::isScancodeDown(int button)
-{
+bool SDLKeyboard::isScancodeDown(int button) {
     return keystate[button];
 }
 
-bool SDLKeyboard::isScancodeUp(int button)
-{
+bool SDLKeyboard::isScancodeUp(int button) {
     return !keystate[button];
 }
 
-bool SDLKeyboard::scancodePressed(int button)
-{
+bool SDLKeyboard::scancodePressed(int button) {
     return keystate[button] && !oldKeystate[button];
 }
 
-bool SDLKeyboard::scancodeReleased(int button)
-{
+bool SDLKeyboard::scancodeReleased(int button) {
     return !keystate[button] && oldKeystate[button];
 }
 
-int SDLKeyboard::getNumKeys()
-{
+int SDLKeyboard::getNumKeys() {
     return numKeys;
 }
 
-SDL_Keymod SDLKeyboard::getModifier()
-{
+SDL_Keymod SDLKeyboard::getModifier() {
     return modifier;
 }
 
@@ -121,13 +108,11 @@ const char *SDLKeyboard::getKeyBuffer() const
     return utf8KeyBuffer.c_str();
 }
 
-void SDLKeyboard::clearKeyBuffer()
-{
+void SDLKeyboard::clearKeyBuffer() {
     utf8KeyBuffer = "";
 }
 
-void SDLKeyboard::addToKeyBuffer(const char *str)
-{
+void SDLKeyboard::addToKeyBuffer(const char *str) {
     utf8KeyBuffer += str;
 }
 

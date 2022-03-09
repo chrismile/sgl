@@ -32,14 +32,12 @@
 
 namespace sgl {
 
-SubMesh::SubMesh(ShaderProgramPtr &shader)
-{
+SubMesh::SubMesh(ShaderProgramPtr &shader) {
     renderData = ShaderManager->createShaderAttributes(shader);
     material = MaterialPtr(new Material());
 }
 
-SubMesh::SubMesh(bool textured)
-{
+SubMesh::SubMesh(bool textured) {
     ShaderProgramPtr shader;
     if (!textured) {
         shader = ShaderManager->getShaderProgram({"Mesh.Vertex.Plain", "Mesh.Fragment.Plain"});
@@ -50,8 +48,7 @@ SubMesh::SubMesh(bool textured)
     material = std::make_shared<Material>();
 }
 
-void SubMesh::render()
-{
+void SubMesh::render() {
     renderData->getShaderProgram()->setUniform("color", material->color);
     if (material->texture) {
         renderData->getShaderProgram()->setUniform("albedoTexture", material->texture);
@@ -59,8 +56,7 @@ void SubMesh::render()
     Renderer->render(renderData);
 }
 
-void SubMesh::createVertices(VertexPlain *vertices, size_t numVertices)
-{
+void SubMesh::createVertices(VertexPlain *vertices, size_t numVertices) {
     GeometryBufferPtr geometryBuffer = Renderer->createGeometryBuffer(sizeof(VertexPlain)*numVertices, vertices);
     renderData->addGeometryBuffer(geometryBuffer, "vertexPosition", ATTRIB_FLOAT, 3);
 
@@ -82,8 +78,7 @@ void SubMesh::createVertices(VertexPlain *vertices, size_t numVertices)
     aabb.max = glm::vec3(maxValues.x, maxValues.y, 0.0f);
 }
 
-void SubMesh::createVertices(VertexTextured *vertices, size_t numVertices)
-{
+void SubMesh::createVertices(VertexTextured *vertices, size_t numVertices) {
     int stride = sizeof(glm::vec3) + sizeof(glm::vec2);
     GeometryBufferPtr geometryBuffer = Renderer->createGeometryBuffer(sizeof(VertexTextured)*numVertices, vertices);
     renderData->addGeometryBuffer(geometryBuffer, "vertexPosition", ATTRIB_FLOAT, 3, 0, stride);
@@ -108,20 +103,17 @@ void SubMesh::createVertices(VertexTextured *vertices, size_t numVertices)
 }
 
 
-void SubMesh::createIndices(uint8_t *indices, size_t numIndices)
-{
+void SubMesh::createIndices(uint8_t *indices, size_t numIndices) {
     GeometryBufferPtr geometryBuffer = Renderer->createGeometryBuffer(sizeof(uint8_t)*numIndices, (void*)indices, INDEX_BUFFER);
     renderData->setIndexGeometryBuffer(geometryBuffer, ATTRIB_UNSIGNED_BYTE);
 }
 
-void SubMesh::createIndices(uint16_t *indices, size_t numIndices)
-{
+void SubMesh::createIndices(uint16_t *indices, size_t numIndices) {
     GeometryBufferPtr geometryBuffer = Renderer->createGeometryBuffer(sizeof(uint16_t)*numIndices, (void*)indices, INDEX_BUFFER);
     renderData->setIndexGeometryBuffer(geometryBuffer, ATTRIB_UNSIGNED_SHORT);
 }
 
-void SubMesh::createIndices(uint32_t *indices, size_t numIndices)
-{
+void SubMesh::createIndices(uint32_t *indices, size_t numIndices) {
     GeometryBufferPtr geometryBuffer = Renderer->createGeometryBuffer(sizeof(uint32_t)*numIndices, (void*)indices, INDEX_BUFFER);
     renderData->setIndexGeometryBuffer(geometryBuffer, ATTRIB_UNSIGNED_INT);
 }

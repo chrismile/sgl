@@ -51,8 +51,7 @@
 
 namespace sgl {
 
-AppLogic::AppLogic() : framerateSmoother(16)
-{
+AppLogic::AppLogic() : framerateSmoother(16) {
     Timer->setFixedPhysicsFPS(true, 30);
     Timer->setFPSLimit(true, 60);
     running = true;
@@ -71,8 +70,7 @@ AppLogic::AppLogic() : framerateSmoother(16)
 #endif
 }
 
-AppLogic::~AppLogic()
-{
+AppLogic::~AppLogic() {
 #ifdef SUPPORT_VULKAN
     if (sgl::AppSettings::get()->getPrimaryDevice()) {
         delete rendererVk;
@@ -81,13 +79,11 @@ AppLogic::~AppLogic()
 #endif
 }
 
-void AppLogic::saveScreenshot(const std::string &filename)
-{
+void AppLogic::saveScreenshot(const std::string &filename) {
     AppSettings::get()->getMainWindow()->saveScreenshot(filename.c_str());
 }
 
-void AppLogic::makeScreenshot()
-{
+void AppLogic::makeScreenshot() {
     std::string filename = FileUtils::get()->getConfigDirectory() + "Screenshot";
     bool nonExistent = false;
     for (int i = 1; i < 999; ++i) {
@@ -103,8 +99,7 @@ void AppLogic::makeScreenshot()
     screenshot = false;
 }
 
-void AppLogic::run()
-{
+void AppLogic::run() {
     Window *window = AppSettings::get()->getMainWindow();
     // Used for only calling "updateFixed(...)" at fixed update rate
     uint64_t accumulatedTimeFixed = 0;
@@ -195,8 +190,7 @@ void AppLogic::run()
     Logfile::get()->write("INFO: End of main loop.", BLUE);
 }
 
-void AppLogic::updateBase(float dt)
-{
+void AppLogic::updateBase(float dt) {
     EventManager::get()->update();
     if (Keyboard->keyPressed(SDLK_PRINTSCREEN)
             || ((Keyboard->getModifier()&KMOD_CTRL) && Keyboard->keyPressed(SDLK_p))) {
@@ -208,8 +202,7 @@ void AppLogic::updateBase(float dt)
     }
 }
 
-void AppLogic::setPrintFPS(bool enabled)
-{
+void AppLogic::setPrintFPS(bool enabled) {
     printFPS = enabled;
 }
 

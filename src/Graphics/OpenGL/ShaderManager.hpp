@@ -33,8 +33,7 @@
 
 namespace sgl {
 
-class DLL_OBJECT ShaderManagerGL : public ShaderManagerInterface
-{
+class DLL_OBJECT ShaderManagerGL : public ShaderManagerInterface {
 public:
     ShaderManagerGL();
     ~ShaderManagerGL() override;
@@ -51,8 +50,7 @@ public:
      * different rendering technique with "addPreprocessorDefine" after already loading a certain shader.
      * Already loaded shaders will stay intact thanks to reference counting.
      */
-    void invalidateShaderCache() override
-    {
+    void invalidateShaderCache() override {
         assetMap.clear();
         effectSources.clear();
     }
@@ -64,19 +62,19 @@ public:
     // --- Compute shader interface ---
 
     /// Array containing maximum work-group count in x,y,z that can be passed to glDispatchCompute.
-    virtual const std::vector<int> &getMaxComputeWorkGroupCount() override;
+    const std::vector<int> &getMaxComputeWorkGroupCount() override;
     /// Array containing maximum local work-group size (defined in shader with layout qualifier).
-    virtual const std::vector<int> &getMaxComputeWorkGroupSize() override;
+    const std::vector<int> &getMaxComputeWorkGroupSize() override;
     /// Maximum number of work group units of a local work group, e.g. 1024 local work items.
-    virtual int getMaxWorkGroupInvocations() override;
+    int getMaxWorkGroupInvocations() override;
 
 
     // --- Shader program resources ---
 
     // Binding points are shared by all shader programs (specified in shader by "layout(binding = x) ...").
-    virtual void bindUniformBuffer(int binding, const GeometryBufferPtr &geometryBuffer) override;
-    virtual void bindAtomicCounterBuffer(int binding, const GeometryBufferPtr &geometryBuffer) override;
-    virtual void bindShaderStorageBuffer(int binding, const GeometryBufferPtr &geometryBuffer) override;
+    void bindUniformBuffer(int binding, const GeometryBufferPtr &geometryBuffer) override;
+    void bindAtomicCounterBuffer(int binding, const GeometryBufferPtr &geometryBuffer) override;
+    void bindShaderStorageBuffer(int binding, const GeometryBufferPtr &geometryBuffer) override;
 
 
 protected:

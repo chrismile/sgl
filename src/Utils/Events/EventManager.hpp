@@ -62,13 +62,13 @@ public:
     EventManager();
     void update();
 
-    //! Creates a listener
+    /// Creates a listener
     ListenerToken addListener(uint32_t eventType, const EventFunc& func);
     void removeListener(uint32_t eventType, ListenerToken token);
 
-    //! Event function is called instantly
+    /// Event function is called instantly
     void triggerEvent(const EventPtr& event);
-    //! Adds an event to the event queue, which is updated by calling the function "update"
+    /// Adds an event to the event queue, which is updated by calling the function "update"
     void queueEvent(const EventPtr& event);
     //bool threadSafeQueueEvent(const EventDataPtr &event);
 

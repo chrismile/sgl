@@ -41,21 +41,19 @@ namespace sgl {
 
 class ShaderProgramGL;
 
-// Bound in all shaders to binding 0
-struct DLL_OBJECT MatrixBlock
-{
-    glm::mat4 mMatrix; // Model matrix
-    glm::mat4 vMatrix; // View matrix
-    glm::mat4 pMatrix; // Projection matrix
-    glm::mat4 mvpMatrix; // Model-view-projection matrix
+/// Bound in all shaders to binding 0
+struct DLL_OBJECT MatrixBlock {
+    glm::mat4 mMatrix; ///< Model matrix
+    glm::mat4 vMatrix; ///< View matrix
+    glm::mat4 pMatrix; ///< Projection matrix
+    glm::mat4 mvpMatrix; ///< Model-view-projection matrix
 };
 
-class DLL_OBJECT RendererGL : public RendererInterface
-{
+class DLL_OBJECT RendererGL : public RendererInterface {
 public:
     RendererGL();
 
-    //! Outputs e.g. "glGetError"
+    /// Outputs e.g. "glGetError"
     void errorCheck() override;
     // The functions below only work in an OpenGL debug context
     /// Sets a callback function that is called (synchronously) when an error in the OpenGL context occurs
@@ -64,7 +62,7 @@ public:
     /// Set how much error reporting the program wants
     void setDebugVerbosity(DebugVerbosity verbosity) override;
 
-    //! Creation functions
+    /// Creation functions
     FramebufferObjectPtr createFBO() override;
     RenderbufferObjectPtr createRBO(
             int _width, int _height, RenderbufferType rboType, int _samples = 0) override;
@@ -73,7 +71,7 @@ public:
     GeometryBufferPtr createGeometryBuffer(
             size_t size, void *data, BufferType type = VERTEX_BUFFER, BufferUse bufferUse = BUFFER_STATIC) override;
 
-    //! Functions for managing viewports/render targets
+    /// Functions for managing viewports/render targets
     void bindFBO(FramebufferObjectPtr _fbo, bool force = false) override;
     void unbindFBO(bool force = false) override;
     FramebufferObjectPtr getFBO() override;
@@ -82,7 +80,7 @@ public:
     void setCamera(CameraPtr _viewport, bool force = false) override;
     CameraPtr getCamera() override;
 
-    //! State changes
+    /// State changes
     void bindTexture(const TexturePtr &tex, unsigned int textureUnit = 0) override;
     void setBlendMode(BlendMode mode) override;
     void setModelMatrix(const glm::mat4 &matrix) override;
@@ -91,7 +89,7 @@ public:
     void setLineWidth(float width) override;
     void setPointSize(float size) override;
 
-    //! Stencil buffer
+    /// Stencil buffer
     void enableStencilTest() override;
     void disableStencilTest() override;
     void setStencilMask(unsigned int mask) override;
@@ -99,24 +97,24 @@ public:
     void setStencilFunc(unsigned int func, int ref, unsigned int mask) override;
     void setStencilOp(unsigned int sfail, unsigned int dpfail, unsigned int dppass) override;
 
-    //! Rendering
+    /// Rendering
     void render(ShaderAttributesPtr &shaderAttributes) override;
-    //! Rendering with overwritten shader (e.g. for multi-pass rendering without calling copy()).
+    /// Rendering with overwritten shader (e.g. for multi-pass rendering without calling copy()).
     void render(ShaderAttributesPtr &shaderAttributes, ShaderProgramPtr &passShader) override;
 
-    //! For debugging purposes
+    /// For debugging purposes
     void setPolygonMode(unsigned int polygonMode) override;
-    //! For debugging purposes
+    /// For debugging purposes
     void enableWireframeMode(const Color &_wireframeColor = Color(255, 255, 255)) override;
-    //! For debugging purposes
+    /// For debugging purposes
     void disableWireframeMode() override;
 
     // Utility functions
     void blitTexture(TexturePtr &tex, const AABB2 &renderRect, bool mirrored = false) override;
     void blitTexture(TexturePtr &tex, const AABB2 &renderRect, ShaderProgramPtr &shader, bool mirrored = false) override;
-    //! Just returns tex if not multisampled
+    /// Just returns tex if not multisampled
     TexturePtr resolveMultisampledTexture(TexturePtr &tex) override;
-    //! Texture needs GL_LINEAR filter for best results!
+    /// Texture needs GL_LINEAR filter for best results!
     void blurTexture(TexturePtr &tex) override;
     TexturePtr getScaledTexture(TexturePtr &tex, Point2 newSize) override;
     void blitTextureFXAAAntialiased(TexturePtr &tex) override;
@@ -146,7 +144,7 @@ public:
     glm::mat4 modelMatrix, viewMatrix, projectionMatrix, mvpMatrix;
     float lineWidth, pointSize;
     bool wireframeMode;
-    //! https://www.khronos.org/opengl/wiki/Debug_Output
+    /// https://www.khronos.org/opengl/wiki/Debug_Output
     bool debugOutputExtEnabled;
     Color wireframeColor;
     BlendMode blendMode;

@@ -40,20 +40,21 @@
 
 namespace sgl {
 
-/*! Note: https://www.opengl.org/sdk/docs/man3/xhtml/glTexImage2DMultisample.xml
- *   -> "glTexImage2DMultisample is available only if the GL version is 3.2 or greater."
- * You can't use multisampled textures on systems with GL < 3.2! */
-class DLL_OBJECT FramebufferObjectGL : public FramebufferObject
-{
+/**
+ * Note: https://www.opengl.org/sdk/docs/man3/xhtml/glTexImage2DMultisample.xml
+ * -> "glTexImage2DMultisample is available only if the GL version is 3.2 or greater."
+ * You can't use multisampled textures on systems with GL < 3.2!
+ */
+class DLL_OBJECT FramebufferObjectGL : public FramebufferObject {
 public:
     FramebufferObjectGL();
-    ~FramebufferObjectGL();
-    virtual bool bindTexture(TexturePtr texture, FramebufferAttachment attachment = COLOR_ATTACHMENT);
-    virtual bool bindRenderbuffer(RenderbufferObjectPtr renderbuffer, FramebufferAttachment attachment = DEPTH_ATTACHMENT);
-    virtual int getWidth() { return width; }
-    virtual int getHeight() { return height; }
-    virtual unsigned int _bindInternal();
-    virtual unsigned int getID() { return id; }
+    ~FramebufferObjectGL() override;
+    bool bindTexture(TexturePtr texture, FramebufferAttachment attachment = COLOR_ATTACHMENT) override;
+    bool bindRenderbuffer(RenderbufferObjectPtr renderbuffer, FramebufferAttachment attachment = DEPTH_ATTACHMENT) override;
+    int getWidth() override { return width; }
+    int getHeight() override { return height; }
+    unsigned int _bindInternal() override;
+    unsigned int getID() override { return id; }
 
 protected:
     virtual bool checkStatus();
@@ -69,13 +70,13 @@ class DLL_OBJECT FramebufferObjectGL2 : public FramebufferObjectGL
 {
 public:
     FramebufferObjectGL2();
-    ~FramebufferObjectGL2();
-    virtual bool bindTexture(TexturePtr texture, FramebufferAttachment attachment = COLOR_ATTACHMENT);
-    virtual bool bindRenderbuffer(RenderbufferObjectPtr renderbuffer, FramebufferAttachment attachment = DEPTH_ATTACHMENT);
-    virtual unsigned int _bindInternal();
+    ~FramebufferObjectGL2() override;
+    bool bindTexture(TexturePtr texture, FramebufferAttachment attachment = COLOR_ATTACHMENT) override;
+    bool bindRenderbuffer(RenderbufferObjectPtr renderbuffer, FramebufferAttachment attachment = DEPTH_ATTACHMENT) override;
+    unsigned int _bindInternal() override;
 
 protected:
-    bool checkStatus();
+    bool checkStatus() override;
 };
 
 }

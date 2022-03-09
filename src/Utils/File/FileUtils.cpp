@@ -51,13 +51,11 @@
 
 namespace sgl {
 
-void FileUtils::initialize(const std::string &_appName, int _argc, char *_argv[])
-{
+void FileUtils::initialize(const std::string &_appName, int _argc, char *_argv[]) {
     initialize(_appName, _argc, const_cast<const char**>(_argv));
 }
 
-void FileUtils::initialize(const std::string &_appName, int _argc, const char *_argv[])
-{
+void FileUtils::initialize(const std::string &_appName, int _argc, const char *_argv[]) {
     argc = _argc;
     argv = _argv;
     execDir = argv[0];
@@ -119,21 +117,18 @@ void FileUtils::initialize(const std::string &_appName, int _argc, const char *_
 }
 
 // Check whether file has certain extension
-bool FileUtils::hasExtension(const char *fileString, const char *extension)
-{
+bool FileUtils::hasExtension(const char *fileString, const char *extension) {
     std::string lowerFilename = boost::to_lower_copy(std::string(fileString));
     return boost::ends_with(lowerFilename, extension);
 }
 
-std::string FileUtils::filenameWithoutExtension(const std::string &filename)
-{
+std::string FileUtils::filenameWithoutExtension(const std::string &filename) {
     size_t dotPos = filename.find_last_of(".");
     return filename.substr(0, dotPos);
 }
 
 // /home/user/Info.txt -> Info.txt
-std::string FileUtils::getPureFilename(const std::string &path)
-{
+std::string FileUtils::getPureFilename(const std::string &path) {
     for (int i = (int)path.size() - 2; i >= 0; --i) {
         if (path.at(i) == '/' || path.at(i) == '\\') {
             return path.substr(i+1, path.size()-i-1);
@@ -143,8 +138,7 @@ std::string FileUtils::getPureFilename(const std::string &path)
 }
 
 // Info.txt -> Info
-std::string FileUtils::removeExtension(const std::string &path)
-{
+std::string FileUtils::removeExtension(const std::string &path) {
     for (int i = (int)path.size() - 1; i >= 0; --i) {
         if (path.at(i) == '.') {
             return path.substr(0, i);
@@ -154,8 +148,7 @@ std::string FileUtils::removeExtension(const std::string &path)
 }
 
 // "/home/user/Info.txt" -> "/home/user/"
-std::string FileUtils::getPathToFile(const std::string &path)
-{
+std::string FileUtils::getPathToFile(const std::string &path) {
     for (int i = int(path.size()) - 1; i >= 0; --i) {
         if (path.at(i) == '/' || path.at(i) == '\\') {
             return path.substr(0, i+1);
@@ -165,8 +158,7 @@ std::string FileUtils::getPathToFile(const std::string &path)
 }
 
 
-std::list<std::string> FileUtils::getFilesInDirectoryList(const std::string &dirPath)
-{
+std::list<std::string> FileUtils::getFilesInDirectoryList(const std::string &dirPath) {
     boost::filesystem::path dir(dirPath);
     if (!boost::filesystem::exists(dir)) {
         Logfile::get()->writeError(std::string() + "FileUtils::getFilesInDirectory: Path \""
@@ -194,8 +186,7 @@ std::list<std::string> FileUtils::getFilesInDirectoryList(const std::string &dir
 }
 
 
-std::vector<std::string> FileUtils::getFilesInDirectoryVector(const std::string &dirPath)
-{
+std::vector<std::string> FileUtils::getFilesInDirectoryVector(const std::string &dirPath) {
     boost::filesystem::path dir(dirPath);
     if (!boost::filesystem::exists(dir)) {
         Logfile::get()->writeError(std::string() + "FileUtils::getFilesInDirectoryAsVector: Path \""
@@ -223,8 +214,7 @@ std::vector<std::string> FileUtils::getFilesInDirectoryVector(const std::string 
 }
 
 
-std::vector<std::string> FileUtils::getPathAsList(const std::string &dirPath)
-{
+std::vector<std::string> FileUtils::getPathAsList(const std::string &dirPath) {
     std::vector<std::string> files;
     if (dirPath.size() == 0)
         return files;
@@ -254,30 +244,26 @@ std::vector<std::string> FileUtils::getPathAsList(const std::string &dirPath)
 }
 
 
-bool FileUtils::isDirectory(const std::string &dirPath)
-{
+bool FileUtils::isDirectory(const std::string &dirPath) {
     boost::filesystem::path dir(dirPath);
     if (boost::filesystem::is_directory(dir))
         return true;
     return false;
 }
 
-bool FileUtils::exists(const std::string &filePath)
-{
+bool FileUtils::exists(const std::string &filePath) {
     boost::filesystem::path dir(filePath);
     if (boost::filesystem::exists(dir))
         return true;
     return false;
 }
 
-bool FileUtils::directoryExists(const std::string &dirPath)
-{
+bool FileUtils::directoryExists(const std::string &dirPath) {
     return isDirectory(dirPath) && exists(dirPath);
 }
 
 
-void FileUtils::deleteFileEnding(std::string &path)
-{
+void FileUtils::deleteFileEnding(std::string &path) {
     if (path.size() != 0)
     {
         for (int i = int(path.size()) - 1; i >= 0; --i)
@@ -292,15 +278,13 @@ void FileUtils::deleteFileEnding(std::string &path)
 }
 
 
-void FileUtils::createDirectory(const std::string &path)
-{
+void FileUtils::createDirectory(const std::string &path) {
     boost::filesystem::path dir(path);
     boost::filesystem::create_directory(dir);
 }
 
 
-void FileUtils::ensureDirectoryExists(const std::string &path)
-{
+void FileUtils::ensureDirectoryExists(const std::string &path) {
     std::vector<std::string> directories;
     splitPath(path, directories);
     std::string currentDirectory;
@@ -324,27 +308,23 @@ void FileUtils::ensureDirectoryExists(const std::string &path)
     }
 }
 
-void FileUtils::rename(const std::string &filename, const std::string &newFilename)
-{
+void FileUtils::rename(const std::string &filename, const std::string &newFilename) {
     boost::filesystem::path file(filename);
     boost::filesystem::path newFile(newFilename);
     boost::filesystem::rename(file, newFilename);
 }
 
-bool FileUtils::removeFile(const std::string &filename)
-{
+bool FileUtils::removeFile(const std::string &filename) {
     boost::filesystem::path file(filename);
     return boost::filesystem::remove(filename);
 }
 
-bool FileUtils::removeAll(const std::string &filename)
-{
+bool FileUtils::removeAll(const std::string &filename) {
     boost::filesystem::path file(filename);
     return boost::filesystem::remove_all(filename);
 }
 
-void FileUtils::copyFileToDirectory(const std::string &sourceFile, const std::string &destinationDirectory)
-{
+void FileUtils::copyFileToDirectory(const std::string &sourceFile, const std::string &destinationDirectory) {
     if (!exists(sourceFile)) {
         std::string errorString = std::string() + "FileUtils::CopyFileToDirectory: File to copy (\" +" + sourceFile + "+ \") doesn't exist!";
         Logfile::get()->writeError(std::string() + "FileUtils::CopyFileToDirectory: File to copy (\""
@@ -368,8 +348,7 @@ void FileUtils::copyFileToDirectory(const std::string &sourceFile, const std::st
     boost::filesystem::copy_file(file, destination);
 }
 
-void FileUtils::splitPath(const std::string &path, std::list<std::string> &pathList)
-{
+void FileUtils::splitPath(const std::string &path, std::list<std::string> &pathList) {
     std::string::const_iterator it;
     std::string buffer = "";
     for (it = path.begin(); it != path.end(); it++) {
@@ -388,8 +367,7 @@ void FileUtils::splitPath(const std::string &path, std::list<std::string> &pathL
     }
 }
 
-void FileUtils::splitPath(const std::string &path, std::vector<std::string> &pathList)
-{
+void FileUtils::splitPath(const std::string &path, std::vector<std::string> &pathList) {
     std::string::const_iterator it;
     std::string buffer = "";
     for (it = path.begin(); it != path.end(); it++) {

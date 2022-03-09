@@ -51,7 +51,7 @@ class DLL_OBJECT Camera : public SceneNode {
     friend class AppSettings;
 public:
     Camera();
-    virtual ~Camera() {}
+    virtual ~Camera() = default;
     void onResolutionChanged(const EventPtr& event);
     void onResolutionChanged(const uint32_t width, const uint32_t height);
 
@@ -67,16 +67,16 @@ public:
         TOP_LEFT // Vulkan/DirectX
     };
 
-    //! Render target & viewport area
+    /// Render target & viewport area
     void setViewport(const AABB2 &_viewport) { viewport = _viewport; }
-    //! Relative coordinates
+    /// Relative coordinates
     [[nodiscard]] AABB2 getViewport() const { return viewport; }
-    //! Viewport left, top, width, height for OpenGL/DirectX
+    /// Viewport left, top, width, height for OpenGL/DirectX
     glm::ivec4 getViewportLTWH();
     void setRenderTarget(RenderTargetPtr target, bool bindFramebuffer = true);
     inline RenderTargetPtr getRenderTarget() { return renderTarget; }
 
-    //! Frustum data
+    /// Frustum data
     [[nodiscard]] inline float getNearClipDistance() const { return nearDist; }
     [[nodiscard]] inline float getFarClipDistance()  const { return farDist; }
     [[nodiscard]] inline float getFOVy()             const { return fovy; }
@@ -100,11 +100,11 @@ public:
     [[nodiscard]] inline const glm::vec3 &getLookAtLocation() const { return lookAtLocation; }
     inline void resetLookAtLocation() { lookAtLocation = {}; cameraUp = globalUp; }
 
-    //! Set projection type: Orthogonal or perspective
+    /// Set projection type: Orthogonal or perspective
     //virtual void setProjectionType(ProjectionType pt);
     //virtual void setOrthoWindow(float w, float h);
 
-    //! View & projection matrices
+    /// View & projection matrices
     inline const glm::mat4& getViewMatrix()              { updateCamera(); return modelMatrix; }
     inline const glm::mat4& getProjectionMatrix()        { updateCamera(); return projMat; }
     inline const glm::mat4& getViewProjMatrix()          { updateCamera(); return viewProjMat; }
@@ -116,7 +116,7 @@ public:
     void setLookAtViewMatrix(const glm::vec3 &cameraPos, const glm::vec3 &lookAtPos, const glm::vec3 &upDir);
     void copyState(const CameraPtr& otherCamera);
 
-    //! Get projection matrix with overwritten clip space or coordinate origins (e.g., for OpenGL/Vulkan interop).
+    /// Get projection matrix with overwritten clip space or coordinate origins (e.g., for OpenGL/Vulkan interop).
     glm::mat4 getProjectionMatrix(DepthRange customDepthRange, CoordinateOrigin customCoordinateOrigin);
     glm::mat4 getProjectionMatrixVulkan() {
         return getProjectionMatrix(
@@ -129,21 +129,21 @@ public:
                 CoordinateOrigin::BOTTOM_LEFT);
     }
 
-    //! For frustum culling
+    /// For frustum culling
     [[nodiscard]] virtual bool isVisible(const AABB3& bound) const;
     [[nodiscard]] virtual bool isVisible(const Sphere& bound) const;
     [[nodiscard]] virtual bool isVisible(const glm::vec2 &vert) const;
     [[nodiscard]] virtual bool isVisible(const glm::vec3 &vert) const;
 
-    //! AABB of a slice of the view frustum in distance planeDistance
+    /// AABB of a slice of the view frustum in distance planeDistance
     AABB2 getAABB2(float planeDistance = -1.0f);
-    //! Position of the Mouse in the plane with the given distance
+    /// Position of the Mouse in the plane with the given distance
     glm::vec2 mousePositionInPlane(float planeDistance = -1.0f);
 
 protected:
-    //! screenPos has to be in relative window coordinates [0,1]x[0,1]
+    /// screenPos has to be in relative window coordinates [0,1]x[0,1]
     Ray3 getCameraToViewportRay(const glm::vec2 &screenPos);
-    //! Calls updateFrustumPlanes
+    /// Calls updateFrustumPlanes
     void updateCamera();
     void updateFrustumPlanes();
     void invalidateFrustum() { recalcFrustum = true; }
@@ -172,7 +172,7 @@ protected:
 
     AABB2 viewport;
 
-    //! modelMatrix of Camera is view matrix
+    /// modelMatrix of Camera is view matrix
     glm::mat4 projMat, viewProjMat, inverseViewProjMat;
     AABB3 boundingBox;
     glm::vec3 worldSpaceCorners[8];

@@ -38,47 +38,46 @@
 
 namespace sgl {
 
-class DLL_OBJECT SDLWindow : public Window
-{
+class DLL_OBJECT SDLWindow : public Window {
 public:
     SDLWindow();
-    ~SDLWindow();
+    ~SDLWindow() override;
 
     /// Outputs e.g. "SDL_GetError"
-    virtual void errorCheck();
+    void errorCheck() override;
     static void errorCheckSDL();
     void errorCheckSDLCritical();
 
     /// Returns whether this window uses
-    virtual bool isDebugContext() { return windowSettings.debugContext; }
+    bool isDebugContext() override { return windowSettings.debugContext; }
 
     /// Initialize the window
-    virtual void initialize(const WindowSettings &settings, RenderSystem renderSystem);
+    void initialize(const WindowSettings &settings, RenderSystem renderSystem) override;
 
     /// Change the window attributes
     /// Try to keep resolution
-    virtual void toggleFullscreen(bool nativeFullscreen = true);
-    virtual void setWindowSize(int width, int height);
-    virtual void setWindowPosition(int x, int y);
-    virtual void serializeSettings(SettingsFile &settings);
-    virtual WindowSettings deserializeSettings(const SettingsFile &settings);
+    void toggleFullscreen(bool nativeFullscreen = true) override;
+    void setWindowSize(int width, int height) override;
+    void setWindowPosition(int x, int y) override;
+    void serializeSettings(SettingsFile &settings) override;
+    WindowSettings deserializeSettings(const SettingsFile &settings) override;
 
     /// Update the window
-    virtual void update();
-    virtual void setEventHandler(std::function<void(const SDL_Event&)> eventHandler);
+    void update() override;
+    void setEventHandler(std::function<void(const SDL_Event&)> eventHandler) override;
     /// Returns false if the game should quit
-    virtual bool processEvents();
-    virtual void clear(const Color &color = Color(0, 0, 0));
-    virtual void flip();
+    bool processEvents() override;
+    void clear(const Color &color = Color(0, 0, 0)) override;
+    void flip() override;
 
     /// Utility functions/getters for the main window attributes
-    virtual void saveScreenshot(const char *filename);
-    virtual bool isFullscreen() { return windowSettings.fullscreen; }
-    virtual int getWidth() { return windowSettings.width; }
-    virtual int getHeight() { return windowSettings.height; }
-    virtual glm::ivec2 getWindowResolution() { return glm::ivec2(windowSettings.width, windowSettings.height); }
-    virtual glm::ivec2 getWindowPosition();
-    virtual const WindowSettings& getWindowSettings() const { return windowSettings; }
+    void saveScreenshot(const char *filename) override;
+    bool isFullscreen() override { return windowSettings.fullscreen; }
+    int getWidth() override { return windowSettings.width; }
+    int getHeight() override { return windowSettings.height; }
+    glm::ivec2 getWindowResolution() override { return glm::ivec2(windowSettings.width, windowSettings.height); }
+    glm::ivec2 getWindowPosition() override;
+    [[nodiscard]] const WindowSettings& getWindowSettings() const override { return windowSettings; }
 
     /// Getting SDL specific data
     inline SDL_Window *getSDLWindow() { return sdlWindow; }
@@ -86,7 +85,7 @@ public:
     inline SDL_GLContext getGLContext() { return glContext; }
 #endif
 #ifdef SUPPORT_VULKAN
-    virtual VkSurfaceKHR getVkSurface() { return windowSurface; }
+    VkSurfaceKHR getVkSurface() override { return windowSurface; }
 #endif
 
 private:

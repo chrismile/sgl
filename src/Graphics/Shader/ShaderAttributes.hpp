@@ -85,18 +85,18 @@ typedef std::shared_ptr<ShaderAttributes> ShaderAttributesPtr;
 class ShaderProgram;
 typedef std::shared_ptr<ShaderProgram> ShaderProgramPtr;
 
-class DLL_OBJECT ShaderAttributes
-{
+class DLL_OBJECT ShaderAttributes {
     friend class ShaderProgram;
 public:
     ShaderAttributes() : vertexMode(VERTEX_MODE_TRIANGLES), indexFormat(ATTRIB_UNSIGNED_SHORT),
         numVertices(0), numIndices(0), instanceCount(0) {}
-    virtual ~ShaderAttributes() {}
+    virtual ~ShaderAttributes() = default;
 
-    //! Creates copy of attributes with other shader
-    virtual ShaderAttributesPtr copy(ShaderProgramPtr &_shader, bool ignoreMissingAttrs = true)=0;
+    /// Creates copy of attributes with other shader
+    virtual ShaderAttributesPtr copy(ShaderProgramPtr& _shader, bool ignoreMissingAttrs = true)=0;
 
-    /*! Adds a geometry buffer to the shader attributes.
+    /**
+     * Adds a geometry buffer to the shader attributes.
      * Example: "format=ATTRIB_FLOAT,components=3" e.g. means vec3 data.
      * \param geometryBuffer is the geometry buffer containing the data.
      * \param attributeName is the name of the attribute in the shader the data shall be bound to
@@ -108,22 +108,23 @@ public:
      *         A value of 0 means no instancing. Use Renderer->renderInstanced if this value is > 0.
      * \param attrConversion Should be changed for e.g. uint32_t colors that are accessed as denormalized vec4's.
      * \return True if geometry buffer was found, false otherwise.
-     *  NOTE: Instancing is only supported if OpenGL >= 3.3 or OpenGL ES >= 3.0! */
-    virtual bool addGeometryBuffer(GeometryBufferPtr &geometryBuffer, const char *attributeName,
+     * NOTE: Instancing is only supported if OpenGL >= 3.3 or OpenGL ES >= 3.0!
+     */
+    virtual bool addGeometryBuffer(GeometryBufferPtr& geometryBuffer, const char *attributeName,
                                    VertexAttributeFormat format, int components,
                                    int offset = 0, int stride = 0, int instancing = 0,
                                    VertexAttributeConversion attrConversion = ATTRIB_CONVERSION_FLOAT)=0;
     /// Same as "addGeometryBuffer", but no error message if attribute not existent in shader.
-    virtual bool addGeometryBufferOptional(GeometryBufferPtr &geometryBuffer, const char *attributeName,
+    virtual bool addGeometryBufferOptional(GeometryBufferPtr& geometryBuffer, const char *attributeName,
                                            VertexAttributeFormat format, int components,
                                            int offset = 0, int stride = 0, int instancing = 0,
                                            VertexAttributeConversion attrConversion = ATTRIB_CONVERSION_FLOAT)=0;
     /// Same as function above, but specifies layout binding position in vertex shader instead of attribute name.
-    virtual void addGeometryBuffer(GeometryBufferPtr &geometryBuffer, int attributeLocation,
+    virtual void addGeometryBuffer(GeometryBufferPtr& geometryBuffer, int attributeLocation,
                                    VertexAttributeFormat format, int components,
                                    int offset = 0, int stride = 0, int instancing = 0,
                                    VertexAttributeConversion attrConversion = ATTRIB_CONVERSION_FLOAT)=0;
-    virtual void setIndexGeometryBuffer(GeometryBufferPtr &geometryBuffer, VertexAttributeFormat format)=0;
+    virtual void setIndexGeometryBuffer(GeometryBufferPtr& geometryBuffer, VertexAttributeFormat format)=0;
     virtual void bind()=0;
     /// Pass a shader attribute in case you want to do multi-pass rendering without a call to copy().
     /// NOTE: Expects the passed shader to have the same binding point like the shader attached (is not checked!).
@@ -132,12 +133,12 @@ public:
 
     // Query information on the shader attributes
     inline void setVertexMode(VertexMode _vertexMode) { vertexMode = _vertexMode; }
-    inline VertexMode getVertexMode() const { return vertexMode; }
-    inline VertexAttributeFormat getIndexFormat() const { return indexFormat; }
-    inline size_t getNumVertices() const { return numVertices; }
-    inline size_t getNumIndices() const { return numIndices; }
-    //! Gets and sets the number of instances to be rendered (standard: No instancing/0)
-    inline size_t getInstanceCount() const { return instanceCount; }
+    [[nodiscard]] inline VertexMode getVertexMode() const { return vertexMode; }
+    [[nodiscard]] inline VertexAttributeFormat getIndexFormat() const { return indexFormat; }
+    [[nodiscard]] inline size_t getNumVertices() const { return numVertices; }
+    [[nodiscard]] inline size_t getNumIndices() const { return numIndices; }
+    /// Gets and sets the number of instances to be rendered (standard: No instancing/0)
+    [[nodiscard]] inline size_t getInstanceCount() const { return instanceCount; }
     inline void setInstanceCount(int count) { instanceCount = count; }
 
 protected:

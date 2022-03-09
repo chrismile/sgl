@@ -36,10 +36,9 @@
 namespace sgl {
 
 template <class AssetType, class AssetInfo>
-class FileManager
-{
+class FileManager {
 public:
-    virtual ~FileManager() {}
+    virtual ~FileManager() = default;
     typedef std::shared_ptr<AssetType> AssetPtr;
     typedef std::weak_ptr<AssetType> WeakAssetPtr;
     AssetPtr getAsset(AssetInfo &assetInfo);
@@ -50,8 +49,7 @@ protected:
 };
 
 template <class AssetType, class AssetInfo>
-std::shared_ptr<AssetType> FileManager<AssetType, AssetInfo>::getAsset(AssetInfo &assetInfo)
-{
+std::shared_ptr<AssetType> FileManager<AssetType, AssetInfo>::getAsset(AssetInfo &assetInfo) {
     auto it = assetMap.find(assetInfo);
 
     //! Do we need to (re-)load the asset?

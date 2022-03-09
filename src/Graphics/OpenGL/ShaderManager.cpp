@@ -48,8 +48,7 @@
 
 namespace sgl {
 
-ShaderManagerGL::ShaderManagerGL()
-{
+ShaderManagerGL::ShaderManagerGL() {
     pathPrefix = sgl::AppSettings::get()->getDataDirectory() + "Shaders/";
     indexFiles(pathPrefix);
 
@@ -75,40 +74,33 @@ ShaderManagerGL::ShaderManagerGL()
     glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &maxWorkGroupInvocations);
 }
 
-ShaderManagerGL::~ShaderManagerGL()
-{
+ShaderManagerGL::~ShaderManagerGL() {
 }
 
-const std::vector<int> &ShaderManagerGL::getMaxComputeWorkGroupCount()
-{
+const std::vector<int> &ShaderManagerGL::getMaxComputeWorkGroupCount() {
     return maxComputeWorkGroupCount;
 }
 
-const std::vector<int> &ShaderManagerGL::getMaxComputeWorkGroupSize()
-{
+const std::vector<int> &ShaderManagerGL::getMaxComputeWorkGroupSize() {
     return maxComputeWorkGroupSize;
 }
 
-int ShaderManagerGL::getMaxWorkGroupInvocations()
-{
+int ShaderManagerGL::getMaxWorkGroupInvocations() {
     return maxWorkGroupInvocations;
 }
 
-void ShaderManagerGL::unbindShader()
-{
+void ShaderManagerGL::unbindShader() {
     glUseProgram(0);
 }
 
-void ShaderManagerGL::invalidateBindings()
-{
+void ShaderManagerGL::invalidateBindings() {
     uniformBuffers.clear();
     atomicCounterBuffers.clear();
     shaderStorageBuffers.clear();
 }
 
 
-void ShaderManagerGL::bindUniformBuffer(int binding, const GeometryBufferPtr &geometryBuffer)
-{
+void ShaderManagerGL::bindUniformBuffer(int binding, const GeometryBufferPtr &geometryBuffer) {
     GLuint bufferID = static_cast<GeometryBufferGL*>(geometryBuffer.get())->getBuffer();
 
     auto it = uniformBuffers.find(binding);
@@ -123,8 +115,7 @@ void ShaderManagerGL::bindUniformBuffer(int binding, const GeometryBufferPtr &ge
     uniformBuffers[binding] = geometryBuffer;
 }
 
-void ShaderManagerGL::bindAtomicCounterBuffer(int binding, const GeometryBufferPtr &geometryBuffer)
-{
+void ShaderManagerGL::bindAtomicCounterBuffer(int binding, const GeometryBufferPtr &geometryBuffer) {
     GLuint bufferID = static_cast<GeometryBufferGL*>(geometryBuffer.get())->getBuffer();
 
     auto it = atomicCounterBuffers.find(binding);
@@ -139,8 +130,7 @@ void ShaderManagerGL::bindAtomicCounterBuffer(int binding, const GeometryBufferP
     atomicCounterBuffers[binding] = geometryBuffer;
 }
 
-void ShaderManagerGL::bindShaderStorageBuffer(int binding, const GeometryBufferPtr &geometryBuffer)
-{
+void ShaderManagerGL::bindShaderStorageBuffer(int binding, const GeometryBufferPtr &geometryBuffer) {
     GLuint bufferID = static_cast<GeometryBufferGL*>(geometryBuffer.get())->getBuffer();
 
     auto it = shaderStorageBuffers.find(binding);
@@ -159,8 +149,7 @@ void ShaderManagerGL::bindShaderStorageBuffer(int binding, const GeometryBufferP
 
 
 static bool dumpTextDebugStatic = false;
-ShaderProgramPtr ShaderManagerGL::createShaderProgram(const std::vector<std::string> &shaderIDs, bool dumpTextDebug)
-{
+ShaderProgramPtr ShaderManagerGL::createShaderProgram(const std::vector<std::string> &shaderIDs, bool dumpTextDebug) {
     ShaderProgramPtr shaderProgram = createShaderProgram();
     dumpTextDebugStatic = dumpTextDebug;
 
@@ -209,8 +198,7 @@ ShaderProgramPtr ShaderManagerGL::createShaderProgram(const std::vector<std::str
     return shaderProgram;
 }
 
-ShaderPtr ShaderManagerGL::loadAsset(ShaderInfo &shaderInfo)
-{
+ShaderPtr ShaderManagerGL::loadAsset(ShaderInfo &shaderInfo) {
     std::string id = shaderInfo.filename;
     std::string shaderString = getShaderString(id);
 
@@ -228,20 +216,17 @@ ShaderPtr ShaderManagerGL::loadAsset(ShaderInfo &shaderInfo)
     return shader;
 }
 
-ShaderPtr ShaderManagerGL::createShader(ShaderType sh)
-{
+ShaderPtr ShaderManagerGL::createShader(ShaderType sh) {
     ShaderPtr shader(new ShaderGL(sh));
     return shader;
 }
 
-ShaderProgramPtr ShaderManagerGL::createShaderProgram()
-{
+ShaderProgramPtr ShaderManagerGL::createShaderProgram() {
     ShaderProgramPtr shaderProg(new ShaderProgramGL());
     return shaderProg;
 }
 
-ShaderAttributesPtr ShaderManagerGL::createShaderAttributes(ShaderProgramPtr &shader)
-{
+ShaderAttributesPtr ShaderManagerGL::createShaderAttributes(ShaderProgramPtr &shader) {
     if (SystemGL::get()->openglVersionMinimum(3,0)) {
         return ShaderAttributesPtr(new ShaderAttributesGL3(shader));
     }
@@ -291,8 +276,7 @@ std::string ShaderManagerGL::loadHeaderFileString(const std::string &shaderName,
 }
 
 
-std::string ShaderManagerGL::getHeaderName(const std::string &lineString)
-{
+std::string ShaderManagerGL::getHeaderName(const std::string &lineString) {
     // Filename in quotes?
     auto startFilename = lineString.find("\"");
     auto endFilename = lineString.find_last_of("\"");
@@ -340,8 +324,7 @@ void ShaderManagerGL::indexFiles(const std::string &file) {
 }
 
 
-std::string ShaderManagerGL::getShaderFileName(const std::string &pureFilename)
-{
+std::string ShaderManagerGL::getShaderFileName(const std::string &pureFilename) {
     auto it = shaderFileMap.find(pureFilename);
     if (it == shaderFileMap.end()) {
         sgl::Logfile::get()->writeError("Error in ShaderManagerGL::getShaderFileName: Unknown file name \""
@@ -352,8 +335,7 @@ std::string ShaderManagerGL::getShaderFileName(const std::string &pureFilename)
 }
 
 
-std::string ShaderManagerGL::getPreprocessorDefines()
-{
+std::string ShaderManagerGL::getPreprocessorDefines() {
     std::string preprocessorStatements;
     for (auto it = preprocessorDefines.begin(); it != preprocessorDefines.end(); it++) {
         preprocessorStatements += std::string() + "#define " + it->first + " " + it->second + "\n";

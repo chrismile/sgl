@@ -34,20 +34,18 @@
 #include <map>
 #include <chrono>
 
-namespace sgl
-{
+namespace sgl {
 
 // http://www.lighthouse3d.com/tutorials/opengl-timer-query/
 // https://www.khronos.org/opengl/wiki/Query_Object
 
 // NOTE: Does not support nested start-end calls!
 
-/*!
+/**
  * TimerGL has functions for profiling OpenGL API calls.
  * The time for an event can be measured multiple frames to get the average time returned by "getTimeMS".
  */
-class DLL_OBJECT TimerGL
-{
+class DLL_OBJECT TimerGL {
 public:
     /// Calls deleteAll
     ~TimerGL();

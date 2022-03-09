@@ -36,38 +36,39 @@
 
 namespace sgl {
 
-class DLL_OBJECT SDLKeyboard : public KeyboardInterface
-{
+class DLL_OBJECT SDLKeyboard : public KeyboardInterface {
 public:
     SDLKeyboard();
-    virtual ~SDLKeyboard();
-    virtual void update(float dt);
+    ~SDLKeyboard() override;
+    void update(float dt) override;
 
-    //! Keyboard keys
-    //! SDLK - logical keys
-    virtual bool isKeyDown(int button);
-    virtual bool isKeyUp(int button);
-    virtual bool keyPressed(int button);
-    virtual bool keyReleased(int button);
-    //! SDL_SCANCODE - physical keys
-    virtual bool isScancodeDown(int button);
-    virtual bool isScancodeUp(int button);
-    virtual bool scancodePressed(int button);
-    virtual bool scancodeReleased(int button);
-    virtual int getNumKeys();
-    virtual SDL_Keymod getModifier();
+    /// Keyboard keys
+    /// SDLK - logical keys
+    bool isKeyDown(int button) override;
+    bool isKeyUp(int button) override;
+    bool keyPressed(int button) override;
+    bool keyReleased(int button) override;
+    /// SDL_SCANCODE - physical keys
+    bool isScancodeDown(int button) override;
+    bool isScancodeUp(int button) override;
+    bool scancodePressed(int button) override;
+    bool scancodeReleased(int button) override;
+    int getNumKeys() override;
+    SDL_Keymod getModifier() override;
 
-    /*! To support non-standard input methods a key buffer is needed.
-     * It contains the chars that were typed this frame as UTF-8 chars. */
-    virtual const char *getKeyBuffer() const;
-    virtual void clearKeyBuffer();
-    virtual void addToKeyBuffer(const char *str);
+    /**
+     * To support non-standard input methods a key buffer is needed.
+     * It contains the chars that were typed this frame as UTF-8 chars.
+     */
+    [[nodiscard]] const char *getKeyBuffer() const override;
+    void clearKeyBuffer() override;
+    void addToKeyBuffer(const char *str) override;
 
 public:
     int numKeys;
-    //! State of the keyboard in the current and the last frame
+    /// State of the keyboard in the current and the last frame
     Uint8 *keystate, *oldKeystate;
-    //! CTRL, SHIFT, etc.
+    /// CTRL, SHIFT, etc.
     SDL_Keymod modifier;
     std::string utf8KeyBuffer;
 };

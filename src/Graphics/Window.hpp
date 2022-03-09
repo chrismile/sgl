@@ -99,8 +99,7 @@ class SettingsFile;
 
 /// Use AppSettings (Utils/AppSettings.hpp) to create a window using the user's preferred settings
 
-class DLL_OBJECT Window
-{
+class DLL_OBJECT Window {
 public:
     virtual ~Window() = default;
     /// Outputs e.g. "SDL_GetError"

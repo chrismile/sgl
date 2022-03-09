@@ -33,8 +33,7 @@
 
 namespace sgl {
 
-class DLL_OBJECT TextureManagerGL : public TextureManagerInterface
-{
+class DLL_OBJECT TextureManagerGL : public TextureManagerInterface {
 public:
     TexturePtr createEmptyTexture(
             int width, const TextureSettings& settings = TextureSettings()) override;
@@ -55,9 +54,12 @@ public:
     /**
      * Uses glTexStorage<x>D for creating an immutable texture.
      */
-    TexturePtr createTextureStorage(int width, const TextureSettings& settings = TextureSettings());
-    TexturePtr createTextureStorage(int width, int height, const TextureSettings& settings = TextureSettings());
-    TexturePtr createTextureStorage(int width, int height, int depth, const TextureSettings& settings = TextureSettings());
+    TexturePtr createTextureStorage(
+            int width, const TextureSettings& settings = TextureSettings()) override;
+    TexturePtr createTextureStorage(
+            int width, int height, const TextureSettings& settings = TextureSettings()) override;
+    TexturePtr createTextureStorage(
+            int width, int height, int depth, const TextureSettings& settings = TextureSettings()) override;
 
     /**
      * Only for FBOs!
@@ -65,18 +67,17 @@ public:
      */
     TexturePtr createMultisampledTexture(
             int width, int height, int numSamples,
-            int internalFormat = 0x8058 /*GL_RGBA8*/, bool fixedSampleLocations = true);
-    //! bitsPerPixel must be 16, 24 or 32
+            int internalFormat = 0x8058 /*GL_RGBA8*/, bool fixedSampleLocations = true) override;
+    /// bitsPerPixel must be 16, 24 or 32
     TexturePtr createDepthTexture(
             int width, int height, DepthTextureFormat format = DEPTH_COMPONENT16,
-            int textureMinFilter = GL_LINEAR, int textureMagFilter = GL_LINEAR);
+            int textureMinFilter = GL_LINEAR, int textureMagFilter = GL_LINEAR) override;
     TexturePtr createDepthStencilTexture(
             int width, int height, DepthStencilTextureFormat format = DEPTH24_STENCIL8,
-            int textureMinFilter = GL_LINEAR, int textureMagFilter = GL_LINEAR);
+            int textureMinFilter = GL_LINEAR, int textureMagFilter = GL_LINEAR) override;
 
 protected:
-    virtual TexturePtr loadAsset(TextureInfo& textureInfo);
-    void createTextureInternal();
+    TexturePtr loadAsset(TextureInfo& textureInfo) override;
 };
 
 }

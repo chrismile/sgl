@@ -36,19 +36,16 @@
 namespace sgl {
 
 TimerInterface::TimerInterface() : currentTime(0), lastTime(0), elapsedMicroSeconds(0),
-        fpsLimitEnabled(true), fpsLimit(60), fixedPhysicsFPSEnabled(true), physicsFPS(60)
-{
+        fpsLimitEnabled(true), fpsLimit(60), fixedPhysicsFPSEnabled(true), physicsFPS(60) {
     perfFreq = SDL_GetPerformanceFrequency();
     startFrameTime = SDL_GetPerformanceCounter();
 }
 
-void TimerInterface::sleepMilliseconds(unsigned int milliseconds)
-{
+void TimerInterface::sleepMilliseconds(unsigned int milliseconds) {
     std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
 }
 
-void TimerInterface::waitForFPSLimit()
-{
+void TimerInterface::waitForFPSLimit() {
     if (!fpsLimitEnabled) {
         return;
     }
@@ -64,8 +61,7 @@ void TimerInterface::waitForFPSLimit()
     }
 }
 
-void TimerInterface::update()
-{
+void TimerInterface::update() {
     if (lastTime == 0) {
         // Set elapsed time in first frame to frame limit (or 60FPS if not set otherwise)
         lastTime = getTicksMicroseconds();

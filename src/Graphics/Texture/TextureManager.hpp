@@ -60,8 +60,7 @@ enum DepthStencilTextureFormat {
  * - Create an 32-bit RGBA texture using createTexture
  * - Create an empty texture (e.g. for offscreen rendering) with "createEmptyTexture"
  * - Create an multisampled texture for offscreen rendering with "createMultisampledTexture" */
-class DLL_OBJECT TextureManagerInterface : public FileManager<Texture, TextureInfo>
-{
+class DLL_OBJECT TextureManagerInterface : public FileManager<Texture, TextureInfo> {
 public:
     TexturePtr getAsset(const char* filename, const TextureSettings& settings = TextureSettings(), bool sRGB = false);
     virtual TexturePtr createEmptyTexture(int w, const TextureSettings& settings = TextureSettings())=0;
@@ -84,7 +83,7 @@ public:
     virtual TexturePtr createTextureStorage(int width, int height, const TextureSettings& settings = TextureSettings())=0;
     virtual TexturePtr createTextureStorage(int width, int height, int depth, const TextureSettings& settings = TextureSettings())=0;
 
-    //! Only for FBOs!
+    /// Only for FBOs!
     virtual TexturePtr createMultisampledTexture(
             int width, int height, int numSamples,
             int internalFormat = 0x8058 /*GL_RGBA8*/, bool fixedSampleLocations = true)=0;

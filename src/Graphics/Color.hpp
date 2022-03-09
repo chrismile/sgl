@@ -34,8 +34,7 @@
 
 namespace sgl {
 
-class DLL_OBJECT Color
-{
+class DLL_OBJECT Color {
 public:
     Color(uint8_t R = 255, uint8_t G = 255, uint8_t B = 255, uint8_t A = 255) : r(R), g(G), b(B), a(A) {}
     Color(const glm::vec4 &colorNormalized) {
@@ -53,18 +52,18 @@ public:
     bool operator==(const Color &color) const { return r == color.r && g == color.g && b == color.b && a == color.a; }
     bool operator!=(const Color &color) const { return r != color.r || g != color.g || b != color.b || a != color.a; }
 
-    inline uint8_t getR() const { return r; }
-    inline uint8_t getG() const { return g; }
-    inline uint8_t getB() const { return b; }
-    inline uint8_t getA() const { return a; }
-    inline float getFloatR() const { return r/255.0f; }
-    inline float getFloatG() const { return g/255.0f; }
-    inline float getFloatB() const { return b/255.0f; }
-    inline float getFloatA() const { return a/255.0f; }
-    inline glm::vec3 getFloatColorRGB() const { return glm::vec3(r/255.0f, g/255.0f, b/255.0f); }
-    inline glm::vec4 getFloatColorRGBA() const { return glm::vec4(r/255.0f, g/255.0f, b/255.0f, a/255.0f); }
-    inline uint32_t getColorRGBA() const { uint32_t col = a; col <<= 8; col |= b; col <<= 8; col |= g; col <<= 8; col |= r; return col; }
-    inline uint32_t getColorRGB() const { uint32_t col = 255; col <<= 8; col |= b; col <<= 8; col |= g; col <<= 8; col |= r; return col; }
+    [[nodiscard]] inline uint8_t getR() const { return r; }
+    [[nodiscard]] inline uint8_t getG() const { return g; }
+    [[nodiscard]] inline uint8_t getB() const { return b; }
+    [[nodiscard]] inline uint8_t getA() const { return a; }
+    [[nodiscard]] inline float getFloatR() const { return r/255.0f; }
+    [[nodiscard]] inline float getFloatG() const { return g/255.0f; }
+    [[nodiscard]] inline float getFloatB() const { return b/255.0f; }
+    [[nodiscard]] inline float getFloatA() const { return a/255.0f; }
+    [[nodiscard]] inline glm::vec3 getFloatColorRGB() const { return glm::vec3(r/255.0f, g/255.0f, b/255.0f); }
+    [[nodiscard]] inline glm::vec4 getFloatColorRGBA() const { return glm::vec4(r/255.0f, g/255.0f, b/255.0f, a/255.0f); }
+    [[nodiscard]] inline uint32_t getColorRGBA() const { uint32_t col = a; col <<= 8; col |= b; col <<= 8; col |= g; col <<= 8; col |= r; return col; }
+    [[nodiscard]] inline uint32_t getColorRGB() const { uint32_t col = 255; col <<= 8; col |= b; col <<= 8; col |= g; col <<= 8; col |= r; return col; }
 
     inline void setR(uint8_t R) { r = R; }
     inline void setG(uint8_t G) { g = G; }
@@ -90,12 +89,11 @@ DLL_OBJECT Color colorFromVec3(const glm::vec3 &vecColor);
 DLL_OBJECT Color colorFromVec4(const glm::vec4 &vecColor);
 DLL_OBJECT glm::vec3 colorToVec3(const Color &color);
 DLL_OBJECT glm::vec4 colorToVec4(const Color &color);
-//! 0 <= factor <= 1
+/// 0 <= factor <= 1
 DLL_OBJECT Color colorLerp(const Color &color1, const Color &color2, float factor);
 
-///! 16-bit color
-class DLL_OBJECT Color16
-{
+//// 16-bit color
+class DLL_OBJECT Color16 {
 public:
     Color16(uint16_t R = 65535, uint16_t G = 65535, uint16_t B = 65535, uint16_t A = 65535) : r(R), g(G), b(B), a(A) {}
     Color16(const Color& c) {
@@ -120,18 +118,18 @@ public:
     bool operator==(const Color16 &color) const { return r == color.r && g == color.g && b == color.b && a == color.a; }
     bool operator!=(const Color16 &color) const { return r != color.r || g != color.g || b != color.b || a != color.a; }
 
-    inline uint16_t getR() const { return r; }
-    inline uint16_t getG() const { return g; }
-    inline uint16_t getB() const { return b; }
-    inline uint16_t getA() const { return a; }
-    inline float getFloatR() const { return r/65535.0f; }
-    inline float getFloatG() const { return g/65535.0f; }
-    inline float getFloatB() const { return b/65535.0f; }
-    inline float getFloatA() const { return a/65535.0f; }
-    inline glm::vec3 getFloatColorRGB() const { return glm::vec3(r/65535.0f, g/65535.0f, b/65535.0f); }
-    inline glm::vec4 getFloatColorRGBA() const { return glm::vec4(r/65535.0f, g/65535.0f, b/65535.0f, a/65535.0f); }
-    inline uint32_t getColorRGBA() const { uint32_t col = a; col <<= 8; col |= b; col <<= 8; col |= g; col <<= 8; col |= r; return col; }
-    inline uint32_t getColorRGB() const { uint32_t col = 65535; col <<= 8; col |= b; col <<= 8; col |= g; col <<= 8; col |= r; return col; }
+    [[nodiscard]] inline uint16_t getR() const { return r; }
+    [[nodiscard]] inline uint16_t getG() const { return g; }
+    [[nodiscard]] inline uint16_t getB() const { return b; }
+    [[nodiscard]] inline uint16_t getA() const { return a; }
+    [[nodiscard]] inline float getFloatR() const { return r/65535.0f; }
+    [[nodiscard]] inline float getFloatG() const { return g/65535.0f; }
+    [[nodiscard]] inline float getFloatB() const { return b/65535.0f; }
+    [[nodiscard]] inline float getFloatA() const { return a/65535.0f; }
+    [[nodiscard]] inline glm::vec3 getFloatColorRGB() const { return glm::vec3(r/65535.0f, g/65535.0f, b/65535.0f); }
+    [[nodiscard]] inline glm::vec4 getFloatColorRGBA() const { return glm::vec4(r/65535.0f, g/65535.0f, b/65535.0f, a/65535.0f); }
+    [[nodiscard]] inline uint32_t getColorRGBA() const { uint32_t col = a; col <<= 8; col |= b; col <<= 8; col |= g; col <<= 8; col |= r; return col; }
+    [[nodiscard]] inline uint32_t getColorRGB() const { uint32_t col = 65535; col <<= 8; col |= b; col <<= 8; col |= g; col <<= 8; col |= r; return col; }
 
     inline void setR(uint16_t R) { r = R; }
     inline void setG(uint16_t G) { g = G; }
@@ -163,7 +161,7 @@ DLL_OBJECT Color16 color16FromVec3(const glm::vec3 &vecColor);
 DLL_OBJECT Color16 color16FromVec4(const glm::vec4 &vecColor);
 DLL_OBJECT glm::vec3 color16ToVec3(const Color16 &color);
 DLL_OBJECT glm::vec4 color16ToVec4(const Color16 &color);
-//! 0 <= factor <= 1
+/// 0 <= factor <= 1
 DLL_OBJECT Color16 color16Lerp(const Color16 &color1, const Color16 &color2, float factor);
 
 }

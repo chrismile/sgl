@@ -35,32 +35,26 @@
 
 namespace sgl {
 
-RenderTarget::RenderTarget(FramebufferObjectPtr _framebuffer)
-{
+RenderTarget::RenderTarget(FramebufferObjectPtr _framebuffer) {
     framebuffer = std::move(_framebuffer);
 }
 
-RenderTarget::RenderTarget(int width, int height) : width(width), height(height)
-{
+RenderTarget::RenderTarget(int width, int height) : width(width), height(height) {
 }
 
-void RenderTarget::bindFramebufferObject(FramebufferObjectPtr _framebuffer)
-{
+void RenderTarget::bindFramebufferObject(FramebufferObjectPtr _framebuffer) {
     framebuffer = std::move(_framebuffer);
 }
 
-void RenderTarget::bindWindowFramebuffer()
-{
+void RenderTarget::bindWindowFramebuffer() {
     framebuffer = FramebufferObjectPtr();
 }
 
-FramebufferObjectPtr RenderTarget::getFramebufferObject()
-{
+FramebufferObjectPtr RenderTarget::getFramebufferObject() {
     return framebuffer;
 }
 
-void RenderTarget::bindRenderTarget()
-{
+void RenderTarget::bindRenderTarget() {
     if (framebuffer) {
         Renderer->bindFBO(framebuffer);
     } else {
@@ -68,8 +62,7 @@ void RenderTarget::bindRenderTarget()
     }
 }
 
-int RenderTarget::getWidth()
-{
+int RenderTarget::getWidth() {
     if (framebuffer) {
         return framebuffer->getWidth();
     } else if (width > 0) {
@@ -79,8 +72,7 @@ int RenderTarget::getWidth()
     }
 }
 
-int RenderTarget::getHeight()
-{
+int RenderTarget::getHeight() {
     if (framebuffer) {
         return framebuffer->getHeight();
     } else if (height > 0) {

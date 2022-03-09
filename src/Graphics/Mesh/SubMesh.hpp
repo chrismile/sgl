@@ -37,20 +37,19 @@
 
 namespace sgl {
 
-class DLL_OBJECT SubMesh
-{
+class DLL_OBJECT SubMesh {
     friend class Mesh;
 public:
-    SubMesh(ShaderProgramPtr &shader);
-    //! Automatically retrieves the standard shaders
-    SubMesh(bool textured);
+    explicit SubMesh(ShaderProgramPtr &shader);
+    /// Automatically retrieves the standard shaders
+    explicit SubMesh(bool textured);
     void render();
     inline MaterialPtr &getMaterial() { return material; }
     inline void setMaterial(const MaterialPtr &_material) { material = _material; }
-    inline const AABB3 &getAABB() const { return aabb; }
+    [[nodiscard]] inline const AABB3 &getAABB() const { return aabb; }
     inline void setAABB(const AABB3 &_aabb) { aabb = _aabb; }
 
-    //! Call these functions to create a mesh manually
+    /// Call these functions to create a mesh manually
     void createVertices(VertexPlain *vertices, size_t numVertices);
     void createVertices(VertexTextured *vertices, size_t numVertices);
     void createIndices(uint8_t *indices, size_t numIndices);
@@ -59,7 +58,6 @@ public:
     inline void setVertexMode(VertexMode vertexMode) { renderData->setVertexMode(vertexMode); }
 
 private:
-    void computeAABB();
     ShaderAttributesPtr renderData;
     MaterialPtr material;
     AABB3 aabb;

@@ -40,20 +40,18 @@ using namespace std;
 
 namespace sgl {
 
-class DLL_OBJECT RandomGenerator
-{
+class DLL_OBJECT RandomGenerator {
 public:
-    RandomGenerator() { seed = (uint32_t)time(NULL); }
-    RandomGenerator(uint32_t _seed) { seed = _seed; }
-    virtual ~RandomGenerator() {}
+    RandomGenerator() { seed = (uint32_t)time(nullptr); }
+    explicit RandomGenerator(uint32_t _seed) { seed = _seed; }
+    virtual ~RandomGenerator() = default;
     virtual uint32_t getRandomUint32()=0;
     virtual int getRandomIntBetween(int min, int max);
     virtual float getRandomFloatBetween(float min, float max);
 
     // Shuffles the elements in the container
     template <class T>
-    void shuffle(vector<T> &container)
-    {
+    void shuffle(vector<T> &container) {
         for (int i = container.size() - 1; i > 0; --i) {
             int index = getRandomIntBetween(0, i);
             std::swap(container[i], container[index]);
@@ -63,8 +61,7 @@ public:
     // WARNING: I suspect the code beneath to have produced flawed lists.
     // Please use "shuffle(vector<T> &container)" for now!
     /*template <class T>
-    void shuffle(list<T> &container)
-    {
+    void shuffle(list<T> &container) {
         auto it = container.end();
         for (int i = container.size() - 1; i > 0; --i) {
             --it;

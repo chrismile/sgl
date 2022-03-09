@@ -94,8 +94,7 @@ float getScreenScalingX11(Display* display) {
 namespace sgl
 {
 
-float getScreenScalingWindows()
-{
+float getScreenScalingWindows() {
     HDC hdcScreen = GetDC(NULL); // HWND hWnd
     int dpi = GetDeviceCaps(hdcScreen, LOGPIXELSX);
     ReleaseDC(NULL, hdcScreen);
@@ -105,8 +104,7 @@ float getScreenScalingWindows()
 }
 #endif
 
-namespace sgl
-{
+namespace sgl {
 
 static bool scaleFactorRetrieved = false;
 static float scaleFactorHiDPI = 1.0f;

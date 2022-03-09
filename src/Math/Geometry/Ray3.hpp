@@ -42,7 +42,7 @@ struct DLL_OBJECT RaycastResult {
     float t;
 };
 
-//! Plane in 3D, ax + by + cz + d = 0
+/// Plane in 3D, ax + by + cz + d = 0
 class DLL_OBJECT Ray3 {
 public:
     Ray3(const glm::vec3 &origin, const glm::vec3 &direction) : origin(origin), direction(direction) {}

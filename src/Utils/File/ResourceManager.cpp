@@ -30,12 +30,12 @@
 #include "ResourceBuffer.hpp"
 #include <Utils/File/FileUtils.hpp>
 #include <fstream>
+#include <memory>
 #include <boost/shared_ptr.hpp>
 
 namespace sgl {
 
-ResourceBufferPtr ResourceManager::getFileSync(const char *filename)
-{
+ResourceBufferPtr ResourceManager::getFileSync(const char *filename) {
     ResourceBufferPtr resource = getResourcePointer(filename);
 
     // Is the file already loaded?
@@ -46,7 +46,7 @@ ResourceBufferPtr ResourceManager::getFileSync(const char *filename)
     if (FileUtils::get()->exists(filename) && !FileUtils::get()->isDirectory(filename)) {
         bool loaded = loadFile(filename, resource);
         if (!loaded) {
-            return ResourceBufferPtr();
+            return {};
         }
         resourceFiles.insert(std::make_pair(filename, resource));
     }
@@ -54,14 +54,13 @@ ResourceBufferPtr ResourceManager::getFileSync(const char *filename)
     return resource;
 }
 
-bool ResourceManager::loadFile(const char *filename, ResourceBufferPtr &resource)
-{
+bool ResourceManager::loadFile(const char *filename, ResourceBufferPtr &resource) {
     //assert(resource.get() && "ResourceManager::loadFile: resource.get()");
     std::streampos size;
     std::ifstream file(filename, std::ios::in|std::ios::binary|std::ios::ate);
     if (file.is_open()) {
         size = file.tellg();
-        resource = ResourceBufferPtr(new ResourceBuffer(size));
+        resource = std::make_shared<ResourceBuffer>(size);
         file.seekg(0, std::ios::beg);
         file.read(resource->getBuffer(), size);
         file.close();
@@ -71,16 +70,14 @@ bool ResourceManager::loadFile(const char *filename, ResourceBufferPtr &resource
     return false;
 }
 
-/*ResourceBufferPtr ResourceManager::getFileAsync(const char *filename)
-{
+/*ResourceBufferPtr ResourceManager::getFileAsync(const char *filename) {
     ResourceBufferPtr resource;
     ResourceManager::get()->queue.push(make_pair(filename, resource));
     resourceFiles.insert(make_pair(filename, resource));
     return ResourceBufferPtr();
 }*/
 
-ResourceBufferPtr ResourceManager::getResourcePointer(const char *filename)
-{
+ResourceBufferPtr ResourceManager::getResourcePointer(const char *filename) {
     auto it = resourceFiles.find(filename);
 
     // If the file isn't loaded yet
@@ -91,7 +88,7 @@ ResourceBufferPtr ResourceManager::getResourcePointer(const char *filename)
             resourceFiles.erase(it);
 
         // Return an empty pointer, as the file still needs to be loaded
-        return ResourceBufferPtr();
+        return {};
     }
 
     return it->second.lock();

@@ -33,8 +33,7 @@
 
 namespace sgl {
 
-Color colorFromHex(const std::string &hexColor)
-{
+Color colorFromHex(const std::string &hexColor) {
     Color color;
     std::string colorString = "";
     if (hexColor.length() == 6) {
@@ -52,8 +51,7 @@ Color colorFromHex(const std::string &hexColor)
     return color;
 }
 
-Color colorFromFloat(float R /*= 0.0f*/, float G /*= 0.0f*/, float B /*= 0.0f*/, float A /*= 1.0f*/)
-{
+Color colorFromFloat(float R /*= 0.0f*/, float G /*= 0.0f*/, float B /*= 0.0f*/, float A /*= 1.0f*/) {
     return Color(
             uint8_t(clamp(R*255.0f, 0.0f, 255.0f)),
             uint8_t(clamp(G*255.0f, 0.0f, 255.0f)),
@@ -61,28 +59,23 @@ Color colorFromFloat(float R /*= 0.0f*/, float G /*= 0.0f*/, float B /*= 0.0f*/,
             uint8_t(clamp(A*255.0f, 0.0f, 255.0f)));
 }
 
-Color colorFromVec3(const glm::vec3 &vecColor)
-{
+Color colorFromVec3(const glm::vec3 &vecColor) {
     return colorFromFloat(vecColor.x, vecColor.y, vecColor.z, 1.0f);
 }
 
-Color colorFromVec4(const glm::vec4 &vecColor)
-{
+Color colorFromVec4(const glm::vec4 &vecColor) {
     return colorFromFloat(vecColor.x, vecColor.y, vecColor.z, vecColor.w);
 }
 
-glm::vec3 colorToVec3(const Color &color)
-{
+glm::vec3 colorToVec3(const Color &color) {
     return glm::vec3(color.getFloatR(), color.getFloatG(), color.getFloatB());
 }
 
-glm::vec4 colorToVec4(const Color &color)
-{
+glm::vec4 colorToVec4(const Color &color) {
     return glm::vec4(color.getFloatR(), color.getFloatG(), color.getFloatB(), color.getFloatA());
 }
 
-Color colorLerp(const Color &color1, const Color &color2, float factor)
-{
+Color colorLerp(const Color &color1, const Color &color2, float factor) {
     factor = clamp(factor, 0.0f, 1.0f);
     uint8_t r = uint8_t(interpolateLinear(color1.getFloatR(), color2.getFloatR(), factor)*255.0f);
     uint8_t g = uint8_t(interpolateLinear(color1.getFloatG(), color2.getFloatG(), factor)*255.0f);
@@ -91,8 +84,7 @@ Color colorLerp(const Color &color1, const Color &color2, float factor)
     return Color(r, g, b, a);
 }
 
-Color16 color16FromFloat(float R /*= 0.0f*/, float G /*= 0.0f*/, float B /*= 0.0f*/, float A /*= 1.0f*/)
-{
+Color16 color16FromFloat(float R /*= 0.0f*/, float G /*= 0.0f*/, float B /*= 0.0f*/, float A /*= 1.0f*/) {
     return Color16(
             uint16_t(clamp(R*65535.0f, 0.0f, 65535.0f)),
             uint16_t(clamp(G*65535.0f, 0.0f, 65535.0f)),
@@ -100,28 +92,23 @@ Color16 color16FromFloat(float R /*= 0.0f*/, float G /*= 0.0f*/, float B /*= 0.0
             uint16_t(clamp(A*65535.0f, 0.0f, 65535.0f)));
 }
 
-Color16 color16FromVec3(const glm::vec3 &vecColor)
-{
-    return colorFromFloat(vecColor.x, vecColor.y, vecColor.z, 1.0f);
+Color16 color16FromVec3(const glm::vec3 &vecColor) {
+    return color16FromFloat(vecColor.x, vecColor.y, vecColor.z, 1.0f);
 }
 
-Color16 color16FromVec4(const glm::vec4 &vecColor)
-{
-    return colorFromFloat(vecColor.x, vecColor.y, vecColor.z, vecColor.w);
+Color16 color16FromVec4(const glm::vec4 &vecColor) {
+    return color16FromFloat(vecColor.x, vecColor.y, vecColor.z, vecColor.w);
 }
 
-glm::vec3 color16ToVec3(const Color16 &color)
-{
+glm::vec3 color16ToVec3(const Color16 &color) {
     return glm::vec3(color.getFloatR(), color.getFloatG(), color.getFloatB());
 }
 
-glm::vec4 color16ToVec4(const Color16 &color)
-{
+glm::vec4 color16ToVec4(const Color16 &color) {
     return glm::vec4(color.getFloatR(), color.getFloatG(), color.getFloatB(), color.getFloatA());
 }
 
-Color16 color16Lerp(const Color16 &color1, const Color16 &color2, float factor)
-{
+Color16 color16Lerp(const Color16 &color1, const Color16 &color2, float factor) {
     factor = clamp(factor, 0.0f, 1.0f);
     uint16_t r = uint16_t(interpolateLinear(color1.getFloatR(), color2.getFloatR(), factor)*65535.0f);
     uint16_t g = uint16_t(interpolateLinear(color1.getFloatG(), color2.getFloatG(), factor)*65535.0f);

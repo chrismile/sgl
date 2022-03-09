@@ -41,34 +41,33 @@ struct DLL_OBJECT MouseState {
     int scrollWheel;
 };
 
-class DLL_OBJECT SDLMouse : public MouseInterface
-{
+class DLL_OBJECT SDLMouse : public MouseInterface {
 public:
     SDLMouse();
-    virtual ~SDLMouse();
-    virtual void update(float dt);
+    ~SDLMouse() override;
+    void update(float dt) override;
 
-    //! Mouse position
-    virtual Point2 getAxis();
-    virtual int getX();
-    virtual int getY();
-    virtual Point2 mouseMovement();
-    virtual bool mouseMoved();
-    virtual void warp(const Point2 &windowPosition);
+    /// Mouse position
+    Point2 getAxis() override;
+    int getX() override;
+    int getY() override;
+    Point2 mouseMovement() override;
+    bool mouseMoved() override;
+    void warp(const Point2 &windowPosition) override;
 
-    //! Mouse buttons
-    virtual bool isButtonDown(int button);
-    virtual bool isButtonUp(int button);
-    virtual bool buttonPressed(int button);
-    virtual bool buttonReleased(int button);
-    //! -1: Scroll down; 0: No scrolling; 1: Scroll up
-    virtual float getScrollWheel();
+    /// Mouse buttons
+    bool isButtonDown(int button) override;
+    bool isButtonUp(int button) override;
+    bool buttonPressed(int button) override;
+    bool buttonReleased(int button) override;
+    /// -1: Scroll down; 0: No scrolling; 1: Scroll up
+    float getScrollWheel() override;
 
-    //! Function for event processing (SDL only suppots querying scroll wheel state within the event queue)
+    /// Function for event processing (SDL only suppots querying scroll wheel state within the event queue)
     void setScrollWheelValue(int val);
 
 protected:
-    //! States in the current and last frame
+    /// States in the current and last frame
     MouseState state, oldState;
 };
 

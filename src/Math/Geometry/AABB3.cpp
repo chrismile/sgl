@@ -31,8 +31,7 @@
 
 namespace sgl {
 
-bool AABB3::intersects(const AABB3& otherAABB) const
-{
+bool AABB3::intersects(const AABB3& otherAABB) const {
     if (max.x < otherAABB.min.x || min.x > otherAABB.max.x
         || max.y < otherAABB.min.y || min.y > otherAABB.max.y
         || max.z < otherAABB.min.z || min.z > otherAABB.max.z) {
@@ -41,8 +40,7 @@ bool AABB3::intersects(const AABB3& otherAABB) const
     return true;
 }
 
-void AABB3::combine(const AABB3& otherAABB)
-{
+void AABB3::combine(const AABB3& otherAABB) {
     if (otherAABB.min.x < min.x)
         min.x = otherAABB.min.x;
     if (otherAABB.min.y < min.y)
@@ -58,8 +56,7 @@ void AABB3::combine(const AABB3& otherAABB)
         max.z = otherAABB.max.z;
 }
 
-void AABB3::combine(const glm::vec3& pt)
-{
+void AABB3::combine(const glm::vec3& pt) {
     if (pt.x < min.x)
         min.x = pt.x;
     if (pt.y < min.y)
@@ -75,13 +72,11 @@ void AABB3::combine(const glm::vec3& pt)
         max.z = pt.z;
 }
 
-bool AABB3::contains(const glm::vec3& pt) const
-{
+bool AABB3::contains(const glm::vec3& pt) const {
     return pt.x >= min.x && pt.y >= min.y && pt.z >= min.z && pt.x <= max.x && pt.y <= max.y && pt.z <= max.z;
 }
 
-AABB3 AABB3::transformed(const glm::mat4& matrix) const
-{
+AABB3 AABB3::transformed(const glm::mat4& matrix) const {
     glm::vec3 transformedCorners[8];
     transformedCorners[0] = transformPoint(matrix, glm::vec3(min.x, min.y, min.z));
     transformedCorners[1] = transformPoint(matrix, glm::vec3(min.x, min.y, max.z));

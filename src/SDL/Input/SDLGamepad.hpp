@@ -38,41 +38,40 @@ namespace sgl {
 
 class OldGamepadState;
 
-class DLL_OBJECT SDLGamepad : public GamepadInterface
-{
+class DLL_OBJECT SDLGamepad : public GamepadInterface {
 public:
     SDLGamepad();
-    virtual ~SDLGamepad();
+    ~SDLGamepad() override;
     void initialize();
     void release();
-    virtual void update(float dt);
-    //! Re-open all gamepads
-    virtual void refresh();
-    virtual int getNumGamepads();
-    virtual const char *getGamepadName(int j);
+    void update(float dt) override;
+    /// Re-open all gamepads
+    void refresh() override;
+    int getNumGamepads() override;
+    const char *getGamepadName(int j) override;
 
-    //! Gamepad buttons
-    virtual bool isButtonDown(int button, int gamepadIndex = 0);
-    virtual bool isButtonUp(int button, int gamepadIndex = 0);
-    virtual bool buttonPressed(int button, int gamepadIndex = 0);
-    virtual bool buttonReleased(int button, int gamepadIndex = 0);
-    virtual int getNumButtons(int gamepadIndex = 0);
+    /// Gamepad buttons
+    bool isButtonDown(int button, int gamepadIndex = 0) override;
+    bool isButtonUp(int button, int gamepadIndex = 0) override;
+    bool buttonPressed(int button, int gamepadIndex = 0) override;
+    bool buttonReleased(int button, int gamepadIndex = 0) override;
+    int getNumButtons(int gamepadIndex = 0) override;
 
-    //! Gamepad control stick axes
-    virtual float axisX(int stickIndex = 0, int gamepadIndex = 0);
-    virtual float axisY(int stickIndex = 0, int gamepadIndex = 0);
-    virtual glm::vec2 axis(int stickIndex = 0, int gamepadIndex = 0);
-    virtual uint8_t getDirectionPad(int dirPadIndex = 0, int gamepadIndex = 0);
-    virtual uint8_t getDirectionPadPressed(int dirPadIndex = 0, int gamepadIndex = 0);
+    /// Gamepad control stick axes
+    float axisX(int stickIndex = 0, int gamepadIndex = 0) override;
+    float axisY(int stickIndex = 0, int gamepadIndex = 0) override;
+    glm::vec2 axis(int stickIndex = 0, int gamepadIndex = 0) override;
+    uint8_t getDirectionPad(int dirPadIndex = 0, int gamepadIndex = 0) override;
+    uint8_t getDirectionPadPressed(int dirPadIndex = 0, int gamepadIndex = 0) override;
 
-    //! Force Feedback support:
-    //! time in seconds
-    virtual void rumble(float strength, float time, int gamepadIndex = 0);
+    /// Force Feedback support:
+    /// time in seconds
+    void rumble(float strength, float time, int gamepadIndex = 0) override;
 
 protected:
-    //! Array containing the state of the gamepads
+    /// Array containing the state of the gamepads
     std::vector<SDL_Joystick*> gamepads;
-    //! Array containing the state of the gamepads in the last frame
+    /// Array containing the state of the gamepads in the last frame
     std::vector<OldGamepadState*> oldGamepads;
     int numGamepads;
 

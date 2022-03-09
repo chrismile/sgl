@@ -50,8 +50,7 @@ struct DLL_OBJECT ShaderInfo {
     }
 };
 
-class DLL_OBJECT ShaderManagerInterface : public FileManager<Shader, ShaderInfo>
-{
+class DLL_OBJECT ShaderManagerInterface : public FileManager<Shader, ShaderInfo> {
 public:
     /// Reference-counted loading
     /// If dumpTextDebug, the pre-processed source will be dumped on the command line.
@@ -72,12 +71,10 @@ public:
      * The generated preprocessor statements are of the form "#define <token> <value>".
      */
     template<typename T>
-    void addPreprocessorDefine(const std::string &token, const T &value)
-    {
+    void addPreprocessorDefine(const std::string &token, const T &value) {
         preprocessorDefines[token] = toString(value);
     }
-    std::string getPreprocessorDefine(const std::string &token)
-    {
+    std::string getPreprocessorDefine(const std::string &token) {
         return preprocessorDefines[token];
     }
 
@@ -119,7 +116,7 @@ public:
 
 
 protected:
-    virtual ShaderPtr loadAsset(ShaderInfo &shaderInfo)=0;
+    ShaderPtr loadAsset(ShaderInfo &shaderInfo) override = 0;
     virtual ShaderProgramPtr createShaderProgram(const std::vector<std::string> &shaderIDs, bool dumpTextDebug)=0;
 
     /// A token-value map for user-provided preprocessor #define's

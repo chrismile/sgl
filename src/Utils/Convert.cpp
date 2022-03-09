@@ -32,8 +32,7 @@
 namespace sgl
 {
 
-uint32_t hexadecimalStringToUint32(const std::string &stringObject)
-{
+uint32_t hexadecimalStringToUint32(const std::string &stringObject) {
     std::stringstream strstr;
     strstr << std::hex << stringObject;
     uint32_t type;
@@ -41,8 +40,7 @@ uint32_t hexadecimalStringToUint32(const std::string &stringObject)
     return type;
 }
 
-int fromHexString(const std::string &stringObject)
-{
+int fromHexString(const std::string &stringObject) {
     std::stringstream strstr;
     strstr << std::hex << stringObject;
     int type;
@@ -59,8 +57,7 @@ inline int stringToNumber(const char *str) {
     }
 }
 
-bool isInteger(const std::string &stringObject)
-{
+bool isInteger(const std::string &stringObject) {
     for (size_t i = 0; i < stringObject.size(); ++i) {
         if (stringObject.at(i) < '0' || stringObject.at(i) > '9') {
             return false;
@@ -70,8 +67,7 @@ bool isInteger(const std::string &stringObject)
 }
 
 // Integer or floating-point number?
-bool isNumeric(const std::string &stringObject)
-{
+bool isNumeric(const std::string &stringObject) {
     for (size_t i = 0; i < stringObject.size(); ++i) {
         if ((stringObject.at(i) < '0' || stringObject.at(i) > '9') && (stringObject.at(i) != '.')) {
             return false;

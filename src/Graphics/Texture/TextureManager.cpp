@@ -30,8 +30,7 @@
 
 namespace sgl {
 
-TexturePtr TextureManagerInterface::getAsset(const char *filename, const TextureSettings &settings, bool sRGB)
-{
+TexturePtr TextureManagerInterface::getAsset(const char *filename, const TextureSettings &settings, bool sRGB) {
     TextureInfo info;
     info.filename = filename;
     info.minificationFilter = settings.textureMinFilter;

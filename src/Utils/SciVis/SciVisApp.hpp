@@ -200,7 +200,7 @@ protected:
     bool startedCameraFlightPerUI = false;
     bool realTimeCameraFlight = true; // Move camera in real elapsed time or camera frame rate?
     std::string saveDirectoryCameraPaths;
-    float FRAME_TIME_CAMERA_PATH = 1.0f / FRAME_RATE_VIDEOS; ///< Simulate constant frame rate.
+    float FRAME_TIME_CAMERA_PATH = 1.0f / float(FRAME_RATE_VIDEOS); ///< Simulate constant frame rate.
     float CAMERA_PATH_TIME_RECORDING = 30.0f;
     float CAMERA_PATH_TIME_PERFORMANCE_MEASUREMENT = 128.0f; ///< Change if desired.
     float customEndTime = 0.0f; ///< > 0.0 if the camera path should play for a custom amount of time.

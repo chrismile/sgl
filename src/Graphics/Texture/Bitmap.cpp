@@ -82,8 +82,7 @@ BitmapPtr Bitmap::clone() {
     return clonedBitmap;
 }
 
-void Bitmap::blit(BitmapPtr &aim, const Point2 &pos)
-{
+void Bitmap::blit(BitmapPtr &aim, const Point2 &pos) {
     // No area to be blit?
     if (pos.x >= aim->w || pos.x+w <= 0 || pos.y >= aim->h || pos.y+h <= 0) {
         return;
@@ -103,8 +102,7 @@ void Bitmap::blit(BitmapPtr &aim, const Point2 &pos)
     }
 }
 
-void Bitmap::blit(BitmapPtr &aim, const Rectangle &sourceRectangle, const Rectangle &destinationRectangle)
-{
+void Bitmap::blit(BitmapPtr &aim, const Rectangle &sourceRectangle, const Rectangle &destinationRectangle) {
     int sourceY = int(sourceRectangle.y);
     int sourceW = int(sourceRectangle.w);
     int sourceX = int(sourceRectangle.x);
@@ -130,8 +128,7 @@ void Bitmap::blit(BitmapPtr &aim, const Rectangle &sourceRectangle, const Rectan
     }
 }
 
-void Bitmap::colorize(Color color)
-{
+void Bitmap::colorize(Color color) {
     for (int y = 0; y < h; ++y) {
         for (int x = 0; x < w; ++x) {
             Color oldColor = getPixelColor(x, y);
@@ -143,8 +140,7 @@ void Bitmap::colorize(Color color)
     }
 }
 
-BitmapPtr Bitmap::rotated(int degree)
-{
+BitmapPtr Bitmap::rotated(int degree) {
     BitmapPtr bitmap(new Bitmap);
 
     if (degree == 90) {
@@ -387,8 +383,7 @@ Color Bitmap::getPixelColor(int x, int y) const
     return Color(pixels[0], pixels[1], pixels[2], pixels[3]);
 }
 
-void Bitmap::setPixelColor(int x, int y, const Color &color)
-{
+void Bitmap::setPixelColor(int x, int y, const Color &color) {
     assert(x >= 0 && x < w && y >= 0 && y < h);
     uint8_t *pixels = getPixel(x, y);
     pixels[0] = color.getR();
@@ -397,13 +392,11 @@ void Bitmap::setPixelColor(int x, int y, const Color &color)
     pixels[3] = color.getA();
 }
 
-void Bitmap::setPixel(int x, int y, const uint8_t *color)
-{
+void Bitmap::setPixel(int x, int y, const uint8_t *color) {
     memcpy(getPixel(x, y), color, bpp / 8);
 }
 
-void Bitmap::blendPixelColor(int x, int y, const Color &color)
-{
+void Bitmap::blendPixelColor(int x, int y, const Color &color) {
     assert(x >= 0 && x < w && y >= 0 && y < h);
 
     int a = color.getA();

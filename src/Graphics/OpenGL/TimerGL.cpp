@@ -33,17 +33,14 @@
 
 #include "TimerGL.hpp"
 
-namespace sgl
-{
+namespace sgl {
 
-TimerGL::~TimerGL()
-{
+TimerGL::~TimerGL() {
     deleteAll();
 }
 
 
-void TimerGL::startGPU(const std::string &name, float timeStamp)
-{
+void TimerGL::startGPU(const std::string &name, float timeStamp) {
     size_t index = numSamples.size();
     auto it = regionNameMap.find(name);
     if (it == regionNameMap.end()) {
@@ -68,8 +65,7 @@ void TimerGL::startGPU(const std::string &name, float timeStamp)
     glBeginQuery(GL_TIME_ELAPSED, queryIDs.at(index));
 }
 
-void TimerGL::startCPU(const std::string &name, float timeStamp)
-{
+void TimerGL::startCPU(const std::string &name, float timeStamp) {
     size_t index = numSamples.size();
     auto it = regionNameMap.find(name);
     if (it == regionNameMap.end()) {
@@ -91,8 +87,7 @@ void TimerGL::startCPU(const std::string &name, float timeStamp)
 }
 
 
-void TimerGL::end()
-{
+void TimerGL::end() {
     if (isGPUQuery.at(lastIndex)) {
         glEndQuery(GL_TIME_ELAPSED);
         queryHasFinished.at(lastIndex) = true;
@@ -101,8 +96,7 @@ void TimerGL::end()
     }
 }
 
-void TimerGL::stopMeasuring()
-{
+void TimerGL::stopMeasuring() {
     if (isGPUQuery.at(lastIndex)) {
         assert(queryHasFinished.at(lastIndex));
         addQueryTime(lastIndex, lastTimeStamp);
@@ -110,8 +104,7 @@ void TimerGL::stopMeasuring()
     }
 }
 
-void TimerGL::addQueryTime(size_t index, float timeStamp)
-{
+void TimerGL::addQueryTime(size_t index, float timeStamp) {
     if (isGPUQuery.at(index)) {
         GLuint64 timer;
         glGetQueryObjectui64v(queryIDs.at(index), GL_QUERY_RESULT, &timer);
@@ -130,8 +123,7 @@ void TimerGL::addQueryTime(size_t index, float timeStamp)
 }
 
 
-void TimerGL::deleteAll()
-{
+void TimerGL::deleteAll() {
     size_t n = numSamples.size();
     for (size_t i = 0; i < n; i++) {
         if (isGPUQuery.at(i)) {
@@ -146,8 +138,7 @@ void TimerGL::deleteAll()
 }
 
 
-double TimerGL::getTimeMS(const std::string &name)
-{
+double TimerGL::getTimeMS(const std::string &name) {
     auto it = regionNameMap.find(name);
     if (it == regionNameMap.end()) {
         std::cerr << "Invalid name in TimerGL::getTimeMS" << std::endl;
@@ -161,15 +152,13 @@ double TimerGL::getTimeMS(const std::string &name)
 }
 
 
-void TimerGL::printTimeMS(const std::string &name)
-{
+void TimerGL::printTimeMS(const std::string &name) {
     double timeMS = getTimeMS(name);
     std::cout << "TIMER - " << name << ": " << timeMS << "ms" << std::endl;
 }
 
 
-void TimerGL::printTotalAvgTime()
-{
+void TimerGL::printTotalAvgTime() {
     double timeMS = 0.0;
     for (auto it = regionNameMap.begin(); it != regionNameMap.end(); it++) {
         size_t index = it->second;

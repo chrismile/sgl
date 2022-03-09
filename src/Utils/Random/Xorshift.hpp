@@ -33,18 +33,17 @@
 
 namespace sgl {
 
-class DLL_OBJECT XorshiftRandomGenerator : public RandomGenerator
-{
+class DLL_OBJECT XorshiftRandomGenerator : public RandomGenerator {
 public:
     XorshiftRandomGenerator() : RandomGenerator() { initialize(); }
-    XorshiftRandomGenerator(uint32_t _seed) : RandomGenerator(_seed) { initialize(); }
-    virtual ~XorshiftRandomGenerator() {}
-    uint32_t getRandomUint32() { return xorshift96(); }
+    explicit XorshiftRandomGenerator(uint32_t _seed) : RandomGenerator(_seed) { initialize(); }
+    ~XorshiftRandomGenerator() override = default;
+    uint32_t getRandomUint32() override { return xorshift96(); }
 
 private:
     void initialize();
     uint32_t xorshift96();
-    uint32_t x, y, z;
+    uint32_t x{}, y{}, z{};
 };
 
 }

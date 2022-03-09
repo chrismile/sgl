@@ -37,11 +37,11 @@ class DLL_OBJECT RenderbufferObjectGL : public RenderbufferObject
 {
 public:
     RenderbufferObjectGL(int _width, int _height, RenderbufferType rboType, int _samples = 0);
-    virtual ~RenderbufferObjectGL();
-    virtual int getWidth() { return width; }
-    virtual int getHeight() { return height; }
-    virtual int getSamples() { return samples; }
-    inline GLuint getID() { return rbo; }
+    ~RenderbufferObjectGL() override;
+    int getWidth() override { return width; }
+    int getHeight() override { return height; }
+    int getSamples() override { return samples; }
+    [[nodiscard]] inline GLuint getID() const { return rbo; }
 
 private:
     GLuint rbo;

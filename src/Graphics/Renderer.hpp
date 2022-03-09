@@ -84,8 +84,7 @@ enum DebugVerbosity {
  *  Only high-level functions are outsourced to other classes (e.g. font rendering).
  */
 
-class DLL_OBJECT RendererInterface
-{
+class DLL_OBJECT RendererInterface {
 public:
     virtual ~RendererInterface() = default;
 

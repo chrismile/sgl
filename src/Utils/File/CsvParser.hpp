@@ -35,8 +35,7 @@
 #include <fstream>
 #include <iostream>
 
-namespace sgl
-{
+namespace sgl {
 
 typedef std::vector<std::vector<std::string>> RowMap;
 

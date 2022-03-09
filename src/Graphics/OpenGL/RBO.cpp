@@ -32,8 +32,7 @@
 namespace sgl {
 
 RenderbufferObjectGL::RenderbufferObjectGL(int _width, int _height, RenderbufferType rboType, int _samples /* = 0 */)
-    : rbo(0), width(_width), height(_height), samples(_samples)
-{
+    : rbo(0), width(_width), height(_height), samples(_samples) {
     glGenRenderbuffers(1, &rbo);
     glBindRenderbuffer(GL_RENDERBUFFER, rbo);
 
@@ -60,8 +59,7 @@ RenderbufferObjectGL::RenderbufferObjectGL(int _width, int _height, Renderbuffer
     }
 }
 
-RenderbufferObjectGL::~RenderbufferObjectGL()
-{
+RenderbufferObjectGL::~RenderbufferObjectGL() {
     glDeleteRenderbuffers(1, &rbo);
 }
 

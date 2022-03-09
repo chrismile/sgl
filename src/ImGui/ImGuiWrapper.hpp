@@ -48,8 +48,7 @@ class Renderer;
 
 union SDL_Event;
 
-namespace sgl
-{
+namespace sgl {
 
 // For calls to @see ImGuiWrapper::setNextWindowStandardPosSizeLocation.
 const int LOCATION_LEFT = 0x1;
@@ -57,8 +56,7 @@ const int LOCATION_RIGHT = 0x2;
 const int LOCATION_TOP = 0x4;
 const int LOCATION_BOTTOM = 0x8;
 
-class DLL_OBJECT ImGuiWrapper : public Singleton<ImGuiWrapper>
-{
+class DLL_OBJECT ImGuiWrapper : public Singleton<ImGuiWrapper> {
 public:
     /**
      * Initializes ImGui for use with SDL and OpenGL.

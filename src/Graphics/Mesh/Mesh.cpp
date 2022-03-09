@@ -43,30 +43,27 @@ using namespace tinyxml2;
 
 namespace sgl {
 
-void Mesh::render()
-{
+void Mesh::render() {
     for (auto it = submeshes.begin(); it != submeshes.end(); ++it) {
         (*it)->render();
     }
 }
 
-void Mesh::computeAABB()
-{
+void Mesh::computeAABB() {
     aabb = AABB3();
     for (SubMeshPtr &submesh : submeshes) {
         aabb.combine(submesh->getAABB());
     }
 }
 
-bool Mesh::loadFromXML(const char *filename)
-{
+bool Mesh::loadFromXML(const char* filename) {
     XMLDocument doc;
     if (doc.LoadFile(filename) != 0) {
         Logfile::get()->writeError(std::string() + "Mesh::loadFromXML: Couldn't open file \"" + filename + "\"!");
         return false;
     }
-    XMLElement *meshNode = doc.FirstChildElement("MeshXML");
-    if (meshNode == NULL) {
+    XMLElement* meshNode = doc.FirstChildElement("MeshXML");
+    if (meshNode == nullptr) {
         Logfile::get()->writeError("Mesh::loadFromXML: No \"MeshXML\" node found!");
         return false;
     }
@@ -75,7 +72,7 @@ bool Mesh::loadFromXML(const char *filename)
     std::map<std::string, MaterialPtr> materialMap;
     if (meshNode->FirstChildElement("Materials") != NULL) {
         for (XMLIterator it(meshNode->FirstChildElement("Materials"), XMLNameFilter("Material")); it.isValid(); ++it) {
-            XMLElement *materialElement = *it;
+            XMLElement* materialElement = *it;
             materialMap.insert(std::make_pair(materialElement->Attribute("name"), MaterialManager->getMaterial(materialElement)));
         }
     }
@@ -221,13 +218,11 @@ bool Mesh::loadFromXML(const char *filename)
 }
 
 
-void Mesh::addSubMesh(SubMeshPtr &submesh)
-{
+void Mesh::addSubMesh(SubMeshPtr& submesh) {
     submeshes.push_back(submesh);
 }
 
-void Mesh::finalizeManualMesh()
-{
+void Mesh::finalizeManualMesh() {
     computeAABB();
 }
 

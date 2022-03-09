@@ -41,21 +41,20 @@ namespace sgl {
 const uint32_t RESOURCE_LOADED_ASYNC_EVENT = 1041457103U;
 
 class ResourceLoadingProcess;
-class DLL_OBJECT ResourceManager : public Singleton<ResourceManager>
-{
+class DLL_OBJECT ResourceManager : public Singleton<ResourceManager> {
 friend class ResourceLoadingProcess;
 public:
-    //! Interface
-    //! Loads the resource from the hard-drive
+    /// Interface
+    /// Loads the resource from the hard-drive
     ResourceBufferPtr getFileSync(const char *filename);
-    //! Returns empty buffer; RESOURCE_LOADED_ASYNC_EVENT is triggered when the file was loaded
+    /// Returns empty buffer; RESOURCE_LOADED_ASYNC_EVENT is triggered when the file was loaded
     //ResourceBufferPtr getFileAsync(const char *filename);
 
 private:
-    //! Internal interface for querying already loaded files
+    /// Internal interface for querying already loaded files
     ResourceBufferPtr getResourcePointer(const char *filename);
 
-    //! Internes Laden der Daten
+    /// Internes Laden der Daten
     bool loadFile(const char *filename, ResourceBufferPtr &resource);
 
     std::map<std::string, std::weak_ptr<ResourceBuffer>> resourceFiles;

@@ -177,8 +177,7 @@ static const std::unordered_map<int, int> pixelTypeMap = {
         { GL_DEPTH32F_STENCIL8, GL_FLOAT },
 };
 
-TexturePtr TextureManagerGL::createEmptyTexture(int width, const TextureSettings& settings)
-{
+TexturePtr TextureManagerGL::createEmptyTexture(int width, const TextureSettings& settings) {
     GLuint TEXTURE_TYPE = GL_TEXTURE_1D;
 
     GLuint oglTexture;
@@ -213,8 +212,7 @@ TexturePtr TextureManagerGL::createEmptyTexture(int width, const TextureSettings
 }
 
 TexturePtr TextureManagerGL::createTexture(
-        void* data, int width, const PixelFormat& pixelFormat, const TextureSettings& settings)
-{
+        void* data, int width, const PixelFormat& pixelFormat, const TextureSettings& settings) {
     GLuint TEXTURE_TYPE = GL_TEXTURE_1D;
 
     GLuint oglTexture;
@@ -248,8 +246,7 @@ TexturePtr TextureManagerGL::createTexture(
 }
 
 
-TexturePtr TextureManagerGL::loadAsset(TextureInfo& textureInfo)
-{
+TexturePtr TextureManagerGL::loadAsset(TextureInfo& textureInfo) {
     ResourceBufferPtr resource = ResourceManager::get()->getFileSync(textureInfo.filename.c_str());
     if (!resource) {
         Logfile::get()->writeError(std::string() + "TextureManagerGL::loadFromFile: Unable to load image file "
@@ -386,20 +383,17 @@ TexturePtr TextureManagerGL::loadAsset(TextureInfo& textureInfo)
 
 
 
-TexturePtr TextureManagerGL::createEmptyTexture(int width, int height, const TextureSettings& settings)
-{
+TexturePtr TextureManagerGL::createEmptyTexture(int width, int height, const TextureSettings& settings) {
     return createEmptyTexture(width, height, 0, settings);
 }
 
 TexturePtr TextureManagerGL::createTexture(
-        void* data, int width, int height, const PixelFormat& pixelFormat, const TextureSettings& settings)
-{
+        void* data, int width, int height, const PixelFormat& pixelFormat, const TextureSettings& settings) {
     return createTexture(data, width, height, 0, pixelFormat, settings);
 }
 
 
-TexturePtr TextureManagerGL::createEmptyTexture(int width, int height, int depth, const TextureSettings& settings)
-{
+TexturePtr TextureManagerGL::createEmptyTexture(int width, int height, int depth, const TextureSettings& settings) {
     GLuint TEXTURE_TYPE = (GLuint)settings.type;
 
     GLuint oglTexture;
@@ -445,8 +439,7 @@ TexturePtr TextureManagerGL::createEmptyTexture(int width, int height, int depth
 }
 
 TexturePtr TextureManagerGL::createTexture(
-        void* data, int width, int height, int depth, const PixelFormat& pixelFormat, const TextureSettings& settings)
-{
+        void* data, int width, int height, int depth, const PixelFormat& pixelFormat, const TextureSettings& settings) {
     GLuint TEXTURE_TYPE = (GLuint)settings.type;
 
     GLuint oglTexture;
@@ -491,8 +484,7 @@ TexturePtr TextureManagerGL::createTexture(
 
 
 TexturePtr TextureManagerGL::createMultisampledTexture(
-        int width, int height, int numSamples, int internalFormat, bool fixedSampleLocations)
-{
+        int width, int height, int numSamples, int internalFormat, bool fixedSampleLocations) {
     // https://www.opengl.org/sdk/docs/man3/xhtml/glTexImage2DMultisample.xml
     //   -> "glTexImage2DMultisample is available only if the GL version is 3.2 or greater."
     if (!SystemGL::get()->openglVersionMinimum(3, 2) || SystemGL::get()->getMaximumTextureSamples() <= 0) {
@@ -528,8 +520,7 @@ TexturePtr TextureManagerGL::createMultisampledTexture(
 
 TexturePtr TextureManagerGL::createDepthTexture(
         int width, int height, DepthTextureFormat format,
-        int textureMinFilter /* = GL_LINEAR */, int textureMagFilter /* = GL_LINEAR */)
-{
+        int textureMinFilter /* = GL_LINEAR */, int textureMagFilter /* = GL_LINEAR */) {
     GLuint oglTexture = 0;
     glGenTextures(1, &oglTexture);
     glBindTexture(GL_TEXTURE_2D, oglTexture);

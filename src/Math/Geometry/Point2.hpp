@@ -31,8 +31,7 @@
 
 namespace sgl {
 
-class DLL_OBJECT Point2
-{
+class DLL_OBJECT Point2 {
 public:
     Point2(int _x, int _y) : x(_x), y(_y) {}
     Point2() : x(0), y(0) {}

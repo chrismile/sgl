@@ -33,16 +33,14 @@
 
 namespace sgl {
 
-struct DLL_OBJECT OldBallDelta
-{
+struct DLL_OBJECT OldBallDelta {
     int dx;
     int dy;
 };
 
-class DLL_OBJECT OldGamepadState
-{
+class DLL_OBJECT OldGamepadState {
 public:
-    OldGamepadState(SDL_Joystick *joystick);
+    OldGamepadState(SDL_Joystick *_joy);
     ~OldGamepadState();
     void updateOldState();
     bool getButtonDown(int button);
@@ -55,11 +53,9 @@ private:
     Uint8  *hats;             // Hat states
     OldBallDelta *ballDeltas; // Ball motion deltas
 };
-// Initialisiert die Werte von OldJoystick
-OldGamepadState::OldGamepadState(SDL_Joystick *_joy)
-{
+OldGamepadState::OldGamepadState(SDL_Joystick *_joy) {
     joy  = _joy;
-    if (joy != NULL) {
+    if (joy != nullptr) {
         buttons    = new Uint8 [SDL_JoystickNumButtons(joy)];
         axes       = new Sint16[SDL_JoystickNumAxes(joy)];
         hats       = new Uint8 [SDL_JoystickNumHats(joy)];
@@ -67,9 +63,8 @@ OldGamepadState::OldGamepadState(SDL_Joystick *_joy)
     }
 }
 
-OldGamepadState::~OldGamepadState()
-{
-    if (joy != NULL) {
+OldGamepadState::~OldGamepadState() {
+    if (joy != nullptr) {
         delete[] buttons;
         delete[] axes;
         delete[] hats;
@@ -78,9 +73,8 @@ OldGamepadState::~OldGamepadState()
 }
 
 // Setzt altes State auf neues
-void OldGamepadState::updateOldState()
-{
-    if (joy != NULL) {
+void OldGamepadState::updateOldState() {
+    if (joy != nullptr) {
         for(int i = 0; i < SDL_JoystickNumButtons(joy); i++) {
             buttons[i] = SDL_JoystickGetButton(joy, i);
         }
@@ -90,34 +84,29 @@ void OldGamepadState::updateOldState()
     }
 }
 
-bool OldGamepadState::getButtonDown(int button)
-{
-    if (joy == NULL)
+bool OldGamepadState::getButtonDown(int button) {
+    if (joy == nullptr)
         return false;
-    return (buttons[button] ? true : false);
+    return buttons[button] != 0;
 }
 
 
-Uint8 OldGamepadState::getDirpadState(int iDirpadIndex)
-{
-    if (joy == NULL)
+Uint8 OldGamepadState::getDirpadState(int iDirpadIndex) {
+    if (joy == nullptr)
         return 0;
     return hats[iDirpadIndex];
 }
 
 
-SDLGamepad::SDLGamepad()
-{
+SDLGamepad::SDLGamepad() {
     initialize();
 }
 
-SDLGamepad::~SDLGamepad()
-{
+SDLGamepad::~SDLGamepad() {
     release();
 }
 
-void SDLGamepad::initialize()
-{
+void SDLGamepad::initialize() {
     numGamepads = SDL_NumJoysticks();
     for (int j = 0; j < numGamepads; j++) {
         gamepads.push_back(static_cast<SDL_Joystick*>(0));
@@ -148,8 +137,7 @@ void SDLGamepad::initialize()
     }
 }
 
-void SDLGamepad::release()
-{
+void SDLGamepad::release() {
     for (size_t j = 0; j < gamepads.size(); j++) {
         if (hapticList.at(j) != nullptr) {
             SDL_HapticClose(hapticList.at(j));
@@ -162,17 +150,15 @@ void SDLGamepad::release()
     oldGamepads.clear();
 }
 
-void SDLGamepad::update(float dt)
-{
+void SDLGamepad::update(float dt) {
     for (size_t j = 0; j < gamepads.size(); j++) {
-        if (gamepads.at(j) == NULL) break;
+        if (gamepads.at(j) == nullptr) break;
         oldGamepads.at(j)->updateOldState();
     }
 }
 
 // Re-open all gamepads
-void SDLGamepad::refresh()
-{
+void SDLGamepad::refresh() {
     release();
 
     SDL_QuitSubSystem(SDL_INIT_JOYSTICK);
@@ -182,46 +168,39 @@ void SDLGamepad::refresh()
 }
 
 
-int SDLGamepad::getNumGamepads()
-{
+int SDLGamepad::getNumGamepads() {
     return SDL_NumJoysticks();
 }
 
-const char *SDLGamepad::getGamepadName(int j)
-{
+const char *SDLGamepad::getGamepadName(int j) {
     return SDL_JoystickNameForIndex(j);
 }
 
 
 // Gamepad buttons
-bool SDLGamepad::isButtonDown(int button, int gamepadIndex /* = 0 */)
-{
+bool SDLGamepad::isButtonDown(int button, int gamepadIndex /* = 0 */) {
     if ((size_t)gamepadIndex < gamepads.size() && button < SDL_JoystickNumButtons(gamepads.at(gamepadIndex)))
         return SDL_JoystickGetButton(gamepads.at(gamepadIndex), button);
     return false;
 }
 
-bool SDLGamepad::isButtonUp(int button, int gamepadIndex /* = 0 */)
-{
+bool SDLGamepad::isButtonUp(int button, int gamepadIndex /* = 0 */) {
     return !isButtonDown(button, gamepadIndex);
 }
 
-bool SDLGamepad::buttonPressed(int button, int gamepadIndex /* = 0 */)
-{
+bool SDLGamepad::buttonPressed(int button, int gamepadIndex /* = 0 */) {
     if ((size_t)gamepadIndex < gamepads.size() && button < SDL_JoystickNumButtons(gamepads.at(gamepadIndex)))
         return isButtonDown(button, gamepadIndex) && !oldGamepads.at(gamepadIndex)->getButtonDown(button);
     return false;
 }
 
-bool SDLGamepad::buttonReleased(int button, int gamepadIndex /* = 0 */)
-{
+bool SDLGamepad::buttonReleased(int button, int gamepadIndex /* = 0 */) {
     if ((size_t)gamepadIndex < gamepads.size() && button < SDL_JoystickNumButtons(gamepads.at(gamepadIndex)))
         return !isButtonDown(button, gamepadIndex) && oldGamepads.at(gamepadIndex)->getButtonDown(button);
     return false;
 }
 
-int SDLGamepad::getNumButtons(int gamepadIndex /* = 0 */)
-{
+int SDLGamepad::getNumButtons(int gamepadIndex /* = 0 */) {
     return SDL_JoystickNumButtons(gamepads.at(gamepadIndex));
 }
 
@@ -243,25 +222,21 @@ float remapAnalogStickAxis(float in, float min, float max) {
     return (in - min) / (max - min); // Remap from min == 0.0f to max == +/-1.0f
 }
 
-float SDLGamepad::axisX(int stickIndex /* = 0 */, int gamepadIndex /* = 0 */)
-{
+float SDLGamepad::axisX(int stickIndex /* = 0 */, int gamepadIndex /* = 0 */) {
     Sint16 axisX = SDL_JoystickGetAxis(gamepads.at(gamepadIndex), stickIndex*2);
     return remapAnalogStickAxis(axisX/32768.0f, 0.05f, 0.95f);
 }
 
-float SDLGamepad::axisY(int stickIndex /* = 0 */, int gamepadIndex /* = 0 */)
-{
+float SDLGamepad::axisY(int stickIndex /* = 0 */, int gamepadIndex /* = 0 */) {
     Sint16 axisY = SDL_JoystickGetAxis(gamepads.at(gamepadIndex), stickIndex*2+1);
     return remapAnalogStickAxis(axisY/32768.0f, 0.05f, 0.95f);
 }
 
-glm::vec2 SDLGamepad::axis(int stickIndex /* = 0 */, int gamepadIndex /* = 0 */)
-{
+glm::vec2 SDLGamepad::axis(int stickIndex /* = 0 */, int gamepadIndex /* = 0 */) {
     return glm::vec2(axisX(stickIndex, gamepadIndex), axisY(stickIndex, gamepadIndex));
 }
 
-Uint8 SDLGamepad::getDirectionPad(int dirPadIndex /* = 0 */, int gamepadIndex /* = 0 */)
-{
+Uint8 SDLGamepad::getDirectionPad(int dirPadIndex /* = 0 */, int gamepadIndex /* = 0 */) {
     SDL_Joystick *gamepad = gamepads.at(gamepadIndex);
     if (SDL_JoystickNumHats(gamepad) <= dirPadIndex) {
         return 0;
@@ -269,8 +244,7 @@ Uint8 SDLGamepad::getDirectionPad(int dirPadIndex /* = 0 */, int gamepadIndex /*
     return SDL_JoystickGetHat(gamepad, dirPadIndex);
 }
 
-Uint8 SDLGamepad::getDirectionPadPressed(int dirPadIndex /* = 0 */, int gamepadIndex /* = 0 */)
-{
+Uint8 SDLGamepad::getDirectionPadPressed(int dirPadIndex /* = 0 */, int gamepadIndex /* = 0 */) {
     SDL_Joystick *gamepad = gamepads.at(gamepadIndex);
     if (SDL_JoystickNumHats(gamepad) <= dirPadIndex) {
         return 0;

@@ -50,31 +50,31 @@ enum FramebufferAttachment {
     COLOR_ATTACHMENT14 = 0x8CEE, COLOR_ATTACHMENT15 = 0x8CEF
 };
 
-/*! A framebuffer object (often called render target in DirectX) is used for offscreen rendering.
- *  You can attach either textures or renderbuffer objects to it. For more infos see
- *     https://www.khronos.org/opengl/wiki/Framebuffer_Object
- *  - A texture can be sampled after rendering. Use it when you want to use post-processing.
- *  - A renderbuffer object is often more optimized for being used as a render target and supports native MSAA.
+/**
+ * A framebuffer object (often called render target in DirectX) is used for offscreen rendering.
+ * You can attach either textures or renderbuffer objects to it. For more infos see
+ * https://www.khronos.org/opengl/wiki/Framebuffer_Object
+ * - A texture can be sampled after rendering. Use it when you want to use post-processing.
+ * - A renderbuffer object is often more optimized for being used as a render target and supports native MSAA.
+ *
+ * Note: https://www.opengl.org/sdk/docs/man3/xhtml/glTexImage2DMultisample.xml
+ * -> "glTexImage2DMultisample is available only if the GL version is 3.2 or greater."
+ * You can't use multisampled textures on systems with GL < 3.2
  */
-
-/*! Note: https://www.opengl.org/sdk/docs/man3/xhtml/glTexImage2DMultisample.xml
- *   -> "glTexImage2DMultisample is available only if the GL version is 3.2 or greater."
- * You can't use multisampled textures on systems with GL < 3.2 */
-class DLL_OBJECT FramebufferObject
-{
+class DLL_OBJECT FramebufferObject {
 public:
-    FramebufferObject() {}
-    virtual ~FramebufferObject() {}
+    FramebufferObject() = default;
+    virtual ~FramebufferObject() = default;
     //virtual bool bind2DTexture(TexturePtr texture, FramebufferAttachment attachment = COLOR_ATTACHMENT)=0;
     virtual bool bindTexture(TexturePtr texture, FramebufferAttachment attachment = COLOR_ATTACHMENT)=0;
     virtual bool bindRenderbuffer(RenderbufferObjectPtr renderbuffer, FramebufferAttachment attachment = DEPTH_ATTACHMENT)=0;
-    //! Width of framebuffer in pixels
+    /// Width of framebuffer in pixels
     virtual int getWidth()=0;
-    //! Height of framebuffer in pixels
+    /// Height of framebuffer in pixels
     virtual int getHeight()=0;
-    //! Only for use in the class Renderer!
+    /// Only for use in the class Renderer!
     virtual unsigned int _bindInternal()=0;
-    //! Only for use in the class Renderer!
+    /// Only for use in the class Renderer!
     virtual unsigned int getID()=0;
 };
 

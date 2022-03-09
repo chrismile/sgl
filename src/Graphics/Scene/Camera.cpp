@@ -300,11 +300,9 @@ void Camera::updateFrustumPlanes() {
         frustumPlanes[i].c /= normalLength;
         frustumPlanes[i].d /= normalLength;
     }
-
 }
 
-Ray3 Camera::getCameraToViewportRay(const glm::vec2 &screenPos)
-{
+Ray3 Camera::getCameraToViewportRay(const glm::vec2 &screenPos) {
     // Normalized coordinates
     glm::vec2 nc(2.0f * screenPos.x - 1.0f, 1.0f - 2.0f * screenPos.y);
     glm::vec3 nearPoint(nc.x, nc.y, -1.0f), midPoint (nc.x, nc.y, 0.0f);

@@ -40,14 +40,14 @@ enum RenderbufferType {
     RBO_RGBA8 = 0x8058
 };
 
-/*! RBOs can be attached to framebuffer objects (see FBO.hpp).
- *  For more information on RBOs see https://www.khronos.org/opengl/wiki/Renderbuffer_Object */
-
-class DLL_OBJECT RenderbufferObject
-{
+/**
+ * RBOs can be attached to framebuffer objects (see FBO.hpp).
+ * For more information on RBOs see https://www.khronos.org/opengl/wiki/Renderbuffer_Object
+ */
+class DLL_OBJECT RenderbufferObject {
 public:
-    RenderbufferObject() {}
-    virtual ~RenderbufferObject() {}
+    RenderbufferObject() = default;
+    virtual ~RenderbufferObject() = default;
     virtual int getWidth()=0;
     virtual int getHeight()=0;
     virtual int getSamples()=0;

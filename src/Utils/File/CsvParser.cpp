@@ -28,8 +28,7 @@
 
 #include "CsvParser.hpp"
 
-namespace sgl
-{
+namespace sgl {
 
 RowMap parseCsv(const std::string& filename, bool filterComments, char separator) {
     RowMap rows;

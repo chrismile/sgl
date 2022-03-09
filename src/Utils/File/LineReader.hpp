@@ -44,7 +44,7 @@ namespace sgl {
  */
 class DLL_OBJECT LineReader {
 public:
-    LineReader(const std::string& filename);
+    explicit LineReader(const std::string& filename);
     LineReader(const char* bufferData, const size_t bufferSize);
     ~LineReader();
 
@@ -77,14 +77,14 @@ public:
         for (size_t linePtr = 0; linePtr < lineBuffer.size(); linePtr++) {
             char currentChar = lineBuffer.at(linePtr);
             bool isWhitespace = currentChar == ' ' || currentChar == '\t';
-            if (isWhitespace && tokenString.size() != 0) {
+            if (isWhitespace && !tokenString.empty()) {
                 vec.push_back(sgl::fromString<T>(tokenString.c_str()));
                 tokenString.clear();
             } else if (!isWhitespace) {
                 tokenString.push_back(currentChar);
             }
         }
-        if (tokenString.size() != 0) {
+        if (!tokenString.empty()) {
             vec.push_back(sgl::fromString<T>(tokenString.c_str()));
             tokenString.clear();
         }
@@ -106,14 +106,14 @@ public:
         for (size_t linePtr = 0; linePtr < lineBuffer.size(); linePtr++) {
             char currentChar = lineBuffer.at(linePtr);
             bool isWhitespace = currentChar == ' ' || currentChar == '\t';
-            if (isWhitespace && tokenString.size() != 0) {
+            if (isWhitespace && !tokenString.empty()) {
                 vec.push_back(sgl::fromString<T>(tokenString.c_str()));
                 tokenString.clear();
             } else if (!isWhitespace) {
                 tokenString.push_back(currentChar);
             }
         }
-        if (tokenString.size() != 0) {
+        if (!tokenString.empty()) {
             vec.push_back(sgl::fromString<T>(tokenString.c_str()));
             tokenString.clear();
         }
@@ -139,14 +139,14 @@ public:
         for (size_t linePtr = 0; linePtr < lineBuffer.size(); linePtr++) {
             char currentChar = lineBuffer.at(linePtr);
             bool isWhitespace = currentChar == ' ' || currentChar == '\t';
-            if (isWhitespace && tokenString.size() != 0) {
+            if (isWhitespace && !tokenString.empty()) {
                 vec.push_back(sgl::fromString<T>(tokenString.c_str()));
                 tokenString.clear();
             } else if (!isWhitespace) {
                 tokenString.push_back(currentChar);
             }
         }
-        if (tokenString.size() != 0) {
+        if (!tokenString.empty()) {
             vec.push_back(sgl::fromString<T>(tokenString.c_str()));
             tokenString.clear();
         }

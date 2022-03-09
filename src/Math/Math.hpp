@@ -36,9 +36,8 @@
 #include <bit>
 #endif
 
-//! Collection of math utility functions
-namespace sgl
-{
+/// Collection of math utility functions
+namespace sgl {
 
 const float PI = 3.1415926535897932f;
 const float TWO_PI = PI * 2.0f;
@@ -148,7 +147,7 @@ inline uint32_t getNumberOfBitsSet(uint32_t number) {
 }
 
 
-//! Interpolation
+/// Interpolation
 template <typename T> T interpolateLinear(const T &val1, const T &val2, float factor)
 {
     return val1 + factor * (val2 - val1);

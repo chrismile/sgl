@@ -45,26 +45,27 @@
 #include <Graphics/Vulkan/Utils/Device.hpp>
 #include <Graphics/Vulkan/Utils/Swapchain.hpp>
 #include <Graphics/Vulkan/Render/Renderer.hpp>
+#include <utility>
 #endif
 
 #include "VideoWriter.hpp"
 
 namespace sgl {
 
-VideoWriter::VideoWriter(const std::string& filename, int frameW, int frameH, int framerate, bool useAsyncCopy)
+VideoWriter::VideoWriter(std::string filename, int frameW, int frameH, int framerate, bool useAsyncCopy)
         :
 #ifdef SUPPORT_OPENGL
         useAsyncCopy(useAsyncCopy),
 #endif
-        filename(filename), frameW(frameW), frameH(frameH), framerate(framerate), framebuffer(nullptr) {
+        filename(std::move(filename)), frameW(frameW), frameH(frameH), framerate(framerate), framebuffer(nullptr) {
 }
 
-VideoWriter::VideoWriter(const std::string& filename, int framerate, bool useAsyncCopy)
+VideoWriter::VideoWriter(std::string filename, int framerate, bool useAsyncCopy)
         :
 #ifdef SUPPORT_OPENGL
         useAsyncCopy(useAsyncCopy),
 #endif
-        filename(filename), framerate(framerate), framebuffer(nullptr) {
+        filename(std::move(filename)), framerate(framerate), framebuffer(nullptr) {
     sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
     frameW = window->getWidth();
     frameH = window->getHeight();

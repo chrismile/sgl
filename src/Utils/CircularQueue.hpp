@@ -33,8 +33,7 @@
 #include <cassert>
 
 template<class T>
-class CircularQueue
-{
+class CircularQueue {
 public:
     explicit CircularQueue(size_t maxCapacity = 32) {
         startPointer = 0;

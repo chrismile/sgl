@@ -31,10 +31,9 @@
 
 #include <vector>
 
-class DLL_OBJECT FramerateSmoother
-{
+class DLL_OBJECT FramerateSmoother {
 public:
-    FramerateSmoother(int numSamples);
+    explicit FramerateSmoother(int numSamples);
     void addSample(float fps);
     float computeAverage();
     float computeMedian();

@@ -55,13 +55,13 @@ const std::string NUMBER_AND_DEGREES_REGEX_STRING =
  * @param str: The string to parse.
  * @param exprStr: A regular expression string describing the structure of a token.
  */
-DLL_OBJECT std::vector<std::string> getTokenList(const std::string &str, const std::string &exprStr);
+DLL_OBJECT std::vector<std::string> getTokenList(const std::string& str, const std::string& exprStr);
 
 /**
  * Tests whether the string 'str' marches the regex string 'exprStr'.
  * @param str: The string to test.
  * @param exprStr: The regular expression.
  */
-DLL_OBJECT bool regexMatches(const std::string &str, const std::string &exprStr);
+DLL_OBJECT bool regexMatches(const std::string& str, const std::string& exprStr);
 
 #endif //STRESSLINEVIS_TOKENS_HPP

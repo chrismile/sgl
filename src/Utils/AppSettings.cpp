@@ -94,8 +94,7 @@ DLL_OBJECT GamepadInterface *Gamepad = NULL;
 
 #ifdef WIN32
 // Don't upscale window content on Windows with High-DPI settings
-void setDPIAware()
-{
+void setDPIAware() {
     bool minWin81 = IsWindows8Point1OrGreater();//IsWindowsVersionOrGreater(HIBYTE(0x0603), LOBYTE(0x0603), 0); // IsWindows8Point1OrGreater
     if (minWin81) {
         HMODULE library = LoadLibrary("User32.dll");
@@ -112,8 +111,7 @@ void setDPIAware()
     }
 }
 #else
-void setDPIAware()
-{
+void setDPIAware() {
 }
 #endif
 
@@ -137,14 +135,12 @@ AppSettings::AppSettings() {
 }
 
 // Load the settings from the configuration file
-void AppSettings::loadSettings(const char *filename)
-{
+void AppSettings::loadSettings(const char *filename) {
     settings.loadFromFile(filename);
     settingsFilename = filename;
 }
 
-void SettingsFile::saveToFile(const char *filename)
-{
+void SettingsFile::saveToFile(const char *filename) {
     std::ofstream file(filename);
     file << "{\n";
 
@@ -156,8 +152,7 @@ void SettingsFile::saveToFile(const char *filename)
     file.close();
 }
 
-void SettingsFile::loadFromFile(const char *filename)
-{
+void SettingsFile::loadFromFile(const char *filename) {
     // VERY basic and lacking JSON parser
     std::ifstream file(filename);
     if (!file.is_open()) {
@@ -198,8 +193,7 @@ void AppSettings::initializeDataDirectory() {
     }
 }
 
-Window *AppSettings::createWindow()
-{
+Window *AppSettings::createWindow() {
 #ifdef USE_BOOST_LOCALE
     boost::locale::generator gen;
     std::locale l = gen("");
@@ -402,8 +396,7 @@ void AppSettings::setRenderSystem(RenderSystem renderSystem) {
     this->renderSystem = renderSystem;
 }
 
-void AppSettings::initializeSubsystems()
-{
+void AppSettings::initializeSubsystems() {
     /*if (TTF_Init() == -1) {
         Logfile::get()->writeError("ERROR: SDLWindow::initializeAudio: Couldn't initialize SDL_ttf!");
         Logfile::get()->writeError(std::string() + "SDL_ttf initialization error: " + TTF_GetError());
@@ -441,8 +434,7 @@ void AppSettings::initializeSubsystems()
     }
 }
 
-void AppSettings::release()
-{
+void AppSettings::release() {
 #ifdef SUPPORT_VULKAN
     if (primaryDevice) {
         primaryDevice->waitIdle();
@@ -530,18 +522,15 @@ void AppSettings::setLoadGUI(
     this->uiScaleFactor = uiScaleFactor;
 }
 
-Window *AppSettings::getMainWindow()
-{
+Window *AppSettings::getMainWindow() {
     return mainWindow;
 }
 
-Window *AppSettings::setMainWindow(Window *window)
-{
+Window *AppSettings::setMainWindow(Window *window) {
     return mainWindow;
 }
 
-void AppSettings::getCurrentDisplayMode(int& width, int& height, int& refreshRate, int displayIndex)
-{
+void AppSettings::getCurrentDisplayMode(int& width, int& height, int& refreshRate, int displayIndex) {
     SDL_DisplayMode displayMode;
     SDL_GetCurrentDisplayMode(displayIndex, &displayMode);
     width = displayMode.w;
@@ -549,8 +538,7 @@ void AppSettings::getCurrentDisplayMode(int& width, int& height, int& refreshRat
     refreshRate = displayMode.refresh_rate;
 }
 
-void AppSettings::getDesktopDisplayMode(int& width, int& height, int& refreshRate, int displayIndex)
-{
+void AppSettings::getDesktopDisplayMode(int& width, int& height, int& refreshRate, int displayIndex) {
     SDL_DisplayMode displayMode;
     SDL_GetDesktopDisplayMode(displayIndex, &displayMode);
     width = displayMode.w;
@@ -558,15 +546,13 @@ void AppSettings::getDesktopDisplayMode(int& width, int& height, int& refreshRat
     refreshRate = displayMode.refresh_rate;
 }
 
-glm::ivec2 AppSettings::getCurrentDisplayModeResolution(int displayIndex)
-{
+glm::ivec2 AppSettings::getCurrentDisplayModeResolution(int displayIndex) {
     SDL_DisplayMode displayMode;
     SDL_GetCurrentDisplayMode(displayIndex, &displayMode);
     return glm::ivec2(displayMode.w, displayMode.h);
 }
 
-glm::ivec2 AppSettings::getDesktopResolution(int displayIndex)
-{
+glm::ivec2 AppSettings::getDesktopResolution(int displayIndex) {
     SDL_DisplayMode displayMode;
     SDL_GetDesktopDisplayMode(displayIndex, &displayMode);
     return glm::ivec2(displayMode.w, displayMode.h);

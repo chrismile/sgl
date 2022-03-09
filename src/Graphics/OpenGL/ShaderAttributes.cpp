@@ -39,8 +39,7 @@
 
 namespace sgl {
 
-int getComponentByteSize(VertexAttributeFormat format)
-{
+int getComponentByteSize(VertexAttributeFormat format) {
     if (format == ATTRIB_BYTE || format == ATTRIB_UNSIGNED_BYTE) {
         return sizeof(GLubyte);
     } else if (format == ATTRIB_SHORT || format == ATTRIB_UNSIGNED_SHORT) {
@@ -58,14 +57,12 @@ int getComponentByteSize(VertexAttributeFormat format)
 }
 
 
-ShaderAttributesGL::ShaderAttributesGL(ShaderProgramPtr &_shader)
-{
+ShaderAttributesGL::ShaderAttributesGL(ShaderProgramPtr &_shader) {
     shader = _shader;
     shaderGL = (ShaderProgramGL*)_shader.get();
 }
 
-void ShaderAttributesGL::setIndexGeometryBuffer(GeometryBufferPtr &geometryBuffer, VertexAttributeFormat format)
-{
+void ShaderAttributesGL::setIndexGeometryBuffer(GeometryBufferPtr &geometryBuffer, VertexAttributeFormat format) {
     indexBuffer = geometryBuffer;
     numIndices = geometryBuffer->getSize() / getComponentByteSize(format);
     indexFormat = format;
@@ -75,16 +72,14 @@ void ShaderAttributesGL::setIndexGeometryBuffer(GeometryBufferPtr &geometryBuffe
 
 // ---------------------------------- OpenGL 3 ----------------------------------
 
-ShaderAttributesGL3::ShaderAttributesGL3(ShaderProgramPtr &_shader) : ShaderAttributesGL(_shader)
-{
+ShaderAttributesGL3::ShaderAttributesGL3(ShaderProgramPtr &_shader) : ShaderAttributesGL(_shader) {
     RendererGL *rendererGL = static_cast<RendererGL*>(Renderer);
     glGenVertexArrays(1, &vaoID);
     rendererGL->bindVAO(vaoID);
     rendererGL->bindVAO(0);
 }
 
-ShaderAttributesGL3::~ShaderAttributesGL3()
-{
+ShaderAttributesGL3::~ShaderAttributesGL3() {
     RendererGL *rendererGL = static_cast<RendererGL*>(Renderer);
     if (rendererGL->getVAO() == vaoID) {
         rendererGL->bindVAO(0);
@@ -114,8 +109,7 @@ int vertexAttrFormatToIntSize(VertexAttributeFormat format) {
     }
 }
 
-void ShaderAttributesGL3::setIndexGeometryBuffer(GeometryBufferPtr &geometryBuffer, VertexAttributeFormat format)
-{
+void ShaderAttributesGL3::setIndexGeometryBuffer(GeometryBufferPtr &geometryBuffer, VertexAttributeFormat format) {
     ShaderAttributesGL::setIndexGeometryBuffer(geometryBuffer, format);
 
     RendererGL *rendererGL = static_cast<RendererGL*>(Renderer);
@@ -126,8 +120,7 @@ void ShaderAttributesGL3::setIndexGeometryBuffer(GeometryBufferPtr &geometryBuff
     rendererGL->bindVAO(0);
 }
 
-ShaderAttributesPtr ShaderAttributesGL3::copy(ShaderProgramPtr &_shader, bool ignoreMissingAttrs /* = true */)
-{
+ShaderAttributesPtr ShaderAttributesGL3::copy(ShaderProgramPtr &_shader, bool ignoreMissingAttrs /* = true */) {
     ShaderAttributesGL3 *obj = new ShaderAttributesGL3(_shader);
     obj->vertexMode = this->vertexMode;
     obj->indexFormat = this->indexFormat;
@@ -178,8 +171,7 @@ ShaderAttributesPtr ShaderAttributesGL3::copy(ShaderProgramPtr &_shader, bool ig
 bool ShaderAttributesGL3::addGeometryBuffer(GeometryBufferPtr &geometryBuffer,
                                             const char *attributeName, VertexAttributeFormat format, int components,
                                             int offset /* = 0 */, int stride /* = 0 */, int instancing /* = 0 */,
-                                            VertexAttributeConversion attrConversion /* = ATTRIB_CONVERSION_FLOAT */)
-{
+                                            VertexAttributeConversion attrConversion /* = ATTRIB_CONVERSION_FLOAT */) {
     bool passed = addGeometryBufferOptional(geometryBuffer, attributeName, format, components, offset, stride,
             instancing, attrConversion);
     if (!passed) {
@@ -192,8 +184,7 @@ bool ShaderAttributesGL3::addGeometryBuffer(GeometryBufferPtr &geometryBuffer,
 bool ShaderAttributesGL3::addGeometryBufferOptional(GeometryBufferPtr &geometryBuffer,
         const char *attributeName, VertexAttributeFormat format, int components,
         int offset /* = 0 */, int stride /* = 0 */, int instancing /* = 0 */,
-        VertexAttributeConversion attrConversion /* = ATTRIB_CONVERSION_FLOAT */)
-{
+        VertexAttributeConversion attrConversion /* = ATTRIB_CONVERSION_FLOAT */) {
     RendererGL *rendererGL = static_cast<RendererGL*>(Renderer);
     attributes.push_back(AttributeData(geometryBuffer, attributeName, (GLuint)format, components,
             glGetAttribLocation(shaderGL->getShaderProgramID(), attributeName), offset, stride,
@@ -252,8 +243,7 @@ bool ShaderAttributesGL3::addGeometryBufferOptional(GeometryBufferPtr &geometryB
 void ShaderAttributesGL3::addGeometryBuffer(GeometryBufferPtr &geometryBuffer,
                                             int attributeLocation, VertexAttributeFormat format, int components,
                                             int offset /* = 0 */, int stride /* = 0 */, int instancing /* = 0 */,
-                                            VertexAttributeConversion attrConversion /* = ATTRIB_CONVERSION_FLOAT */)
-{
+                                            VertexAttributeConversion attrConversion /* = ATTRIB_CONVERSION_FLOAT */) {
     RendererGL *rendererGL = static_cast<RendererGL*>(Renderer);
     attributes.push_back(AttributeData(geometryBuffer, "", (GLuint)format, components,
                                        attributeLocation, offset, stride, instancing, attrConversion));
@@ -303,13 +293,11 @@ void ShaderAttributesGL3::addGeometryBuffer(GeometryBufferPtr &geometryBuffer,
 }
 
 
-void ShaderAttributesGL3::bind()
-{
+void ShaderAttributesGL3::bind() {
     bind(shader);
 }
 
-void ShaderAttributesGL3::bind(ShaderProgramPtr passShader)
-{
+void ShaderAttributesGL3::bind(ShaderProgramPtr passShader) {
     passShader->bind();
     RendererGL *rendererGL = static_cast<RendererGL*>(Renderer);
     rendererGL->bindVAO(vaoID);
@@ -320,14 +308,11 @@ void ShaderAttributesGL3::bind(ShaderProgramPtr passShader)
 
 // ---------------------------------- OpenGL 2 ----------------------------------
 
-ShaderAttributesGL2::ShaderAttributesGL2(ShaderProgramPtr &_shader) : ShaderAttributesGL(_shader)
-{}
+ShaderAttributesGL2::ShaderAttributesGL2(ShaderProgramPtr &_shader) : ShaderAttributesGL(_shader) {}
 
-ShaderAttributesGL2::~ShaderAttributesGL2()
-{}
+ShaderAttributesGL2::~ShaderAttributesGL2() = default;
 
-ShaderAttributesPtr ShaderAttributesGL2::copy(ShaderProgramPtr &_shader, bool ignoreMissingAttrs /* = true */)
-{
+ShaderAttributesPtr ShaderAttributesGL2::copy(ShaderProgramPtr &_shader, bool ignoreMissingAttrs /* = true */) {
     ShaderAttributesGL3 *obj = new ShaderAttributesGL3(_shader);
     obj->vertexMode = this->vertexMode;
     obj->indexFormat = this->indexFormat;
@@ -362,8 +347,7 @@ ShaderAttributesPtr ShaderAttributesGL2::copy(ShaderProgramPtr &_shader, bool ig
 bool ShaderAttributesGL2::addGeometryBuffer(GeometryBufferPtr &geometryBuffer,
                                             const char *attributeName, VertexAttributeFormat format, int components,
                                             int offset /* = 0 */, int stride /* = 0 */, int instancing /* = 0 */,
-                                            VertexAttributeConversion attrConversion /* = ATTRIB_CONVERSION_FLOAT */)
-{
+                                            VertexAttributeConversion attrConversion /* = ATTRIB_CONVERSION_FLOAT */) {
     bool passed = addGeometryBufferOptional(geometryBuffer, attributeName, format, components, offset, stride,
                                             instancing, attrConversion);
     if (!passed) {
@@ -377,8 +361,7 @@ bool ShaderAttributesGL2::addGeometryBuffer(GeometryBufferPtr &geometryBuffer,
 bool ShaderAttributesGL2::addGeometryBufferOptional(GeometryBufferPtr &geometryBuffer,
         const char *attributeName, VertexAttributeFormat format, int components,
         int offset /* = 0 */, int stride /* = 0 */, int instancing /* = 0 */,
-        VertexAttributeConversion attrConversion /* = ATTRIB_CONVERSION_FLOAT */)
-{
+        VertexAttributeConversion attrConversion /* = ATTRIB_CONVERSION_FLOAT */) {
     if (instancing > 0) {
         Logfile::get()->writeError( "ERROR: ShaderAttributesGL2::addGeometryBuffer: OpenGL 2 does not support instancing.");
         return false;
@@ -411,8 +394,7 @@ bool ShaderAttributesGL2::addGeometryBufferOptional(GeometryBufferPtr &geometryB
 void ShaderAttributesGL2::addGeometryBuffer(GeometryBufferPtr &geometryBuffer,
                                             int attributeLocation, VertexAttributeFormat format, int components,
                                             int offset /* = 0 */, int stride /* = 0 */, int instancing /* = 0 */,
-                                            VertexAttributeConversion attrConversion /* = ATTRIB_CONVERSION_FLOAT */)
-{
+                                            VertexAttributeConversion attrConversion /* = ATTRIB_CONVERSION_FLOAT */) {
     if (instancing > 0) {
         Logfile::get()->writeError( "ERROR: ShaderAttributesGL2::addGeometryBuffer: OpenGL 2 does not support instancing.");
         return;
@@ -438,13 +420,11 @@ void ShaderAttributesGL2::addGeometryBuffer(GeometryBufferPtr &geometryBuffer,
     numVertices = numElements;
 }
 
-void ShaderAttributesGL2::bind()
-{
+void ShaderAttributesGL2::bind() {
     bind(shader);
 }
 
-void ShaderAttributesGL2::bind(ShaderProgramPtr passShader)
-{
+void ShaderAttributesGL2::bind(ShaderProgramPtr passShader) {
     passShader->bind();
 
     for (AttributeData &attributeData : attributes) {

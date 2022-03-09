@@ -66,10 +66,11 @@ Buffer::Buffer(
             Logfile::get()->throwError("Error in Buffer::Buffer: Failed to create a buffer of the specified size!");
         }
     } else {
+        VkExternalMemoryHandleTypeFlags handleTypes = 0;
 #if defined(_WIN32)
-        VkExternalMemoryHandleTypeFlags handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+        handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
 #elif defined(__linux__)
-        VkExternalMemoryHandleTypeFlags handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+        handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 #else
         Logfile::get()->throwError(
                 "Error in Buffer::Buffer: External memory is only supported on Linux, Android and Windows systems!");

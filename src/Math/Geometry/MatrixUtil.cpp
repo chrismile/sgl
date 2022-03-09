@@ -80,8 +80,7 @@ glm::mat4 matrixScaling(const glm::vec2 &vec) {
     return glm::scale(glm::vec3(vec.x, vec.y, 1.0f));
 }
 
-glm::mat4 matrixOrthogonalProjection(float left, float right, float bottom, float top, float near, float far)
-{
+glm::mat4 matrixOrthogonalProjection(float left, float right, float bottom, float top, float near, float far) {
     return glm::mat4(
             2.0f / (right - left), 0.0f, 0.0f, 0.0f,
             0.0f, 2.0f / (top - bottom), 0.0f, 0.0f,
@@ -89,8 +88,7 @@ glm::mat4 matrixOrthogonalProjection(float left, float right, float bottom, floa
             -(right + left) / (right - left), -(top + bottom) / (top - bottom), 0.0f, 1.0f);
 }
 
-glm::mat4 matrixSkewX(float f)
-{
+glm::mat4 matrixSkewX(float f) {
     // Calculate scaling matrix
     return glm::mat4(
             1.0f,     0.0f, 0.0f, 0.0f,
@@ -99,8 +97,7 @@ glm::mat4 matrixSkewX(float f)
             0.0f,     0.0f, 0.0f, 1.0f);
 }
 
-glm::mat4 matrixSkewY(float f)
-{
+glm::mat4 matrixSkewY(float f) {
     // Calculate scaling matrix
     return glm::mat4(
             1.0f, std::tan(f), 0.0f, 0.0f,
@@ -114,8 +111,7 @@ glm::mat4 matrixRowMajor(
         float m11, float m12, float m13, float m14,
         float m21, float m22, float m23, float m24,
         float m31, float m32, float m33, float m34,
-        float m41, float m42, float m43, float m44)
-{
+        float m41, float m42, float m43, float m44) {
     return glm::mat4(
             m11, m21, m31, m41,
             m12, m22, m32, m42,
@@ -128,8 +124,7 @@ glm::mat4 matrixColumnMajor(
         float m11, float m21, float m31, float m41,
         float m12, float m22, float m32, float m42,
         float m13, float m23, float m33, float m43,
-        float m14, float m24, float m34, float m44)
-{
+        float m14, float m24, float m34, float m44) {
     return glm::mat4(
             m11, m21, m31, m41,
             m12, m22, m32, m42,

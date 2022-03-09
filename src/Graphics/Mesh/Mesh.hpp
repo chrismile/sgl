@@ -34,15 +34,14 @@
 
 namespace sgl {
 
-class DLL_OBJECT Mesh
-{
+class DLL_OBJECT Mesh {
 public:
     void render();
-    bool loadFromXML(const char *filename);
-    inline const AABB3 &getAABB() const { return aabb; }
+    bool loadFromXML(const char* filename);
+    [[nodiscard]] inline const AABB3& getAABB() const { return aabb; }
 
-    //! Call these functions to create a mesh manually
-    void addSubMesh(SubMeshPtr &submesh);
+    /// Call these functions to create a mesh manually
+    void addSubMesh(SubMeshPtr& submesh);
     void finalizeManualMesh();
 
 private:

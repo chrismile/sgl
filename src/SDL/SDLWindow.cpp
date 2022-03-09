@@ -64,8 +64,7 @@ namespace sgl {
 
 SDLWindow::SDLWindow() = default;
 
-SDLWindow::~SDLWindow()
-{
+SDLWindow::~SDLWindow() {
 #ifdef SUPPORT_OPENGL
     if (renderSystem == RenderSystem::OPENGL) {
         SDL_GL_DeleteContext(glContext);
@@ -81,13 +80,11 @@ SDLWindow::~SDLWindow()
     Logfile::get()->write("Closing SDL window.");
 }
 
-void SDLWindow::errorCheck()
-{
+void SDLWindow::errorCheck() {
     errorCheckSDL();
 }
 
-void SDLWindow::errorCheckSDL()
-{
+void SDLWindow::errorCheckSDL() {
     while (SDL_GetError()[0] != '\0') {
         std::string errorString = SDL_GetError();
         bool openMessageBox = true;
@@ -101,8 +98,7 @@ void SDLWindow::errorCheckSDL()
     }
 }
 
-void SDLWindow::errorCheckSDLCritical()
-{
+void SDLWindow::errorCheckSDLCritical() {
     while (SDL_GetError()[0] != '\0') {
         Logfile::get()->throwError(std::string() + "SDL error: " + SDL_GetError());
     }
@@ -187,8 +183,7 @@ int getMaxSamplesGLImpl(int desiredSamples) {
 }
 #endif
 
-void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSystem)
-{
+void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSystem) {
     this->renderSystem = renderSystem;
     this->windowSettings = settings;
 
@@ -321,15 +316,13 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
 }
 
 
-void SDLWindow::toggleFullscreen(bool nativeFullscreen)
-{
+void SDLWindow::toggleFullscreen(bool nativeFullscreen) {
     windowSettings.fullscreen = !windowSettings.fullscreen;
     int fullscreenMode = nativeFullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN;
     SDL_SetWindowFullscreen(sdlWindow, windowSettings.fullscreen ? fullscreenMode : 0);
 }
 
-void SDLWindow::setWindowSize(int width, int height)
-{
+void SDLWindow::setWindowSize(int width, int height) {
     windowSettings.width = width;
     windowSettings.height = height;
     SDL_SetWindowSize(sdlWindow, width, height);
@@ -344,30 +337,25 @@ void SDLWindow::setWindowSize(int width, int height)
 #endif
 }
 
-glm::ivec2 SDLWindow::getWindowPosition()
-{
+glm::ivec2 SDLWindow::getWindowPosition() {
     int x, y;
     SDL_GetWindowPosition(sdlWindow, &x, &y);
     return glm::ivec2(x, y);
 }
 
-void SDLWindow::setWindowPosition(int x, int y)
-{
+void SDLWindow::setWindowPosition(int x, int y) {
     SDL_SetWindowPosition(sdlWindow, x, y);
 }
 
-void SDLWindow::update()
-{
+void SDLWindow::update() {
 }
 
-void SDLWindow::setEventHandler(std::function<void(const SDL_Event&)> eventHandler)
-{
+void SDLWindow::setEventHandler(std::function<void(const SDL_Event&)> eventHandler) {
     this->eventHandler = eventHandler;
     eventHandlerSet = true;
 }
 
-bool SDLWindow::processEvents()
-{
+bool SDLWindow::processEvents() {
     SDL_PumpEvents();
 
     bool running = true;
@@ -444,16 +432,14 @@ bool SDLWindow::processEvents()
     return running;
 }
 
-void SDLWindow::clear(const Color &color)
-{
+void SDLWindow::clear(const Color &color) {
 #ifdef SUPPORT_OPENGL
     glClearColor(color.getFloatR(), color.getFloatG(), color.getFloatB(), 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 #endif
 }
 
-void SDLWindow::flip()
-{
+void SDLWindow::flip() {
     if (renderSystem == RenderSystem::OPENGL) {
         SDL_GL_SwapWindow(sdlWindow);
     } else {
@@ -461,8 +447,7 @@ void SDLWindow::flip()
     }
 }
 
-void SDLWindow::serializeSettings(SettingsFile &settings)
-{
+void SDLWindow::serializeSettings(SettingsFile &settings) {
     settings.addKeyValue("window-width", windowSettings.width);
     settings.addKeyValue("window-height", windowSettings.height);
     settings.addKeyValue("window-fullscreen", windowSettings.fullscreen);
@@ -478,8 +463,7 @@ void SDLWindow::serializeSettings(SettingsFile &settings)
     }
 }
 
-WindowSettings SDLWindow::deserializeSettings(const SettingsFile &settings)
-{
+WindowSettings SDLWindow::deserializeSettings(const SettingsFile &settings) {
     WindowSettings windowSettings;
     if (!settings.hasKey("window-width") || !settings.hasKey("window-height")) {
         int desktopWidth = 1920;
@@ -508,8 +492,7 @@ WindowSettings SDLWindow::deserializeSettings(const SettingsFile &settings)
     return windowSettings;
 }
 
-void SDLWindow::saveScreenshot(const char* filename)
-{
+void SDLWindow::saveScreenshot(const char* filename) {
     if (renderSystem == RenderSystem::OPENGL) {
 #ifdef SUPPORT_OPENGL
         BitmapPtr bitmap(new Bitmap(windowSettings.width, windowSettings.height, 32));

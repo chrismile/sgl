@@ -58,8 +58,7 @@ void packUnorm16Array(const std::vector<float>& floatVector, std::vector<uint16_
 /// https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/packUnorm.xhtml
 void packUnorm16ArrayOfArrays(
         const std::vector<std::vector<float>> &floatVector,
-        std::vector<std::vector<uint16_t>> &unormVector)
-{
+        std::vector<std::vector<uint16_t>> &unormVector) {
     unormVector.resize(floatVector.size());
     for (size_t i = 0; i < unormVector.size(); i++) {
         packUnorm16Array(floatVector.at(i), unormVector.at(i));
@@ -104,8 +103,7 @@ std::vector<float> computeSegmentLengths(std::vector<glm::vec3>& vertexPositions
     return segmentLengths;
 }
 
-std::vector<float> computeCurvature(std::vector<glm::vec3>& vertexPositions)
-{
+std::vector<float> computeCurvature(std::vector<glm::vec3>& vertexPositions) {
     int n = (int)vertexPositions.size();
     std::vector<float> curvatures;
     curvatures.reserve(n);
@@ -149,8 +147,7 @@ std::vector<float> computeCurvature(std::vector<glm::vec3>& vertexPositions)
 
 std::vector<float> computeSegmentAttributeDifference(
         std::vector<glm::vec3>& vertexPositions,
-        std::vector<float>& vertexAttributes)
-{
+        std::vector<float>& vertexAttributes) {
     int n = (int)vertexPositions.size();
     std::vector<float> segmentAttributeDifferences;
     segmentAttributeDifferences.reserve(n);
@@ -177,8 +174,7 @@ std::vector<float> computeSegmentAttributeDifference(
 
 std::vector<float> computeTotalAttributeDifference(
         std::vector<glm::vec3>& vertexPositions,
-        std::vector<float>& vertexAttributes)
-{
+        std::vector<float>& vertexAttributes) {
     int n = (int)vertexPositions.size();
     std::vector<float> segmentAttributeDifferences;
     segmentAttributeDifferences.reserve(n);
@@ -202,8 +198,7 @@ std::vector<float> computeTotalAttributeDifference(
     return segmentAttributeDifferences;
 }
 
-std::vector<float> computeAngleOfAscent(std::vector<glm::vec3>& vertexPositions)
-{
+std::vector<float> computeAngleOfAscent(std::vector<glm::vec3>& vertexPositions) {
     int n = (int)vertexPositions.size();
     std::vector<float> angleOfAscentArray;
     angleOfAscentArray.reserve(n);
@@ -240,8 +235,7 @@ std::vector<float> computeAngleOfAscent(std::vector<glm::vec3>& vertexPositions)
     return angleOfAscentArray;
 }
 
-std::vector<float> computeSegmentHeightDifference(std::vector<glm::vec3>& vertexPositions)
-{
+std::vector<float> computeSegmentHeightDifference(std::vector<glm::vec3>& vertexPositions) {
     int n = (int)vertexPositions.size();
     std::vector<float> computeSegmentHeightDifferences;
     computeSegmentHeightDifferences.reserve(n);

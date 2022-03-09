@@ -32,7 +32,7 @@
 #include <cstdint>
 #include <memory>
 
-//! Standard size: 256 bytes
+/// Standard size: 256 bytes
 const size_t STD_BUFFER_SIZE = 256;
 
 #include "BinaryStream.hpp"

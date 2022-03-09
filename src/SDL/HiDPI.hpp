@@ -29,8 +29,7 @@
 #ifndef SGL_HIDPI_HPP
 #define SGL_HIDPI_HPP
 
-namespace sgl
-{
+namespace sgl {
 
 /**
  * @return The scale factor used for scaling fonts/the UI on the system.

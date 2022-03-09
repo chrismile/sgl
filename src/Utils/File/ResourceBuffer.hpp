@@ -34,23 +34,22 @@
 
 namespace sgl {
 
-class DLL_OBJECT ResourceBuffer
-{
+class DLL_OBJECT ResourceBuffer {
 public:
-    ResourceBuffer(size_t size) : bufferSize(size), loaded(false) { data = new char[bufferSize]; }
-    ~ResourceBuffer() { if (data) { delete[] data; data = NULL; } }
+    explicit ResourceBuffer(size_t size) : bufferSize(size), loaded(false) { data = new char[bufferSize]; }
+    ~ResourceBuffer() { if (data) { delete[] data; data = nullptr; } }
     inline char *getBuffer() { return data; }
-    inline const char *getBuffer() const { return data; }
-    inline size_t getBufferSize() { return bufferSize; }
+    [[nodiscard]] inline const char *getBuffer() const { return data; }
+    [[nodiscard]] inline size_t getBufferSize() const { return bufferSize; }
     inline bool getIsLoaded() { return loaded; }
     inline void setIsLoaded() { loaded = true; }
 
 private:
     char *data;
     size_t bufferSize;
-    //! For asynchronously loaded resources
+    /// For asynchronously loaded resources
     std::atomic<bool> loaded;
-    //! optional!
+    /// optional!
     std::shared_ptr<ResourceBuffer> parentZipFileResource;
 };
 

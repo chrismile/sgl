@@ -35,16 +35,13 @@
 
 namespace sgl {
 
-SDLMouse::SDLMouse()
-{
+SDLMouse::SDLMouse() {
 }
 
-SDLMouse::~SDLMouse()
-{
+SDLMouse::~SDLMouse() {
 }
 
-void SDLMouse::update(float dt)
-{
+void SDLMouse::update(float dt) {
     oldState = state;
     state.buttonState = SDL_GetMouseState(&state.pos.x, &state.pos.y);
 
@@ -55,33 +52,27 @@ void SDLMouse::update(float dt)
 
 
 // Mouse position
-Point2 SDLMouse::getAxis()
-{
+Point2 SDLMouse::getAxis() {
     return state.pos;
 }
 
-int SDLMouse::getX()
-{
+int SDLMouse::getX() {
     return state.pos.x;
 }
 
-int SDLMouse::getY()
-{
+int SDLMouse::getY() {
     return state.pos.y;
 }
 
-Point2 SDLMouse::mouseMovement()
-{
+Point2 SDLMouse::mouseMovement() {
     return Point2(state.pos.x-oldState.pos.x, state.pos.y-oldState.pos.y);
 }
 
-bool SDLMouse::mouseMoved()
-{
+bool SDLMouse::mouseMoved() {
     return state.pos.x-oldState.pos.x != 0 || state.pos.y-oldState.pos.y != 0;
 }
 
-void SDLMouse::warp(const Point2 &windowPosition)
-{
+void SDLMouse::warp(const Point2 &windowPosition) {
     SDLWindow *mainWindow = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
     SDL_WarpMouseInWindow(mainWindow->getSDLWindow(), windowPosition.x, windowPosition.y);
     state.pos.x = windowPosition.x;
@@ -91,34 +82,28 @@ void SDLMouse::warp(const Point2 &windowPosition)
 
 
 // Mouse buttons
-bool SDLMouse::isButtonDown(int button)
-{
+bool SDLMouse::isButtonDown(int button) {
     return state.buttonState & SDL_BUTTON(button);
 }
 
-bool SDLMouse::isButtonUp(int button)
-{
+bool SDLMouse::isButtonUp(int button) {
     return !(state.buttonState & SDL_BUTTON(button));
 }
 
-bool SDLMouse::buttonPressed(int button)
-{
+bool SDLMouse::buttonPressed(int button) {
     return (state.buttonState & SDL_BUTTON(button)) && !(oldState.buttonState & SDL_BUTTON(button));
 }
 
-bool SDLMouse::buttonReleased(int button)
-{
+bool SDLMouse::buttonReleased(int button) {
     return !(state.buttonState & SDL_BUTTON(button)) && (oldState.buttonState & SDL_BUTTON(button));
 }
 
 // -1: Scroll down; 0: No scrolling; 1: Scroll up
-float SDLMouse::getScrollWheel()
-{
+float SDLMouse::getScrollWheel() {
     return float(state.scrollWheel);
 }
 
-void SDLMouse::setScrollWheelValue(int val)
-{
+void SDLMouse::setScrollWheelValue(int val) {
     oldState.scrollWheel = state.scrollWheel;
     state.scrollWheel = val;
 }

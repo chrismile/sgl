@@ -36,8 +36,7 @@
 
 namespace sgl {
 
-SystemGL::SystemGL()
-{
+SystemGL::SystemGL() {
     // Save OpenGL extensions in the variable "extensions"
     int n = 0;
     std::string extensionString;
@@ -89,8 +88,7 @@ SystemGL::SystemGL()
     premulAlphaEnabled = true;
 }
 
-bool SystemGL::isGLExtensionAvailable(const char *extensionName)
-{
+bool SystemGL::isGLExtensionAvailable(const char *extensionName) {
     auto it = extensions.find(extensionName);
     if (it != extensions.end())
         return true;
@@ -108,8 +106,7 @@ bool SystemGL::openglVersionMinimum(int major, int minor /* = 0 */) {
     return true;
 }
 
-void SystemGL::setPremulAlphaEnabled(bool enabled)
-{
+void SystemGL::setPremulAlphaEnabled(bool enabled) {
     premulAlphaEnabled = enabled;
 }
 

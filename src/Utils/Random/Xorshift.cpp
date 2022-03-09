@@ -30,15 +30,14 @@
 
 namespace sgl {
 
-void XorshiftRandomGenerator::initialize()
-{
+void XorshiftRandomGenerator::initialize() {
     x = 123456789UL ^ seed;
     y = 362436069UL ^ seed;
     z = 521288629UL ^ seed;
 }
 
-uint32_t XorshiftRandomGenerator::xorshift96() // Period: 2^96-1
-{
+uint32_t XorshiftRandomGenerator::xorshift96() {
+    // Period: 2^96-1
     x ^= x << 16;
     x ^= x >> 5;
     x ^= x << 1;

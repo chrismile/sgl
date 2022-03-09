@@ -51,8 +51,7 @@ enum BufferMapping {
     BUFFER_MAP_READ_ONLY = 0x88B8, BUFFER_MAP_WRITE_ONLY = 0x88B9, BUFFER_MAP_READ_WRITE = 0x88BA
 };
 
-class DLL_OBJECT GeometryBuffer
-{
+class DLL_OBJECT GeometryBuffer {
 public:
     explicit GeometryBuffer(size_t size, BufferType type = VERTEX_BUFFER, BufferUse bufferUse = BUFFER_STATIC)
             : bufferSize(size), bufferType(type) {}
@@ -67,10 +66,10 @@ public:
     /*! Map section of buffer into main memory */
     virtual void *mapBufferRange(int offset, size_t size, BufferMapping accessType)=0;
     virtual void unmapBuffer()=0;
-    //! Mainly for internal use
+    /// Mainly for internal use
     virtual void bind()=0;
     virtual void unbind()=0;
-    inline size_t getSize() const { return bufferSize; }
+    [[nodiscard]] inline size_t getSize() const { return bufferSize; }
     inline BufferType getBufferType() { return bufferType; }
 
 protected:

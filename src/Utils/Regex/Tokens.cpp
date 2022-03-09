@@ -29,7 +29,7 @@
 #include "Tokens.hpp"
 #include <regex>
 
-std::vector<std::string> getTokenList(const std::string &str, const std::string &exprStr) {
+std::vector<std::string> getTokenList(const std::string& str, const std::string& exprStr) {
     std::vector<std::string> tokenList;
     std::regex expr(exprStr.c_str());
     std::regex_token_iterator<std::string::const_iterator> it{str.begin(), str.end(), expr};
@@ -41,7 +41,7 @@ std::vector<std::string> getTokenList(const std::string &str, const std::string 
     return tokenList;
 }
 
-bool regexMatches(const std::string &str, const std::string &exprStr) {
+bool regexMatches(const std::string& str, const std::string& exprStr) {
     std::regex regexp(exprStr);
     std::cmatch what;
     return std::regex_match(str.c_str(), what, regexp);

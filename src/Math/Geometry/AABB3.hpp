@@ -48,15 +48,15 @@ public:
     [[nodiscard]] inline glm::vec3 getMinimum() const { return min; }
     [[nodiscard]] inline glm::vec3 getMaximum() const { return max; }
 
-    //! Returns whether the two AABBs intersect.
+    /// Returns whether the two AABBs intersect.
     [[nodiscard]] bool intersects(const AABB3& otherAABB) const;
-    //! Merge the two AABBs.
+    /// Merge the two AABBs.
     void combine(const AABB3& otherAABB);
-    //! Merge AABB with a point.
+    /// Merge AABB with a point.
     void combine(const glm::vec3& pt);
-    //! Returns whether the AABB contain the point.
+    /// Returns whether the AABB contain the point.
     [[nodiscard]] bool contains(const glm::vec3& pt) const;
-    //! Transform AABB.
+    /// Transform AABB.
     [[nodiscard]] AABB3 transformed(const glm::mat4& matrix) const;
 };
 

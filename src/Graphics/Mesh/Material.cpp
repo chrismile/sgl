@@ -38,8 +38,7 @@ using namespace tinyxml2;
 
 namespace sgl {
 
-int minificationFilterFromString(const char *filter)
-{
+int minificationFilterFromString(const char *filter) {
     int textureMinFilter = GL_LINEAR;
 
     if (strcmp(filter, "Linear") == 0)
@@ -60,8 +59,7 @@ int minificationFilterFromString(const char *filter)
     return textureMinFilter;
 }
 
-int magnificationFilterFromString(const char *filter)
-{
+int magnificationFilterFromString(const char *filter) {
     int textureMagFilter = GL_LINEAR;
 
     if (strcmp(filter, "Linear") == 0)
@@ -74,8 +72,7 @@ int magnificationFilterFromString(const char *filter)
     return textureMagFilter;
 }
 
-int textureWrapFromString(const char *filter)
-{
+int textureWrapFromString(const char *filter) {
     int textureWrap = GL_REPEAT;
 
     if (strcmp(filter, "Repeat") == 0)
@@ -95,8 +92,7 @@ int textureWrapFromString(const char *filter)
 }
 
 // Load the material with the name 'materialName' from the file 'filename'
-MaterialPtr MaterialManagerInterface::getMaterial(const char *filename, const char *materialName)
-{
+MaterialPtr MaterialManagerInterface::getMaterial(const char *filename, const char *materialName) {
     MaterialInfo info;
     info.filename = filename;
     info.materialName = materialName;
@@ -104,8 +100,7 @@ MaterialPtr MaterialManagerInterface::getMaterial(const char *filename, const ch
 }
 
 // Get the material this element describes
-MaterialPtr MaterialManagerInterface::getMaterial(tinyxml2::XMLElement *materialElement)
-{
+MaterialPtr MaterialManagerInterface::getMaterial(tinyxml2::XMLElement *materialElement) {
     // If this is element contains a reference to an external XML file, load the material in this file.
     if (materialElement->GetText()) {
         return getMaterial(materialElement->GetText(), materialElement->Attribute("name"));
@@ -117,8 +112,7 @@ MaterialPtr MaterialManagerInterface::getMaterial(tinyxml2::XMLElement *material
 
 }
 
-MaterialPtr MaterialManagerInterface::loadAsset(MaterialInfo &info)
-{
+MaterialPtr MaterialManagerInterface::loadAsset(MaterialInfo &info) {
     // Was the material data already parsed?
     if (info.loaded) {
         return createMaterial(info);
@@ -155,8 +149,7 @@ MaterialPtr MaterialManagerInterface::loadAsset(MaterialInfo &info)
     return getMaterial(masterNode);
 }
 
-MaterialInfo MaterialManagerInterface::loadMaterialInfo(tinyxml2::XMLElement *materialElement)
-{
+MaterialInfo MaterialManagerInterface::loadMaterialInfo(tinyxml2::XMLElement *materialElement) {
     // Read the material data
     MaterialInfo materialInfo;
     materialInfo.loaded = true;
@@ -207,8 +200,7 @@ MaterialInfo MaterialManagerInterface::loadMaterialInfo(tinyxml2::XMLElement *ma
     return materialInfo;
 }
 
-MaterialPtr MaterialManagerInterface::createMaterial(const MaterialInfo &info)
-{
+MaterialPtr MaterialManagerInterface::createMaterial(const MaterialInfo &info) {
     MaterialPtr material(new Material);
     material->color = info.color;
     if (!info.textureFilename.empty()) {

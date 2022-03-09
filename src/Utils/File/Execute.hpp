@@ -34,10 +34,10 @@
 
 namespace sgl {
 
-//! Executes the program "appName" with the argument list "args".
+/// Executes the program "appName" with the argument list "args".
 DLL_OBJECT int executeProgram(const char *appName, std::list<std::string> &args);
 
-//! Returns output of program
+/// Returns output of program
 DLL_OBJECT std::string exec(const char* command);
 
 }

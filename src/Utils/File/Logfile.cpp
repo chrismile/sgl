@@ -38,17 +38,14 @@
 
 namespace sgl {
 
-Logfile::Logfile () : closedLogfile(false)
-{
+Logfile::Logfile () : closedLogfile(false) {
 }
 
-Logfile::~Logfile ()
-{
+Logfile::~Logfile () {
     closeLogfile();
 }
 
-void Logfile::closeLogfile()
-{
+void Logfile::closeLogfile() {
     if (closedLogfile) {
         std::cerr << "Tried to close logfile multiple times!" << std::endl;
         return;
@@ -58,8 +55,7 @@ void Logfile::closeLogfile()
     closedLogfile = true;
 }
 
-void Logfile::createLogfile(const std::string& filename, const std::string& appName)
-{
+void Logfile::createLogfile(const std::string& filename, const std::string& appName) {
     // Open the file and write the header.
     logfile.open(filename);
     write(std::string() + "<html><head><title>Logfile (" + appName + ")</title></head>");
@@ -106,8 +102,7 @@ void Logfile::createLogfile(const std::string& filename, const std::string& appN
 }
 
 // Writes the header.
-void Logfile::writeTopic (const std::string &text, int size)
-{
+void Logfile::writeTopic (const std::string &text, int size) {
     write("<table width='100%%' ");
     write("bgcolor='#E0E0E5'><tr><td><font face='arial' ");
     write(std::string() + "size='+" + toString(size) + "'>");
@@ -116,15 +111,13 @@ void Logfile::writeTopic (const std::string &text, int size)
 }
 
 // Writes black text to the file.
-void Logfile::write(const std::string &text)
-{
+void Logfile::write(const std::string &text) {
     logfile.write(text.c_str(), text.size());
     logfile.flush();
 }
 
 // Writes colored text to the logfile.
-void Logfile::write(const std::string &text, int color)
-{
+void Logfile::write(const std::string &text, int color) {
     switch (color) {
     case BLACK:
         write("<font color=black>");  break;
@@ -147,8 +140,7 @@ void Logfile::write(const std::string &text, int color)
     write("<br>");
 }
 
-void Logfile::writeWarning(const std::string &text, bool openMessageBox)
-{
+void Logfile::writeWarning(const std::string &text, bool openMessageBox) {
     std::cerr << text << std::endl;
     write(text, ORANGE);
     if (openMessageBox) {

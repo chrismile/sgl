@@ -47,8 +47,7 @@ namespace sgl {
 class Event;
 typedef std::shared_ptr<Event> EventPtr;
 
-class DLL_OBJECT AppLogic
-{
+class DLL_OBJECT AppLogic {
 public:
     AppLogic();
     virtual ~AppLogic();
@@ -63,7 +62,7 @@ public:
     virtual void render() {}
 
     virtual void setPrintFPS(bool enabled);
-    inline float getFPS() { return fps; }
+    [[nodiscard]] inline float getFPS() const { return fps; }
     inline void quit() { running = false; }
 
 protected:

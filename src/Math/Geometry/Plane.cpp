@@ -26,6 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <cmath>
+
 #include "Plane.hpp"
 #include "AABB3.hpp"
 
@@ -42,7 +44,7 @@ bool Plane::isOutside(const glm::vec3 &pt) const {
 bool Plane::isOutside(const AABB3 &aabb) const {
     glm::vec3 extent = aabb.getExtent();
     float centerDist = getDistance(aabb.getCenter());
-    float maxAbsDist = fabs(a*extent.x + b*extent.y + c*extent.z);
+    float maxAbsDist = std::abs(a*extent.x + b*extent.y + c*extent.z);
     return -centerDist > maxAbsDist;
 }
 

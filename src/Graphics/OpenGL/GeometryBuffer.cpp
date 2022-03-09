@@ -43,8 +43,7 @@
 namespace sgl {
 
 GeometryBufferGL::GeometryBufferGL(size_t size, BufferType type /* = VERTEX_BUFFER */, BufferUse bufferUse /* = BUFFER_STATIC */)
-    : GeometryBuffer(size, type, bufferUse)
-{
+    : GeometryBuffer(size, type, bufferUse) {
     initialize(type, bufferUse);
 
     glGenBuffers(1, &buffer);
@@ -53,8 +52,7 @@ GeometryBufferGL::GeometryBufferGL(size_t size, BufferType type /* = VERTEX_BUFF
 }
 
 GeometryBufferGL::GeometryBufferGL(size_t size, void *data, BufferType type /* = VERTEX_BUFFER*/, BufferUse bufferUse /* = BUFFER_STATIC */)
-    : GeometryBuffer(size, data, type, bufferUse)
-{
+    : GeometryBuffer(size, data, type, bufferUse) {
     initialize(type, bufferUse);
 
     glGenBuffers(1, &buffer);
@@ -62,15 +60,13 @@ GeometryBufferGL::GeometryBufferGL(size_t size, void *data, BufferType type /* =
     glBufferData(oglBufferType, size, data, oglBufferUsage);
 }
 
-GeometryBufferGL::GeometryBufferGL(BufferType type) : GeometryBuffer(0, type, BUFFER_STATIC)
-{
+GeometryBufferGL::GeometryBufferGL(BufferType type) : GeometryBuffer(0, type, BUFFER_STATIC) {
     initialize(type, BUFFER_STATIC);
 }
 
 
 
-void GeometryBufferGL::initialize(BufferType type, BufferUse bufferUse)
-{
+void GeometryBufferGL::initialize(BufferType type, BufferUse bufferUse) {
     oglBufferUsage = GL_STATIC_DRAW;
     if (bufferUse == BUFFER_DYNAMIC) {
         oglBufferUsage = GL_DYNAMIC_DRAW;
@@ -88,13 +84,11 @@ void GeometryBufferGL::initialize(BufferType type, BufferUse bufferUse)
     }
 }
 
-GeometryBufferGL::~GeometryBufferGL()
-{
+GeometryBufferGL::~GeometryBufferGL() {
     glDeleteBuffers(1, &buffer);
 }
 
-void GeometryBufferGL::subData(int offset, size_t size, void *data)
-{
+void GeometryBufferGL::subData(int offset, size_t size, void *data) {
     if (offset + size > bufferSize) {
         Logfile::get()->writeError("GeometryBufferGL::subData: offset + size > bufferSize.");
     }
@@ -103,14 +97,12 @@ void GeometryBufferGL::subData(int offset, size_t size, void *data)
     glBufferSubData(oglBufferType, offset, size, data);
 }
 
-void *GeometryBufferGL::mapBuffer(BufferMapping accessType)
-{
+void *GeometryBufferGL::mapBuffer(BufferMapping accessType) {
     glBindBuffer(oglBufferType, buffer);
     return glMapBuffer(oglBufferType, accessType);
 }
 
-void *GeometryBufferGL::mapBufferRange(int offset, size_t size, BufferMapping accessType)
-{
+void *GeometryBufferGL::mapBufferRange(int offset, size_t size, BufferMapping accessType) {
     if (offset + size > bufferSize) {
         Logfile::get()->writeError("GeometryBufferGL::subData: offset + size > bufferSize.");
     }
@@ -127,8 +119,7 @@ void *GeometryBufferGL::mapBufferRange(int offset, size_t size, BufferMapping ac
     return glMapBufferRange(oglBufferType, offset, size, access);
 }
 
-void GeometryBufferGL::unmapBuffer()
-{
+void GeometryBufferGL::unmapBuffer() {
     glBindBuffer(oglBufferType, buffer);
     bool success = glUnmapBuffer(oglBufferType);
     if (!success) {
@@ -136,13 +127,11 @@ void GeometryBufferGL::unmapBuffer()
     }
 }
 
-void GeometryBufferGL::bind()
-{
+void GeometryBufferGL::bind() {
     glBindBuffer(oglBufferType, buffer);
 }
 
-void GeometryBufferGL::unbind()
-{
+void GeometryBufferGL::unbind() {
     glBindBuffer(oglBufferType, 0);
 }
 

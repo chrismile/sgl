@@ -53,13 +53,12 @@ namespace sgl {
  *
  * NOTE: In newer versions, the avconv package was replaced by ffmpeg.
  */
-class DLL_OBJECT VideoWriter
-{
+class DLL_OBJECT VideoWriter {
 public:
     /// Open mp4 video file with specified frame width and height.
-    VideoWriter(const std::string& filename, int frameW, int frameH, int framerate = 30, bool useAsyncCopy = true);
+    VideoWriter(std::string filename, int frameW, int frameH, int framerate = 30, bool useAsyncCopy = true);
     /// Open mp4 video file with frame width and height specified by application window.
-    VideoWriter(const std::string& filename, int framerate = 30, bool useAsyncCopy = true);
+    explicit VideoWriter(std::string filename, int framerate = 30, bool useAsyncCopy = true);
     /// Closes file automatically
     ~VideoWriter();
     /// Push a 24-bit RGB frame (with width and height specified in constructor).
@@ -94,8 +93,8 @@ private:
 #ifdef SUPPORT_OPENGL
     // Asynchronous CPU/GPU data transfer.
     void initializeReadBackBuffers();
-    bool isReadBackBufferFree() const;
-    bool isReadBackBufferEmpty() const;
+    [[nodiscard]] bool isReadBackBufferFree() const;
+    [[nodiscard]] bool isReadBackBufferEmpty() const;
     void addCurrentFrameToQueue();
     void addCurrentFramebufferFrameToQueue(const sgl::FramebufferObjectPtr& fbo);
     void readBackFinishedFrames();

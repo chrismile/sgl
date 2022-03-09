@@ -46,27 +46,24 @@ public:
     /*virtual ~Singleton () { }
     inline static void deleteSingleton() { singleton = std::unique_ptr<T>(); }*/
 
-    //! Creates static instance if necessary and returns the pointer to it
-    inline static T *get()
-    {
+    /// Creates static instance if necessary and returns the pointer to it
+    inline static T *get() {
         return &boost::interprocess::ipcdetail::intermodule_singleton<T>::get();
     }
 };
 
 #else
 
-//! Singleton instance of classes T derived from Singleton<T> can be accessed using T::get().
+/// Singleton instance of classes T derived from Singleton<T> can be accessed using T::get().
 
 template <class T>
-class Singleton
-{
+class Singleton {
 public:
-    virtual ~Singleton () { }
+    virtual ~Singleton () = default;
     inline static void deleteSingleton() { singleton = std::unique_ptr<T>(); }
 
-    //! Creates static instance if necessary and returns the pointer to it
-    inline static T *get()
-    {
+    /// Creates static instance if necessary and returns the pointer to it
+    inline static T *get() {
         if (!singleton.get())
             singleton = std::unique_ptr<T>(new T);
         return singleton.get();

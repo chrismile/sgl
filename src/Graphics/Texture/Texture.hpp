@@ -61,8 +61,8 @@ struct PixelFormat {
         this->pixelType = pixelType;
     }
 
-    int pixelFormat; // OpenGL: Format of pixel data, e.g. RGB, RGBA, BGRA, Depth, Stencil, ...
-    int pixelType; // OpenGL: Type of one pixel data, e.g. Unsigned Byte, Float, ...
+    int pixelFormat; ///< OpenGL: Format of pixel data, e.g. RGB, RGBA, BGRA, Depth, Stencil, ...
+    int pixelType; ///< OpenGL: Type of one pixel data, e.g. Unsigned Byte, Float, ...
 };
 
 enum TextureType {
@@ -123,8 +123,7 @@ class Texture;
 typedef std::shared_ptr<Texture> TexturePtr;
 typedef std::weak_ptr<Texture> WeakTexturePtr;
 
-class DLL_OBJECT Texture : public std::enable_shared_from_this<Texture>
-{
+class DLL_OBJECT Texture : public std::enable_shared_from_this<Texture> {
 public:
     Texture(int _w, TextureSettings settings, int _samples = 0) : w(_w), h(0), d(0), settings(settings),
                                                                   samples(_samples) {}
@@ -132,7 +131,7 @@ public:
                                                                           samples(_samples) {}
     Texture(int _w, int _h, int _d, TextureSettings settings, int _samples = 0) : w(_w), h(_h), d(_d),
             settings(settings), samples(_samples) {}
-    virtual ~Texture() {}
+    virtual ~Texture() = default;
     virtual void uploadPixelData(int width, const void* pixelData, PixelFormat pixelFormat = PixelFormat())=0;
     virtual void uploadPixelData(int width, int height, const void* pixelData, PixelFormat pixelFormat = PixelFormat())=0;
     virtual void uploadPixelData(int width, int height, int depth, const void* pixelData, PixelFormat pixelFormat = PixelFormat())=0;

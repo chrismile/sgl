@@ -40,8 +40,7 @@ bool AABB2::intersects(const AABB2& otherAABB) const
     return true;
 }
 
-void AABB2::combine(const AABB2& otherAABB)
-{
+void AABB2::combine(const AABB2& otherAABB) {
     if (otherAABB.min.x < min.x)
         min.x = otherAABB.min.x;
     if (otherAABB.min.y < min.y)
@@ -52,8 +51,7 @@ void AABB2::combine(const AABB2& otherAABB)
         max.y = otherAABB.max.y;
 }
 
-void AABB2::combine(const glm::vec2& pt)
-{
+void AABB2::combine(const glm::vec2& pt) {
     if (pt.x < min.x)
         min.x = pt.x;
     if (pt.y < min.y)
@@ -64,13 +62,11 @@ void AABB2::combine(const glm::vec2& pt)
         max.y = pt.y;
 }
 
-bool AABB2::contains(const glm::vec2& pt) const
-{
+bool AABB2::contains(const glm::vec2& pt) const {
     return pt.x >= min.x && pt.y >= min.y && pt.x <= max.x && pt.y <= max.y;
 }
 
-AABB2 AABB2::transformed(const glm::mat4& matrix) const
-{
+AABB2 AABB2::transformed(const glm::mat4& matrix) const {
     glm::vec2 transformedCorners[4];
     transformedCorners[0] = transformPoint(matrix, min);
     transformedCorners[1] = transformPoint(matrix, max);

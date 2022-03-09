@@ -37,8 +37,7 @@
 
 namespace sgl {
 
-class DLL_OBJECT TextureGL : public Texture
-{
+class DLL_OBJECT TextureGL : public Texture {
 public:
     TextureGL(unsigned int _texture, int _w, TextureSettings settings, int _samples = 0);
     TextureGL(unsigned int _texture, int _w, int _h, TextureSettings settings, int _samples = 0);
@@ -59,8 +58,7 @@ protected:
 /**
  * An OpenGL texture object created from external Vulkan memory.
  */
-class DLL_OBJECT TextureGLExternalMemoryVk : public TextureGL
-{
+class DLL_OBJECT TextureGLExternalMemoryVk : public TextureGL {
 public:
     explicit TextureGLExternalMemoryVk(vk::TexturePtr& vulkanTexture);
     ~TextureGLExternalMemoryVk() override;

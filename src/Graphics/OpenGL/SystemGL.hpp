@@ -36,36 +36,35 @@
 
 namespace sgl {
 
-//! Get information about the OpenGL context
-class DLL_OBJECT SystemGL : public Singleton<SystemGL>
-{
+/// Get information about the OpenGL context.
+class DLL_OBJECT SystemGL : public Singleton<SystemGL> {
 public:
     SystemGL();
 
-    //! Information about version of OpenGL
+    /// Information about version of OpenGL
     bool isGLExtensionAvailable(const char *extensionName);
-    inline int getGLMajorVersionNumber() { return majorVersionNumber; }
-    inline int getGLMinorVersionNumber() { return minorVersionNumber; }
-    inline int getGLMajorShadingLanguageVersionNumber() { return majorShadingLanguageVersionNumber; }
-    inline int getGLMinorShadingLanguageVersionNumber() { return minorShadingLanguageVersionNumber; }
-    inline std::string getVendorString() { return vendorString; }
+    [[nodiscard]] inline int getGLMajorVersionNumber() const { return majorVersionNumber; }
+    [[nodiscard]] inline int getGLMinorVersionNumber() const { return minorVersionNumber; }
+    [[nodiscard]] inline int getGLMajorShadingLanguageVersionNumber() const { return majorShadingLanguageVersionNumber; }
+    [[nodiscard]] inline int getGLMinorShadingLanguageVersionNumber() const { return minorShadingLanguageVersionNumber; }
+    [[nodiscard]] inline const std::string& getVendorString() const { return vendorString; }
 
     /*! Returns whether the current OpenGL context supports the features of the passed OpenGL version
      * You could for example call "openglVersionMinimum(3)" or "openglVersionMinimum(2, 1)" */
     bool openglVersionMinimum(int major, int minor = 0);
 
-    //! Information about hardware limitations
-    inline int getMaximumTextureSize() { return maximumTextureSize; }
-    inline int getMaximumTextureSamples() { return maxSamples; }
-    inline float getMaximumAnisotropy() { return maximumAnisotropy; }
-    inline float getMinimumLineSize() { return glLineSizeRange[0]; }
-    inline float getMaximumLineSize() { return glLineSizeRange[1]; }
-    inline float getLineSizeIncrementStep() { return glLineSizeIncrementStep; }
+    /// Information about hardware limitations.
+    [[nodiscard]] inline int getMaximumTextureSize() const { return maximumTextureSize; }
+    [[nodiscard]] inline int getMaximumTextureSamples() const { return maxSamples; }
+    [[nodiscard]] inline float getMaximumAnisotropy() const { return maximumAnisotropy; }
+    [[nodiscard]] inline float getMinimumLineSize() const { return glLineSizeRange[0]; }
+    [[nodiscard]] inline float getMaximumLineSize() const { return glLineSizeRange[1]; }
+    [[nodiscard]] inline float getLineSizeIncrementStep() const { return glLineSizeIncrementStep; }
 
-    //! Enable/disable features of engine
-    //! Standard: true
+    /// Enable/disable features of engine.
+    /// Standard: true
     void setPremulAlphaEnabled(bool enabled);
-    bool isPremulAphaEnabled() { return premulAlphaEnabled; }
+    [[nodiscard]] bool isPremulAphaEnabled() const { return premulAlphaEnabled; }
 
 private:
     std::unordered_set<std::string> extensions;

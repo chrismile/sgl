@@ -35,16 +35,14 @@
 
 namespace sgl {
 
-BinaryWriteStream::BinaryWriteStream(size_t size /* = STD_BUFFER_SIZE */)
-{
+BinaryWriteStream::BinaryWriteStream(size_t size /* = STD_BUFFER_SIZE */) {
     bufferSize = 0;
     capacity = 0;
     buffer = nullptr;
     reserve(size);
 }
 
-BinaryWriteStream::~BinaryWriteStream()
-{
+BinaryWriteStream::~BinaryWriteStream() {
     if (buffer) {
         delete[] buffer;
         buffer = nullptr;
@@ -53,11 +51,10 @@ BinaryWriteStream::~BinaryWriteStream()
     }
 }
 
-void BinaryWriteStream::reserve(size_t size /* = STD_BUFFER_SIZE */)
-{
+void BinaryWriteStream::reserve(size_t size /* = STD_BUFFER_SIZE */) {
     size = std::max((size_t)4, size); // Minimum buffer size: 32 bits
     if (size > capacity) {
-        uint8_t *_buffer = new uint8_t[size];
+        auto* _buffer = new uint8_t[size];
         if (buffer) {
             memcpy(_buffer, buffer, bufferSize);
             delete[] buffer;
@@ -67,8 +64,7 @@ void BinaryWriteStream::reserve(size_t size /* = STD_BUFFER_SIZE */)
     }
 }
 
-void BinaryWriteStream::write(const void *data, size_t size)
-{
+void BinaryWriteStream::write(const void* data, size_t size) {
     // Check if we need to increase the buffer size
     if (bufferSize + size > capacity) {
         reserve(std::max(bufferSize + size, bufferSize*2));
@@ -79,24 +75,21 @@ void BinaryWriteStream::write(const void *data, size_t size)
     bufferSize += size;
 }
 
-void BinaryWriteStream::write(const char *str)
-{
-    uint32_t strSize = uint32_t(strlen(str));
+void BinaryWriteStream::write(const char *str) {
+    auto strSize = uint32_t(strlen(str));
     write(strSize);
     write((void*)str, strSize);
 }
 
-void BinaryWriteStream::write(const std::string &str)
-{
-    uint32_t strSize = uint32_t(str.size());
+void BinaryWriteStream::write(const std::string &str) {
+    auto strSize = uint32_t(str.size());
     write(strSize);
     write((void*)str.c_str(), strSize);
 }
 
 
 
-BinaryReadStream::BinaryReadStream(BinaryWriteStream &stream)
-{
+BinaryReadStream::BinaryReadStream(BinaryWriteStream &stream) {
     // Copy the buffer address to this stream
     buffer = stream.buffer;
     bufferSize = stream.bufferSize;
@@ -108,23 +101,20 @@ BinaryReadStream::BinaryReadStream(BinaryWriteStream &stream)
     stream.capacity = 0;
 }
 
-BinaryReadStream::BinaryReadStream(void *_buffer, size_t _bufferSize)
-{
+BinaryReadStream::BinaryReadStream(void* _buffer, size_t _bufferSize) {
     buffer = (uint8_t*)_buffer;
     bufferSize = _bufferSize;
     bufferStart = 0;
 }
 
-BinaryReadStream::BinaryReadStream(const void *_buffer, size_t _bufferSize)
-{
+BinaryReadStream::BinaryReadStream(const void* _buffer, size_t _bufferSize) {
     buffer = new uint8_t[_bufferSize];
     memcpy(buffer, _buffer, _bufferSize);
     bufferSize = _bufferSize;
     bufferStart = 0;
 }
 
-BinaryReadStream::~BinaryReadStream()
-{
+BinaryReadStream::~BinaryReadStream() {
     if (buffer) {
         delete[] buffer;
         buffer = nullptr;
@@ -133,8 +123,7 @@ BinaryReadStream::~BinaryReadStream()
     }
 }
 
-void BinaryReadStream::read(void *data, size_t size)
-{
+void BinaryReadStream::read(void* data, size_t size) {
     if (bufferStart + size > bufferSize) {
         Logfile::get()->writeError("FATAL ERROR: BinaryReadStream::read(void*, size_t)");
         return;
@@ -143,8 +132,7 @@ void BinaryReadStream::read(void *data, size_t size)
     bufferStart += size;
 }
 
-void BinaryReadStream::read(std::string &str)
-{
+void BinaryReadStream::read(std::string& str) {
     uint32_t strSize;
     read(strSize);
     if (bufferStart + (size_t)strSize > bufferSize) {

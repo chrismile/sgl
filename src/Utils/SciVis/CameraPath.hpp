@@ -38,15 +38,14 @@
 
 namespace sgl {
 
-class DLL_OBJECT ControlPoint
-{
+class DLL_OBJECT ControlPoint {
 public:
-    ControlPoint() {}
+    ControlPoint() = default;
     ControlPoint(float time, float tx, float ty, float tz, float yaw, float pitch);
 
     float time = 0.0f;
-    glm::vec3 position;
-    glm::quat orientation;
+    glm::vec3 position{};
+    glm::quat orientation{};
 };
 
 
@@ -58,10 +57,9 @@ public:
  */
 typedef std::function<void(const std::string&, glm::vec3&, float&, float&, float&)> ApplicationCallback;
 
-class DLL_OBJECT CameraPath
-{
+class DLL_OBJECT CameraPath {
 public:
-    CameraPath() {}
+    CameraPath() = default;
     void setApplicationCallback(ApplicationCallback applicationCallback);
     void fromCirclePath(
             const sgl::AABB3& sceneBoundingBox, const std::string& modelFilename, float totalTime,
@@ -72,15 +70,15 @@ public:
     void normalizeToTotalTime(float totalTime);
     void update(float currentTime);
     void resetTime();
-    inline const glm::mat4x4& getViewMatrix() const { return currentTransform; }
-    inline float getEndTime() const { return controlPoints.empty() ? 0.0f : controlPoints.back().time; }
-    inline bool empty() const { return controlPoints.empty(); }
+    [[nodiscard]] inline const glm::mat4x4& getViewMatrix() const { return currentTransform; }
+    [[nodiscard]] inline float getEndTime() const { return controlPoints.empty() ? 0.0f : controlPoints.back().time; }
+    [[nodiscard]] inline bool empty() const { return controlPoints.empty(); }
 
 private:
     glm::mat4x4 toTransform(const glm::vec3 &position, const glm::quat &orientation);
 
     const uint32_t CAMERA_PATH_FORMAT_VERSION = 1u;
-    glm::mat4x4 currentTransform;
+    glm::mat4x4 currentTransform{};
     std::vector<ControlPoint> controlPoints;
     float time = 0.0f;
 

@@ -54,7 +54,7 @@
 #define DLL_OBJECT
 #endif
 
-//! The MinGW version of GDB doesn't break on the standard assert.
+/// The MinGW version of GDB doesn't break on the standard assert.
 #include <cassert>
 #define CUSTOM_ASSERT
 

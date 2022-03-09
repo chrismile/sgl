@@ -50,23 +50,22 @@ namespace sgl {
 char **convertStringListToArgv(std::list<std::string> &stringList) {
     char **argv = new char*[stringList.size() + 1];
     int i = 0;
-    for (std::list<std::string>::iterator it = stringList.begin(); it != stringList.end(); ++it)
-    {
-        argv[i] = new char[it->size() + 1];
+    for (auto& it : stringList) {
+        argv[i] = new char[it.size() + 1];
 #if (defined(_MSC_VER) && _MSC_VER > 1910) || defined(__STDC_LIB_EXT1__)
         strcpy_s(argv[i], it->size() + 1, it->c_str());
 #else
-        strcpy(argv[i], it->c_str());
+        strcpy(argv[i], it.c_str());
 #endif
         ++i;
     }
-    argv[stringList.size()] = NULL;
+    argv[stringList.size()] = nullptr;
     return argv;
 }
 
 void deleteArgv(char **argv) {
     int i = 0;
-    while (argv[i] != NULL)
+    while (argv[i] != nullptr)
     {
         delete[] (argv[i]);
         ++i;
@@ -76,9 +75,8 @@ void deleteArgv(char **argv) {
 
 std::string convertStringListToString(std::list<std::string> &stringList) {
     std::string args;
-    for (std::list<std::string>::iterator it = stringList.begin(); it != stringList.end(); ++it)
-    {
-        args += *it + ' ';
+    for (auto& it : stringList) {
+        args += it + ' ';
     }
     return args;
 }
@@ -132,7 +130,7 @@ std::string exec(const char* command) {
     if (!pipe)
         throw std::runtime_error("popen() failed");
     while (!feof(pipe)) {
-        if (fgets(buffer, 256, pipe) != NULL)
+        if (fgets(buffer, 256, pipe) != nullptr)
             output += buffer;
     }
     pclose(pipe);

@@ -41,8 +41,7 @@
 
 namespace sgl {
 
-class DLL_OBJECT FileUtils : public Singleton<FileUtils>
-{
+class DLL_OBJECT FileUtils : public Singleton<FileUtils> {
 public:
     /// Title name is the name of the application and argc/argv are the arguments passed to the main function
     void initialize(const std::string &_appName, int argc, char *argv[]);

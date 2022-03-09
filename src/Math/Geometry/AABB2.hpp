@@ -50,15 +50,15 @@ public:
     [[nodiscard]] inline float getWidth() const { return max.x - min.x; }
     [[nodiscard]] inline float getHeight() const { return max.y - min.y; }
 
-    //! Returns whether the two AABBs intersect.
+    /// Returns whether the two AABBs intersect.
     [[nodiscard]] bool intersects(const AABB2& otherAABB) const;
-    //! Merge the two AABBs.
+    /// Merge the two AABBs.
     void combine(const AABB2& otherAABB);
-    //! Merge AABB with a point.
+    /// Merge AABB with a point.
     void combine(const glm::vec2& pt);
-    //! Returns whether the AABB contain the point.
+    /// Returns whether the AABB contain the point.
     [[nodiscard]] bool contains(const glm::vec2& pt) const;
-    //! Transform AABB.
+    /// Transform AABB.
     [[nodiscard]] AABB2 transformed(const glm::mat4& matrix) const;
 };
 

@@ -49,8 +49,7 @@
 
 namespace sgl {
 
-std::string getErrorSeverityString(GLenum severity)
-{
+std::string getErrorSeverityString(GLenum severity) {
     const std::map<GLenum, std::string> severityMap = {
             { GL_DEBUG_SEVERITY_HIGH,         "High" },
             { GL_DEBUG_SEVERITY_MEDIUM,       "Medium" },
@@ -60,8 +59,7 @@ std::string getErrorSeverityString(GLenum severity)
     return severityMap.at(severity);
 }
 
-std::string getErrorSourceString(GLenum source)
-{
+std::string getErrorSourceString(GLenum source) {
     const std::map<GLenum, std::string> sourceMap = {
             { GL_DEBUG_SOURCE_API, "OpenGL API" },
             { GL_DEBUG_SOURCE_WINDOW_SYSTEM, "Window System" },
@@ -73,8 +71,7 @@ std::string getErrorSourceString(GLenum source)
     return sourceMap.at(source);
 }
 
-std::string getErrorTypeString(GLenum type)
-{
+std::string getErrorTypeString(GLenum type) {
     const std::map<GLenum, std::string> typeMap = {
             { GL_DEBUG_TYPE_ERROR, "API Error" },
             { GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR, "Deprecated Behavior" },
@@ -91,8 +88,7 @@ std::string getErrorTypeString(GLenum type)
 
 // Uses KHR_debug. For more information see https://www.khronos.org/opengl/wiki/Debug_Output.
 void openglErrorCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message,
-        const void* userParam)
-{
+        const void* userParam) {
     Logfile::get()->writeError("OpenGL Error:", false);
     Logfile::get()->writeError("=============", false);
     Logfile::get()->writeError(std::string() + " Message ID: " + sgl::toString(id), false);
@@ -110,8 +106,7 @@ void openglErrorCallback(GLenum source, GLenum type, GLuint id, GLenum severity,
     Renderer->callApplicationErrorCallback();
 }
 
-RendererGL::RendererGL()
-{
+RendererGL::RendererGL() {
     blendMode = BLEND_OVERWRITE;
     RendererGL::setBlendMode(BLEND_ALPHA);
     boundTextureID.resize(32, 0);
@@ -150,20 +145,17 @@ RendererGL::RendererGL()
     }
 }
 
-void RendererGL::setErrorCallback(std::function<void()> callback)
-{
+void RendererGL::setErrorCallback(std::function<void()> callback) {
     applicationErrorCallback = callback;
 }
 
-void RendererGL::callApplicationErrorCallback()
-{
+void RendererGL::callApplicationErrorCallback() {
     if (applicationErrorCallback) {
         applicationErrorCallback();
     }
 }
 
-void RendererGL::setDebugVerbosity(DebugVerbosity verbosity)
-{
+void RendererGL::setDebugVerbosity(DebugVerbosity verbosity) {
     GLboolean activeHigh = GL_TRUE, activeMedium = GL_FALSE, activeLow = GL_FALSE, activeNotification = GL_FALSE;
     if ((int)verbosity > 0) {
         activeMedium = GL_TRUE;
@@ -215,8 +207,7 @@ std::vector<std::string> getErrorMessages() {
     return messages;
 }
 
-void RendererGL::errorCheck()
-{
+void RendererGL::errorCheck() {
     // Check for errors
     GLenum oglError = glGetError();
     if (oglError != GL_NO_ERROR) {
@@ -230,35 +221,30 @@ void RendererGL::errorCheck()
 }
 
 // Creation functions
-FramebufferObjectPtr RendererGL::createFBO()
-{
+FramebufferObjectPtr RendererGL::createFBO() {
     if (SystemGL::get()->openglVersionMinimum(3,2)) {
         return FramebufferObjectPtr(new FramebufferObjectGL);
     }
     return FramebufferObjectPtr(new FramebufferObjectGL2);
 }
 
-RenderbufferObjectPtr RendererGL::createRBO(int _width, int _height, RenderbufferType rboType, int _samples /* = 0 */)
-{
+RenderbufferObjectPtr RendererGL::createRBO(int _width, int _height, RenderbufferType rboType, int _samples /* = 0 */) {
     return RenderbufferObjectPtr(new RenderbufferObjectGL(_width, _height, rboType, _samples));
 }
 
-GeometryBufferPtr RendererGL::createGeometryBuffer(size_t size, BufferType type /* = VERTEX_BUFFER */, BufferUse bufferUse /* = BUFFER_STATIC */)
-{
+GeometryBufferPtr RendererGL::createGeometryBuffer(size_t size, BufferType type /* = VERTEX_BUFFER */, BufferUse bufferUse /* = BUFFER_STATIC */) {
     GeometryBufferPtr geomBuffer(new GeometryBufferGL(size, type, bufferUse));
     return geomBuffer;
 }
 
-GeometryBufferPtr RendererGL::createGeometryBuffer(size_t size, void *data, BufferType type /* = VERTEX_BUFFER */, BufferUse bufferUse /* = BUFFER_STATIC */)
-{
+GeometryBufferPtr RendererGL::createGeometryBuffer(size_t size, void *data, BufferType type /* = VERTEX_BUFFER */, BufferUse bufferUse /* = BUFFER_STATIC */) {
     GeometryBufferPtr geomBuffer(new GeometryBufferGL(size, data, type, bufferUse));
     return geomBuffer;
 }
 
 
 // Functions for managing viewports/render targets
-void RendererGL::bindFBO(FramebufferObjectPtr _fbo, bool force /* = false */)
-{
+void RendererGL::bindFBO(FramebufferObjectPtr _fbo, bool force /* = false */) {
     if (boundFBO.get() != _fbo.get() || force) {
         boundFBO = _fbo;
         if (_fbo.get() != nullptr) {
@@ -269,8 +255,7 @@ void RendererGL::bindFBO(FramebufferObjectPtr _fbo, bool force /* = false */)
     }
 }
 
-void RendererGL::unbindFBO(bool force /* = false */)
-{
+void RendererGL::unbindFBO(bool force /* = false */) {
     if (boundFBO.get() != 0 || force) {
         boundFBO = FramebufferObjectPtr();
         boundFBOID = 0;
@@ -282,14 +267,12 @@ void RendererGL::unbindFBO(bool force /* = false */)
     }
 }
 
-FramebufferObjectPtr RendererGL::getFBO()
-{
+FramebufferObjectPtr RendererGL::getFBO() {
     return boundFBO;
 }
 
 void RendererGL::clearFramebuffer(unsigned int buffers /* = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT */,
-        const Color& col /* = Color(0, 0, 0) */, float depth /* = 0.0f */, unsigned short stencil /* = 0*/ )
-{
+        const Color& col /* = Color(0, 0, 0) */, float depth /* = 0.0f */, unsigned short stencil /* = 0*/ ) {
     if ((buffers & GL_COLOR_BUFFER_BIT) != 0)
         glClearColor(col.getFloatR(), col.getFloatG(), col.getFloatB(), col.getFloatA());
     if ((buffers & GL_DEPTH_BUFFER_BIT) != 0)
@@ -299,8 +282,7 @@ void RendererGL::clearFramebuffer(unsigned int buffers /* = GL_COLOR_BUFFER_BIT 
     glClear(buffers);
 }
 
-void RendererGL::setCamera(CameraPtr _camera, bool force)
-{
+void RendererGL::setCamera(CameraPtr _camera, bool force) {
     if (camera != _camera || force) {
         camera = _camera;
         glm::ivec4 ltwh =  camera->getViewportLTWH();
@@ -311,15 +293,13 @@ void RendererGL::setCamera(CameraPtr _camera, bool force)
     }
 }
 
-CameraPtr RendererGL::getCamera()
-{
+CameraPtr RendererGL::getCamera() {
     return camera;
 }
 
 
 // State changes
-void RendererGL::bindTexture(const TexturePtr &tex, unsigned int textureUnit /* = 0 */)
-{
+void RendererGL::bindTexture(const TexturePtr &tex, unsigned int textureUnit /* = 0 */) {
     TextureGL *textureGL = (TextureGL*)tex.get();
 
     // TODO: OpenGL reuses texture IDs after deletion. Remove bound texture ID!
@@ -357,8 +337,7 @@ void RendererGL::bindTexture(const TexturePtr &tex, unsigned int textureUnit /* 
     //}
 }
 
-void RendererGL::unbindTexture(TexturePtr &tex, unsigned int textureUnit /* = 0 */)
-{
+void RendererGL::unbindTexture(TexturePtr &tex, unsigned int textureUnit /* = 0 */) {
     TextureGL *textureGL = (TextureGL*)tex.get();
 
     if (boundTextureID.at(textureUnit) == textureGL->getTexture()) {
@@ -366,8 +345,7 @@ void RendererGL::unbindTexture(TexturePtr &tex, unsigned int textureUnit /* = 0 
     }
 }
 
-void RendererGL::setBlendMode(BlendMode mode)
-{
+void RendererGL::setBlendMode(BlendMode mode) {
     if (mode == blendMode)
         return;
     /*if (mode == blendMode || (SystemGL::get()->isPremulAphaEnabled()
@@ -440,34 +418,29 @@ void RendererGL::setBlendMode(BlendMode mode)
     blendMode = mode;
 }
 
-void RendererGL::setModelMatrix(const glm::mat4 &matrix)
-{
+void RendererGL::setModelMatrix(const glm::mat4 &matrix) {
     modelMatrix = matrix;
     matrixBlockNeedsUpdate = true;
 }
 
-void RendererGL::setViewMatrix(const glm::mat4 &matrix)
-{
+void RendererGL::setViewMatrix(const glm::mat4 &matrix) {
     viewMatrix = matrix;
     matrixBlockNeedsUpdate = true;
 }
 
-void RendererGL::setProjectionMatrix(const glm::mat4 &matrix)
-{
+void RendererGL::setProjectionMatrix(const glm::mat4 &matrix) {
     projectionMatrix = matrix;
     matrixBlockNeedsUpdate = true;
 }
 
-void RendererGL::setLineWidth(float width)
-{
+void RendererGL::setLineWidth(float width) {
     if (width != lineWidth) {
         lineWidth = width;
         glLineWidth(width);
     }
 }
 
-void RendererGL::setPointSize(float size)
-{
+void RendererGL::setPointSize(float size) {
     if (size != pointSize) {
         pointSize = size;
         glPointSize(size);
@@ -476,40 +449,33 @@ void RendererGL::setPointSize(float size)
 
 
 // Stencil buffer
-void RendererGL::enableStencilTest()
-{
+void RendererGL::enableStencilTest() {
     glEnable(GL_STENCIL_TEST);
 }
 
-void RendererGL::disableStencilTest()
-{
+void RendererGL::disableStencilTest() {
     glDisable(GL_STENCIL_TEST);
 }
 
-void RendererGL::setStencilMask(unsigned int mask)
-{
+void RendererGL::setStencilMask(unsigned int mask) {
     glStencilMask(mask);
 }
 
-void RendererGL::clearStencilBuffer()
-{
+void RendererGL::clearStencilBuffer() {
     glClear(GL_STENCIL_BUFFER_BIT);
 }
 
-void RendererGL::setStencilFunc(unsigned int func, int ref, unsigned int mask)
-{
+void RendererGL::setStencilFunc(unsigned int func, int ref, unsigned int mask) {
     glStencilFunc(func, ref, mask);
 }
 
-void RendererGL::setStencilOp(unsigned int sfail, unsigned int dpfail, unsigned int dppass)
-{
+void RendererGL::setStencilOp(unsigned int sfail, unsigned int dpfail, unsigned int dppass) {
     glStencilOp(sfail, dpfail, dppass);
 }
 
 
 // Rendering
-void RendererGL::render(ShaderAttributesPtr &shaderAttributes)
-{
+void RendererGL::render(ShaderAttributesPtr &shaderAttributes) {
     ShaderAttributesPtr attr = shaderAttributes;
     if (wireframeMode) {
         // Not the most performat solution, but wireframe mode is for debugging anyway
@@ -547,8 +513,7 @@ void RendererGL::render(ShaderAttributesPtr &shaderAttributes)
     }
 }
 
-void RendererGL::render(ShaderAttributesPtr &shaderAttributes, ShaderProgramPtr &passShader)
-{
+void RendererGL::render(ShaderAttributesPtr &shaderAttributes, ShaderProgramPtr &passShader) {
     ShaderAttributesPtr attr = shaderAttributes;
     if (wireframeMode) {
         // Not the most performat solution, but wireframe mode is for debugging anyway
@@ -586,8 +551,7 @@ void RendererGL::render(ShaderAttributesPtr &shaderAttributes, ShaderProgramPtr 
     }
 }
 
-void RendererGL::createMatrixBlock()
-{
+void RendererGL::createMatrixBlock() {
     matrixBlockBuffer = this->createGeometryBuffer(sizeof(MatrixBlock), &matrixBlock, UNIFORM_BUFFER, BUFFER_STREAM);
 
     // Binding point is unique for _all_ shaders
@@ -595,8 +559,7 @@ void RendererGL::createMatrixBlock()
     //glBindBufferBase(GL_UNIFORM_BUFFER, 0, static_cast<GeometryBufferGL*>(matrixBlockBuffer.get())->getBuffer());
 }
 
-void RendererGL::updateMatrixBlock()
-{
+void RendererGL::updateMatrixBlock() {
     if (matrixBlockNeedsUpdate) {
         mvpMatrix = projectionMatrix * viewMatrix * modelMatrix;
         matrixBlock.mMatrix = modelMatrix;
@@ -616,24 +579,21 @@ void RendererGL::setPolygonMode(unsigned int polygonMode) // For debugging purpo
     glPolygonMode(GL_FRONT_AND_BACK, polygonMode);
 }
 
-void RendererGL::enableWireframeMode(const Color &_wireframeColor)
-{
+void RendererGL::enableWireframeMode(const Color &_wireframeColor) {
     wireframeMode = true;
     wireframeColor = _wireframeColor;
     solidShader->setUniform("color", wireframeColor);
     setPolygonMode(GL_LINE);
 }
 
-void RendererGL::disableWireframeMode()
-{
+void RendererGL::disableWireframeMode() {
     wireframeMode = false;
     setPolygonMode(GL_FILL);
 }
 
 
 // Utility functions
-void RendererGL::blitTexture(TexturePtr &tex, const AABB2 &renderRect, bool mirrored)
-{
+void RendererGL::blitTexture(TexturePtr &tex, const AABB2 &renderRect, bool mirrored) {
     if (tex->getTextureType() == TEXTURE_2D_MULTISAMPLE) {
         blitTexture(tex, renderRect, resolveMSAAShader, mirrored);
     } else {
@@ -641,8 +601,7 @@ void RendererGL::blitTexture(TexturePtr &tex, const AABB2 &renderRect, bool mirr
     }
 }
 
-std::vector<VertexTextured> RendererGL::createTexturedQuad(const AABB2 &renderRect, bool mirrored /* = false */)
-{
+std::vector<VertexTextured> RendererGL::createTexturedQuad(const AABB2 &renderRect, bool mirrored /* = false */) {
     glm::vec2 min = renderRect.getMinimum();
     glm::vec2 max = renderRect.getMaximum();
     if (!mirrored) {
@@ -664,8 +623,7 @@ std::vector<VertexTextured> RendererGL::createTexturedQuad(const AABB2 &renderRe
     }
 }
 
-void RendererGL::blitTexture(TexturePtr &tex, const AABB2 &renderRect, ShaderProgramPtr &shader, bool mirrored)
-{
+void RendererGL::blitTexture(TexturePtr &tex, const AABB2 &renderRect, ShaderProgramPtr &shader, bool mirrored) {
     // Set-up the vertex data of the rectangle
     std::vector<VertexTextured> fullscreenQuad(createTexturedQuad(renderRect, mirrored));
 
@@ -755,8 +713,7 @@ TexturePtr RendererGL::resolveMultisampledTexture(TexturePtr &tex) // Just retur
     return resolvedTexture;
 }
 
-void RendererGL::blurTexture(TexturePtr &tex)
-{
+void RendererGL::blurTexture(TexturePtr &tex) {
     // Create a framebuffer and a temporal texture for blurring
     FramebufferObjectPtr blurFramebuffer = createFBO();
     TexturePtr tempBlurTexture = TextureManager->createEmptyTexture(tex->getW(), tex->getH(),
@@ -793,8 +750,7 @@ void RendererGL::blurTexture(TexturePtr &tex)
     _restoreViewProj();
 }
 
-TexturePtr RendererGL::getScaledTexture(TexturePtr &tex, Point2 newSize)
-{
+TexturePtr RendererGL::getScaledTexture(TexturePtr &tex, Point2 newSize) {
     // Create a framebuffer and the storage for the scaled texture
     FramebufferObjectPtr framebuffer = createFBO();
     TexturePtr scaledTexture = TextureManager->createEmptyTexture(newSize.x, newSize.y, TextureSettings(
@@ -814,8 +770,7 @@ TexturePtr RendererGL::getScaledTexture(TexturePtr &tex, Point2 newSize)
     return scaledTexture;
 }
 
-void RendererGL::blitTextureFXAAAntialiased(TexturePtr &tex)
-{
+void RendererGL::blitTextureFXAAAntialiased(TexturePtr &tex) {
     // Set a new temporal MV and P matrix to render a fullscreen quad
     _setNormalizedViewProj();
 
@@ -836,21 +791,18 @@ void RendererGL::blitTextureFXAAAntialiased(TexturePtr &tex)
 
 
 // OpenGL-specific calls
-void RendererGL::bindVAO(GLuint vao)
-{
+void RendererGL::bindVAO(GLuint vao) {
     if (vao != boundVAO) {
         boundVAO = vao;
         glBindVertexArray(vao);
     }
 }
 
-GLuint RendererGL::getVAO()
-{
+GLuint RendererGL::getVAO() {
     return boundVAO;
 }
 
-void RendererGL::useShaderProgram(ShaderProgramGL *shader)
-{
+void RendererGL::useShaderProgram(ShaderProgramGL *shader) {
     unsigned int shaderID = shader ? shader->getShaderProgramID() : 0;
     if (shaderID != boundShader) {
         boundShader = shaderID;
@@ -858,8 +810,7 @@ void RendererGL::useShaderProgram(ShaderProgramGL *shader)
     }
 }
 
-void RendererGL::resetShaderProgram()
-{
+void RendererGL::resetShaderProgram() {
     boundShader = 0;
     ShaderManager->bindUniformBuffer(0, matrixBlockBuffer);
 }

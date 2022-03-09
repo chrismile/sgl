@@ -35,7 +35,7 @@ namespace sgl {
 
 class DLL_OBJECT Renderable {
 public:
-    virtual ~Renderable() {}
+    virtual ~Renderable() = default;
     virtual void render() {}
 };
 

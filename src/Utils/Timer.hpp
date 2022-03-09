@@ -36,8 +36,7 @@
 
 namespace sgl {
 
-class DLL_OBJECT TimerInterface
-{
+class DLL_OBJECT TimerInterface {
 public:
     TimerInterface();
 
@@ -45,10 +44,10 @@ public:
     void sleepMilliseconds(unsigned int milliseconds);
     void waitForFPSLimit();
 
-    uint64_t getTicksMicroseconds() const;
-    float getTimeInSeconds() const { return currentTime / 1e6f; }
-    uint64_t getElapsedMicroseconds() const { return elapsedMicroSeconds; }
-    float getElapsedSeconds() const { return elapsedMicroSeconds / 1e6f; }
+    [[nodiscard]] uint64_t getTicksMicroseconds() const;
+    [[nodiscard]] float getTimeInSeconds() const { return float(double(currentTime) / 1e6); }
+    [[nodiscard]] uint64_t getElapsedMicroseconds() const { return elapsedMicroSeconds; }
+    [[nodiscard]] float getElapsedSeconds() const { return float(double(elapsedMicroSeconds) / 1e6); }
 
     /**
      * In real-time applications, we usually have two main goals:
@@ -62,16 +61,16 @@ public:
     inline void setFPSLimit(bool enabled, unsigned int fpsLimit) {
         fpsLimitEnabled = enabled; this->fpsLimit = fpsLimit;
     }
-    inline bool getFPSLimitEnabled() { return fpsLimitEnabled; }
-    inline unsigned int getTargetFPS() { return fpsLimit; }
+    [[nodiscard]] inline bool getFPSLimitEnabled() const { return fpsLimitEnabled; }
+    [[nodiscard]] inline unsigned int getTargetFPS() const { return fpsLimit; }
 
     /// Sets whether we want fixed FPS for physics updates. You can place functions that expect this fixed
     /// FPS in AppSettings::fixedUpdate(float dt).
     inline void setFixedPhysicsFPS(bool enabled, unsigned int physicsFPS) {
         fixedPhysicsFPSEnabled = enabled; this->physicsFPS = physicsFPS;
     }
-    inline bool getFixedPhysicsFPSEnabled() { return fixedPhysicsFPSEnabled; }
-    inline unsigned int getFixedPhysicsFPS() { return physicsFPS; }
+    [[nodiscard]] inline bool getFixedPhysicsFPSEnabled() const { return fixedPhysicsFPSEnabled; }
+    [[nodiscard]] inline unsigned int getFixedPhysicsFPS() const { return physicsFPS; }
 
 private:
     uint64_t currentTime, lastTime, elapsedMicroSeconds;

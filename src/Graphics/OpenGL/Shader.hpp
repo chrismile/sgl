@@ -38,18 +38,17 @@
 
 namespace sgl {
 
-class DLL_OBJECT ShaderGL : public Shader
-{
+class DLL_OBJECT ShaderGL : public Shader {
 public:
-    ShaderGL(ShaderType _shaderType);
-    ~ShaderGL();
-    void setShaderText(const std::string &text);
-    bool compile();
+    explicit ShaderGL(ShaderType _shaderType);
+    ~ShaderGL() override;
+    void setShaderText(const std::string &text) override;
+    bool compile() override;
 
-    //! Implementation dependent
-    inline GLuint getShaderID() const { return shaderID; }
-    inline GLuint getShaderType() const { return shaderType; }
-    //! Returns e.g. "Fragment Shader" for logging purposes
+    /// Implementation dependent
+    [[nodiscard]] inline GLuint getShaderID() const { return shaderID; }
+    [[nodiscard]] inline GLuint getShaderType() const { return shaderType; }
+    /// Returns e.g. "Fragment Shader" for logging purposes
     std::string getShaderDebugType();
 
 private:
@@ -59,8 +58,7 @@ private:
 
 typedef std::shared_ptr<Shader> ShaderPtr;
 
-class DLL_OBJECT ShaderProgramGL : public ShaderProgram
-{
+class DLL_OBJECT ShaderProgramGL : public ShaderProgram {
 public:
     ShaderProgramGL();
     ~ShaderProgramGL() override;
@@ -186,10 +184,10 @@ public:
     bool setShaderStorageBuffer(int binding, int location, const GeometryBufferPtr &geometryBuffer) override;
     bool setShaderStorageBuffer(int binding, const char *name, const GeometryBufferPtr &geometryBuffer) override;
 
-    inline GLuint getShaderProgramID() { return shaderProgramID; }
+    [[nodiscard]] inline GLuint getShaderProgramID() const { return shaderProgramID; }
 
 private:
-    //! Prints an error message if the uniform doesn't exist
+    /// Prints an error message if the uniform doesn't exist
     int getUniformLoc_error(const char *name);
     std::map<std::string, int> uniforms;
     std::map<std::string, int> attributes;

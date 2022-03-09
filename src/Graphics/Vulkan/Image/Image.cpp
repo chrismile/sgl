@@ -73,10 +73,11 @@ Image::Image(Device* device, const ImageSettings& imageSettings) : device(device
             sgl::Logfile::get()->throwError("Image::Image: vmaCreateImage failed!");
         }
     } else {
+        VkExternalMemoryHandleTypeFlags handleTypes = 0;
 #if defined(_WIN32)
-        VkExternalMemoryHandleTypeFlags handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+        handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
 #elif defined(__linux__)
-        VkExternalMemoryHandleTypeFlags handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+        handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 #else
         Logfile::get()->throwError(
                 "Error in Image::Image: External memory is only supported on Linux, Android and Windows systems!");

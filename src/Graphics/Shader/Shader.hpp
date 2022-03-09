@@ -51,17 +51,16 @@ class Color;
 class Texture;
 typedef std::shared_ptr<Texture> TexturePtr;
 
-//! A single shader, e.g. fragment (pixel) shader, vertex shader, geometry shader, ...
-class DLL_OBJECT Shader
-{
+/// A single shader, e.g. fragment (pixel) shader, vertex shader, geometry shader, ...
+class DLL_OBJECT Shader {
 public:
-    Shader() {}
-    virtual ~Shader() {}
+    Shader() = default;
+    virtual ~Shader() = default;
     virtual void setShaderText(const std::string &text)=0;
     virtual bool compile()=0;
 
     // The identifier used for loading the shader, e.g. "Blit.Vertex"
-    inline const char *getFileID() const { return fileID.c_str(); }
+    [[nodiscard]] inline const char *getFileID() const { return fileID.c_str(); }
     inline void setFileID(const std::string &_fileID) { fileID = _fileID; }
 
 protected:
@@ -70,12 +69,11 @@ protected:
 
 typedef std::shared_ptr<Shader> ShaderPtr;
 
-//! The shader program is the sum of the different shaders attached and linked together
-class DLL_OBJECT ShaderProgram
-{
+/// The shader program is the sum of the different shaders attached and linked together
+class DLL_OBJECT ShaderProgram {
 public:
-    ShaderProgram() {}
-    virtual ~ShaderProgram() {}
+    ShaderProgram() = default;
+    virtual ~ShaderProgram() = default;
     inline std::vector<ShaderPtr> &getShaderList() { return shaders; }
 
     virtual void attachShader(ShaderPtr shader)=0;
@@ -87,7 +85,7 @@ public:
     // Compute shader interface
     virtual void dispatchCompute(int numGroupsX, int numGroupsY = 1, int numGroupsZ = 1)=0;
 
-    //! Uniform variables are shared between different executions of a shader program
+    /// Uniform variables are shared between different executions of a shader program
     virtual bool hasUniform(const char *name)=0;
     virtual int getUniformLoc(const char *name)=0;
     virtual bool setUniform(const char *name, int value)=0;
