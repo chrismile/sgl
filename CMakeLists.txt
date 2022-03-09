@@ -24,6 +24,10 @@ if(MSVC)
     # Disable "[...] needs to have dll-interface to be used by clients of class [...]".
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /w44251")
 endif()
+if (APPLE)
+    # Disable '-Wnullability-completeness' warnings caused by VMA using '_Nonnull'.
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-nullability-completeness")
+endif()
 
 option(SUPPORT_OPENGL "Build with OpenGL support" ON)
 option(SUPPORT_VULKAN "Build with Vulkan support" ON)

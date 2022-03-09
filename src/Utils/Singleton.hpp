@@ -43,8 +43,7 @@ template <class T>
 class Singleton : public boost::interprocess::ipcdetail::intermodule_singleton<T>
 {
 public:
-    /*virtual ~Singleton () { }
-    inline static void deleteSingleton() { singleton = std::unique_ptr<T>(); }*/
+    virtual ~Singleton() = default;
 
     /// Creates static instance if necessary and returns the pointer to it
     inline static T *get() {
@@ -59,7 +58,7 @@ public:
 template <class T>
 class Singleton {
 public:
-    virtual ~Singleton () = default;
+    virtual ~Singleton() = default;
     inline static void deleteSingleton() { singleton = std::unique_ptr<T>(); }
 
     /// Creates static instance if necessary and returns the pointer to it
