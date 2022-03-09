@@ -97,9 +97,9 @@ protected:
     uint64_t waitSemaphoreValue = 0;
     uint64_t signalSemaphoreValue = 0;
 
-#ifdef _WIN32
+#if defined(_WIN32)
     HANDLE handle = nullptr;
-#else
+#elif defined(__linux__)
     int fileDescriptor = -1;
 #endif
 };

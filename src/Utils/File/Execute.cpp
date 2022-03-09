@@ -53,7 +53,7 @@ char **convertStringListToArgv(std::list<std::string> &stringList) {
     for (auto& it : stringList) {
         argv[i] = new char[it.size() + 1];
 #if (defined(_MSC_VER) && _MSC_VER > 1910) || defined(__STDC_LIB_EXT1__)
-        strcpy_s(argv[i], it->size() + 1, it->c_str());
+        strcpy_s(argv[i], it.size() + 1, it.c_str());
 #else
         strcpy(argv[i], it.c_str());
 #endif

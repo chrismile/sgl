@@ -48,12 +48,12 @@ Semaphore::Semaphore(
 Semaphore::~Semaphore() {
     vkDestroySemaphore(device->getVkDevice(), semaphoreVk, nullptr);
 
-#ifdef _WIN32
+#if defined(_WIN32)
     if (handle != nullptr) {
         CloseHandle(handle);
         handle = nullptr;
     }
-#else
+#elif defined(__linux__)
     if (fileDescriptor != -1) {
         close(fileDescriptor);
         fileDescriptor = -1;
