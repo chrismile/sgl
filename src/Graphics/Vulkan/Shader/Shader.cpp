@@ -379,7 +379,7 @@ bool ShaderStages::getHasInputVariable(const std::string& varName) const {
     if (!vertexShaderModule) {
         sgl::Logfile::get()->writeError(
                 "Error in ShaderStages::getInputVariableLocation: No vertex shader exists!");
-        return -1;
+        return false;
     }
 
     return inputVariableNameLocationMap.find(varName) != inputVariableNameLocationMap.end();
