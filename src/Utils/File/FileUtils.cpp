@@ -61,7 +61,7 @@ void FileUtils::initialize(const std::string &_appName, int _argc, const char *_
     execDir = argv[0];
 
     appName = _appName;
-#ifdef __unix__
+#if defined(__unix__) || defined(__APPLE__)
     std::string appNameNoWhitespace;
     for (char c : appName) {
         if (c != ' ' && c != '\t') {

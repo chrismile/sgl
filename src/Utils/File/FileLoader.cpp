@@ -26,6 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define _FILE_OFFSET_BITS 64
+
 #include <cassert>
 
 #ifdef USE_LIBARCHIVE
@@ -52,10 +54,10 @@ bool loadFileFromSource(
     // Carriage return was not counted in text mode when using MinGW.
     isBinaryFile = true;
 #endif
-#ifdef _MSC_VER
-    FILE* file = fopen(filename.c_str(), "rb");
-#else
+#if defined(__linux__) || defined(__MINGW32__) // __GNUC__? Does GCC generally work on non-POSIX systems?
     FILE* file = fopen64(filename.c_str(), "rb");
+#else
+    FILE* file = fopen(filename.c_str(), "rb");
 #endif
     if (!file) {
         sgl::Logfile::get()->writeError(
