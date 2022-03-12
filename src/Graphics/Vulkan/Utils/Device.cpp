@@ -168,7 +168,7 @@ bool Device::isDeviceSuitable(
     }
 
     if (surface) {
-        SwapchainSupportInfo swapchainSupportInfo = querySwapchainSupportInfo(physicalDevice, surface);
+        SwapchainSupportInfo swapchainSupportInfo = querySwapchainSupportInfo(physicalDevice, surface, nullptr);
         if (swapchainSupportInfo.formats.empty() && !swapchainSupportInfo.presentModes.empty()) {
             return false;
         }

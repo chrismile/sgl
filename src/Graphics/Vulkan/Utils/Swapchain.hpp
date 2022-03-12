@@ -47,7 +47,8 @@ struct DLL_OBJECT SwapchainSupportInfo {
     std::vector<VkSurfaceFormatKHR> formats;
     std::vector<VkPresentModeKHR> presentModes;
 };
-DLL_OBJECT SwapchainSupportInfo querySwapchainSupportInfo(VkPhysicalDevice device, VkSurfaceKHR surface);
+DLL_OBJECT SwapchainSupportInfo querySwapchainSupportInfo(
+        VkPhysicalDevice device, VkSurfaceKHR surface, Window* window);
 
 class DLL_OBJECT Swapchain {
 public:
@@ -71,7 +72,7 @@ public:
 
     /// Called by the window class when the resolution changed.
     inline void windowResolutionChanged() { framebufferResized = true; }
-    [[nodiscard]]  inline bool getIsWaitingForResizeEnd() const { return isWaitingForResizeEnd; }
+    [[nodiscard]] inline bool getIsWaitingForResizeEnd() const { return isWaitingForResizeEnd; }
 
     [[nodiscard]] inline size_t getNumImages() { return swapchainImageViews.size(); }
     [[nodiscard]] inline uint32_t getMinImageCount() { return minImageCount; }

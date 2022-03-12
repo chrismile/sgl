@@ -54,7 +54,8 @@ void Swapchain::create(Window* window) {
     VkSurfaceKHR surface = window->getVkSurface();
     WindowSettings windowSettings = window->getWindowSettings();
 
-    SwapchainSupportInfo swapchainSupportInfo = querySwapchainSupportInfo(device->getVkPhysicalDevice(), surface);
+    SwapchainSupportInfo swapchainSupportInfo = querySwapchainSupportInfo(
+            device->getVkPhysicalDevice(), surface, window);
     std::set<VkPresentModeKHR> presentModesSet(
             swapchainSupportInfo.presentModes.begin(), swapchainSupportInfo.presentModes.end());
     VkSurfaceFormatKHR surfaceFormat = getSwapSurfaceFormat(swapchainSupportInfo.formats);
@@ -350,10 +351,17 @@ void Swapchain::cleanup() {
     }
 }
 
-SwapchainSupportInfo querySwapchainSupportInfo(VkPhysicalDevice device, VkSurfaceKHR surface) {
+SwapchainSupportInfo querySwapchainSupportInfo(VkPhysicalDevice device, VkSurfaceKHR surface, Window* window) {
     SwapchainSupportInfo swapchainSupportInfo;
 
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &swapchainSupportInfo.capabilities);
+	if (window) {
+        while (swapchainSupportInfo.capabilities.currentExtent.width == 0
+                || swapchainSupportInfo.capabilities.currentExtent.height == 0) {
+            vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &swapchainSupportInfo.capabilities);
+            window->processEvents();
+        }
+    }
 
     uint32_t formatCount;
     vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
