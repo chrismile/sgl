@@ -62,7 +62,7 @@ Instance::~Instance() {
         auto _vkDestroyDebugUtilsMessengerEXT =
                 (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
         if (_vkDestroyDebugUtilsMessengerEXT != nullptr) {
-            _vkDestroyDebugUtilsMessengerEXT(instance, debugMessenger, NULL);
+            _vkDestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
         }
     }
 
