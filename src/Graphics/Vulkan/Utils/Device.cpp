@@ -168,7 +168,8 @@ bool Device::isDeviceSuitable(
     }
 
     if (surface) {
-        SwapchainSupportInfo swapchainSupportInfo = querySwapchainSupportInfo(physicalDevice, surface, nullptr);
+        SwapchainSupportInfo swapchainSupportInfo = querySwapchainSupportInfo(
+                physicalDevice, surface, nullptr);
         if (swapchainSupportInfo.formats.empty() && !swapchainSupportInfo.presentModes.empty()) {
             return false;
         }
@@ -200,7 +201,7 @@ bool Device::isDeviceSuitable(
         presentSupport = true;
     }
 
-    VkPhysicalDeviceFeatures physicalDeviceFeatures;
+    VkPhysicalDeviceFeatures physicalDeviceFeatures{};
     vkGetPhysicalDeviceFeatures(physicalDevice, &physicalDeviceFeatures);
 
     // Check if all requested features are available.
@@ -257,8 +258,33 @@ VkPhysicalDevice Device::createPhysicalDeviceBinding(
     deviceExtensions.insert(
             deviceExtensions.end(), requiredDeviceExtensions.begin(), requiredDeviceExtensions.end());
 
+    /*
+     * Give priority to GPUs in this order: Discrete, integrated, virtual, CPU, other.
+     */
+    std::vector<VkPhysicalDeviceType> deviceTypePriorityList = {
+            VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
+            VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU,
+            VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU,
+            VK_PHYSICAL_DEVICE_TYPE_CPU,
+            VK_PHYSICAL_DEVICE_TYPE_OTHER
+    };
+    std::map<VkPhysicalDeviceType, std::vector<VkPhysicalDevice>> physicalDeviceMap;
+    for (const VkPhysicalDevice& physicalDeviceIt : physicalDevices) {
+        VkPhysicalDeviceProperties physicalDeviceItProperties{};
+        vkGetPhysicalDeviceProperties(physicalDeviceIt, &physicalDeviceItProperties);
+        physicalDeviceMap[physicalDeviceItProperties.deviceType].push_back(physicalDeviceIt);
+    }
+
+    std::vector<VkPhysicalDevice> sortedPhysicalDevices;
+    sortedPhysicalDevices.reserve(numPhysicalDevices);
+    for (VkPhysicalDeviceType deviceType : deviceTypePriorityList) {
+        const std::vector<VkPhysicalDevice>& physicalDeviceList = physicalDeviceMap[deviceType];
+        sortedPhysicalDevices.insert(
+                sortedPhysicalDevices.end(), physicalDeviceList.begin(), physicalDeviceList.end());
+    }
+
     physicalDevice = VK_NULL_HANDLE;
-    for (const auto &physicalDeviceIt : physicalDevices) {
+    for (const VkPhysicalDevice& physicalDeviceIt : sortedPhysicalDevices) {
         if (isDeviceSuitable(
                 physicalDeviceIt, surface, requiredDeviceExtensions, optionalDeviceExtensions,
                 deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures, computeOnly)) {
