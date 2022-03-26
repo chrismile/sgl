@@ -35,11 +35,12 @@
 
 namespace sgl {
 
-RenderTarget::RenderTarget(FramebufferObjectPtr _framebuffer) {
-    framebuffer = std::move(_framebuffer);
+RenderTarget::RenderTarget(int width, int height) : width(width), height(height) {
 }
 
-RenderTarget::RenderTarget(int width, int height) : width(width), height(height) {
+#ifdef SUPPORT_OPENGL
+RenderTarget::RenderTarget(FramebufferObjectPtr _framebuffer) {
+    framebuffer = std::move(_framebuffer);
 }
 
 void RenderTarget::bindFramebufferObject(FramebufferObjectPtr _framebuffer) {
@@ -61,6 +62,7 @@ void RenderTarget::bindRenderTarget() {
         Renderer->unbindFBO();
     }
 }
+#endif
 
 int RenderTarget::getWidth() {
     if (framebuffer) {

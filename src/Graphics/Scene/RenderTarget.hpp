@@ -42,12 +42,14 @@ typedef std::shared_ptr<RenderTarget> RenderTargetPtr;
 class DLL_OBJECT RenderTarget {
 public:
     RenderTarget() = default;
-    explicit RenderTarget(FramebufferObjectPtr _framebuffer);
     RenderTarget(int width, int height);
+#ifdef SUPPORT_OPENGL
+    explicit RenderTarget(FramebufferObjectPtr _framebuffer);
     void bindFramebufferObject(FramebufferObjectPtr _framebuffer);
     void bindWindowFramebuffer();
     FramebufferObjectPtr getFramebufferObject();
     void bindRenderTarget();
+#endif
     int getWidth();
     int getHeight();
 

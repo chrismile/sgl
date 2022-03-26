@@ -90,6 +90,13 @@ private:
     void openFile(const std::string& filename, int frameWidth, int frameHeight, int framerate = 25);
     void createCpuBufferData(int width, int height);
 
+#if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN)
+    static const size_t NUM_RB_BUFFERS = 4; ///< Sufficient for up to 4 frames queued at the same time.
+    size_t startPointer = 0, endPointer = 0;
+    size_t queueCapacity = NUM_RB_BUFFERS;
+    size_t queueSize = 0;
+#endif
+
 #ifdef SUPPORT_OPENGL
     // Asynchronous CPU/GPU data transfer.
     void initializeReadBackBuffers();
@@ -101,15 +108,11 @@ private:
     void readBackOldestFrame();
     bool initializedReadBackBuffers = false;
     bool useAsyncCopy;
-    static const size_t NUM_RB_BUFFERS = 4; ///< Sufficient for up to 4 frames queued at the same time.
     struct ReadBackBuffer {
         GLuint pbo = 0u;
         GLsync fence = nullptr;
     };
     ReadBackBuffer readBackBuffers[NUM_RB_BUFFERS];
-    size_t startPointer = 0, endPointer = 0;
-    size_t queueCapacity = NUM_RB_BUFFERS;
-    size_t queueSize = 0;
 #endif
 
 #ifdef SUPPORT_VULKAN

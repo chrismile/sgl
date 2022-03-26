@@ -85,7 +85,9 @@ void ImGuiWrapper::initialize(
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
     //io.FontGlobalScale = fontScaleFactor*2.0f;
 
+#if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN)
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
+#endif
 #ifdef SUPPORT_OPENGL
     if (renderSystem == RenderSystem::OPENGL) {
         SDLWindow* window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
@@ -187,7 +189,9 @@ void ImGuiWrapper::initialize(
 }
 
 void ImGuiWrapper::shutdown() {
+#if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN)
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
+#endif
 #ifdef SUPPORT_OPENGL
     if (renderSystem == RenderSystem::OPENGL) {
         ImGui_ImplOpenGL3_Shutdown();
@@ -263,8 +267,9 @@ void ImGuiWrapper::renderStart() {
     ZoneScopedN("ImGuiWrapper::renderStart");
 
     SDLWindow* window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
+#if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN)
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
-
+#endif
 #ifdef SUPPORT_VULKAN
     if (renderSystem == RenderSystem::VULKAN && !initialized) {
         initialized = true;
@@ -320,7 +325,9 @@ void ImGuiWrapper::renderEnd() {
 
     ImGui::Render();
 
+#if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN)
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
+#endif
 #ifdef SUPPORT_OPENGL
     if (renderSystem == RenderSystem::OPENGL) {
         ZoneScopedN("ImGui_ImplOpenGL3_RenderDrawData");

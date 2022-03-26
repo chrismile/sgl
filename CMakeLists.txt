@@ -46,7 +46,9 @@ if (${SUPPORT_OPENGL})
     endif()
 endif()
 if ((NOT ${SUPPORT_OPENGL}) OR (NOT ${OpenGL_FOUND}) OR (NOT ${GLEW_FOUND}))
-    file(GLOB_RECURSE OPENGL_SOURCES src/Graphics/OpenGL/*.cpp src/Graphics/OpenGL/*.c src/Graphics/OpenGL/*.h src/Graphics/OpenGL/*.hpp)
+    file(GLOB_RECURSE OPENGL_SOURCES
+            src/Graphics/OpenGL/*.cpp src/Graphics/OpenGL/*.c src/Graphics/OpenGL/*.h src/Graphics/OpenGL/*.hpp
+            src/Graphics/Mesh/*.cpp src/Graphics/Mesh/*.c src/Graphics/Mesh/*.h src/Graphics/Mesh/*.hpp)
     foreach(source ${OPENGL_SOURCES})
         list(REMOVE_ITEM SOURCES ${source})
     endforeach()
