@@ -6449,10 +6449,22 @@ void VmaBlockMetadata::PrintDetailedMap_Begin(class VmaJsonWriter& json,
     json.WriteNumber(unusedBytes);
 
     json.WriteString("Allocations");
-    json.WriteNumber(allocationCount);
+#if !defined(_WIN64) && !defined(__x86_64__) && !defined(__ppc64__) && !defined(_M_ARM64) && !defined(__LP64__)
+    assert(sizeof(size_t) == sizeof(uint32_t));
+    json.WriteNumber(uint32_t(allocationCount));
+#else
+    assert(sizeof(size_t) == sizeof(uint64_t));
+    json.WriteNumber(uint64_t(allocationCount));
+#endif
 
     json.WriteString("UnusedRanges");
-    json.WriteNumber(unusedRangeCount);
+#if !defined(_WIN64) && !defined(__x86_64__) && !defined(__ppc64__) && !defined(_M_ARM64) && !defined(__LP64__)
+    assert(sizeof(size_t) == sizeof(uint32_t));
+    json.WriteNumber(uint32_t(unusedRangeCount));
+#else
+    assert(sizeof(size_t) == sizeof(uint64_t));
+    json.WriteNumber(uint64_t(unusedRangeCount));
+#endif
 
     json.WriteString("Suballocations");
     json.BeginArray();
@@ -15983,7 +15995,14 @@ void VmaAllocator_T::PrintDetailedMap(VmaJsonWriter& json)
                         {
                             json.WriteString("Name");
                             json.BeginString();
-                            json.ContinueString(index++);
+#if !defined(_WIN64) && !defined(__x86_64__) && !defined(__ppc64__) && !defined(_M_ARM64) && !defined(__LP64__)
+                            assert(sizeof(size_t) == sizeof(uint32_t));
+                            json.ContinueString(uint32_t(index++));
+#else
+                            assert(sizeof(size_t) == sizeof(uint64_t));
+                            json.ContinueString(uint64_t(index++));
+#endif
+
                             if (pool->GetName())
                             {
                                 json.WriteString(" - ");

@@ -168,9 +168,11 @@ void AppLogic::run() {
         }
 
         // Check for errors
+#ifdef SUPPORT_OPENGL
         if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
             Renderer->errorCheck();
         }
+#endif
         window->errorCheck();
 
         if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
