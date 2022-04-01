@@ -306,7 +306,7 @@ void SciVisApp::resolutionChanged(sgl::EventPtr event) {
 }
 
 void SciVisApp::saveScreenshot(const std::string &filename) {
-#if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN)
+#ifdef SUPPORT_OPENGL
     int width;
     int height;
     if (customScreenshotWidth < 0 || customScreenshotHeight < 0) {

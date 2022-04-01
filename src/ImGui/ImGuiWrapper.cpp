@@ -373,7 +373,6 @@ void ImGuiWrapper::renderEnd() {
 
     ImGuiIO &io = ImGui::GetIO();
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        SDLWindow* sdlWindow = (SDLWindow*)AppSettings::get()->getMainWindow();
         {
             ZoneScopedN("ImGui::UpdatePlatformWindows");
             ImGui::UpdatePlatformWindows();
@@ -385,6 +384,7 @@ void ImGuiWrapper::renderEnd() {
 #ifdef SUPPORT_OPENGL
         if (renderSystem == RenderSystem::OPENGL) {
             ZoneScopedN("SDL_GL_MakeCurrent");
+            SDLWindow* sdlWindow = (SDLWindow*)AppSettings::get()->getMainWindow();
             SDL_GL_MakeCurrent(sdlWindow->getSDLWindow(), sdlWindow->getGLContext());
         }
 #endif
