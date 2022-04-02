@@ -368,7 +368,7 @@ if (${USE_LIBARCHIVE})
 endif()
 
 target_link_libraries(sgl PRIVATE ${Boost_LIBRARIES})
-target_include_directories(sgl PRIVATE ${Boost_INCLUDE_DIR} ${GLM_INCLUDE_DIR})
+target_include_directories(sgl PRIVATE ${Boost_INCLUDE_DIR} ${GLM_INCLUDE_DIR} ${GLM_INCLUDE_DIRS})
 
 if(NOT WIN32 AND NOT (UNIX AND NOT APPLE))
     if(${efsw_FOUND})
