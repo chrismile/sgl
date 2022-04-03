@@ -39,7 +39,18 @@
 #include <ImGui/imgui.h>
 
 #ifdef SUPPORT_OPENGL
+#include <Graphics/Buffers/RBO.hpp>
 typedef int GLint;
+namespace sgl {
+struct FramebufferObject;
+typedef std::shared_ptr<FramebufferObject> FramebufferObjectPtr;
+class Texture;
+typedef std::shared_ptr<Texture> TexturePtr;
+class RenderbufferObject;
+typedef std::shared_ptr<RenderbufferObject> RenderbufferObjectPtr;
+class ShaderProgram;
+typedef std::shared_ptr<ShaderProgram> ShaderProgramPtr;
+}
 #endif
 
 #ifdef SUPPORT_VULKAN
