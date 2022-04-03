@@ -258,8 +258,15 @@ VkPhysicalDevice Device::createPhysicalDeviceBinding(
     deviceExtensions.insert(
             deviceExtensions.end(), requiredDeviceExtensions.begin(), requiredDeviceExtensions.end());
 
+#ifdef __linux__
     /*
      * Give priority to GPUs in this order: Discrete, integrated, virtual, CPU, other.
+     * This is necessary on Linux, as VK_LAYER_NV_optimus, which should make sure that on systems with hybrid GPU
+     * solutions the selected GPU always comes first, seems to not work correctly at least on Ubuntu 20.04.
+     * When selecting the Intel GPU on Ubuntu 20.04, the NVIDIA GPU is not reported. When selecting the NVIDIA GPU,
+     * the Intel GPU still comes first, but the system crashes when using the Intel GPU. Thus, the discrete GPU is
+     * prioritized when available. On Arch Linux, which per default uses prime-run, it seems like only the correct GPU
+     * is reported at all, so this should have no side effect for prime-run based systems.
      */
     std::vector<VkPhysicalDeviceType> deviceTypePriorityList = {
             VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
@@ -292,6 +299,20 @@ VkPhysicalDevice Device::createPhysicalDeviceBinding(
             break;
         }
     }
+#else
+    /**
+     * Select the first device on, e.g., Windows, as the selected GPU on hybrid GPU systems seems to always be first.
+     */
+    physicalDevice = VK_NULL_HANDLE;
+    for (const VkPhysicalDevice& physicalDeviceIt : physicalDevices) {
+        if (isDeviceSuitable(
+                physicalDeviceIt, surface, requiredDeviceExtensions, optionalDeviceExtensions,
+                deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures, computeOnly)) {
+            physicalDevice = physicalDeviceIt;
+            break;
+        }
+    }
+#endif
 
     if (physicalDevice == VK_NULL_HANDLE) {
         std::string errorText =
