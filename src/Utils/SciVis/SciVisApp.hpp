@@ -38,6 +38,10 @@
 #include <ImGui/Widgets/CoordinateAxesOverlayWidget.hpp>
 #include <ImGui/imgui.h>
 
+#ifdef SUPPORT_OPENGL
+typedef int GLint;
+#endif
+
 #ifdef SUPPORT_VULKAN
 namespace sgl { namespace vk {
 class Image;

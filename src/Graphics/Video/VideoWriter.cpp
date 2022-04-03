@@ -39,6 +39,7 @@
 
 #ifdef SUPPORT_OPENGL
 #include <GL/glew.h>
+#include <Graphics/OpenGL/RendererGL.hpp>
 #endif
 
 #ifdef SUPPORT_VULKAN

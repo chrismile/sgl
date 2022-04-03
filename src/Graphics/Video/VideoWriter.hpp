@@ -30,10 +30,16 @@
 #define SGL_VIDEOWRITER_HPP
 
 #include <string>
+#include <memory>
 #include <cstdio>
 
 #ifdef SUPPORT_OPENGL
-#include <Graphics/OpenGL/RendererGL.hpp>
+typedef unsigned int GLuint;
+typedef struct __GLsync *GLsync;
+namespace sgl {
+struct FramebufferObject;
+typedef std::shared_ptr<FramebufferObject> FramebufferObjectPtr;
+}
 #endif
 
 #ifdef SUPPORT_VULKAN

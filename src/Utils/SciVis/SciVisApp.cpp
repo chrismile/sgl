@@ -37,6 +37,8 @@
 #include <Graphics/Window.hpp>
 #include <Graphics/Scene/RenderTarget.hpp>
 #ifdef SUPPORT_OPENGL
+#include <GL/glew.h>
+#include <Graphics/Renderer.hpp>
 #include <Graphics/Shader/ShaderManager.hpp>
 #include <Graphics/Texture/TextureManager.hpp>
 #include <Graphics/Texture/Bitmap.hpp>
