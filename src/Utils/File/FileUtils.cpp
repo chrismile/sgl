@@ -70,9 +70,11 @@ void FileUtils::initialize(const std::string &_appName, int _argc, const char *_
             appNameNoWhitespace += '-';
         }
     }
-    configDir =
-            std::string() + getenv("HOME") + "/.config/" + boost::to_lower_copy(appNameNoWhitespace) + "/";
-    userDir = std::string() + getenv("HOME") + "/";
+    std::string homeDirectory = getenv("HOME");
+
+#ifndef __APPLE__
+    configDir = homeDirectory + "/.config/" + boost::to_lower_copy(appNameNoWhitespace) + "/";
+    userDir = homeDirectory + "/";
 
     // Use the system-wide path "/var/games" if it is available on the system
     if (exists("/var/games")) {
@@ -80,6 +82,11 @@ void FileUtils::initialize(const std::string &_appName, int _argc, const char *_
     } else {
         sharedDir = getConfigDirectory();
     }
+#else
+    configDir = homeDirectory + "/Library/Preferences/" + boost::to_lower_copy(appNameNoWhitespace) + "/";
+    userDir = homeDirectory + "/";
+    sharedDir = "/Library/Preferences/" + boost::to_lower_copy(appNameNoWhitespace) + "/";
+#endif
 #else
     std::string appNameNoWhitespace;
     for (char c : appName) {
