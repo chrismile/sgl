@@ -62,6 +62,9 @@ void FileUtils::initialize(const std::string &_appName, int _argc, const char *_
 
     appName = _appName;
 #if defined(__unix__) || defined(__APPLE__)
+    std::string homeDirectory = getenv("HOME");
+
+#ifndef __APPLE__
     std::string appNameNoWhitespace;
     for (char c : appName) {
         if (c != ' ' && c != '\t') {
@@ -70,9 +73,7 @@ void FileUtils::initialize(const std::string &_appName, int _argc, const char *_
             appNameNoWhitespace += '-';
         }
     }
-    std::string homeDirectory = getenv("HOME");
 
-#ifndef __APPLE__
     configDir = homeDirectory + "/.config/" + boost::to_lower_copy(appNameNoWhitespace) + "/";
     userDir = homeDirectory + "/";
 
@@ -83,9 +84,16 @@ void FileUtils::initialize(const std::string &_appName, int _argc, const char *_
         sharedDir = getConfigDirectory();
     }
 #else
-    configDir = homeDirectory + "/Library/Preferences/" + boost::to_lower_copy(appNameNoWhitespace) + "/";
+    std::string appNameNoWhitespace;
+    for (char c : appName) {
+        if (c != ' ' && c != '\t') {
+            appNameNoWhitespace += c;
+        }
+    }
+
+    configDir = homeDirectory + "/Library/Preferences/" + appNameNoWhitespace + "/";
     userDir = homeDirectory + "/";
-    sharedDir = "/Library/Preferences/" + boost::to_lower_copy(appNameNoWhitespace) + "/";
+    sharedDir = "/Library/Preferences/" + appNameNoWhitespace + "/";
 #endif
 #else
     std::string appNameNoWhitespace;
