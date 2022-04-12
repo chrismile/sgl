@@ -201,6 +201,7 @@ private:
     vk::Device* primaryDevice = nullptr;
     vk::Swapchain* swapchain = nullptr;
     VulkanInteropCapabilities vulkanInteropCapabilities = VulkanInteropCapabilities::NOT_LOADED;
+    bool sdlVulkanLibraryLoaded = false;
 #endif
 
     // Where the application data is stored.

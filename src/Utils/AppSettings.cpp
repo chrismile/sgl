@@ -71,6 +71,10 @@
 #endif
 #endif
 
+#ifdef __APPLE__
+#include <dlfcn.h>
+#endif
+
 namespace sgl {
 
 DLL_OBJECT TimerInterface *Timer = NULL;
@@ -206,8 +210,9 @@ Window *AppSettings::createWindow() {
     setDPIAware();
 
     // There may only be one instance of a window for now!
-    static int i = 0; i++;
-    if (i != 1) {
+    static int windowIdx = 0;
+    windowIdx++;
+    if (windowIdx != 1) {
         Logfile::get()->writeError("ERROR: AppSettings::createWindow: More than one instance of a window created!");
         return nullptr;
     }
@@ -223,6 +228,20 @@ Window *AppSettings::createWindow() {
 #ifdef SUPPORT_VULKAN
     if (renderSystem == RenderSystem::VULKAN) {
         instance = new vk::Instance;
+
+#if defined(__APPLE__)
+        sdlVulkanLibraryLoaded = false;
+        const char* const moduleNames[] = { "libvulkan.dylib", "libvulkan.1.dylib", "libMoltenVK.dylib" };
+        for (int i = 0; i < IM_ARRAYSIZE(moduleNames); i++) {
+            void* module = dlopen(moduleNames[i], RTLD_NOW | RTLD_LOCAL);
+            if (module) {
+                SDL_Vulkan_LoadLibrary(moduleNames[i]);
+                sdlVulkanLibraryLoaded = true;
+                dlclose(module);
+                break;
+            }
+        }
+#endif
     }
 #endif
 
@@ -503,6 +522,9 @@ void AppSettings::release() {
         primaryDevice = nullptr;
     }
     if (instance) {
+        if (sdlVulkanLibraryLoaded) {
+            SDL_Vulkan_UnloadLibrary();
+        }
         delete instance;
         instance = nullptr;
     }
