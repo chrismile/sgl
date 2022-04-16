@@ -429,6 +429,17 @@ void Device::createLogicalDeviceAndQueues(
             requestedDeviceFeatures.fragmentShaderInterlockFeatures = fragmentShaderInterlockFeatures;
         }
     }
+    if (deviceExtensionsSet.find(VK_NV_MESH_SHADER_EXTENSION_NAME) != deviceExtensionsSet.end()) {
+        meshShaderFeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &meshShaderFeaturesNV;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        if (requestedDeviceFeatures.meshShaderFeaturesNV.meshShader == VK_FALSE) {
+            requestedDeviceFeatures.meshShaderFeaturesNV = meshShaderFeaturesNV;
+        }
+    }
 
     //
     /*
@@ -549,6 +560,10 @@ void Device::createLogicalDeviceAndQueues(
         *pNextPtr = &requestedDeviceFeatures.fragmentShaderInterlockFeatures;
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.fragmentShaderInterlockFeatures.pNext);
     }
+    if (requestedDeviceFeatures.meshShaderFeaturesNV.meshShader) {
+        *pNextPtr = &requestedDeviceFeatures.meshShaderFeaturesNV;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.meshShaderFeaturesNV.pNext);
+    }
 
     VkResult res = vkCreateDevice(physicalDevice, &deviceInfo, nullptr, &device);
     if (res != VK_SUCCESS) {
@@ -663,6 +678,15 @@ void Device::_getDeviceInformation() {
         VkPhysicalDeviceProperties2 deviceProperties2 = {};
         deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
         deviceProperties2.pNext = &rayTracingPipelineProperties;
+        vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
+    }
+
+    if (isDeviceExtensionSupported(VK_NV_MESH_SHADER_EXTENSION_NAME)) {
+        meshShaderPropertiesNV = {};
+        meshShaderPropertiesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_NV;
+        VkPhysicalDeviceProperties2 deviceProperties2 = {};
+        deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        deviceProperties2.pNext = &meshShaderPropertiesNV;
         vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
     }
 }

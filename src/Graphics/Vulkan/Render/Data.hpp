@@ -217,6 +217,14 @@ public:
     void setVertexBuffer(const BufferPtr& buffer, const std::string& name);
     void setVertexBufferOptional(const BufferPtr& buffer, const std::string& name);
 
+    /// For use with https://www.khronos.org/registry/vulkan/specs/1.3-extensions/man/html/vkCmdDrawMeshTasksNV.html.
+    void setMeshTasks(uint32_t _taskCount, uint32_t _firstTask) {
+        taskCount = _taskCount;
+        firstTask = _firstTask;
+    }
+    [[nodiscard]] inline uint32_t getTaskCount() const { return taskCount; }
+    [[nodiscard]] inline uint32_t getFirstTask() const { return firstTask; }
+
     inline void setNumInstances(size_t numInstances) { this->numInstances = numInstances; }
     [[nodiscard]] inline size_t getNumInstances() const { return numInstances; }
 
@@ -242,6 +250,10 @@ protected:
     std::vector<BufferPtr> vertexBuffers;
     size_t numVertices = 0;
     std::vector<VkBuffer> vulkanVertexBuffers;
+
+    // In case task/mesh shaders are used.
+    uint32_t taskCount = 0;
+    uint32_t firstTask = 0;
 };
 
 class DLL_OBJECT RayTracingData : public RenderData {

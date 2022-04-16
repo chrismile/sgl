@@ -82,6 +82,9 @@ Renderer::Renderer(Device* device, uint32_t numDescriptors) : device(device) {
     if (device->getPhysicalDeviceFeatures().geometryShader) {
         uboLayoutBinding.stageFlags |= VK_SHADER_STAGE_GEOMETRY_BIT;
     }
+    if (device->getPhysicalDeviceMeshShaderFeaturesNV().meshShader) {
+        uboLayoutBinding.stageFlags |= VK_SHADER_STAGE_MESH_BIT_NV;
+    }
 
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo{};
     descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -353,14 +356,30 @@ void Renderer::render(const RasterDataPtr& rasterData, const FramebufferPtr& fra
         }
     }
 
-    if (rasterData->hasIndexBuffer()) {
-        vkCmdDrawIndexed(
-                commandBuffer, static_cast<uint32_t>(rasterData->getNumIndices()),
-                static_cast<uint32_t>(rasterData->getNumInstances()), 0, 0, 0);
-    } else {
-        vkCmdDraw(
-                commandBuffer, static_cast<uint32_t>(rasterData->getNumVertices()),
-                static_cast<uint32_t>(rasterData->getNumInstances()), 0, 0);
+    if (graphicsPipeline->getShaderStages()->getHasVertexShader()) {
+        if (rasterData->hasIndexBuffer()) {
+            vkCmdDrawIndexed(
+                    commandBuffer, static_cast<uint32_t>(rasterData->getNumIndices()),
+                    static_cast<uint32_t>(rasterData->getNumInstances()), 0, 0, 0);
+        } else {
+            vkCmdDraw(
+                    commandBuffer, static_cast<uint32_t>(rasterData->getNumVertices()),
+                    static_cast<uint32_t>(rasterData->getNumInstances()), 0, 0);
+        }
+    } else if (rasterData->getTaskCount() > 0) {
+        /**
+         * Assuming task/mesh shaders. The maximum number of tasks is relatively low on NVIDIA hardware, so split into
+         * multiple draw calls if necessary.
+         */
+        uint32_t firstTask = rasterData->getFirstTask();
+        uint32_t taskCount = rasterData->getTaskCount();
+        uint32_t taskCountMax = device->getPhysicalDeviceMeshShaderPropertiesNV().maxDrawMeshTasksCount;
+        while (taskCount > taskCountMax) {
+            vkCmdDrawMeshTasksNV(commandBuffer, taskCountMax, firstTask);
+            firstTask += taskCountMax;
+            taskCount -= taskCountMax;
+        }
+        vkCmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask);
     }
 
     // Transition the image layouts.

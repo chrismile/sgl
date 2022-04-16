@@ -97,6 +97,7 @@ struct DLL_OBJECT DeviceFeatures {
         rayQueryFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
         fragmentShaderInterlockFeatures.sType =
                 VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_INTERLOCK_FEATURES_EXT;
+        meshShaderFeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
     }
     VkPhysicalDeviceFeatures requestedPhysicalDeviceFeatures{};
     VkPhysicalDeviceFeatures optionalPhysicalDeviceFeatures{};
@@ -108,6 +109,7 @@ struct DLL_OBJECT DeviceFeatures {
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures{};
     VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures{};
     VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT fragmentShaderInterlockFeatures{};
+    VkPhysicalDeviceMeshShaderFeaturesNV meshShaderFeaturesNV{};
 };
 
 /**
@@ -169,18 +171,24 @@ public:
     inline const uint8_t* getPipelineCacheUuid() const { return physicalDeviceProperties.pipelineCacheUUID; }
     inline const VkPhysicalDeviceLimits& getLimits() const { return physicalDeviceProperties.limits; }
     inline const VkPhysicalDeviceSparseProperties& getSparseProperties() const { return physicalDeviceProperties.sparseProperties; }
-    inline VkPhysicalDeviceFeatures getPhysicalDeviceFeatures() { return physicalDeviceFeatures; }
-    inline VkPhysicalDeviceAccelerationStructurePropertiesKHR getPhysicalDeviceAccelerationStructureProperties() const {
+    inline const VkPhysicalDeviceFeatures& getPhysicalDeviceFeatures() { return physicalDeviceFeatures; }
+    inline const VkPhysicalDeviceAccelerationStructurePropertiesKHR& getPhysicalDeviceAccelerationStructureProperties() const {
         return accelerationStructureProperties;
     }
-    inline VkPhysicalDeviceAccelerationStructureFeaturesKHR getPhysicalDeviceAccelerationStructureFeatures() const {
+    inline const VkPhysicalDeviceAccelerationStructureFeaturesKHR& getPhysicalDeviceAccelerationStructureFeatures() const {
         return accelerationStructureFeatures;
     }
-    inline VkPhysicalDeviceRayTracingPipelinePropertiesKHR getPhysicalDeviceRayTracingPipelineProperties() const {
+    inline const VkPhysicalDeviceRayTracingPipelinePropertiesKHR& getPhysicalDeviceRayTracingPipelineProperties() const {
         return rayTracingPipelineProperties;
     }
     inline bool getRayQueriesSupported() const { return rayQueryFeatures.rayQuery == VK_TRUE; }
     inline bool getRayTracingPipelineSupported() const { return rayTracingPipelineFeatures.rayTracingPipeline == VK_TRUE; }
+    inline const VkPhysicalDeviceMeshShaderPropertiesNV& getPhysicalDeviceMeshShaderPropertiesNV() const {
+        return meshShaderPropertiesNV;
+    }
+    inline const VkPhysicalDeviceMeshShaderFeaturesNV& getPhysicalDeviceMeshShaderFeaturesNV() const {
+        return meshShaderFeaturesNV;
+    }
     VkSampleCountFlagBits getMaxUsableSampleCount() const;
 
     VkFormat getSupportedDepthFormat(
@@ -284,15 +292,15 @@ private:
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VmaAllocator allocator = VK_NULL_HANDLE;
 
+    // Device properties.
     VkPhysicalDeviceProperties physicalDeviceProperties{};
     VkPhysicalDeviceDriverProperties physicalDeviceDriverProperties{};
     VkPhysicalDeviceIDProperties physicalDeviceIDProperties{};
     VkPhysicalDeviceMemoryProperties physicalDeviceMemoryProperties{};
     VkPhysicalDeviceFeatures physicalDeviceFeatures{};
-
-    // Ray tracing information.
     VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties{};
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties{};
+    VkPhysicalDeviceMeshShaderPropertiesNV meshShaderPropertiesNV{};
 
     VkPhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeatures{};
     VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures{};
@@ -302,6 +310,7 @@ private:
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures{};
     VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures{};
     VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT fragmentShaderInterlockFeatures{};
+    VkPhysicalDeviceMeshShaderFeaturesNV meshShaderFeaturesNV{};
 
     // Queues for the logical device.
     std::vector<VkQueueFamilyProperties> queueFamilyProperties;

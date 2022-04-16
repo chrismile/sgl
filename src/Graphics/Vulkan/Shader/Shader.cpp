@@ -290,6 +290,9 @@ void ShaderStages::mergeDescriptorSetsInfo(const std::map<uint32_t, std::vector<
                 if (device->getPhysicalDeviceFeatures().geometryShader) {
                     it->second.shaderStageFlags |= VK_SHADER_STAGE_GEOMETRY_BIT;
                 }
+                if (device->getPhysicalDeviceMeshShaderFeaturesNV().meshShader) {
+                    it->second.shaderStageFlags |= VK_SHADER_STAGE_MESH_BIT_NV;
+                }
             }
         }
 

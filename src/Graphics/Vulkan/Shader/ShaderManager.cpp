@@ -142,9 +142,9 @@ ShaderModuleType getShaderModuleTypeFromString(const std::string& shaderId) {
     } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "callable")) {
         shaderModuleType = ShaderModuleType::CALLABLE;
     } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "task")) {
-        shaderModuleType = ShaderModuleType::TASK;
+        shaderModuleType = ShaderModuleType::TASK_NV;
     } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "mesh")) {
-        shaderModuleType = ShaderModuleType::MESH;
+        shaderModuleType = ShaderModuleType::MESH_NV;
     } else {
         if (boost::algorithm::contains(shaderIdLower.c_str(), "vert")) {
             shaderModuleType = ShaderModuleType::VERTEX;
@@ -173,9 +173,9 @@ ShaderModuleType getShaderModuleTypeFromString(const std::string& shaderId) {
         } else if (boost::algorithm::contains(shaderIdLower.c_str(), "callable")) {
             shaderModuleType = ShaderModuleType::CALLABLE;
         } else if (boost::algorithm::contains(shaderIdLower.c_str(), "task")) {
-            shaderModuleType = ShaderModuleType::TASK;
+            shaderModuleType = ShaderModuleType::TASK_NV;
         } else if (boost::algorithm::contains(shaderIdLower.c_str(), "mesh")) {
-            shaderModuleType = ShaderModuleType::MESH;
+            shaderModuleType = ShaderModuleType::MESH_NV;
         } else {
             Logfile::get()->throwError(
                     std::string() + "ERROR: ShaderManagerVk::createShaderProgram: "
@@ -225,6 +225,7 @@ ShaderModulePtr ShaderManagerVk::loadAsset(ShaderModuleInfo& shaderInfo) {
         compileOptions.AddMacroDefinition(it.first, it.second);
     }
     auto includerInterface = new IncluderInterface();
+    includerInterface->setShaderManager(this);
     compileOptions.SetIncluder(std::unique_ptr<shaderc::CompileOptions::IncluderInterface>(includerInterface));
     if (isOptimizationLevelSet) {
         if (shaderOptimizationLevel == ShaderOptimizationLevel::ZERO) {
@@ -274,8 +275,8 @@ ShaderModulePtr ShaderManagerVk::loadAsset(ShaderModuleInfo& shaderInfo) {
             { ShaderModuleType::MISS,                   shaderc_miss_shader },
             { ShaderModuleType::INTERSECTION,           shaderc_intersection_shader },
             { ShaderModuleType::CALLABLE,               shaderc_callable_shader },
-            { ShaderModuleType::TASK,                   shaderc_task_shader },
-            { ShaderModuleType::MESH,                   shaderc_mesh_shader },
+            {ShaderModuleType::TASK_NV, shaderc_task_shader },
+            {ShaderModuleType::MESH_NV, shaderc_mesh_shader },
 #endif
     };
     auto it = shaderKindLookupTable.find(shaderInfo.shaderModuleType);
@@ -439,7 +440,7 @@ std::string ShaderManagerVk::getPreprocessorDefines(ShaderModuleType shaderModul
         preprocessorStatements += std::string() + "#define " + it->first + " " + it->second + "\n";
     }
     if (shaderModuleType == ShaderModuleType::VERTEX || shaderModuleType == ShaderModuleType::GEOMETRY
-            || shaderModuleType == ShaderModuleType::FRAGMENT) {
+            || shaderModuleType == ShaderModuleType::FRAGMENT || shaderModuleType == ShaderModuleType::MESH_NV) {
         preprocessorStatements += globalDefinesMvpMatrices;
     }
     preprocessorStatements += globalDefines;
