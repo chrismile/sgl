@@ -315,6 +315,15 @@ void VideoWriter::pushFramebufferImage(vk::ImagePtr& image) {
 
     createCpuBufferData(int(image->getImageSettings().width), int(image->getImageSettings().height));
 
+    if (!readBackImages.empty()) {
+        auto& newImageSettings = image->getImageSettings();
+        auto& oldImageSettings = readBackImages.front()->getImageSettings();
+        if (newImageSettings.width != oldImageSettings.width || newImageSettings.height != oldImageSettings.height) {
+            readBackImages.clear();
+            onSwapchainRecreated();
+        }
+    }
+
     vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
     uint32_t imageIndex = swapchain ? swapchain->getImageIndex() : 0;
 
