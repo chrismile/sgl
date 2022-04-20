@@ -160,9 +160,12 @@ void Timer::addTimesForFrame(uint32_t frameIdx, VkCommandBuffer commandBuffer) {
         }
         uint64_t startTimestamp = queryBuffer[startIt->second];
         uint64_t endTimestamp = queryBuffer[endIt->second];
-        elapsedTimeNS[startIt->first] +=
-                uint64_t(std::round(double(endTimestamp - startTimestamp) * timestampPeriod));
+        auto elapsedTimeNanoseconds = uint64_t(std::round(double(endTimestamp - startTimestamp) * timestampPeriod));
+        elapsedTimeNS[startIt->first] += elapsedTimeNanoseconds;
         numSamples[startIt->first] += 1;
+        if (shallStoreFrameTimeList) {
+            frameTimeList[startIt->first].push_back(elapsedTimeNanoseconds);
+        }
     }
 
     if (commandBuffer == VK_NULL_HANDLE) {
@@ -182,6 +185,9 @@ void Timer::endCPU(const std::string& eventName) {
     uint64_t elapsedTimeNanoseconds = elapsedTime.count();
     elapsedTimeNS[eventName] += elapsedTimeNanoseconds;
     numSamples[eventName] += 1;
+    if (shallStoreFrameTimeList) {
+        frameTimeList[eventName].push_back(elapsedTimeNanoseconds);
+    }
 }
 
 void Timer::finishGPU(VkCommandBuffer commandBuffer) {
@@ -213,6 +219,7 @@ void Timer::finishGPU(VkCommandBuffer commandBuffer) {
 void Timer::clear() {
     elapsedTimeNS.clear();
     numSamples.clear();
+    frameTimeList.clear();
 }
 
 double Timer::getTimeMS(const std::string &name) {
@@ -230,6 +237,14 @@ void Timer::printTotalAvgTime() {
         timeMS += static_cast<double>(elapsedTimeNS[it.first]) / static_cast<double>(it.second) * 1e-6;
     }
     std::cout << "TOTAL TIME (avg): " << timeMS << "ms" << std::endl;
+}
+
+std::vector<uint64_t> Timer::getFrameTimeList(const std::string& eventName) {
+    if (shallStoreFrameTimeList) {
+        return frameTimeList[eventName];
+    } else {
+        return { elapsedTimeNS[eventName] / numSamples[eventName] };
+    }
 }
 
 }}

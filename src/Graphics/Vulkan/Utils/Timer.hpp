@@ -81,12 +81,16 @@ public:
      */
     void finishGPU(VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 
-    /// Get the (average) time the event with the specified name took.
+    /// Returns the (average) time the event with the specified name took.
     double getTimeMS(const std::string& eventName);
     /// Prints the time returned by @see getTimeMS.
     void printTimeMS(const std::string& eventName);
-    // Prints sum of all average times.
+    /// Prints sum of all average times.
     void printTotalAvgTime();
+    /// Returns a list of the individual elapsed times for the event.
+    std::vector<uint64_t> getFrameTimeList(const std::string& eventName);
+
+    inline void setStoreFrameTimeList(bool shallStore) { shallStoreFrameTimeList = shallStore; }
 
 private:
     void _onSwapchainRecreated();
@@ -119,7 +123,12 @@ private:
     /// The number of measurements of each event (for computing average)
     std::map<std::string, uint64_t> numSamples;
 
-    // CPU timer
+    /// Whether to store lists of all elapsed times for all event time measurements.
+    bool shallStoreFrameTimeList = false;
+    /// A list of the individual elapsed times for the events.
+    std::map<std::string, std::vector<uint64_t>> frameTimeList;
+
+    // CPU timer.
     std::map<std::string, std::chrono::time_point<std::chrono::system_clock>> startTimesCPU;
 };
 
