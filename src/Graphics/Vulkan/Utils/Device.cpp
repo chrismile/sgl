@@ -564,6 +564,7 @@ void Device::createLogicalDeviceAndQueues(
         *pNextPtr = &requestedDeviceFeatures.meshShaderFeaturesNV;
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.meshShaderFeaturesNV.pNext);
     }
+#ifdef VK_VERSION_1_3
     vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
     if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 3, 0)
             && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 3, 0)) {
@@ -572,6 +573,7 @@ void Device::createLogicalDeviceAndQueues(
         *pNextPtr = &requestedDeviceFeatures.vulkan13Features;
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.vulkan13Features.pNext);
     }
+#endif
 
     VkResult res = vkCreateDevice(physicalDevice, &deviceInfo, nullptr, &device);
     if (res != VK_SUCCESS) {
