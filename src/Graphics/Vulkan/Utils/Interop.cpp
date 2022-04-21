@@ -31,7 +31,9 @@
 #include <Utils/File/Logfile.hpp>
 
 #ifdef _WIN32
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
 #include <windows.h>
 #include "../libs/volk/volk.h"
 #include <vulkan/vulkan_win32.h>

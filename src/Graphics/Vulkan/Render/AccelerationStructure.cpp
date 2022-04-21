@@ -120,7 +120,8 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
         uncompactedSizes.at(blasIdx) = buildSizesInfo.accelerationStructureSize;
 
         BottomLevelAccelerationStructurePtr blas(new BottomLevelAccelerationStructure(
-                device, accelerationStructure, accelerationStructureBuffer));
+                device, accelerationStructure, accelerationStructureBuffer,
+                buildSizesInfo.accelerationStructureSize));
         blases.at(blasIdx) = blas;
     }
 
@@ -228,7 +229,8 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
             vkCmdCopyAccelerationStructureKHR(commandBuffer, &copyAccelerationStructureInfo);
 
             BottomLevelAccelerationStructurePtr blas(new BottomLevelAccelerationStructure(
-                    device, accelerationStructure, accelerationStructureBuffer));
+                    device, accelerationStructure, accelerationStructureBuffer,
+                    compactSizes.at(blasIdx)));
             blasesOld.at(blasIdx) = blases.at(blasIdx);
             blases.at(blasIdx) = blas;
         }
@@ -361,6 +363,12 @@ void TopLevelAccelerationStructure::build(
         VkBuildAccelerationStructureFlagsKHR flags) {
     bottomLevelAccelerationStructures = blases;
 
+    blasesSizeInBytes = 0;
+    tlasSizeInBytes = 0;
+    for (auto& blas : blases) {
+        blasesSizeInBytes += blas->getAccelerationStructureSizeInBytes();
+    }
+
     if (instances.size() > device->getPhysicalDeviceAccelerationStructureProperties().maxInstanceCount) {
         Logfile::get()->throwError(
                 "Error in TopLevelAccelerationStructure::build: The maximum number of supported instances is "
@@ -432,12 +440,15 @@ void TopLevelAccelerationStructure::build(
     buildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
     buildInfo.srcAccelerationStructure = VK_NULL_HANDLE;
 
-    uint32_t numInstances = uint32_t(instances.size());
+    auto numInstances = uint32_t(instances.size());
     VkAccelerationStructureBuildSizesInfoKHR buildSizesInfo{};
     buildSizesInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
     vkGetAccelerationStructureBuildSizesKHR(
             device->getVkDevice(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
             &buildInfo, &numInstances, &buildSizesInfo);
+
+    tlasSizeInBytes = buildSizesInfo.accelerationStructureSize;
+    accelerationStructureSizeInBytes = tlasSizeInBytes + blasesSizeInBytes;
 
     if (!update) {
         // Create the acceleration structure and the underlying memory.

@@ -39,7 +39,6 @@ TimerGL::~TimerGL() {
     deleteAll();
 }
 
-
 void TimerGL::startGPU(const std::string &name, float timeStamp) {
     size_t index = numSamples.size();
     auto it = regionNameMap.find(name);

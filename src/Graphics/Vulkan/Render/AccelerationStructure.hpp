@@ -120,9 +120,11 @@ protected:
 class DLL_OBJECT BottomLevelAccelerationStructure {
 public:
     explicit BottomLevelAccelerationStructure(
-            Device* device, VkAccelerationStructureKHR accelerationStructure, BufferPtr accelerationStructureBuffer)
+            Device* device, VkAccelerationStructureKHR accelerationStructure, BufferPtr accelerationStructureBuffer,
+            size_t blasSizeInBytes)
             : device(device), accelerationStructure(accelerationStructure),
-            accelerationStructureBuffer(std::move(accelerationStructureBuffer)) {
+              accelerationStructureBuffer(std::move(accelerationStructureBuffer)),
+              accelerationStructureSizeInBytes(blasSizeInBytes) {
     }
 
     ~BottomLevelAccelerationStructure();
@@ -130,11 +132,13 @@ public:
     VkDeviceAddress getAccelerationStructureDeviceAddress();
 
     inline VkAccelerationStructureKHR getAccelerationStructure() { return accelerationStructure; }
+    [[nodiscard]] inline size_t getAccelerationStructureSizeInBytes() const { return accelerationStructureSizeInBytes; }
 
 protected:
     Device* device = nullptr;
     VkAccelerationStructureKHR accelerationStructure = VK_NULL_HANDLE;
     BufferPtr accelerationStructureBuffer;
+    size_t accelerationStructureSizeInBytes = 0;
 };
 
 typedef std::shared_ptr<BottomLevelAccelerationStructure> BottomLevelAccelerationStructurePtr;
@@ -148,7 +152,7 @@ DLL_OBJECT std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAcce
 DLL_OBJECT std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStructuresFromInputList(
         const std::vector<BottomLevelAccelerationStructureInputPtr>& blasInputsList,
         VkBuildAccelerationStructureFlagsKHR flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR,
-        bool debugOutput = false);
+         bool debugOutput = false);
 
 DLL_OBJECT BottomLevelAccelerationStructurePtr buildBottomLevelAccelerationStructureFromInputs(
         const BottomLevelAccelerationStructureInputList& blasInputs,
@@ -197,12 +201,18 @@ public:
             VkBuildAccelerationStructureFlagsKHR flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR);
 
     inline VkAccelerationStructureKHR getAccelerationStructure() { return accelerationStructure; }
+    [[nodiscard]] inline size_t getBlasesSizeInBytes() const { return blasesSizeInBytes; }
+    [[nodiscard]] inline size_t getTlasSizeInBytes() const { return tlasSizeInBytes; }
+    [[nodiscard]] inline size_t getAccelerationStructureSizeInBytes() const { return accelerationStructureSizeInBytes; }
 
 protected:
     Device* device = nullptr;
     VkAccelerationStructureKHR accelerationStructure = VK_NULL_HANDLE;
     BufferPtr accelerationStructureBuffer;
     std::vector<BottomLevelAccelerationStructurePtr> bottomLevelAccelerationStructures;
+    size_t blasesSizeInBytes = 0;
+    size_t tlasSizeInBytes = 0;
+    size_t accelerationStructureSizeInBytes = 0;
 };
 
 typedef std::shared_ptr<TopLevelAccelerationStructure> TopLevelAccelerationStructurePtr;

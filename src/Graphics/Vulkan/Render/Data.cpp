@@ -517,6 +517,56 @@ void RenderData::onSwapchainRecreated() {
     }
 }
 
+RenderDataSize RenderData::getRenderDataSize() {
+    RenderDataSize renderDataSize;
+
+    const auto& frameData = frameDataList.front();
+
+    for (const auto& buffer : frameData.buffers) {
+        const auto& descriptorInfo =
+                shaderStages->getDescriptorInfoByBinding(0, buffer.first);
+        if (descriptorInfo.type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+                || descriptorInfo.type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) {
+            renderDataSize.storageBufferSize += buffer.second->getSizeInBytes();
+        } else if (descriptorInfo.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+                || descriptorInfo.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
+            renderDataSize.uniformBufferSize += buffer.second->getSizeInBytes();
+        }
+    }
+
+    for (const auto& buffer : frameData.bufferViews) {
+        const auto& descriptorInfo =
+                shaderStages->getDescriptorInfoByBinding(0, buffer.first);
+        if (descriptorInfo.type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+            || descriptorInfo.type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) {
+            renderDataSize.storageBufferSize += buffer.second->getBuffer()->getSizeInBytes();
+        } else if (descriptorInfo.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+                   || descriptorInfo.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
+            renderDataSize.uniformBufferSize += buffer.second->getBuffer()->getSizeInBytes();
+        }
+    }
+
+    for (const auto& imageView : frameData.imageViews) {
+        auto imageFormat = imageView.second->getImage()->getImageSettings();
+        renderDataSize.imageSize +=
+                imageFormat.width * imageFormat.height * imageFormat.depth * imageFormat.arrayLayers
+                * getImageFormatEntryByteSize(imageFormat.format);
+    }
+
+    for (const auto& tlas : frameData.accelerationStructures) {
+        renderDataSize.accelerationStructureSize += tlas.second->getAccelerationStructureSizeInBytes();
+    }
+
+    return renderDataSize;
+}
+
+size_t RenderData::getRenderDataSizeSizeInBytes() {
+    RenderDataSize renderDataSize = getRenderDataSize();
+    return
+            renderDataSize.indexBufferSize + renderDataSize.vertexBufferSize + renderDataSize.storageBufferSize
+            + renderDataSize.uniformBufferSize + renderDataSize.imageSize + renderDataSize.accelerationStructureSize;
+}
+
 
 ComputeData::ComputeData(Renderer* renderer, ComputePipelinePtr& computePipeline)
         : RenderData(renderer, computePipeline->getShaderStages()), computePipeline(computePipeline) {
@@ -594,6 +644,20 @@ void RasterData::setVertexBufferOptional(const BufferPtr& buffer, const std::str
         uint32_t location = graphicsPipeline->getShaderStages()->getInputVariableLocationIndex(name);
         setVertexBuffer(buffer, location);
     }
+}
+
+RenderDataSize RasterData::getRenderDataSize() {
+    RenderDataSize renderDataSize = RenderData::getRenderDataSize();
+
+    if (indexBuffer) {
+        renderDataSize.indexBufferSize = indexBuffer->getSizeInBytes();
+    }
+
+    for (auto& buffer : vertexBuffers) {
+        renderDataSize.vertexBufferSize += buffer->getSizeInBytes();
+    }
+
+    return renderDataSize;
 }
 
 

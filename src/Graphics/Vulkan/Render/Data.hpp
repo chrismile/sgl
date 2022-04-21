@@ -73,6 +73,15 @@ enum class RenderDataType {
     COMPUTE, RASTER, RAYTRACING
 };
 
+struct RenderDataSize {
+    size_t indexBufferSize = 0;
+    size_t vertexBufferSize = 0;
+    size_t storageBufferSize = 0;
+    size_t uniformBufferSize = 0;
+    size_t imageSize = 0;
+    size_t accelerationStructureSize = 0;
+};
+
 class DLL_OBJECT RenderData {
     friend class Renderer;
 public:
@@ -146,9 +155,11 @@ public:
     ImageViewPtr getImageView(uint32_t binding);
     ImageViewPtr getImageView(const std::string& name);
 
+    virtual RenderDataSize getRenderDataSize();
+    size_t getRenderDataSizeSizeInBytes();
+
     inline VkDescriptorSet getVkDescriptorSet(uint32_t frameIdx) { return frameDataList.at(frameIdx).descriptorSet; }
     VkDescriptorSet getVkDescriptorSet();
-
 
     struct FrameData {
         std::map<uint32_t, BufferPtr> buffers;
@@ -237,6 +248,8 @@ public:
     [[nodiscard]] inline const std::vector<VkBuffer>& getVkVertexBuffers() { return vulkanVertexBuffers; }
 
     [[nodiscard]] inline const GraphicsPipelinePtr& getGraphicsPipeline() { return graphicsPipeline; }
+
+    RenderDataSize getRenderDataSize() override;
 
 protected:
     GraphicsPipelinePtr graphicsPipeline;
