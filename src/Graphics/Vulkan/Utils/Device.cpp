@@ -564,6 +564,14 @@ void Device::createLogicalDeviceAndQueues(
         *pNextPtr = &requestedDeviceFeatures.meshShaderFeaturesNV;
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.meshShaderFeaturesNV.pNext);
     }
+    vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
+    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 3, 0)
+            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 3, 0)) {
+        // SPIR-V 1.6 needs VkPhysicalDeviceVulkan13Features::maintenance4.
+        requestedDeviceFeatures.vulkan13Features.maintenance4 = VK_TRUE;
+        *pNextPtr = &requestedDeviceFeatures.vulkan13Features;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.vulkan13Features.pNext);
+    }
 
     VkResult res = vkCreateDevice(physicalDevice, &deviceInfo, nullptr, &device);
     if (res != VK_SUCCESS) {
