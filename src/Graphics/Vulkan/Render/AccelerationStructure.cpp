@@ -74,6 +74,9 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
         buildInfos.at(blasIdx).srcAccelerationStructure = VK_NULL_HANDLE;
     }
 
+    VkDeviceSize minAccelerationStructureScratchOffsetAlignment =
+            device->getPhysicalDeviceAccelerationStructureProperties().minAccelerationStructureScratchOffsetAlignment;
+
     VkDeviceSize maxScratchSize = 0;
     for(size_t blasIdx = 0; blasIdx < numBlases; blasIdx++) {
         const BottomLevelAccelerationStructureInputList& blasInputs = blasInputsList.at(blasIdx);
@@ -116,7 +119,8 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
                 device->getVkDevice(), &accelerationStructureCreateInfo, nullptr,
                 &accelerationStructure);
         buildInfos.at(blasIdx).dstAccelerationStructure = accelerationStructure;
-        maxScratchSize = std::max(maxScratchSize, buildSizesInfo.buildScratchSize);
+        maxScratchSize = std::max(
+                maxScratchSize, buildSizesInfo.buildScratchSize + minAccelerationStructureScratchOffsetAlignment);
         uncompactedSizes.at(blasIdx) = buildSizesInfo.accelerationStructureSize;
 
         BottomLevelAccelerationStructurePtr blas(new BottomLevelAccelerationStructure(
@@ -131,6 +135,11 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
             VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
             VMA_MEMORY_USAGE_GPU_ONLY));
     VkDeviceAddress scratchBufferDeviceAddress = scratchBuffer->getVkDeviceAddress();
+    VkDeviceSize alignmentOffset = scratchBufferDeviceAddress % minAccelerationStructureScratchOffsetAlignment;
+    if (scratchBufferDeviceAddress % minAccelerationStructureScratchOffsetAlignment != 0) {
+        // This was necessary on AMD hardware.
+        scratchBufferDeviceAddress += minAccelerationStructureScratchOffsetAlignment - alignmentOffset;
+    }
 
     bool shallDoCompaction =
             (flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR)
@@ -471,17 +480,22 @@ void TopLevelAccelerationStructure::build(
     }
 
     // Allocate a scratch buffer for holding the temporary memory needed by the AS builder.
+    VkDeviceSize minAccelerationStructureScratchOffsetAlignment =
+            device->getPhysicalDeviceAccelerationStructureProperties().minAccelerationStructureScratchOffsetAlignment;
     BufferPtr scratchBuffer(new Buffer(
-            device, buildSizesInfo.buildScratchSize,
+            device, buildSizesInfo.buildScratchSize + minAccelerationStructureScratchOffsetAlignment,
             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
             | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY));
-    if (device->getPhysicalDeviceAccelerationStructureProperties().minAccelerationStructureScratchOffsetAlignment) {
-        ;
+    VkDeviceAddress scratchBufferDeviceAddress = scratchBuffer->getVkDeviceAddress();
+    VkDeviceSize alignmentOffset = scratchBufferDeviceAddress % minAccelerationStructureScratchOffsetAlignment;
+    if (scratchBufferDeviceAddress % minAccelerationStructureScratchOffsetAlignment != 0) {
+        // This was necessary on AMD hardware.
+        scratchBufferDeviceAddress += minAccelerationStructureScratchOffsetAlignment - alignmentOffset;
     }
 
     buildInfo.srcAccelerationStructure = update ? accelerationStructure : VK_NULL_HANDLE;
     buildInfo.dstAccelerationStructure = accelerationStructure;
-    buildInfo.scratchData.deviceAddress = scratchBuffer->getVkDeviceAddress();
+    buildInfo.scratchData.deviceAddress = scratchBufferDeviceAddress;
 
     VkAccelerationStructureBuildRangeInfoKHR buildRangeInfo{};
     buildRangeInfo.primitiveCount = static_cast<uint32_t>(instances.size());
