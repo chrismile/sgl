@@ -136,7 +136,7 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
             VMA_MEMORY_USAGE_GPU_ONLY));
     VkDeviceAddress scratchBufferDeviceAddress = scratchBuffer->getVkDeviceAddress();
     VkDeviceSize alignmentOffset = scratchBufferDeviceAddress % minAccelerationStructureScratchOffsetAlignment;
-    if (scratchBufferDeviceAddress % minAccelerationStructureScratchOffsetAlignment != 0) {
+    if (alignmentOffset != 0) {
         // This was necessary on AMD hardware.
         scratchBufferDeviceAddress += minAccelerationStructureScratchOffsetAlignment - alignmentOffset;
     }
@@ -407,14 +407,24 @@ void TopLevelAccelerationStructure::build(
         asInstances.push_back(asInstance);
     }
 
-    // Create a buffering that stores the AS instance data.
+    // Create a buffering that stores the AS instance data. 16 is added for possibly needed alignment padding.
+    size_t instancesSizeInBytes = asInstances.size() * sizeof(VkAccelerationStructureInstanceKHR) + 16;
     BufferPtr instancesBuffer(new Buffer(
-            device, asInstances.size() * sizeof(VkAccelerationStructureInstanceKHR),
+            device, instancesSizeInBytes,
             VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT
             | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
             VMA_MEMORY_USAGE_GPU_ONLY));
+    VkDeviceAddress instancesBufferDeviceAddress = instancesBuffer->getVkDeviceAddress();
+    VkDeviceSize instancesAlignmentOffset = instancesBufferDeviceAddress % VkDeviceAddress(16);
+    VkDeviceSize instancesWriteOffset = 0;
+    if (instancesAlignmentOffset != 0) {
+        // This was necessary on AMD hardware.
+        instancesWriteOffset = VkDeviceSize(16) - instancesAlignmentOffset;
+        instancesBufferDeviceAddress += instancesWriteOffset;
+    }
     BufferPtr instancesStagingBuffer;
-    instancesBuffer->uploadData(
+    instancesBuffer->uploadDataOffset(
+            instancesWriteOffset,
             asInstances.size() * sizeof(VkAccelerationStructureInstanceKHR), asInstances.data(),
             commandBuffer, instancesStagingBuffer);
 
@@ -431,7 +441,7 @@ void TopLevelAccelerationStructure::build(
     VkAccelerationStructureGeometryInstancesDataKHR asGeometryInstancesData{};
     asGeometryInstancesData.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
     asGeometryInstancesData.arrayOfPointers = VK_FALSE;
-    asGeometryInstancesData.data.deviceAddress = instancesBuffer->getVkDeviceAddress();
+    asGeometryInstancesData.data.deviceAddress = instancesBufferDeviceAddress;
 
     VkAccelerationStructureGeometryKHR topAsGeometry{};
     topAsGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
@@ -488,7 +498,7 @@ void TopLevelAccelerationStructure::build(
             | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY));
     VkDeviceAddress scratchBufferDeviceAddress = scratchBuffer->getVkDeviceAddress();
     VkDeviceSize alignmentOffset = scratchBufferDeviceAddress % minAccelerationStructureScratchOffsetAlignment;
-    if (scratchBufferDeviceAddress % minAccelerationStructureScratchOffsetAlignment != 0) {
+    if (alignmentOffset != 0) {
         // This was necessary on AMD hardware.
         scratchBufferDeviceAddress += minAccelerationStructureScratchOffsetAlignment - alignmentOffset;
     }

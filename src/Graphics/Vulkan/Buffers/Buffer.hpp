@@ -130,6 +130,43 @@ public:
     void uploadData(size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer, BufferPtr& stagingBuffer);
 
     /**
+     * Uploads memory to the GPU. If memoryUsage is not VMA_MEMORY_USAGE_CPU_ONLY, VMA_MEMORY_USAGE_CPU_TO_GPU or
+     * VMA_MEMORY_USAGE_CPU_COPY, a staging buffer is used for uploading.
+     * NOTE: This version of uploadData will wait for the copy operation to finish.
+     * @param regionOffset The offset of the memory region to upload to in bytes.
+     * @param sizeInBytesData The size of the data to upload in bytes.
+     * @param dataPtr Data that is uploaded to the GPU.
+     */
+    void uploadDataOffset(size_t regionOffset, size_t sizeInBytesData, void* dataPtr);
+
+    /**
+     * Uploads memory to the GPU. If memoryUsage is not VMA_MEMORY_USAGE_CPU_ONLY, VMA_MEMORY_USAGE_CPU_TO_GPU or
+     * VMA_MEMORY_USAGE_CPU_COPY, a staging buffer is used for uploading.
+     * NOTE: The version of uploadData with four parameters needs to be called in order to save the staging buffer when
+     * using a custom command buffer in combination with VMA_MEMORY_USAGE_GPU_ONLY buffers.
+     * @param regionOffset The offset of the memory region to upload to in bytes.
+     * @param sizeInBytesData The size of the data to upload in bytes.
+     * @param dataPtr Data that is uploaded to the GPU.
+     * @param commandBuffer The command buffer to use for the copy operation.
+     * If the command buffer is a null pointer, the command will be executed synchronously.
+     */
+    void uploadDataOffset(size_t regionOffset, size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer);
+
+    /**
+     * Uploads memory to the GPU. If memoryUsage is not VMA_MEMORY_USAGE_CPU_ONLY, VMA_MEMORY_USAGE_CPU_TO_GPU or
+     * VMA_MEMORY_USAGE_CPU_COPY, a staging buffer is used for uploading.
+     * @param regionOffset The offset of the memory region to upload to in bytes.
+     * @param sizeInBytesData The size of the data to upload in bytes.
+     * @param dataPtr Data that is uploaded to the GPU.
+     * @param commandBuffer The command buffer to use for the copy operation.
+     * @param stagingBuffer A reference to which the used staging buffer should be stored. This object must not be
+     * deleted before the device queue has finished the copy operation!
+     */
+    void uploadDataOffset(
+            size_t regionOffset, size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer,
+            BufferPtr& stagingBuffer);
+
+    /**
      * Asynchronously updates the buffer data using vkCmdUpdateBuffer.
      * This operation is allowed only outside of a rendering pass. Furthermore, the user needs to ensure that the
      * correct synchronization primitives are used to avoid race conditions when accessing the updated buffer.

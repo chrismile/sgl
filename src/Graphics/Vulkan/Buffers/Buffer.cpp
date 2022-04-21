@@ -262,7 +262,8 @@ void Buffer::uploadData(size_t sizeInBytesData, void* dataPtr) {
         }
 
         BufferPtr stagingBuffer(new Buffer(
-                device, sizeInBytesData, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY,
+                device, sizeInBytesData,
+                VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY,
                 queueExclusive));
         void* mappedData = stagingBuffer->mapMemory();
         memcpy(mappedData, dataPtr, sizeInBytesData);
@@ -329,6 +330,102 @@ void Buffer::uploadData(
         bufferCopy.size = sizeInBytesData;
         bufferCopy.srcOffset = 0;
         bufferCopy.dstOffset = 0;
+        vkCmdCopyBuffer(
+                commandBuffer, stagingBuffer->getVkBuffer(), this->getVkBuffer(), 1, &bufferCopy);
+    }
+}
+
+void Buffer::uploadDataOffset(size_t regionOffset, size_t sizeInBytesData, void* dataPtr) {
+    if (sizeInBytesData > sizeInBytes) {
+        sgl::Logfile::get()->throwError(
+                "Error in Buffer::uploadData: sizeInBytesData > sizeInBytes");
+    }
+
+    if (memoryUsage == VMA_MEMORY_USAGE_CPU_ONLY || memoryUsage == VMA_MEMORY_USAGE_CPU_TO_GPU
+            || memoryUsage == VMA_MEMORY_USAGE_CPU_COPY) {
+        void* mappedData = mapMemory();
+        uint8_t* dstRegion = reinterpret_cast<uint8_t*>(mappedData) + regionOffset;
+        memcpy(dstRegion, dataPtr, sizeInBytesData);
+        unmapMemory();
+    } else {
+        if ((bufferUsageFlags & VK_BUFFER_USAGE_TRANSFER_DST_BIT) == 0) {
+            sgl::Logfile::get()->throwError(
+                    "Error in Buffer::uploadData: Buffer usage flag VK_BUFFER_USAGE_TRANSFER_DST_BIT not set!");
+        }
+
+        BufferPtr stagingBuffer(new Buffer(
+                device, sizeInBytesData,
+                VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY,
+                queueExclusive));
+        void* mappedData = stagingBuffer->mapMemory();
+        memcpy(mappedData, dataPtr, sizeInBytesData);
+        stagingBuffer->unmapMemory();
+
+        VkCommandBuffer commandBuffer = device->beginSingleTimeCommands();
+
+        VkBufferCopy bufferCopy{};
+        bufferCopy.size = sizeInBytesData;
+        bufferCopy.srcOffset = 0;
+        bufferCopy.dstOffset = regionOffset;
+        vkCmdCopyBuffer(
+                commandBuffer, stagingBuffer->getVkBuffer(), this->getVkBuffer(), 1, &bufferCopy);
+
+        device->endSingleTimeCommands(commandBuffer);
+    }
+}
+
+void Buffer::uploadDataOffset(
+        size_t regionOffset, size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer) {
+    if (sizeInBytesData > sizeInBytes) {
+        sgl::Logfile::get()->throwError(
+                "Error in Buffer::uploadData: sizeInBytesData > sizeInBytes");
+    }
+
+    if (memoryUsage == VMA_MEMORY_USAGE_CPU_ONLY || memoryUsage == VMA_MEMORY_USAGE_CPU_TO_GPU
+            || memoryUsage == VMA_MEMORY_USAGE_CPU_COPY) {
+        void* mappedData = mapMemory();
+        uint8_t* dstRegion = reinterpret_cast<uint8_t*>(mappedData) + regionOffset;
+        memcpy(dstRegion, dataPtr, sizeInBytesData);
+        unmapMemory();
+    } else {
+        sgl::Logfile::get()->throwError(
+                "Error in Buffer::uploadData: The version of uploadData with four parameters needs to be called in "
+                "order to save the staging buffer when using a custom command buffer in combination with "
+                "VMA_MEMORY_USAGE_GPU_ONLY buffers!");
+    }
+}
+
+void Buffer::uploadDataOffset(
+        size_t regionOffset, size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer,
+        BufferPtr& stagingBuffer) {
+    if (sizeInBytesData > sizeInBytes) {
+        sgl::Logfile::get()->throwError(
+                "Error in Buffer::uploadData: sizeInBytesData > sizeInBytes");
+    }
+
+    if (memoryUsage == VMA_MEMORY_USAGE_CPU_ONLY || memoryUsage == VMA_MEMORY_USAGE_CPU_TO_GPU
+            || memoryUsage == VMA_MEMORY_USAGE_CPU_COPY) {
+        void* mappedData = mapMemory();
+        uint8_t* dstRegion = reinterpret_cast<uint8_t*>(mappedData) + regionOffset;
+        memcpy(dstRegion, dataPtr, sizeInBytesData);
+        unmapMemory();
+    } else {
+        if ((bufferUsageFlags & VK_BUFFER_USAGE_TRANSFER_DST_BIT) == 0) {
+            sgl::Logfile::get()->throwError(
+                    "Error in Buffer::uploadData: Buffer usage flag VK_BUFFER_USAGE_TRANSFER_DST_BIT not set!");
+        }
+
+        stagingBuffer = std::make_shared<Buffer>(
+                device, sizeInBytesData, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY,
+                queueExclusive);
+        void* mappedData = stagingBuffer->mapMemory();
+        memcpy(mappedData, dataPtr, sizeInBytesData);
+        stagingBuffer->unmapMemory();
+
+        VkBufferCopy bufferCopy{};
+        bufferCopy.size = sizeInBytesData;
+        bufferCopy.srcOffset = 0;
+        bufferCopy.dstOffset = regionOffset;
         vkCmdCopyBuffer(
                 commandBuffer, stagingBuffer->getVkBuffer(), this->getVkBuffer(), 1, &bufferCopy);
     }
