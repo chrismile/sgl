@@ -107,6 +107,9 @@ void Instance::createInstance(std::vector<const char*> instanceExtensionNames, b
             instanceExtensionNames.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         }
     }
+    if (instanceVulkanVersion > VK_MAKE_API_VERSION(0, 1, 1, 0)) {
+        instanceExtensionNames.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
 
     VkInstanceCreateInfo instanceInfo = { };
     instanceInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
