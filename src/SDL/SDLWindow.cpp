@@ -91,7 +91,8 @@ void SDLWindow::errorCheckSDL() {
         // "Unknown sensor type" can somehow can occur some Windows systems. Ignore it, as it is probably harmless.
         if (boost::contains(errorString, "Unknown sensor type")
                 || boost::contains(errorString, "No window has focus")
-                || boost::contains(errorString, "X server refused mouse capture")) {
+                || boost::contains(errorString, "X server refused mouse capture")
+                || boost::contains(errorString, "Unknown touch device id -1, cannot reset")) {
             openMessageBox = false;
         }
         Logfile::get()->writeError(std::string() + "SDL error: " + errorString, openMessageBox);

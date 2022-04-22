@@ -46,6 +46,9 @@
 #include <windows.h>
 #include <vulkan/vulkan_win32.h>
 #endif
+#ifdef __APPLE__
+#include <vulkan/vulkan_beta.h>
+#endif
 
 namespace sgl { namespace vk {
 
@@ -732,12 +735,16 @@ void Device::writeDeviceInfoToLog(const std::vector<const char*>& deviceExtensio
 void Device::createDeviceSwapchain(
         Instance* instance, Window* window,
         std::vector<const char*> requiredDeviceExtensions,
-        const std::vector<const char*>& optionalDeviceExtensions,
+        std::vector<const char*> optionalDeviceExtensions,
         const DeviceFeatures& requestedDeviceFeatures, bool computeOnly) {
     this->instance = instance;
     this->window = window;
 
     requiredDeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+
+#ifdef __APPLE__
+    optionalDeviceExtensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+#endif
 
     VkSurfaceKHR surface = window->getVkSurface();
     std::vector<const char*> deviceExtensions;
@@ -763,11 +770,15 @@ void Device::createDeviceSwapchain(
 
 void Device::createDeviceHeadless(
         Instance* instance,
-        const std::vector<const char*>& requiredDeviceExtensions,
-        const std::vector<const char*>& optionalDeviceExtensions,
+        std::vector<const char*> requiredDeviceExtensions,
+        std::vector<const char*> optionalDeviceExtensions,
         const DeviceFeatures& requestedDeviceFeatures, bool computeOnly) {
     this->instance = instance;
     this->window = nullptr;
+
+#ifdef __APPLE__
+    optionalDeviceExtensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+#endif
 
     std::vector<const char*> deviceExtensions;
     physicalDevice = createPhysicalDeviceBinding(

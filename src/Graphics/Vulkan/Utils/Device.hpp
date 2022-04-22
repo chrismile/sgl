@@ -127,14 +127,14 @@ public:
     void createDeviceSwapchain(
             Instance* instance, Window* window,
             std::vector<const char*> requiredDeviceExtensions = {},
-            const std::vector<const char*>& optionalDeviceExtensions = {},
+            std::vector<const char*> optionalDeviceExtensions = {},
             const DeviceFeatures& requestedDeviceFeatures = DeviceFeatures(),
             bool computeOnly = false);
     /// For headless rendering without a window (or when coupled with an OpenGL context in interoperability mode).
     void createDeviceHeadless(
             Instance* instance,
-            const std::vector<const char*>& requiredDeviceExtensions = {},
-            const std::vector<const char*>& optionalDeviceExtensions = {},
+            std::vector<const char*> requiredDeviceExtensions = {},
+            std::vector<const char*> optionalDeviceExtensions = {},
             const DeviceFeatures& requestedDeviceFeatures = DeviceFeatures(),
             bool computeOnly = false);
     ~Device();
