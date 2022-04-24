@@ -35,7 +35,7 @@
 #include <boost/filesystem/operations.hpp>
 #undef BOOST_NO_CXX11_SCOPED_ENUMS
 
-#ifdef WIN32
+#ifdef _WIN32
 #define _WIN32_IE 0x0400
 #include <shlobj.h>
 #include <windef.h>
@@ -190,7 +190,7 @@ std::list<std::string> FileUtils::getFilesInDirectoryList(const std::string &dir
     boost::filesystem::directory_iterator end;
     for (boost::filesystem::directory_iterator i(dir); i != end; ++i) {
         files.push_back(i->path().string());
-#ifdef WIN32
+#ifdef _WIN32
         std::string &currPath = files.back();
         for (std::string::iterator it = currPath.begin(); it != currPath.end(); ++it) {
             if (*it == '\\') *it = '/';
@@ -218,7 +218,7 @@ std::vector<std::string> FileUtils::getFilesInDirectoryVector(const std::string 
     boost::filesystem::directory_iterator end;
     for (boost::filesystem::directory_iterator i(dir); i != end; ++i) {
         files.push_back(i->path().string());
-#ifdef WIN32
+#ifdef _WIN32
         std::string &currPath = files.back();
         for (std::string::iterator it = currPath.begin(); it != currPath.end(); ++it) {
             if (*it == '\\') *it = '/';
@@ -233,7 +233,7 @@ std::vector<std::string> FileUtils::getPathAsList(const std::string &dirPath) {
     std::vector<std::string> files;
     if (dirPath.size() == 0)
         return files;
-#ifndef WIN32
+#ifndef _WIN32
     // Starts with root directory?
     if (dirPath.at(0) == '/')
         files.push_back("/");
@@ -301,20 +301,20 @@ void FileUtils::createDirectory(const std::string &path) {
 
 void FileUtils::ensureDirectoryExists(const std::string &path) {
     std::vector<std::string> directories;
-    splitPath(path, directories);
+    splitPathNoTrim(path, directories);
     std::string currentDirectory;
 
     for (size_t i = 0; i < directories.size(); ++i)
     {
         currentDirectory = currentDirectory + directories.at(i) + "/";
         if (i == 0) {
-#ifdef WIN32
+#ifdef _WIN32
             // Do we have a drive letter?
             if (directories.at(i).size() == 2 && directories.at(i).at(1) == ':')
                 continue;
 #else
             // Is this the root directory?
-            if (directories.at(i).size() == 0)
+            if (directories.at(i).empty())
                 continue;
 #endif
         }
@@ -378,7 +378,6 @@ void FileUtils::splitPath(const std::string &path, std::list<std::string> &pathL
     }
     if (buffer != "") {
         pathList.push_back(buffer);
-        buffer = "";
     }
 }
 
@@ -397,7 +396,22 @@ void FileUtils::splitPath(const std::string &path, std::vector<std::string> &pat
     }
     if (buffer != "") {
         pathList.push_back(buffer);
-        buffer = "";
+    }
+}
+
+void FileUtils::splitPathNoTrim(const std::string &path, std::vector<std::string> &pathList) {
+    std::string::const_iterator it;
+    std::string buffer = "";
+    for (it = path.begin(); it != path.end(); it++) {
+        if (*it != '/' && *it != '\\') {
+            buffer += *it;
+        } else {
+            pathList.push_back(buffer);
+            buffer = "";
+        }
+    }
+    if (buffer != "") {
+        pathList.push_back(buffer);
     }
 }
 
