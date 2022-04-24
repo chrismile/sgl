@@ -225,15 +225,24 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
 
     errorCheckSDLCritical();
 
-    Uint32 flags = SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI;
+    //
+    Uint32 flags = SDL_WINDOW_SHOWN;
+    //Uint32 flags = SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI;
+#ifndef __APPLE__
+    /*
+     * TODO: High-DPI disabled on macOS for the time being.
+     * Further investigation into NSHighResolutionCapable is necessary.
+     */
+    flags |= SDL_WINDOW_ALLOW_HIGHDPI;
+#endif
 #ifdef SUPPORT_OPENGL
     if (renderSystem == RenderSystem::OPENGL) {
-        flags = flags | SDL_WINDOW_OPENGL;
+        flags |= SDL_WINDOW_OPENGL;
     }
 #endif
 #ifdef SUPPORT_VULKAN
     if (renderSystem == RenderSystem::VULKAN) {
-        flags = flags | SDL_WINDOW_VULKAN;
+        flags |= SDL_WINDOW_VULKAN;
     }
 #endif
     if (windowSettings.fullscreen) flags |= SDL_WINDOW_FULLSCREEN;

@@ -129,9 +129,14 @@ float getHighDPIScaleFactor() {
 #if defined(SDL_VIDEO_DRIVER_WINDOWS)
                 scaleFactorHiDPI = getScreenScalingWindows();
 #endif
+            case SDL_SYSWM_COCOA:
+                /*
+                 * TODO: High-DPI disabled on macOS for the time being.
+                 * Further investigation into NSHighResolutionCapable is necessary.
+                 */
+                return 1.0f;
             case SDL_SYSWM_WAYLAND:
             case SDL_SYSWM_ANDROID:
-            case SDL_SYSWM_COCOA:
             default:
                 float ddpi = 96, hdpi = 96, vdpi = 96;
                 if (SDL_GetDisplayDPI(0, &ddpi, &hdpi, &vdpi) == 0) {
