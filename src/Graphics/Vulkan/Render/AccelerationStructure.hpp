@@ -51,13 +51,13 @@ public:
     explicit BottomLevelAccelerationStructureInput(
             Device* device, VkGeometryFlagsKHR geometryFlags = VkGeometryFlagsKHR(0));
 
-    inline Device* getDevice() const { return device; }
-    inline size_t getNumPrimitives() const { return buildRangeInfo.primitiveCount; }
+    [[nodiscard]] inline Device* getDevice() const { return device; }
+    [[nodiscard]] inline size_t getNumPrimitives() const { return buildRangeInfo.primitiveCount; }
 
     inline VkAccelerationStructureGeometryKHR& getAccelerationStructureGeometry() { return asGeometry; }
-    inline const VkAccelerationStructureGeometryKHR& getAccelerationStructureGeometry() const { return asGeometry; }
+    [[nodiscard]] inline const VkAccelerationStructureGeometryKHR& getAccelerationStructureGeometry() const { return asGeometry; }
     inline VkAccelerationStructureBuildRangeInfoKHR& getBuildRangeInfo() { return buildRangeInfo; }
-    inline const VkAccelerationStructureBuildRangeInfoKHR& getBuildRangeInfo() const { return buildRangeInfo; }
+    [[nodiscard]] inline const VkAccelerationStructureBuildRangeInfoKHR& getBuildRangeInfo() const { return buildRangeInfo; }
 
 protected:
     Device* device = nullptr;

@@ -64,6 +64,10 @@ void CsvWriter::close() {
     }
 }
 
+void CsvWriter::flush() {
+    file.flush();
+}
+
 void CsvWriter::writeRow(const std::vector<std::string>& row) {
     size_t rowSize = row.size();
     for (size_t i = 0; i < rowSize; i++) {
