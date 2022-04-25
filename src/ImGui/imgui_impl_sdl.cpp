@@ -68,6 +68,7 @@
 #include <SDL.h>
 #include <SDL_syswm.h>
 #if defined(__APPLE__)
+#include <cmath>
 #include <TargetConditionals.h>
 #endif
 
