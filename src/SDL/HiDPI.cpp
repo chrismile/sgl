@@ -126,16 +126,13 @@ float getHighDPIScaleFactor() {
 #endif
                 break;
             case SDL_SYSWM_COCOA:
-                /*
-                 * TODO: High-DPI disabled on macOS for the time being.
-                 * Further investigation into NSHighResolutionCapable is necessary.
-                 */
+                // Standard DPI is supposedly 72 on macOS, but fonts seem to be too big in this case.
                 if ((SDL_GetWindowFlags(window) & SDL_WINDOW_ALLOW_HIGHDPI) != 0) {
-                    float ddpi = 72, hdpi = 72, vdpi = 72;
+                    float ddpi = 96, hdpi = 96, vdpi = 96;
                     if (SDL_GetDisplayDPI(0, &ddpi, &hdpi, &vdpi) == 0) {
                         Logfile::get()->writeInfo(std::string() + "getHighDPIScaleFactor: ddpi: " + toString(ddpi)
-                                + ", hdpi: " + toString(hdpi) + ", vdpi: " + toString(vdpi));
-                        return hdpi / 72.0f;
+                                                  + ", hdpi: " + toString(hdpi) + ", vdpi: " + toString(vdpi));
+                        return hdpi / 96.0f;
                     }
                 } else {
                     return 1.0f;
