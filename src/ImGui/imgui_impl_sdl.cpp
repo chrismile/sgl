@@ -653,6 +653,18 @@ void ImGui_ImplSDL2_NewFrame()
     if (w > 0 && h > 0)
         io.DisplayFramebufferScale = ImVec2((float)display_w / w, (float)display_h / h);
 
+    // https://github.com/ocornut/imgui/issues/3757#issuecomment-800921198
+    // https://github.com/cmaughan/sonic-pi/blob/b65f3c6bc6d070f69f2bffe5b1f9d7f78cb7149b/app/gui/imgui/backends/imgui_impl_sdl.cpp#L499
+#if defined(__APPLE__)
+    // On Apple, The window size is reported in Low DPI, even when running in high DPI mode
+    ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
+    if (!platform_io.Monitors.empty() && platform_io.Monitors[0].DpiScale > 1.0f && display_h != h)
+    {
+        io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
+        io.DisplaySize = ImVec2((float)display_w, (float)display_h);
+    }
+#endif
+
     // Setup time step (we don't use SDL_GetTicks() because it is using millisecond resolution)
     static Uint64 frequency = SDL_GetPerformanceFrequency();
     Uint64 current_time = SDL_GetPerformanceCounter();
