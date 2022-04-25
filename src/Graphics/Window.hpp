@@ -64,6 +64,9 @@ enum VSyncMode {
 struct DLL_OBJECT WindowSettings {
     int width;
     int height;
+    // Pixel width and height may differ on macOS.
+    int pixelWidth;
+    int pixelHeight;
     bool fullscreen;
     bool resizable;
     int multisamples;
@@ -78,6 +81,8 @@ struct DLL_OBJECT WindowSettings {
     WindowSettings() {
         width = 1920;
         height = 1080;
+        pixelWidth = width;
+        pixelHeight = height;
         fullscreen = false;
         resizable = true;
         multisamples = 16;
@@ -113,27 +118,38 @@ public:
 
     /// Change the window attributes
     virtual void toggleFullscreen(bool nativeFullscreen = true)=0;
-    virtual void setWindowSize(int width, int height)=0;
     virtual void setWindowPosition(int x, int y)=0;
     virtual void serializeSettings(SettingsFile &settings)=0;
     virtual WindowSettings deserializeSettings(const SettingsFile &settings)=0;
 
-    /// Update the window
+    /// Update the window.
     virtual void update()=0;
     virtual void setEventHandler(std::function<void(const SDL_Event&)> eventHandler)=0;
-    /// Returns false if the game should quit
+    /// Returns false if the game should quit.
     virtual bool processEvents()=0;
     virtual void clear(const Color &color = Color(0, 0, 0))=0;
     virtual void flip()=0;
 
-    /// Utility functions and getters for the main window attributes
+    /// Utility functions and getters & setters for the main window attributes.
+    // Virtual and pixel size is equivalent on Linux and Windows, but not on macOS.
     virtual void saveScreenshot(const char *filename)=0;
     virtual bool isFullscreen()=0;
+    virtual int getVirtualWidth()=0;
+    virtual int getVirtualHeight()=0;
+    virtual int getPixelWidth()=0;
+    virtual int getPixelHeight()=0;
+    virtual glm::ivec2 getWindowVirtualResolution()=0;
+    virtual glm::ivec2 getWindowPixelResolution()=0;
+    virtual glm::ivec2 getWindowPosition()=0;
+    [[nodiscard]] virtual const WindowSettings& getWindowSettings() const=0;
+    virtual void setWindowVirtualSize(int width, int height)=0;
+    virtual void setWindowPixelSize(int width, int height)=0;
+
+    // Legacy, may make problems on macOS.
     virtual int getWidth()=0;
     virtual int getHeight()=0;
     virtual glm::ivec2 getWindowResolution()=0;
-    virtual glm::ivec2 getWindowPosition()=0;
-    [[nodiscard]] virtual const WindowSettings& getWindowSettings() const=0;
+    virtual void setWindowSize(int width, int height)=0;
 
 #ifdef SUPPORT_VULKAN
     virtual VkSurfaceKHR getVkSurface()=0;

@@ -95,10 +95,10 @@ namespace sgl
 {
 
 float getScreenScalingWindows() {
-    HDC hdcScreen = GetDC(NULL); // HWND hWnd
+    HDC hdcScreen = GetDC(nullptr); // HWND hWnd
     int dpi = GetDeviceCaps(hdcScreen, LOGPIXELSX);
-    ReleaseDC(NULL, hdcScreen);
-    return dpi/96.0f;
+    ReleaseDC(nullptr, hdcScreen);
+    return dpi / 96.0f;
 }
 
 }
@@ -125,16 +125,25 @@ float getHighDPIScaleFactor() {
                 scaleFactorHiDPI = getScreenScalingX11(wminfo.info.x11.display);
 #endif
                 break;
-            case SDL_SYSWM_WINDOWS:
-#if defined(SDL_VIDEO_DRIVER_WINDOWS)
-                scaleFactorHiDPI = getScreenScalingWindows();
-#endif
             case SDL_SYSWM_COCOA:
                 /*
                  * TODO: High-DPI disabled on macOS for the time being.
                  * Further investigation into NSHighResolutionCapable is necessary.
                  */
-                return 1.0f;
+                if ((SDL_GetWindowFlags(window) & SDL_WINDOW_ALLOW_HIGHDPI) != 0) {
+                    float ddpi = 72, hdpi = 72, vdpi = 72;
+                    if (SDL_GetDisplayDPI(0, &ddpi, &hdpi, &vdpi) == 0) {
+                        Logfile::get()->writeInfo(std::string() + "getHighDPIScaleFactor: ddpi: " + toString(ddpi)
+                                + ", hdpi: " + toString(hdpi) + ", vdpi: " + toString(vdpi));
+                        return hdpi / 72.0f;
+                    }
+                } else {
+                    return 1.0f;
+                }
+            case SDL_SYSWM_WINDOWS:
+#if defined(SDL_VIDEO_DRIVER_WINDOWS)
+                scaleFactorHiDPI = getScreenScalingWindows();
+#endif
             case SDL_SYSWM_WAYLAND:
             case SDL_SYSWM_ANDROID:
             default:

@@ -57,7 +57,6 @@ public:
     /// Change the window attributes
     /// Try to keep resolution
     void toggleFullscreen(bool nativeFullscreen = true) override;
-    void setWindowSize(int width, int height) override;
     void setWindowPosition(int x, int y) override;
     void serializeSettings(SettingsFile &settings) override;
     WindowSettings deserializeSettings(const SettingsFile &settings) override;
@@ -70,14 +69,26 @@ public:
     void clear(const Color &color = Color(0, 0, 0)) override;
     void flip() override;
 
-    /// Utility functions/getters for the main window attributes
+    /// Utility functions and getters & setters for the main window attributes.
+    // Virtual and pixel size is equivalent on Linux and Windows, but not on macOS.
     void saveScreenshot(const char *filename) override;
     bool isFullscreen() override { return windowSettings.fullscreen; }
-    int getWidth() override { return windowSettings.width; }
-    int getHeight() override { return windowSettings.height; }
-    glm::ivec2 getWindowResolution() override { return glm::ivec2(windowSettings.width, windowSettings.height); }
+    int getVirtualWidth() override { return windowSettings.width; }
+    int getVirtualHeight() override { return windowSettings.height; }
+    int getPixelWidth() override { return windowSettings.pixelWidth; }
+    int getPixelHeight() override { return windowSettings.pixelHeight; }
+    glm::ivec2 getWindowVirtualResolution() override { return glm::ivec2(windowSettings.width, windowSettings.height); }
+    glm::ivec2 getWindowPixelResolution() override { return glm::ivec2(windowSettings.pixelWidth, windowSettings.pixelHeight); }
     glm::ivec2 getWindowPosition() override;
     [[nodiscard]] const WindowSettings& getWindowSettings() const override { return windowSettings; }
+    void setWindowVirtualSize(int width, int height) override;
+    void setWindowPixelSize(int width, int height) override;
+
+    // Legacy, may make problems on macOS.
+    int getWidth() override { return windowSettings.pixelWidth; }
+    int getHeight() override { return windowSettings.pixelHeight; }
+    glm::ivec2 getWindowResolution() override { return glm::ivec2(windowSettings.pixelWidth, windowSettings.pixelHeight); }
+    void setWindowSize(int width, int height) override { setWindowPixelSize(width, height); }
 
     /// Getting SDL specific data
     inline SDL_Window *getSDLWindow() { return sdlWindow; }

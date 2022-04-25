@@ -195,8 +195,8 @@ void SciVisApp::createSceneFramebuffer() {
 
 #if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN)
     sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
-    int width = window->getWidth();
-    int height = window->getHeight();
+    int width = window->getPixelWidth();
+    int height = window->getPixelHeight();
 #endif
 
 #ifdef SUPPORT_OPENGL
@@ -271,8 +271,8 @@ void SciVisApp::createSceneFramebuffer() {
 
 void SciVisApp::resolutionChanged(sgl::EventPtr event) {
     sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
-    int width = window->getWidth();
-    int height = window->getHeight();
+    int width = window->getPixelWidth();
+    int height = window->getPixelHeight();
     windowResolution = glm::ivec2(width, height);
 #ifdef SUPPORT_OPENGL
     // Buffers for off-screen rendering
@@ -313,8 +313,8 @@ void SciVisApp::saveScreenshot(const std::string &filename) {
     int height;
     if (customScreenshotWidth < 0 || customScreenshotHeight < 0) {
         sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
-        width = window->getWidth();
-        height = window->getHeight();
+        width = window->getPixelWidth();
+        height = window->getPixelHeight();
     } else {
         width = customScreenshotWidth;
         height = customScreenshotHeight;
@@ -394,8 +394,8 @@ void SciVisApp::preRender() {
 #ifdef SUPPORT_OPENGL
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
         sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
-        int width = window->getWidth();
-        int height = window->getHeight();
+        int width = window->getPixelWidth();
+        int height = window->getPixelHeight();
         glViewport(0, 0, width, height);
     }
 #endif
