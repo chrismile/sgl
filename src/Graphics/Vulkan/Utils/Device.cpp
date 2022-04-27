@@ -1086,7 +1086,7 @@ void Device::endSingleTimeMultipleCommands(
     } else {
         queue = workerThreadGraphicsQueue;
     }
-    vkQueueSubmit(queue, uint32_t(commandBuffers.size()), &submitInfo, VK_NULL_HANDLE);
+    vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
     vkQueueWaitIdle(queue);
 
     CommandPoolType commandPoolType;
