@@ -80,7 +80,19 @@ public:
             Device* device, VkGeometryFlagsKHR geometryFlags = VkGeometryFlagsKHR(0));
 
     void setIndexBuffer(BufferPtr& buffer, VkIndexType indexType = VK_INDEX_TYPE_UINT32);
+    void setIndexBufferOffset(
+            BufferPtr& buffer, uint32_t primitiveOffset, uint32_t numIndices,
+            VkIndexType indexType = VK_INDEX_TYPE_UINT32);
     void setVertexBuffer(BufferPtr& buffer, VkFormat vertexFormat, VkDeviceSize vertexStride = 0);
+
+    void setIndexBuffer(
+            VkDeviceAddress bufferDeviceAddress, size_t bufferSize, VkIndexType indexType = VK_INDEX_TYPE_UINT32);
+    void setVertexBuffer(
+            VkDeviceAddress bufferDeviceAddress, size_t bufferSize,
+            VkFormat vertexFormat, VkDeviceSize vertexStride = 0);
+
+    /// Optional. Needs to be called after @see setVertexBuffer.
+    void setMaxVertex(uint32_t maxVertex);
 
 protected:
     BufferPtr indexBuffer;
@@ -150,9 +162,9 @@ DLL_OBJECT std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAcce
         bool debugOutput = false);
 
 DLL_OBJECT std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStructuresFromInputList(
-        const std::vector<BottomLevelAccelerationStructureInputPtr>& blasInputsList,
+        const std::vector<BottomLevelAccelerationStructureInputPtr>& blasInputList,
         VkBuildAccelerationStructureFlagsKHR flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR,
-         bool debugOutput = false);
+        bool debugOutput = false);
 
 DLL_OBJECT BottomLevelAccelerationStructurePtr buildBottomLevelAccelerationStructureFromInputs(
         const BottomLevelAccelerationStructureInputList& blasInputs,

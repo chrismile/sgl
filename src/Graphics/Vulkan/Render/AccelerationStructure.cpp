@@ -56,6 +56,11 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
     std::vector<VkAccelerationStructureBuildGeometryInfoKHR> buildInfos(numBlases);
     std::vector<BottomLevelAccelerationStructurePtr> blases(numBlases);
     std::vector<size_t> uncompactedSizes(numBlases);
+    std::vector<VkAccelerationStructureBuildSizesInfoKHR> buildSizesInfoList(numBlases);
+
+    VkDeviceSize maxScratchSize = 0;
+    VkDeviceSize minAccelerationStructureScratchOffsetAlignment =
+            device->getPhysicalDeviceAccelerationStructureProperties().minAccelerationStructureScratchOffsetAlignment;
 
     for(size_t blasIdx = 0; blasIdx < numBlases; blasIdx++) {
         const BottomLevelAccelerationStructureInputList& blasInputs = blasInputsList.at(blasIdx);
@@ -72,61 +77,23 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
         buildInfos.at(blasIdx).mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
         buildInfos.at(blasIdx).type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
         buildInfos.at(blasIdx).srcAccelerationStructure = VK_NULL_HANDLE;
-    }
 
-    VkDeviceSize minAccelerationStructureScratchOffsetAlignment =
-            device->getPhysicalDeviceAccelerationStructureProperties().minAccelerationStructureScratchOffsetAlignment;
-
-    VkDeviceSize maxScratchSize = 0;
-    for(size_t blasIdx = 0; blasIdx < numBlases; blasIdx++) {
-        const BottomLevelAccelerationStructureInputList& blasInputs = blasInputsList.at(blasIdx);
         std::vector<uint32_t> numPrimitivesList(blasInputs.size());
         for (size_t inputIdx = 0; inputIdx < blasInputs.size(); inputIdx++) {
             numPrimitivesList.at(inputIdx) = uint32_t(blasInputs.at(inputIdx)->getNumPrimitives());
         }
 
         // Query the memory requirements for the bottom-level acceleration structure.
-        VkAccelerationStructureBuildSizesInfoKHR buildSizesInfo{};
+        VkAccelerationStructureBuildSizesInfoKHR& buildSizesInfo = buildSizesInfoList.at(blasIdx);
+        buildSizesInfo = {};
         buildSizesInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
         vkGetAccelerationStructureBuildSizesKHR(
                 device->getVkDevice(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
                 &buildInfos.at(blasIdx), numPrimitivesList.data(), &buildSizesInfo);
 
-        if (debugOutput) {
-            sgl::Logfile::get()->writeInfo(
-                    "Acceleration structure build scratch size: "
-                    + sgl::toString(double(buildSizesInfo.buildScratchSize) / 1024.0 / 1024.0) + "MiB");
-            sgl::Logfile::get()->writeInfo(
-                    "Acceleration structure size: "
-                    + sgl::toString(double(buildSizesInfo.accelerationStructureSize) / 1024.0 / 1024.0) + "MiB");
-        }
-
-        // Create the acceleration structure and the underlying memory.
-        BufferPtr accelerationStructureBuffer(new Buffer(
-                device, buildSizesInfo.accelerationStructureSize,
-                VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR
-                | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-                VMA_MEMORY_USAGE_GPU_ONLY));
-
-        VkAccelerationStructureCreateInfoKHR accelerationStructureCreateInfo{};
-        accelerationStructureCreateInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
-        accelerationStructureCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-        accelerationStructureCreateInfo.size = buildSizesInfo.accelerationStructureSize;
-        accelerationStructureCreateInfo.buffer = accelerationStructureBuffer->getVkBuffer();
-
-        VkAccelerationStructureKHR accelerationStructure = VK_NULL_HANDLE;
-        vkCreateAccelerationStructureKHR(
-                device->getVkDevice(), &accelerationStructureCreateInfo, nullptr,
-                &accelerationStructure);
-        buildInfos.at(blasIdx).dstAccelerationStructure = accelerationStructure;
         maxScratchSize = std::max(
                 maxScratchSize, buildSizesInfo.buildScratchSize + minAccelerationStructureScratchOffsetAlignment);
         uncompactedSizes.at(blasIdx) = buildSizesInfo.accelerationStructureSize;
-
-        BottomLevelAccelerationStructurePtr blas(new BottomLevelAccelerationStructure(
-                device, accelerationStructure, accelerationStructureBuffer,
-                buildSizesInfo.accelerationStructureSize));
-        blases.at(blasIdx) = blas;
     }
 
     // Allocate a scratch buffer for holding the temporary memory needed by the AS builder.
@@ -158,98 +125,176 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
         device->endSingleTimeCommands(commandBuffer);
     }
 
-    std::vector<VkCommandBuffer> commandBuffers = device->beginSingleTimeMultipleCommands(
-            uint32_t(numBlases));
-    for (size_t blasIdx = 0; blasIdx < numBlases; blasIdx++) {
-        VkCommandBuffer commandBuffer = commandBuffers.at(blasIdx);
-        const BottomLevelAccelerationStructureInputList& blasInputs = blasInputsList.at(blasIdx);
-        const BottomLevelAccelerationStructurePtr& blas = blases.at(blasIdx);
+    size_t totalUncompactedSize = 0, totalCompactedSize = 0;
 
+    /*
+     * If possible, try creating the BLASes in smaller batches and compact immediately afterwards to ...
+     * a) ... avoid driver timeout detection.
+     * b) ... avoid out of memory errors.
+     */
+    constexpr VkDeviceSize batchBlasLimit = 256 * 1024 * 1024; //< 256MiB
+    VkDeviceSize batchBlasSize = 0;
+    size_t batchBlasStartIdx = 0;
+    size_t batchNumBlases = 0;
+
+    for(size_t blasIdx = 0; blasIdx < numBlases; blasIdx++) {
+        const VkAccelerationStructureBuildSizesInfoKHR& buildSizesInfo = buildSizesInfoList.at(blasIdx);
+
+        if (debugOutput) {
+            sgl::Logfile::get()->writeInfo(
+                    "Acceleration structure build scratch size: "
+                    + sgl::toString(double(buildSizesInfo.buildScratchSize) / 1024.0 / 1024.0) + "MiB");
+            sgl::Logfile::get()->writeInfo(
+                    "Acceleration structure size: "
+                    + sgl::toString(double(buildSizesInfo.accelerationStructureSize) / 1024.0 / 1024.0) + "MiB");
+        }
+
+        // Create the acceleration structure and the underlying memory.
+        BufferPtr accelerationStructureBuffer(new Buffer(
+                device, buildSizesInfo.accelerationStructureSize,
+                VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR
+                | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                VMA_MEMORY_USAGE_GPU_ONLY));
+
+        VkAccelerationStructureCreateInfoKHR accelerationStructureCreateInfo{};
+        accelerationStructureCreateInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
+        accelerationStructureCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+        accelerationStructureCreateInfo.size = buildSizesInfo.accelerationStructureSize;
+        accelerationStructureCreateInfo.buffer = accelerationStructureBuffer->getVkBuffer();
+
+        VkAccelerationStructureKHR accelerationStructure = VK_NULL_HANDLE;
+        vkCreateAccelerationStructureKHR(
+                device->getVkDevice(), &accelerationStructureCreateInfo, nullptr,
+                &accelerationStructure);
+        buildInfos.at(blasIdx).dstAccelerationStructure = accelerationStructure;
         buildInfos.at(blasIdx).scratchData.deviceAddress = scratchBufferDeviceAddress;
 
-        std::vector<const VkAccelerationStructureBuildRangeInfoKHR*> buildRangeInfos;
-        buildRangeInfos.reserve(blasInputs.size());
-        for (const BottomLevelAccelerationStructureInputPtr& blasInput : blasInputs) {
-            buildRangeInfos.push_back(&blasInput->getBuildRangeInfo());
-        }
+        BottomLevelAccelerationStructurePtr blas(new BottomLevelAccelerationStructure(
+                device, accelerationStructure, accelerationStructureBuffer,
+                buildSizesInfo.accelerationStructureSize));
+        blases.at(blasIdx) = blas;
 
-        vkCmdBuildAccelerationStructuresKHR(commandBuffer, 1, &buildInfos.at(blasIdx), buildRangeInfos.data());
+        batchBlasSize += buildSizesInfo.accelerationStructureSize;
+        batchNumBlases += 1;
 
-        VkMemoryBarrier barrier{};
-        barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
-        barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
-        barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
-        vkCmdPipelineBarrier(
-                commandBuffer,
-                VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
-                VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
-                0, 1, &barrier,
-                0, nullptr,
-                0, nullptr);
+        if (batchBlasSize >= batchBlasLimit || blasIdx == numBlases - 1) {
+            std::vector<VkCommandBuffer> commandBuffers = device->beginSingleTimeMultipleCommands(
+                    uint32_t(batchNumBlases));
+            for (size_t batchBlasIdx = batchBlasStartIdx; batchBlasIdx < batchNumBlases; batchBlasIdx++) {
+                VkCommandBuffer commandBuffer = commandBuffers.at(batchBlasIdx);
+                const BottomLevelAccelerationStructureInputList& blasInputs = blasInputsList.at(batchBlasIdx);
+                const BottomLevelAccelerationStructurePtr& blas = blases.at(batchBlasIdx);
 
-        if(shallDoCompaction) {
-            VkAccelerationStructureKHR accelerationStructure = blas->getAccelerationStructure();
-            vkCmdWriteAccelerationStructuresPropertiesKHR(
-                    commandBuffer, 1, &accelerationStructure,
-                    VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, queryPool, uint32_t(blasIdx));
+                std::vector<const VkAccelerationStructureBuildRangeInfoKHR*> buildRangeInfos;
+                buildRangeInfos.reserve(blasInputs.size());
+                for (const BottomLevelAccelerationStructureInputPtr& blasInput : blasInputs) {
+                    buildRangeInfos.push_back(&blasInput->getBuildRangeInfo());
+                }
+
+                vkCmdBuildAccelerationStructuresKHR(
+                        commandBuffer, 1, &buildInfos.at(batchBlasIdx), buildRangeInfos.data());
+
+                VkMemoryBarrier barrier{};
+                barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+                barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
+                barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+                vkCmdPipelineBarrier(
+                        commandBuffer,
+                        VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+                        VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+                        0, 1, &barrier,
+                        0, nullptr,
+                        0, nullptr);
+
+                if(shallDoCompaction) {
+                    VkAccelerationStructureKHR accelerationStructure = blas->getAccelerationStructure();
+                    vkCmdWriteAccelerationStructuresPropertiesKHR(
+                            commandBuffer, 1, &accelerationStructure,
+                            VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, queryPool, uint32_t(batchBlasIdx));
+                }
+            }
+            device->endSingleTimeMultipleCommands(commandBuffers);
+
+            if(shallDoCompaction) {
+                VkCommandBuffer commandBuffer = device->beginSingleTimeCommands();
+
+                std::vector<VkDeviceSize> compactSizes(numBlases);
+                vkGetQueryPoolResults(
+                        device->getVkDevice(), queryPool, 0,
+                        uint32_t(compactSizes.size()), compactSizes.size() * sizeof(VkDeviceSize),
+                        compactSizes.data(), sizeof(VkDeviceSize), VK_QUERY_RESULT_WAIT_BIT);
+
+                std::vector<BottomLevelAccelerationStructurePtr> blasesOld(batchNumBlases);
+                size_t batchUncompactedSize = 0, batchCompactedSize = 0;
+                for (size_t batchBlasIdx = batchBlasStartIdx; batchBlasIdx < batchNumBlases; batchBlasIdx++) {
+                    totalUncompactedSize += uncompactedSizes.at(batchBlasIdx);
+                    totalCompactedSize += compactSizes.at(batchBlasIdx);
+                    batchUncompactedSize += uncompactedSizes.at(batchBlasIdx);
+                    batchCompactedSize += compactSizes.at(batchBlasIdx);
+
+                    // Create the compacted acceleration structure and the underlying memory.
+                    BufferPtr accelerationStructureBuffer(new Buffer(
+                            device, compactSizes.at(batchBlasIdx),
+                            VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR
+                            | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                            VMA_MEMORY_USAGE_GPU_ONLY));
+
+                    VkAccelerationStructureCreateInfoKHR accelerationStructureCreateInfo{};
+                    accelerationStructureCreateInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
+                    accelerationStructureCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+                    accelerationStructureCreateInfo.size = compactSizes.at(batchBlasIdx);
+                    accelerationStructureCreateInfo.buffer = accelerationStructureBuffer->getVkBuffer();
+
+                    VkAccelerationStructureKHR accelerationStructure = VK_NULL_HANDLE;
+                    vkCreateAccelerationStructureKHR(
+                            device->getVkDevice(), &accelerationStructureCreateInfo, nullptr,
+                            &accelerationStructure);
+
+                    // Copy the original BLAS to a compact version.
+                    VkCopyAccelerationStructureInfoKHR copyAccelerationStructureInfo{};
+                    copyAccelerationStructureInfo.sType = VK_STRUCTURE_TYPE_COPY_ACCELERATION_STRUCTURE_INFO_KHR;
+                    copyAccelerationStructureInfo.src = blases.at(batchBlasIdx)->getAccelerationStructure();
+                    copyAccelerationStructureInfo.dst = accelerationStructure;
+                    copyAccelerationStructureInfo.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR;
+                    vkCmdCopyAccelerationStructureKHR(commandBuffer, &copyAccelerationStructureInfo);
+
+                    BottomLevelAccelerationStructurePtr blas(new BottomLevelAccelerationStructure(
+                            device, accelerationStructure, accelerationStructureBuffer,
+                            compactSizes.at(batchBlasIdx)));
+                    blasesOld.at(batchBlasIdx) = blases.at(batchBlasIdx);
+                    blases.at(batchBlasIdx) = blas;
+                }
+                if (debugOutput) {
+                    Logfile::get()->writeInfo(
+                            "BLAS: Reducing batch from "
+                            + sgl::toString(double(batchUncompactedSize) / 1024.0 / 1024.0) + "MiB to "
+                            + sgl::toString(double(batchCompactedSize) / 1024.0 / 1024.0) + "MiB.");
+                }
+                device->endSingleTimeCommands(commandBuffer);
+
+                blasesOld.clear();
+            } else {
+                for (size_t batchBlasIdx = batchBlasStartIdx; batchBlasIdx < batchNumBlases; batchBlasIdx++) {
+                    totalUncompactedSize += uncompactedSizes.at(batchBlasIdx);
+                }
+            }
+
+            batchBlasSize = 0;
+            batchNumBlases = 0;
+            batchBlasStartIdx = blasIdx + 1;
         }
     }
-    device->endSingleTimeMultipleCommands(commandBuffers);
 
-    if(shallDoCompaction) {
-        VkCommandBuffer commandBuffer = device->beginSingleTimeCommands();
-
-        std::vector<VkDeviceSize> compactSizes(numBlases);
-        vkGetQueryPoolResults(
-                device->getVkDevice(), queryPool, 0,
-                uint32_t(compactSizes.size()), compactSizes.size() * sizeof(VkDeviceSize),
-                compactSizes.data(), sizeof(VkDeviceSize), VK_QUERY_RESULT_WAIT_BIT);
-
-        std::vector<BottomLevelAccelerationStructurePtr> blasesOld(numBlases);
-        size_t totalUncompactedSize = 0, totalCompactedSize = 0;
-        for (size_t blasIdx = 0; blasIdx < numBlases; blasIdx++) {
-            totalUncompactedSize += uncompactedSizes.at(blasIdx);
-            totalCompactedSize += compactSizes.at(blasIdx);
-
-            // Create the compacted acceleration structure and the underlying memory.
-            BufferPtr accelerationStructureBuffer(new Buffer(
-                    device, compactSizes.at(blasIdx),
-                    VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR
-                    | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-                    VMA_MEMORY_USAGE_GPU_ONLY));
-
-            VkAccelerationStructureCreateInfoKHR accelerationStructureCreateInfo{};
-            accelerationStructureCreateInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
-            accelerationStructureCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-            accelerationStructureCreateInfo.size = compactSizes.at(blasIdx);
-            accelerationStructureCreateInfo.buffer = accelerationStructureBuffer->getVkBuffer();
-
-            VkAccelerationStructureKHR accelerationStructure = VK_NULL_HANDLE;
-            vkCreateAccelerationStructureKHR(
-                    device->getVkDevice(), &accelerationStructureCreateInfo, nullptr,
-                    &accelerationStructure);
-
-            // Copy the original BLAS to a compact version
-            VkCopyAccelerationStructureInfoKHR copyAccelerationStructureInfo{};
-            copyAccelerationStructureInfo.sType = VK_STRUCTURE_TYPE_COPY_ACCELERATION_STRUCTURE_INFO_KHR;
-            copyAccelerationStructureInfo.src = blases.at(blasIdx)->getAccelerationStructure();
-            copyAccelerationStructureInfo.dst = accelerationStructure;
-            copyAccelerationStructureInfo.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR;
-            vkCmdCopyAccelerationStructureKHR(commandBuffer, &copyAccelerationStructureInfo);
-
-            BottomLevelAccelerationStructurePtr blas(new BottomLevelAccelerationStructure(
-                    device, accelerationStructure, accelerationStructureBuffer,
-                    compactSizes.at(blasIdx)));
-            blasesOld.at(blasIdx) = blases.at(blasIdx);
-            blases.at(blasIdx) = blas;
-        }
-        device->endSingleTimeCommands(commandBuffer);
-
-        blasesOld.clear();
-
+    if (debugOutput && shallDoCompaction) {
         Logfile::get()->writeInfo(
-                "BLAS: Reducing from " + sgl::toString(double(totalUncompactedSize) / 1024.0 / 1024.0)
-                + "MiB to " + sgl::toString(double(totalCompactedSize) / 1024.0 / 1024.0) + "MiB.");
+                "BLAS: Reduced from "
+                + sgl::toString(double(totalUncompactedSize) / 1024.0 / 1024.0) + "MiB to "
+                + sgl::toString(double(totalCompactedSize) / 1024.0 / 1024.0) + "MiB.");
+    }
+    if (debugOutput && !shallDoCompaction) {
+        Logfile::get()->writeInfo(
+                "BLAS: Created acceleration structures of size "
+                + sgl::toString(double(totalUncompactedSize) / 1024.0 / 1024.0) + "MiB.");
     }
 
     vkDestroyQueryPool(device->getVkDevice(), queryPool, nullptr);
@@ -258,17 +303,21 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
 }
 
 std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStructuresFromInputList(
-        const std::vector<BottomLevelAccelerationStructureInputPtr>& blasInputsList,
+        const std::vector<BottomLevelAccelerationStructureInputPtr>& blasInputs,
         VkBuildAccelerationStructureFlagsKHR flags, bool debugOutput) {
+    std::vector<BottomLevelAccelerationStructureInputList> blasInputsList;
+    for (const BottomLevelAccelerationStructureInputPtr& blasInput : blasInputs) {
+        blasInputsList.push_back({ blasInput });
+    }
     return buildBottomLevelAccelerationStructuresFromInputsLists(
             { blasInputsList }, flags, debugOutput);
 }
 
 BottomLevelAccelerationStructurePtr buildBottomLevelAccelerationStructureFromInputs(
-        const BottomLevelAccelerationStructureInputList& blasInputs,
+        const BottomLevelAccelerationStructureInputList& blasInputList,
         VkBuildAccelerationStructureFlagsKHR flags, bool debugOutput) {
     return buildBottomLevelAccelerationStructuresFromInputsLists(
-            { blasInputs }, flags, debugOutput).front();
+            { blasInputList }, flags, debugOutput).front();
 }
 
 BottomLevelAccelerationStructurePtr buildBottomLevelAccelerationStructureFromInput(
@@ -304,6 +353,22 @@ void TrianglesAccelerationStructureInput::setIndexBuffer(
     trianglesData.indexData.deviceAddress = indexBuffer->getVkDeviceAddress();
 }
 
+void TrianglesAccelerationStructureInput::setIndexBufferOffset(
+        BufferPtr& buffer, uint32_t primitiveOffset, uint32_t numIndices, VkIndexType indexType) {
+    this->indexBuffer = buffer;
+    this->indexType = indexType;
+    this->numIndices = numIndices;
+
+    buildRangeInfo.firstVertex = 0;
+    buildRangeInfo.primitiveCount = uint32_t(numIndices / 3);
+    buildRangeInfo.primitiveOffset = primitiveOffset;
+    buildRangeInfo.transformOffset = 0;
+
+    VkAccelerationStructureGeometryTrianglesDataKHR& trianglesData = asGeometry.geometry.triangles;
+    trianglesData.indexType = indexType;
+    trianglesData.indexData.deviceAddress = indexBuffer->getVkDeviceAddress();
+}
+
 void TrianglesAccelerationStructureInput::setVertexBuffer(
         BufferPtr& buffer, VkFormat vertexFormat, VkDeviceSize vertexStride) {
     this->vertexBuffer = buffer;
@@ -328,6 +393,54 @@ void TrianglesAccelerationStructureInput::setVertexBuffer(
     trianglesData.vertexData.deviceAddress = vertexBuffer->getVkDeviceAddress();
     trianglesData.vertexStride = this->vertexStride;
     trianglesData.maxVertex = uint32_t(this->numVertices);
+}
+
+void TrianglesAccelerationStructureInput::setIndexBuffer(
+        VkDeviceAddress bufferDeviceAddress, size_t bufferSize, VkIndexType indexType) {
+    this->indexBuffer = {};
+    this->indexType = indexType;
+    this->numIndices = bufferSize / getIndexTypeByteSize(indexType);
+
+    buildRangeInfo.firstVertex = 0;
+    buildRangeInfo.primitiveCount = uint32_t(numIndices / 3);
+    buildRangeInfo.primitiveOffset = 0;
+    buildRangeInfo.transformOffset = 0;
+
+    VkAccelerationStructureGeometryTrianglesDataKHR& trianglesData = asGeometry.geometry.triangles;
+    trianglesData.indexType = indexType;
+    trianglesData.indexData.deviceAddress = bufferDeviceAddress;
+}
+
+void TrianglesAccelerationStructureInput::setVertexBuffer(
+        VkDeviceAddress bufferDeviceAddress, size_t bufferSize,
+        VkFormat vertexFormat, VkDeviceSize vertexStride) {
+    this->vertexBuffer = {};
+    this->vertexFormat = vertexFormat;
+    if (vertexStride == 0) {
+        if (vertexFormat == VK_FORMAT_R32G32B32_SFLOAT) {
+            this->vertexStride = 3 * sizeof(float);
+        } else if (vertexFormat == VK_FORMAT_R32G32B32A32_SFLOAT) {
+            this->vertexStride = 4 * sizeof(float);
+        } else {
+            Logfile::get()->throwError(
+                    "Error in TrianglesAccelerationStructure::setVertexBuffer: vertexStride == 0, "
+                    "but unhandled vertex format is used.");
+        }
+    } else {
+        this->vertexStride = vertexStride;
+    }
+    this->numVertices = bufferSize / this->vertexStride;
+
+    VkAccelerationStructureGeometryTrianglesDataKHR& trianglesData = asGeometry.geometry.triangles;
+    trianglesData.vertexFormat = this->vertexFormat;
+    trianglesData.vertexData.deviceAddress = bufferDeviceAddress;
+    trianglesData.vertexStride = this->vertexStride;
+    trianglesData.maxVertex = uint32_t(this->numVertices);
+}
+
+void TrianglesAccelerationStructureInput::setMaxVertex(uint32_t maxVertex) {
+    VkAccelerationStructureGeometryTrianglesDataKHR& trianglesData = asGeometry.geometry.triangles;
+    trianglesData.maxVertex = maxVertex;
 }
 
 
