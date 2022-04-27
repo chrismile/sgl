@@ -108,6 +108,8 @@ VideoWriter::~VideoWriter() {
         while (queueSize > 0) {
             readBackOldestFrameVulkan();
         }
+        renderer->getDevice()->waitIdle();
+        readBackImages = {};
     }
 #endif
 
