@@ -443,6 +443,18 @@ void Device::createLogicalDeviceAndQueues(
             requestedDeviceFeatures.meshShaderFeaturesNV = meshShaderFeaturesNV;
         }
     }
+    if (deviceExtensionsSet.find(VK_NV_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME) != deviceExtensionsSet.end()) {
+        fragmentShaderBarycentricFeaturesNV.sType =
+                VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_NV;
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &fragmentShaderBarycentricFeaturesNV;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        if (requestedDeviceFeatures.fragmentShaderBarycentricFeaturesNV.fragmentShaderBarycentric == VK_FALSE) {
+            requestedDeviceFeatures.fragmentShaderBarycentricFeaturesNV = fragmentShaderBarycentricFeaturesNV;
+        }
+    }
 
     //
     /*
@@ -566,6 +578,10 @@ void Device::createLogicalDeviceAndQueues(
     if (requestedDeviceFeatures.meshShaderFeaturesNV.meshShader) {
         *pNextPtr = &requestedDeviceFeatures.meshShaderFeaturesNV;
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.meshShaderFeaturesNV.pNext);
+    }
+    if (requestedDeviceFeatures.fragmentShaderBarycentricFeaturesNV.fragmentShaderBarycentric) {
+        *pNextPtr = &requestedDeviceFeatures.fragmentShaderBarycentricFeaturesNV;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.fragmentShaderBarycentricFeaturesNV.pNext);
     }
 #ifdef VK_VERSION_1_3
     vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);

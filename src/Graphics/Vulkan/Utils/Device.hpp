@@ -113,6 +113,7 @@ struct DLL_OBJECT DeviceFeatures {
     VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures{};
     VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT fragmentShaderInterlockFeatures{};
     VkPhysicalDeviceMeshShaderFeaturesNV meshShaderFeaturesNV{};
+    VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragmentShaderBarycentricFeaturesNV{};
 #ifdef VK_VERSION_1_3
     VkPhysicalDeviceVulkan13Features vulkan13Features{};
 #endif
@@ -317,6 +318,7 @@ private:
     VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures{};
     VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT fragmentShaderInterlockFeatures{};
     VkPhysicalDeviceMeshShaderFeaturesNV meshShaderFeaturesNV{};
+    VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragmentShaderBarycentricFeaturesNV{};
 
     // Queues for the logical device.
     std::vector<VkQueueFamilyProperties> queueFamilyProperties;
