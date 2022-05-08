@@ -218,6 +218,10 @@ if (${SUPPORT_VULKAN} AND ${shaderc_FOUND})
     target_compile_definitions(sgl PUBLIC VK_NO_PROTOTYPES)
     if (${Vulkan_FOUND} AND ${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.21.0")
         target_link_libraries(sgl PRIVATE Vulkan::Headers)
+        target_include_directories(sgl INTERFACE
+                $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Vulkan/libs/Vulkan-Headers>
+                $<INSTALL_INTERFACE:include/sgl/Graphics/Vulkan/libs/Vulkan-Headers> # <prefix>/include/sgl
+        )
     else()
         target_include_directories(sgl PUBLIC
                 $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Vulkan/libs/Vulkan-Headers>
