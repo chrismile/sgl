@@ -43,6 +43,7 @@ namespace sgl { namespace vk {
 
 class Buffer;
 typedef std::shared_ptr<Buffer> BufferPtr;
+class Device;
 class Renderer;
 
 class DLL_OBJECT Timer {
