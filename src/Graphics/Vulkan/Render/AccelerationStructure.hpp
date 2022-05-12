@@ -176,6 +176,14 @@ DLL_OBJECT BottomLevelAccelerationStructurePtr buildBottomLevelAccelerationStruc
 DLL_OBJECT std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStructuresFromInputsListsBatched(
         const std::vector<BottomLevelAccelerationStructureInputList>& blasInputsList,
         VkBuildAccelerationStructureFlagsKHR flags, bool debugOutput);
+DLL_OBJECT std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStructuresFromInputListBatched(
+        const std::vector<BottomLevelAccelerationStructureInputPtr>& blasInputList,
+        VkBuildAccelerationStructureFlagsKHR flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR,
+        bool debugOutput = false);
+DLL_OBJECT BottomLevelAccelerationStructurePtr buildBottomLevelAccelerationStructureFromInputsBatched(
+        const BottomLevelAccelerationStructureInputList& blasInputs,
+        VkBuildAccelerationStructureFlagsKHR flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR,
+        bool debugOutput = false);
 
 /**
  * Bottom-level acceleration structure instance.

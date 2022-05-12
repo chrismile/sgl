@@ -539,6 +539,24 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
     return blases;
 }
 
+std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStructuresFromInputListBatched(
+        const std::vector<BottomLevelAccelerationStructureInputPtr>& blasInputs,
+        VkBuildAccelerationStructureFlagsKHR flags, bool debugOutput) {
+    std::vector<BottomLevelAccelerationStructureInputList> blasInputsList;
+    for (const BottomLevelAccelerationStructureInputPtr& blasInput : blasInputs) {
+        blasInputsList.push_back({ blasInput });
+    }
+    return buildBottomLevelAccelerationStructuresFromInputsListsBatched(
+            { blasInputsList }, flags, debugOutput);
+}
+
+BottomLevelAccelerationStructurePtr buildBottomLevelAccelerationStructureFromInputsBatched(
+        const BottomLevelAccelerationStructureInputList& blasInputList,
+        VkBuildAccelerationStructureFlagsKHR flags, bool debugOutput) {
+    return buildBottomLevelAccelerationStructuresFromInputsListsBatched(
+            { blasInputList }, flags, debugOutput).front();
+}
+
 
 TrianglesAccelerationStructureInput::TrianglesAccelerationStructureInput(
         Device* device, VkGeometryFlagsKHR geometryFlags) : BottomLevelAccelerationStructureInput(device, geometryFlags) {
