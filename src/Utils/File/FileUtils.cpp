@@ -26,6 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define _FILE_OFFSET_BITS 64
+
 #include "FileUtils.hpp"
 #include <fstream>
 #include <cstdlib>
@@ -413,6 +415,43 @@ void FileUtils::splitPathNoTrim(const std::string &path, std::vector<std::string
     if (buffer != "") {
         pathList.push_back(buffer);
     }
+}
+
+bool FileUtils::getIsPathAbsolute(const std::string &path) {
+#ifdef _WIN32
+    bool isAbsolutePath =
+            (path.size() > 1 && path.at(1) == ':')
+            || boost::starts_with(path, "/") || boost::starts_with(path, "\\");
+#else
+    bool isAbsolutePath =
+            boost::starts_with(path, "/");
+#endif
+    return isAbsolutePath;
+}
+
+size_t FileUtils::getFileSizeInBytes(const std::string &path) {
+#if defined(__linux__) || defined(__MINGW32__) // __GNUC__? Does GCC generally work on non-POSIX systems?
+    FILE* file = fopen64(path.c_str(), "rb");
+#else
+    FILE* file = fopen(path.c_str(), "rb");
+#endif
+    if (!file) {
+        sgl::Logfile::get()->writeError(
+                std::string() + "Error in FileUtils::getFileSizeInBytes: File \""
+                + path + "\" could not be opened.");
+        return 0;
+    }
+#if defined(_WIN32) && !defined(__MINGW32__)
+    _fseeki64(file, 0, SEEK_END);
+    size_t bufferSize = _ftelli64(file);
+    _fseeki64(file, 0, SEEK_SET);
+#else
+    fseeko(file, 0, SEEK_END);
+    size_t bufferSize = ftello(file);
+    fseeko(file, 0, SEEK_SET);
+#endif
+    fclose(file);
+    return bufferSize;
 }
 
 bool FileUtils::pathsEquivalent(const std::string &pathStr0, const std::string &pathStr1) {
