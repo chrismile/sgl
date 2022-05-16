@@ -499,7 +499,7 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
                     BottomLevelAccelerationStructurePtr blas(new BottomLevelAccelerationStructure(
                             device, accelerationStructure, accelerationStructureBuffer,
                             compactSizes.at(batchBlasIdx)));
-                    blasesOld.at(batchBlasIdx) = blases.at(batchBlasIdx);
+                    blasesOld.at(batchBlasIdx - batchBlasStartIdx) = blases.at(batchBlasIdx);
                     blases.at(batchBlasIdx) = blas;
                 }
                 if (debugOutput) {
