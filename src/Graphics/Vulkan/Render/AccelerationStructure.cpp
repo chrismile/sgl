@@ -57,7 +57,7 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
     std::vector<BottomLevelAccelerationStructurePtr> blases(numBlases);
     std::vector<size_t> uncompactedSizes(numBlases);
 
-    for(size_t blasIdx = 0; blasIdx < numBlases; blasIdx++) {
+    for (size_t blasIdx = 0; blasIdx < numBlases; blasIdx++) {
         const BottomLevelAccelerationStructureInputList& blasInputs = blasInputsList.at(blasIdx);
         std::vector<VkAccelerationStructureGeometryKHR>& asGeometries = asGeometriesList.at(blasIdx);
         asGeometries.reserve(blasInputs.size());
@@ -78,7 +78,7 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
             device->getPhysicalDeviceAccelerationStructureProperties().minAccelerationStructureScratchOffsetAlignment;
 
     VkDeviceSize maxScratchSize = 0;
-    for(size_t blasIdx = 0; blasIdx < numBlases; blasIdx++) {
+    for (size_t blasIdx = 0; blasIdx < numBlases; blasIdx++) {
         const BottomLevelAccelerationStructureInputList& blasInputs = blasInputsList.at(blasIdx);
         std::vector<uint32_t> numPrimitivesList(blasInputs.size());
         for (size_t inputIdx = 0; inputIdx < blasInputs.size(); inputIdx++) {
@@ -299,7 +299,7 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
     VkDeviceSize minAccelerationStructureScratchOffsetAlignment =
             device->getPhysicalDeviceAccelerationStructureProperties().minAccelerationStructureScratchOffsetAlignment;
 
-    for(size_t blasIdx = 0; blasIdx < numBlases; blasIdx++) {
+    for (size_t blasIdx = 0; blasIdx < numBlases; blasIdx++) {
         const BottomLevelAccelerationStructureInputList& blasInputs = blasInputsList.at(blasIdx);
         std::vector<VkAccelerationStructureGeometryKHR>& asGeometries = asGeometriesList.at(blasIdx);
         asGeometries.reserve(blasInputs.size());
@@ -373,8 +373,9 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
     VkDeviceSize batchBlasSize = 0;
     size_t batchBlasStartIdx = 0;
     size_t batchNumBlases = 0;
+    std::vector<VkDeviceSize> compactSizes(numBlases);
 
-    for(size_t blasIdx = 0; blasIdx < numBlases; blasIdx++) {
+    for (size_t blasIdx = 0; blasIdx < numBlases; blasIdx++) {
         const VkAccelerationStructureBuildSizesInfoKHR& buildSizesInfo = buildSizesInfoList.at(blasIdx);
 
         if (debugOutput) {
@@ -417,8 +418,9 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
         if (batchBlasSize >= batchBlasLimit || blasIdx == numBlases - 1) {
             std::vector<VkCommandBuffer> commandBuffers = device->beginSingleTimeMultipleCommands(
                     uint32_t(batchNumBlases));
-            for (size_t batchBlasIdx = batchBlasStartIdx; batchBlasIdx < batchNumBlases; batchBlasIdx++) {
-                VkCommandBuffer commandBuffer = commandBuffers.at(batchBlasIdx);
+            size_t batchBlasEndIdx = batchBlasStartIdx + batchNumBlases;
+            for (size_t batchBlasIdx = batchBlasStartIdx; batchBlasIdx < batchBlasEndIdx; batchBlasIdx++) {
+                VkCommandBuffer commandBuffer = commandBuffers.at(batchBlasIdx - batchBlasStartIdx);
                 const BottomLevelAccelerationStructureInputList& blasInputs = blasInputsList.at(batchBlasIdx);
                 const BottomLevelAccelerationStructurePtr& blas = blases.at(batchBlasIdx);
 
@@ -452,18 +454,17 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
             }
             device->endSingleTimeMultipleCommands(commandBuffers);
 
-            if(shallDoCompaction) {
+            if (shallDoCompaction) {
                 VkCommandBuffer commandBuffer = device->beginSingleTimeCommands();
 
-                std::vector<VkDeviceSize> compactSizes(numBlases);
                 vkGetQueryPoolResults(
-                        device->getVkDevice(), queryPool, 0,
-                        uint32_t(compactSizes.size()), compactSizes.size() * sizeof(VkDeviceSize),
-                        compactSizes.data(), sizeof(VkDeviceSize), VK_QUERY_RESULT_WAIT_BIT);
+                        device->getVkDevice(), queryPool, batchBlasStartIdx,
+                        uint32_t(batchNumBlases), batchNumBlases * sizeof(VkDeviceSize),
+                        compactSizes.data() + batchBlasStartIdx, sizeof(VkDeviceSize), VK_QUERY_RESULT_WAIT_BIT);
 
                 std::vector<BottomLevelAccelerationStructurePtr> blasesOld(batchNumBlases);
                 size_t batchUncompactedSize = 0, batchCompactedSize = 0;
-                for (size_t batchBlasIdx = batchBlasStartIdx; batchBlasIdx < batchNumBlases; batchBlasIdx++) {
+                for (size_t batchBlasIdx = batchBlasStartIdx; batchBlasIdx < batchBlasEndIdx; batchBlasIdx++) {
                     totalUncompactedSize += uncompactedSizes.at(batchBlasIdx);
                     totalCompactedSize += compactSizes.at(batchBlasIdx);
                     batchUncompactedSize += uncompactedSizes.at(batchBlasIdx);
