@@ -635,6 +635,11 @@ void Renderer::insertBufferMemoryBarrier(
     bufferMemoryBarrier.buffer = buffer->getVkBuffer();
     bufferMemoryBarrier.size = buffer->getSizeInBytes();
 
+    if (!useGraphicsQueue) {
+        bufferMemoryBarrier.srcQueueFamilyIndex = device->getComputeQueueIndex();
+        bufferMemoryBarrier.dstQueueFamilyIndex = device->getComputeQueueIndex();
+    }
+
     vkCmdPipelineBarrier(
             commandBuffer, srcStageMask, dstStageMask, 0, 1, &memoryBarrier, 1, &bufferMemoryBarrier, 0, nullptr);
 }
