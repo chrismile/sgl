@@ -147,6 +147,33 @@ public:
         queueData = newData;
     }
 
+    bool contains(const T& element) {
+        size_t queueIdx;
+        for (size_t i = 0; i < queueSize; i++) {
+            queueIdx = (startPointer + i) % queueCapacity;
+            if (queueData[queueIdx] == element) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    size_t find(const T& element) {
+        size_t queueIdx;
+        for (size_t i = 0; i < queueSize; i++) {
+            queueIdx = (startPointer + i) % queueCapacity;
+            if (queueData[queueIdx] == element) {
+                return i;
+            }
+        }
+        return std::numeric_limits<size_t>::max();
+    }
+
+    void clear() {
+        startPointer = 0;
+        endPointer = 0;
+    }
+
 private:
     T *queueData;
     size_t startPointer, endPointer;
