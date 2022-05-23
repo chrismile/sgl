@@ -26,6 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <map>
 #include <cstring>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
@@ -168,14 +169,16 @@ bool Instance::checkRequestedLayersAvailable(const std::vector<const char*> &req
     std::vector<VkLayerProperties> availableLayerList(numLayers);
     vkEnumerateInstanceLayerProperties(&numLayers, availableLayerList.data());
 
-    std::set<std::string> availableLayers;
-    for (const VkLayerProperties &layerProperty : availableLayerList) {
-        availableLayers.insert(layerProperty.layerName);
+    std::map<std::string, VkLayerProperties> availableLayers;
+    for (const VkLayerProperties& layerProperties : availableLayerList) {
+        availableLayers.insert(std::make_pair(layerProperties.layerName, layerProperties));
     }
 
     for (const char *requestedLayer : requestedLayers) {
+        bool isValidationLayer = strcmp(requestedLayer, "VK_LAYER_KHRONOS_validation") == 0;
+
         if (availableLayers.find(requestedLayer) == availableLayers.end()) {
-            if (strcmp(requestedLayer, "VK_LAYER_KHRONOS_validation") == 0) {
+            if (isValidationLayer) {
                 sgl::Logfile::get()->writeWarning(
                         std::string() + "Warning: Invalid Vulkan layer name \"" + requestedLayer + "\".",
                         false);
@@ -184,6 +187,14 @@ bool Instance::checkRequestedLayersAvailable(const std::vector<const char*> &req
                         std::string() + "Error: Invalid Vulkan layer name \"" + requestedLayer + "\".");
             }
             return false;
+        }
+
+        // Disable the validation layer when it is older than the Vulkan version (ignoring patch version).
+        if (isValidationLayer) {
+            uint32_t validationLayerVersion = availableLayers[requestedLayer].specVersion;
+            if ((validationLayerVersion & 0xFFFFF000u) < (getInstanceVulkanVersion() & 0xFFFFF000u)) {
+                return false;
+            }
         }
     }
 
