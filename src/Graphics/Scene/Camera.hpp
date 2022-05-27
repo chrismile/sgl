@@ -98,6 +98,7 @@ public:
     [[nodiscard]] inline const glm::vec3 &getCameraUp()             { updateCamera(); return cameraUp; }
     [[nodiscard]] inline const glm::vec3 &getCameraGlobalUp() const { return globalUp; }
     [[nodiscard]] inline const glm::vec3 &getLookAtLocation() const { return lookAtLocation; }
+    inline void setLookAtLocation(const glm::vec3 &position) { recalcModelMat = true; lookAtLocation = position; }
     inline void resetLookAtLocation() { lookAtLocation = {}; cameraUp = globalUp; }
 
     /// Set projection type: Orthogonal or perspective

@@ -41,15 +41,16 @@ namespace sgl {
 class DLL_OBJECT Checkpoint {
 public:
     Checkpoint() = default;
-    Checkpoint(const glm::vec3& position, float yaw, float pitch, float fovy)
-        : position(position), yaw(yaw), pitch(pitch), fovy(fovy) {}
-    Checkpoint(float tx, float ty, float tz, float yaw, float pitch, float fovy)
-        : position(tx, ty, tz), yaw(yaw), pitch(pitch), fovy(fovy) {}
+    Checkpoint(const glm::vec3& position, float yaw, float pitch, float fovy, const glm::vec3& lookAt)
+        : position(position), yaw(yaw), pitch(pitch), fovy(fovy), lookAtLocation(lookAt) {}
+    Checkpoint(float tx, float ty, float tz, float yaw, float pitch, float fovy, float lx, float ly, float lz)
+        : position(tx, ty, tz), yaw(yaw), pitch(pitch), fovy(fovy), lookAtLocation(lx, ly, lz) {}
 
     glm::vec3 position{};
     float yaw{};
     float pitch{};
     float fovy{};
+    glm::vec3 lookAtLocation{};
 };
 
 class DLL_OBJECT CheckpointWindow {
@@ -78,8 +79,9 @@ private:
     /**
      * Changes since version 1:
      * - Version 2: Added vertical field of view (FoV y).
+     * - Version 3: Added look at location.
      */
-    const uint32_t CHECKPOINT_FORMAT_VERSION = 2u;
+    const uint32_t CHECKPOINT_FORMAT_VERSION = 3u;
 
     std::string saveDirectoryCheckpoints;
     std::string checkpointsFilename;

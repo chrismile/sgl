@@ -48,6 +48,14 @@ public:
     float pitch;
 };
 
+class Checkpoint_v2 {
+public:
+    glm::vec3 position;
+    float yaw;
+    float pitch;
+    float fovy;
+};
+
 CheckpointWindow::CheckpointWindow(CameraPtr& camera) : camera(camera) {
     saveDirectoryCheckpoints = sgl::AppSettings::get()->getDataDirectory() + "Checkpoints/";
     checkpointsFilename = saveDirectoryCheckpoints + "checkpoints.bin";
@@ -131,7 +139,7 @@ bool CheckpointWindow::readFromFile(const std::string& filename) {
     sgl::BinaryReadStream stream(buffer, size);
     uint32_t version;
     stream.read(version);
-    if (version != CHECKPOINT_FORMAT_VERSION && version != 1u) {
+    if (version > CHECKPOINT_FORMAT_VERSION || version < 1u) {
         sgl::Logfile::get()->writeError(
                 std::string() + "Error in CheckpointWindow::readFromFile: "
                 + "Invalid version in file \"" + filename + "\".");
@@ -159,6 +167,13 @@ bool CheckpointWindow::readFromFile(const std::string& filename) {
                 checkpoint.yaw = checkpointV1.yaw;
                 checkpoint.pitch = checkpointV1.pitch;
                 checkpoint.fovy = atanf(1.0f / 2.0f) * 2.0f; // Old standard FoV.
+            } else if (version == 2u) {
+                Checkpoint_v2 checkpointV2;
+                stream.read(checkpointV2);
+                checkpoint.position = checkpointV2.position;
+                checkpoint.yaw = checkpointV2.yaw;
+                checkpoint.pitch = checkpointV2.pitch;
+                checkpoint.fovy = checkpointV2.fovy;
             } else {
                 stream.read(checkpoint);
             }
@@ -238,12 +253,15 @@ bool CheckpointWindow::renderGui() {
                 camera->setYaw(dataSetCheckpoint.second.yaw);
                 camera->setPitch(dataSetCheckpoint.second.pitch);
                 camera->setFOVy(dataSetCheckpoint.second.fovy);
+                camera->setLookAtLocation(dataSetCheckpoint.second.lookAtLocation);
                 reRender = true;
             } ImGui::NextColumn();
             if (ImGui::Button(updateLabel.c_str())) {
                 dataSetCheckpoint.second.position = camera->getPosition();
                 dataSetCheckpoint.second.yaw = camera->getYaw();
                 dataSetCheckpoint.second.pitch = camera->getPitch();
+                dataSetCheckpoint.second.fovy = camera->getFOVy();
+                dataSetCheckpoint.second.lookAtLocation = camera->getLookAtLocation();
             } ImGui::NextColumn();
             if (ImGui::Button(deleteLabel.c_str())) {
                 deleteElementId = i;
@@ -258,8 +276,9 @@ bool CheckpointWindow::renderGui() {
                     camera->getPosition(),
                     camera->getYaw(),
                     camera->getPitch(),
-                    camera->getFOVy());
-            loadedDataSetCheckpoints.push_back(std::make_pair("New Checkpoint", checkpoint));
+                    camera->getFOVy(),
+                    camera->getLookAtLocation());
+            loadedDataSetCheckpoints.emplace_back("New Checkpoint", checkpoint);
         }
     }
     ImGui::End();
