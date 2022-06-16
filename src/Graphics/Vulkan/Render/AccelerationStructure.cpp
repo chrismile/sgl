@@ -458,7 +458,7 @@ std::vector<BottomLevelAccelerationStructurePtr> buildBottomLevelAccelerationStr
                 VkCommandBuffer commandBuffer = device->beginSingleTimeCommands();
 
                 vkGetQueryPoolResults(
-                        device->getVkDevice(), queryPool, batchBlasStartIdx,
+                        device->getVkDevice(), queryPool, uint32_t(batchBlasStartIdx),
                         uint32_t(batchNumBlases), batchNumBlases * sizeof(VkDeviceSize),
                         compactSizes.data() + batchBlasStartIdx, sizeof(VkDeviceSize), VK_QUERY_RESULT_WAIT_BIT);
 
