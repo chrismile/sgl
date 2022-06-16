@@ -37,6 +37,7 @@
 #define IGFD_KEY_ENTER SDL_SCANCODE_RETURN//SDLK_RETURN//GLFW_KEY_ENTER
 // BackSpace for comming back to the last directory
 #define IGFD_KEY_BACKSPACE SDL_SCANCODE_BACKSPACE//SDLK_BACKSPACE///GLFW_KEY_BACKSPACE
+#define IGFD_KEY_ESCAPE SDL_SCANCODE_ESCAPE//SDLK_ESCAPE///GLFW_KEY_ESCAPE
 
 // by ex you can quit the dialog by pressing the key excape
 #define USE_DIALOG_EXIT_WITH_KEY

@@ -2334,13 +2334,15 @@ namespace IGFD
 		if (puFileManager.puInputPathActivated)
 		{
 			auto gio = ImGui::GetIO();
-			if (ImGui::IsKeyReleased(gio.KeyMap[ImGuiKey_Enter]))
+            //if (ImGui::IsKeyReleased(gio.KeyMap[ImGuiKey_Enter]))
+            if (ImGui::IsKeyReleased(IGFD_KEY_ENTER))
 			{
 				puFileManager.SetCurrentPath(std::string(puFileManager.puInputPathBuffer));
 				puFileManager.OpenCurrentPath(*this);
 				puFileManager.puInputPathActivated = false;
 			}
-			if (ImGui::IsKeyReleased(gio.KeyMap[ImGuiKey_Escape]))
+            //if (ImGui::IsKeyReleased(gio.KeyMap[ImGuiKey_Escape]))
+            if (ImGui::IsKeyReleased(IGFD_KEY_ESCAPE))
 			{
 				puFileManager.puInputPathActivated = false;
 			}
