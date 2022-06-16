@@ -37,7 +37,7 @@
 typedef unsigned int GLuint;
 typedef struct __GLsync *GLsync;
 namespace sgl {
-struct FramebufferObject;
+class FramebufferObject;
 typedef std::shared_ptr<FramebufferObject> FramebufferObjectPtr;
 }
 #endif

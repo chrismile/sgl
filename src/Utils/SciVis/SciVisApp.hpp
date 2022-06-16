@@ -42,7 +42,7 @@
 #include <Graphics/Buffers/RBO.hpp>
 typedef int GLint;
 namespace sgl {
-struct FramebufferObject;
+class FramebufferObject;
 typedef std::shared_ptr<FramebufferObject> FramebufferObjectPtr;
 class Texture;
 typedef std::shared_ptr<Texture> TexturePtr;
