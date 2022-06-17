@@ -73,20 +73,20 @@ ArchiveFileLoadReturnType loadFileFromArchive(
             const size_t extensionPos = filenameLower.find(archiveExtension);
             if (extensionPos != std::string::npos) {
                 sgl::Logfile::get()->writeError(
-                        std::string() + "ERROR in loadFileFromArchive: Invalid archive format. Please use "
+                        std::string() + "Error in loadFileFromArchive: Invalid archive format. Please use "
                         + ".tar" + fileExtension + " instead of " + fileExtension);
                 return ARCHIVE_FILE_LOAD_FORMAT_UNSUPPORTED;
             }
         }
         if (verbose) {
-            sgl::Logfile::get()->writeError("ERROR in loadFileFromArchive: Couldn't determine archive format.");
+            sgl::Logfile::get()->writeError("Error in loadFileFromArchive: Couldn't determine archive format.");
         }
         return ARCHIVE_FILE_LOAD_FORMAT_NOT_FOUND;
     }
 
     if (!sgl::FileUtils::get()->exists(filenameArchive)) {
         if (verbose) {
-            sgl::Logfile::get()->writeError("ERROR in loadFileFromArchive: Couldn't find archive.");
+            sgl::Logfile::get()->writeError("Error in loadFileFromArchive: Couldn't find archive.");
         }
         return ARCHIVE_FILE_LOAD_ARCHIVE_NOT_FOUND;
     }
@@ -104,7 +104,7 @@ ArchiveFileLoadReturnType loadFileFromArchive(
     int returnCode = archive_read_open_filename(a, filenameArchive.c_str(), 16384);
     if (returnCode != ARCHIVE_OK) {
         if (verbose) {
-            sgl::Logfile::get()->writeError("ERROR in loadFileFromArchive: Invalid archive data.");
+            sgl::Logfile::get()->writeError("Error in loadFileFromArchive: Invalid archive data.");
         }
         return ARCHIVE_FILE_LOAD_INVALID_ARCHIVE_DATA;
     }
@@ -118,7 +118,7 @@ ArchiveFileLoadReturnType loadFileFromArchive(
             size_t sizeRead = archive_read_data(a, buffer, bufferSize);
             if (sizeRead != bufferSize) {
                 if (verbose) {
-                    sgl::Logfile::get()->writeError("ERROR in loadFileFromArchive: Invalid archive data.");
+                    sgl::Logfile::get()->writeError("Error in loadFileFromArchive: Invalid archive data.");
                 }
                 delete[] buffer;
                 buffer = nullptr;
@@ -135,7 +135,7 @@ ArchiveFileLoadReturnType loadFileFromArchive(
     returnCode = archive_read_free(a);
     if (returnCode != ARCHIVE_OK) {
         if (verbose) {
-            sgl::Logfile::get()->writeError("ERROR in loadFileFromArchive: Invalid archive data.");
+            sgl::Logfile::get()->writeError("Error in loadFileFromArchive: Invalid archive data.");
         }
         if (!foundArchiveEntry) {
             delete[] buffer;
@@ -147,7 +147,7 @@ ArchiveFileLoadReturnType loadFileFromArchive(
 
     if (!foundArchiveEntry) {
         if (verbose) {
-            sgl::Logfile::get()->writeError("ERROR in loadFileFromArchive: Couldn't find file in archive.");
+            sgl::Logfile::get()->writeError("Error in loadFileFromArchive: Couldn't find file in archive.");
         }
         return ARCHIVE_FILE_LOAD_FILE_NOT_FOUND;
     }
