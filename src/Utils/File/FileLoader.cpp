@@ -27,6 +27,7 @@
  */
 
 #define _FILE_OFFSET_BITS 64
+#define __USE_FILE_OFFSET64
 
 #include <cassert>
 
@@ -61,7 +62,7 @@ bool loadFileFromSource(
 #endif
     if (!file) {
         sgl::Logfile::get()->writeError(
-                std::string() + "ERROR in loadFileFromSource: File \"" + filename + "\" could not be opened.");
+                std::string() + "Error in loadFileFromSource: File \"" + filename + "\" could not be opened.");
         return false;
     }
 #if defined(_WIN32) && !defined(__MINGW32__)
@@ -84,7 +85,7 @@ bool loadFileFromSource(
 
     if (readBytes != bufferSize) {
         sgl::Logfile::get()->writeError(
-                std::string() + "ERROR in loadFileFromSource: File \"" + filename + "\" could not be read.");
+                std::string() + "Error in loadFileFromSource: File \"" + filename + "\" could not be read.");
         delete[] buffer;
         buffer = nullptr;
         bufferSize = 0;
