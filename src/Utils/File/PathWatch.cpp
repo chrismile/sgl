@@ -101,7 +101,7 @@ void PathWatch::_freeInternal() {
         if (retVal == -1) {
             sgl::Logfile::get()->writeError(
                     "Error in PathWatch::~PathWatch: inotify_rm_watch (parent) returned errno "
-                    + std::to_string(errno) + ": " + strerror(errno));
+                    + std::to_string(errno) + ": " + strerror(errno), false);
             return;
         }
     }
@@ -111,7 +111,7 @@ void PathWatch::_freeInternal() {
         if (retVal == -1) {
             sgl::Logfile::get()->writeError(
                     "Error in PathWatch::~PathWatch: inotify_rm_watch (path) returned errno "
-                    + std::to_string(errno) + ": " + strerror(errno));
+                    + std::to_string(errno) + ": " + strerror(errno), false);
             return;
         }
     }
