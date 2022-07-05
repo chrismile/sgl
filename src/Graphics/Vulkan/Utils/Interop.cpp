@@ -64,27 +64,38 @@ SemaphoreVkGlInterop::SemaphoreVkGlInterop(sgl::vk::Device* device, VkSemaphoreC
             device, semaphoreCreateFlags, VK_SEMAPHORE_TYPE_BINARY, 0,
             &exportSemaphoreCreateInfo);
 
+    /*
+     * https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_external_objects_fd.txt
+     * - ImportSemaphoreFdEXT: "A successful import operation transfers ownership of <fd> to the GL implementation, and
+     * performing any operation on <fd> in the application after an import results in undefined behavior."
+     * https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_external_objects_win32.txt
+     * - ImportSemaphoreWin32HandleEXT: "Importing a Windows handle does not transfer ownership of the handle to the GL
+     * implementation. For handle types defined as NT handles, the application must release the handle using an
+     * appropriate system call when it is no longer needed."
+     */
+
     glGenSemaphoresEXT(1, &semaphoreGl);
 #if defined(_WIN32)
     auto _vkGetSemaphoreWin32HandleKHR = (PFN_vkGetSemaphoreWin32HandleKHR)vkGetDeviceProcAddr(
                 device->getVkDevice(), "vkGetSemaphoreWin32HandleKHR");
-        if (!_vkGetSemaphoreWin32HandleKHR) {
-            Logfile::get()->throwError(
-                    "Error in SemaphoreVkGlInterop::SemaphoreVkGlInterop: vkGetSemaphoreWin32HandleKHR was not found!");
-        }
+    if (!_vkGetSemaphoreWin32HandleKHR) {
+        Logfile::get()->throwError(
+                "Error in SemaphoreVkGlInterop::SemaphoreVkGlInterop: vkGetSemaphoreWin32HandleKHR was not found!");
+    }
 
-        VkSemaphoreGetWin32HandleInfoKHR semaphoreGetWin32HandleInfo = {};
-        semaphoreGetWin32HandleInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR;
-        semaphoreGetWin32HandleInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
-        semaphoreGetWin32HandleInfo.semaphore = semaphoreVk;
-        HANDLE semaphoreHandle = nullptr;
-        if (_vkGetSemaphoreWin32HandleKHR(
-                device->getVkDevice(), &semaphoreGetWin32HandleInfo, &semaphoreHandle) != VK_SUCCESS) {
-            Logfile::get()->throwError(
-                    "Error in SemaphoreVkGlInterop::SemaphoreVkGlInterop: vkGetSemaphoreFdKHR failed!");
-        }
+    VkSemaphoreGetWin32HandleInfoKHR semaphoreGetWin32HandleInfo = {};
+    semaphoreGetWin32HandleInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR;
+    semaphoreGetWin32HandleInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+    semaphoreGetWin32HandleInfo.semaphore = semaphoreVk;
+    HANDLE semaphoreHandle = nullptr;
+    if (_vkGetSemaphoreWin32HandleKHR(
+            device->getVkDevice(), &semaphoreGetWin32HandleInfo, &semaphoreHandle) != VK_SUCCESS) {
+        Logfile::get()->throwError(
+                "Error in SemaphoreVkGlInterop::SemaphoreVkGlInterop: vkGetSemaphoreFdKHR failed!");
+    }
 
-        glImportSemaphoreWin32HandleEXT(semaphoreGl, GL_HANDLE_TYPE_OPAQUE_WIN32_EXT, semaphoreHandle);
+    glImportSemaphoreWin32HandleEXT(semaphoreGl, GL_HANDLE_TYPE_OPAQUE_WIN32_EXT, semaphoreHandle);
+    this->handle = semaphoreHandle;
 #elif defined(__linux__)
     auto _vkGetSemaphoreFdKHR = (PFN_vkGetSemaphoreFdKHR)vkGetDeviceProcAddr(
             device->getVkDevice(), "vkGetSemaphoreFdKHR");
@@ -104,6 +115,8 @@ SemaphoreVkGlInterop::SemaphoreVkGlInterop(sgl::vk::Device* device, VkSemaphoreC
     }
 
     glImportSemaphoreFdEXT(semaphoreGl, GL_HANDLE_TYPE_OPAQUE_FD_EXT, fileDescriptor);
+    fileDescriptor = -1;
+    this->fileDescriptor = fileDescriptor;
 
 #ifndef NDEBUG
     if (!glIsSemaphoreEXT(semaphoreGl)) {
@@ -353,6 +366,15 @@ bool isDeviceCompatibleWithOpenGl(VkPhysicalDevice physicalDevice) {
 bool createGlMemoryObjectFromVkDeviceMemory(
         GLuint& memoryObjectGl, InteropMemoryHandle& interopMemoryHandle,
         VkDevice device, VkDeviceMemory deviceMemory, size_t sizeInBytes) {
+    /*
+     * https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_external_objects_fd.txt
+     * - ImportMemoryFdEXT: "A successful import operation transfers ownership of <fd> to the GL implementation, and
+     * performing any operation on <fd> in the application after an import results in undefined behavior."
+     * https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_external_objects_win32.txt
+     * - ImportMemoryWin32HandleEXT: "Importing a Windows handle does not transfer ownership of the handle to the GL
+     * implementation. For handle types defined as NT handles, the application must release the handle using an
+     * appropriate system call when it is no longer needed."
+     */
 #if defined(_WIN32)
     auto _vkGetMemoryWin32HandleKHR = (PFN_vkGetMemoryWin32HandleKHR)vkGetDeviceProcAddr(
             device, "vkGetMemoryWin32HandleKHR");
@@ -400,6 +422,7 @@ bool createGlMemoryObjectFromVkDeviceMemory(
 
     glCreateMemoryObjectsEXT(1, &memoryObjectGl);
     glImportMemoryFdEXT(memoryObjectGl, sizeInBytes, GL_HANDLE_TYPE_OPAQUE_FD_EXT, fileDescriptor);
+    fileDescriptor = -1;
     interopMemoryHandle.fileDescriptor = fileDescriptor;
 #else
     Logfile::get()->throwError(

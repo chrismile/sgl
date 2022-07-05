@@ -246,6 +246,18 @@ SemaphoreVkCudaDriverApiInterop::SemaphoreVkCudaDriverApiInterop(
     CUresult cuResult = g_cudaDeviceApiFunctionTable.cuImportExternalSemaphore(
             &cuExternalSemaphore, &externalSemaphoreHandleDesc);
     checkCUresult(cuResult, "Error in cuImportExternalSemaphore: ");
+
+    /*
+     * https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__EXTRES__INTEROP.html
+     * - CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD and CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_TIMELINE_SEMAPHORE_FD:
+     * "Ownership of the file descriptor is transferred to the CUDA driver when the handle is imported successfully."
+     * - CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32 and CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_TIMELINE_SEMAPHORE_WIN32:
+     * "Ownership of this handle is not transferred to CUDA after the import operation, so the application must release
+     * the handle using the appropriate system call."
+     */
+#if defined(__linux__)
+    fileDescriptor = -1;
+#endif
 }
 
 SemaphoreVkCudaDriverApiInterop::~SemaphoreVkCudaDriverApiInterop() {
@@ -341,6 +353,17 @@ BufferCudaDriverApiExternalMemoryVk::BufferCudaDriverApiExternalMemoryVk(vk::Buf
     CUresult cuResult = g_cudaDeviceApiFunctionTable.cuImportExternalMemory(
             &cudaExtMemVertexBuffer, &externalMemoryHandleDesc);
     checkCUresult(cuResult, "Error in cuImportExternalMemory: ");
+
+    /*
+     * https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__EXTRES__INTEROP.html
+     * - CU_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD: "Ownership of the file descriptor is transferred to the CUDA driver
+     * when the handle is imported successfully."
+     * - CU_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32: "Ownership of this handle is not transferred to CUDA after the
+     * import operation, so the application must release the handle using the appropriate system call."
+     */
+#if defined(__linux__)
+    this->fileDescriptor = -1;
+#endif
 
     CUDA_EXTERNAL_MEMORY_BUFFER_DESC externalMemoryBufferDesc{};
     externalMemoryBufferDesc.offset = 0;
