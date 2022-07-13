@@ -65,7 +65,7 @@ std::string getNiceNumberString(float number, int digits) {
     }
 
     // Still too large?
-    if (int(outString.size()) > maxDigits) {
+    if (int(outString.size()) > maxDigits || (outString == "0" && number > std::numeric_limits<float>::epsilon())) {
         outString = sgl::toString(number, std::max(digits - 2, 1), false, false, true);
     }
     return outString;
