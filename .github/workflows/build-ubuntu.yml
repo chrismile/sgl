@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         use-vulkan: [ true, false ]
-        os: [ ubuntu-18.04, ubuntu-20.04 ]
+        os: [ ubuntu-18.04, ubuntu-20.04, ubuntu-22.04 ]
 
     runs-on: ${{ matrix.os }}
     name: "Build on ${{ matrix.os }} (Vulkan: ${{ matrix.use-vulkan }})"
@@ -49,8 +49,19 @@ jobs:
         fi
 
     - name: Install system packages
+      shell: bash
       run: |
         sudo apt-get update
+        distro_code_name=$(lsb_release -c | grep -oP "\:\s+\K\S+")
+        if [ "$distro_code_name" = "jammy" ]; then
+          # Fix for https://askubuntu.com/questions/1417403/can-not-install-libudev-dev-on-ubuntu-22-04/1417416#1417416
+          sudo apt-get install aptitude
+          sudo apt-get upgrade
+          sudo apt-get --with-new-pkgs upgrade
+          sudo aptitude full-upgrade -y
+          sudo apt-get update
+          sudo apt-get upgrade
+        fi
         sudo apt-get install git cmake libglm-dev libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libpng-dev libboost-filesystem-dev libtinyxml2-dev libarchive-dev libglew-dev
 
     - name: Configure CMake
