@@ -228,6 +228,17 @@ public:
     void setVertexBuffer(const BufferPtr& buffer, const std::string& name);
     void setVertexBufferOptional(const BufferPtr& buffer, const std::string& name);
 
+    [[nodiscard]] inline bool getHasIndexBuffer() const { return indexBuffer.get(); }
+    [[nodiscard]] inline size_t getNumIndices() const { return numIndices; }
+    [[nodiscard]] inline VkIndexType getIndexType() const { return indexType; }
+    [[nodiscard]] inline VkBuffer getVkIndexBuffer() { return indexBuffer->getVkBuffer(); }
+
+    [[nodiscard]] inline size_t getNumVertices() const { return numVertices; }
+    [[nodiscard]] inline const std::vector<VkBuffer>& getVkVertexBuffers() { return vulkanVertexBuffers; }
+
+    inline void setNumInstances(size_t _numInstances) { this->numInstances = _numInstances; }
+    [[nodiscard]] inline size_t getNumInstances() const { return numInstances; }
+
     /// For use with https://www.khronos.org/registry/vulkan/specs/1.3-extensions/man/html/vkCmdDrawMeshTasksNV.html.
     void setMeshTasks(uint32_t _taskCount, uint32_t _firstTask) {
         taskCount = _taskCount;
@@ -236,16 +247,55 @@ public:
     [[nodiscard]] inline uint32_t getTaskCount() const { return taskCount; }
     [[nodiscard]] inline uint32_t getFirstTask() const { return firstTask; }
 
-    inline void setNumInstances(size_t numInstances) { this->numInstances = numInstances; }
-    [[nodiscard]] inline size_t getNumInstances() const { return numInstances; }
-
-    [[nodiscard]] inline bool hasIndexBuffer() const { return indexBuffer.get(); }
-    [[nodiscard]] inline size_t getNumIndices() const { return numIndices; }
-    [[nodiscard]] inline VkIndexType getIndexType() const { return indexType; }
-    [[nodiscard]] inline VkBuffer getVkIndexBuffer() { return indexBuffer->getVkBuffer(); }
-
-    [[nodiscard]] inline size_t getNumVertices() const { return numVertices; }
-    [[nodiscard]] inline const std::vector<VkBuffer>& getVkVertexBuffers() { return vulkanVertexBuffers; }
+    /*
+     * For use with vkCmdDrawIndirect, vkCmdDrawIndirectCount, vkCmdDrawIndexedIndirect, vkCmdDrawIndexedIndirectCount.
+     */
+     /**
+      * Sets the indirect draw command buffer. It contains entries either of the type VkDrawIndirectCommand for
+      * vkCmdDrawIndirect and vkCmdDrawIndirectCount, or VkDrawIndexedIndirectCommand for vkCmdDrawIndexedIndirect and
+      * vkCmdDrawIndexedIndirectCount.
+      * @param buffer The buffer containing the VkDrawIndirectCommand/VkDrawIndexedIndirectCommand entries.
+      * @param stride Stride in bytes between two entries. It is usually either sizeof(VkDrawIndirectCommand) or
+      * sizeof(VkDrawIndexedIndirectCommand).
+      * @param offset Offset in bytes to the first entry in the buffer.
+      */
+    void setIndirectDrawBuffer(const BufferPtr& buffer, uint32_t stride, VkDeviceSize offset = 0) {
+         indirectDrawBuffer = buffer;
+         indirectDrawBufferStride = stride;
+         indirectDrawBufferOffset = offset;
+     }
+    /**
+     * For vkCmdDrawIndirect and vkCmdDrawIndexedIndirect.
+     * @param drawCount The number of elements to read from the indirect draw buffer.
+     */
+    void setIndirectDrawCount(uint32_t drawCount) {
+        indirectDrawCount = drawCount;
+    }
+    /**
+     * For vkCmdDrawIndirectCount and vkCmdDrawIndexedIndirectCount.
+     * @param buffer The buffer to read the number of elements to read from the indirect draw buffer from.
+     * @param maxDrawCount The maximum draw count. The actual draw count will be the minimum of this value and the
+     * value read from the buffer.
+     * @param offset Offset in bytes to the uint32_t value to read from the buffer.
+     */
+    void setIndirectDrawCountBuffer(const BufferPtr& buffer, uint32_t maxDrawCount, VkDeviceSize offset = 0) {
+        indirectDrawCountBuffer = buffer;
+        indirectMaxDrawCount = maxDrawCount;
+        indirectDrawCountBufferOffset = offset;
+    }
+    [[nodiscard]] inline bool getUseIndirectDraw() const { return indirectDrawBuffer.get() != nullptr; }
+    [[nodiscard]] inline bool getUseIndirectDrawCount() const { return indirectDrawCountBuffer.get() != nullptr; }
+    [[nodiscard]] const BufferPtr& getIndirectDrawBuffer() const { return indirectDrawBuffer; };
+    [[nodiscard]] VkBuffer getIndirectDrawBufferVk() const { return indirectDrawBuffer->getVkBuffer(); };
+    [[nodiscard]] uint32_t getIndirectDrawBufferStride() const { return indirectDrawBufferStride; };
+    [[nodiscard]] VkDeviceSize getIndirectDrawBufferOffset() const { return indirectDrawBufferOffset; };
+    // For vkCmdDrawIndirect and vkCmdDrawIndexedIndirect.
+    [[nodiscard]] uint32_t getIndirectDrawCount() const { return indirectDrawCount; };
+    // For vkCmdDrawIndirectCount and vkCmdDrawIndexedIndirectCount.
+    [[nodiscard]] const BufferPtr& getIndirectDrawCountBuffer() const { return indirectDrawCountBuffer; };
+    [[nodiscard]] VkBuffer getIndirectDrawCountBufferVk() const { return indirectDrawCountBuffer->getVkBuffer(); };
+    [[nodiscard]] uint32_t getIndirectMaxDrawCount() const { return indirectMaxDrawCount; };
+    [[nodiscard]] VkDeviceSize getIndirectDrawCountBufferOffset() const { return indirectDrawCountBufferOffset; };
 
     [[nodiscard]] inline const GraphicsPipelinePtr& getGraphicsPipeline() { return graphicsPipeline; }
 
@@ -267,6 +317,17 @@ protected:
     // In case task/mesh shaders are used.
     uint32_t taskCount = 0;
     uint32_t firstTask = 0;
+
+    // In case indirect draw is used.
+    BufferPtr indirectDrawBuffer;
+    uint32_t indirectDrawBufferStride = 0;
+    VkDeviceSize indirectDrawBufferOffset = 0;
+    // For vkCmdDrawIndirect and vkCmdDrawIndexedIndirect.
+    uint32_t indirectDrawCount = 0;
+    // For vkCmdDrawIndirectCount and vkCmdDrawIndexedIndirectCount.
+    BufferPtr indirectDrawCountBuffer;
+    uint32_t indirectMaxDrawCount = 0;
+    VkDeviceSize indirectDrawCountBufferOffset = 0;
 };
 
 class DLL_OBJECT RayTracingData : public RenderData {

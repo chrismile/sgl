@@ -325,7 +325,7 @@ void Renderer::render(const RasterDataPtr& rasterData, const FramebufferPtr& fra
                 graphicsPipeline->getVkPipeline());
     }
 
-    if (rasterData->hasIndexBuffer()) {
+    if (rasterData->getHasIndexBuffer()) {
         VkBuffer indexBuffer = rasterData->getVkIndexBuffer();
         vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, rasterData->getIndexType());
     }
@@ -357,7 +357,44 @@ void Renderer::render(const RasterDataPtr& rasterData, const FramebufferPtr& fra
     }
 
     if (graphicsPipeline->getShaderStages()->getHasVertexShader()) {
-        if (rasterData->hasIndexBuffer()) {
+        if (rasterData->getUseIndirectDraw()) {
+            if (rasterData->getUseIndirectDrawCount()) {
+                if (rasterData->getHasIndexBuffer()) {
+                    vkCmdDrawIndexedIndirectCount(
+                            commandBuffer, rasterData->getIndirectDrawBufferVk(),
+                            rasterData->getIndirectDrawBufferOffset(),
+                            rasterData->getIndirectDrawCountBufferVk(),
+                            rasterData->getIndirectDrawCountBufferOffset(),
+                            rasterData->getIndirectMaxDrawCount(),
+                            rasterData->getIndirectDrawBufferStride());
+                } else {
+                    vkCmdDrawIndirectCount(
+                            commandBuffer, rasterData->getIndirectDrawBufferVk(),
+                            rasterData->getIndirectDrawBufferOffset(),
+                            rasterData->getIndirectDrawCountBufferVk(),
+                            rasterData->getIndirectDrawCountBufferOffset(),
+                            rasterData->getIndirectMaxDrawCount(),
+                            rasterData->getIndirectDrawBufferStride());
+                }
+            } else {
+                if (rasterData->getHasIndexBuffer()) {
+                    vkCmdDrawIndexedIndirect(
+                            commandBuffer, rasterData->getIndirectDrawBufferVk(),
+                            rasterData->getIndirectDrawBufferOffset(),
+                            rasterData->getIndirectDrawCount(),
+                            rasterData->getIndirectDrawBufferStride());
+                    vkCmdDrawIndexed(
+                            commandBuffer, static_cast<uint32_t>(rasterData->getNumIndices()),
+                            static_cast<uint32_t>(rasterData->getNumInstances()), 0, 0, 0);
+                } else {
+                    vkCmdDrawIndirect(
+                            commandBuffer, rasterData->getIndirectDrawBufferVk(),
+                            rasterData->getIndirectDrawBufferOffset(),
+                            rasterData->getIndirectDrawCount(),
+                            rasterData->getIndirectDrawBufferStride());
+                }
+            }
+        } else if (rasterData->getHasIndexBuffer()) {
             vkCmdDrawIndexed(
                     commandBuffer, static_cast<uint32_t>(rasterData->getNumIndices()),
                     static_cast<uint32_t>(rasterData->getNumInstances()), 0, 0, 0);

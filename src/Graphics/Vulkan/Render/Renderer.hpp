@@ -103,14 +103,6 @@ public:
             const RayTracingDataPtr& rayTracingData,
             uint32_t launchSizeX, uint32_t launchSizeY, uint32_t launchSizeZ = 1);
 
-    /**
-     * Mesh shaders via VK_NV_mesh_shader:
-     * https://www.khronos.org/registry/vulkan/specs/1.3-extensions/man/html/vkCmdDrawMeshTasksNV.html
-     */
-    void drawMeshTasksNV(
-            const RasterDataPtr& rasterData, const FramebufferPtr& framebuffer,
-            uint32_t taskCount, uint32_t firstTask);
-
     // Image pipeline barrier.
     void transitionImageLayout(vk::ImagePtr& image, VkImageLayout newLayout);
     void insertImageMemoryBarrier(
@@ -195,10 +187,10 @@ public:
         lastFramebuffer = FramebufferPtr();
         recordingCommandBufferStarted = true;
     }
-    inline const glm::mat4& getModelMatrix() const { return matrixBlock.mMatrix; }
-    inline const glm::mat4& getViewMatrix() const { return matrixBlock.vMatrix; }
-    inline const glm::mat4& getProjectionMatrix() const { return matrixBlock.pMatrix; }
-    inline const glm::mat4& getModelViewProjectionMatrix() const { return matrixBlock.mvpMatrix; }
+    [[nodiscard]] inline const glm::mat4& getModelMatrix() const { return matrixBlock.mMatrix; }
+    [[nodiscard]] inline const glm::mat4& getViewMatrix() const { return matrixBlock.vMatrix; }
+    [[nodiscard]] inline const glm::mat4& getProjectionMatrix() const { return matrixBlock.pMatrix; }
+    [[nodiscard]] inline const glm::mat4& getModelViewProjectionMatrix() const { return matrixBlock.mvpMatrix; }
 
 private:
     Device* device;
