@@ -248,15 +248,18 @@ public:
     [[nodiscard]] inline uint32_t getFirstTask() const { return firstTask; }
 
     /*
-     * For use with vkCmdDrawIndirect, vkCmdDrawIndirectCount, vkCmdDrawIndexedIndirect, vkCmdDrawIndexedIndirectCount.
+     * For use with vkCmdDrawIndirect, vkCmdDrawIndirectCount, vkCmdDrawIndexedIndirect, vkCmdDrawIndexedIndirectCount,
+     * vkCmdDrawMeshTasksIndirectNV and vkCmdDrawMeshTasksIndirectCountNV.
      */
      /**
       * Sets the indirect draw command buffer. It contains entries either of the type VkDrawIndirectCommand for
       * vkCmdDrawIndirect and vkCmdDrawIndirectCount, or VkDrawIndexedIndirectCommand for vkCmdDrawIndexedIndirect and
-      * vkCmdDrawIndexedIndirectCount.
-      * @param buffer The buffer containing the VkDrawIndirectCommand/VkDrawIndexedIndirectCommand entries.
-      * @param stride Stride in bytes between two entries. It is usually either sizeof(VkDrawIndirectCommand) or
-      * sizeof(VkDrawIndexedIndirectCommand).
+      * vkCmdDrawIndexedIndirectCount, or VkDrawMeshTasksIndirectCommandNV for vkCmdDrawMeshTasksIndirectNV and
+      * vkCmdDrawMeshTasksIndirectCountNV.
+      * @param buffer The buffer containing the VkDrawIndirectCommand/VkDrawIndexedIndirectCommand/
+      * VkDrawMeshTasksIndirectCommandNV entries.
+      * @param stride Stride in bytes between two entries. It is usually either sizeof(VkDrawIndirectCommand),
+      * sizeof(VkDrawIndexedIndirectCommand) or sizeof(VkDrawMeshTasksIndirectCommandNV).
       * @param offset Offset in bytes to the first entry in the buffer.
       */
     void setIndirectDrawBuffer(const BufferPtr& buffer, uint32_t stride, VkDeviceSize offset = 0) {
@@ -265,14 +268,14 @@ public:
          indirectDrawBufferOffset = offset;
      }
     /**
-     * For vkCmdDrawIndirect and vkCmdDrawIndexedIndirect.
+     * For vkCmdDrawIndirect, vkCmdDrawIndexedIndirect and vkCmdDrawMeshTasksIndirectNV.
      * @param drawCount The number of elements to read from the indirect draw buffer.
      */
     void setIndirectDrawCount(uint32_t drawCount) {
         indirectDrawCount = drawCount;
     }
     /**
-     * For vkCmdDrawIndirectCount and vkCmdDrawIndexedIndirectCount.
+     * For vkCmdDrawIndirectCount, vkCmdDrawIndexedIndirectCount and vkCmdDrawMeshTasksIndirectCountNV.
      * @param buffer The buffer to read the number of elements to read from the indirect draw buffer from.
      * @param maxDrawCount The maximum draw count. The actual draw count will be the minimum of this value and the
      * value read from the buffer.
@@ -289,9 +292,9 @@ public:
     [[nodiscard]] VkBuffer getIndirectDrawBufferVk() const { return indirectDrawBuffer->getVkBuffer(); };
     [[nodiscard]] uint32_t getIndirectDrawBufferStride() const { return indirectDrawBufferStride; };
     [[nodiscard]] VkDeviceSize getIndirectDrawBufferOffset() const { return indirectDrawBufferOffset; };
-    // For vkCmdDrawIndirect and vkCmdDrawIndexedIndirect.
+    // For vkCmdDrawIndirect, vkCmdDrawIndexedIndirect and vkCmdDrawMeshTasksIndirectNV.
     [[nodiscard]] uint32_t getIndirectDrawCount() const { return indirectDrawCount; };
-    // For vkCmdDrawIndirectCount and vkCmdDrawIndexedIndirectCount.
+    // For vkCmdDrawIndirectCount, vkCmdDrawIndexedIndirectCount and vkCmdDrawMeshTasksIndirectCountNV.
     [[nodiscard]] const BufferPtr& getIndirectDrawCountBuffer() const { return indirectDrawCountBuffer; };
     [[nodiscard]] VkBuffer getIndirectDrawCountBufferVk() const { return indirectDrawCountBuffer->getVkBuffer(); };
     [[nodiscard]] uint32_t getIndirectMaxDrawCount() const { return indirectMaxDrawCount; };

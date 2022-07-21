@@ -383,9 +383,6 @@ void Renderer::render(const RasterDataPtr& rasterData, const FramebufferPtr& fra
                             rasterData->getIndirectDrawBufferOffset(),
                             rasterData->getIndirectDrawCount(),
                             rasterData->getIndirectDrawBufferStride());
-                    vkCmdDrawIndexed(
-                            commandBuffer, static_cast<uint32_t>(rasterData->getNumIndices()),
-                            static_cast<uint32_t>(rasterData->getNumInstances()), 0, 0, 0);
                 } else {
                     vkCmdDrawIndirect(
                             commandBuffer, rasterData->getIndirectDrawBufferVk(),
@@ -404,19 +401,37 @@ void Renderer::render(const RasterDataPtr& rasterData, const FramebufferPtr& fra
                     static_cast<uint32_t>(rasterData->getNumInstances()), 0, 0);
         }
     } else if (rasterData->getTaskCount() > 0) {
-        /**
-         * Assuming task/mesh shaders. The maximum number of tasks is relatively low on NVIDIA hardware, so split into
-         * multiple draw calls if necessary.
-         */
-        uint32_t firstTask = rasterData->getFirstTask();
-        uint32_t taskCount = rasterData->getTaskCount();
-        uint32_t taskCountMax = device->getPhysicalDeviceMeshShaderPropertiesNV().maxDrawMeshTasksCount;
-        while (taskCount > taskCountMax) {
-            vkCmdDrawMeshTasksNV(commandBuffer, taskCountMax, firstTask);
-            firstTask += taskCountMax;
-            taskCount -= taskCountMax;
+        if (rasterData->getUseIndirectDraw()) {
+            if (rasterData->getUseIndirectDrawCount()) {
+                vkCmdDrawMeshTasksIndirectCountNV(
+                        commandBuffer, rasterData->getIndirectDrawBufferVk(),
+                        rasterData->getIndirectDrawBufferOffset(),
+                        rasterData->getIndirectDrawCountBufferVk(),
+                        rasterData->getIndirectDrawCountBufferOffset(),
+                        rasterData->getIndirectMaxDrawCount(),
+                        rasterData->getIndirectDrawBufferStride());
+            } else {
+                vkCmdDrawMeshTasksIndirectNV(
+                        commandBuffer, rasterData->getIndirectDrawBufferVk(),
+                        rasterData->getIndirectDrawBufferOffset(),
+                        rasterData->getIndirectDrawCount(),
+                        rasterData->getIndirectDrawBufferStride());
+            }
+        } else {
+            /**
+             * Assuming task/mesh shaders. The maximum number of tasks is relatively low on NVIDIA hardware, so split
+             * into multiple draw calls if necessary.
+             */
+            uint32_t firstTask = rasterData->getFirstTask();
+            uint32_t taskCount = rasterData->getTaskCount();
+            uint32_t taskCountMax = device->getPhysicalDeviceMeshShaderPropertiesNV().maxDrawMeshTasksCount;
+            while (taskCount > taskCountMax) {
+                vkCmdDrawMeshTasksNV(commandBuffer, taskCountMax, firstTask);
+                firstTask += taskCountMax;
+                taskCount -= taskCountMax;
+            }
+            vkCmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask);
         }
-        vkCmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask);
     }
 
     // Transition the image layouts.
