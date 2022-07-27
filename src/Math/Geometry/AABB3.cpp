@@ -108,4 +108,21 @@ AABB3 AABB3::transformed(const glm::mat4& matrix) const {
     return aabbTransformed;
 }
 
+AABB3 AABB3::transformedFast(const glm::mat4& matrix) const {
+    glm::vec4 minH(min.x, min.y, min.z, 1.0f);
+    glm::vec4 maxH(max.x, max.y, max.z, 1.0f);
+    glm::vec4 xa = matrix[0] * minH.x;
+    glm::vec4 xb = matrix[0] * maxH.x;
+    glm::vec4 ya = matrix[1] * minH.y;
+    glm::vec4 yb = matrix[1] * maxH.y;
+    glm::vec4 za = matrix[2] * minH.z;
+    glm::vec4 zb = matrix[2] * maxH.z;
+    glm::vec4 minT = glm::min(xa, xb) + glm::min(ya, yb) + glm::min(za, zb) + matrix[3];
+    glm::vec4 maxT = glm::max(xa, xb) + glm::max(ya, yb) + glm::max(za, zb) + matrix[3];
+    AABB3 aabbTransformed(
+            glm::vec3(minT.x / minT.w, minT.y / minT.w, minT.z / minT.w),
+            glm::vec3(maxT.x / maxT.w, maxT.y / maxT.w, maxT.z / maxT.w));
+    return aabbTransformed;
+}
+
 }

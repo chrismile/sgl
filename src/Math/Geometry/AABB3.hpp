@@ -58,6 +58,8 @@ public:
     [[nodiscard]] bool contains(const glm::vec3& pt) const;
     /// Transform AABB.
     [[nodiscard]] AABB3 transformed(const glm::mat4& matrix) const;
+    /// Transform AABB (faster, but doesn't work as expected for projective transforms).
+    [[nodiscard]] AABB3 transformedFast(const glm::mat4& matrix) const;
 };
 
 }

@@ -583,6 +583,22 @@ void Device::createLogicalDeviceAndQueues(
         *pNextPtr = &requestedDeviceFeatures.fragmentShaderBarycentricFeaturesNV;
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.fragmentShaderBarycentricFeaturesNV.pNext);
     }
+#ifdef VK_VERSION_1_1
+    vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
+    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 1, 0)
+            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 1, 0)) {
+        *pNextPtr = &requestedDeviceFeatures.vulkan11Features;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.vulkan11Features.pNext);
+    }
+#endif
+#ifdef VK_VERSION_1_2
+    vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
+    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 2, 0)
+            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 2, 0)) {
+        *pNextPtr = &requestedDeviceFeatures.vulkan12Features;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.vulkan12Features.pNext);
+    }
+#endif
 #ifdef VK_VERSION_1_3
     vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
     if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 3, 0)

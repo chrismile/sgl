@@ -98,6 +98,12 @@ struct DLL_OBJECT DeviceFeatures {
         fragmentShaderInterlockFeatures.sType =
                 VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_INTERLOCK_FEATURES_EXT;
         meshShaderFeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
+#ifdef VK_VERSION_1_1
+        vulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+#endif
+#ifdef VK_VERSION_1_2
+        vulkan12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+#endif
 #ifdef VK_VERSION_1_3
         vulkan13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
 #endif
@@ -114,6 +120,12 @@ struct DLL_OBJECT DeviceFeatures {
     VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT fragmentShaderInterlockFeatures{};
     VkPhysicalDeviceMeshShaderFeaturesNV meshShaderFeaturesNV{};
     VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragmentShaderBarycentricFeaturesNV{};
+#ifdef VK_VERSION_1_2
+    VkPhysicalDeviceVulkan11Features vulkan11Features{};
+#endif
+#ifdef VK_VERSION_1_2
+    VkPhysicalDeviceVulkan12Features vulkan12Features{};
+#endif
 #ifdef VK_VERSION_1_3
     VkPhysicalDeviceVulkan13Features vulkan13Features{};
 #endif

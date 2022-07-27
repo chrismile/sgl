@@ -96,6 +96,40 @@ public:
         colorAttachmentClearValues.at(index).color =
                 { { clearColor.x, clearColor.y, clearColor.z, clearColor.w } };
     }
+    void setColorAttachmentInt(
+            ImageViewPtr& attachmentImageView, int index,
+            const AttachmentState& attachmentState = AttachmentState::standardColorAttachment(),
+            const glm::ivec4& clearColor = glm::ivec4(0, 0, 0, 0)) {
+        if (int(colorAttachments.size()) <= index) {
+            colorAttachments.resize(index + 1);
+            colorAttachmentStates.resize(index + 1);
+            colorAttachmentClearValues.resize(index + 1);
+        }
+        colorAttachments.at(index) = attachmentImageView;
+        colorAttachmentStates.at(index) = attachmentState;
+        int32_t* clearValuesInt = colorAttachmentClearValues.at(index).color.int32;
+        clearValuesInt[0] = clearColor.x;
+        clearValuesInt[1] = clearColor.y;
+        clearValuesInt[2] = clearColor.z;
+        clearValuesInt[3] = clearColor.w;
+    }
+    void setColorAttachmentUint(
+            ImageViewPtr& attachmentImageView, int index,
+            const AttachmentState& attachmentState = AttachmentState::standardColorAttachment(),
+            const glm::uvec4& clearColor = glm::uvec4(0, 0, 0, 0)) {
+        if (int(colorAttachments.size()) <= index) {
+            colorAttachments.resize(index + 1);
+            colorAttachmentStates.resize(index + 1);
+            colorAttachmentClearValues.resize(index + 1);
+        }
+        colorAttachments.at(index) = attachmentImageView;
+        colorAttachmentStates.at(index) = attachmentState;
+        uint32_t* clearValuesUint = colorAttachmentClearValues.at(index).color.uint32;
+        clearValuesUint[0] = clearColor.x;
+        clearValuesUint[1] = clearColor.y;
+        clearValuesUint[2] = clearColor.z;
+        clearValuesUint[3] = clearColor.w;
+    }
 
     /**
      * Sets the depth-stencil attachment.

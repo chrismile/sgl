@@ -545,6 +545,15 @@ bool ShaderStages::getDescriptorBindingByNameOptional(
     return false;
 }
 
+bool ShaderStages::getHasModuleId(const std::string& shaderModuleId) const {
+    for (const ShaderModulePtr& shaderModule : shaderModules) {
+        if (shaderModule->getShaderModuleId() == shaderModuleId) {
+            return true;
+        }
+    }
+    return false;
+}
+
 ShaderModulePtr ShaderStages::findModuleId(const std::string& shaderModuleId) {
     for (ShaderModulePtr& shaderModule : shaderModules) {
         if (shaderModule->getShaderModuleId() == shaderModuleId) {

@@ -156,6 +156,7 @@ public:
     bool getDescriptorBindingByNameOptional(uint32_t setIdx, const std::string& descName, uint32_t& binding) const;
 
     /// Finds a certain module based on its ID.
+    bool getHasModuleId(const std::string& shaderModuleId) const;
     ShaderModulePtr findModuleId(const std::string& shaderModuleId);
     [[nodiscard]] size_t findModuleIndexFromId(const std::string& shaderModuleId) const;
 
