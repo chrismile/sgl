@@ -105,6 +105,10 @@ public:
 
     // Image pipeline barrier.
     void transitionImageLayout(vk::ImagePtr& image, VkImageLayout newLayout);
+    void transitionImageLayout(vk::ImageViewPtr& imageView, VkImageLayout newLayout);
+    void transitionImageLayoutSubresource(
+            vk::ImagePtr& image, VkImageLayout newLayout,
+            uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount);
     void insertImageMemoryBarrier(
             const vk::ImagePtr& image, VkImageLayout oldLayout, VkImageLayout newLayout,
             VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
@@ -113,6 +117,15 @@ public:
             const std::vector<vk::ImagePtr>& images, VkImageLayout oldLayout, VkImageLayout newLayout,
             VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
             VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask);
+    void insertImageMemoryBarrier(
+            const vk::ImageViewPtr& imageView, VkImageLayout oldLayout, VkImageLayout newLayout,
+            VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
+            VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask);
+    void insertImageMemoryBarrierSubresource(
+            const vk::ImagePtr& image, VkImageLayout oldLayout, VkImageLayout newLayout,
+            VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
+            VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+            uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount);
 
     // Push constants.
     void pushConstants(

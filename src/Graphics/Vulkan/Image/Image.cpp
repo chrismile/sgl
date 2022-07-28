@@ -632,6 +632,14 @@ void Image::blit(ImagePtr& destImage, VkCommandBuffer commandBuffer) {
 }
 
 void Image::clearColor(const glm::vec4& clearColor, VkCommandBuffer commandBuffer) {
+    Image::clearColor(
+            0, imageSettings.mipLevels, 0, imageSettings.arrayLayers,
+            clearColor, commandBuffer);
+}
+
+void Image::clearColor(
+        uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount,
+        const glm::vec4& clearColor, VkCommandBuffer commandBuffer) {
     bool singleTimeCommand = false;
     if (commandBuffer == VK_NULL_HANDLE) {
         singleTimeCommand = true;
@@ -642,10 +650,10 @@ void Image::clearColor(const glm::vec4& clearColor, VkCommandBuffer commandBuffe
 
     VkImageSubresourceRange imageSubresourceRange;
     imageSubresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    imageSubresourceRange.baseMipLevel = 0;
-    imageSubresourceRange.levelCount = imageSettings.mipLevels;
-    imageSubresourceRange.baseArrayLayer = 0;
-    imageSubresourceRange.layerCount = imageSettings.arrayLayers;
+    imageSubresourceRange.baseMipLevel = baseMipLevel;
+    imageSubresourceRange.levelCount = levelCount;
+    imageSubresourceRange.baseArrayLayer = baseArrayLayer;
+    imageSubresourceRange.layerCount = layerCount;
 
     vkCmdClearColorImage(
             commandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -658,24 +666,33 @@ void Image::clearColor(const glm::vec4& clearColor, VkCommandBuffer commandBuffe
 
 void Image::clearDepthStencil(
         VkImageAspectFlags aspectFlags, float clearDepth, uint32_t clearStencil, VkCommandBuffer commandBuffer) {
+    Image::clearDepthStencil(
+            aspectFlags, 0, imageSettings.mipLevels, 0,
+            imageSettings.arrayLayers, clearDepth, clearStencil, commandBuffer);
+}
+
+void Image::clearDepthStencil(
+        VkImageAspectFlags aspectFlags,
+        uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount,
+        float clearDepth, uint32_t clearStencil, VkCommandBuffer commandBuffer) {
     bool singleTimeCommand = false;
     if (commandBuffer == VK_NULL_HANDLE) {
         singleTimeCommand = true;
         commandBuffer = device->beginSingleTimeCommands();
     }
 
-    VkClearDepthStencilValue clearColorValue = { clearDepth, clearStencil };
+    VkClearDepthStencilValue clearDepthStencilValue = { clearDepth, clearStencil };
 
     VkImageSubresourceRange imageSubresourceRange;
     imageSubresourceRange.aspectMask = aspectFlags;
-    imageSubresourceRange.baseMipLevel = 0;
-    imageSubresourceRange.levelCount = imageSettings.mipLevels;
-    imageSubresourceRange.baseArrayLayer = 0;
+    imageSubresourceRange.baseMipLevel = baseMipLevel;
+    imageSubresourceRange.levelCount = levelCount;
+    imageSubresourceRange.baseArrayLayer = baseArrayLayer;
+    imageSubresourceRange.layerCount = layerCount;
 
-    imageSubresourceRange.layerCount = imageSettings.arrayLayers;
     vkCmdClearDepthStencilImage(
             commandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            &clearColorValue, 1, &imageSubresourceRange);
+            &clearDepthStencilValue, 1, &imageSubresourceRange);
 
     if (singleTimeCommand) {
         device->endSingleTimeCommands(commandBuffer);
@@ -697,6 +714,48 @@ void Image::transitionImageLayout(VkImageLayout newLayout, VkCommandBuffer comma
 }
 
 void Image::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout, VkCommandBuffer commandBuffer) {
+    Image::transitionImageLayoutSubresource(
+            oldLayout, newLayout, commandBuffer,
+            0, this->getImageSettings().mipLevels,
+            0, this->getImageSettings().arrayLayers);
+}
+
+void Image::insertMemoryBarrier(
+        VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout,
+        VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
+        VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask) {
+    Image::insertMemoryBarrierSubresource(
+            commandBuffer, oldLayout, newLayout, srcStage, dstStage, srcAccessMask, dstAccessMask,
+            0, this->getImageSettings().mipLevels,
+            0, this->getImageSettings().arrayLayers);
+}
+
+void Image::transitionImageLayoutSubresource(
+        VkImageLayout newLayout,
+        uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount) {
+    Image::transitionImageLayoutSubresource(
+            imageLayout, newLayout, baseMipLevel, levelCount, baseArrayLayer, layerCount);
+}
+
+void Image::transitionImageLayoutSubresource(
+        VkImageLayout oldLayout, VkImageLayout newLayout,
+        uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount) {
+    VkCommandBuffer commandBuffer = device->beginSingleTimeCommands();
+    Image::transitionImageLayoutSubresource(
+            imageLayout, newLayout, commandBuffer, baseMipLevel, levelCount, baseArrayLayer, layerCount);
+    device->endSingleTimeCommands(commandBuffer);
+}
+
+void Image::transitionImageLayoutSubresource(
+        VkImageLayout newLayout, VkCommandBuffer commandBuffer,
+        uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount) {
+    Image::transitionImageLayoutSubresource(
+            imageLayout, newLayout, commandBuffer, baseMipLevel, levelCount, baseArrayLayer, layerCount);
+}
+
+void Image::transitionImageLayoutSubresource(
+        VkImageLayout oldLayout, VkImageLayout newLayout, VkCommandBuffer commandBuffer,
+        uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount) {
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     barrier.oldLayout = oldLayout;
@@ -704,10 +763,10 @@ void Image::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayo
     barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.image = image;
-    barrier.subresourceRange.baseMipLevel = 0;
-    barrier.subresourceRange.levelCount = imageSettings.mipLevels;
-    barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount = imageSettings.arrayLayers;
+    barrier.subresourceRange.baseMipLevel = baseMipLevel;
+    barrier.subresourceRange.levelCount = levelCount;
+    barrier.subresourceRange.baseArrayLayer = baseArrayLayer;
+    barrier.subresourceRange.layerCount = layerCount;
     if (isDepthStencilFormat(imageSettings.format)) {
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
         if (hasStencilComponent(imageSettings.format)) {
@@ -780,10 +839,11 @@ void Image::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayo
     this->imageLayout = newLayout;
 }
 
-void Image::insertMemoryBarrier(
+void Image::insertMemoryBarrierSubresource(
         VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout,
         VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
-        VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask) {
+        VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+        uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount) {
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     barrier.oldLayout = oldLayout;
@@ -872,11 +932,12 @@ void Image::_generateMipmaps(VkCommandBuffer commandBuffer) {
         blit.dstSubresource.baseArrayLayer = 0;
         blit.dstSubresource.layerCount = 1;
 
-        vkCmdBlitImage(commandBuffer,
-                       image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                       image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                       1, &blit,
-                       VK_FILTER_LINEAR);
+        vkCmdBlitImage(
+                commandBuffer,
+                image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                1, &blit,
+                VK_FILTER_LINEAR);
 
         barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
         barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -954,8 +1015,11 @@ bool Image::createGlMemoryObject(GLuint& memoryObjectGl, InteropMemoryHandle& in
 
 
 
-ImageView::ImageView(const ImagePtr& image, VkImageViewType imageViewType, VkImageAspectFlags aspectFlags)
-        : device(image->getDevice()), image(image), imageViewType(imageViewType), aspectFlags(aspectFlags) {
+ImageView::ImageView(
+        const ImagePtr& image, VkImageViewType imageViewType,
+        uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount,
+        VkImageAspectFlags aspectFlags)
+        : device(image->getDevice()), image(image), imageViewType(imageViewType) {
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewInfo.image = image->getVkImage();
@@ -965,24 +1029,40 @@ ImageView::ImageView(const ImagePtr& image, VkImageViewType imageViewType, VkIma
     //viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
     //viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
     //viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-    viewInfo.subresourceRange.aspectMask = aspectFlags;
-    viewInfo.subresourceRange.baseMipLevel = 0;
-    viewInfo.subresourceRange.levelCount = image->getImageSettings().mipLevels;
-    viewInfo.subresourceRange.baseArrayLayer = 0;
-    viewInfo.subresourceRange.layerCount = image->getImageSettings().arrayLayers;
+    subresourceRange.aspectMask = aspectFlags;
+    subresourceRange.baseMipLevel = baseMipLevel;
+    subresourceRange.levelCount = levelCount;
+    subresourceRange.baseArrayLayer = baseArrayLayer;
+    subresourceRange.layerCount = layerCount;
+    viewInfo.subresourceRange = subresourceRange;
 
     if (vkCreateImageView(device->getVkDevice(), &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
         sgl::Logfile::get()->throwError("Error in ImageView::ImageView: vkCreateImageView failed!");
     }
 }
 
+ImageView::ImageView(const ImagePtr& image, VkImageViewType imageViewType, VkImageAspectFlags aspectFlags)
+        : ImageView(
+                image, imageViewType, 0, image->getImageSettings().mipLevels,
+                0, image->getImageSettings().arrayLayers, aspectFlags) {}
+
 ImageView::ImageView(const ImagePtr& image, VkImageAspectFlags aspectFlags)
-        : ImageView(image, VkImageViewType(image->getImageSettings().imageType), aspectFlags) {
-}
+        : ImageView(image, VkImageViewType(image->getImageSettings().imageType), aspectFlags) {}
 
 ImageView::ImageView(
         const ImagePtr& image, VkImageView imageView, VkImageViewType imageViewType, VkImageAspectFlags aspectFlags)
-        : device(image->getDevice()), image(image), imageViewType(imageViewType), aspectFlags(aspectFlags) {
+        : device(image->getDevice()), image(image), imageView(imageView), imageViewType(imageViewType) {
+    subresourceRange.aspectMask = aspectFlags;
+    subresourceRange.baseMipLevel = 0;
+    subresourceRange.levelCount = image->getImageSettings().mipLevels;
+    subresourceRange.baseArrayLayer = 0;
+    subresourceRange.layerCount = image->getImageSettings().arrayLayers;
+}
+
+ImageView::ImageView(
+        const ImagePtr& image, VkImageView imageView, VkImageViewType imageViewType, VkImageSubresourceRange range)
+        : device(image->getDevice()), image(image), imageView(imageView), imageViewType(imageViewType),
+          subresourceRange(range) {
     this->imageView = imageView;
 }
 
@@ -993,27 +1073,77 @@ ImageView::~ImageView() {
 ImageViewPtr ImageView::copy(bool copyImage, bool copyContent) {
     ImagePtr newImage;
     if (copyImage) {
-        newImage = image->copy(copyContent, aspectFlags);
+        newImage = image->copy(copyContent, subresourceRange.aspectMask);
     } else {
         newImage = image;
     }
-    ImageViewPtr newImageView(new ImageView(newImage, imageViewType, aspectFlags));
+    ImageViewPtr newImageView(new ImageView(
+            newImage, imageViewType,
+            subresourceRange.baseMipLevel, subresourceRange.levelCount,
+            subresourceRange.baseArrayLayer, subresourceRange.layerCount,
+            subresourceRange.aspectMask));
     return newImageView;
 }
 
 void ImageView::clearColor(const glm::vec4& clearColor, VkCommandBuffer commandBuffer) {
-    if (aspectFlags != VK_IMAGE_ASPECT_COLOR_BIT) {
+    if (subresourceRange.aspectMask != VK_IMAGE_ASPECT_COLOR_BIT) {
         Logfile::get()->throwError("Error in ImageView::clearColor: Invalid aspect flags!");
     }
-    image->clearColor(clearColor, commandBuffer);
+    image->clearColor(
+            subresourceRange.baseMipLevel, subresourceRange.levelCount,
+            subresourceRange.baseArrayLayer, subresourceRange.layerCount,
+            clearColor, commandBuffer);
 }
 
 void ImageView::clearDepthStencil(
         float clearDepth, uint32_t clearStencil, VkCommandBuffer commandBuffer) {
-    if (!(aspectFlags & VK_IMAGE_ASPECT_DEPTH_BIT) && !(aspectFlags & VK_IMAGE_ASPECT_STENCIL_BIT)) {
+    if (!(subresourceRange.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT)
+            && !(subresourceRange.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT)) {
         Logfile::get()->throwError("Error in ImageView::clearDepthStencil: Invalid aspect flags!");
     }
-    image->clearDepthStencil(aspectFlags, clearDepth, clearStencil, commandBuffer);
+    image->clearDepthStencil(
+            subresourceRange.aspectMask,
+            subresourceRange.baseMipLevel, subresourceRange.levelCount,
+            subresourceRange.baseArrayLayer, subresourceRange.layerCount,
+            clearDepth, clearStencil, commandBuffer);
+}
+
+void ImageView::transitionImageLayout(VkImageLayout newLayout) {
+    image->transitionImageLayoutSubresource(
+            newLayout,
+            subresourceRange.baseMipLevel, subresourceRange.levelCount,
+            subresourceRange.baseArrayLayer, subresourceRange.layerCount);
+}
+
+void ImageView::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout) {
+    image->transitionImageLayoutSubresource(
+            oldLayout, newLayout,
+            subresourceRange.baseMipLevel, subresourceRange.levelCount,
+            subresourceRange.baseArrayLayer, subresourceRange.layerCount);
+}
+
+void ImageView::transitionImageLayout(VkImageLayout newLayout, VkCommandBuffer commandBuffer) {
+    image->transitionImageLayoutSubresource(
+            newLayout, commandBuffer,
+            subresourceRange.baseMipLevel, subresourceRange.levelCount,
+            subresourceRange.baseArrayLayer, subresourceRange.layerCount);
+}
+
+void ImageView::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout, VkCommandBuffer commandBuffer) {
+    image->transitionImageLayoutSubresource(
+            oldLayout, newLayout, commandBuffer,
+            subresourceRange.baseMipLevel, subresourceRange.levelCount,
+            subresourceRange.baseArrayLayer, subresourceRange.layerCount);
+}
+
+void ImageView::insertMemoryBarrier(
+        VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout,
+        VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
+        VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask) {
+    image->insertMemoryBarrierSubresource(
+            commandBuffer, oldLayout, newLayout, srcStage, dstStage, srcAccessMask, dstAccessMask,
+            subresourceRange.baseMipLevel, subresourceRange.levelCount,
+            subresourceRange.baseArrayLayer, subresourceRange.layerCount);
 }
 
 

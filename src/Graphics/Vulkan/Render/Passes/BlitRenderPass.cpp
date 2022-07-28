@@ -104,6 +104,21 @@ void BlitRenderPass::setColorWriteEnabled(bool enable) {
     setDataDirty();
 }
 
+void BlitRenderPass::setDepthWriteEnabled(bool enable) {
+    enableDepthWrite = enable;
+    setDataDirty();
+}
+
+void BlitRenderPass::setDepthTestEnabled(bool enable) {
+    enableDepthTest = enable;
+    setDataDirty();
+}
+
+void BlitRenderPass::setDepthCompareOp(VkCompareOp compareOp) {
+    depthCompareOp = compareOp;
+    setDataDirty();
+}
+
 void BlitRenderPass::recreateSwapchain(uint32_t width, uint32_t height) {
     AttachmentState attachmentState;
     attachmentState.loadOp = attachmentLoadOp;
@@ -114,7 +129,15 @@ void BlitRenderPass::recreateSwapchain(uint32_t width, uint32_t height) {
     framebuffers.clear();
     for (size_t i = 0; i < outputImageViews.size(); i++) {
         FramebufferPtr framebuffer = std::make_shared<sgl::vk::Framebuffer>(device, width, height);
-        framebuffer->setColorAttachment(outputImageViews.at(i), 0, attachmentState, clearColor);
+        sgl::vk::ImageViewPtr outputImageView = outputImageViews.at(i);
+        if (outputImageView->getVkImageAspectFlags() == VK_IMAGE_ASPECT_COLOR_BIT) {
+            framebuffer->setColorAttachment(outputImageViews.at(i), 0, attachmentState, clearColor);
+        } else if ((outputImageView->getVkImageAspectFlags() & VK_IMAGE_ASPECT_DEPTH_BIT) != 0) {
+            framebuffer->setDepthStencilAttachment(outputImageViews.at(i), attachmentState, clearColorDepth);
+        } else {
+            sgl::Logfile::get()->throwError(
+                    "Error in BlitRenderPass::recreateSwapchain: Invalid image aspect flags.");
+        }
         framebuffers.push_back(framebuffer);
     }
     framebuffer = framebuffers.front();
@@ -201,6 +224,9 @@ void BlitRenderPass::setGraphicsPipelineInfo(sgl::vk::GraphicsPipelineInfo& grap
     }
     graphicsPipelineInfo.setBlendMode(blendMode);
     graphicsPipelineInfo.setColorWriteEnabled(enableColorWrite);
+    graphicsPipelineInfo.setDepthWriteEnabled(enableDepthWrite);
+    graphicsPipelineInfo.setDepthTestEnabled(enableDepthTest);
+    graphicsPipelineInfo.setDepthCompareOp(depthCompareOp);
     graphicsPipelineInfo.setCullMode(cullMode);
 }
 

@@ -67,6 +67,9 @@ public:
     void setAttachmentStoreOp(VkAttachmentStoreOp op);
     void setAttachmentClearColor(const glm::vec4& color);
     void setColorWriteEnabled(bool enable);
+    void setDepthWriteEnabled(bool enable);
+    void setDepthTestEnabled(bool enable);
+    void setDepthCompareOp(VkCompareOp compareOp);
 
     void recreateSwapchain(uint32_t width, uint32_t height) override;
 
@@ -81,12 +84,16 @@ protected:
     sgl::vk::CullMode cullMode = sgl::vk::CullMode::CULL_BACK;
     BlendMode blendMode = BlendMode::OVERWRITE;
     bool enableColorWrite = true;
+    bool enableDepthWrite = true;
+    bool enableDepthTest = true;
+    VkCompareOp depthCompareOp = VK_COMPARE_OP_LESS;
 
     VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     VkImageLayout finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     VkAttachmentLoadOp attachmentLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     VkAttachmentStoreOp attachmentStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
     glm::vec4 clearColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    float clearColorDepth = 1.0f;
     sgl::vk::TexturePtr inputTexture;
     std::vector<sgl::vk::ImageViewPtr> outputImageViews;
     std::vector<sgl::vk::FramebufferPtr> framebuffers;

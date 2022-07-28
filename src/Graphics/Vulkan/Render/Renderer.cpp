@@ -584,6 +584,17 @@ void Renderer::transitionImageLayout(vk::ImagePtr& image, VkImageLayout newLayou
     image->transitionImageLayout(newLayout, commandBuffer);
 }
 
+void Renderer::transitionImageLayout(vk::ImageViewPtr& imageView, VkImageLayout newLayout) {
+    imageView->transitionImageLayout(newLayout, commandBuffer);
+}
+
+void Renderer::transitionImageLayoutSubresource(
+        vk::ImagePtr& image, VkImageLayout newLayout,
+        uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount) {
+    image->transitionImageLayoutSubresource(
+            newLayout, commandBuffer, baseMipLevel, levelCount, baseArrayLayer, layerCount);
+}
+
 void Renderer::insertImageMemoryBarrier(
         const vk::ImagePtr& image, VkImageLayout oldLayout, VkImageLayout newLayout,
         VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
@@ -632,6 +643,24 @@ void Renderer::insertImageMemoryBarriers(
             0, nullptr,
             uint32_t(images.size()), barriers.data()
     );
+}
+
+void Renderer::insertImageMemoryBarrier(
+        const vk::ImageViewPtr& imageView, VkImageLayout oldLayout, VkImageLayout newLayout,
+        VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
+        VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask) {
+    imageView->insertMemoryBarrier(
+            commandBuffer, oldLayout, newLayout, srcStage, dstStage, srcAccessMask, dstAccessMask);
+}
+
+void Renderer::insertImageMemoryBarrierSubresource(
+        const vk::ImagePtr& image, VkImageLayout oldLayout, VkImageLayout newLayout,
+        VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
+        VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+        uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount) {
+    image->insertMemoryBarrierSubresource(
+            commandBuffer, oldLayout, newLayout, srcStage, dstStage, srcAccessMask, dstAccessMask,
+            baseMipLevel, levelCount, baseArrayLayer, layerCount);
 }
 
 void Renderer::pushConstants(

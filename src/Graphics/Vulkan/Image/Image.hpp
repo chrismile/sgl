@@ -66,7 +66,7 @@ class Texture;
 typedef std::shared_ptr<Texture> TexturePtr;
 
 struct DLL_OBJECT ImageSettings {
-    ImageSettings() {}
+    ImageSettings() = default;
     uint32_t width = 1;
     uint32_t height = 1;
     uint32_t depth = 1;
@@ -185,9 +185,17 @@ public:
     void clearColor(
             const glm::vec4& clearColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f),
             VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
+    void clearColor(
+            uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount,
+            const glm::vec4& clearColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f),
+            VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
     void clearDepthStencil(
             VkImageAspectFlags aspectFlags, float clearDepth = 1.0f, uint32_t clearStencil = 0,
             VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
+    void clearDepthStencil(
+            VkImageAspectFlags aspectFlags,
+            uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount,
+            float clearDepth = 1.0f, uint32_t clearStencil = 0, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 
     /// Transitions the image layout from the current layout to the new layout.
     void transitionImageLayout(VkImageLayout newLayout);
@@ -198,6 +206,23 @@ public:
             VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout,
             VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
             VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask);
+    void transitionImageLayoutSubresource(
+            VkImageLayout newLayout,
+            uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount);
+    void transitionImageLayoutSubresource(
+            VkImageLayout oldLayout, VkImageLayout newLayout,
+            uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount);
+    void transitionImageLayoutSubresource(
+            VkImageLayout newLayout, VkCommandBuffer commandBuffer,
+            uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount);
+    void transitionImageLayoutSubresource(
+            VkImageLayout oldLayout, VkImageLayout newLayout, VkCommandBuffer commandBuffer,
+            uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount);
+    void insertMemoryBarrierSubresource(
+            VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout,
+            VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
+            VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+            uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount);
 
     /// The subresource layout contains information necessary when accessing the image data on the CPU (e.g., stride).
     [[nodiscard]] VkSubresourceLayout getSubresourceLayout(
@@ -277,12 +302,19 @@ class DLL_OBJECT ImageView {
 public:
     ImageView(
             const ImagePtr& image, VkImageViewType imageViewType,
+            uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount,
+            VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
+    ImageView(
+            const ImagePtr& image, VkImageViewType imageViewType,
             VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
     explicit ImageView(
             const ImagePtr& image, VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
     ImageView(
             const ImagePtr& image, VkImageView imageView, VkImageViewType imageViewType,
             VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
+    ImageView(
+            const ImagePtr& image, VkImageView imageView, VkImageViewType imageViewType,
+            VkImageSubresourceRange range);
     ~ImageView();
 
     /**
@@ -300,18 +332,29 @@ public:
     void clearDepthStencil(
             float clearDepth = 1.0f, uint32_t clearStencil = 0, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 
+    /// Transitions the image layout from the current layout to the new layout for the subresource.
+    void transitionImageLayout(VkImageLayout newLayout);
+    void transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout);
+    void transitionImageLayout(VkImageLayout newLayout, VkCommandBuffer commandBuffer);
+    void transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout, VkCommandBuffer commandBuffer);
+    void insertMemoryBarrier(
+            VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout,
+            VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
+            VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask);
+
     inline Device* getDevice() { return device; }
     inline ImagePtr& getImage() { return image; }
     inline VkImageView getVkImageView() { return imageView; }
-    inline VkImageViewType getVkImageViewType() const { return imageViewType; }
-    inline VkImageAspectFlags getVkImageAspectFlags() const { return aspectFlags; }
+    [[nodiscard]] inline VkImageViewType getVkImageViewType() const { return imageViewType; }
+    [[nodiscard]] inline VkImageAspectFlags getVkImageAspectFlags() const { return subresourceRange.aspectMask; }
+    [[nodiscard]] inline VkImageSubresourceRange getVkImageSubresourceRange() const { return subresourceRange; }
 
 private:
     Device* device = nullptr;
     ImagePtr image;
     VkImageView imageView = nullptr;
     VkImageViewType imageViewType;
-    VkImageAspectFlags aspectFlags;
+    VkImageSubresourceRange subresourceRange{};
 };
 
 struct DLL_OBJECT ImageSamplerSettings {
@@ -352,7 +395,7 @@ public:
     ImageSampler(Device* device, const ImageSamplerSettings& samplerSettings, ImagePtr image);
     ~ImageSampler();
 
-    inline const ImageSamplerSettings& getImageSamplerSettings() const { return imageSamplerSettings; }
+    [[nodiscard]] inline const ImageSamplerSettings& getImageSamplerSettings() const { return imageSamplerSettings; }
     inline VkSampler getVkSampler() { return sampler; }
 
 private:
