@@ -71,7 +71,7 @@ protected:
 class DLL_OBJECT ComputePass : public Pass {
 public:
     explicit ComputePass(sgl::vk::Renderer* renderer) : Pass(renderer) {}
-    PassType getPassType() override { return PassType::RASTER_PASS; }
+    PassType getPassType() override { return PassType::COMPUTE_PASS; }
     [[nodiscard]] inline const sgl::vk::ComputePipelinePtr& getComputePipeline() const {
         return computeData->getComputePipeline();
     }

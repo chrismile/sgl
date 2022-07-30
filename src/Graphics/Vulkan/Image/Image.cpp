@@ -515,8 +515,7 @@ void Image::copyFromBuffer(BufferPtr& buffer, VkCommandBuffer commandBuffer) {
             image,
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             1,
-            &region
-    );
+            &region);
 
     if (transientCommandBuffer) {
         device->endSingleTimeCommands(commandBuffer);
@@ -548,8 +547,7 @@ void Image::copyToBuffer(BufferPtr& buffer, VkCommandBuffer commandBuffer) {
             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
             buffer->getVkBuffer(),
             1,
-            &region
-            );
+            &region);
 
     if (transientCommandBuffer) {
         device->endSingleTimeCommands(commandBuffer);

@@ -354,6 +354,10 @@ void Renderer::render(const RasterDataPtr& rasterData, const FramebufferPtr& fra
                     graphicsPipeline->getVkPipelineLayout(),
                     0, 2, descriptorSets, 0, nullptr);
         }
+    } else {
+        vkCmdBindDescriptorSets(
+                commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline->getVkPipelineLayout(),
+                1, 1, &matrixBlockDescriptorSet, 0, nullptr);
     }
 
     if (graphicsPipeline->getShaderStages()->getHasVertexShader()) {
