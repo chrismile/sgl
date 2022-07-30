@@ -60,6 +60,9 @@ bool initializeCudaDeviceApiFunctionTable() {
     typedef CUresult ( *PFN_cuStreamSynchronize )( CUstream hStream );
     typedef CUresult ( *PFN_cuMemAlloc )( CUdeviceptr *dptr, size_t bytesize );
     typedef CUresult ( *PFN_cuMemFree )( CUdeviceptr dptr );
+    typedef CUresult ( *PFN_cuMemsetD8Async )( CUdeviceptr dstDevice, unsigned char uc, size_t N, CUstream hStream );
+    typedef CUresult ( *PFN_cuMemsetD16Async )( CUdeviceptr dstDevice, unsigned short us, size_t N, CUstream hStream );
+    typedef CUresult ( *PFN_cuMemsetD32Async )( CUdeviceptr dstDevice, unsigned int ui, size_t N, CUstream hStream );
     typedef CUresult ( *PFN_cuImportExternalMemory )( CUexternalMemory *extMem_out, const CUDA_EXTERNAL_MEMORY_HANDLE_DESC *memHandleDesc );
     typedef CUresult ( *PFN_cuExternalMemoryGetMappedBuffer )( CUdeviceptr *devPtr, CUexternalMemory extMem, const CUDA_EXTERNAL_MEMORY_BUFFER_DESC *bufferDesc );
     typedef CUresult ( *PFN_cuDestroyExternalMemory )( CUexternalMemory extMem );
@@ -91,6 +94,9 @@ bool initializeCudaDeviceApiFunctionTable() {
     g_cudaDeviceApiFunctionTable.cuStreamSynchronize = PFN_cuStreamSynchronize(dlsym(g_cudaLibraryHandle, TOSTRING(cuStreamSynchronize)));
     g_cudaDeviceApiFunctionTable.cuMemAlloc = PFN_cuMemAlloc(dlsym(g_cudaLibraryHandle, TOSTRING(cuMemAlloc)));
     g_cudaDeviceApiFunctionTable.cuMemFree = PFN_cuMemFree(dlsym(g_cudaLibraryHandle, TOSTRING(cuMemFree)));
+    g_cudaDeviceApiFunctionTable.cuMemsetD8Async = PFN_cuMemsetD8Async(dlsym(g_cudaLibraryHandle, TOSTRING(cuMemsetD8Async)));
+    g_cudaDeviceApiFunctionTable.cuMemsetD16Async = PFN_cuMemsetD16Async(dlsym(g_cudaLibraryHandle, TOSTRING(cuMemsetD16Async)));
+    g_cudaDeviceApiFunctionTable.cuMemsetD32Async = PFN_cuMemsetD32Async(dlsym(g_cudaLibraryHandle, TOSTRING(cuMemsetD32Async)));
     g_cudaDeviceApiFunctionTable.cuImportExternalMemory = PFN_cuImportExternalMemory(dlsym(g_cudaLibraryHandle, TOSTRING(cuImportExternalMemory)));
     g_cudaDeviceApiFunctionTable.cuExternalMemoryGetMappedBuffer = PFN_cuExternalMemoryGetMappedBuffer(dlsym(g_cudaLibraryHandle, TOSTRING(cuExternalMemoryGetMappedBuffer)));
     g_cudaDeviceApiFunctionTable.cuDestroyExternalMemory = PFN_cuDestroyExternalMemory(dlsym(g_cudaLibraryHandle, TOSTRING(cuDestroyExternalMemory)));
@@ -108,6 +114,9 @@ bool initializeCudaDeviceApiFunctionTable() {
             || !g_cudaDeviceApiFunctionTable.cuStreamSynchronize
             || !g_cudaDeviceApiFunctionTable.cuMemAlloc
             || !g_cudaDeviceApiFunctionTable.cuMemFree
+            || !g_cudaDeviceApiFunctionTable.cuMemsetD8Async
+            || !g_cudaDeviceApiFunctionTable.cuMemsetD16Async
+            || !g_cudaDeviceApiFunctionTable.cuMemsetD32Async
             || !g_cudaDeviceApiFunctionTable.cuImportExternalMemory
             || !g_cudaDeviceApiFunctionTable.cuExternalMemoryGetMappedBuffer
             || !g_cudaDeviceApiFunctionTable.cuDestroyExternalMemory
