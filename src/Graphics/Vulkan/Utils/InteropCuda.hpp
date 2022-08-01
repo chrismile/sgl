@@ -48,7 +48,6 @@ namespace sgl { namespace vk {
 /*
  * Utility functions for Vulkan-CUDA driver API interoperability.
  */
-
 struct CudaDeviceApiFunctionTable {
     CUresult ( *cuInit )( unsigned int Flags );
     CUresult ( *cuGetErrorString )( CUresult error, const char **pStr );
@@ -65,6 +64,9 @@ struct CudaDeviceApiFunctionTable {
     CUresult ( *cuMemsetD8Async )( CUdeviceptr dstDevice, unsigned char uc, size_t N, CUstream hStream );
     CUresult ( *cuMemsetD16Async )( CUdeviceptr dstDevice, unsigned short us, size_t N, CUstream hStream );
     CUresult ( *cuMemsetD32Async )( CUdeviceptr dstDevice, unsigned int ui, size_t N, CUstream hStream );
+    CUresult ( *cuMemcpyAsync )( CUdeviceptr dst, CUdeviceptr src, size_t ByteCount, CUstream hStream );
+    CUresult ( *cuMemcpyDtoHAsync )( void *dstHost, CUdeviceptr srcDevice, size_t ByteCount, CUstream hStream );
+    CUresult ( *cuMemcpyHtoDAsync )( CUdeviceptr dstDevice, const void *srcHost, size_t ByteCount, CUstream hStream );
 
     CUresult ( *cuImportExternalMemory )( CUexternalMemory *extMem_out, const CUDA_EXTERNAL_MEMORY_HANDLE_DESC *memHandleDesc );
     CUresult ( *cuExternalMemoryGetMappedBuffer )( CUdeviceptr *devPtr, CUexternalMemory extMem, const CUDA_EXTERNAL_MEMORY_BUFFER_DESC *bufferDesc );
