@@ -255,8 +255,8 @@ void Swapchain::renderFrame(const std::vector<sgl::vk::CommandBufferPtr>& comman
         sgl::Logfile::get()->throwError("Error in Swapchain::renderFrame: Command buffer array empty!");
     }
 
-    sgl::vk::CommandBufferPtr commandBufferFirst = commandBuffers.front();
-    sgl::vk::CommandBufferPtr commandBufferLast = commandBuffers.back();
+    const sgl::vk::CommandBufferPtr& commandBufferFirst = commandBuffers.front();
+    const sgl::vk::CommandBufferPtr& commandBufferLast = commandBuffers.back();
 
     //VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
     VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
