@@ -363,9 +363,9 @@ BufferCudaDriverApiExternalMemoryVk::BufferCudaDriverApiExternalMemoryVk(vk::Buf
     return false;
 #endif
 
-    CUexternalMemory cudaExtMemVertexBuffer{};
+    cudaExternalMemoryBuffer = {};
     CUresult cuResult = g_cudaDeviceApiFunctionTable.cuImportExternalMemory(
-            &cudaExtMemVertexBuffer, &externalMemoryHandleDesc);
+            &cudaExternalMemoryBuffer, &externalMemoryHandleDesc);
     checkCUresult(cuResult, "Error in cuImportExternalMemory: ");
 
     /*
@@ -384,7 +384,7 @@ BufferCudaDriverApiExternalMemoryVk::BufferCudaDriverApiExternalMemoryVk(vk::Buf
     externalMemoryBufferDesc.size = memoryRequirements.size;
     externalMemoryBufferDesc.flags = 0;
     cuResult = g_cudaDeviceApiFunctionTable.cuExternalMemoryGetMappedBuffer(
-            &cudaDevicePtr, cudaExtMemVertexBuffer, &externalMemoryBufferDesc);
+            &cudaDevicePtr, cudaExternalMemoryBuffer, &externalMemoryBufferDesc);
     checkCUresult(cuResult, "Error in cudaExternalMemoryGetMappedBuffer: ");
 }
 
@@ -397,6 +397,10 @@ BufferCudaDriverApiExternalMemoryVk::~BufferCudaDriverApiExternalMemoryVk() {
         fileDescriptor = -1;
     }
 #endif
+    if (cudaExternalMemoryBuffer) {
+        CUresult cuResult = g_cudaDeviceApiFunctionTable.cuDestroyExternalMemory(cudaExternalMemoryBuffer);
+        checkCUresult(cuResult, "Error in cuDestroyExternalMemory: ");
+    }
 }
 
 }}

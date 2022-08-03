@@ -130,7 +130,8 @@ public:
 
 protected:
     sgl::vk::BufferPtr vulkanBuffer;
-    CUdeviceptr cudaDevicePtr = {};
+    CUexternalMemory cudaExternalMemoryBuffer{};
+    CUdeviceptr cudaDevicePtr{};
 
 #ifdef _WIN32
     HANDLE handle = nullptr;
