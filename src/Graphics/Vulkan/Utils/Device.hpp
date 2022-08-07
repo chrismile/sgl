@@ -94,20 +94,24 @@ struct DLL_OBJECT DeviceFeatures {
                 VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES;
         shaderFloat16Int8Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES;
         device8BitStorageFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES;
+        shaderDrawParametersFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES;
         accelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
         rayTracingPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
         rayQueryFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
         fragmentShaderInterlockFeatures.sType =
                 VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_INTERLOCK_FEATURES_EXT;
         meshShaderFeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
-/*#ifdef VK_VERSION_1_1
-        vulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+#ifdef VK_VERSION_1_1
+        requestedVulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+        optionalVulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
 #endif
 #ifdef VK_VERSION_1_2
-        vulkan12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-#endif*/
+        requestedVulkan12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+        optionalVulkan12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+#endif
 #ifdef VK_VERSION_1_3
-        vulkan13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+        requestedVulkan13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+        optionalVulkan13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
 #endif
     }
     VkPhysicalDeviceFeatures requestedPhysicalDeviceFeatures{};
@@ -118,20 +122,27 @@ struct DLL_OBJECT DeviceFeatures {
     VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR uniformBufferStandardLayoutFeaturesKhr{};
     VkPhysicalDeviceShaderFloat16Int8Features shaderFloat16Int8Features{};
     VkPhysicalDevice8BitStorageFeatures device8BitStorageFeatures{};
+    VkPhysicalDeviceShaderDrawParametersFeatures shaderDrawParametersFeatures{};
     VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures{};
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures{};
     VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures{};
     VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT fragmentShaderInterlockFeatures{};
     VkPhysicalDeviceMeshShaderFeaturesNV meshShaderFeaturesNV{};
     VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragmentShaderBarycentricFeaturesNV{};
-/*#ifdef VK_VERSION_1_1
-    VkPhysicalDeviceVulkan11Features vulkan11Features{};
+    // The following features have no extensions, thus use
+    bool optionalEnableShaderDrawParametersFeatures = false;
+    // Vulkan 1.x features are only enabled when at least one value in the struct is set to true.
+#ifdef VK_VERSION_1_1
+    VkPhysicalDeviceVulkan11Features requestedVulkan11Features{};
+    VkPhysicalDeviceVulkan11Features optionalVulkan11Features{};
 #endif
 #ifdef VK_VERSION_1_2
-    VkPhysicalDeviceVulkan12Features vulkan12Features{};
-#endif*/
+    VkPhysicalDeviceVulkan12Features requestedVulkan12Features{};
+    VkPhysicalDeviceVulkan12Features optionalVulkan12Features{};
+#endif
 #ifdef VK_VERSION_1_3
-    VkPhysicalDeviceVulkan13Features vulkan13Features{};
+    VkPhysicalDeviceVulkan13Features requestedVulkan13Features{};
+    VkPhysicalDeviceVulkan13Features optionalVulkan13Features{};
 #endif
 };
 
@@ -200,6 +211,9 @@ public:
     }
     inline const VkPhysicalDevice8BitStorageFeatures& getPhysicalDevice8BitStorageFeatures() const {
         return device8BitStorageFeatures;
+    }
+    inline const VkPhysicalDeviceShaderDrawParametersFeatures& getPhysicalDeviceShaderDrawParametersFeatures() const {
+        return shaderDrawParametersFeatures;
     }
     inline const VkPhysicalDeviceAccelerationStructurePropertiesKHR& getPhysicalDeviceAccelerationStructureProperties() const {
         return accelerationStructureProperties;
@@ -327,6 +341,15 @@ private:
     VkPhysicalDeviceIDProperties physicalDeviceIDProperties{};
     VkPhysicalDeviceMemoryProperties physicalDeviceMemoryProperties{};
     VkPhysicalDeviceFeatures physicalDeviceFeatures{};
+#ifdef VK_VERSION_1_1
+    VkPhysicalDeviceVulkan11Features physicalDeviceVulkan11Features{};
+#endif
+#ifdef VK_VERSION_1_2
+    VkPhysicalDeviceVulkan12Features physicalDeviceVulkan12Features{};
+#endif
+#ifdef VK_VERSION_1_3
+    VkPhysicalDeviceVulkan13Features physicalDeviceVulkan13Features{};
+#endif
     VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties{};
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties{};
     VkPhysicalDeviceMeshShaderPropertiesNV meshShaderPropertiesNV{};
@@ -337,6 +360,7 @@ private:
     VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR uniformBufferStandardLayoutFeaturesKhr{};
     VkPhysicalDeviceShaderFloat16Int8Features shaderFloat16Int8Features{};
     VkPhysicalDevice8BitStorageFeatures device8BitStorageFeatures{};
+    VkPhysicalDeviceShaderDrawParametersFeatures shaderDrawParametersFeatures{};
     VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures{};
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures{};
     VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures{};

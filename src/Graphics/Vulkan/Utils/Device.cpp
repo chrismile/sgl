@@ -220,6 +220,82 @@ bool Device::isDeviceSuitable(
         }
     }
 
+#ifdef VK_VERSION_1_1
+    VkPhysicalDeviceVulkan11Features physicalDeviceVulkan11Features{};
+    physicalDeviceVulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 1, 0)
+            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 1, 0)) {
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &physicalDeviceVulkan11Features;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        const size_t numVulkan11Features =
+                (sizeof(VkBool32) + (&requestedDeviceFeatures.requestedVulkan11Features.shaderDrawParameters)
+                 - (&requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess)) / sizeof(VkBool32);
+        auto requestedVulkan11FeaturesArray = reinterpret_cast<const VkBool32*>(
+                &requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess);
+        auto physicalDeviceVulkan11FeaturesArray = reinterpret_cast<VkBool32*>(
+                &physicalDeviceVulkan11Features.storageBuffer16BitAccess);
+        for (size_t i = 0; i < numVulkan11Features; i++) {
+            if (requestedVulkan11FeaturesArray[i] && !physicalDeviceVulkan11FeaturesArray[i]) {
+                requestedFeaturesAvailable = false;
+                break;
+            }
+        }
+    }
+#endif
+#ifdef VK_VERSION_1_2
+    VkPhysicalDeviceVulkan12Features physicalDeviceVulkan12Features{};
+    physicalDeviceVulkan12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 2, 0)
+            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 2, 0)) {
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &physicalDeviceVulkan12Features;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        const size_t numVulkan12Features =
+                (sizeof(VkBool32) + (&requestedDeviceFeatures.requestedVulkan12Features.subgroupBroadcastDynamicId)
+                 - (&requestedDeviceFeatures.requestedVulkan12Features.samplerMirrorClampToEdge)) / sizeof(VkBool32);
+        auto requestedVulkan12FeaturesArray = reinterpret_cast<const VkBool32*>(
+                &requestedDeviceFeatures.requestedVulkan12Features.samplerMirrorClampToEdge);
+        auto physicalDeviceVulkan12FeaturesArray = reinterpret_cast<VkBool32*>(
+                &physicalDeviceVulkan12Features.samplerMirrorClampToEdge);
+        for (size_t i = 0; i < numVulkan12Features; i++) {
+            if (requestedVulkan12FeaturesArray[i] && !physicalDeviceVulkan12FeaturesArray[i]) {
+                requestedFeaturesAvailable = false;
+                break;
+            }
+        }
+    }
+#endif
+#ifdef VK_VERSION_1_3
+    VkPhysicalDeviceVulkan13Features physicalDeviceVulkan13Features{};
+    physicalDeviceVulkan13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 3, 0)
+            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 3, 0)) {
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &physicalDeviceVulkan13Features;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        const size_t numVulkan13Features =
+                (sizeof(VkBool32) + (&requestedDeviceFeatures.requestedVulkan13Features.maintenance4)
+                 - (&requestedDeviceFeatures.requestedVulkan13Features.robustImageAccess)) / sizeof(VkBool32);
+        auto requestedVulkan13FeaturesArray = reinterpret_cast<const VkBool32*>(
+                &requestedDeviceFeatures.requestedVulkan13Features.robustImageAccess);
+        auto physicalDeviceVulkan13FeaturesArray = reinterpret_cast<VkBool32*>(
+                &physicalDeviceVulkan13Features.robustImageAccess);
+        for (size_t i = 0; i < numVulkan13Features; i++) {
+            if (requestedVulkan13FeaturesArray[i] && !physicalDeviceVulkan13FeaturesArray[i]) {
+                requestedFeaturesAvailable = false;
+                break;
+            }
+        }
+    }
+#endif
+
     bool isSuitable = presentSupport && requiredExtensions.empty() && requestedFeaturesAvailable;
     if (isSuitable && !optionalDeviceExtensions.empty()) {
         for (const char* extensionName : optionalDeviceExtensions) {
@@ -412,6 +488,20 @@ void Device::createLogicalDeviceAndQueues(
             requestedDeviceFeatures.device8BitStorageFeatures = device8BitStorageFeatures;
         }
     }
+    if ((requestedDeviceFeatures.optionalEnableShaderDrawParametersFeatures
+            || requestedDeviceFeatures.shaderDrawParametersFeatures.shaderDrawParameters)
+            && instance->getInstanceVulkanVersion() >= VK_MAKE_API_VERSION(0, 1, 1, 0)) {
+        shaderDrawParametersFeatures.sType =
+                VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES;
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &shaderDrawParametersFeatures;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        if (requestedDeviceFeatures.shaderDrawParametersFeatures.shaderDrawParameters == VK_FALSE) {
+            requestedDeviceFeatures.shaderDrawParametersFeatures = shaderDrawParametersFeatures;
+        }
+    }
     if (deviceExtensionsSet.find(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) != deviceExtensionsSet.end()) {
         accelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
         VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
@@ -539,7 +629,7 @@ void Device::createLogicalDeviceAndQueues(
         queueInfosPtr = queueInfos;
     }
 
-    // Check if all requested features are available.
+    // Enable all available optional features.
     constexpr size_t numFeatures = sizeof(VkPhysicalDeviceFeatures) / sizeof(VkBool32);
     auto requestedPhysicalDeviceFeaturesArray = reinterpret_cast<VkBool32*>(
             &requestedDeviceFeatures.requestedPhysicalDeviceFeatures);
@@ -551,6 +641,137 @@ void Device::createLogicalDeviceAndQueues(
             requestedPhysicalDeviceFeaturesArray[i] = VK_TRUE;
         }
     }
+
+#ifdef VK_VERSION_1_1
+    physicalDeviceVulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 1, 0)
+            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 1, 0)) {
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &physicalDeviceVulkan11Features;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        const size_t numVulkan11Features =
+                (sizeof(VkBool32) + (&requestedDeviceFeatures.requestedVulkan11Features.shaderDrawParameters)
+                 - (&requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess)) / sizeof(VkBool32);
+        auto requestedVulkan11FeaturesArray = reinterpret_cast<VkBool32*>(
+                &requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess);
+        auto optionalVulkan11FeaturesArray = reinterpret_cast<VkBool32*>(
+                &requestedDeviceFeatures.optionalVulkan11Features.storageBuffer16BitAccess);
+        auto physicalDeviceVulkan11FeaturesArray = reinterpret_cast<VkBool32*>(
+                &physicalDeviceVulkan11Features.storageBuffer16BitAccess);
+        for (size_t i = 0; i < numVulkan11Features; i++) {
+            if (optionalVulkan11FeaturesArray[i] && physicalDeviceVulkan11FeaturesArray[i]) {
+                requestedVulkan11FeaturesArray[i] = VK_TRUE;
+            }
+        }
+    }
+#endif
+#ifdef VK_VERSION_1_2
+    physicalDeviceVulkan12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 2, 0)
+            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 2, 0)) {
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &physicalDeviceVulkan12Features;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        const size_t numVulkan12Features =
+                (sizeof(VkBool32) + (&requestedDeviceFeatures.requestedVulkan12Features.subgroupBroadcastDynamicId)
+                 - (&requestedDeviceFeatures.requestedVulkan12Features.samplerMirrorClampToEdge)) / sizeof(VkBool32);
+        auto requestedVulkan12FeaturesArray = reinterpret_cast<VkBool32*>(
+                &requestedDeviceFeatures.requestedVulkan12Features.samplerMirrorClampToEdge);
+        auto optionalVulkan12FeaturesArray = reinterpret_cast<VkBool32*>(
+                &requestedDeviceFeatures.optionalVulkan12Features.samplerMirrorClampToEdge);
+        auto physicalDeviceVulkan12FeaturesArray = reinterpret_cast<VkBool32*>(
+                &physicalDeviceVulkan12Features.samplerMirrorClampToEdge);
+        for (size_t i = 0; i < numVulkan12Features; i++) {
+            if (optionalVulkan12FeaturesArray[i] && physicalDeviceVulkan12FeaturesArray[i]) {
+                requestedVulkan12FeaturesArray[i] = VK_TRUE;
+            }
+        }
+    }
+#endif
+#ifdef VK_VERSION_1_3
+    physicalDeviceVulkan13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 3, 0)
+            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 3, 0)) {
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &physicalDeviceVulkan13Features;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        const size_t numVulkan13Features =
+                (sizeof(VkBool32) + (&requestedDeviceFeatures.requestedVulkan13Features.maintenance4)
+                 - (&requestedDeviceFeatures.requestedVulkan13Features.robustImageAccess)) / sizeof(VkBool32);
+        auto requestedVulkan13FeaturesArray = reinterpret_cast<VkBool32*>(
+                &requestedDeviceFeatures.requestedVulkan13Features.robustImageAccess);
+        auto optionalVulkan13FeaturesArray = reinterpret_cast<VkBool32*>(
+                &requestedDeviceFeatures.optionalVulkan13Features.robustImageAccess);
+        auto physicalDeviceVulkan13FeaturesArray = reinterpret_cast<VkBool32*>(
+                &physicalDeviceVulkan13Features.robustImageAccess);
+        for (size_t i = 0; i < numVulkan13Features; i++) {
+            if (optionalVulkan13FeaturesArray[i] && physicalDeviceVulkan13FeaturesArray[i]) {
+                requestedVulkan13FeaturesArray[i] = VK_TRUE;
+            }
+        }
+    }
+#endif
+
+
+    // Check if Vulkan 1.x extensions are used.
+#ifdef VK_VERSION_1_1
+    bool hasRequestedVulkan11Features = false;
+    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 1, 0)
+            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 1, 0)) {
+        const size_t numVulkan11Features =
+                (sizeof(VkBool32) + (&requestedDeviceFeatures.requestedVulkan11Features.shaderDrawParameters)
+                 - (&requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess)) / sizeof(VkBool32);
+        auto requestedVulkan11FeaturesArray = reinterpret_cast<VkBool32*>(
+                &requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess);
+        for (size_t i = 0; i < numVulkan11Features; i++) {
+            if (requestedVulkan11FeaturesArray[i]) {
+                hasRequestedVulkan11Features = true;
+            }
+        }
+    }
+#endif
+#ifdef VK_VERSION_1_2
+    bool hasRequestedVulkan12Features = false;
+    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 2, 0)
+            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 2, 0)) {
+        const size_t numVulkan12Features =
+                (sizeof(VkBool32) + (&requestedDeviceFeatures.requestedVulkan12Features.subgroupBroadcastDynamicId)
+                 - (&requestedDeviceFeatures.requestedVulkan12Features.samplerMirrorClampToEdge)) / sizeof(VkBool32);
+        auto requestedVulkan12FeaturesArray = reinterpret_cast<VkBool32*>(
+                &requestedDeviceFeatures.requestedVulkan12Features.samplerMirrorClampToEdge);
+        for (size_t i = 0; i < numVulkan12Features; i++) {
+            if (requestedVulkan12FeaturesArray[i]) {
+                hasRequestedVulkan12Features = true;
+            }
+        }
+    }
+#endif
+#ifdef VK_VERSION_1_3
+    bool hasRequestedVulkan13Features = false;
+    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 3, 0)
+            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 3, 0)) {
+        const size_t numVulkan13Features =
+                (sizeof(VkBool32) + (&requestedDeviceFeatures.requestedVulkan13Features.maintenance4)
+                 - (&requestedDeviceFeatures.requestedVulkan13Features.robustImageAccess)) / sizeof(VkBool32);
+        auto requestedVulkan13FeaturesArray = reinterpret_cast<VkBool32*>(
+                &requestedDeviceFeatures.requestedVulkan13Features.robustImageAccess);
+        for (size_t i = 0; i < numVulkan13Features; i++) {
+            if (requestedVulkan13FeaturesArray[i]) {
+                hasRequestedVulkan13Features = true;
+            }
+        }
+
+        // SPIR-V 1.6 needs VkPhysicalDeviceVulkan13Features::maintenance4.
+        requestedDeviceFeatures.requestedVulkan13Features.maintenance4 = VK_TRUE;
+        hasRequestedVulkan13Features = true;
+    }
+#endif
 
 
     VkDeviceCreateInfo deviceInfo{};
@@ -595,6 +816,10 @@ void Device::createLogicalDeviceAndQueues(
         *pNextPtr = &requestedDeviceFeatures.device8BitStorageFeatures;
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.device8BitStorageFeatures.pNext);
     }
+    if (requestedDeviceFeatures.shaderDrawParametersFeatures.shaderDrawParameters) {
+        *pNextPtr = &requestedDeviceFeatures.shaderDrawParametersFeatures;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.shaderDrawParametersFeatures.pNext);
+    }
     if (requestedDeviceFeatures.accelerationStructureFeatures.accelerationStructure) {
         *pNextPtr = &requestedDeviceFeatures.accelerationStructureFeatures;
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.accelerationStructureFeatures.pNext);
@@ -619,30 +844,26 @@ void Device::createLogicalDeviceAndQueues(
         *pNextPtr = &requestedDeviceFeatures.fragmentShaderBarycentricFeaturesNV;
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.fragmentShaderBarycentricFeaturesNV.pNext);
     }
-/*#ifdef VK_VERSION_1_1
     vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
-    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 1, 0)
+#ifdef VK_VERSION_1_1
+    if (hasRequestedVulkan11Features && getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 1, 0)
             && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 1, 0)) {
-        *pNextPtr = &requestedDeviceFeatures.vulkan11Features;
-        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.vulkan11Features.pNext);
+        *pNextPtr = &requestedDeviceFeatures.requestedVulkan11Features;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.requestedVulkan11Features.pNext);
     }
 #endif
 #ifdef VK_VERSION_1_2
-    vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
-    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 2, 0)
+    if (hasRequestedVulkan12Features && getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 2, 0)
             && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 2, 0)) {
-        *pNextPtr = &requestedDeviceFeatures.vulkan12Features;
-        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.vulkan12Features.pNext);
+        *pNextPtr = &requestedDeviceFeatures.requestedVulkan12Features;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.requestedVulkan12Features.pNext);
     }
-#endif*/
+#endif
 #ifdef VK_VERSION_1_3
-    vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
-    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 3, 0)
+    if (hasRequestedVulkan13Features && getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 3, 0)
             && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 3, 0)) {
-        // SPIR-V 1.6 needs VkPhysicalDeviceVulkan13Features::maintenance4.
-        requestedDeviceFeatures.vulkan13Features.maintenance4 = VK_TRUE;
-        *pNextPtr = &requestedDeviceFeatures.vulkan13Features;
-        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.vulkan13Features.pNext);
+        *pNextPtr = &requestedDeviceFeatures.requestedVulkan13Features;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.requestedVulkan13Features.pNext);
     }
 #endif
 
