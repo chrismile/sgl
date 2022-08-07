@@ -80,8 +80,8 @@ public:
      * Linux, Android and Windows systems.
      */
     Buffer(
-            Device* device, size_t sizeInBytes, void* dataPtr, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
-            bool queueExclusive = true, bool exportMemory = false);
+            Device* device, size_t sizeInBytes, const void* dataPtr, VkBufferUsageFlags usage,
+            VmaMemoryUsage memoryUsage, bool queueExclusive = true, bool exportMemory = false);
     /**
      * Does not allocate any memory and buffer. This constructor is mainly needed when later calling
      * @see createFromD3D12SharedResourceHandle.
@@ -104,7 +104,7 @@ public:
      * @param sizeInBytesData The size of the data to upload in bytes.
      * @param dataPtr Data that is uploaded to the GPU.
      */
-    void uploadData(size_t sizeInBytesData, void* dataPtr);
+    void uploadData(size_t sizeInBytesData, const void* dataPtr);
 
     /**
      * Uploads memory to the GPU. If memoryUsage is not VMA_MEMORY_USAGE_CPU_ONLY, VMA_MEMORY_USAGE_CPU_TO_GPU or
@@ -116,7 +116,7 @@ public:
      * @param commandBuffer The command buffer to use for the copy operation.
      * If the command buffer is a null pointer, the command will be executed synchronously.
      */
-    void uploadData(size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer);
+    void uploadData(size_t sizeInBytesData, const void* dataPtr, VkCommandBuffer commandBuffer);
 
     /**
      * Uploads memory to the GPU. If memoryUsage is not VMA_MEMORY_USAGE_CPU_ONLY, VMA_MEMORY_USAGE_CPU_TO_GPU or
@@ -127,7 +127,8 @@ public:
      * @param stagingBuffer A reference to which the used staging buffer should be stored. This object must not be
      * deleted before the device queue has finished the copy operation!
      */
-    void uploadData(size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer, BufferPtr& stagingBuffer);
+    void uploadData(
+            size_t sizeInBytesData, const void* dataPtr, VkCommandBuffer commandBuffer, BufferPtr& stagingBuffer);
 
     /**
      * Uploads memory to the GPU. If memoryUsage is not VMA_MEMORY_USAGE_CPU_ONLY, VMA_MEMORY_USAGE_CPU_TO_GPU or
@@ -137,7 +138,7 @@ public:
      * @param sizeInBytesData The size of the data to upload in bytes.
      * @param dataPtr Data that is uploaded to the GPU.
      */
-    void uploadDataOffset(size_t regionOffset, size_t sizeInBytesData, void* dataPtr);
+    void uploadDataOffset(size_t regionOffset, size_t sizeInBytesData, const void* dataPtr);
 
     /**
      * Uploads memory to the GPU. If memoryUsage is not VMA_MEMORY_USAGE_CPU_ONLY, VMA_MEMORY_USAGE_CPU_TO_GPU or
@@ -150,7 +151,8 @@ public:
      * @param commandBuffer The command buffer to use for the copy operation.
      * If the command buffer is a null pointer, the command will be executed synchronously.
      */
-    void uploadDataOffset(size_t regionOffset, size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer);
+    void uploadDataOffset(
+            size_t regionOffset, size_t sizeInBytesData, const void* dataPtr, VkCommandBuffer commandBuffer);
 
     /**
      * Uploads memory to the GPU. If memoryUsage is not VMA_MEMORY_USAGE_CPU_ONLY, VMA_MEMORY_USAGE_CPU_TO_GPU or
@@ -163,7 +165,7 @@ public:
      * deleted before the device queue has finished the copy operation!
      */
     void uploadDataOffset(
-            size_t regionOffset, size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer,
+            size_t regionOffset, size_t sizeInBytesData, const void* dataPtr, VkCommandBuffer commandBuffer,
             BufferPtr& stagingBuffer);
 
     /**
@@ -172,8 +174,8 @@ public:
      * correct synchronization primitives are used to avoid race conditions when accessing the updated buffer.
      * Also, VK_BUFFER_USAGE_TRANSFER_DST_BIT must be specified in the VkBufferUsageFlags when creating the buffer.
      */
-    void updateData(size_t offset, size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer);
-    void updateData(size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer);
+    void updateData(size_t offset, size_t sizeInBytesData, const void* dataPtr, VkCommandBuffer commandBuffer);
+    void updateData(size_t sizeInBytesData, const void* dataPtr, VkCommandBuffer commandBuffer);
 
     /**
      * Copies the data of this buffer object to the passed data object.

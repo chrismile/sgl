@@ -76,6 +76,8 @@ inline int nextPowerOfTwo(int x) { --x; x |= x >> 1; x |= x >> 2; x |= x >> 4; x
 inline int lastPowerOfTwo(int x) { return nextPowerOfTwo(x/2+1); }
 
 inline int iceil(int x, int y) { return (x - 1) / y + 1; }
+// Avoids going into negative for x == 0 and overflow.
+inline uint32_t uiceil(uint32_t x, uint32_t y) { return x > 0 ? (x - 1) / y + 1 : 0; }
 
 inline int nextMultiple(int num, int multiple) {
     int remainder = num % multiple;

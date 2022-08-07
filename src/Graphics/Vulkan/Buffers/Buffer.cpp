@@ -117,7 +117,7 @@ Buffer::Buffer(
 }
 
 Buffer::Buffer(
-        Device* device, size_t sizeInBytes, void* dataPtr, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
+        Device* device, size_t sizeInBytes, const void* dataPtr, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
         bool queueExclusive, bool exportMemory)
         : Buffer(device, sizeInBytes, usage, memoryUsage, queueExclusive, exportMemory) {
     uploadData(sizeInBytes, dataPtr);
@@ -244,7 +244,7 @@ BufferPtr Buffer::copy(bool copyContent) {
     return newBuffer;
 }
 
-void Buffer::uploadData(size_t sizeInBytesData, void* dataPtr) {
+void Buffer::uploadData(size_t sizeInBytesData, const void* dataPtr) {
     if (sizeInBytesData > sizeInBytes) {
         sgl::Logfile::get()->throwError(
                 "Error in Buffer::uploadData: sizeInBytesData > sizeInBytes");
@@ -282,7 +282,7 @@ void Buffer::uploadData(size_t sizeInBytesData, void* dataPtr) {
     }
 }
 
-void Buffer::uploadData(size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer) {
+void Buffer::uploadData(size_t sizeInBytesData, const void* dataPtr, VkCommandBuffer commandBuffer) {
     if (sizeInBytesData > sizeInBytes) {
         sgl::Logfile::get()->throwError(
                 "Error in Buffer::uploadData: sizeInBytesData > sizeInBytes");
@@ -302,7 +302,7 @@ void Buffer::uploadData(size_t sizeInBytesData, void* dataPtr, VkCommandBuffer c
 }
 
 void Buffer::uploadData(
-        size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer, BufferPtr& stagingBuffer) {
+        size_t sizeInBytesData, const void* dataPtr, VkCommandBuffer commandBuffer, BufferPtr& stagingBuffer) {
     if (sizeInBytesData > sizeInBytes) {
         sgl::Logfile::get()->throwError(
                 "Error in Buffer::uploadData: sizeInBytesData > sizeInBytes");
@@ -335,7 +335,7 @@ void Buffer::uploadData(
     }
 }
 
-void Buffer::uploadDataOffset(size_t regionOffset, size_t sizeInBytesData, void* dataPtr) {
+void Buffer::uploadDataOffset(size_t regionOffset, size_t sizeInBytesData, const void* dataPtr) {
     if (sizeInBytesData > sizeInBytes) {
         sgl::Logfile::get()->throwError(
                 "Error in Buffer::uploadData: sizeInBytesData > sizeInBytes");
@@ -375,7 +375,7 @@ void Buffer::uploadDataOffset(size_t regionOffset, size_t sizeInBytesData, void*
 }
 
 void Buffer::uploadDataOffset(
-        size_t regionOffset, size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer) {
+        size_t regionOffset, size_t sizeInBytesData, const void* dataPtr, VkCommandBuffer commandBuffer) {
     if (sizeInBytesData > sizeInBytes) {
         sgl::Logfile::get()->throwError(
                 "Error in Buffer::uploadData: sizeInBytesData > sizeInBytes");
@@ -396,7 +396,7 @@ void Buffer::uploadDataOffset(
 }
 
 void Buffer::uploadDataOffset(
-        size_t regionOffset, size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer,
+        size_t regionOffset, size_t sizeInBytesData, const void* dataPtr, VkCommandBuffer commandBuffer,
         BufferPtr& stagingBuffer) {
     if (sizeInBytesData > sizeInBytes) {
         sgl::Logfile::get()->throwError(
@@ -431,7 +431,7 @@ void Buffer::uploadDataOffset(
     }
 }
 
-void Buffer::updateData(size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer) {
+void Buffer::updateData(size_t sizeInBytesData, const void* dataPtr, VkCommandBuffer commandBuffer) {
     updateData(0, sizeInBytesData, dataPtr, commandBuffer);
 }
 
@@ -455,7 +455,7 @@ void Buffer::copyDataTo(
             commandBuffer, this->getVkBuffer(), destinationBuffer->getVkBuffer(), 1, &bufferCopy);
 }
 
-void Buffer::updateData(size_t offset, size_t sizeInBytesData, void* dataPtr, VkCommandBuffer commandBuffer) {
+void Buffer::updateData(size_t offset, size_t sizeInBytesData, const void* dataPtr, VkCommandBuffer commandBuffer) {
     if (sizeInBytesData > 65536) {
         Logfile::get()->throwError(
                 "Error in Buffer::uploadDataAsync: vkCmdUpdateBuffer only supports transferring up to 65536 "
