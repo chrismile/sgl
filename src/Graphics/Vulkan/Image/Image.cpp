@@ -849,10 +849,10 @@ void Image::insertMemoryBarrierSubresource(
     barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.image = this->getVkImage();
-    barrier.subresourceRange.baseMipLevel = 0;
-    barrier.subresourceRange.levelCount = this->getImageSettings().mipLevels;
-    barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount = this->getImageSettings().arrayLayers;
+    barrier.subresourceRange.baseMipLevel = baseMipLevel;
+    barrier.subresourceRange.levelCount = levelCount;
+    barrier.subresourceRange.baseArrayLayer = baseArrayLayer;
+    barrier.subresourceRange.layerCount = layerCount;
     if (isDepthStencilFormat(this->getImageSettings().format)) {
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
         if (hasStencilComponent(this->getImageSettings().format)) {

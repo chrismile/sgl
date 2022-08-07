@@ -387,6 +387,31 @@ void Device::createLogicalDeviceAndQueues(
             requestedDeviceFeatures.uniformBufferStandardLayoutFeaturesKhr = uniformBufferStandardLayoutFeaturesKhr;
         }
     }
+    if (deviceExtensionsSet.find(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME) != deviceExtensionsSet.end()) {
+        shaderFloat16Int8Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES;
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &shaderFloat16Int8Features;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        if (requestedDeviceFeatures.shaderFloat16Int8Features.shaderFloat16 == VK_FALSE
+                && requestedDeviceFeatures.shaderFloat16Int8Features.shaderInt8 == VK_FALSE) {
+            requestedDeviceFeatures.shaderFloat16Int8Features = shaderFloat16Int8Features;
+        }
+    }
+    if (deviceExtensionsSet.find(VK_KHR_8BIT_STORAGE_EXTENSION_NAME) != deviceExtensionsSet.end()) {
+        device8BitStorageFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES;
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &device8BitStorageFeatures;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        if (requestedDeviceFeatures.device8BitStorageFeatures.storageBuffer8BitAccess == VK_FALSE
+                && requestedDeviceFeatures.device8BitStorageFeatures.uniformAndStorageBuffer8BitAccess == VK_FALSE
+                && requestedDeviceFeatures.device8BitStorageFeatures.storagePushConstant8 == VK_FALSE) {
+            requestedDeviceFeatures.device8BitStorageFeatures = device8BitStorageFeatures;
+        }
+    }
     if (deviceExtensionsSet.find(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) != deviceExtensionsSet.end()) {
         accelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
         VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
@@ -558,6 +583,17 @@ void Device::createLogicalDeviceAndQueues(
     if (requestedDeviceFeatures.uniformBufferStandardLayoutFeaturesKhr.uniformBufferStandardLayout) {
         *pNextPtr = &requestedDeviceFeatures.uniformBufferStandardLayoutFeaturesKhr;
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.uniformBufferStandardLayoutFeaturesKhr.pNext);
+    }
+    if (requestedDeviceFeatures.shaderFloat16Int8Features.shaderFloat16
+            || requestedDeviceFeatures.shaderFloat16Int8Features.shaderInt8) {
+        *pNextPtr = &requestedDeviceFeatures.shaderFloat16Int8Features;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.shaderFloat16Int8Features.pNext);
+    }
+    if (requestedDeviceFeatures.device8BitStorageFeatures.storageBuffer8BitAccess
+            || requestedDeviceFeatures.device8BitStorageFeatures.uniformAndStorageBuffer8BitAccess
+            || requestedDeviceFeatures.device8BitStorageFeatures.storagePushConstant8) {
+        *pNextPtr = &requestedDeviceFeatures.device8BitStorageFeatures;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.device8BitStorageFeatures.pNext);
     }
     if (requestedDeviceFeatures.accelerationStructureFeatures.accelerationStructure) {
         *pNextPtr = &requestedDeviceFeatures.accelerationStructureFeatures;
