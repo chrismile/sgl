@@ -218,10 +218,10 @@ if (${SUPPORT_VULKAN} AND ${shaderc_FOUND})
     target_compile_definitions(sgl PUBLIC VK_NO_PROTOTYPES)
     if (${Vulkan_FOUND} AND ${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.21.0")
         target_link_libraries(sgl PRIVATE Vulkan::Headers)
-        target_include_directories(sgl INTERFACE
-                $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Vulkan/libs/Vulkan-Headers>
-                $<INSTALL_INTERFACE:include/sgl/Graphics/Vulkan/libs/Vulkan-Headers> # <prefix>/include/sgl
-        )
+        #target_include_directories(sgl INTERFACE
+        #        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Vulkan/libs/Vulkan-Headers>
+        #        $<INSTALL_INTERFACE:include/sgl/Graphics/Vulkan/libs/Vulkan-Headers> # <prefix>/include/sgl
+        #)
     else()
         target_include_directories(sgl PUBLIC
                 $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Vulkan/libs/Vulkan-Headers>
@@ -303,6 +303,15 @@ if (${SUPPORT_VULKAN} AND ${shaderc_FOUND})
     else()
         find_package(PkgConfig REQUIRED)
         pkg_check_modules(SHADERC REQUIRED IMPORTED_TARGET shaderc)
+
+        # Check for Vulkan 1.3 support.
+        set(SHADERC_ENV_PATH "${SHADERC_INCLUDEDIR}/shaderc/env.h")
+        file(READ "${SHADERC_ENV_PATH}" SHADERC_ENV_STRING)
+        string(FIND "${SHADERC_ENV_STRING}" "shaderc_env_version_vulkan_1_3" SHADERC_VULKAN_13_MATCHRES)
+        if(${SHADERC_VULKAN_13_MATCHRES} EQUAL -1)
+            target_compile_definitions(sgl PRIVATE SHADERC_NO_VULKAN_1_3_SUPPORT)
+        endif ()
+
         target_link_libraries(sgl PRIVATE PkgConfig::SHADERC)
     endif()
 endif()

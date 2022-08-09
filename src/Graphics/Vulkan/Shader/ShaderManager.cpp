@@ -250,7 +250,7 @@ ShaderModulePtr ShaderManagerVk::loadAsset(ShaderModuleInfo& shaderInfo) {
         compileOptions.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_1);
         compileOptions.SetTargetSpirv(shaderc_spirv_version_1_3);
     }
-#if defined(VK_VERSION_1_3) && VK_HEADER_VERSION >= 204
+#if defined(VK_VERSION_1_3) && VK_HEADER_VERSION >= 204 && !defined(SHADERC_NO_VULKAN_1_3_SUPPORT)
     else if (device->getInstance()->getInstanceVulkanVersion() < VK_MAKE_API_VERSION(0, 1, 3, 0)
                || device->getApiVersion() < VK_MAKE_API_VERSION(0, 1, 3, 0)
                || device->getInstance()->getApplicationInfo().apiVersion < VK_MAKE_API_VERSION(0, 1, 3, 0)) {

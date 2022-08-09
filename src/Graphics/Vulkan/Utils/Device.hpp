@@ -40,7 +40,9 @@
 #include <Defs.hpp>
 #include "../libs/volk/volk.h"
 #include "../libs/VMA/vk_mem_alloc.h"
-#		include <vulkan/vk_platform.h>
+#include <vulkan/vk_platform.h>
+#include "VulkanCompat.hpp"
+
 
 namespace sgl { class Window; }
 
@@ -135,14 +137,23 @@ struct DLL_OBJECT DeviceFeatures {
 #ifdef VK_VERSION_1_1
     VkPhysicalDeviceVulkan11Features requestedVulkan11Features{};
     VkPhysicalDeviceVulkan11Features optionalVulkan11Features{};
+#else
+    VkPhysicalDeviceVulkan11Features_Compat requestedVulkan11Features{};
+    VkPhysicalDeviceVulkan11Features_Compat optionalVulkan11Features{};
 #endif
 #ifdef VK_VERSION_1_2
     VkPhysicalDeviceVulkan12Features requestedVulkan12Features{};
     VkPhysicalDeviceVulkan12Features optionalVulkan12Features{};
+#else
+    VkPhysicalDeviceVulkan12Features_Compat requestedVulkan12Features{};
+    VkPhysicalDeviceVulkan12Features_Compat optionalVulkan12Features{};
 #endif
 #ifdef VK_VERSION_1_3
     VkPhysicalDeviceVulkan13Features requestedVulkan13Features{};
     VkPhysicalDeviceVulkan13Features optionalVulkan13Features{};
+#else
+    VkPhysicalDeviceVulkan13Features_Compat requestedVulkan13Features{};
+    VkPhysicalDeviceVulkan13Features_Compat optionalVulkan13Features{};
 #endif
 };
 
@@ -343,12 +354,18 @@ private:
     VkPhysicalDeviceFeatures physicalDeviceFeatures{};
 #ifdef VK_VERSION_1_1
     VkPhysicalDeviceVulkan11Features physicalDeviceVulkan11Features{};
+#else
+    VkPhysicalDeviceVulkan11Features_Compat physicalDeviceVulkan11Features{};
 #endif
 #ifdef VK_VERSION_1_2
     VkPhysicalDeviceVulkan12Features physicalDeviceVulkan12Features{};
+#else
+    VkPhysicalDeviceVulkan12Features_Compat physicalDeviceVulkan12Features{};
 #endif
 #ifdef VK_VERSION_1_3
     VkPhysicalDeviceVulkan13Features physicalDeviceVulkan13Features{};
+#else
+    VkPhysicalDeviceVulkan13Features_Compat physicalDeviceVulkan13Features{};
 #endif
     VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties{};
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties{};
