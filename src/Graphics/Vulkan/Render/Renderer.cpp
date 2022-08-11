@@ -201,6 +201,7 @@ void Renderer::beginCommandBuffer() {
     }
 
     recordingCommandBufferStarted = true;
+    isCommandBufferInRecordingState = true;
 }
 
 VkCommandBuffer Renderer::endCommandBuffer() {
@@ -212,13 +213,9 @@ VkCommandBuffer Renderer::endCommandBuffer() {
     computePipeline = ComputePipelinePtr();
     rayTracingPipeline = RayTracingPipelinePtr();
     lastFramebuffer = FramebufferPtr();
+    isCommandBufferInRecordingState = false;
 
     return commandBuffer;
-}
-
-void Renderer::setCustomCommandBuffer(VkCommandBuffer commandBuffer, bool useGraphicsQueue) {
-    customCommandBuffer = commandBuffer;
-    this->useGraphicsQueue = useGraphicsQueue;
 }
 
 std::vector<sgl::vk::CommandBufferPtr> Renderer::getFrameCommandBuffers() {
@@ -227,8 +224,25 @@ std::vector<sgl::vk::CommandBufferPtr> Renderer::getFrameCommandBuffers() {
     return frameCommandBuffersCopy;
 }
 
+void Renderer::setCustomCommandBuffer(VkCommandBuffer _commandBuffer, bool _useGraphicsQueue) {
+    cachedCommandBuffer = commandBuffer;
+    cachedUseGraphicsQueue = useGraphicsQueue;
+    cachedRecordingCommandBufferStarted = recordingCommandBufferStarted;
+    cachedIsCommandBufferInRecordingState = isCommandBufferInRecordingState;
+    customCommandBuffer = _commandBuffer;
+    useGraphicsQueue = _useGraphicsQueue;
+}
+
 void Renderer::resetCustomCommandBuffer() {
-    setCustomCommandBuffer(VK_NULL_HANDLE);
+    commandBuffer = cachedCommandBuffer;
+    recordingCommandBufferStarted = cachedRecordingCommandBufferStarted;
+    isCommandBufferInRecordingState = cachedIsCommandBufferInRecordingState;
+    useGraphicsQueue = cachedUseGraphicsQueue;
+    cachedUseGraphicsQueue = true;
+    customCommandBuffer = VK_NULL_HANDLE;
+    cachedCommandBuffer = VK_NULL_HANDLE;
+    cachedRecordingCommandBufferStarted = false;
+    cachedIsCommandBufferInRecordingState = false;
 }
 
 void Renderer::pushCommandBuffer(const sgl::vk::CommandBufferPtr& commandBuffer) {

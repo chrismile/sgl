@@ -78,7 +78,7 @@ public:
     void beginCommandBuffer();
     VkCommandBuffer endCommandBuffer();
     /// Use VK_NULL_HANDLE to reset the custom command buffer.
-    void setCustomCommandBuffer(VkCommandBuffer commandBuffer, bool useGraphicsQueue = true);
+    void setCustomCommandBuffer(VkCommandBuffer _commandBuffer, bool _useGraphicsQueue = true);
     void resetCustomCommandBuffer();
     void pushCommandBuffer(const sgl::vk::CommandBufferPtr& commandBuffer);
     std::vector<sgl::vk::CommandBufferPtr> getFrameCommandBuffers();
@@ -200,6 +200,7 @@ public:
         lastFramebuffer = FramebufferPtr();
         recordingCommandBufferStarted = true;
     }
+    [[nodiscard]] inline bool getIsCommandBufferInRecordingState() const { return isCommandBufferInRecordingState; }
     [[nodiscard]] inline const glm::mat4& getModelMatrix() const { return matrixBlock.mMatrix; }
     [[nodiscard]] inline const glm::mat4& getViewMatrix() const { return matrixBlock.vMatrix; }
     [[nodiscard]] inline const glm::mat4& getProjectionMatrix() const { return matrixBlock.pMatrix; }
@@ -213,7 +214,6 @@ private:
     std::vector<sgl::vk::CommandBufferPtr> frameCommandBuffers;
     VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
     VkCommandBuffer customCommandBuffer = VK_NULL_HANDLE;
-    bool useGraphicsQueue = true;
 
     // Global descriptor pool that can be used by ComputeData, RasterData and RayTracingData.
     VkDescriptorPool globalDescriptorPool;
@@ -242,7 +242,13 @@ private:
     MatrixBlock matrixBlock;
     BufferPtr currentMatrixBlockBuffer;
     VkDescriptorSet matrixBlockDescriptorSet;
+    bool useGraphicsQueue = true;
     bool recordingCommandBufferStarted = true;
+    bool isCommandBufferInRecordingState = false;
+    bool cachedUseGraphicsQueue = true;
+    VkCommandBuffer cachedCommandBuffer = VK_NULL_HANDLE;
+    bool cachedRecordingCommandBufferStarted = false;
+    bool cachedIsCommandBufferInRecordingState = false;
 
     // Some data needs to be stored per swapchain image.
     struct FrameCache {
