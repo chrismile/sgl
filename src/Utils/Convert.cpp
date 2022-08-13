@@ -32,6 +32,10 @@
 namespace sgl
 {
 
+std::string floatToString(float f, int decimalPrecision) {
+    return toString(f, decimalPrecision);
+}
+
 uint32_t hexadecimalStringToUint32(const std::string &stringObject) {
     std::stringstream strstr;
     strstr << std::hex << stringObject;
