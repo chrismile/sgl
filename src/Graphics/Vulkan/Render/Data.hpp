@@ -207,6 +207,18 @@ public:
       */
     void dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ, VkCommandBuffer commandBuffer);
 
+    /**
+     * Dispatches the compute shader using the passed command buffer.
+     * NOTE: The preferred way for this is using @see sgl::vk::Renderer.
+     * @param dispatchIndirectBuffer A buffer containing a struct of the type VkDispatchIndirectCommand.
+     * @param offset A byte offset into the dispatch indirect buffer.
+     * @param commandBuffer The command buffer in which to enqueue the dispatched compute shader.
+     */
+    void dispatchIndirect(
+            const sgl::vk::BufferPtr& dispatchIndirectBuffer, VkDeviceSize offset, VkCommandBuffer commandBuffer);
+    void dispatchIndirect(
+            const sgl::vk::BufferPtr& dispatchIndirectBuffer, VkCommandBuffer commandBuffer);
+
     // Push constants for @see dispatch.
     void pushConstants(uint32_t offset, uint32_t size, const void* data, VkCommandBuffer commandBuffer);
     template<class T>
@@ -251,22 +263,22 @@ public:
      * For use with vkCmdDrawIndirect, vkCmdDrawIndirectCount, vkCmdDrawIndexedIndirect, vkCmdDrawIndexedIndirectCount,
      * vkCmdDrawMeshTasksIndirectNV and vkCmdDrawMeshTasksIndirectCountNV.
      */
-     /**
-      * Sets the indirect draw command buffer. It contains entries either of the type VkDrawIndirectCommand for
-      * vkCmdDrawIndirect and vkCmdDrawIndirectCount, or VkDrawIndexedIndirectCommand for vkCmdDrawIndexedIndirect and
-      * vkCmdDrawIndexedIndirectCount, or VkDrawMeshTasksIndirectCommandNV for vkCmdDrawMeshTasksIndirectNV and
-      * vkCmdDrawMeshTasksIndirectCountNV.
-      * @param buffer The buffer containing the VkDrawIndirectCommand/VkDrawIndexedIndirectCommand/
-      * VkDrawMeshTasksIndirectCommandNV entries.
-      * @param stride Stride in bytes between two entries. It is usually either sizeof(VkDrawIndirectCommand),
-      * sizeof(VkDrawIndexedIndirectCommand) or sizeof(VkDrawMeshTasksIndirectCommandNV).
-      * @param offset Offset in bytes to the first entry in the buffer.
-      */
+    /**
+     * Sets the indirect draw command buffer. It contains entries either of the type VkDrawIndirectCommand for
+     * vkCmdDrawIndirect and vkCmdDrawIndirectCount, or VkDrawIndexedIndirectCommand for vkCmdDrawIndexedIndirect and
+     * vkCmdDrawIndexedIndirectCount, or VkDrawMeshTasksIndirectCommandNV for vkCmdDrawMeshTasksIndirectNV and
+     * vkCmdDrawMeshTasksIndirectCountNV.
+     * @param buffer The buffer containing the VkDrawIndirectCommand/VkDrawIndexedIndirectCommand/
+     * VkDrawMeshTasksIndirectCommandNV entries.
+     * @param stride Stride in bytes between two entries. It is usually either sizeof(VkDrawIndirectCommand),
+     * sizeof(VkDrawIndexedIndirectCommand) or sizeof(VkDrawMeshTasksIndirectCommandNV).
+     * @param offset Offset in bytes to the first entry in the buffer.
+     */
     void setIndirectDrawBuffer(const BufferPtr& buffer, uint32_t stride, VkDeviceSize offset = 0) {
-         indirectDrawBuffer = buffer;
-         indirectDrawBufferStride = stride;
-         indirectDrawBufferOffset = offset;
-     }
+        indirectDrawBuffer = buffer;
+        indirectDrawBufferStride = stride;
+        indirectDrawBufferOffset = offset;
+    }
     /**
      * For vkCmdDrawIndirect, vkCmdDrawIndexedIndirect and vkCmdDrawMeshTasksIndirectNV.
      * @param drawCount The number of elements to read from the indirect draw buffer.

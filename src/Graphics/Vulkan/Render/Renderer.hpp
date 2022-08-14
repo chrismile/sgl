@@ -97,6 +97,11 @@ public:
 
     // Compute pipeline.
     void dispatch(const ComputeDataPtr& computeData, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
+    // dispatchIndirectBuffer is a buffer containing a struct of the type VkDispatchIndirectCommand.
+    void dispatchIndirect(
+            const ComputeDataPtr& computeData, const sgl::vk::BufferPtr& dispatchIndirectBuffer, VkDeviceSize offset);
+    void dispatchIndirect(
+            const ComputeDataPtr& computeData, const sgl::vk::BufferPtr& dispatchIndirectBuffer);
 
     // Ray tracing pipeline.
     void traceRays(

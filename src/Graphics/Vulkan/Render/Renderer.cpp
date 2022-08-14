@@ -559,6 +559,38 @@ void Renderer::dispatch(
     vkCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
 }
 
+void Renderer::dispatchIndirect(
+        const ComputeDataPtr& computeData, const sgl::vk::BufferPtr& dispatchIndirectBuffer, VkDeviceSize offset) {
+    bool isNewPipeline = false;
+    ComputePipelinePtr newComputePipeline = computeData->getComputePipeline();
+    if (computePipeline != newComputePipeline) {
+        computePipeline = newComputePipeline;
+        isNewPipeline = true;
+    }
+
+    if (isNewPipeline) {
+        vkCmdBindPipeline(
+                commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                computePipeline->getVkPipeline());
+    }
+
+    computeData->_updateDescriptorSets();
+    VkDescriptorSet descriptorSet = computeData->getVkDescriptorSet();
+    if (descriptorSet != VK_NULL_HANDLE) {
+        vkCmdBindDescriptorSets(
+                commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                computePipeline->getVkPipelineLayout(),
+                0, 1, &descriptorSet, 0, nullptr);
+    }
+
+    vkCmdDispatchIndirect(commandBuffer, dispatchIndirectBuffer->getVkBuffer(), offset);
+}
+
+void Renderer::dispatchIndirect(
+        const ComputeDataPtr& computeData, const sgl::vk::BufferPtr& dispatchIndirectBuffer) {
+    dispatchIndirect(computeData, dispatchIndirectBuffer, 0);
+}
+
 void Renderer::traceRays(
         const RayTracingDataPtr& rayTracingData,
         uint32_t launchSizeX, uint32_t launchSizeY, uint32_t launchSizeZ) {

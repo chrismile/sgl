@@ -590,6 +590,28 @@ void ComputeData::dispatch(
     vkCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
 }
 
+void ComputeData::dispatchIndirect(
+        const sgl::vk::BufferPtr& dispatchIndirectBuffer, VkDeviceSize offset, VkCommandBuffer commandBuffer) {
+    vkCmdBindPipeline(
+            commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+            computePipeline->getVkPipeline());
+
+    _updateDescriptorSets();
+    VkDescriptorSet descriptorSet = getVkDescriptorSet();
+    if (descriptorSet != VK_NULL_HANDLE) {
+        vkCmdBindDescriptorSets(
+                commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                computePipeline->getVkPipelineLayout(),
+                0, 1, &descriptorSet, 0, nullptr);
+    }
+
+    vkCmdDispatchIndirect(commandBuffer, dispatchIndirectBuffer->getVkBuffer(), offset);
+}
+
+void ComputeData::dispatchIndirect(const sgl::vk::BufferPtr& dispatchIndirectBuffer, VkCommandBuffer commandBuffer) {
+    dispatchIndirect(dispatchIndirectBuffer, 0, commandBuffer);
+}
+
 void ComputeData::pushConstants(uint32_t offset, uint32_t size, const void* data, VkCommandBuffer commandBuffer) {
     vkCmdPushConstants(
             commandBuffer, computePipeline->getVkPipelineLayout(), VK_SHADER_STAGE_COMPUTE_BIT, offset, size, data);
