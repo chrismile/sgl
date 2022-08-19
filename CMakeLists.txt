@@ -299,21 +299,21 @@ if (${SUPPORT_VULKAN} AND ${shaderc_FOUND})
         target_link_libraries(spirvtoolsopt INTERFACE spirvtools)
         target_link_libraries(shaderc INTERFACE spirvtoolsopt glslang OSDependent OGLCompiler HLSL SPIRV MachineIndependent)
 
+        set(SHADERC_ENV_PATH "${VCPKG_INCLUDE_DIR}/shaderc/env.h")
         target_link_libraries(sgl PRIVATE shaderc shaderc_util)
     else()
         find_package(PkgConfig REQUIRED)
         pkg_check_modules(SHADERC REQUIRED IMPORTED_TARGET shaderc)
-
-        # Check for Vulkan 1.3 support.
         set(SHADERC_ENV_PATH "${SHADERC_INCLUDEDIR}/shaderc/env.h")
-        file(READ "${SHADERC_ENV_PATH}" SHADERC_ENV_STRING)
-        string(FIND "${SHADERC_ENV_STRING}" "shaderc_env_version_vulkan_1_3" SHADERC_VULKAN_13_MATCHRES)
-        if(${SHADERC_VULKAN_13_MATCHRES} EQUAL -1)
-            target_compile_definitions(sgl PRIVATE SHADERC_NO_VULKAN_1_3_SUPPORT)
-        endif ()
-
         target_link_libraries(sgl PRIVATE PkgConfig::SHADERC)
     endif()
+
+    # Check for Vulkan 1.3 support.
+    file(READ "${SHADERC_ENV_PATH}" SHADERC_ENV_STRING)
+    string(FIND "${SHADERC_ENV_STRING}" "shaderc_env_version_vulkan_1_3" SHADERC_VULKAN_13_MATCHRES)
+    if(${SHADERC_VULKAN_13_MATCHRES} EQUAL -1)
+        target_compile_definitions(sgl PRIVATE SHADERC_NO_VULKAN_1_3_SUPPORT)
+    endif ()
 endif()
 
 if (${USE_CUDA})
