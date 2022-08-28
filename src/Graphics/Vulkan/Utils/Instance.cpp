@@ -30,6 +30,7 @@
 #include <cstring>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
+#include "Status.hpp"
 #include "Instance.hpp"
 
 namespace sgl { namespace vk {
@@ -127,10 +128,11 @@ void Instance::createInstance(std::vector<const char*> instanceExtensionNames, b
                 std::string() + "Error in Instance::createInstance: Cannot find a specified extension.");
     } else if (res == VK_ERROR_INCOMPATIBLE_DRIVER) {
         sgl::Logfile::get()->throwError(
-                std::string() + "Error in Instance::createInstance: Couldn't find a compatible Vulkan driver.");
+                std::string() + "Error in Instance::createInstance: Could not find a compatible Vulkan driver.");
     } else if (res != VK_SUCCESS) {
         sgl::Logfile::get()->throwError(
-                std::string() + "Error in Instance::createInstance: Failed to create a Vulkan instance.");
+                std::string() + "Error in Instance::createInstance: Failed to create a Vulkan instance ("
+                + vulkanResultToString(res) + ").");
     }
     volkLoadInstance(instance);
 
@@ -217,7 +219,7 @@ void Instance::initializeInstanceExtensionList() {
     if (res != VK_SUCCESS) {
         sgl::Logfile::get()->throwError(
                 "Error in Instance::initializeInstanceExtensionList: "
-                "vkEnumerateInstanceExtensionProperties failed!");
+                "vkEnumerateInstanceExtensionProperties failed (" + vulkanResultToString(res) + ")!");
     }
 
     if (availableInstanceExtensionCount > 0) {
@@ -226,7 +228,7 @@ void Instance::initializeInstanceExtensionList() {
         if (res != VK_SUCCESS) {
             sgl::Logfile::get()->throwError(
                     "Error in Instance::initializeInstanceExtensionList: "
-                    "vkEnumerateInstanceExtensionProperties failed!");
+                    "vkEnumerateInstanceExtensionProperties failed (" + vulkanResultToString(res) + ")!");
         }
 
         for (uint32_t i = 0; i < availableInstanceExtensionCount; i++) {

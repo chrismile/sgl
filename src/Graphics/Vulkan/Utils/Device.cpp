@@ -34,6 +34,7 @@
 #include <Utils/File/Logfile.hpp>
 #include <Math/Math.hpp>
 #include <Graphics/Window.hpp>
+#include "Status.hpp"
 #include "Instance.hpp"
 #include "Swapchain.hpp"
 #include "Device.hpp"
@@ -97,7 +98,8 @@ void Device::initializeDeviceExtensionList(VkPhysicalDevice physicalDevice) {
                 physicalDevice, nullptr, &deviceExtensionCount, deviceExtensions);
         if (res != VK_SUCCESS) {
             Logfile::get()->throwError(
-                    "Error in Device::initializeDeviceExtensionList: vkEnumerateDeviceExtensionProperties failed!");
+                    "Error in Device::initializeDeviceExtensionList: vkEnumerateDeviceExtensionProperties failed ("
+                    + vulkanResultToString(res) + ")!");
         }
 
         for (uint32_t i = 0; i < deviceExtensionCount; i++) {
@@ -319,7 +321,8 @@ VkPhysicalDevice Device::createPhysicalDeviceBinding(
     VkResult res = vkEnumeratePhysicalDevices(instance->getVkInstance(), &numPhysicalDevices, nullptr);
     if (res != VK_SUCCESS) {
         Logfile::get()->throwError(
-                "Error in Device::createPhysicalDeviceBinding: vkEnumeratePhysicalDevices failed!");
+                "Error in Device::createPhysicalDeviceBinding: vkEnumeratePhysicalDevices failed ("
+                + vulkanResultToString(res) + ")!");
     }
     if (numPhysicalDevices == 0) {
         Logfile::get()->throwError(
@@ -330,7 +333,8 @@ VkPhysicalDevice Device::createPhysicalDeviceBinding(
     res = vkEnumeratePhysicalDevices(instance->getVkInstance(), &numPhysicalDevices, physicalDevices.data());
     if (res != VK_SUCCESS) {
         Logfile::get()->throwError(
-                "Error in Device::createPhysicalDeviceBinding: vkEnumeratePhysicalDevices failed!");
+                "Error in Device::createPhysicalDeviceBinding: vkEnumeratePhysicalDevices failed ("
+                + vulkanResultToString(res) + ")!");
     }
 
     deviceExtensionsSet = {requiredDeviceExtensions.begin(), requiredDeviceExtensions.end()};
@@ -869,7 +873,8 @@ void Device::createLogicalDeviceAndQueues(
 
     VkResult res = vkCreateDevice(physicalDevice, &deviceInfo, nullptr, &device);
     if (res != VK_SUCCESS) {
-        Logfile::get()->throwError("Error in createLogicalDeviceAndQueues: vkCreateDevice failed!");
+        Logfile::get()->throwError("Error in createLogicalDeviceAndQueues: vkCreateDevice failed ("
+        + vulkanResultToString(res) + ")!");
     }
 
     graphicsQueue = VK_NULL_HANDLE;
