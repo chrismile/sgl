@@ -92,8 +92,8 @@ void Instance::createInstance(std::vector<const char*> instanceExtensionNames, b
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName = "sgl";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VK_MAKE_API_VERSION(0, 1, 2, 0);
-    //appInfo.apiVersion = std::min(instanceVulkanVersion, VK_MAKE_API_VERSION(0, 1, 3, 216));
+    //appInfo.apiVersion = VK_MAKE_API_VERSION(0, 1, 2, 0);
+    appInfo.apiVersion = std::min(instanceVulkanVersion, VK_MAKE_API_VERSION(0, 1, 3, 216));
 
     // Add a validation layer if requested.
     instanceLayerNames = {};
@@ -102,7 +102,7 @@ void Instance::createInstance(std::vector<const char*> instanceExtensionNames, b
         if (!checkRequestedLayersAvailable(instanceLayerNames)) {
             sgl::Logfile::get()->write(
                     "Instance::createInstance: Disabling validation layer, as VK_LAYER_KHRONOS_validation is not "
-                    "available.");
+                    "available.", BLACK);
             useValidationLayer = false;
             instanceLayerNames.clear();
         } else {
