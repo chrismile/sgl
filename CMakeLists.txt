@@ -35,6 +35,7 @@ option(SUPPORT_CUDA "Build with Vulkan-CUDA interoperability support" ON)
 option(USE_BOOST_LOCALE "Build with Boost::Locale support" OFF)
 option(USE_LIBARCHIVE "Build with libarchive support" ON)
 option(TRACY_ENABLE "Build with Tracy Profiler support" OFF)
+option(USE_STATIC_STD_LIBRARIES "Link with standard libraries statically (only supported on Linux for now)." OFF)
 
 find_package(OpenGL QUIET)
 find_package(GLEW QUIET)
@@ -179,6 +180,10 @@ if (MSVC)
 	
 	# Enable parallel build.
 	target_compile_options(sgl PRIVATE "/MP")
+endif()
+
+if(UNIX AND NOT APPLE AND ${USE_STATIC_STD_LIBRARIES})
+    target_link_options(LineVis PRIVATE -static-libgcc -static-libstdc++)
 endif()
 
 if (${TRACY_ENABLE})
