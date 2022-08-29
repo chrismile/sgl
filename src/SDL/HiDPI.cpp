@@ -130,8 +130,9 @@ float getHighDPIScaleFactor() {
                 if ((SDL_GetWindowFlags(window) & SDL_WINDOW_ALLOW_HIGHDPI) != 0) {
                     float ddpi = 96, hdpi = 96, vdpi = 96;
                     if (SDL_GetDisplayDPI(0, &ddpi, &hdpi, &vdpi) == 0) {
-                        Logfile::get()->writeInfo(std::string() + "getHighDPIScaleFactor: ddpi: " + toString(ddpi)
-                                                  + ", hdpi: " + toString(hdpi) + ", vdpi: " + toString(vdpi));
+                        Logfile::get()->writeInfo(
+                                std::string() + "getHighDPIScaleFactor: ddpi: " + toString(ddpi)
+                                + ", hdpi: " + toString(hdpi) + ", vdpi: " + toString(vdpi));
                         return hdpi / 96.0f;
                     }
                 } else {

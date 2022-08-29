@@ -100,7 +100,7 @@ public:
 #endif
 
 private:
-    RenderSystem renderSystem;
+    RenderSystem renderSystem = RenderSystem::VULKAN;
     WindowSettings windowSettings;
 
     bool eventHandlerSet = false;

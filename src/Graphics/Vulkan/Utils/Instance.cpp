@@ -124,11 +124,59 @@ void Instance::createInstance(std::vector<const char*> instanceExtensionNames, b
 
     VkResult res = vkCreateInstance(&instanceInfo, nullptr, &instance);
     if (res == VK_ERROR_EXTENSION_NOT_PRESENT) {
+        std::vector<size_t> availableEnabledExtensionIndices;
+        std::string enabledExtensionNames;
+        for (size_t i = 0; i < instanceExtensionNames.size(); i++) {
+            enabledExtensionNames += instanceExtensionNames.at(i);
+            if (isInstanceExtensionAvailable(instanceExtensionNames.at(i))) {
+                availableEnabledExtensionIndices.push_back(i);
+            }
+            if (i != instanceExtensionNames.size() - 1) {
+                enabledExtensionNames += ", ";
+            }
+        }
+        std::string availableEnabledExtensionNames;
+        if (availableEnabledExtensionIndices.empty()) {
+            availableEnabledExtensionNames = "None";
+        }
+        for (size_t i = 0; i < availableEnabledExtensionIndices.size(); i++) {
+            availableEnabledExtensionNames += instanceExtensionNames.at(availableEnabledExtensionIndices.at(i));
+            if (i != availableEnabledExtensionIndices.size() - 1) {
+                availableEnabledExtensionNames += ", ";
+            }
+        }
         sgl::Logfile::get()->throwError(
-                std::string() + "Error in Instance::createInstance: Cannot find a specified extension.");
+                std::string() + "Error in Instance::createInstance: Cannot find a specified extension. Enabled "
+                + "extensions: " + enabledExtensionNames + ". Available enabled extensions: "
+                + availableEnabledExtensionNames);
     } else if (res == VK_ERROR_INCOMPATIBLE_DRIVER) {
         sgl::Logfile::get()->throwError(
                 std::string() + "Error in Instance::createInstance: Could not find a compatible Vulkan driver.");
+    } else if (res == VK_ERROR_LAYER_NOT_PRESENT) {
+        std::vector<size_t> availableEnabledLayerIndices;
+        std::string enabledLayerNames;
+        for (size_t i = 0; i < instanceLayerNames.size(); i++) {
+            enabledLayerNames += instanceLayerNames.at(i);
+            if (checkRequestedLayersAvailable({ instanceLayerNames.at(i) })) {
+                availableEnabledLayerIndices.push_back(i);
+            }
+            if (i != instanceLayerNames.size() - 1) {
+                enabledLayerNames += ", ";
+            }
+        }
+        std::string availableEnabledLayerNames;
+        if (availableEnabledLayerIndices.empty()) {
+            availableEnabledLayerNames = "None";
+        }
+        for (size_t i = 0; i < availableEnabledLayerIndices.size(); i++) {
+            availableEnabledLayerNames += instanceLayerNames.at(availableEnabledLayerIndices.at(i));
+            if (i != availableEnabledLayerIndices.size() - 1) {
+                availableEnabledLayerNames += ", ";
+            }
+        }
+        sgl::Logfile::get()->throwError(
+                std::string() + "Error in Instance::createInstance: Cannot find a specified layer. Enabled layers: "
+                + enabledLayerNames + ". Available enabled layers: " + availableEnabledLayerNames);
     } else if (res != VK_SUCCESS) {
         sgl::Logfile::get()->throwError(
                 std::string() + "Error in Instance::createInstance: Failed to create a Vulkan instance ("
@@ -165,11 +213,21 @@ void Instance::createInstance(std::vector<const char*> instanceExtensionNames, b
     }
 }
 
-bool Instance::checkRequestedLayersAvailable(const std::vector<const char*> &requestedLayers) {
+bool Instance::checkRequestedLayersAvailable(const std::vector<const char*> &requestedLayers) const {
     uint32_t numLayers;
-    vkEnumerateInstanceLayerProperties(&numLayers, nullptr);
+    VkResult res = vkEnumerateInstanceLayerProperties(&numLayers, nullptr);
+    if (res != VK_SUCCESS) {
+        sgl::Logfile::get()->throwError(
+                "Error in Instance::checkRequestedLayersAvailable: "
+                "vkEnumerateInstanceLayerProperties (1) failed (" + vulkanResultToString(res) + ")!");
+    }
     std::vector<VkLayerProperties> availableLayerList(numLayers);
-    vkEnumerateInstanceLayerProperties(&numLayers, availableLayerList.data());
+    res = vkEnumerateInstanceLayerProperties(&numLayers, availableLayerList.data());
+    if (res != VK_SUCCESS) {
+        sgl::Logfile::get()->throwError(
+                "Error in Instance::checkRequestedLayersAvailable: "
+                "vkEnumerateInstanceLayerProperties (2) failed (" + vulkanResultToString(res) + ")!");
+    }
 
     std::map<std::string, VkLayerProperties> availableLayers;
     for (const VkLayerProperties& layerProperties : availableLayerList) {

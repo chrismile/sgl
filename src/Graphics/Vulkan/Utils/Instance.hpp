@@ -74,7 +74,7 @@ public:
 
 private:
     // Helper functions.
-    bool checkRequestedLayersAvailable(const std::vector<const char*> &requestedLayers);
+    bool checkRequestedLayersAvailable(const std::vector<const char*> &requestedLayers) const;
     void initializeInstanceExtensionList();
     void printAvailableInstanceExtensionList();
     bool isInstanceExtensionAvailable(const std::string &extensionName);

@@ -72,16 +72,16 @@ void PathWatch::initialize() {
             IN_CREATE | IN_DELETE | IN_DELETE_SELF | IN_MOVED_TO | IN_MOVED_FROM);
     if (data->parentWatchDesc == -1) {
         sgl::Logfile::get()->writeError(
-                "Error in PathWatch::initialize: inotify_add_watch (parent) returned errno "
-                + std::to_string(errno) + ": " + strerror(errno));
+                "Error in PathWatch::initialize: inotify_add_watch (parent) for '" + parentDirectoryPath
+                + "' returned errno " + std::to_string(errno) + ": " + strerror(errno));
     }
     data->pathWatchDesc = inotify_add_watch(
             data->inotifyFileDesc, path.c_str(),
             IN_CREATE | IN_DELETE | IN_DELETE_SELF | IN_MOVED_TO | IN_MOVED_FROM);
     if (data->pathWatchDesc == -1) {
         sgl::Logfile::get()->writeError(
-                "Error in PathWatch::initialize: inotify_add_watch (path) returned errno "
-                + std::to_string(errno) + ": " + strerror(errno));
+                "Error in PathWatch::initialize: inotify_add_watch (path) for '" + path
+                + "' returned errno " + std::to_string(errno) + ": " + strerror(errno));
     }
 
     if (!data->inotifyEvents) {
