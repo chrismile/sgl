@@ -52,7 +52,7 @@ enum class ShaderModuleType {
     INTERSECTION = VK_SHADER_STAGE_INTERSECTION_BIT_KHR,
     CALLABLE = VK_SHADER_STAGE_CALLABLE_BIT_KHR,
     TASK_NV = VK_SHADER_STAGE_TASK_BIT_NV,
-    MESH_NV = VK_SHADER_STAGE_MESH_BIT_NV
+    MESH_NV = VK_SHADER_STAGE_MESH_BIT_NV,
 };
 
 struct DLL_OBJECT InterfaceVariableDescriptor {
@@ -95,18 +95,18 @@ public:
      *
      * @return A list of input interface variable descriptors for this shader module.
      */
-    const std::vector<InterfaceVariableDescriptor>& getInputVariableDescriptors() const;
+    [[nodiscard]] const std::vector<InterfaceVariableDescriptor>& getInputVariableDescriptors() const;
 
-    const std::map<uint32_t, std::vector<DescriptorInfo>>& getDescriptorSetsInfo() const;
+    [[nodiscard]] const std::map<uint32_t, std::vector<DescriptorInfo>>& getDescriptorSetsInfo() const;
 
-    inline const std::vector<VkPushConstantRange>& getVkPushConstantRanges() const { return pushConstantRanges; }
+    [[nodiscard]] inline const std::vector<VkPushConstantRange>& getVkPushConstantRanges() const { return pushConstantRanges; }
 
-    inline const std::string& getShaderModuleId() const { return shaderModuleId; }
-    inline ShaderModuleType getShaderModuleType() const { return shaderModuleType; }
+    [[nodiscard]] inline const std::string& getShaderModuleId() const { return shaderModuleId; }
+    [[nodiscard]] inline ShaderModuleType getShaderModuleType() const { return shaderModuleType; }
 
     // Get Vulkan data.
     inline VkShaderModule getVkShaderModule() { return vkShaderModule; }
-    inline Device* getDevice() const { return device; }
+    [[nodiscard]] inline Device* getDevice() const { return device; }
 
 private:
     void createReflectData(const std::vector<uint32_t>& spirvCode);
