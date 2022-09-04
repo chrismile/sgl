@@ -41,13 +41,147 @@
 #include <Utils/File/FileUtils.hpp>
 
 #include <Graphics/Vulkan/Utils/Instance.hpp>
-#include "Internal/IncluderInterface.hpp"
 #include "ShaderManager.hpp"
+
+#ifdef SUPPORT_SHADERC_BACKEND
+#include "Internal/IncluderInterface.hpp"
+#endif
+
+#ifdef SUPPORT_GLSLANG_BACKEND
+#include <glslang/Public/ShaderLang.h>
+#include <glslang/SPIRV/GlslangToSpv.h>
+
+static void initializeBuiltInResourceGlslang(TBuiltInResource &defaultTBuiltInResource) {
+    defaultTBuiltInResource = {};
+    defaultTBuiltInResource.maxLights = 32;
+    defaultTBuiltInResource.maxClipPlanes = 6;
+    defaultTBuiltInResource.maxTextureUnits = 32;
+    defaultTBuiltInResource.maxTextureCoords = 32;
+    defaultTBuiltInResource.maxVertexAttribs = 64;
+    defaultTBuiltInResource.maxVertexUniformComponents = 4096;
+    defaultTBuiltInResource.maxVaryingFloats = 64;
+    defaultTBuiltInResource.maxVertexTextureImageUnits = 32;
+    defaultTBuiltInResource.maxCombinedTextureImageUnits = 80;
+    defaultTBuiltInResource.maxTextureImageUnits = 32;
+    defaultTBuiltInResource.maxFragmentUniformComponents = 4096;
+    defaultTBuiltInResource.maxDrawBuffers = 32;
+    defaultTBuiltInResource.maxVertexUniformVectors = 128;
+    defaultTBuiltInResource.maxVaryingVectors = 8;
+    defaultTBuiltInResource.maxFragmentUniformVectors = 16;
+    defaultTBuiltInResource.maxVertexOutputVectors = 16;
+    defaultTBuiltInResource.maxFragmentInputVectors = 15;
+    defaultTBuiltInResource.minProgramTexelOffset = -8;
+    defaultTBuiltInResource.maxProgramTexelOffset = 7;
+    defaultTBuiltInResource.maxClipDistances = 8;
+    defaultTBuiltInResource.maxComputeWorkGroupCountX = 65535;
+    defaultTBuiltInResource.maxComputeWorkGroupCountY = 65535;
+    defaultTBuiltInResource.maxComputeWorkGroupCountZ = 65535;
+    defaultTBuiltInResource.maxComputeWorkGroupSizeX = 1024;
+    defaultTBuiltInResource.maxComputeWorkGroupSizeY = 1024;
+    defaultTBuiltInResource.maxComputeWorkGroupSizeZ = 64;
+    defaultTBuiltInResource.maxComputeUniformComponents = 1024;
+    defaultTBuiltInResource.maxComputeTextureImageUnits = 16;
+    defaultTBuiltInResource.maxComputeImageUniforms = 8;
+    defaultTBuiltInResource.maxComputeAtomicCounters = 8;
+    defaultTBuiltInResource.maxComputeAtomicCounterBuffers = 1;
+    defaultTBuiltInResource.maxVaryingComponents = 60;
+    defaultTBuiltInResource.maxVertexOutputComponents = 64;
+    defaultTBuiltInResource.maxGeometryInputComponents = 64;
+    defaultTBuiltInResource.maxGeometryOutputComponents = 128;
+    defaultTBuiltInResource.maxFragmentInputComponents = 128;
+    defaultTBuiltInResource.maxImageUnits = 8;
+    defaultTBuiltInResource.maxCombinedImageUnitsAndFragmentOutputs = 8;
+    defaultTBuiltInResource.maxCombinedShaderOutputResources = 8;
+    defaultTBuiltInResource.maxImageSamples = 0;
+    defaultTBuiltInResource.maxVertexImageUniforms = 0;
+    defaultTBuiltInResource.maxTessControlImageUniforms = 0;
+    defaultTBuiltInResource.maxTessEvaluationImageUniforms = 0;
+    defaultTBuiltInResource.maxGeometryImageUniforms = 0;
+    defaultTBuiltInResource.maxFragmentImageUniforms = 8;
+    defaultTBuiltInResource.maxCombinedImageUniforms = 8;
+    defaultTBuiltInResource.maxGeometryTextureImageUnits = 16;
+    defaultTBuiltInResource.maxGeometryOutputVertices = 256;
+    defaultTBuiltInResource.maxGeometryTotalOutputComponents = 1024;
+    defaultTBuiltInResource.maxGeometryUniformComponents = 1024;
+    defaultTBuiltInResource.maxGeometryVaryingComponents = 64;
+    defaultTBuiltInResource.maxTessControlInputComponents = 128;
+    defaultTBuiltInResource.maxTessControlOutputComponents = 128;
+    defaultTBuiltInResource.maxTessControlTextureImageUnits = 16;
+    defaultTBuiltInResource.maxTessControlUniformComponents = 1024;
+    defaultTBuiltInResource.maxTessControlTotalOutputComponents = 4096;
+    defaultTBuiltInResource.maxTessEvaluationInputComponents = 128;
+    defaultTBuiltInResource.maxTessEvaluationOutputComponents = 128;
+    defaultTBuiltInResource.maxTessEvaluationTextureImageUnits = 16;
+    defaultTBuiltInResource.maxTessEvaluationUniformComponents = 1024;
+    defaultTBuiltInResource.maxTessPatchComponents = 120;
+    defaultTBuiltInResource.maxPatchVertices = 32;
+    defaultTBuiltInResource.maxTessGenLevel = 64;
+    defaultTBuiltInResource.maxViewports = 16;
+    defaultTBuiltInResource.maxVertexAtomicCounters = 0;
+    defaultTBuiltInResource.maxTessControlAtomicCounters = 0;
+    defaultTBuiltInResource.maxTessEvaluationAtomicCounters = 0;
+    defaultTBuiltInResource.maxGeometryAtomicCounters = 0;
+    defaultTBuiltInResource.maxFragmentAtomicCounters = 8;
+    defaultTBuiltInResource.maxCombinedAtomicCounters = 8;
+    defaultTBuiltInResource.maxAtomicCounterBindings = 1;
+    defaultTBuiltInResource.maxVertexAtomicCounterBuffers = 0;
+    defaultTBuiltInResource.maxTessControlAtomicCounterBuffers = 0;
+    defaultTBuiltInResource.maxTessEvaluationAtomicCounterBuffers = 0;
+    defaultTBuiltInResource.maxGeometryAtomicCounterBuffers = 0;
+    defaultTBuiltInResource.maxFragmentAtomicCounterBuffers = 1;
+    defaultTBuiltInResource.maxCombinedAtomicCounterBuffers = 1;
+    defaultTBuiltInResource.maxAtomicCounterBufferSize = 16384;
+    defaultTBuiltInResource.maxTransformFeedbackBuffers = 4;
+    defaultTBuiltInResource.maxTransformFeedbackInterleavedComponents = 64;
+    defaultTBuiltInResource.maxCullDistances = 8;
+    defaultTBuiltInResource.maxCombinedClipAndCullDistances = 8;
+    defaultTBuiltInResource.maxSamples = 4;
+    defaultTBuiltInResource.maxMeshOutputVerticesNV = 256;
+    defaultTBuiltInResource.maxMeshOutputPrimitivesNV = 512;
+    defaultTBuiltInResource.maxMeshWorkGroupSizeX_NV = 32;
+    defaultTBuiltInResource.maxMeshWorkGroupSizeY_NV = 1;
+    defaultTBuiltInResource.maxMeshWorkGroupSizeZ_NV = 1;
+    defaultTBuiltInResource.maxTaskWorkGroupSizeX_NV = 32;
+    defaultTBuiltInResource.maxTaskWorkGroupSizeY_NV = 1;
+    defaultTBuiltInResource.maxTaskWorkGroupSizeZ_NV = 1;
+    defaultTBuiltInResource.maxMeshViewCountNV = 4;
+#ifdef GLSLANG_MESH_SHADER_EXT_SUPPORT
+    defaultTBuiltInResource.maxMeshOutputVerticesEXT = 256;
+    defaultTBuiltInResource.maxMeshOutputPrimitivesEXT = 256;
+    defaultTBuiltInResource.maxMeshWorkGroupSizeX_EXT = 128;
+    defaultTBuiltInResource.maxMeshWorkGroupSizeY_EXT = 128;
+    defaultTBuiltInResource.maxMeshWorkGroupSizeZ_EXT = 128;
+    defaultTBuiltInResource.maxTaskWorkGroupSizeX_EXT = 128;
+    defaultTBuiltInResource.maxTaskWorkGroupSizeY_EXT = 128;
+    defaultTBuiltInResource.maxTaskWorkGroupSizeZ_EXT = 128;
+    defaultTBuiltInResource.maxMeshViewCountEXT = 4;
+#endif
+    defaultTBuiltInResource.maxDualSourceDrawBuffersEXT = 1;
+
+    defaultTBuiltInResource.limits.nonInductiveForLoops = true;
+    defaultTBuiltInResource.limits.whileLoops = true;
+    defaultTBuiltInResource.limits.doWhileLoops = true;
+    defaultTBuiltInResource.limits.generalUniformIndexing = true;
+    defaultTBuiltInResource.limits.generalAttributeMatrixVectorIndexing = true;
+    defaultTBuiltInResource.limits.generalVaryingIndexing = true;
+    defaultTBuiltInResource.limits.generalSamplerIndexing = true;
+    defaultTBuiltInResource.limits.generalVariableIndexing = true;
+    defaultTBuiltInResource.limits.generalConstantMatrixVectorIndexing = true;
+}
+#endif
 
 namespace sgl { namespace vk {
 
-ShaderManagerVk::ShaderManagerVk(Device* device) : device(device) {
+ShaderManagerVk::ShaderManagerVk(Device *device) : device(device) {
+#ifdef SUPPORT_GLSLANG_BACKEND
+    if (!glslang::InitializeProcess()) {
+        Logfile::get()->throwError(
+                "Fatal error in ShaderManagerVk::ShaderManagerVk: glslang::InitializeProcess failed!");
+    }
+#endif
+#ifdef SUPPORT_SHADERC_BACKEND
     shaderCompiler = new shaderc::Compiler;
+#endif
     pathPrefix = sgl::AppSettings::get()->getDataDirectory() + "Shaders/";
     indexFiles(pathPrefix);
 
@@ -63,19 +197,45 @@ ShaderManagerVk::ShaderManagerVk(Device* device) : device(device) {
         globalDefines = std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     }
     globalDefinesMvpMatrices =
+            "#ifndef SGL_MATRIX_BLOCK\n"
+            "#define SGL_MATRIX_BLOCK\n"
             "layout (set = 1, binding = 0) uniform MatrixBlock {\n"
             "    mat4 mMatrix; // Model matrix\n"
             "    mat4 vMatrix; // View matrix\n"
             "    mat4 pMatrix; // Projection matrix\n"
             "    mat4 mvpMatrix; // Model-view-projection matrix\n"
-            "};\n\n";
+            "};\n"
+            "#endif\n\n";
 }
 
 ShaderManagerVk::~ShaderManagerVk() {
+#ifdef SUPPORT_SHADERC_BACKEND
     if (shaderCompiler) {
         delete shaderCompiler;
         shaderCompiler = nullptr;
     }
+#endif
+#ifdef SUPPORT_GLSLANG_BACKEND
+    glslang::FinalizeProcess();
+#endif
+}
+
+void ShaderManagerVk::setShaderCompilerBackend(ShaderCompilerBackend backend) {
+#ifndef SUPPORT_SHADERC_BACKEND
+    if (backend == ShaderCompilerBackend::SHADERC) {
+        sgl::Logfile::get()->writeWarning(
+                "Warning in ShaderManagerVk::setShaderCompilerBackend: shaderc backend is not available.");
+        return;
+    }
+#endif
+#ifndef SUPPORT_GLSLANG_BACKEND
+    if (backend == ShaderCompilerBackend::GLSLANG) {
+        sgl::Logfile::get()->writeWarning(
+                "Warning in ShaderManagerVk::setShaderCompilerBackend: glslang backend is not available.");
+        return;
+    }
+#endif
+    shaderCompilerBackend = backend;
 }
 
 
@@ -116,7 +276,7 @@ ShaderModulePtr ShaderManagerVk::getShaderModule(
 
 ShaderModuleType getShaderModuleTypeFromString(const std::string& shaderId) {
     std::string shaderIdLower = boost::algorithm::to_lower_copy(shaderId);
-    ShaderModuleType shaderModuleType = ShaderModuleType::VERTEX;
+    ShaderModuleType shaderModuleType = ShaderModuleType::UNKNOWN;
     if (boost::algorithm::ends_with(shaderIdLower.c_str(), "vertex")) {
         shaderModuleType = ShaderModuleType::VERTEX;
     } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "fragment")) {
@@ -141,11 +301,20 @@ ShaderModuleType getShaderModuleTypeFromString(const std::string& shaderId) {
         shaderModuleType = ShaderModuleType::INTERSECTION;
     } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "callable")) {
         shaderModuleType = ShaderModuleType::CALLABLE;
-    } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "task")) {
+    } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "tasknv")) {
         shaderModuleType = ShaderModuleType::TASK_NV;
-    } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "mesh")) {
+    } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "meshnv")) {
         shaderModuleType = ShaderModuleType::MESH_NV;
-    } else {
+    }
+#ifdef VK_EXT_mesh_shader
+    else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "taskext")) {
+        shaderModuleType = ShaderModuleType::TASK_EXT;
+    }
+    else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "meshext")) {
+        shaderModuleType = ShaderModuleType::MESH_EXT;
+    }
+#endif
+    else {
         if (boost::algorithm::contains(shaderIdLower.c_str(), "vert")) {
             shaderModuleType = ShaderModuleType::VERTEX;
         } else if (boost::algorithm::contains(shaderIdLower.c_str(), "frag")) {
@@ -172,16 +341,25 @@ ShaderModuleType getShaderModuleTypeFromString(const std::string& shaderId) {
             shaderModuleType = ShaderModuleType::INTERSECTION;
         } else if (boost::algorithm::contains(shaderIdLower.c_str(), "callable")) {
             shaderModuleType = ShaderModuleType::CALLABLE;
-        } else if (boost::algorithm::contains(shaderIdLower.c_str(), "task")) {
+        } else if (boost::algorithm::contains(shaderIdLower.c_str(), "tasknv")) {
             shaderModuleType = ShaderModuleType::TASK_NV;
-        } else if (boost::algorithm::contains(shaderIdLower.c_str(), "mesh")) {
+        } else if (boost::algorithm::contains(shaderIdLower.c_str(), "meshnv")) {
             shaderModuleType = ShaderModuleType::MESH_NV;
-        } else {
-            Logfile::get()->throwError(
-                    std::string() + "ERROR: ShaderManagerVk::createShaderProgram: "
-                    + "Unknown shader type (id: \"" + shaderId + "\")");
-            return ShaderModuleType(0);
         }
+#ifdef VK_EXT_mesh_shader
+        else if (boost::algorithm::contains(shaderIdLower.c_str(), "taskext")) {
+            shaderModuleType = ShaderModuleType::TASK_EXT;
+        }
+        else if (boost::algorithm::contains(shaderIdLower.c_str(), "meshext")) {
+            shaderModuleType = ShaderModuleType::MESH_EXT;
+        }
+#endif
+        //else {
+        //    Logfile::get()->throwError(
+        //            std::string() + "ERROR: ShaderManagerVk::createShaderProgram: "
+        //            + "Unknown shader type (id: \"" + shaderId + "\")");
+        //    return ShaderModuleType::UNKNOWN;
+        //}
     }
     return shaderModuleType;
 }
@@ -211,12 +389,38 @@ ShaderModulePtr ShaderManagerVk::loadAsset(ShaderModuleInfo& shaderInfo) {
     std::string id = shaderInfo.filename;
     std::string shaderString = getShaderString(id);
 
+    if (isFirstShaderCompilation) {
+        std::string backendName = shaderCompilerBackend == ShaderCompilerBackend::SHADERC ? "shaderc" : "glslang";
+        sgl::Logfile::get()->write(
+                "ShaderManagerVk::loadAsset: Using the " + backendName + " shader compiler backend.",
+                sgl::BLUE);
+        isFirstShaderCompilation = false;
+    }
+
     if (dumpTextDebugStatic) {
         std::cout << "Shader dump (" << id << "):" << std::endl;
         std::cout << "--------------------------------------------" << std::endl;
         std::cout << shaderString << std::endl << std::endl;
     }
 
+#ifdef SUPPORT_SHADERC_BACKEND
+    if (shaderCompilerBackend == ShaderCompilerBackend::SHADERC) {
+        return loadAssetShaderc(shaderInfo, id, shaderString);
+    }
+#endif
+#ifdef SUPPORT_GLSLANG_BACKEND
+    if (shaderCompilerBackend == ShaderCompilerBackend::GLSLANG) {
+        return loadAssetGlslang(shaderInfo, id, shaderString);
+    }
+#endif
+    return {};
+}
+
+
+#ifdef SUPPORT_SHADERC_BACKEND
+ShaderModulePtr ShaderManagerVk::loadAssetShaderc(
+        const ShaderModuleInfo& shaderInfo, const std::string& id,
+        const std::string& shaderString) {
     shaderc::CompileOptions compileOptions;
     for (auto& it : preprocessorDefines) {
         compileOptions.AddMacroDefinition(it.first, it.second);
@@ -245,15 +449,15 @@ ShaderModulePtr ShaderManagerVk::loadAsset(ShaderModuleInfo& shaderInfo) {
         compileOptions.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_0);
         compileOptions.SetTargetSpirv(shaderc_spirv_version_1_0);
     } else if (device->getInstance()->getInstanceVulkanVersion() < VK_MAKE_API_VERSION(0, 1, 2, 0)
-            || device->getApiVersion() < VK_MAKE_API_VERSION(0, 1, 2, 0)
-            || device->getInstance()->getApplicationInfo().apiVersion < VK_MAKE_API_VERSION(0, 1, 2, 0)) {
+               || device->getApiVersion() < VK_MAKE_API_VERSION(0, 1, 2, 0)
+               || device->getInstance()->getApplicationInfo().apiVersion < VK_MAKE_API_VERSION(0, 1, 2, 0)) {
         compileOptions.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_1);
         compileOptions.SetTargetSpirv(shaderc_spirv_version_1_3);
     }
 #if defined(VK_VERSION_1_3) && VK_HEADER_VERSION >= 204 && !defined(SHADERC_NO_VULKAN_1_3_SUPPORT)
     else if (device->getInstance()->getInstanceVulkanVersion() < VK_MAKE_API_VERSION(0, 1, 3, 0)
-               || device->getApiVersion() < VK_MAKE_API_VERSION(0, 1, 3, 0)
-               || device->getInstance()->getApplicationInfo().apiVersion < VK_MAKE_API_VERSION(0, 1, 3, 0)) {
+             || device->getApiVersion() < VK_MAKE_API_VERSION(0, 1, 3, 0)
+             || device->getInstance()->getApplicationInfo().apiVersion < VK_MAKE_API_VERSION(0, 1, 3, 0)) {
         compileOptions.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_2);
         compileOptions.SetTargetSpirv(shaderc_spirv_version_1_5);
     } else {
@@ -281,31 +485,162 @@ ShaderModulePtr ShaderManagerVk::loadAsset(ShaderModuleInfo& shaderInfo) {
             { ShaderModuleType::MISS,                   shaderc_miss_shader },
             { ShaderModuleType::INTERSECTION,           shaderc_intersection_shader },
             { ShaderModuleType::CALLABLE,               shaderc_callable_shader },
-            {ShaderModuleType::TASK_NV, shaderc_task_shader },
-            {ShaderModuleType::MESH_NV, shaderc_mesh_shader },
+            { ShaderModuleType::TASK_NV,                shaderc_task_shader },
+            { ShaderModuleType::MESH_NV,                shaderc_mesh_shader },
+#if defined(VK_EXT_mesh_shader) && defined(SHADERC_MESH_SHADER_EXT_SUPPORT)
+            { ShaderModuleType::TASK_EXT,               shaderc_task_shader_ext },
+            { ShaderModuleType::MESH_EXT,               shaderc_mesh_shader_ext },
+#endif
 #endif
     };
     auto it = shaderKindLookupTable.find(shaderInfo.shaderModuleType);
     if (it == shaderKindLookupTable.end()) {
         sgl::Logfile::get()->writeError("Error in ShaderManagerVk::loadAsset: Invalid shader type.");
-        return ShaderModulePtr();
+        return {};
     }
     shaderc_shader_kind shaderKind = it->second;
     shaderc::SpvCompilationResult compilationResult = shaderCompiler->CompileGlslToSpv(
-            shaderString.c_str(), shaderString.size(), shaderKind, id.c_str(), compileOptions);
+            shaderString.c_str(), shaderString.size(), shaderKind,
+            id.c_str(), compileOptions);
 
     if (compilationResult.GetNumErrors() != 0 || compilationResult.GetNumWarnings() != 0) {
         sgl::Logfile::get()->writeError(compilationResult.GetErrorMessage());
         if (compilationResult.GetNumErrors() != 0) {
-            return ShaderModulePtr();
+            return {};
         }
     }
 
     std::vector<uint32_t> compilationResultWords(compilationResult.cbegin(), compilationResult.cend());
     ShaderModulePtr shaderModule(new ShaderModule(
-            device, shaderInfo.filename, shaderInfo.shaderModuleType, compilationResultWords));
+            device, shaderInfo.filename, shaderInfo.shaderModuleType,
+            compilationResultWords));
     return shaderModule;
 }
+#endif
+
+
+#ifdef SUPPORT_GLSLANG_BACKEND
+ShaderModulePtr ShaderManagerVk::loadAssetGlslang(
+        const ShaderModuleInfo& shaderInfo, const std::string& id,
+        const std::string& shaderString) {
+    std::string preprocessorDefinesString = "";
+    for (auto& it : preprocessorDefines) {
+        preprocessorDefinesString += "#define " + it.first + " " + it.second + "\n";
+    }
+    for (auto& it : tempPreprocessorDefines) {
+        preprocessorDefinesString += "#define " + it.first + " " + it.second + "\n";
+    }
+
+    glslang::EShSource source = glslang::EShSourceGlsl;
+#ifdef ENABLE_HLSL
+    if (endsWith(shaderInfo.filename, ".hlsl")) {
+        source = glslang::EShSourceHlsl;
+    }
+#endif
+    glslang::EShClient client = glslang::EShClientVulkan;
+    glslang::EShTargetLanguage targetLanguage = glslang::EShTargetSpv;
+    glslang::EShTargetClientVersion targetClientVersion = glslang::EShTargetVulkan_1_0;
+    glslang::EShTargetLanguageVersion targetLanguageVersion = glslang::EShTargetSpv_1_0;
+    if (device->getInstance()->getInstanceVulkanVersion() < VK_API_VERSION_1_1) {
+        targetClientVersion = glslang::EShTargetVulkan_1_0;
+        targetLanguageVersion = glslang::EShTargetSpv_1_0;
+    } else if (device->getInstance()->getInstanceVulkanVersion() < VK_MAKE_API_VERSION(0, 1, 2, 0)
+               || device->getApiVersion() < VK_MAKE_API_VERSION(0, 1, 2, 0)
+               || device->getInstance()->getApplicationInfo().apiVersion < VK_MAKE_API_VERSION(0, 1, 2, 0)) {
+        targetClientVersion = glslang::EShTargetVulkan_1_1;
+        targetLanguageVersion = glslang::EShTargetSpv_1_3;
+    }
+#if defined(VK_VERSION_1_3) && VK_HEADER_VERSION >= 204 && !defined(GLSLANG_NO_VULKAN_1_3_SUPPORT)
+    else if (device->getInstance()->getInstanceVulkanVersion() < VK_MAKE_API_VERSION(0, 1, 3, 0)
+             || device->getApiVersion() < VK_MAKE_API_VERSION(0, 1, 3, 0)
+             || device->getInstance()->getApplicationInfo().apiVersion < VK_MAKE_API_VERSION(0, 1, 3, 0)) {
+        targetClientVersion = glslang::EShTargetVulkan_1_2;
+        targetLanguageVersion = glslang::EShTargetSpv_1_5;
+    } else {
+        targetClientVersion = glslang::EShTargetVulkan_1_3;
+        targetLanguageVersion = glslang::EShTargetSpv_1_6;
+    }
+#else
+    else {
+        targetClientVersion = glslang::EShTargetVulkan_1_2;
+        targetLanguageVersion = glslang::EShTargetSpv_1_5;
+    }
+#endif
+
+    const std::unordered_map<ShaderModuleType, EShLanguage> shaderKindLookupTable = {
+            { ShaderModuleType::VERTEX,                 EShLangVertex },
+            { ShaderModuleType::FRAGMENT,               EShLangFragment },
+            { ShaderModuleType::COMPUTE,                EShLangCompute },
+            { ShaderModuleType::GEOMETRY,               EShLangGeometry },
+            { ShaderModuleType::TESSELATION_CONTROL,    EShLangTessControl },
+            { ShaderModuleType::TESSELATION_EVALUATION, EShLangTessEvaluation },
+#if VK_VERSION_1_2 && VK_HEADER_VERSION >= 162
+            { ShaderModuleType::RAYGEN,                 EShLangRayGen },
+            { ShaderModuleType::ANY_HIT,                EShLangAnyHit },
+            { ShaderModuleType::CLOSEST_HIT,            EShLangClosestHit },
+            { ShaderModuleType::MISS,                   EShLangMiss },
+            { ShaderModuleType::INTERSECTION,           EShLangIntersect },
+            { ShaderModuleType::CALLABLE,               EShLangCallable },
+            { ShaderModuleType::TASK_NV,                EShLangTaskNV },
+            { ShaderModuleType::MESH_NV,                EShLangMeshNV },
+#if defined(VK_EXT_mesh_shader) && defined(GLSLANG_MESH_SHADER_EXT_SUPPORT)
+            { ShaderModuleType::TASK_EXT,               EShLangTask },
+            { ShaderModuleType::MESH_EXT,               EShLangMesh },
+#endif
+#endif
+    };
+    auto it = shaderKindLookupTable.find(shaderInfo.shaderModuleType);
+    if (it == shaderKindLookupTable.end()) {
+        sgl::Logfile::get()->writeError("Error in ShaderManagerVk::loadAsset: Invalid shader type.");
+        return {};
+    }
+    EShLanguage shaderKind = it->second;
+    //EShMessages messages = EShMsgDefault;
+    auto messages = (EShMessages)(EShMsgSpvRules | EShMsgVulkanRules);
+    auto* shader = new glslang::TShader(shaderKind);
+    auto* program = new glslang::TProgram();
+    auto shaderStringSize = int(shaderString.size());
+    const char* shaderStringPtr = shaderString.c_str();
+    const char* idStringPtr = id.c_str();
+    shader->setStringsWithLengthsAndNames(&shaderStringPtr, &shaderStringSize, &idStringPtr, 1);
+    if (!preprocessorDefinesString.empty()) {
+        shader->setPreamble(preprocessorDefinesString.c_str());
+    }
+    shader->setEnvInput(source, shaderKind, client, 100);
+    shader->setEnvClient(client, targetClientVersion);
+    shader->setEnvTarget(targetLanguage, targetLanguageVersion);
+    //shader->setEntryPoint(entryPointName);
+    //shader->setOverrideVersion(glslVersion); // e.g., 450.
+    TBuiltInResource builtInResource = {};
+    initializeBuiltInResourceGlslang(builtInResource);
+    if (!shader->parse(&builtInResource, 100, false, messages)) {
+        std::string errorString = "Error in ShaderManagerVk::loadAssetGlslang: Shader parsing failed. \n";
+        errorString += shader->getInfoLog();
+        errorString += shader->getInfoDebugLog();
+        sgl::Logfile::get()->writeError(errorString);
+        return {};
+    }
+
+    program->addShader(shader);
+    if (!program->link(messages)) {
+        std::string errorString = "Error in ShaderManagerVk::loadAssetGlslang: Program linking failed. \n";
+        errorString += program->getInfoLog();
+        errorString += program->getInfoDebugLog();
+        sgl::Logfile::get()->writeError(errorString);
+        return {};
+    }
+
+    std::vector<uint32_t> compilationResultWords;
+    glslang::GlslangToSpv(*program->getIntermediate(shaderKind), compilationResultWords);
+    ShaderModulePtr shaderModule(new ShaderModule(
+            device, shaderInfo.filename, shaderInfo.shaderModuleType,
+            compilationResultWords));
+
+    delete shader;
+    delete program;
+    return shaderModule;
+}
+#endif
 
 
 std::string ShaderManagerVk::loadHeaderFileString(const std::string &shaderName, std::string &prependContent) {
@@ -446,7 +781,11 @@ std::string ShaderManagerVk::getPreprocessorDefines(ShaderModuleType shaderModul
         preprocessorStatements += std::string() + "#define " + it->first + " " + it->second + "\n";
     }
     if (shaderModuleType == ShaderModuleType::VERTEX || shaderModuleType == ShaderModuleType::GEOMETRY
-            || shaderModuleType == ShaderModuleType::FRAGMENT || shaderModuleType == ShaderModuleType::MESH_NV) {
+            || shaderModuleType == ShaderModuleType::FRAGMENT || shaderModuleType == ShaderModuleType::MESH_NV
+#ifdef VK_EXT_mesh_shader
+            || shaderModuleType == ShaderModuleType::MESH_EXT
+#endif
+    ) {
         preprocessorStatements += globalDefinesMvpMatrices;
     }
     preprocessorStatements += globalDefines;

@@ -37,7 +37,9 @@
 #include "../libs/volk/volk.h"
 #include "Shader.hpp"
 
+#ifdef SUPPORT_SHADERC_BACKEND
 namespace shaderc { class Compiler; }
+#endif
 
 namespace sgl { namespace vk {
 
@@ -47,6 +49,13 @@ struct DLL_OBJECT ShaderModuleInfo {
     bool operator <(const ShaderModuleInfo& rhs) const {
         return filename < rhs.filename;
     }
+};
+
+/**
+ * Both shaderc and glslang can be used as shader compiler backends.
+ */
+enum class ShaderCompilerBackend {
+    SHADERC, GLSLANG
 };
 
 /// Wrapper for shaderc_optimization_level.
@@ -60,6 +69,7 @@ class DLL_OBJECT ShaderManagerVk : public FileManager<ShaderModule, ShaderModule
 public:
     explicit ShaderManagerVk(Device* device);
     ~ShaderManagerVk() override;
+    void setShaderCompilerBackend(ShaderCompilerBackend backend);
 
     /// Reference-counted loading.
     /// If dumpTextDebug, the pre-processed source will be dumped on the command line.
@@ -120,6 +130,14 @@ public:
 
 protected:
     ShaderModulePtr loadAsset(ShaderModuleInfo& shaderModuleInfo) override;
+#ifdef SUPPORT_SHADERC_BACKEND
+    ShaderModulePtr loadAssetShaderc(
+            const ShaderModuleInfo& shaderInfo, const std::string& id, const std::string& shaderString);
+#endif
+#ifdef SUPPORT_GLSLANG_BACKEND
+    ShaderModulePtr loadAssetGlslang(
+            const ShaderModuleInfo& shaderInfo, const std::string& id, const std::string& shaderString);
+#endif
     ShaderStagesPtr createShaderStages(const std::vector<std::string>& shaderIds, bool dumpTextDebug);
 
     /// Internal loading
@@ -165,10 +183,19 @@ protected:
     Device* device = nullptr;
 
     // Shader module compiler.
-    shaderc::Compiler* shaderCompiler = nullptr;
+#ifdef SUPPORT_SHADERC_BACKEND
+    ShaderCompilerBackend shaderCompilerBackend = ShaderCompilerBackend::SHADERC;
+#else
+    ShaderCompilerBackend shaderCompilerBackend = ShaderCompilerBackend::GLSLANG;
+#endif
     bool generateDebugInfo = false;
     bool isOptimizationLevelSet = false;
+    bool isFirstShaderCompilation = true;
     ShaderOptimizationLevel shaderOptimizationLevel = ShaderOptimizationLevel::PERFORMANCE;
+
+#ifdef SUPPORT_SHADERC_BACKEND
+    shaderc::Compiler* shaderCompiler = nullptr;
+#endif
 };
 
 DLL_OBJECT extern ShaderManagerVk* ShaderManager;

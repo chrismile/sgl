@@ -210,7 +210,14 @@ ShaderStages::ShaderStages(
                 inputVariableNameLocationIndexMap.insert(std::make_pair(
                         inputLocationVariableNameMap[location], locationIndex));
             }
+        } else if (shaderModule->getShaderModuleType() == ShaderModuleType::MESH_NV) {
+            hasMeshShaderNV = true;
         }
+#ifdef VK_EXT_mesh_shader
+        else if (shaderModule->getShaderModuleType() == ShaderModuleType::MESH_EXT) {
+            hasMeshShaderEXT = true;
+        }
+#endif
 
         mergeDescriptorSetsInfo(shaderModule->getDescriptorSetsInfo());
         mergePushConstantRanges(shaderModule->getVkPushConstantRanges());
@@ -293,6 +300,11 @@ void ShaderStages::mergeDescriptorSetsInfo(const std::map<uint32_t, std::vector<
                 if (device->getPhysicalDeviceMeshShaderFeaturesNV().meshShader) {
                     it->second.shaderStageFlags |= VK_SHADER_STAGE_MESH_BIT_NV;
                 }
+#ifdef VK_EXT_mesh_shader
+                if (device->getPhysicalDeviceMeshShaderFeaturesEXT().meshShader) {
+                    it->second.shaderStageFlags |= VK_SHADER_STAGE_MESH_BIT_EXT;
+                }
+#endif
             }
         }
 

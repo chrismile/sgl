@@ -251,27 +251,43 @@ public:
     inline void setNumInstances(size_t _numInstances) { this->numInstances = _numInstances; }
     [[nodiscard]] inline size_t getNumInstances() const { return numInstances; }
 
-    /// For use with https://www.khronos.org/registry/vulkan/specs/1.3-extensions/man/html/vkCmdDrawMeshTasksNV.html.
-    void setMeshTasks(uint32_t _taskCount, uint32_t _firstTask) {
-        taskCount = _taskCount;
+    /**
+     * For use with https://www.khronos.org/registry/vulkan/specs/1.3-extensions/man/html/vkCmdDrawMeshTasksNV.html.
+     */
+    void setMeshTasksNV(uint32_t _taskCount, uint32_t _firstTask) {
+        groupCountX = _taskCount;
         firstTask = _firstTask;
     }
-    [[nodiscard]] inline uint32_t getTaskCount() const { return taskCount; }
-    [[nodiscard]] inline uint32_t getFirstTask() const { return firstTask; }
+    [[nodiscard]] inline uint32_t getTaskCountNV() const { return groupCountX; }
+    [[nodiscard]] inline uint32_t getFirstTaskNV() const { return firstTask; }
+    /**
+     * For use with https://www.khronos.org/registry/vulkan/specs/1.3-extensions/man/html/vkCmdDrawMeshTasksEXT.html.
+     */
+    void setMeshTasksGroupCountEXT(uint32_t _groupCountX, uint32_t _groupCountY, uint32_t _groupCountZ) {
+        groupCountX = _groupCountX;
+        groupCountY = _groupCountY;
+        groupCountZ = _groupCountZ;
+    }
+    [[nodiscard]] inline uint32_t getMeshTasksGroupCountX() const { return groupCountX; }
+    [[nodiscard]] inline uint32_t getMeshTasksGroupCountY() const { return groupCountY; }
+    [[nodiscard]] inline uint32_t getMeshTasksGroupCountZ() const { return groupCountZ; }
 
     /*
      * For use with vkCmdDrawIndirect, vkCmdDrawIndirectCount, vkCmdDrawIndexedIndirect, vkCmdDrawIndexedIndirectCount,
-     * vkCmdDrawMeshTasksIndirectNV and vkCmdDrawMeshTasksIndirectCountNV.
+     * vkCmdDrawMeshTasksIndirectNV, vkCmdDrawMeshTasksIndirectCountNV, vkCmdDrawMeshTasksIndirectEXT and
+     * vkCmdDrawMeshTasksIndirectCountEXT.
      */
     /**
      * Sets the indirect draw command buffer. It contains entries either of the type VkDrawIndirectCommand for
      * vkCmdDrawIndirect and vkCmdDrawIndirectCount, or VkDrawIndexedIndirectCommand for vkCmdDrawIndexedIndirect and
      * vkCmdDrawIndexedIndirectCount, or VkDrawMeshTasksIndirectCommandNV for vkCmdDrawMeshTasksIndirectNV and
-     * vkCmdDrawMeshTasksIndirectCountNV.
+     * vkCmdDrawMeshTasksIndirectCountNV, or VkDrawMeshTasksIndirectCommandEXT for vkCmdDrawMeshTasksIndirectEXT and
+     * vkCmdDrawMeshTasksIndirectCountEXT.
      * @param buffer The buffer containing the VkDrawIndirectCommand/VkDrawIndexedIndirectCommand/
-     * VkDrawMeshTasksIndirectCommandNV entries.
+     * VkDrawMeshTasksIndirectCommandNV/VkDrawMeshTasksIndirectCommandEXT entries.
      * @param stride Stride in bytes between two entries. It is usually either sizeof(VkDrawIndirectCommand),
-     * sizeof(VkDrawIndexedIndirectCommand) or sizeof(VkDrawMeshTasksIndirectCommandNV).
+     * sizeof(VkDrawIndexedIndirectCommand), sizeof(VkDrawMeshTasksIndirectCommandNV), or
+     * sizeof(VkDrawMeshTasksIndirectCommandEXT).
      * @param offset Offset in bytes to the first entry in the buffer.
      */
     void setIndirectDrawBuffer(const BufferPtr& buffer, uint32_t stride, VkDeviceSize offset = 0) {
@@ -280,14 +296,15 @@ public:
         indirectDrawBufferOffset = offset;
     }
     /**
-     * For vkCmdDrawIndirect, vkCmdDrawIndexedIndirect and vkCmdDrawMeshTasksIndirectNV.
+     * For vkCmdDrawIndirect, vkCmdDrawIndexedIndirect, vkCmdDrawMeshTasksIndirectNV and vkCmdDrawMeshTasksIndirectEXT.
      * @param drawCount The number of elements to read from the indirect draw buffer.
      */
     void setIndirectDrawCount(uint32_t drawCount) {
         indirectDrawCount = drawCount;
     }
     /**
-     * For vkCmdDrawIndirectCount, vkCmdDrawIndexedIndirectCount and vkCmdDrawMeshTasksIndirectCountNV.
+     * For vkCmdDrawIndirectCount, vkCmdDrawIndexedIndirectCount, vkCmdDrawMeshTasksIndirectCountNV and
+     * vkCmdDrawMeshTasksIndirectCountEXT.
      * @param buffer The buffer to read the number of elements to read from the indirect draw buffer from.
      * @param maxDrawCount The maximum draw count. The actual draw count will be the minimum of this value and the
      * value read from the buffer.
@@ -304,9 +321,10 @@ public:
     [[nodiscard]] VkBuffer getIndirectDrawBufferVk() const { return indirectDrawBuffer->getVkBuffer(); };
     [[nodiscard]] uint32_t getIndirectDrawBufferStride() const { return indirectDrawBufferStride; };
     [[nodiscard]] VkDeviceSize getIndirectDrawBufferOffset() const { return indirectDrawBufferOffset; };
-    // For vkCmdDrawIndirect, vkCmdDrawIndexedIndirect and vkCmdDrawMeshTasksIndirectNV.
+    // For vkCmdDrawIndirect, vkCmdDrawIndexedIndirect, vkCmdDrawMeshTasksIndirectNV and vkCmdDrawMeshTasksIndirectEXT.
     [[nodiscard]] uint32_t getIndirectDrawCount() const { return indirectDrawCount; };
-    // For vkCmdDrawIndirectCount, vkCmdDrawIndexedIndirectCount and vkCmdDrawMeshTasksIndirectCountNV.
+    // For vkCmdDrawIndirectCount, vkCmdDrawIndexedIndirectCount, vkCmdDrawMeshTasksIndirectCountNV and
+    // vkCmdDrawMeshTasksIndirectCountEXT.
     [[nodiscard]] const BufferPtr& getIndirectDrawCountBuffer() const { return indirectDrawCountBuffer; };
     [[nodiscard]] VkBuffer getIndirectDrawCountBufferVk() const { return indirectDrawCountBuffer->getVkBuffer(); };
     [[nodiscard]] uint32_t getIndirectMaxDrawCount() const { return indirectMaxDrawCount; };
@@ -330,8 +348,10 @@ protected:
     std::vector<VkBuffer> vulkanVertexBuffers;
 
     // In case task/mesh shaders are used.
-    uint32_t taskCount = 0;
-    uint32_t firstTask = 0;
+    uint32_t groupCountX = 0;
+    uint32_t groupCountY = 0;
+    uint32_t groupCountZ = 0;
+    uint32_t firstTask = 0; // Only for NV extension.
 
     // In case indirect draw is used.
     BufferPtr indirectDrawBuffer;

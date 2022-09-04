@@ -103,6 +103,9 @@ struct DLL_OBJECT DeviceFeatures {
         fragmentShaderInterlockFeatures.sType =
                 VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_INTERLOCK_FEATURES_EXT;
         meshShaderFeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
+#ifdef VK_EXT_mesh_shader
+        meshShaderFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
+#endif
 #ifdef VK_VERSION_1_1
         requestedVulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
         optionalVulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
@@ -129,8 +132,13 @@ struct DLL_OBJECT DeviceFeatures {
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures{};
     VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures{};
     VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT fragmentShaderInterlockFeatures{};
-    VkPhysicalDeviceMeshShaderFeaturesNV meshShaderFeaturesNV{};
     VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragmentShaderBarycentricFeaturesNV{};
+    VkPhysicalDeviceMeshShaderFeaturesNV meshShaderFeaturesNV{};
+#ifdef VK_EXT_mesh_shader
+    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeaturesEXT{};
+#else
+    VkPhysicalDeviceMeshShaderFeaturesEXT_Compat meshShaderFeaturesEXT{};
+#endif
     // The following features have no extensions, thus use
     bool optionalEnableShaderDrawParametersFeatures = false;
     // Vulkan 1.x features are only enabled when at least one value in the struct is set to true.
@@ -243,6 +251,14 @@ public:
     inline const VkPhysicalDeviceMeshShaderFeaturesNV& getPhysicalDeviceMeshShaderFeaturesNV() const {
         return meshShaderFeaturesNV;
     }
+#ifdef VK_EXT_mesh_shader
+    inline const VkPhysicalDeviceMeshShaderPropertiesNV& getPhysicalDeviceMeshShaderPropertiesEXT() const {
+        return meshShaderPropertiesEXT;
+    }
+    inline const VkPhysicalDeviceMeshShaderFeaturesNV& getPhysicalDeviceMeshShaderFeaturesEXT() const {
+        return meshShaderFeaturesEXT;
+    }
+#endif
     VkSampleCountFlagBits getMaxUsableSampleCount() const;
 
     VkFormat getSupportedDepthFormat(
@@ -370,6 +386,9 @@ private:
     VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties{};
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties{};
     VkPhysicalDeviceMeshShaderPropertiesNV meshShaderPropertiesNV{};
+#ifdef VK_EXT_mesh_shader
+    VkPhysicalDeviceMeshShaderPropertiesEXT meshShaderPropertiesNV{};
+#endif
 
     VkPhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeatures{};
     VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures{};
@@ -382,8 +401,11 @@ private:
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures{};
     VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures{};
     VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT fragmentShaderInterlockFeatures{};
-    VkPhysicalDeviceMeshShaderFeaturesNV meshShaderFeaturesNV{};
     VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragmentShaderBarycentricFeaturesNV{};
+    VkPhysicalDeviceMeshShaderFeaturesNV meshShaderFeaturesNV{};
+#ifdef VK_EXT_mesh_shader
+    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeaturesEXT{};
+#endif
 
     // Queues for the logical device.
     std::vector<VkQueueFamilyProperties> queueFamilyProperties;

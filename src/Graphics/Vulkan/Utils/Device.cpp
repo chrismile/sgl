@@ -562,6 +562,19 @@ void Device::createLogicalDeviceAndQueues(
             requestedDeviceFeatures.meshShaderFeaturesNV = meshShaderFeaturesNV;
         }
     }
+#ifdef VK_EXT_mesh_shader
+    if (deviceExtensionsSet.find(VK_EXT_MESH_SHADER_EXTENSION_NAME) != deviceExtensionsSet.end()) {
+        meshShaderFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &meshShaderFeaturesEXT;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        if (requestedDeviceFeatures.meshShaderFeaturesEXT.meshShader == VK_FALSE) {
+            requestedDeviceFeatures.meshShaderFeaturesEXT = meshShaderFeaturesEXT;
+        }
+    }
+#endif
     if (deviceExtensionsSet.find(VK_NV_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME) != deviceExtensionsSet.end()) {
         fragmentShaderBarycentricFeaturesNV.sType =
                 VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_NV;
@@ -844,6 +857,12 @@ void Device::createLogicalDeviceAndQueues(
         *pNextPtr = &requestedDeviceFeatures.meshShaderFeaturesNV;
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.meshShaderFeaturesNV.pNext);
     }
+#ifdef VK_EXT_mesh_shader
+    if (requestedDeviceFeatures.meshShaderFeaturesEXT.meshShader) {
+        *pNextPtr = &requestedDeviceFeatures.meshShaderFeaturesEXT;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.meshShaderFeaturesEXT.pNext);
+    }
+#endif
     if (requestedDeviceFeatures.fragmentShaderBarycentricFeaturesNV.fragmentShaderBarycentric) {
         *pNextPtr = &requestedDeviceFeatures.fragmentShaderBarycentricFeaturesNV;
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.fragmentShaderBarycentricFeaturesNV.pNext);
@@ -996,6 +1015,17 @@ void Device::_getDeviceInformation() {
         deviceProperties2.pNext = &meshShaderPropertiesNV;
         vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
     }
+#ifdef VK_EXT_mesh_shader
+    if (isDeviceExtensionSupported(VK_EXT_MESH_SHADER_EXTENSION_NAME)) {
+        meshShaderPropertiesEXT = {};
+        meshShaderPropertiesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT;
+        VkPhysicalDeviceProperties2 deviceProperties2 = {};
+        deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        deviceProperties2.pNext = &meshShaderPropertiesEXT;
+        vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
+    }
+#endif
+
 }
 
 void Device::writeDeviceInfoToLog(const std::vector<const char*>& deviceExtensions) {

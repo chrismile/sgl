@@ -39,6 +39,7 @@
 namespace sgl { namespace vk {
 
 enum class ShaderModuleType {
+    UNKNOWN = 0,
     VERTEX = VK_SHADER_STAGE_VERTEX_BIT,
     TESSELATION_CONTROL = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
     TESSELATION_EVALUATION = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
@@ -53,6 +54,9 @@ enum class ShaderModuleType {
     CALLABLE = VK_SHADER_STAGE_CALLABLE_BIT_KHR,
     TASK_NV = VK_SHADER_STAGE_TASK_BIT_NV,
     MESH_NV = VK_SHADER_STAGE_MESH_BIT_NV,
+#ifdef VK_EXT_mesh_shader
+    MESH_EXT = VK_SHADER_STAGE_MESH_BIT_EXT,
+#endif
 };
 
 struct DLL_OBJECT InterfaceVariableDescriptor {
@@ -140,7 +144,7 @@ public:
             Device* device, std::vector<ShaderModulePtr>& shaderModules, const std::vector<std::string>& functionNames);
     ~ShaderStages();
 
-    inline bool getHasVertexShader() const { return vertexShaderModule.get() != nullptr; }
+    [[nodiscard]] inline bool getHasVertexShader() const { return vertexShaderModule.get() != nullptr; }
     /// Returns the input variable descriptors of the vertex shader. NOTE: A vertex shader must exist for this to work!
     [[nodiscard]] const std::vector<InterfaceVariableDescriptor>& getInputVariableDescriptors() const;
     [[nodiscard]] bool getHasInputVariable(const std::string& varName) const;
@@ -156,12 +160,14 @@ public:
     bool getDescriptorBindingByNameOptional(uint32_t setIdx, const std::string& descName, uint32_t& binding) const;
 
     /// Finds a certain module based on its ID.
-    bool getHasModuleId(const std::string& shaderModuleId) const;
+    [[nodiscard]] bool getHasModuleId(const std::string& shaderModuleId) const;
     ShaderModulePtr findModuleId(const std::string& shaderModuleId);
     [[nodiscard]] size_t findModuleIndexFromId(const std::string& shaderModuleId) const;
 
     inline std::vector<ShaderModulePtr>& getShaderModules() { return shaderModules; }
     [[nodiscard]] inline const std::vector<ShaderModulePtr>& getShaderModules() const { return shaderModules; }
+    [[nodiscard]] inline bool getHasMeshShaderNV() const { return hasMeshShaderNV; }
+    [[nodiscard]] inline bool getHasMeshShaderEXT() const { return hasMeshShaderEXT; }
     [[nodiscard]] inline Device* getDevice() const { return device; }
 
     [[nodiscard]] inline const std::vector<VkPipelineShaderStageCreateInfo>& getVkShaderStages() const {
@@ -182,6 +188,7 @@ private:
     Device* device;
     std::vector<ShaderModulePtr> shaderModules;
     ShaderModulePtr vertexShaderModule; // Optional
+    bool hasMeshShaderNV = false, hasMeshShaderEXT = false;
     std::map<uint32_t, std::vector<DescriptorInfo>> descriptorSetsInfo; ///< set index -> descriptor set info
     std::map<std::string, std::vector<DescriptorInfo>> descriptorSetNameBindingMap; ///< name -> binding
     std::map<std::string, uint32_t> inputVariableNameLocationMap; ///< input interface variable name -> location
