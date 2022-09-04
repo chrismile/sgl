@@ -252,10 +252,10 @@ public:
         return meshShaderFeaturesNV;
     }
 #ifdef VK_EXT_mesh_shader
-    inline const VkPhysicalDeviceMeshShaderPropertiesNV& getPhysicalDeviceMeshShaderPropertiesEXT() const {
+    inline const VkPhysicalDeviceMeshShaderPropertiesEXT& getPhysicalDeviceMeshShaderPropertiesEXT() const {
         return meshShaderPropertiesEXT;
     }
-    inline const VkPhysicalDeviceMeshShaderFeaturesNV& getPhysicalDeviceMeshShaderFeaturesEXT() const {
+    inline const VkPhysicalDeviceMeshShaderFeaturesEXT& getPhysicalDeviceMeshShaderFeaturesEXT() const {
         return meshShaderFeaturesEXT;
     }
 #endif
@@ -387,7 +387,7 @@ private:
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties{};
     VkPhysicalDeviceMeshShaderPropertiesNV meshShaderPropertiesNV{};
 #ifdef VK_EXT_mesh_shader
-    VkPhysicalDeviceMeshShaderPropertiesEXT meshShaderPropertiesNV{};
+    VkPhysicalDeviceMeshShaderPropertiesEXT meshShaderPropertiesEXT{};
 #endif
 
     VkPhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeatures{};
