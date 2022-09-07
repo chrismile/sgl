@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# Copyright(c) 2018 Robert Osfield
+# Copyright(c) 2018-2022 Robert Osfield, Christoph Neuhauser
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -44,7 +44,11 @@
 #   glslang_LIBRARY        - the path to the glslang library
 #
 
-if (DEFINED ENV{VULKAN_SDK})
+# Added by sgl.
+if (DEFINED glslang_DIR)
+    set(ADDITIONAL_PATHS_INCLUDE "${glslang_DIR}/include")
+    set(ADDITIONAL_PATHS_LIBS "${glslang_DIR}/lib")
+elseif (DEFINED ENV{VULKAN_SDK})
     if(WIN32)
         set(ADDITIONAL_PATHS_INCLUDE "$ENV{VULKAN_SDK}/Include")
         if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -66,104 +70,104 @@ endif()
 
 find_path(glslang_INCLUDE_DIR
     NAMES glslang/Public/ShaderLang.h
-    PATHS ${ADDITIONAL_PATHS_INCLUDE}
+    HINTS ${ADDITIONAL_PATHS_INCLUDE}
 )
 
 find_path(spirv_INCLUDE_DIR
     NAMES glslang/SPIRV/GlslangToSpv.h
-    PATHS ${ADDITIONAL_PATHS_INCLUDE}
+    HINTS ${ADDITIONAL_PATHS_INCLUDE}
 )
 
 find_library(glslang_LIBRARY
     NAMES glslang
-    PATHS ${ADDITIONAL_PATHS_LIBS}
+    HINTS ${ADDITIONAL_PATHS_LIBS}
 )
 
 find_library(OSDependent_LIBRARY
     NAMES OSDependent
-    PATHS ${ADDITIONAL_PATHS_LIBS}
+    HINTS ${ADDITIONAL_PATHS_LIBS}
 )
 
 find_library(SPIRV_LIBRARY
     NAMES SPIRV
-    PATHS ${ADDITIONAL_PATHS_LIBS}
+    HINTS ${ADDITIONAL_PATHS_LIBS}
 )
 
 find_library(OGLCompiler_LIBRARY
     NAMES OGLCompiler
-    PATHS ${ADDITIONAL_PATHS_LIBS}
+    HINTS ${ADDITIONAL_PATHS_LIBS}
 )
 
 find_library(HLSL_LIBRARY
     NAMES HLSL
-    PATHS ${ADDITIONAL_PATHS_LIBS}
+    HINTS ${ADDITIONAL_PATHS_LIBS}
 )
 
 find_library(MachineIndependent_LIBRARY
     NAMES MachineIndependent
-    PATHS ${ADDITIONAL_PATHS_LIBS}
+    HINTS ${ADDITIONAL_PATHS_LIBS}
 )
 
 find_library(GenericCodeGen_LIBRARY
     NAMES GenericCodeGen
-    PATHS ${ADDITIONAL_PATHS_LIBS}
+    HINTS ${ADDITIONAL_PATHS_LIBS}
 )
 
 find_library(SPIRV-Tools_LIBRARY
     NAMES SPIRV-Tools
-    PATHS ${ADDITIONAL_PATHS_LIBS}
+    HINTS ${ADDITIONAL_PATHS_LIBS}
 )
 
 find_library(SPIRV-Tools-opt_LIBRARY
     NAMES SPIRV-Tools-opt
-    PATHS ${ADDITIONAL_PATHS_LIBS}
+    HINTS ${ADDITIONAL_PATHS_LIBS}
 )
 
 if(WIN32)
 
     find_library(glslang_LIBRARY_debug
         NAMES glslangd
-        PATHS ${ADDITIONAL_PATHS_LIBS}
+        HINTS ${ADDITIONAL_PATHS_LIBS}
     )
 
     find_library(OSDependent_LIBRARY_debug
         NAMES OSDependentd
-        PATHS ${ADDITIONAL_PATHS_LIBS}
+        HINTS ${ADDITIONAL_PATHS_LIBS}
     )
 
     find_library(SPIRV_LIBRARY_debug
         NAMES SPIRVd
-        PATHS ${ADDITIONAL_PATHS_LIBS}
+        HINTS ${ADDITIONAL_PATHS_LIBS}
     )
 
     find_library(OGLCompiler_LIBRARY_debug
         NAMES OGLCompilerd
-        PATHS ${ADDITIONAL_PATHS_LIBS}
+        HINTS ${ADDITIONAL_PATHS_LIBS}
     )
 
     find_library(HLSL_LIBRARY_debug
         NAMES HLSLd
-        PATHS ${ADDITIONAL_PATHS_LIBS}
+        HINTS ${ADDITIONAL_PATHS_LIBS}
     )
 
     find_library(MachineIndependent_LIBRARY_debug
         NAMES MachineIndependentd
-        PATHS ${ADDITIONAL_PATHS_LIBS}
+        HINTS ${ADDITIONAL_PATHS_LIBS}
     )
 
     find_library(GenericCodeGen_LIBRARY_debug
         NAMES GenericCodeGend
-        PATHS ${ADDITIONAL_PATHS_LIBS}
+        HINTS ${ADDITIONAL_PATHS_LIBS}
     )
 
     find_library(SPIRV-Tools_LIBRARY_debug
         NAMES SPIRV-Toolsd
-        PATHS ${ADDITIONAL_PATHS_LIBS}
+        HINTS ${ADDITIONAL_PATHS_LIBS}
     )
 
     find_library(SPIRV-Tools-opt_LIBRARY_debug
         NAMES SPIRV-Tools-optd
-        PATHS ${ADDITIONAL_PATHS_LIBS}
+        HINTS ${ADDITIONAL_PATHS_LIBS}
     )
 
 endif()
