@@ -388,6 +388,8 @@ private:
     VkPhysicalDeviceMeshShaderPropertiesNV meshShaderPropertiesNV{};
 #ifdef VK_EXT_mesh_shader
     VkPhysicalDeviceMeshShaderPropertiesEXT meshShaderPropertiesEXT{};
+#else
+    VkPhysicalDeviceMeshShaderPropertiesEXT_Compat meshShaderPropertiesEXT{};
 #endif
 
     VkPhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeatures{};
@@ -405,6 +407,8 @@ private:
     VkPhysicalDeviceMeshShaderFeaturesNV meshShaderFeaturesNV{};
 #ifdef VK_EXT_mesh_shader
     VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeaturesEXT{};
+#else
+    VkPhysicalDeviceMeshShaderFeaturesEXT_Compat meshShaderFeaturesEXT{};
 #endif
 
     // Queues for the logical device.
