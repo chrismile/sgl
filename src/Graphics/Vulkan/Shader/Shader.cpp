@@ -129,7 +129,7 @@ void ShaderModule::createReflectData(const std::vector<uint32_t>& spirvCode) {
             }
             descriptorInfo.count = reflectDescriptorSet->bindings[bindingIdx]->count;
             descriptorInfo.size = reflectDescriptorSet->bindings[bindingIdx]->block.size;
-            descriptorInfo.shaderStageFlags = uint32_t(shaderModuleType);
+            descriptorInfo.shaderStageFlags = uint32_t(getVkShaderStageFlags());
             descriptorInfo.readOnly = true;
             descriptorInfo.image = reflectDescriptorSet->bindings[bindingIdx]->image;
             descriptorsInfo.push_back(descriptorInfo);
@@ -164,7 +164,7 @@ void ShaderModule::createReflectData(const std::vector<uint32_t>& spirvCode) {
     for (uint32_t blockIdx = 0; blockIdx < numPushConstantBlocks; blockIdx++) {
         VkPushConstantRange& pushConstantRange = pushConstantRanges.at(blockIdx);
         SpvReflectBlockVariable* pushConstantBlockVariable = pushConstantBlockVariables.at(blockIdx);
-        pushConstantRange.stageFlags = uint32_t(shaderModuleType);
+        pushConstantRange.stageFlags = uint32_t(getVkShaderStageFlags());
         pushConstantRange.offset = pushConstantBlockVariable->absolute_offset;
         pushConstantRange.size = pushConstantBlockVariable->size;
     }
@@ -189,7 +189,7 @@ ShaderStages::ShaderStages(
     for (ShaderModulePtr& shaderModule : shaderModules) {
         VkPipelineShaderStageCreateInfo shaderStageCreateInfo = {};
         shaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        shaderStageCreateInfo.stage = VkShaderStageFlagBits(shaderModule->getShaderModuleType());
+        shaderStageCreateInfo.stage = VkShaderStageFlagBits(shaderModule->getVkShaderStageFlags());
         shaderStageCreateInfo.module = shaderModule->getVkShaderModule();
         shaderStageCreateInfo.pName = "main";
         shaderStageCreateInfo.pSpecializationInfo = nullptr;
@@ -210,11 +210,11 @@ ShaderStages::ShaderStages(
                 inputVariableNameLocationIndexMap.insert(std::make_pair(
                         inputLocationVariableNameMap[location], locationIndex));
             }
-        } else if (shaderModule->getHasMeshShaderNV()) {
+        } else if (shaderModule->getShaderModuleType() == ShaderModuleType::MESH_NV) {
             hasMeshShaderNV = true;
         }
 #ifdef VK_EXT_mesh_shader
-        else if (shaderModule->getHasMeshShaderEXT()) {
+        else if (shaderModule->getShaderModuleType() == ShaderModuleType::MESH_EXT) {
             hasMeshShaderEXT = true;
         }
 #endif
@@ -232,7 +232,7 @@ ShaderStages::ShaderStages(
         ShaderModulePtr& shaderModule = shaderModules.at(i);
         VkPipelineShaderStageCreateInfo shaderStageCreateInfo = {};
         shaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        shaderStageCreateInfo.stage = VkShaderStageFlagBits(shaderModule->getShaderModuleType());
+        shaderStageCreateInfo.stage = VkShaderStageFlagBits(shaderModule->getVkShaderStageFlags());
         shaderStageCreateInfo.module = shaderModule->getVkShaderModule();
         shaderStageCreateInfo.pName = functionNames.at(i).c_str();
         shaderStageCreateInfo.pSpecializationInfo = nullptr;

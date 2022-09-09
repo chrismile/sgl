@@ -514,16 +514,6 @@ ShaderModulePtr ShaderManagerVk::loadAssetShaderc(
     ShaderModulePtr shaderModule(new ShaderModule(
             device, shaderInfo.filename, shaderInfo.shaderModuleType,
             compilationResultWords));
-    if (shaderInfo.shaderModuleType == ShaderModuleType::TASK_NV
-            || shaderInfo.shaderModuleType == ShaderModuleType::MESH_NV) {
-        shaderModule->hasMeshShaderNV = true;
-    }
-#if defined(VK_EXT_mesh_shader) && (!defined(SUPPORT_GLSLANG_BACKEND) || defined(GLSLANG_MESH_SHADER_EXT_SUPPORT))
-    if (shaderInfo.shaderModuleType == ShaderModuleType::TASK_EXT
-            || shaderInfo.shaderModuleType == ShaderModuleType::MESH_EXT) {
-        shaderModule->hasMeshShaderEXT = true;
-    }
-#endif
     return shaderModule;
 }
 #endif
@@ -645,16 +635,6 @@ ShaderModulePtr ShaderManagerVk::loadAssetGlslang(
     ShaderModulePtr shaderModule(new ShaderModule(
             device, shaderInfo.filename, shaderInfo.shaderModuleType,
             compilationResultWords));
-    if (shaderInfo.shaderModuleType == ShaderModuleType::TASK_NV
-            || shaderInfo.shaderModuleType == ShaderModuleType::MESH_NV) {
-        shaderModule->hasMeshShaderNV = true;
-    }
-#if defined(VK_EXT_mesh_shader) && (!defined(SUPPORT_GLSLANG_BACKEND) || defined(GLSLANG_MESH_SHADER_EXT_SUPPORT))
-    if (shaderInfo.shaderModuleType == ShaderModuleType::TASK_EXT
-            || shaderInfo.shaderModuleType == ShaderModuleType::MESH_EXT) {
-        shaderModule->hasMeshShaderEXT = true;
-    }
-#endif
 
     delete shader;
     delete program;
