@@ -210,11 +210,11 @@ ShaderStages::ShaderStages(
                 inputVariableNameLocationIndexMap.insert(std::make_pair(
                         inputLocationVariableNameMap[location], locationIndex));
             }
-        } else if (shaderModule->getShaderModuleType() == ShaderModuleType::MESH_NV) {
+        } else if (shaderModule->getHasMeshShaderNV()) {
             hasMeshShaderNV = true;
         }
 #ifdef VK_EXT_mesh_shader
-        else if (shaderModule->getShaderModuleType() == ShaderModuleType::MESH_EXT) {
+        else if (shaderModule->getHasMeshShaderEXT()) {
             hasMeshShaderEXT = true;
         }
 #endif

@@ -55,8 +55,8 @@ enum class ShaderModuleType {
     TASK_NV = VK_SHADER_STAGE_TASK_BIT_NV,
     MESH_NV = VK_SHADER_STAGE_MESH_BIT_NV,
 #ifdef VK_EXT_mesh_shader
-    TASK_EXT = VK_SHADER_STAGE_TASK_BIT_EXT | 0x10000000, // NV == EXT, so mark using bit 28.
-    MESH_EXT = VK_SHADER_STAGE_MESH_BIT_EXT | 0x10000000, // NV == EXT, so mark using bit 28.
+    TASK_EXT = VK_SHADER_STAGE_TASK_BIT_EXT,
+    MESH_EXT = VK_SHADER_STAGE_MESH_BIT_EXT,
 #endif
 };
 
@@ -82,8 +82,10 @@ struct DLL_OBJECT DescriptorInfo {
 //};
 
 class Device;
+class ShaderManager;
 
 class DLL_OBJECT ShaderModule {
+    friend class ShaderManager;
 public:
     // Called by ShaderManager.
     ShaderModule(
@@ -108,6 +110,8 @@ public:
 
     [[nodiscard]] inline const std::string& getShaderModuleId() const { return shaderModuleId; }
     [[nodiscard]] inline ShaderModuleType getShaderModuleType() const { return shaderModuleType; }
+    [[nodiscard]] inline bool getHasMeshShaderNV() const { return hasMeshShaderNV; }
+    [[nodiscard]] inline bool getHasMeshShaderEXT() const { return hasMeshShaderEXT; }
 
     // Get Vulkan data.
     inline VkShaderModule getVkShaderModule() { return vkShaderModule; }
@@ -120,6 +124,7 @@ private:
     Device* device;
     std::string shaderModuleId;
     ShaderModuleType shaderModuleType;
+    bool hasMeshShaderNV = false, hasMeshShaderEXT = false;
 
     // Vulkan data.
     VkShaderModule vkShaderModule;
