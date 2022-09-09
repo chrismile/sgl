@@ -85,7 +85,7 @@ class Device;
 class ShaderManager;
 
 class DLL_OBJECT ShaderModule {
-    friend class ShaderManager;
+    friend class ShaderManagerVk;
 public:
     // Called by ShaderManager.
     ShaderModule(
