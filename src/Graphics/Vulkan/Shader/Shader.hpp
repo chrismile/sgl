@@ -55,8 +55,8 @@ enum class ShaderModuleType {
     TASK_NV = VK_SHADER_STAGE_TASK_BIT_NV,
     MESH_NV = VK_SHADER_STAGE_MESH_BIT_NV,
 #ifdef VK_EXT_mesh_shader
-    TASK_EXT = VK_SHADER_STAGE_TASK_BIT_EXT,
-    MESH_EXT = VK_SHADER_STAGE_MESH_BIT_EXT,
+    TASK_EXT = VK_SHADER_STAGE_TASK_BIT_EXT | 0x10000000, // NV == EXT, so mark using bit 28.
+    MESH_EXT = VK_SHADER_STAGE_MESH_BIT_EXT | 0x10000000, // NV == EXT, so mark using bit 28.
 #endif
 };
 

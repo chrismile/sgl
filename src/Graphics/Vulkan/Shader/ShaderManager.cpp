@@ -487,9 +487,9 @@ ShaderModulePtr ShaderManagerVk::loadAssetShaderc(
             { ShaderModuleType::CALLABLE,               shaderc_callable_shader },
             { ShaderModuleType::TASK_NV,                shaderc_task_shader },
             { ShaderModuleType::MESH_NV,                shaderc_mesh_shader },
-#if defined(VK_EXT_mesh_shader) && defined(SHADERC_MESH_SHADER_EXT_SUPPORT)
-            { ShaderModuleType::TASK_EXT,               shaderc_task_shader_ext },
-            { ShaderModuleType::MESH_EXT,               shaderc_mesh_shader_ext },
+#if defined(VK_EXT_mesh_shader) && (!defined(SUPPORT_GLSLANG_BACKEND) || defined(GLSLANG_MESH_SHADER_EXT_SUPPORT))
+            { ShaderModuleType::TASK_EXT,               shaderc_task_shader },
+            { ShaderModuleType::MESH_EXT,               shaderc_mesh_shader },
 #endif
 #endif
     };

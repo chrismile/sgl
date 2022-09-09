@@ -368,13 +368,6 @@ if (${SUPPORT_VULKAN} AND (${shaderc_FOUND} OR ${glslang_FOUND}))
         if (${SHADERC_VULKAN_13_MATCHRES} EQUAL -1)
             target_compile_definitions(sgl PRIVATE SHADERC_NO_VULKAN_1_3_SUPPORT)
         endif()
-
-        # Check for VK_EXT_mesh_shader support.
-        file(READ "${SHADERC_SHADERC_H_PATH}" SHADERC_SHADERC_H_STRING)
-        string(FIND "${SHADERC_SHADERC_H_STRING}" "shaderc_mesh_shader_ext" SHADERC_MESH_SHADER_EXT_MATCHRES)
-        if (NOT ${SHADERC_MESH_SHADER_EXT_MATCHRES} EQUAL -1)
-            target_compile_definitions(sgl PUBLIC SHADERC_MESH_SHADER_EXT_SUPPORT)
-        endif()
     endif()
 endif()
 
