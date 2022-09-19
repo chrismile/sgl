@@ -273,7 +273,8 @@ void freeOpenCLFunctionTable() {
     }
 }
 
-std::string getOpenCLDeviceInfo(cl_device_id device, cl_device_info info) {
+template<>
+std::string getOpenCLDeviceInfo<std::string>(cl_device_id device, cl_device_info info) {
     size_t deviceExtensionStringSize = 0;
     cl_int res;
     res = sgl::vk::g_openclFunctionTable.clGetDeviceInfo(device, info, 0, nullptr, &deviceExtensionStringSize);
