@@ -52,6 +52,11 @@ struct CudaDeviceApiFunctionTable {
     CUresult ( *cuInit )( unsigned int Flags );
     CUresult ( *cuGetErrorString )( CUresult error, const char **pStr );
 
+    CUresult ( *cuDeviceGet )(CUdevice *device, int ordinal);
+    CUresult ( *cuDeviceGetCount )(int *count);
+    CUresult ( *cuDeviceGetUuid )(CUuuid *uuid, CUdevice dev);
+    CUresult ( *cuDeviceGetAttribute )(int *pi, CUdevice_attribute attrib, CUdevice dev);
+
     CUresult ( *cuCtxCreate )( CUcontext *pctx, unsigned int flags, CUdevice dev );
     CUresult ( *cuCtxDestroy )( CUcontext ctx );
 
@@ -91,6 +96,14 @@ DLL_OBJECT void _checkCUresult(CUresult cuResult, const char* text, const char* 
 DLL_OBJECT bool initializeCudaDeviceApiFunctionTable();
 DLL_OBJECT bool getIsCudaDeviceApiFunctionTableInitialized();
 DLL_OBJECT void freeCudaDeviceApiFunctionTable();
+
+/**
+ * Returns the closest matching CUDA device.
+ * @param device The Vulkan device.
+ * @param cuDevice The CUDA device (if true is returned).
+ * @return Whether a matching CUDA device was found.
+ */
+DLL_OBJECT bool getMatchingCudaDevice(sgl::vk::Device* device, CUdevice* cuDevice);
 
 
 /**

@@ -235,6 +235,7 @@ public:
     inline void _updateLayout(VkImageLayout newLayout) { imageLayout = newLayout; }
 
     inline Device* getDevice() { return device; }
+    inline VkDeviceMemory getVkDeviceMemory() { return deviceMemory; }
 
     void* mapMemory();
     void unmapMemory();
@@ -272,7 +273,7 @@ public:
     void createFromD3D12SharedResourceHandle(HANDLE resourceHandle, const ImageSettings& imageSettings);
 #endif
 
-private:
+protected:
     void _generateMipmaps(VkCommandBuffer commandBuffer);
 
     Device* device = nullptr;

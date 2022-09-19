@@ -990,6 +990,15 @@ void Device::_getDeviceInformation() {
         vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
     }
 
+    if (physicalDeviceProperties.apiVersion >= VK_API_VERSION_1_1) {
+        subgroupProperties = {};
+        subgroupProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES;
+        VkPhysicalDeviceProperties2 deviceProperties2 = {};
+        deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        deviceProperties2.pNext = &subgroupProperties;
+        vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
+    }
+
     if (isDeviceExtensionSupported(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)) {
         accelerationStructureProperties = {};
         accelerationStructureProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;

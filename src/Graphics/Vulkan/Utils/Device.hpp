@@ -234,6 +234,9 @@ public:
     inline const VkPhysicalDeviceShaderDrawParametersFeatures& getPhysicalDeviceShaderDrawParametersFeatures() const {
         return shaderDrawParametersFeatures;
     }
+    inline const VkPhysicalDeviceSubgroupProperties& getPhysicalDeviceSubgroupProperties() const {
+        return subgroupProperties;
+    }
     inline const VkPhysicalDeviceAccelerationStructurePropertiesKHR& getPhysicalDeviceAccelerationStructureProperties() const {
         return accelerationStructureProperties;
     }
@@ -383,6 +386,7 @@ private:
 #else
     VkPhysicalDeviceVulkan13Features_Compat physicalDeviceVulkan13Features{};
 #endif
+    VkPhysicalDeviceSubgroupProperties subgroupProperties{};
     VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties{};
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties{};
     VkPhysicalDeviceMeshShaderPropertiesNV meshShaderPropertiesNV{};

@@ -53,6 +53,10 @@ void* g_cudaLibraryHandle = nullptr;
 bool initializeCudaDeviceApiFunctionTable() {
     typedef CUresult ( *PFN_cuInit )( unsigned int Flags );
     typedef CUresult ( *PFN_cuGetErrorString )( CUresult error, const char **pStr );
+    typedef CUresult ( *PFN_cuDeviceGet )(CUdevice *device, int ordinal);
+    typedef CUresult ( *PFN_cuDeviceGetCount )(int *count);
+    typedef CUresult ( *PFN_cuDeviceGetUuid )(CUuuid *uuid, CUdevice dev);
+    typedef CUresult ( *PFN_cuDeviceGetAttribute )(int *pi, CUdevice_attribute attrib, CUdevice dev);
     typedef CUresult ( *PFN_cuCtxCreate )( CUcontext *pctx, unsigned int flags, CUdevice dev );
     typedef CUresult ( *PFN_cuCtxDestroy )( CUcontext ctx );
     typedef CUresult ( *PFN_cuStreamCreate )( CUstream *phStream, unsigned int Flags );
@@ -83,12 +87,16 @@ bool initializeCudaDeviceApiFunctionTable() {
 #elif defined(_WIN32)
     g_cudaLibraryHandle = LoadLibraryA("nvcuda.dll");
     if (!g_cudaLibraryHandle) {
-        sgl::Logfile::get()->writeInfo("initializeCudaDeviceApiFunctionTable: Could not load libcuda.so.");
+        sgl::Logfile::get()->writeInfo("initializeCudaDeviceApiFunctionTable: Could not load nvcuda.dll.");
         return false;
     }
 #endif
     g_cudaDeviceApiFunctionTable.cuInit = PFN_cuInit(dlsym(g_cudaLibraryHandle, TOSTRING(cuInit)));
     g_cudaDeviceApiFunctionTable.cuGetErrorString = PFN_cuGetErrorString(dlsym(g_cudaLibraryHandle, TOSTRING(cuGetErrorString)));
+    g_cudaDeviceApiFunctionTable.cuDeviceGet = PFN_cuDeviceGet(dlsym(g_cudaLibraryHandle, TOSTRING(cuDeviceGet)));
+    g_cudaDeviceApiFunctionTable.cuDeviceGetCount = PFN_cuDeviceGetCount(dlsym(g_cudaLibraryHandle, TOSTRING(cuDeviceGetCount)));
+    g_cudaDeviceApiFunctionTable.cuDeviceGetUuid = PFN_cuDeviceGetUuid(dlsym(g_cudaLibraryHandle, TOSTRING(cuDeviceGetUuid)));
+    g_cudaDeviceApiFunctionTable.cuDeviceGetAttribute = PFN_cuDeviceGetAttribute(dlsym(g_cudaLibraryHandle, TOSTRING(cuDeviceGetAttribute)));
     g_cudaDeviceApiFunctionTable.cuCtxCreate = PFN_cuCtxCreate(dlsym(g_cudaLibraryHandle, TOSTRING(cuCtxCreate)));
     g_cudaDeviceApiFunctionTable.cuCtxDestroy = PFN_cuCtxDestroy(dlsym(g_cudaLibraryHandle, TOSTRING(cuCtxDestroy)));
     g_cudaDeviceApiFunctionTable.cuStreamCreate = PFN_cuStreamCreate(dlsym(g_cudaLibraryHandle, TOSTRING(cuStreamCreate)));
@@ -112,6 +120,10 @@ bool initializeCudaDeviceApiFunctionTable() {
 
     if (!g_cudaDeviceApiFunctionTable.cuInit
             || !g_cudaDeviceApiFunctionTable.cuGetErrorString
+            || !g_cudaDeviceApiFunctionTable.cuDeviceGet
+            || !g_cudaDeviceApiFunctionTable.cuDeviceGetCount
+            || !g_cudaDeviceApiFunctionTable.cuDeviceGetUuid
+            || !g_cudaDeviceApiFunctionTable.cuDeviceGetAttribute
             || !g_cudaDeviceApiFunctionTable.cuCtxCreate
             || !g_cudaDeviceApiFunctionTable.cuCtxDestroy
             || !g_cudaDeviceApiFunctionTable.cuStreamCreate
@@ -155,6 +167,41 @@ void freeCudaDeviceApiFunctionTable() {
         g_cudaLibraryHandle = {};
     }
 }
+
+bool getMatchingCudaDevice(sgl::vk::Device* device, CUdevice* cuDevice) {
+    const VkPhysicalDeviceIDProperties& deviceIdProperties = device->getDeviceIDProperties();
+    bool foundDevice = false;
+
+    int numDevices = 0;
+    CUresult cuResult = sgl::vk::g_cudaDeviceApiFunctionTable.cuDeviceGetCount(&numDevices);
+    sgl::vk::checkCUresult(cuResult, "Error in cuDeviceGetCount: ");
+
+    for (int deviceIdx = 0; deviceIdx < numDevices; deviceIdx++) {
+        CUdevice currDevice = 0;
+        cuResult = sgl::vk::g_cudaDeviceApiFunctionTable.cuDeviceGet(&currDevice, deviceIdx);
+        sgl::vk::checkCUresult(cuResult, "Error in cuDeviceGet: ");
+
+        CUuuid currUuid = {};
+        cuResult = sgl::vk::g_cudaDeviceApiFunctionTable.cuDeviceGetUuid(&currUuid, currDevice);
+        sgl::vk::checkCUresult(cuResult, "Error in cuDeviceGetUuid: ");
+
+        bool isSameUuid = true;
+        for (int i = 0; i < 16; i++) {
+            if (deviceIdProperties.deviceUUID[i] != reinterpret_cast<uint8_t*>(&currUuid.bytes)[i]) {
+                isSameUuid = false;
+                break;
+            }
+        }
+        if (isSameUuid) {
+            foundDevice = true;
+            *cuDevice = currDevice;
+            break;
+        }
+    }
+
+    return foundDevice;
+}
+
 
 void _checkCUresult(CUresult cuResult, const char* text, const char* locationText) {
     if (cuResult != CUDA_SUCCESS) {

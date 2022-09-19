@@ -17,16 +17,14 @@ For OpenGL support (which is recommended), you also need the following libraries
 sudo apt-get install libglew-dev
 ```
 
-For Vulkan support, the LunarG Vulkan SDK and shaderc need to be installed. Below, an example for installing release
-1.2.162 on Ubuntu 20.04 is given (see https://vulkan.lunarg.com/sdk/home#linux).
+For Vulkan support, the LunarG Vulkan SDK and shaderc need to be installed. Below, an example for installing the
+Vulkan SDK on Ubuntu 20.04 is given (see https://vulkan.lunarg.com/sdk/home#linux).
 
 ```
 wget -qO - https://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo apt-key add -
-sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-1.2.162-focal.list \
-https://packages.lunarg.com/vulkan/1.2.162/lunarg-vulkan-1.2.162-focal.list
+sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-focal.list https://packages.lunarg.com/vulkan/lunarg-vulkan-focal.list
 sudo apt update
-sudo apt install vulkan-sdk
-sudo apt install shaderc
+sudo apt install vulkan-sdk shaderc opencl-c-headers
 ```
 
 To start the compilation, launch the following commands in the directory of the project:
@@ -54,7 +52,7 @@ In case you wish to install the library to any other directory, specify `-DCMAKE
 The following command can be used to install all dependencies on Arch Linux (last tested in May 2021).
 
 ```
-sudo pacman -S git cmake boost libarchive glm tinyxml2 sdl2 sdl2_image glew vulkan-devel shaderc
+sudo pacman -S git cmake boost libarchive glm tinyxml2 sdl2 sdl2_image glew vulkan-devel shaderc opencl-headers
 ```
 
 Vulkan support on Arch Linux was not yet thoroughly tested. Please open a bug report in the issue tracker in case you

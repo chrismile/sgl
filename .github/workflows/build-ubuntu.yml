@@ -63,7 +63,8 @@ jobs:
           sudo apt-get update
           sudo apt-get upgrade
         fi
-        sudo apt-get install git cmake libglm-dev libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libpng-dev libboost-filesystem-dev libtinyxml2-dev libarchive-dev libglew-dev
+        sudo apt-get install git cmake libglm-dev libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
+        libpng-dev libboost-filesystem-dev libtinyxml2-dev libarchive-dev libglew-dev opencl-c-headers
 
     - name: Configure CMake
       shell: bash
