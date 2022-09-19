@@ -158,17 +158,7 @@ T getOpenCLDeviceInfo(cl_device_id device, cl_device_info info) {
     sgl::vk::checkResultCL(res, "Error in clGetDeviceInfo: ");
     return obj;
 }
-std::string getOpenCLDeviceInfo(cl_device_id device, cl_device_info info) {
-    size_t deviceExtensionStringSize = 0;
-    cl_int res;
-    res = sgl::vk::g_openclFunctionTable.clGetDeviceInfo(device, info, 0, nullptr, &deviceExtensionStringSize);
-    sgl::vk::checkResultCL(res, "Error in clGetDeviceInfo: ");
-    char* strObj = new char[deviceExtensionStringSize + 1];
-    res = sgl::vk::g_openclFunctionTable.clGetDeviceInfo(device, info, deviceExtensionStringSize, strObj, nullptr);
-    sgl::vk::checkResultCL(res, "Error in clGetDeviceInfo: ");
-    strObj[deviceExtensionStringSize] = '\0';
-    return strObj;
-}
+std::string getOpenCLDeviceInfo(cl_device_id device, cl_device_info info);
 
 /**
  * Utility function for retrieving a device info string using clGetDeviceInfo.
