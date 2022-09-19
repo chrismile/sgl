@@ -400,7 +400,11 @@ if (${USE_OPENCL})
     target_compile_definitions(sgl INTERFACE SUPPORT_OPENCL_INTEROP)
     get_target_property(SGL_INTERFACE_COMPILE_DEFINITIONS sgl INTERFACE_COMPILE_DEFINITIONS)
     MESSAGE(STATUS "Found OpenCL. Using includes from: " ${OpenCL_INCLUDE_DIRS})
-    target_include_directories(sgl PUBLIC ${OpenCL_INCLUDE_DIRS})
+    if(VCPKG_TOOLCHAIN)
+        target_include_directories(sgl PRIVATE ${OpenCL_INCLUDE_DIRS})
+    else()
+        target_include_directories(sgl PUBLIC ${OpenCL_INCLUDE_DIRS})
+    endif()
 
     # Check for external semaphore support.
     file(READ "${OpenCL_INCLUDE_DIRS}/CL/cl_version.h" OPENCL_CL_H_STRING)
