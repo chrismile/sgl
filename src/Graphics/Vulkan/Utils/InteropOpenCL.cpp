@@ -35,6 +35,8 @@
 #define NOMINMAX
 #endif
 #include <windows.h>
+#elif defined(__APPLE__)
+#include <dlfcn.h>
 #endif
 
 #include <Utils/File/Logfile.hpp>
