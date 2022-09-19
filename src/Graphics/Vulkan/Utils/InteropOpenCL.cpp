@@ -342,6 +342,7 @@ cl_device_id getMatchingOpenCLDevice(sgl::vk::Device* device) {
                     break;
                 }
             } else {
+#endif
                 // Use heuristics for finding correct device if cl_khr_device_uuid is not supported.
                 std::string deviceNameString = sgl::vk::getOpenCLDeviceInfoString(
                         clCurrDevice, CL_DEVICE_NAME);
@@ -349,6 +350,7 @@ cl_device_id getMatchingOpenCLDevice(sgl::vk::Device* device) {
                     clDevice = clCurrDevice;
                     break;
                 }
+#ifdef cl_khr_device_uuid
             }
 #endif
         }
@@ -424,8 +426,10 @@ static std::map<cl_int, const char*> openclErrorStringMap = {
         { CL_INVALID_DEVICE_PARTITION_COUNT, "CL_INVALID_DEVICE_PARTITION_COUNT" },
         { CL_INVALID_PIPE_SIZE, "CL_INVALID_PIPE_SIZE" },
         { CL_INVALID_DEVICE_QUEUE, "CL_INVALID_DEVICE_QUEUE" },
+#ifdef CL_VERSION_2_2
         { CL_INVALID_SPEC_ID, "CL_INVALID_SPEC_ID" },
         { CL_MAX_SIZE_RESTRICTION_EXCEEDED, "CL_MAX_SIZE_RESTRICTION_EXCEEDED" },
+#endif
 };
 
 void _checkResultCL(cl_int res, const char* text, const char* locationText) {

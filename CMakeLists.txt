@@ -335,7 +335,7 @@ if (${SUPPORT_VULKAN} AND (${shaderc_FOUND} OR ${glslang_FOUND}))
                 IMPORTED_LOCATION_RELEASE ${SHADERC_UTIL_LIB_RELEASE}
                 INTERFACE_INCLUDE_DIRECTORIES "${VCPKG_INCLUDE_DIR}")
         target_link_libraries(spirvtoolsopt INTERFACE spirvtools)
-        target_link_libraries(shaderc INTERFACE spirvtoolsopt glslang OSDependent OGLCompiler HLSL SPIRV MachineIndependent)
+        target_link_libraries(shaderc INTERFACE spirvtoolsopt glslang OSDependent OGLCompiler HLSL SPIRV MachineIndependent GenericCodeGen)
 
         set(GLSLANG_SHADERLANG_H_PATH "${VCPKG_INCLUDE_DIR}/glslang/Public/ShaderLang.h")
         set(SHADERC_ENV_H_PATH "${VCPKG_INCLUDE_DIR}/shaderc/env.h")
