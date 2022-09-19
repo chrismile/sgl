@@ -27,6 +27,7 @@
  */
 
 #include <map>
+#include <boost/algorithm/string/case_conv.hpp>
 #if defined(__linux__)
 #include <dlfcn.h>
 #include <unistd.h>
@@ -39,6 +40,7 @@
 #include <dlfcn.h>
 #endif
 
+#include <Math/Math.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/StringUtils.hpp>
 #include "InteropOpenCL.hpp"
@@ -63,7 +65,6 @@ bool initializeOpenCLFunctionTable() {
     typedef cl_int ( *PFN_clRetainContext )( cl_context context );
     typedef cl_int ( *PFN_clReleaseContext )( cl_context context );
     typedef cl_command_queue ( *PFN_clCreateCommandQueue )( cl_context context, cl_device_id device, cl_command_queue_properties properties, cl_int* errcode_ret );
-    typedef cl_command_queue ( *PFN_clCreateCommandQueueWithProperties )( cl_context context, cl_device_id device, const cl_queue_properties* properties, cl_int* errcode_ret );
     typedef cl_int ( *PFN_clRetainCommandQueue )( cl_command_queue command_queue );
     typedef cl_int ( *PFN_clReleaseCommandQueue )( cl_command_queue command_queue );
     typedef cl_int ( *PFN_clGetCommandQueueInfo )( cl_command_queue command_queue, cl_command_queue_info param_name, size_t param_value_size, void* param_value, size_t* param_value_size_ret );
@@ -144,7 +145,6 @@ bool initializeOpenCLFunctionTable() {
     g_openclFunctionTable.clRetainContext = PFN_clRetainContext(dlsym(g_openclLibraryHandle, TOSTRING(clRetainContext)));
     g_openclFunctionTable.clReleaseContext = PFN_clReleaseContext(dlsym(g_openclLibraryHandle, TOSTRING(clReleaseContext)));
     g_openclFunctionTable.clCreateCommandQueue = PFN_clCreateCommandQueue(dlsym(g_openclLibraryHandle, TOSTRING(clCreateCommandQueue)));
-    g_openclFunctionTable.clCreateCommandQueueWithProperties = PFN_clCreateCommandQueueWithProperties(dlsym(g_openclLibraryHandle, TOSTRING(clCreateCommandQueueWithProperties)));
     g_openclFunctionTable.clRetainCommandQueue = PFN_clRetainCommandQueue(dlsym(g_openclLibraryHandle, TOSTRING(clRetainCommandQueue)));
     g_openclFunctionTable.clReleaseCommandQueue = PFN_clReleaseCommandQueue(dlsym(g_openclLibraryHandle, TOSTRING(clReleaseCommandQueue)));
     g_openclFunctionTable.clGetCommandQueueInfo = PFN_clGetCommandQueueInfo(dlsym(g_openclLibraryHandle, TOSTRING(clGetCommandQueueInfo)));
@@ -206,7 +206,6 @@ bool initializeOpenCLFunctionTable() {
             || !g_openclFunctionTable.clRetainContext
             || !g_openclFunctionTable.clReleaseContext
             || !g_openclFunctionTable.clCreateCommandQueue
-            || !g_openclFunctionTable.clCreateCommandQueueWithProperties
             || !g_openclFunctionTable.clRetainCommandQueue
             || !g_openclFunctionTable.clReleaseCommandQueue
             || !g_openclFunctionTable.clGetCommandQueueInfo
@@ -278,10 +277,10 @@ std::string getOpenCLDeviceInfoString(cl_device_id device, cl_device_info info) 
     size_t deviceExtensionStringSize = 0;
     cl_int res;
     res = sgl::vk::g_openclFunctionTable.clGetDeviceInfo(device, info, 0, nullptr, &deviceExtensionStringSize);
-    sgl::vk::checkResultCL(res, "Error in clGetDeviceInfo[CL_DEVICE_EXTENSIONS]: ");
+    sgl::vk::checkResultCL(res, "Error in clGetDeviceInfo: ");
     char* strObj = new char[deviceExtensionStringSize + 1];
-    sgl::vk::g_openclFunctionTable.clGetDeviceInfo(device, info, deviceExtensionStringSize, strObj, nullptr);
-    sgl::vk::checkResultCL(res, "Error in clGetDeviceInfo[CL_DEVICE_EXTENSIONS]: ");
+    res = sgl::vk::g_openclFunctionTable.clGetDeviceInfo(device, info, deviceExtensionStringSize, strObj, nullptr);
+    sgl::vk::checkResultCL(res, "Error in clGetDeviceInfo: ");
     strObj[deviceExtensionStringSize] = '\0';
     return strObj;
 }
@@ -345,10 +344,46 @@ cl_device_id getMatchingOpenCLDevice(sgl::vk::Device* device) {
                 }
             } else {
 #endif
-                // Use heuristics for finding correct device if cl_khr_device_uuid is not supported.
-                std::string deviceNameString = sgl::vk::getOpenCLDeviceInfoString(
+                /*
+                 * Use heuristics for finding correct device if cl_khr_device_uuid is not supported.
+                 * Comparing the device name turned out to be sufficient for an NVIDIA RTX 3090 and the AMD APP SDK.
+                 * However, on the Steam Deck, the name of the OpenCL Clover driver uses the code name
+                 * "AMD Custom GPU 0405 (vangogh, ...)" compared to the Vulkan device name "AMD RADV VANGOGH".
+                 */
+                auto deviceNameString = sgl::vk::getOpenCLDeviceInfo<std::string>(
                         clCurrDevice, CL_DEVICE_NAME);
                 if (deviceNameString == device->getDeviceName()) {
+                    clDevice = clCurrDevice;
+                    break;
+                }
+
+                /*
+                 * Make sure that the vendor ID matches. Otherwise, when in the next step checking sub-strings of the
+                 * device name, we might get incorrect matches when an APU is used.
+                 * E.g., POCL puts the CPU name into the device name, and the APU name might be identical.
+                 */
+                auto clDeviceVendorId = sgl::vk::getOpenCLDeviceInfo<uint32_t>(
+                        clCurrDevice, CL_DEVICE_VENDOR_ID);
+                if (clDeviceVendorId != device->getVendorId()) {
+                    continue;
+                }
+
+                /**
+                 * We assume matching devices if at least half of the Vulkan device name can be found in the OpenCL
+                 * device name. Example for the Steam Deck: "AMD RADV VANGOGH" has two matches ("amd", "vangogh") in
+                 * the OpenCL device name "AMD Custom GPU 0405 (vangogh, ...)".
+                 */
+                std::string deviceNameStringCl = boost::to_lower_copy(deviceNameString);
+                std::string deviceNameStringVk = boost::to_lower_copy(std::string(device->getDeviceName()));
+                std::vector<std::string> deviceNameStringVkParts;
+                sgl::splitStringWhitespace(deviceNameStringVk, deviceNameStringVkParts);
+                int numStringPartsFound = 0;
+                for (const std::string& deviceNameStringVkPart : deviceNameStringVkParts) {
+                    if (deviceNameStringCl.find(deviceNameStringVkPart) != std::string::npos) {
+                        numStringPartsFound++;
+                    }
+                }
+                if (numStringPartsFound >= sgl::iceil(int(deviceNameStringVkParts.size()), 2)) {
                     clDevice = clCurrDevice;
                     break;
                 }
@@ -426,8 +461,10 @@ static std::map<cl_int, const char*> openclErrorStringMap = {
         { CL_INVALID_COMPILER_OPTIONS, "CL_INVALID_COMPILER_OPTIONS" },
         { CL_INVALID_LINKER_OPTIONS, "CL_INVALID_LINKER_OPTIONS" },
         { CL_INVALID_DEVICE_PARTITION_COUNT, "CL_INVALID_DEVICE_PARTITION_COUNT" },
+#ifdef CL_VERSION_2_0
         { CL_INVALID_PIPE_SIZE, "CL_INVALID_PIPE_SIZE" },
         { CL_INVALID_DEVICE_QUEUE, "CL_INVALID_DEVICE_QUEUE" },
+#endif
 #ifdef CL_VERSION_2_2
         { CL_INVALID_SPEC_ID, "CL_INVALID_SPEC_ID" },
         { CL_MAX_SIZE_RESTRICTION_EXCEEDED, "CL_MAX_SIZE_RESTRICTION_EXCEEDED" },

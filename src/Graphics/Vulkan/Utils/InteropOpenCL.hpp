@@ -64,7 +64,6 @@ struct OpenCLFunctionTable {
     cl_int ( *clReleaseContext )( cl_context context );
 
     cl_command_queue ( *clCreateCommandQueue )( cl_context context, cl_device_id device, cl_command_queue_properties properties, cl_int* errcode_ret );
-    cl_command_queue ( *clCreateCommandQueueWithProperties )( cl_context context, cl_device_id device, const cl_queue_properties* properties, cl_int* errcode_ret );
     cl_int ( *clRetainCommandQueue )( cl_command_queue command_queue );
     cl_int ( *clReleaseCommandQueue )( cl_command_queue command_queue );
     cl_int ( *clGetCommandQueueInfo )( cl_command_queue command_queue, cl_command_queue_info param_name, size_t param_value_size, void* param_value, size_t* param_value_size_ret );
@@ -146,6 +145,31 @@ DLL_OBJECT void freeOpenCLFunctionTable();
 /*
  * Utility functions.
  */
+/**
+ * Utility function for retrieving a device info object using clGetDeviceInfo.
+ * @param device The OpenCL device.
+ * @param info The device info to retrieve.
+ * @return The device info uint.
+ */
+template<class T>
+T getOpenCLDeviceInfo(cl_device_id device, cl_device_info info) {
+    T obj;
+    cl_int res = sgl::vk::g_openclFunctionTable.clGetDeviceInfo(device, info, sizeof(T), &obj, nullptr);
+    sgl::vk::checkResultCL(res, "Error in clGetDeviceInfo: ");
+    return obj;
+}
+std::string getOpenCLDeviceInfo(cl_device_id device, cl_device_info info) {
+    size_t deviceExtensionStringSize = 0;
+    cl_int res;
+    res = sgl::vk::g_openclFunctionTable.clGetDeviceInfo(device, info, 0, nullptr, &deviceExtensionStringSize);
+    sgl::vk::checkResultCL(res, "Error in clGetDeviceInfo: ");
+    char* strObj = new char[deviceExtensionStringSize + 1];
+    res = sgl::vk::g_openclFunctionTable.clGetDeviceInfo(device, info, deviceExtensionStringSize, strObj, nullptr);
+    sgl::vk::checkResultCL(res, "Error in clGetDeviceInfo: ");
+    strObj[deviceExtensionStringSize] = '\0';
+    return strObj;
+}
+
 /**
  * Utility function for retrieving a device info string using clGetDeviceInfo.
  * @param device The OpenCL device.
