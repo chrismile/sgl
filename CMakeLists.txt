@@ -308,6 +308,90 @@ if (${SUPPORT_VULKAN} AND (${shaderc_FOUND} OR ${glslang_FOUND}))
         find_library(SPIRV_TOOLS_LINK_LIB_RELEASE SPIRV-Tools-link
                 PATHS ${VCPKG_RELEASE_LIB_DIR}
                 NO_DEFAULT_PATH)
+        add_library(spirvtoolslink STATIC IMPORTED)
+        set_target_properties(spirvtoolslink PROPERTIES
+                IMPORTED_LOCATION ${SPIRV_TOOLS_LINK_LIB_DEBUG}
+                IMPORTED_LOCATION_DEBUG ${SPIRV_TOOLS_LINK_LIB_DEBUG}
+                IMPORTED_LOCATION_RELEASE ${SPIRV_TOOLS_LINK_LIB_RELEASE}
+                INTERFACE_INCLUDE_DIRECTORIES "${VCPKG_INCLUDE_DIR}")
+
+        find_library(OSDEPENDENT_LIB_DEBUG OSDependent
+                PATHS ${VCPKG_DEBUG_LIB_DIR}
+                NO_DEFAULT_PATH)
+        find_library(OSDEPENDENT_LIB_RELEASE OSDependent
+                PATHS ${VCPKG_RELEASE_LIB_DIR}
+                NO_DEFAULT_PATH)
+        add_library(OSDependent STATIC IMPORTED)
+        set_target_properties(OSDependent PROPERTIES
+                IMPORTED_LOCATION ${OSDEPENDENT_LIB_DEBUG}
+                IMPORTED_LOCATION_DEBUG ${OSDEPENDENT_LIB_DEBUG}
+                IMPORTED_LOCATION_RELEASE ${OSDEPENDENT_LIB_RELEASE}
+                INTERFACE_INCLUDE_DIRECTORIES "${VCPKG_INCLUDE_DIR}")
+
+        find_library(OGLCOMPILER_LIB_DEBUG OGLCompiler
+                PATHS ${VCPKG_DEBUG_LIB_DIR}
+                NO_DEFAULT_PATH)
+        find_library(OGLCOMPILER_LIB_RELEASE OGLCompiler
+                PATHS ${VCPKG_RELEASE_LIB_DIR}
+                NO_DEFAULT_PATH)
+        add_library(OGLCompiler STATIC IMPORTED)
+        set_target_properties(OGLCompiler PROPERTIES
+                IMPORTED_LOCATION ${OGLCOMPILER_LIB_DEBUG}
+                IMPORTED_LOCATION_DEBUG ${OGLCOMPILER_LIB_DEBUG}
+                IMPORTED_LOCATION_RELEASE ${OGLCOMPILER_LIB_RELEASE}
+                INTERFACE_INCLUDE_DIRECTORIES "${VCPKG_INCLUDE_DIR}")
+
+        find_library(HLSL_LIB_DEBUG HLSL
+                PATHS ${VCPKG_DEBUG_LIB_DIR}
+                NO_DEFAULT_PATH)
+        find_library(HLSL_LIB_RELEASE HLSL
+                PATHS ${VCPKG_RELEASE_LIB_DIR}
+                NO_DEFAULT_PATH)
+        add_library(HLSL STATIC IMPORTED)
+        set_target_properties(HLSL PROPERTIES
+                IMPORTED_LOCATION ${HLSL_LIB_DEBUG}
+                IMPORTED_LOCATION_DEBUG ${HLSL_LIB_DEBUG}
+                IMPORTED_LOCATION_RELEASE ${HLSL_LIB_RELEASE}
+                INTERFACE_INCLUDE_DIRECTORIES "${VCPKG_INCLUDE_DIR}")
+
+        find_library(SPIRV_LIB_DEBUG SPIRV
+                PATHS ${VCPKG_DEBUG_LIB_DIR}
+                NO_DEFAULT_PATH)
+        find_library(SPIRV_LIB_RELEASE SPIRV
+                PATHS ${VCPKG_RELEASE_LIB_DIR}
+                NO_DEFAULT_PATH)
+        add_library(SPIRV STATIC IMPORTED)
+        set_target_properties(SPIRV PROPERTIES
+                IMPORTED_LOCATION ${SPIRV_LIB_DEBUG}
+                IMPORTED_LOCATION_DEBUG ${SPIRV_LIB_DEBUG}
+                IMPORTED_LOCATION_RELEASE ${SPIRV_LIB_RELEASE}
+                INTERFACE_INCLUDE_DIRECTORIES "${VCPKG_INCLUDE_DIR}")
+
+        find_library(MACHINE_INDEPENDENT_LIB_DEBUG MachineIndependent
+                PATHS ${VCPKG_DEBUG_LIB_DIR}
+                NO_DEFAULT_PATH)
+        find_library(MACHINE_INDEPENDENT_LIB_RELEASE MachineIndependent
+                PATHS ${VCPKG_RELEASE_LIB_DIR}
+                NO_DEFAULT_PATH)
+        add_library(MachineIndependent STATIC IMPORTED)
+        set_target_properties(MachineIndependent PROPERTIES
+                IMPORTED_LOCATION ${MACHINE_INDEPENDENT_LIB_DEBUG}
+                IMPORTED_LOCATION_DEBUG ${MACHINE_INDEPENDENT_LIB_DEBUG}
+                IMPORTED_LOCATION_RELEASE ${MACHINE_INDEPENDENT_LIB_RELEASE}
+                INTERFACE_INCLUDE_DIRECTORIES "${VCPKG_INCLUDE_DIR}")
+
+        find_library(GENERIC_CODE_GEN_LIB_DEBUG GenericCodeGen
+                PATHS ${VCPKG_DEBUG_LIB_DIR}
+                NO_DEFAULT_PATH)
+        find_library(GENERIC_CODE_GEN_LIB_RELEASE GenericCodeGen
+                PATHS ${VCPKG_RELEASE_LIB_DIR}
+                NO_DEFAULT_PATH)
+        add_library(GenericCodeGen STATIC IMPORTED)
+        set_target_properties(GenericCodeGen PROPERTIES
+                IMPORTED_LOCATION ${GENERIC_CODE_GEN_LIB_DEBUG}
+                IMPORTED_LOCATION_DEBUG ${GENERIC_CODE_GEN_LIB_DEBUG}
+                IMPORTED_LOCATION_RELEASE ${GENERIC_CODE_GEN_LIB_RELEASE}
+                INTERFACE_INCLUDE_DIRECTORIES "${VCPKG_INCLUDE_DIR}")
 
         find_library(SHADERC_LIB_DEBUG shaderc
                 PATHS ${VCPKG_DEBUG_LIB_DIR}
@@ -336,6 +420,7 @@ if (${SUPPORT_VULKAN} AND (${shaderc_FOUND} OR ${glslang_FOUND}))
                 INTERFACE_INCLUDE_DIRECTORIES "${VCPKG_INCLUDE_DIR}")
         target_link_libraries(spirvtoolsopt INTERFACE spirvtools)
         target_link_libraries(shaderc INTERFACE spirvtoolsopt glslang::glslang)
+        target_link_libraries(shaderc INTERFACE OSDependent OGLCompiler HLSL SPIRV MachineIndependent GenericCodeGen)
 
         set(GLSLANG_SHADERLANG_H_PATH "${VCPKG_INCLUDE_DIR}/glslang/Public/ShaderLang.h")
         set(SHADERC_ENV_H_PATH "${VCPKG_INCLUDE_DIR}/shaderc/env.h")
