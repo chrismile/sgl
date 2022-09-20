@@ -44,6 +44,7 @@ jobs:
           mingw64/mingw-w64-x86_64-vulkan-validation-layers
           mingw64/mingw-w64-x86_64-shaderc
           mingw64/mingw-w64-x86_64-opencl-headers
+          mingw64/mingw-w64-x86_64-opencl-icd
 
     - uses: actions/checkout@v2
       with:
