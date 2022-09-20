@@ -26,6 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "InteropOpenCL.hpp"
+
 #include <map>
 #include <boost/algorithm/string/case_conv.hpp>
 #if defined(__linux__)
@@ -44,7 +46,6 @@
 #include <Math/Math.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/StringUtils.hpp>
-#include "InteropOpenCL.hpp"
 
 namespace sgl { namespace vk {
 

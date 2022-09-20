@@ -15,7 +15,8 @@ For Vulkan support, you also need the following libraries additionally to the Vu
 
 ```
 pacman -S mingw64/mingw-w64-x86_64-vulkan-headers mingw64/mingw-w64-x86_64-vulkan-loader \
-mingw64/mingw-w64-x86_64-vulkan-validation-layers mingw64/mingw-w64-x86_64-shaderc
+mingw64/mingw-w64-x86_64-vulkan-validation-layers mingw64/mingw-w64-x86_64-shaderc \
+mingw64/mingw-w64-x86_64-opencl-headers mingw64/mingw-w64-x86_64-opencl-icd
 ```
 
 Finally, when sgl has been cloned, it needs to be compiled and installed to, e.g., /usr/local.

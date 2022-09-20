@@ -24,7 +24,7 @@ Vulkan SDK on Ubuntu 20.04 is given (see https://vulkan.lunarg.com/sdk/home#linu
 wget -qO - https://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo apt-key add -
 sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-focal.list https://packages.lunarg.com/vulkan/lunarg-vulkan-focal.list
 sudo apt update
-sudo apt install vulkan-sdk shaderc opencl-c-headers
+sudo apt install vulkan-sdk shaderc opencl-c-headers ocl-icd-opencl-dev
 ```
 
 To start the compilation, launch the following commands in the directory of the project:
@@ -52,7 +52,7 @@ In case you wish to install the library to any other directory, specify `-DCMAKE
 The following command can be used to install all dependencies on Arch Linux (last tested in May 2021).
 
 ```
-sudo pacman -S git cmake boost libarchive glm tinyxml2 sdl2 sdl2_image glew vulkan-devel shaderc opencl-headers
+sudo pacman -S git cmake boost libarchive glm tinyxml2 sdl2 sdl2_image glew vulkan-devel shaderc opencl-headers ocl-icd
 ```
 
 Vulkan support on Arch Linux was not yet thoroughly tested. Please open a bug report in the issue tracker in case you
