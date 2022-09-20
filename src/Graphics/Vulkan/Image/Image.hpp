@@ -273,7 +273,7 @@ public:
     void createFromD3D12SharedResourceHandle(HANDLE resourceHandle, const ImageSettings& imageSettings);
 #endif
 
-protected:
+private:
     void _generateMipmaps(VkCommandBuffer commandBuffer);
 
     Device* device = nullptr;
