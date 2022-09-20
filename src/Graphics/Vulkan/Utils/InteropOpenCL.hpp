@@ -268,7 +268,7 @@ protected:
     sgl::vk::ImagePtr vulkanImage;
     cl_mem extMemoryBuffer{};
 
-#ifndef _WIN32
+#ifdef _WIN32
     HANDLE handle = nullptr;
 #else
     int fileDescriptor = -1;
