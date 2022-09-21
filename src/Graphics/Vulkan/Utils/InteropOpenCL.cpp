@@ -47,6 +47,10 @@
 #include <Utils/File/Logfile.hpp>
 #include <Utils/StringUtils.hpp>
 
+#ifndef CL_DEVICE_BOARD_NAME_AMD
+#define CL_DEVICE_BOARD_NAME_AMD 0x4038
+#endif
+
 namespace sgl { namespace vk {
 
 OpenCLFunctionTable g_openclFunctionTable{};
@@ -336,10 +340,10 @@ cl_device_id getMatchingOpenCLDevice(sgl::vk::Device* device) {
         for (cl_uint deviceIdx = 0; deviceIdx < numDevices; deviceIdx++) {
             cl_device_id clCurrDevice = clDevices[deviceIdx];
 
-#ifdef cl_khr_device_uuid
             std::unordered_set<std::string> deviceExtensions = sgl::vk::getOpenCLDeviceExtensionsSet(
                     clCurrDevice);
 
+#ifdef cl_khr_device_uuid
             if (deviceExtensions.find("cl_khr_device_uuid") != deviceExtensions.end()) {
                 uint8_t clUuid[16];
                 res = sgl::vk::g_openclFunctionTable.clGetDeviceInfo(
@@ -365,7 +369,7 @@ cl_device_id getMatchingOpenCLDevice(sgl::vk::Device* device) {
                  * However, on the Steam Deck, the name of the OpenCL Clover driver uses the code name
                  * "AMD Custom GPU 0405 (vangogh, ...)" compared to the Vulkan device name "AMD RADV VANGOGH".
                  */
-                auto deviceNameString = sgl::vk::getOpenCLDeviceInfo<std::string>(
+                auto deviceNameString = sgl::vk::getOpenCLDeviceInfoString(
                         clCurrDevice, CL_DEVICE_NAME);
                 if (deviceNameString == device->getDeviceName()) {
                     clDevice = clCurrDevice;
@@ -401,6 +405,32 @@ cl_device_id getMatchingOpenCLDevice(sgl::vk::Device* device) {
                 if (numStringPartsFound >= sgl::iceil(int(deviceNameStringVkParts.size()), 2)) {
                     clDevice = clCurrDevice;
                     break;
+                }
+
+                /*
+                 * On ROCm, the device name is a codename like "gfx1030", which is different from the "real" device name
+                 * (aka. board name). AMD offers an extension to get the board name, matching the name of the Vulkan
+                 * device (e.g., "AMD Radeon RX 6900 XT").
+                 */
+                if (deviceExtensions.find("cl_amd_device_attribute_query") != deviceExtensions.end()) {
+                    auto boardNameAmd = sgl::vk::getOpenCLDeviceInfoString(
+                            clCurrDevice, CL_DEVICE_BOARD_NAME_AMD);
+                    if (boardNameAmd == device->getDeviceName()) {
+                        clDevice = clCurrDevice;
+                        break;
+                    }
+
+                    std::string boardNameStringCl = boost::to_lower_copy(boardNameAmd);
+                    numStringPartsFound = 0;
+                    for (const std::string& deviceNameStringVkPart : deviceNameStringVkParts) {
+                        if (boardNameStringCl.find(deviceNameStringVkPart) != std::string::npos) {
+                            numStringPartsFound++;
+                        }
+                    }
+                    if (numStringPartsFound >= sgl::iceil(int(deviceNameStringVkParts.size()), 2)) {
+                        clDevice = clCurrDevice;
+                        break;
+                    }
                 }
 #ifdef cl_khr_device_uuid
             }

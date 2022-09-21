@@ -159,7 +159,7 @@ T getOpenCLDeviceInfo(cl_device_id device, cl_device_info info) {
     return obj;
 }
 template<>
-std::string getOpenCLDeviceInfo<std::string>(cl_device_id device, cl_device_info info);
+DLL_OBJECT std::string getOpenCLDeviceInfo<std::string>(cl_device_id device, cl_device_info info);
 
 /**
  * Utility function for retrieving a device info string using clGetDeviceInfo.
