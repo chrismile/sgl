@@ -315,9 +315,15 @@ if (${SUPPORT_VULKAN} AND (${shaderc_FOUND} OR ${glslang_FOUND}))
                 IMPORTED_LOCATION_RELEASE ${SPIRV_TOOLS_LINK_LIB_RELEASE}
                 INTERFACE_INCLUDE_DIRECTORIES "${VCPKG_INCLUDE_DIR}")
 
-        find_library(OSDEPENDENT_LIB_DEBUG OSDependent
-                PATHS ${VCPKG_DEBUG_LIB_DIR}
-                NO_DEFAULT_PATH)
+        if (MSVC)
+            find_library(OSDEPENDENT_LIB_DEBUG OSDependentd
+                    PATHS ${VCPKG_DEBUG_LIB_DIR}
+                    NO_DEFAULT_PATH)
+        else()
+            find_library(OSDEPENDENT_LIB_DEBUG OSDependent
+                    PATHS ${VCPKG_DEBUG_LIB_DIR}
+                    NO_DEFAULT_PATH)
+        endif()
         find_library(OSDEPENDENT_LIB_RELEASE OSDependent
                 PATHS ${VCPKG_RELEASE_LIB_DIR}
                 NO_DEFAULT_PATH)
@@ -328,9 +334,15 @@ if (${SUPPORT_VULKAN} AND (${shaderc_FOUND} OR ${glslang_FOUND}))
                 IMPORTED_LOCATION_RELEASE ${OSDEPENDENT_LIB_RELEASE}
                 INTERFACE_INCLUDE_DIRECTORIES "${VCPKG_INCLUDE_DIR}")
 
-        find_library(OGLCOMPILER_LIB_DEBUG OGLCompiler
-                PATHS ${VCPKG_DEBUG_LIB_DIR}
-                NO_DEFAULT_PATH)
+        if (MSVC)
+            find_library(OGLCOMPILER_LIB_DEBUG OGLCompilerd
+                    PATHS ${VCPKG_DEBUG_LIB_DIR}
+                    NO_DEFAULT_PATH)
+        else()
+            find_library(OGLCOMPILER_LIB_DEBUG OGLCompiler
+                    PATHS ${VCPKG_DEBUG_LIB_DIR}
+                    NO_DEFAULT_PATH)
+        endif()
         find_library(OGLCOMPILER_LIB_RELEASE OGLCompiler
                 PATHS ${VCPKG_RELEASE_LIB_DIR}
                 NO_DEFAULT_PATH)
@@ -341,9 +353,15 @@ if (${SUPPORT_VULKAN} AND (${shaderc_FOUND} OR ${glslang_FOUND}))
                 IMPORTED_LOCATION_RELEASE ${OGLCOMPILER_LIB_RELEASE}
                 INTERFACE_INCLUDE_DIRECTORIES "${VCPKG_INCLUDE_DIR}")
 
-        find_library(HLSL_LIB_DEBUG HLSL
-                PATHS ${VCPKG_DEBUG_LIB_DIR}
-                NO_DEFAULT_PATH)
+        if (MSVC)
+            find_library(HLSL_LIB_DEBUG HLSLd
+                    PATHS ${VCPKG_DEBUG_LIB_DIR}
+                    NO_DEFAULT_PATH)
+        else()
+            find_library(HLSL_LIB_DEBUG HLSL
+                    PATHS ${VCPKG_DEBUG_LIB_DIR}
+                    NO_DEFAULT_PATH)
+        endif()
         find_library(HLSL_LIB_RELEASE HLSL
                 PATHS ${VCPKG_RELEASE_LIB_DIR}
                 NO_DEFAULT_PATH)
@@ -354,9 +372,15 @@ if (${SUPPORT_VULKAN} AND (${shaderc_FOUND} OR ${glslang_FOUND}))
                 IMPORTED_LOCATION_RELEASE ${HLSL_LIB_RELEASE}
                 INTERFACE_INCLUDE_DIRECTORIES "${VCPKG_INCLUDE_DIR}")
 
-        find_library(SPIRV_LIB_DEBUG SPIRV
-                PATHS ${VCPKG_DEBUG_LIB_DIR}
-                NO_DEFAULT_PATH)
+        if (MSVC)
+            find_library(SPIRV_LIB_DEBUG SPIRVd
+                    PATHS ${VCPKG_DEBUG_LIB_DIR}
+                    NO_DEFAULT_PATH)
+        else()
+            find_library(SPIRV_LIB_DEBUG SPIRV
+                    PATHS ${VCPKG_DEBUG_LIB_DIR}
+                    NO_DEFAULT_PATH)
+        endif()
         find_library(SPIRV_LIB_RELEASE SPIRV
                 PATHS ${VCPKG_RELEASE_LIB_DIR}
                 NO_DEFAULT_PATH)
@@ -367,9 +391,15 @@ if (${SUPPORT_VULKAN} AND (${shaderc_FOUND} OR ${glslang_FOUND}))
                 IMPORTED_LOCATION_RELEASE ${SPIRV_LIB_RELEASE}
                 INTERFACE_INCLUDE_DIRECTORIES "${VCPKG_INCLUDE_DIR}")
 
-        find_library(MACHINE_INDEPENDENT_LIB_DEBUG MachineIndependent
-                PATHS ${VCPKG_DEBUG_LIB_DIR}
-                NO_DEFAULT_PATH)
+        if (MSVC)
+            find_library(MACHINE_INDEPENDENT_LIB_DEBUG MachineIndependentd
+                    PATHS ${VCPKG_DEBUG_LIB_DIR}
+                    NO_DEFAULT_PATH)
+        else()
+            find_library(MACHINE_INDEPENDENT_LIB_DEBUG MachineIndependent
+                    PATHS ${VCPKG_DEBUG_LIB_DIR}
+                    NO_DEFAULT_PATH)
+        endif()
         find_library(MACHINE_INDEPENDENT_LIB_RELEASE MachineIndependent
                 PATHS ${VCPKG_RELEASE_LIB_DIR}
                 NO_DEFAULT_PATH)
@@ -380,9 +410,15 @@ if (${SUPPORT_VULKAN} AND (${shaderc_FOUND} OR ${glslang_FOUND}))
                 IMPORTED_LOCATION_RELEASE ${MACHINE_INDEPENDENT_LIB_RELEASE}
                 INTERFACE_INCLUDE_DIRECTORIES "${VCPKG_INCLUDE_DIR}")
 
-        find_library(GENERIC_CODE_GEN_LIB_DEBUG GenericCodeGen
-                PATHS ${VCPKG_DEBUG_LIB_DIR}
-                NO_DEFAULT_PATH)
+        if (MSVC)
+            find_library(GENERIC_CODE_GEN_LIB_DEBUG GenericCodeGend
+                    PATHS ${VCPKG_DEBUG_LIB_DIR}
+                    NO_DEFAULT_PATH)
+        else()
+            find_library(GENERIC_CODE_GEN_LIB_DEBUG GenericCodeGen
+                    PATHS ${VCPKG_DEBUG_LIB_DIR}
+                    NO_DEFAULT_PATH)
+        endif()
         find_library(GENERIC_CODE_GEN_LIB_RELEASE GenericCodeGen
                 PATHS ${VCPKG_RELEASE_LIB_DIR}
                 NO_DEFAULT_PATH)
