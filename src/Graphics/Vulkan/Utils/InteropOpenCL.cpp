@@ -320,7 +320,9 @@ cl_device_id getMatchingOpenCLDevice(sgl::vk::Device* device) {
     res = sgl::vk::g_openclFunctionTable.clGetPlatformIDs(numPlatforms, platforms, nullptr);
     sgl::vk::checkResultCL(res, "Error in clGetPlatformIDs: ");
 
+#ifdef cl_khr_device_uuid
     const VkPhysicalDeviceIDProperties& deviceIdProperties = device->getDeviceIDProperties();
+#endif
     cl_device_id clDevice = nullptr;
     for (cl_uint platIdx = 0; platIdx < numPlatforms; platIdx++) {
         // Enumerate the devices.
