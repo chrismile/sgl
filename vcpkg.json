@@ -27,7 +27,7 @@
         },
         "vulkan",
         "vulkan-headers",
-        "opencl",
-        "shaderc"
+        "shaderc",
+        "opencl"
     ]
 }
