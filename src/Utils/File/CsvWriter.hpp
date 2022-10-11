@@ -44,6 +44,7 @@ public:
     bool open(const std::string& filename);
     void close();
     void flush();
+    inline bool getIsOpen() const { return isOpen; }
 
     // Note: All writing functions use "escapeString" to convert strings to a format valid for CSV.
     // For more details see: https://en.wikipedia.org/wiki/Comma-separated_values

@@ -222,8 +222,20 @@ void Timer::clear() {
     frameTimeList.clear();
 }
 
+bool Timer::getHasEvent(const std::string& eventName) {
+    return elapsedTimeNS.find(eventName) != elapsedTimeNS.end();
+}
+
 double Timer::getTimeMS(const std::string &name) {
     return static_cast<double>(elapsedTimeNS[name]) / static_cast<double>(numSamples[name]) * 1e-6;
+}
+
+double Timer::getOptionalTimeMS(const std::string& eventName) {
+    auto it = elapsedTimeNS.find(eventName);
+    if (it != elapsedTimeNS.end()) {
+        return getTimeMS(eventName);
+    }
+    return 0.0;
 }
 
 void Timer::printTimeMS(const std::string &name) {

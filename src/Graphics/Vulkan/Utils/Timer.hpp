@@ -82,8 +82,12 @@ public:
      */
     void finishGPU(VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 
+    /// Returns whether there is an event with the specified name.
+    bool getHasEvent(const std::string& eventName);
     /// Returns the (average) time the event with the specified name took.
     double getTimeMS(const std::string& eventName);
+    /// Returns the (average) time the event with the specified name took. Returns 0 if the event does not exist.
+    double getOptionalTimeMS(const std::string& eventName);
     /// Prints the time returned by @see getTimeMS.
     void printTimeMS(const std::string& eventName);
     /// Prints sum of all average times.

@@ -476,10 +476,6 @@ void Renderer::render(const RasterDataPtr& rasterData, const FramebufferPtr& fra
                             rasterData->getIndirectDrawBufferStride());
                 }
             } else {
-                /**
-                 * Assuming task/mesh shaders. The maximum number of tasks is relatively low on NVIDIA hardware, so
-                 * split into multiple draw calls if necessary.
-                 */
                 uint32_t groupCountX = rasterData->getMeshTasksGroupCountX();
                 uint32_t groupCountY = rasterData->getMeshTasksGroupCountY();
                 uint32_t groupCountZ = rasterData->getMeshTasksGroupCountZ();
