@@ -146,17 +146,17 @@ public:
     inline const std::vector<ColorPoint_LinearRGB>& getColorPoints_LinearRGB() { return colorPoints_LinearRGB; }
 
     // Get data range.
-    inline float getDataRangeMin() const { return dataRange.x; }
-    inline float getDataRangeMax() const { return dataRange.y; }
-    inline const glm::vec2& getDataRange() const { return dataRange; }
-    inline float getSelectedRangeMin() const { return selectedRange.x; }
-    inline float getSelectedRangeMax() const {
+    [[nodiscard]] inline float getDataRangeMin() const { return dataRange.x; }
+    [[nodiscard]] inline float getDataRangeMax() const { return dataRange.y; }
+    [[nodiscard]] inline const glm::vec2& getDataRange() const { return dataRange; }
+    [[nodiscard]] inline float getSelectedRangeMin() const { return selectedRange.x; }
+    [[nodiscard]] inline float getSelectedRangeMax() const {
         // Use epsilon to avoid division by NaN.
         return selectedRange.y + (selectedRange.x == selectedRange.y ? 1e-4f : 0.0f);
     }
-    inline const glm::vec2& getSelectedRange() const { return selectedRange; }
-    inline void setSelectedRange(const glm::vec2& selectedRange) {
-        this->selectedRange = selectedRange;
+    [[nodiscard]] inline const glm::vec2& getSelectedRange() const { return selectedRange; }
+    inline void setSelectedRange(const glm::vec2& _selectedRange) {
+        this->selectedRange = _selectedRange;
         recomputeHistogram();
         rebuildRangeUbo();
     }
@@ -164,6 +164,11 @@ public:
     // sRGB and linear RGB conversion
     static glm::vec3 sRGBToLinearRGB(const glm::vec3& color_LinearRGB);
     static glm::vec3 linearRGBTosRGB(const glm::vec3& color_sRGB);
+    static std::vector<sgl::Color16> createColorMapFromPoints(
+            const std::vector<OpacityPoint>& opacityPoints,
+            const std::vector<sgl::ColorPoint_sRGB>& colorPoints,
+            size_t textureResolution = 256, ColorSpace interpolationColorSpace = COLOR_SPACE_LINEAR_RGB,
+            bool outputUseLinearRGB = false);
 
     inline void setStandardWindowSize(int width, int height) { standardWidth = width; standardHeight = height; }
     inline void setStandardWindowPosition(int x, int y) { standardPositionX = x; standardPositionY = y; }
@@ -217,8 +222,18 @@ private:
     std::vector<std::string> availableFiles;
     int selectedFileIndex = -1;
     void rebuildTransferFunctionMap();
-    void rebuildTransferFunctionMap_sRGB();
-    void rebuildTransferFunctionMap_LinearRGB();
+    static void rebuildTransferFunctionMap_sRGB(
+            const std::vector<OpacityPoint>& opacityPoints,
+            const std::vector<ColorPoint_sRGB>& colorPoints,
+            size_t textureResolution,
+            std::vector<sgl::Color16>& transferFunctionMap_sRGB,
+            std::vector<sgl::Color16>& transferFunctionMap_linearRGB);
+    static void rebuildTransferFunctionMap_LinearRGB(
+            const std::vector<OpacityPoint>& opacityPoints,
+            const std::vector<ColorPoint_LinearRGB>& colorPoints_LinearRGB,
+            size_t textureResolution,
+            std::vector<sgl::Color16>& transferFunctionMap_sRGB,
+            std::vector<sgl::Color16>& transferFunctionMap_linearRGB);
     void rebuildRangeUbo();
     std::vector<sgl::Color16> transferFunctionMap_sRGB;
     std::vector<sgl::Color16> transferFunctionMap_linearRGB;

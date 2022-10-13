@@ -169,7 +169,7 @@ bool TransferFunctionWindow::loadFunctionFromFile(const std::string& filename) {
     }
 
     interpolationColorSpace = COLOR_SPACE_SRGB; // Standard
-    const char* interpolationColorSpaceName = tfNode->Attribute("colorspace_interpolation");
+    const char* interpolationColorSpaceName = tfNode->Attribute("interpolation_colorspace");
     if (interpolationColorSpaceName != nullptr) {
         for (int i = 0; i < 2; i++) {
             if (strcmp(interpolationColorSpaceName, COLOR_SPACE_NAMES[interpolationColorSpace]) == 0) {
@@ -576,15 +576,19 @@ void TransferFunctionWindow::rebuildRangeUbo() {
 void TransferFunctionWindow::rebuildTransferFunctionMap() {
     // Create linear RGB color points
     colorPoints_LinearRGB.clear();
-    for (ColorPoint_sRGB& colorPoint : colorPoints) {
+    for (const ColorPoint_sRGB& colorPoint : colorPoints) {
         glm::vec3 linearRGBColor = sRGBToLinearRGB(colorPoint.color.getFloatColorRGB());
-        colorPoints_LinearRGB.push_back(ColorPoint_LinearRGB(linearRGBColor, colorPoint.position));
+        colorPoints_LinearRGB.emplace_back(linearRGBColor, colorPoint.position);
     }
 
     if (interpolationColorSpace == COLOR_SPACE_LINEAR_RGB) {
-        rebuildTransferFunctionMap_LinearRGB();
+        rebuildTransferFunctionMap_LinearRGB(
+                opacityPoints, colorPoints_LinearRGB, TRANSFER_FUNCTION_TEXTURE_SIZE,
+                transferFunctionMap_sRGB, transferFunctionMap_linearRGB);
     } else {
-        rebuildTransferFunctionMap_sRGB();
+        rebuildTransferFunctionMap_sRGB(
+                opacityPoints, colorPoints, TRANSFER_FUNCTION_TEXTURE_SIZE,
+                transferFunctionMap_sRGB, transferFunctionMap_linearRGB);
     }
 
 #ifdef SUPPORT_OPENGL
@@ -616,13 +620,18 @@ void TransferFunctionWindow::rebuildTransferFunctionMap() {
 }
 
 // For OpenGL: Has 256 entries. Get mapped color for normalized attribute by accessing entry at "attr*255".
-void TransferFunctionWindow::rebuildTransferFunctionMap_LinearRGB() {
+void TransferFunctionWindow::rebuildTransferFunctionMap_LinearRGB(
+        const std::vector<OpacityPoint>& opacityPoints,
+        const std::vector<ColorPoint_LinearRGB>& colorPoints_LinearRGB,
+        size_t textureResolution,
+        std::vector<sgl::Color16>& transferFunctionMap_sRGB,
+        std::vector<sgl::Color16>& transferFunctionMap_linearRGB) {
     int colorPointsIdx = 0;
     int opacityPointsIdx = 0;
-    for (size_t i = 0; i < TRANSFER_FUNCTION_TEXTURE_SIZE; i++) {
+    for (size_t i = 0; i < textureResolution; i++) {
         glm::vec3 linearRGBColorAtIdx;
         float opacityAtIdx;
-        float currentPosition = static_cast<float>(i) / float(TRANSFER_FUNCTION_TEXTURE_SIZE-1);
+        float currentPosition = static_cast<float>(i) / float(textureResolution-1);
 
         // colorPoints.at(colorPointsIdx) should be to the right of/equal to currentPosition
         while (colorPoints_LinearRGB.at(colorPointsIdx).position < currentPosition) {
@@ -656,20 +665,26 @@ void TransferFunctionWindow::rebuildTransferFunctionMap_LinearRGB() {
             opacityAtIdx = sgl::interpolateLinear(opacity0, opacity1, factor);
         }
 
-        transferFunctionMap_linearRGB.at(i) = sgl::Color16(glm::vec4(linearRGBColorAtIdx, opacityAtIdx));
+        transferFunctionMap_linearRGB.at(i) = sgl::Color16(
+                glm::vec4(linearRGBColorAtIdx, opacityAtIdx));
         transferFunctionMap_sRGB.at(i) = sgl::Color16(
                 glm::vec4(linearRGBTosRGB(linearRGBColorAtIdx), opacityAtIdx));
     }
 }
 
 // For OpenGL: Has 256 entries. Get mapped color for normalized attribute by accessing entry at "attr*255".
-void TransferFunctionWindow::rebuildTransferFunctionMap_sRGB() {
+void TransferFunctionWindow::rebuildTransferFunctionMap_sRGB(
+        const std::vector<OpacityPoint>& opacityPoints,
+        const std::vector<ColorPoint_sRGB>& colorPoints,
+        size_t textureResolution,
+        std::vector<sgl::Color16>& transferFunctionMap_sRGB,
+        std::vector<sgl::Color16>& transferFunctionMap_linearRGB) {
     int colorPointsIdx = 0;
     int opacityPointsIdx = 0;
-    for (size_t i = 0; i < TRANSFER_FUNCTION_TEXTURE_SIZE; i++) {
+    for (size_t i = 0; i < textureResolution; i++) {
         glm::vec3 sRGBColorAtIdx;
         float opacityAtIdx;
-        float currentPosition = static_cast<float>(i) / float(TRANSFER_FUNCTION_TEXTURE_SIZE-1);
+        float currentPosition = static_cast<float>(i) / float(textureResolution-1);
 
         // colorPoints.at(colorPointsIdx) should be to the right of/equal to currentPosition
         while (colorPoints.at(colorPointsIdx).position < currentPosition) {
@@ -730,6 +745,39 @@ glm::vec3 TransferFunctionWindow::linearRGBTosRGB(const glm::vec3& color_sRGB) {
     // See https://en.wikipedia.org/wiki/SRGB
     return glm::mix(1.055f * glm::pow(color_sRGB, glm::vec3(1.0f / 2.4f)) - 0.055f,
             color_sRGB * 12.92f, glm::lessThanEqual(color_sRGB, glm::vec3(0.0031308f)));
+}
+
+std::vector<sgl::Color16> TransferFunctionWindow::createColorMapFromPoints(
+        const std::vector<OpacityPoint>& opacityPoints,
+        const std::vector<sgl::ColorPoint_sRGB>& colorPoints,
+        size_t textureResolution, ColorSpace interpolationColorSpace,
+        bool outputUseLinearRGB) {
+    // Create linear RGB color points.
+    std::vector<ColorPoint_LinearRGB> colorPoints_LinearRGB;
+    for (const ColorPoint_sRGB& colorPoint : colorPoints) {
+        glm::vec3 linearRGBColor = sRGBToLinearRGB(colorPoint.color.getFloatColorRGB());
+        colorPoints_LinearRGB.emplace_back(linearRGBColor, colorPoint.position);
+    }
+
+    std::vector<sgl::Color16> transferFunctionMap_sRGB;
+    std::vector<sgl::Color16> transferFunctionMap_linearRGB;
+    transferFunctionMap_sRGB.resize(textureResolution);
+    transferFunctionMap_linearRGB.resize(textureResolution);
+    if (interpolationColorSpace == COLOR_SPACE_LINEAR_RGB) {
+        rebuildTransferFunctionMap_LinearRGB(
+                opacityPoints, colorPoints_LinearRGB, textureResolution,
+                transferFunctionMap_sRGB, transferFunctionMap_linearRGB);
+    } else {
+        rebuildTransferFunctionMap_sRGB(
+                opacityPoints, colorPoints, textureResolution,
+                transferFunctionMap_sRGB, transferFunctionMap_linearRGB);
+    }
+
+    if (outputUseLinearRGB) {
+        return transferFunctionMap_linearRGB;
+    } else {
+        return transferFunctionMap_sRGB;
+    }
 }
 
 void TransferFunctionWindow::setUseLinearRGB(bool useLinearRGB) {
