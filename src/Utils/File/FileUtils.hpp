@@ -50,13 +50,15 @@ public:
     [[nodiscard]] inline int get_argc() const { return argc; }
     inline const char **get_argv() { return argv; }
 
-    /// Directory containing the application
-    inline std::string getExecutableDirectory() { return execDir + "/"; }
-    /// Directory the app may write to, e.g. a folder in AppData (Windows) or in .config (Linux)
+    /// Directory containing the application.
+    inline std::string getExecutableDirectory() { return execDir; }
+    /// Path to the executable.
+    inline std::string getExecutablePath() { return execPath; }
+    /// Directory the app may write to, e.g. a folder in AppData (Windows) or in .config (Linux).
     inline std::string getConfigDirectory() { return configDir; }
-    /// Directory of the user, e.g. C:/Users/<Name> (Windows) or /home/<Name> (Linux)
+    /// Directory of the user, e.g. C:/Users/<Name> (Windows) or /home/<Name> (Linux).
     inline std::string getUserDirectory() { return userDir; }
-    /// Directoy available for all users on the system, e.g. /var/games (Linux) or just the configDir (Windows)
+    /// Directoy available for all users on the system, e.g. /var/games (Linux) or just the configDir (Windows).
     inline std::string getSharedDirectory() { return sharedDir; }
 
     /// Check whether file has certain extension
@@ -82,7 +84,7 @@ public:
     void rename(const std::string &filename, const std::string &newFilename);
     /// Delete file; returns success
     bool removeFile(const std::string &filename);
-    /// Delete file or directory inclusive all directories; returns success
+    /// Delete file or directory inclusive all directories; returns success.
     bool removeAll(const std::string &filename);
     void copyFileToDirectory(const std::string &sourceFile, const std::string &destinationDirectory);
     void splitPath(const std::string &path, std::list<std::string> &list);
@@ -100,15 +102,17 @@ public:
 private:
     int argc;
     const char **argv;
-    /// Name of the application
+    /// Name of the application.
     std::string appName;
-    /// Directory containing the application
+    /// Directory containing the application.
     std::string execDir;
-    /// Directory the app may write to, e.g. a folder in AppData (Windows) or .config (Linux)
+    /// Path to the executable.
+    std::string execPath;
+    /// Directory the app may write to, e.g. a folder in AppData (Windows) or .config (Linux).
     std::string configDir;
-    /// Directory of the user, e.g. C:/Users/<Name> (Windows) or /home/<Name> (Linux)
+    /// Directory of the user, e.g. C:/Users/<Name> (Windows) or /home/<Name> (Linux).
     std::string userDir;
-    /// Directoy available for all users on the system, e.g. /var/games (Linux) or just the configDir (Windows)
+    /// Directoy available for all users on the system, e.g. /var/games (Linux) or just the configDir (Windows).
     std::string sharedDir;
 };
 

@@ -90,6 +90,9 @@ public:
     glm::ivec2 getWindowResolution() override { return glm::ivec2(windowSettings.pixelWidth, windowSettings.pixelHeight); }
     void setWindowSize(int width, int height) override { setWindowPixelSize(width, height); }
 
+    /// Sets the window icon.
+    void setWindowIconFromFile(const std::string& imageFilename) override;
+
     /// Getting SDL specific data
     inline SDL_Window *getSDLWindow() { return sdlWindow; }
 #ifdef SUPPORT_OPENGL

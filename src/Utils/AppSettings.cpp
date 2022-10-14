@@ -41,6 +41,7 @@
 #include <iostream>
 #include <fstream>
 #include <boost/algorithm/string/trim.hpp>
+#include <boost/algorithm/string/case_conv.hpp>
 #include <boost/filesystem.hpp>
 
 #ifdef USE_BOOST_LOCALE
@@ -61,6 +62,7 @@
 #include <Graphics/Vulkan/Utils/Swapchain.hpp>
 #include <Graphics/Vulkan/Utils/Device.hpp>
 #include <Graphics/Vulkan/Shader/ShaderManager.hpp>
+
 #endif
 
 #ifdef _WIN32
@@ -186,7 +188,7 @@ void SettingsFile::loadFromFile(const char *filename) {
 void AppSettings::initializeDataDirectory() {
     // Make sure the "Data" directory exists. If not: Use the "Data" directory in the parent folder if it exists.
     if (!hasCustomDataDirectory && !sgl::FileUtils::get()->exists("Data")
-        && sgl::FileUtils::get()->directoryExists("../Data")) {
+            && sgl::FileUtils::get()->directoryExists("../Data")) {
         dataDirectory = "../Data/";
         hasCustomDataDirectory = true;
     }
@@ -194,6 +196,26 @@ void AppSettings::initializeDataDirectory() {
         sgl::Logfile::get()->writeError(
                 "Error: AppSettings::createWindow: Data directory \"" + dataDirectory + "\" does not exist.");
         exit(1);
+    }
+}
+
+void AppSettings::loadApplicationIconFromFile(const std::string& _iconPath) {
+    iconPath = _iconPath;
+    if (sgl::AppSettings::get()->getOS() == sgl::OperatingSystem::LINUX) {
+        std::string iconPathAbsolute = boost::filesystem::canonical(iconPath).string();
+        std::string appNameLower = boost::to_lower_copy(sgl::FileUtils::get()->getAppName());
+        std::ofstream desktopFile(
+                sgl::FileUtils::get()->getUserDirectory() + ".local/share/applications/" + appNameLower + ".desktop");
+        desktopFile << "[Desktop Entry]\n";
+        desktopFile << "Name=" << sgl::FileUtils::get()->getAppName() << "\n";
+        desktopFile << "Icon=" << iconPathAbsolute << "\n";
+        desktopFile << "Comment=A visualization tool for rendering dense sets of 3D lines\n";
+        desktopFile << "Exec=\"" << sgl::FileUtils::get()->getExecutablePath() << "\" %u\n";
+        desktopFile << "Path=" << sgl::FileUtils::get()->getExecutableDirectory() << "\n";
+        desktopFile << "Version=1.0\n";
+        desktopFile << "Type=Application\n";
+        desktopFile << "Terminal=false\n";
+        desktopFile << "StartupNotify=true\n";
     }
 }
 
@@ -245,9 +267,12 @@ Window *AppSettings::createWindow() {
     }
 #endif
 
-    SDLWindow *window = new SDLWindow;
+    SDLWindow* window = new SDLWindow;
     WindowSettings windowSettings = window->deserializeSettings(settings);
     window->initialize(windowSettings, renderSystem);
+    if (!iconPath.empty()) {
+        window->setWindowIconFromFile(iconPath);
+    }
 
     mainWindow = window;
     return window;
@@ -401,14 +426,14 @@ void AppSettings::initializeVulkanInteropSupport(
 #endif
 
 void AppSettings::setDataDirectory(const std::string& dataDirectory) {
-        char lastChar = dataDirectory.empty() ? '\0' : dataDirectory.at(dataDirectory.size() - 1);
-        if (lastChar != '/' && lastChar != '\\') {
-            this->dataDirectory = dataDirectory + "/";
-        } else {
-            this->dataDirectory = dataDirectory;
-        }
-        hasCustomDataDirectory = true;
+    char lastChar = dataDirectory.empty() ? '\0' : dataDirectory.at(dataDirectory.size() - 1);
+    if (lastChar != '/' && lastChar != '\\') {
+        this->dataDirectory = dataDirectory + "/";
+    } else {
+        this->dataDirectory = dataDirectory;
     }
+    hasCustomDataDirectory = true;
+}
 
 void AppSettings::setRenderSystem(RenderSystem renderSystem) {
     assert(!mainWindow);

@@ -53,7 +53,7 @@ enum class RenderSystem {
 };
 
 enum class OperatingSystem {
-    WINDOWS, LINUX, ANDROID, MACOSX, IOS, UNKNOWN
+    WINDOWS, LINUX, ANDROID, MACOS, IOS, UNKNOWN
 };
 
 class DLL_OBJECT SettingsFile {
@@ -129,6 +129,13 @@ public:
     void loadSettings(const char *filename);
     inline void setSaveSettings(bool _saveSettings) { saveSettings = _saveSettings; }
     inline SettingsFile &getSettings() { return settings; }
+
+    /**
+     * Sets the icon to use, e.g., for the application window.
+     * On Linux, this also creates an entry in the directory ~/.local/share/applications.
+     * @param iconPath The path (local or global) to the application icon.
+     */
+    void loadApplicationIconFromFile(const std::string& iconPath);
 
     /// setRenderSystem must be called before calling initializeSubsystems and createWindow.
     void setRenderSystem(RenderSystem renderSystem);
@@ -214,6 +221,7 @@ private:
     bool useDocking = true;
     bool useMultiViewport = true;
     float uiScaleFactor = 1.0f;
+    std::string iconPath;
 };
 
 }

@@ -130,6 +130,9 @@ public:
     virtual void clear(const Color &color = Color(0, 0, 0))=0;
     virtual void flip()=0;
 
+    /// Sets the window icon.
+    virtual void setWindowIconFromFile(const std::string& imageFilename) {}
+
     /// Utility functions and getters & setters for the main window attributes.
     // Virtual and pixel size is equivalent on Linux and Windows, but not on macOS.
     virtual void saveScreenshot(const char *filename)=0;

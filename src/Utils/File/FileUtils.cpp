@@ -60,7 +60,8 @@ void FileUtils::initialize(const std::string &_appName, int _argc, char *_argv[]
 void FileUtils::initialize(const std::string &_appName, int _argc, const char *_argv[]) {
     argc = _argc;
     argv = _argv;
-    execDir = argv[0];
+    execPath = boost::filesystem::absolute(argv[0]).string();
+    execDir = boost::filesystem::path(execPath).parent_path().string() + "/";
 
     appName = _appName;
 #if defined(__unix__) || defined(__APPLE__)

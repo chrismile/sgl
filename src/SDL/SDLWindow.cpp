@@ -30,6 +30,7 @@
 #include <cstdlib>
 #include <boost/algorithm/string/predicate.hpp>
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 
 #include <Math/Math.hpp>
 #include <Utils/StringUtils.hpp>
@@ -37,6 +38,8 @@
 #include <Utils/File/FileUtils.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/Events/EventManager.hpp>
+#include <Utils/File/ResourceBuffer.hpp>
+#include <Utils/File/ResourceManager.hpp>
 #include <Graphics/Texture/Bitmap.hpp>
 
 #include "Input/SDLMouse.hpp"
@@ -625,6 +628,39 @@ void SDLWindow::saveScreenshot(const char* filename) {
     } else {
         throw std::runtime_error("SDLWindow::saveScreenshot: Unsupported operation when using Vulkan.");
     }
+}
+
+void SDLWindow::setWindowIconFromFile(const std::string& imageFilename) {
+    /*ResourceBufferPtr resource = ResourceManager::get()->getFileSync(imageFilename.c_str());
+
+    SDL_RWops* rwops = SDL_RWFromMem(resource->getBuffer(), int(resource->getBufferSize()));
+    if (!rwops) {
+        Logfile::get()->writeError(
+                std::string() + "Error in SDLWindow::setWindowIconFromFile: SDL_RWFromMem failed for file \""
+                + imageFilename + "\". SDL Error: " + "\"" + SDL_GetError() + "\"");
+        return;
+    }
+
+    SDL_Surface* surface = IMG_Load_RW(rwops, 0);
+    rwops->close(rwops);
+
+    // Was loading the file with SDL_image successful?
+    if (!surface) {
+        Logfile::get()->writeError(
+                std::string() + "Error in SDLWindow::setWindowIconFromFile: IMG_Load_RW failed for file: \""
+                + imageFilename + "\". SDL Error: " + "\"" + SDL_GetError() + "\"");
+        return;
+    }*/
+
+    sgl::BitmapPtr bitmap(new sgl::Bitmap);
+    bitmap->fromFile(imageFilename.c_str());
+    SDL_Surface* surface = SDL_CreateRGBSurfaceFrom(
+            (void*)bitmap->getPixelsConst(), bitmap->getW(), bitmap->getH(), bitmap->getBPP(),
+            bitmap->getW() * (bitmap->getBPP() / 8),
+            0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
+
+    SDL_SetWindowIcon(sdlWindow, surface);
+    SDL_FreeSurface(surface);
 }
 
 }
