@@ -14,7 +14,7 @@
         "libpng",
         {
             "name": "sdl2",
-            "features": [ "vulkan" ]
+            "features": [ "vulkan", "x11", "wayland" ]
         },
         "sdl2-image",
         "tinyxml2",
