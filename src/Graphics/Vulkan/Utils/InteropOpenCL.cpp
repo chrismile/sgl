@@ -344,13 +344,14 @@ cl_device_id getMatchingOpenCLDevice(sgl::vk::Device* device) {
                 platforms[platIdx], CL_DEVICE_TYPE_ALL, numDevices, clDevices, nullptr);
         sgl::vk::checkResultCL(res, "Error in clGetDeviceIDs: ");
 
+        // First, check the device UUIDs (if available).
+#ifdef cl_khr_device_uuid
         for (cl_uint deviceIdx = 0; deviceIdx < numDevices; deviceIdx++) {
             cl_device_id clCurrDevice = clDevices[deviceIdx];
 
             std::unordered_set<std::string> deviceExtensions = sgl::vk::getOpenCLDeviceExtensionsSet(
                     clCurrDevice);
 
-#ifdef cl_khr_device_uuid
             if (deviceExtensions.find("cl_khr_device_uuid") != deviceExtensions.end()) {
                 uint8_t clUuid[16];
                 res = sgl::vk::g_openclFunctionTable.clGetDeviceInfo(
@@ -368,44 +369,77 @@ cl_device_id getMatchingOpenCLDevice(sgl::vk::Device* device) {
                     clDevice = clCurrDevice;
                     break;
                 }
-            } else {
+            }
+        }
 #endif
-                /*
-                 * Use heuristics for finding correct device if cl_khr_device_uuid is not supported.
-                 * Comparing the device name turned out to be sufficient for an NVIDIA RTX 3090 and the AMD APP SDK.
-                 * However, on the Steam Deck, the name of the OpenCL Clover driver uses the code name
-                 * "AMD Custom GPU 0405 (vangogh, ...)" compared to the Vulkan device name "AMD RADV VANGOGH".
-                 */
-                auto deviceNameString = sgl::vk::getOpenCLDeviceInfoString(
-                        clCurrDevice, CL_DEVICE_NAME);
-                if (deviceNameString == device->getDeviceName()) {
+
+        // If no match for the device UUIDs was found, check the device names.
+        for (cl_uint deviceIdx = 0; deviceIdx < numDevices; deviceIdx++) {
+            cl_device_id clCurrDevice = clDevices[deviceIdx];
+
+            /*
+             * Use heuristics for finding correct device if cl_khr_device_uuid is not supported.
+             * Comparing the device name turned out to be sufficient for an NVIDIA RTX 3090 and the AMD APP SDK.
+             * However, on the Steam Deck, the name of the OpenCL Clover driver uses the code name
+             * "AMD Custom GPU 0405 (vangogh, ...)" compared to the Vulkan device name "AMD RADV VANGOGH".
+             */
+            auto deviceNameString = sgl::vk::getOpenCLDeviceInfoString(
+                    clCurrDevice, CL_DEVICE_NAME);
+            if (deviceNameString == device->getDeviceName()) {
+                clDevice = clCurrDevice;
+                break;
+            }
+
+            /*
+             * Make sure that the vendor ID matches. Otherwise, when in the next step checking sub-strings of the
+             * device name, we might get incorrect matches when an APU is used.
+             * E.g., POCL puts the CPU name into the device name, and the APU name might be identical.
+             */
+            auto clDeviceVendorId = sgl::vk::getOpenCLDeviceInfo<uint32_t>(
+                    clCurrDevice, CL_DEVICE_VENDOR_ID);
+            if (clDeviceVendorId != device->getVendorId()) {
+                continue;
+            }
+
+            /**
+             * We assume matching devices if at least half of the Vulkan device name can be found in the OpenCL
+             * device name. Example for the Steam Deck: "AMD RADV VANGOGH" has two matches ("amd", "vangogh") in
+             * the OpenCL device name "AMD Custom GPU 0405 (vangogh, ...)".
+             */
+            std::string deviceNameStringCl = boost::to_lower_copy(deviceNameString);
+            std::string deviceNameStringVk = boost::to_lower_copy(std::string(device->getDeviceName()));
+            std::vector<std::string> deviceNameStringVkParts;
+            sgl::splitStringWhitespace(deviceNameStringVk, deviceNameStringVkParts);
+            int numStringPartsFound = 0;
+            for (const std::string& deviceNameStringVkPart : deviceNameStringVkParts) {
+                if (deviceNameStringCl.find(deviceNameStringVkPart) != std::string::npos) {
+                    numStringPartsFound++;
+                }
+            }
+            if (numStringPartsFound >= sgl::iceil(int(deviceNameStringVkParts.size()), 2)) {
+                clDevice = clCurrDevice;
+                break;
+            }
+
+            /*
+             * On ROCm, the device name is a codename like "gfx1030", which is different from the "real" device name
+             * (aka. board name). AMD offers an extension to get the board name, matching the name of the Vulkan
+             * device (e.g., "AMD Radeon RX 6900 XT").
+             */
+            std::unordered_set<std::string> deviceExtensions = sgl::vk::getOpenCLDeviceExtensionsSet(
+                    clCurrDevice);
+            if (deviceExtensions.find("cl_amd_device_attribute_query") != deviceExtensions.end()) {
+                auto boardNameAmd = sgl::vk::getOpenCLDeviceInfoString(
+                        clCurrDevice, CL_DEVICE_BOARD_NAME_AMD);
+                if (boardNameAmd == device->getDeviceName()) {
                     clDevice = clCurrDevice;
                     break;
                 }
 
-                /*
-                 * Make sure that the vendor ID matches. Otherwise, when in the next step checking sub-strings of the
-                 * device name, we might get incorrect matches when an APU is used.
-                 * E.g., POCL puts the CPU name into the device name, and the APU name might be identical.
-                 */
-                auto clDeviceVendorId = sgl::vk::getOpenCLDeviceInfo<uint32_t>(
-                        clCurrDevice, CL_DEVICE_VENDOR_ID);
-                if (clDeviceVendorId != device->getVendorId()) {
-                    continue;
-                }
-
-                /**
-                 * We assume matching devices if at least half of the Vulkan device name can be found in the OpenCL
-                 * device name. Example for the Steam Deck: "AMD RADV VANGOGH" has two matches ("amd", "vangogh") in
-                 * the OpenCL device name "AMD Custom GPU 0405 (vangogh, ...)".
-                 */
-                std::string deviceNameStringCl = boost::to_lower_copy(deviceNameString);
-                std::string deviceNameStringVk = boost::to_lower_copy(std::string(device->getDeviceName()));
-                std::vector<std::string> deviceNameStringVkParts;
-                sgl::splitStringWhitespace(deviceNameStringVk, deviceNameStringVkParts);
-                int numStringPartsFound = 0;
+                std::string boardNameStringCl = boost::to_lower_copy(boardNameAmd);
+                numStringPartsFound = 0;
                 for (const std::string& deviceNameStringVkPart : deviceNameStringVkParts) {
-                    if (deviceNameStringCl.find(deviceNameStringVkPart) != std::string::npos) {
+                    if (boardNameStringCl.find(deviceNameStringVkPart) != std::string::npos) {
                         numStringPartsFound++;
                     }
                 }
@@ -413,35 +447,7 @@ cl_device_id getMatchingOpenCLDevice(sgl::vk::Device* device) {
                     clDevice = clCurrDevice;
                     break;
                 }
-
-                /*
-                 * On ROCm, the device name is a codename like "gfx1030", which is different from the "real" device name
-                 * (aka. board name). AMD offers an extension to get the board name, matching the name of the Vulkan
-                 * device (e.g., "AMD Radeon RX 6900 XT").
-                 */
-                if (deviceExtensions.find("cl_amd_device_attribute_query") != deviceExtensions.end()) {
-                    auto boardNameAmd = sgl::vk::getOpenCLDeviceInfoString(
-                            clCurrDevice, CL_DEVICE_BOARD_NAME_AMD);
-                    if (boardNameAmd == device->getDeviceName()) {
-                        clDevice = clCurrDevice;
-                        break;
-                    }
-
-                    std::string boardNameStringCl = boost::to_lower_copy(boardNameAmd);
-                    numStringPartsFound = 0;
-                    for (const std::string& deviceNameStringVkPart : deviceNameStringVkParts) {
-                        if (boardNameStringCl.find(deviceNameStringVkPart) != std::string::npos) {
-                            numStringPartsFound++;
-                        }
-                    }
-                    if (numStringPartsFound >= sgl::iceil(int(deviceNameStringVkParts.size()), 2)) {
-                        clDevice = clCurrDevice;
-                        break;
-                    }
-                }
-#ifdef cl_khr_device_uuid
             }
-#endif
         }
 
         delete[] clDevices;
