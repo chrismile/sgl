@@ -315,6 +315,11 @@ cl_device_id getMatchingOpenCLDevice(sgl::vk::Device* device) {
     cl_int res;
     cl_uint numPlatforms = 0;
     res = sgl::vk::g_openclFunctionTable.clGetPlatformIDs(0, nullptr, &numPlatforms);
+#ifdef cl_khr_icd
+    if (res == CL_PLATFORM_NOT_FOUND_KHR) {
+        return nullptr;
+    }
+#endif
     sgl::vk::checkResultCL(res, "Error in clGetPlatformIDs: ");
     auto* platforms = new cl_platform_id[numPlatforms];
     res = sgl::vk::g_openclFunctionTable.clGetPlatformIDs(numPlatforms, platforms, nullptr);
@@ -515,6 +520,9 @@ static std::map<cl_int, const char*> openclErrorStringMap = {
 #ifdef CL_VERSION_2_2
         { CL_INVALID_SPEC_ID, "CL_INVALID_SPEC_ID" },
         { CL_MAX_SIZE_RESTRICTION_EXCEEDED, "CL_MAX_SIZE_RESTRICTION_EXCEEDED" },
+#endif
+#ifdef cl_khr_icd
+        { CL_PLATFORM_NOT_FOUND_KHR, "CL_PLATFORM_NOT_FOUND_KHR" },
 #endif
 };
 
