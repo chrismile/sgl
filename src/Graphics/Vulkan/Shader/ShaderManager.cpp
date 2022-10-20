@@ -145,7 +145,7 @@ static void initializeBuiltInResourceGlslang(TBuiltInResource &defaultTBuiltInRe
     defaultTBuiltInResource.maxTaskWorkGroupSizeY_NV = 1;
     defaultTBuiltInResource.maxTaskWorkGroupSizeZ_NV = 1;
     defaultTBuiltInResource.maxMeshViewCountNV = 4;
-#ifdef GLSLANG_MESH_SHADER_EXT_SUPPORT
+#if defined(VK_EXT_mesh_shader) && defined(GLSLANG_MESH_SHADER_EXT_SUPPORT)
     defaultTBuiltInResource.maxMeshOutputVerticesEXT = 256;
     defaultTBuiltInResource.maxMeshOutputPrimitivesEXT = 256;
     defaultTBuiltInResource.maxMeshWorkGroupSizeX_EXT = 128;
