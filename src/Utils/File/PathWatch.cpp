@@ -116,13 +116,15 @@ void PathWatch::_freeInternal() {
         }
     }
 
-    int retValClose = close(data->inotifyFileDesc);
-    data->inotifyFileDesc = -1;
-    if (retValClose == -1) {
-        sgl::Logfile::get()->writeError(
-                "Error in PathWatch::~PathWatch: close returned errno " + std::to_string(errno) + ": "
-                + strerror(errno));
-        return;
+    if (data->inotifyFileDesc != -1) {
+        int retValClose = close(data->inotifyFileDesc);
+        data->inotifyFileDesc = -1;
+        if (retValClose == -1) {
+            sgl::Logfile::get()->writeError(
+                    "Error in PathWatch::~PathWatch: close returned errno " + std::to_string(errno) + ": "
+                    + strerror(errno));
+            return;
+        }
     }
 
     if (data) {
@@ -132,7 +134,9 @@ void PathWatch::_freeInternal() {
 }
 
 PathWatch::~PathWatch() {
-    _freeInternal();
+    if (data) {
+        _freeInternal();
+    }
 }
 
 void PathWatch::update(std::function<void()> pathChangedCallback) {
