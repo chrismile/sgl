@@ -1249,8 +1249,45 @@ uint32_t Device::findMemoryTypeIndex(uint32_t memoryTypeBits, VkMemoryPropertyFl
         }
     }
 
-    Logfile::get()->throwError("Error in Device::findMemoryTypeIndex: Could find suitable memory!");
+    Logfile::get()->throwError("Error in Device::findMemoryTypeIndex: Could not find suitable memory!");
     return std::numeric_limits<uint32_t>::max();
+}
+
+VkDeviceSize Device::findMemoryHeapIndex(VkMemoryHeapFlagBits heapFlags) {
+    for (uint32_t heapIdx = 0; heapIdx < physicalDeviceMemoryProperties.memoryHeapCount; heapIdx++) {
+        if ((physicalDeviceMemoryProperties.memoryHeaps[heapIdx].flags & heapFlags) == heapFlags) {
+            return heapIdx;
+        }
+    }
+
+    Logfile::get()->writeError("Error in Device::findMemoryHeapIndex: Could not find a suitable memory heap!");
+    return 0;
+}
+
+VkDeviceSize Device::getMemoryHeapBudget(uint32_t memoryHeapIndex) {
+    if (memoryHeapIndex >= physicalDeviceMemoryProperties.memoryHeapCount) {
+        sgl::Logfile::get()->throwError("Error in Device::getMemoryHeapBudget: Memory heap index out of bounds.");
+        uint32_t memoryHeapCount;
+        VkMemoryHeap memoryHeaps[VK_MAX_MEMORY_HEAPS];
+    }
+
+    VkPhysicalDeviceMemoryBudgetPropertiesEXT memoryBudgetProperties = {};
+    memoryBudgetProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT;
+
+    VkPhysicalDeviceMemoryProperties2 memoryProperties2 = {};
+    memoryProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2;
+    memoryProperties2.pNext = &memoryBudgetProperties;
+    vkGetPhysicalDeviceMemoryProperties2(physicalDevice, &memoryProperties2);
+
+    return memoryBudgetProperties.heapBudget[memoryHeapIndex];
+}
+
+VkDeviceSize Device::getMemoryHeapBudgetVma(uint32_t memoryHeapIndex) {
+    auto* budgets = new VmaBudget[allocator->GetMemoryHeapCount()];
+    vmaGetHeapBudgets(allocator, budgets);
+    VkDeviceSize heapBudget = budgets[memoryHeapIndex].budget;
+    delete[] budgets;
+    return heapBudget;
 }
 
 VkCommandBuffer Device::allocateCommandBuffer(

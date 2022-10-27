@@ -41,8 +41,8 @@
 #include "../libs/volk/volk.h"
 #include "../libs/VMA/vk_mem_alloc.h"
 #include <vulkan/vk_platform.h>
+#include <Utils/HashCombine.hpp>
 #include "VulkanCompat.hpp"
-
 
 namespace sgl { class Window; }
 
@@ -60,13 +60,6 @@ struct DLL_OBJECT CommandPoolType {
     }
 };
 }}
-
-// See: https://stackoverflow.com/questions/4948780/magic-number-in-boosthash-combine
-template <class T>
-inline void hash_combine(std::size_t & s, const T & v) {
-    std::hash<T> h;
-    s ^= h(v) + 0x9e3779b9 + (s << 6) + (s >> 2);
-}
 
 namespace std {
 template<> struct hash<sgl::vk::CommandPoolType> {
@@ -272,11 +265,35 @@ public:
     std::vector<VkFormat> getSupportedDepthStencilFormats(VkImageTiling imageTiling = VK_IMAGE_TILING_OPTIMAL);
 
     /**
-     * @param memoryTypeBits
-     * @param memoryPropertyFlags
-     * @return The memoryTypeIndex
+     * Returns the index of the memory type with the corresponding bits and property flags.
+     * @param memoryTypeBits The memory type bits as returned by, e.g., VkMemoryRequirements::memoryTypeBits.
+     * @param memoryPropertyFlags The requested memory property flags.
+     * @return The index of the first suitable memory type.
      */
     uint32_t findMemoryTypeIndex(uint32_t memoryTypeBits, VkMemoryPropertyFlags memoryPropertyFlags);
+
+    /**
+     * Returns the index of the first memory heap with the requested flags.
+     * @param heapFlags The heap flags.
+     * @return The index of the first memory heap with the requested flags.
+     */
+    VkDeviceSize findMemoryHeapIndex(VkMemoryHeapFlagBits heapFlags);
+
+    /**
+     * Returns the amount of available heap memory.
+     * NOTE: VK_EXT_memory_budget needs to be used for this function to work correctly.
+     * @param memoryHeapIndex The index of the memory heap. NOTE: This is NOT equal to the memory type index!
+     * @return The memory budget for the heap in bytes.
+     */
+    VkDeviceSize getMemoryHeapBudget(uint32_t memoryHeapIndex);
+
+    /**
+     * Returns the amount of available heap memory. Compared to @see getMemoryHeapBudget, VMA has some fallbacks if
+     * VK_EXT_memory_budget is not supported by the system.
+     * @param memoryHeapIndex The index of the memory heap. NOTE: This is NOT equal to the memory type index!
+     * @return The memory budget for the heap in bytes.
+     */
+    VkDeviceSize getMemoryHeapBudgetVma(uint32_t memoryHeapIndex);
 
     // Create command buffers. Remember to call vkFreeCommandBuffers (specifying the pool is necessary for this).
     VkCommandBuffer allocateCommandBuffer(
