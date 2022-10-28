@@ -1267,8 +1267,6 @@ VkDeviceSize Device::findMemoryHeapIndex(VkMemoryHeapFlagBits heapFlags) {
 VkDeviceSize Device::getMemoryHeapBudget(uint32_t memoryHeapIndex) {
     if (memoryHeapIndex >= physicalDeviceMemoryProperties.memoryHeapCount) {
         sgl::Logfile::get()->throwError("Error in Device::getMemoryHeapBudget: Memory heap index out of bounds.");
-        uint32_t memoryHeapCount;
-        VkMemoryHeap memoryHeaps[VK_MAX_MEMORY_HEAPS];
     }
 
     VkPhysicalDeviceMemoryBudgetPropertiesEXT memoryBudgetProperties = {};
