@@ -78,12 +78,7 @@ public:
 #endif
 
 #ifdef SUPPORT_VULKAN
-    inline void setRenderer(vk::Renderer* renderer) {
-        this->renderer = renderer;
-        if (AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
-            onSwapchainRecreated();
-        }
-    }
+    void setRenderer(vk::Renderer* renderer);
     /**
      * Retrieves frame from the passed framebuffer image. The flag VK_BUFFER_USAGE_TRANSFER_SRC_BIT needs to be set!
      * @param framebuffer

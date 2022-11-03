@@ -709,7 +709,7 @@ void Renderer::insertImageMemoryBarriers(
         barrier.image = image->getVkImage();
         barrier.subresourceRange.levelCount = image->getImageSettings().mipLevels;
         barrier.subresourceRange.layerCount = image->getImageSettings().arrayLayers;
-        if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+        if (isDepthStencilFormat(image->getImageSettings().format)) {
             barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
             if (hasStencilComponent(image->getImageSettings().format)) {
                 barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;

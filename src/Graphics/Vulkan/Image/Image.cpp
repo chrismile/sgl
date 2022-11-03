@@ -34,6 +34,7 @@
 #include "../Utils/Device.hpp"
 #include "../Utils/Interop.hpp"
 #include "../Utils/Memory.hpp"
+#include "../Utils/Status.hpp"
 #include "../Buffers/Buffer.hpp"
 #include "Image.hpp"
 
@@ -199,6 +200,139 @@ size_t getImageFormatEntryByteSize(VkFormat format) {
     }
 }
 
+size_t getImageFormatNumChannels(VkFormat format) {
+    switch (format) {
+        case VK_FORMAT_R8_UNORM:
+        case VK_FORMAT_R8_SNORM:
+        case VK_FORMAT_R8_USCALED:
+        case VK_FORMAT_R8_SSCALED:
+        case VK_FORMAT_R8_UINT:
+        case VK_FORMAT_R8_SINT:
+        case VK_FORMAT_R8_SRGB:
+        case VK_FORMAT_R16_UNORM:
+        case VK_FORMAT_R16_SNORM:
+        case VK_FORMAT_R16_USCALED:
+        case VK_FORMAT_R16_SSCALED:
+        case VK_FORMAT_R16_UINT:
+        case VK_FORMAT_R16_SINT:
+        case VK_FORMAT_R16_SFLOAT:
+        case VK_FORMAT_R32_UINT:
+        case VK_FORMAT_R32_SINT:
+        case VK_FORMAT_R32_SFLOAT:
+        case VK_FORMAT_R64_UINT:
+        case VK_FORMAT_R64_SINT:
+        case VK_FORMAT_R64_SFLOAT:
+        case VK_FORMAT_D16_UNORM:
+        case VK_FORMAT_D32_SFLOAT:
+        case VK_FORMAT_S8_UINT:
+            return 1;
+        case VK_FORMAT_R8G8_UNORM:
+        case VK_FORMAT_R8G8_SNORM:
+        case VK_FORMAT_R8G8_USCALED:
+        case VK_FORMAT_R8G8_SSCALED:
+        case VK_FORMAT_R8G8_UINT:
+        case VK_FORMAT_R8G8_SINT:
+        case VK_FORMAT_R8G8_SRGB:
+        case VK_FORMAT_R16G16_UNORM:
+        case VK_FORMAT_R16G16_SNORM:
+        case VK_FORMAT_R16G16_USCALED:
+        case VK_FORMAT_R16G16_SSCALED:
+        case VK_FORMAT_R16G16_UINT:
+        case VK_FORMAT_R16G16_SINT:
+        case VK_FORMAT_R16G16_SFLOAT:
+        case VK_FORMAT_R32G32_UINT:
+        case VK_FORMAT_R32G32_SINT:
+        case VK_FORMAT_R32G32_SFLOAT:
+        case VK_FORMAT_R64G64_UINT:
+        case VK_FORMAT_R64G64_SINT:
+        case VK_FORMAT_R64G64_SFLOAT:
+        case VK_FORMAT_X8_D24_UNORM_PACK32:
+        case VK_FORMAT_D16_UNORM_S8_UINT:
+        case VK_FORMAT_D24_UNORM_S8_UINT:
+        case VK_FORMAT_D32_SFLOAT_S8_UINT:
+            return 2;
+        case VK_FORMAT_R8G8B8_UNORM:
+        case VK_FORMAT_R8G8B8_SNORM:
+        case VK_FORMAT_R8G8B8_USCALED:
+        case VK_FORMAT_R8G8B8_SSCALED:
+        case VK_FORMAT_R8G8B8_UINT:
+        case VK_FORMAT_R8G8B8_SINT:
+        case VK_FORMAT_R8G8B8_SRGB:
+        case VK_FORMAT_B8G8R8_UNORM:
+        case VK_FORMAT_B8G8R8_SNORM:
+        case VK_FORMAT_B8G8R8_USCALED:
+        case VK_FORMAT_B8G8R8_SSCALED:
+        case VK_FORMAT_B8G8R8_UINT:
+        case VK_FORMAT_B8G8R8_SINT:
+        case VK_FORMAT_B8G8R8_SRGB:
+        case VK_FORMAT_R16G16B16_UNORM:
+        case VK_FORMAT_R16G16B16_SNORM:
+        case VK_FORMAT_R16G16B16_USCALED:
+        case VK_FORMAT_R16G16B16_SSCALED:
+        case VK_FORMAT_R16G16B16_UINT:
+        case VK_FORMAT_R16G16B16_SINT:
+        case VK_FORMAT_R16G16B16_SFLOAT:
+        case VK_FORMAT_R32G32B32_UINT:
+        case VK_FORMAT_R32G32B32_SINT:
+        case VK_FORMAT_R32G32B32_SFLOAT:
+        case VK_FORMAT_R64G64B64_UINT:
+        case VK_FORMAT_R64G64B64_SINT:
+        case VK_FORMAT_R64G64B64_SFLOAT:
+        case VK_FORMAT_B10G11R11_UFLOAT_PACK32:
+            return 3;
+        case VK_FORMAT_R8G8B8A8_UNORM:
+        case VK_FORMAT_R8G8B8A8_SNORM:
+        case VK_FORMAT_R8G8B8A8_USCALED:
+        case VK_FORMAT_R8G8B8A8_SSCALED:
+        case VK_FORMAT_R8G8B8A8_UINT:
+        case VK_FORMAT_R8G8B8A8_SINT:
+        case VK_FORMAT_R8G8B8A8_SRGB:
+        case VK_FORMAT_B8G8R8A8_UNORM:
+        case VK_FORMAT_B8G8R8A8_SNORM:
+        case VK_FORMAT_B8G8R8A8_USCALED:
+        case VK_FORMAT_B8G8R8A8_SSCALED:
+        case VK_FORMAT_B8G8R8A8_UINT:
+        case VK_FORMAT_B8G8R8A8_SINT:
+        case VK_FORMAT_B8G8R8A8_SRGB:
+        case VK_FORMAT_A8B8G8R8_UNORM_PACK32:
+        case VK_FORMAT_A8B8G8R8_SNORM_PACK32:
+        case VK_FORMAT_A8B8G8R8_USCALED_PACK32:
+        case VK_FORMAT_A8B8G8R8_SSCALED_PACK32:
+        case VK_FORMAT_A8B8G8R8_UINT_PACK32:
+        case VK_FORMAT_A8B8G8R8_SINT_PACK32:
+        case VK_FORMAT_A8B8G8R8_SRGB_PACK32:
+        case VK_FORMAT_A2R10G10B10_UNORM_PACK32:
+        case VK_FORMAT_A2R10G10B10_SNORM_PACK32:
+        case VK_FORMAT_A2R10G10B10_USCALED_PACK32:
+        case VK_FORMAT_A2R10G10B10_SSCALED_PACK32:
+        case VK_FORMAT_A2R10G10B10_UINT_PACK32:
+        case VK_FORMAT_A2R10G10B10_SINT_PACK32:
+        case VK_FORMAT_A2B10G10R10_UNORM_PACK32:
+        case VK_FORMAT_A2B10G10R10_SNORM_PACK32:
+        case VK_FORMAT_A2B10G10R10_USCALED_PACK32:
+        case VK_FORMAT_A2B10G10R10_SSCALED_PACK32:
+        case VK_FORMAT_A2B10G10R10_UINT_PACK32:
+        case VK_FORMAT_A2B10G10R10_SINT_PACK32:
+        case VK_FORMAT_R16G16B16A16_UNORM:
+        case VK_FORMAT_R16G16B16A16_SNORM:
+        case VK_FORMAT_R16G16B16A16_USCALED:
+        case VK_FORMAT_R16G16B16A16_SSCALED:
+        case VK_FORMAT_R16G16B16A16_UINT:
+        case VK_FORMAT_R16G16B16A16_SINT:
+        case VK_FORMAT_R16G16B16A16_SFLOAT:
+        case VK_FORMAT_R32G32B32A32_UINT:
+        case VK_FORMAT_R32G32B32A32_SINT:
+        case VK_FORMAT_R32G32B32A32_SFLOAT:
+        case VK_FORMAT_R64G64B64A64_UINT:
+        case VK_FORMAT_R64G64B64A64_SINT:
+        case VK_FORMAT_R64G64B64A64_SFLOAT:
+        case VK_FORMAT_E5B9G9R9_UFLOAT_PACK32:
+            return 4;
+        default:
+            return 0;
+    }
+}
+
 Image::Image(Device* device, const ImageSettings& imageSettings) : device(device), imageSettings(imageSettings) {
     VkImageCreateInfo imageCreateInfo{};
     imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -216,17 +350,53 @@ Image::Image(Device* device, const ImageSettings& imageSettings) : device(device
     imageCreateInfo.samples = imageSettings.numSamples;
     imageCreateInfo.flags = 0;
 
-    if (!imageSettings.exportMemory) {
-        VmaAllocationCreateInfo allocCreateInfo = {};
-        allocCreateInfo.usage = imageSettings.memoryUsage;
+    VmaAllocationCreateInfo allocCreateInfo = {};
+    allocCreateInfo.usage = imageSettings.memoryUsage;
 
-        VmaAllocationInfo textureImageAllocationInfo;
+    VmaAllocationInfo textureImageAllocationInfo{};
+    VkExternalMemoryImageCreateInfo externalMemoryImageCreateInfo = {};
+
+    if (imageSettings.exportMemory && !imageSettings.useDedicatedAllocationForExportedMemory) {
+        VkExternalMemoryHandleTypeFlags handleTypes = 0;
+#if defined(_WIN32)
+        handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+#elif defined(__linux__)
+        handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+#else
+        Logfile::get()->throwError(
+                "Error in Image::Image: External memory is only supported on Linux, Android and Windows systems!");
+#endif
+
+        externalMemoryImageCreateInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;
+        externalMemoryImageCreateInfo.handleTypes = handleTypes;
+        imageCreateInfo.pNext = &externalMemoryImageCreateInfo;
+
+        uint32_t memoryTypeIndex = 0;
+        VkResult res = vmaFindMemoryTypeIndexForImageInfo(
+                device->getAllocator(), &imageCreateInfo, &allocCreateInfo, &memoryTypeIndex);
+        if (res != VK_SUCCESS) {
+            Logfile::get()->throwError(
+                    "Error in Image::Image: vmaFindMemoryTypeIndexForImageInfo failed ("
+                    + vulkanResultToString(res) + ")!");
+        }
+
+        VmaPool pool = device->getExternalMemoryHandlePool(memoryTypeIndex, false);
+        allocCreateInfo.pool = pool;
+    }
+
+    if (!imageSettings.exportMemory || !imageSettings.useDedicatedAllocationForExportedMemory) {
         if (vmaCreateImage(
                 device->getAllocator(), &imageCreateInfo, &allocCreateInfo, &image,
                 &imageAllocation, &textureImageAllocationInfo) != VK_SUCCESS) {
             sgl::Logfile::get()->throwError("Image::Image: vmaCreateImage failed!");
         }
-    } else {
+
+        deviceMemory = textureImageAllocationInfo.deviceMemory;
+        deviceMemoryOffset = textureImageAllocationInfo.offset;
+        deviceMemorySizeInBytes = textureImageAllocationInfo.size;
+    }
+
+    if (imageSettings.exportMemory && imageSettings.useDedicatedAllocationForExportedMemory) {
         VkExternalMemoryHandleTypeFlags handleTypes = 0;
 #if defined(_WIN32)
         handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
@@ -297,8 +467,7 @@ Image::~Image() {
     if (hasImageOwnership) {
         if (imageAllocation) {
             vmaDestroyImage(device->getAllocator(), image, imageAllocation);
-        }
-        if (deviceMemory) {
+        } else if (deviceMemory) {
             vkDestroyImage(device->getVkDevice(), image, nullptr);
             vkFreeMemory(device->getVkDevice(), deviceMemory, nullptr);
         }
@@ -653,9 +822,12 @@ void Image::clearColor(
     imageSubresourceRange.baseArrayLayer = baseArrayLayer;
     imageSubresourceRange.layerCount = layerCount;
 
-    vkCmdClearColorImage(
-            commandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            &clearColorValue, 1, &imageSubresourceRange);
+    if (imageLayout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && imageLayout != VK_IMAGE_LAYOUT_GENERAL
+            && imageLayout != VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR) {
+        sgl::Logfile::get()->writeError("Error in Image::clearColor: Invalid image layout for clearing.");
+    }
+
+    vkCmdClearColorImage(commandBuffer, image, imageLayout, &clearColorValue, 1, &imageSubresourceRange);
 
     if (singleTimeCommand) {
         device->endSingleTimeCommands(commandBuffer);
@@ -688,9 +860,11 @@ void Image::clearDepthStencil(
     imageSubresourceRange.baseArrayLayer = baseArrayLayer;
     imageSubresourceRange.layerCount = layerCount;
 
-    vkCmdClearDepthStencilImage(
-            commandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            &clearDepthStencilValue, 1, &imageSubresourceRange);
+    if (imageLayout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && imageLayout != VK_IMAGE_LAYOUT_GENERAL) {
+        sgl::Logfile::get()->writeError("Error in Image::clearDepthStencil: Invalid image layout for clearing.");
+    }
+
+    vkCmdClearDepthStencilImage(commandBuffer, image, imageLayout, &clearDepthStencilValue, 1, &imageSubresourceRange);
 
     if (singleTimeCommand) {
         device->endSingleTimeCommands(commandBuffer);

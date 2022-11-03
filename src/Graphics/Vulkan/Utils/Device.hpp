@@ -59,6 +59,19 @@ struct DLL_OBJECT CommandPoolType {
         return flags == other.flags && queueFamilyIndex == other.queueFamilyIndex && other.threadIndex == threadIndex;
     }
 };
+
+struct DLL_OBJECT MemoryPoolType {
+    /*
+     * According to https://gpuopen-librariesandsdks.github.io/VulkanMemoryAllocator/html/custom_memory_pools.html,
+     * "you shouldn't create images in a pool intended for buffers or the other way around".
+     */
+    uint32_t memoryTypeIndex = 0;
+    bool isBufferPool = true;
+
+    bool operator==(const MemoryPoolType& other) const {
+        return memoryTypeIndex == other.memoryTypeIndex && isBufferPool == other.isBufferPool;
+    }
+};
 }}
 
 namespace std {
@@ -71,6 +84,17 @@ template<> struct hash<sgl::vk::CommandPoolType> {
         hash_combine(result, s.flags);
         hash_combine(result, s.queueFamilyIndex);
         hash_combine(result, s.threadIndex);
+        return result;
+    }
+};
+template<> struct hash<sgl::vk::MemoryPoolType> {
+    std::size_t operator()(sgl::vk::MemoryPoolType const& s) const noexcept {
+        //std::size_t h1 = std::hash<uint32_t>{}(s.flags);
+        //std::size_t h2 = std::hash<uint32_t>{}(s.queueFamilyIndex);
+        //return h1 ^ (h2 << 1); // or use boost::hash_combine
+        std::size_t result = 0;
+        hash_combine(result, s.memoryTypeIndex);
+        hash_combine(result, s.isBufferPool);
         return result;
     }
 };
@@ -305,6 +329,9 @@ public:
     void freeCommandBuffer(VkCommandPool commandPool, VkCommandBuffer commandBuffer);
     void freeCommandBuffers(VkCommandPool commandPool, const std::vector<VkCommandBuffer>& commandBuffers);
 
+    // Query memory pools (automatically created).
+    VmaPool getExternalMemoryHandlePool(uint32_t memoryTypeIndex, bool isBuffer);
+
     // Create a transient command buffer ready to execute commands (0xFFFFFFFF encodes graphics queue).
     VkCommandBuffer beginSingleTimeCommands(uint32_t queueIndex = 0xFFFFFFFF, bool beginCommandBuffer = true);
     void endSingleTimeCommands(
@@ -340,6 +367,7 @@ private:
     void writeDeviceInfoToLog(const std::vector<const char*>& deviceExtensions);
 
     void createVulkanMemoryAllocator();
+    VmaPool createExternalMemoryHandlePool(uint32_t memoryTypeIndex);
 
     void createLogicalDeviceAndQueues(
             VkPhysicalDevice physicalDevice, bool useValidationLayer, const std::vector<const char*>& layerNames,
@@ -381,6 +409,8 @@ private:
     VkDevice device = VK_NULL_HANDLE;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VmaAllocator allocator = VK_NULL_HANDLE;
+    std::unordered_map<MemoryPoolType, VmaPool> externalMemoryHandlePools;
+    VkExportMemoryAllocateInfo exportMemoryAllocateInfo{}; ///< Must remain in scope for use in VMA.
 
     // Device properties.
     VkPhysicalDeviceProperties physicalDeviceProperties{};

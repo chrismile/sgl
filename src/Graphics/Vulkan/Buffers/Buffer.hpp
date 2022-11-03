@@ -64,10 +64,14 @@ public:
      * @param memoryUsage VMA_MEMORY_USAGE_GPU_ONLY, VMA_MEMORY_USAGE_CPU_ONLY, VMA_MEMORY_USAGE_CPU_TO_GPU,
      * VMA_MEMORY_USAGE_GPU_TO_CPU, VMA_MEMORY_USAGE_CPU_COPY or VMA_MEMORY_USAGE_GPU_LAZILY_ALLOCATED.
      * @param queueExclusive Is the buffer owned by a specific queue family exclusively or shared?
+     * @param useDedicatedAllocationForExportedMemory Whether to use a dedicated allocation instead of using VMA.
+     * At the moment, this is only supported for exported memory. When not using dedicated allocations, multiple buffers
+     * may share one block of VkDeviceMemory. At the moment, some APIs (like OpenCL) may not support creating buffers
+     * with memory offsets when not using sub-buffers.
      */
     Buffer(
             Device* device, size_t sizeInBytes, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
-            bool queueExclusive = true, bool exportMemory = false);
+            bool queueExclusive = true, bool exportMemory = false, bool useDedicatedAllocationForExportedMemory = true);
     /**
      * @param device The device to allocate the buffer for.
      * @param sizeInBytes The size of the buffer in bytes.
@@ -81,7 +85,8 @@ public:
      */
     Buffer(
             Device* device, size_t sizeInBytes, const void* dataPtr, VkBufferUsageFlags usage,
-            VmaMemoryUsage memoryUsage, bool queueExclusive = true, bool exportMemory = false);
+            VmaMemoryUsage memoryUsage, bool queueExclusive = true,
+            bool exportMemory = false, bool useDedicatedAllocationForExportedMemory = true);
     /**
      * Does not allocate any memory and buffer. This constructor is mainly needed when later calling
      * @see createFromD3D12SharedResourceHandle.
@@ -226,6 +231,7 @@ public:
     inline VkDeviceMemory getVkDeviceMemory() { return deviceMemory; }
     inline Device* getDevice() { return device; }
     [[nodiscard]] inline size_t getSizeInBytes() const { return sizeInBytes; }
+    [[nodiscard]] inline VkDeviceSize getDeviceMemoryOffset() { return deviceMemoryOffset; }
     [[nodiscard]] inline VkBufferUsageFlags getVkBufferUsageFlags() const { return bufferUsageFlags; }
     [[nodiscard]] inline VmaMemoryUsage getVmaMemoryUsage() const { return memoryUsage; }
 
@@ -266,6 +272,7 @@ private:
 
     // Exported memory for external use.
     VkDeviceMemory deviceMemory = VK_NULL_HANDLE;
+    VkDeviceSize deviceMemoryOffset = 0;
 
     VkBufferUsageFlags bufferUsageFlags = 0;
     VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;

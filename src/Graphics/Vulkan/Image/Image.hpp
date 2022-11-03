@@ -80,6 +80,13 @@ struct DLL_OBJECT ImageSettings {
     VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     VkSharingMode sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     bool exportMemory = false; // Whether to export the memory for external use, e.g., in OpenGL.
+    /**
+     * Whether to use a dedicated allocation instead of using VMA. At the moment, this is only supported for exported
+     * memory. When not using dedicated allocations, multiple images may share one block of VkDeviceMemory.
+     * At the moment, some APIs (like OpenCL) may not support creating buffers with memory offsets when not using
+     * sub-buffers.
+     */
+    bool useDedicatedAllocationForExportedMemory = true;
 };
 
 inline bool hasStencilComponent(VkFormat format) {
@@ -91,6 +98,8 @@ inline bool isDepthStencilFormat(VkFormat format) {
            || format == VK_FORMAT_D24_UNORM_S8_UINT || format == VK_FORMAT_D32_SFLOAT_S8_UINT;
 }
 size_t getImageFormatEntryByteSize(VkFormat format);
+
+size_t getImageFormatNumChannels(VkFormat format);
 
 class DLL_OBJECT Image {
     friend class Renderer;
@@ -234,8 +243,9 @@ public:
     /// For access from the framebuffer after a subpass has finished.
     inline void _updateLayout(VkImageLayout newLayout) { imageLayout = newLayout; }
 
-    inline Device* getDevice() { return device; }
-    inline VkDeviceMemory getVkDeviceMemory() { return deviceMemory; }
+    [[nodiscard]] inline Device* getDevice() { return device; }
+    [[nodiscard]] inline VkDeviceMemory getVkDeviceMemory() { return deviceMemory; }
+    [[nodiscard]] inline VkDeviceSize getDeviceMemoryOffset() { return deviceMemoryOffset; }
 
     void* mapMemory();
     void unmapMemory();
@@ -293,6 +303,7 @@ private:
     // Exported memory for external use.
     VkDeviceMemory deviceMemory = VK_NULL_HANDLE;
     VkDeviceSize deviceMemorySizeInBytes = 0;
+    VkDeviceSize deviceMemoryOffset = 0;
 
 #ifdef _WIN32
     HANDLE handle = nullptr;

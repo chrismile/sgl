@@ -145,7 +145,6 @@ std::string FileUtils::filenameWithoutExtension(const std::string &filename) {
     return filename.substr(0, dotPos);
 }
 
-// /home/user/Info.txt -> Info.txt
 std::string FileUtils::getPureFilename(const std::string &path) {
     for (int i = (int)path.size() - 2; i >= 0; --i) {
         if (path.at(i) == '/' || path.at(i) == '\\') {
@@ -155,7 +154,6 @@ std::string FileUtils::getPureFilename(const std::string &path) {
     return path;
 }
 
-// Info.txt -> Info
 std::string FileUtils::removeExtension(const std::string &path) {
     for (int i = (int)path.size() - 1; i >= 0; --i) {
         if (path.at(i) == '.') {
@@ -165,7 +163,22 @@ std::string FileUtils::removeExtension(const std::string &path) {
     return path;
 }
 
-// "/home/user/Info.txt" -> "/home/user/"
+std::string FileUtils::getFileExtension(const std::string &path) {
+    auto dotLocation = path.find_last_of('.');
+    if (dotLocation != std::string::npos) {
+        return path.substr(dotLocation + 1);
+    }
+    return "";
+}
+
+std::string FileUtils::getFileExtensionLower(const std::string &path) {
+    auto dotLocation = path.find_last_of('.');
+    if (dotLocation != std::string::npos) {
+        return boost::to_lower_copy(path.substr(dotLocation + 1));
+    }
+    return "";
+}
+
 std::string FileUtils::getPathToFile(const std::string &path) {
     for (int i = int(path.size()) - 1; i >= 0; --i) {
         if (path.at(i) == '/' || path.at(i) == '\\') {

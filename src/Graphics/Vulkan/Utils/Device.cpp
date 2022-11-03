@@ -892,8 +892,9 @@ void Device::createLogicalDeviceAndQueues(
 
     VkResult res = vkCreateDevice(physicalDevice, &deviceInfo, nullptr, &device);
     if (res != VK_SUCCESS) {
-        Logfile::get()->throwError("Error in createLogicalDeviceAndQueues: vkCreateDevice failed ("
-        + vulkanResultToString(res) + ")!");
+        Logfile::get()->throwError(
+                "Error in createLogicalDeviceAndQueues: vkCreateDevice failed ("
+                + vulkanResultToString(res) + ")!");
     }
 
     graphicsQueue = VK_NULL_HANDLE;
@@ -960,6 +961,108 @@ void Device::createVulkanMemoryAllocator() {
     }
 
     vmaCreateAllocator(&allocatorInfo, &allocator);
+}
+
+VmaPool Device::getExternalMemoryHandlePool(uint32_t memoryTypeIndex, bool isBuffer) {
+    MemoryPoolType memoryPoolType;
+    memoryPoolType.memoryTypeIndex = memoryTypeIndex;
+    memoryPoolType.isBufferPool = isBuffer;
+
+    auto it = externalMemoryHandlePools.find(memoryPoolType);
+    if (it != externalMemoryHandlePools.end()) {
+        return it->second;
+    }
+
+    VmaPool pool = createExternalMemoryHandlePool(memoryTypeIndex);
+    externalMemoryHandlePools.insert(std::make_pair(memoryPoolType, pool));
+    return pool;
+}
+
+VmaPool Device::createExternalMemoryHandlePool(uint32_t memoryTypeIndex) {
+    /*
+     * Previously, sgl used one dedicated allocation per external memory allocation.
+     * In this case, it was possible to use, e.g., vkGetBufferMemoryRequirements to get the best memory type index.
+     * When creating one memory pool with VMA, we need to hope it is able to store both buffers and images with the
+     * memory usage/layout one will normally use for exported memory.
+     */
+
+    VkExternalMemoryHandleTypeFlags handleTypes = 0;
+#if defined(_WIN32)
+    handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+#elif defined(__linux__)
+    handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+#else
+    Logfile::get()->throwError(
+                "Error in Device::createExternalMemoryHandlePool: "
+                "External memory is only supported on Linux, Android and Windows systems!");
+#endif
+
+    exportMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;
+    exportMemoryAllocateInfo.handleTypes = handleTypes;
+
+    /*
+     * According to https://gpuopen-librariesandsdks.github.io/VulkanMemoryAllocator/html/custom_memory_pools.html,
+     * the exact size does not matter.
+     */
+    VkBufferCreateInfo bufferCreateInfo{};
+    bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferCreateInfo.size = 0x10000;
+    bufferCreateInfo.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+
+    VkImageCreateInfo imageCreateInfo{};
+    imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageCreateInfo.format = VK_FORMAT_R32_SFLOAT;
+    imageCreateInfo.extent = { 1024, 1024, 1 };
+    imageCreateInfo.mipLevels = 1;
+    imageCreateInfo.arrayLayers = 1;
+    imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageCreateInfo.usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    imageCreateInfo.queueFamilyIndexCount = 1;
+    imageCreateInfo.pQueueFamilyIndices = &graphicsQueueIndex;
+    imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VmaAllocationCreateInfo allocationCreateInfo = {};
+    allocationCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+    uint32_t memoryTypeIndexBuffer = 0, memoryTypeIndexImage = 0;
+    VkResult res = vmaFindMemoryTypeIndexForBufferInfo(
+            allocator, &bufferCreateInfo, &allocationCreateInfo, &memoryTypeIndexBuffer);
+    if (res != VK_SUCCESS) {
+        Logfile::get()->throwError(
+                "Error in Device::createExternalMemoryHandlePool: vmaFindMemoryTypeIndexForBufferInfo failed ("
+                + vulkanResultToString(res) + ")!");
+    }
+
+    res = vmaFindMemoryTypeIndexForImageInfo(
+            allocator, &imageCreateInfo, &allocationCreateInfo, &memoryTypeIndexImage);
+    if (res != VK_SUCCESS) {
+        Logfile::get()->throwError(
+                "Error in Device::createExternalMemoryHandlePool: vmaFindMemoryTypeIndexForImageInfo failed ("
+                + vulkanResultToString(res) + ")!");
+    }
+
+    if (memoryTypeIndexBuffer != memoryTypeIndexImage) {
+        sgl::Logfile::get()->writeWarning(
+                "Warning in Device::createExternalMemoryHandlePool: Mismatch between buffer memory type index ("
+                + std::to_string(memoryTypeIndexBuffer) + ") and image memory type index ("
+                + std::to_string(memoryTypeIndexImage) + ").");
+    }
+
+    VmaPoolCreateInfo poolCreateInfo{};
+    poolCreateInfo.pMemoryAllocateNext = &exportMemoryAllocateInfo;
+    poolCreateInfo.memoryTypeIndex = memoryTypeIndexImage;
+
+    VmaPool pool = VK_NULL_HANDLE;
+    res = vmaCreatePool(allocator, &poolCreateInfo, &pool);
+    if (res != VK_SUCCESS) {
+        Logfile::get()->throwError(
+                "Error in Device::createExternalMemoryHandlePool: vmaCreatePool failed ("
+                + vulkanResultToString(res) + ")!");
+    }
+    return pool;
 }
 
 bool Device::isDeviceExtensionSupported(const std::string& name) {
@@ -1141,6 +1244,10 @@ Device::~Device() {
     commandPools.clear();
 
     if (allocator) {
+        for (auto& it : externalMemoryHandlePools) {
+            vmaDestroyPool(allocator, it.second);
+        }
+        externalMemoryHandlePools.clear();
         vmaDestroyAllocator(allocator);
     }
     if (device) {

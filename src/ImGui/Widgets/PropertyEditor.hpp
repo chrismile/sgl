@@ -64,10 +64,16 @@ public:
     bool addSliderInt2(
             const std::string& name, int* value, int minVal, int maxVal,
             const char* format = "%d", ImGuiSliderFlags flags = 0);
+    bool addSliderInt3(
+            const std::string& name, int* value, int minVal, int maxVal,
+            const char* format = "%d", ImGuiSliderFlags flags = 0);
     bool addSliderIntPowerOfTwo(
             const std::string& name, int* value, int minVal, int maxVal,
             const char* format = "%d", ImGuiSliderFlags flags = 0);
     bool addSliderFloat(
+            const std::string& name, float* value, float minVal, float maxVal,
+            const char* format = "%.3f", ImGuiSliderFlags flags = 0);
+    bool addSliderFloat2(
             const std::string& name, float* value, float minVal, float maxVal,
             const char* format = "%.3f", ImGuiSliderFlags flags = 0);
     bool addSliderFloat3(
@@ -80,10 +86,16 @@ public:
     ImGui::EditMode addSliderFloat2Edit(
             const std::string& name, float* value, float minVal, float maxVal,
             const char* format = "%.3f", ImGuiSliderFlags flags = 0);
+    ImGui::EditMode addSliderFloat3Edit(
+            const std::string& name, float* value, float minVal, float maxVal,
+            const char* format = "%.3f", ImGuiSliderFlags flags = 0);
     ImGui::EditMode addSliderIntEdit(
             const std::string& name, int* value, int minVal, int maxVal,
             const char* format = "%d", ImGuiSliderFlags flags = 0);
     ImGui::EditMode addSliderInt2Edit(
+            const std::string& name, int* value, int minVal, int maxVal,
+            const char* format = "%d", ImGuiSliderFlags flags = 0);
+    ImGui::EditMode addSliderInt3Edit(
             const std::string& name, int* value, int minVal, int maxVal,
             const char* format = "%d", ImGuiSliderFlags flags = 0);
 

@@ -34,6 +34,7 @@
 #include "../Utils/Device.hpp"
 #include "../Utils/Interop.hpp"
 #include "../Utils/Memory.hpp"
+#include "../Utils/Status.hpp"
 #include "Buffer.hpp"
 
 #ifdef _WIN32
@@ -48,7 +49,7 @@ namespace sgl { namespace vk {
 
 Buffer::Buffer(
         Device* device, size_t sizeInBytes, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, bool queueExclusive,
-        bool exportMemory)
+        bool exportMemory, bool useDedicatedAllocationForExportedMemory)
         : device(device), sizeInBytes(sizeInBytes), bufferUsageFlags(usage), memoryUsage(memoryUsage),
           queueExclusive(queueExclusive), exportMemory(exportMemory) {
     VkBufferCreateInfo bufferCreateInfo{};
@@ -57,17 +58,12 @@ Buffer::Buffer(
     bufferCreateInfo.usage = usage;
     bufferCreateInfo.sharingMode = queueExclusive ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
 
-    if (!exportMemory) {
-        // When the memory does not need to be exported, we can use the library VMA for allocations.
-        VmaAllocationCreateInfo allocCreateInfo{};
-        allocCreateInfo.usage = memoryUsage;
+    VkExternalMemoryBufferCreateInfo externalMemoryBufferCreateInfo{};
 
-        if (vmaCreateBuffer(
-                device->getAllocator(), &bufferCreateInfo, &allocCreateInfo,
-                &buffer, &bufferAllocation, &bufferAllocationInfo) != VK_SUCCESS) {
-            Logfile::get()->throwError("Error in Buffer::Buffer: Failed to create a buffer of the specified size!");
-        }
-    } else {
+    VmaAllocationCreateInfo allocCreateInfo{};
+    allocCreateInfo.usage = memoryUsage;
+
+    if (exportMemory && !useDedicatedAllocationForExportedMemory) {
         VkExternalMemoryHandleTypeFlags handleTypes = 0;
 #if defined(_WIN32)
         handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
@@ -78,7 +74,45 @@ Buffer::Buffer(
                 "Error in Buffer::Buffer: External memory is only supported on Linux, Android and Windows systems!");
 #endif
 
-        VkExternalMemoryBufferCreateInfo externalMemoryBufferCreateInfo{};
+        externalMemoryBufferCreateInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO;
+        externalMemoryBufferCreateInfo.handleTypes = handleTypes;
+        bufferCreateInfo.pNext = &externalMemoryBufferCreateInfo;
+
+        uint32_t memoryTypeIndex = 0;
+        VkResult res = vmaFindMemoryTypeIndexForBufferInfo(
+                device->getAllocator(), &bufferCreateInfo, &allocCreateInfo, &memoryTypeIndex);
+        if (res != VK_SUCCESS) {
+            Logfile::get()->throwError(
+                    "Error in Buffer::Buffer: vmaFindMemoryTypeIndexForBufferInfo failed ("
+                    + vulkanResultToString(res) + ")!");
+        }
+
+        VmaPool pool = device->getExternalMemoryHandlePool(memoryTypeIndex, true);
+        allocCreateInfo.pool = pool;
+    }
+
+    if (!exportMemory || !useDedicatedAllocationForExportedMemory) {
+        if (vmaCreateBuffer(
+                device->getAllocator(), &bufferCreateInfo, &allocCreateInfo,
+                &buffer, &bufferAllocation, &bufferAllocationInfo) != VK_SUCCESS) {
+            Logfile::get()->throwError("Error in Buffer::Buffer: Failed to create a buffer of the specified size!");
+        }
+
+        deviceMemory = bufferAllocationInfo.deviceMemory;
+        deviceMemoryOffset = bufferAllocationInfo.offset;
+    }
+
+    if (exportMemory && useDedicatedAllocationForExportedMemory) {
+        VkExternalMemoryHandleTypeFlags handleTypes = 0;
+#if defined(_WIN32)
+        handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+#elif defined(__linux__)
+        handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+#else
+        Logfile::get()->throwError(
+                "Error in Buffer::Buffer: External memory is only supported on Linux, Android and Windows systems!");
+#endif
+
         externalMemoryBufferCreateInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO;
         externalMemoryBufferCreateInfo.handleTypes = handleTypes;
         bufferCreateInfo.pNext = &externalMemoryBufferCreateInfo;
@@ -118,16 +152,17 @@ Buffer::Buffer(
 
 Buffer::Buffer(
         Device* device, size_t sizeInBytes, const void* dataPtr, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
-        bool queueExclusive, bool exportMemory)
-        : Buffer(device, sizeInBytes, usage, memoryUsage, queueExclusive, exportMemory) {
+        bool queueExclusive, bool exportMemory, bool useDedicatedAllocationForExportedMemory)
+        : Buffer(
+                device, sizeInBytes, usage, memoryUsage, queueExclusive, exportMemory,
+                useDedicatedAllocationForExportedMemory) {
     uploadData(sizeInBytes, dataPtr);
 }
 
 Buffer::~Buffer() {
     if (bufferAllocation) {
         vmaDestroyBuffer(device->getAllocator(), buffer, bufferAllocation);
-    }
-    if (deviceMemory) {
+    } else if (deviceMemory) {
         vkDestroyBuffer(device->getVkDevice(), buffer, nullptr);
         vkFreeMemory(device->getVkDevice(), deviceMemory, nullptr);
     }

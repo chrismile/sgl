@@ -101,6 +101,7 @@ TransferFunctionWindow::TransferFunctionWindow() {
 #endif
 
     saveDirectory = sgl::AppSettings::get()->getDataDirectory() + "TransferFunctions/";
+    sgl::FileUtils::get()->ensureDirectoryExists(saveDirectory);
     directoryContentWatch.setPath(saveDirectory, true);
     directoryContentWatch.initialize();
 

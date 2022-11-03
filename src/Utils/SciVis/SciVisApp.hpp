@@ -55,6 +55,7 @@ typedef std::shared_ptr<ShaderProgram> ShaderProgramPtr;
 
 #ifdef SUPPORT_VULKAN
 namespace sgl { namespace vk {
+class Device;
 class Image;
 typedef std::shared_ptr<Image> ImagePtr;
 class ImageView;

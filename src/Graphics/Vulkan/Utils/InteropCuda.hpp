@@ -30,6 +30,7 @@
 #define SGL_INTEROPCUDA_HPP
 
 #include "../Buffers/Buffer.hpp"
+#include "../Image/Image.hpp"
 #include "SyncObjects.hpp"
 #include "Device.hpp"
 
@@ -73,8 +74,16 @@ struct CudaDeviceApiFunctionTable {
     CUresult ( *cuMemcpyDtoHAsync )( void *dstHost, CUdeviceptr srcDevice, size_t ByteCount, CUstream hStream );
     CUresult ( *cuMemcpyHtoDAsync )( CUdeviceptr dstDevice, const void *srcHost, size_t ByteCount, CUstream hStream );
 
+    CUresult ( *cuMipmappedArrayDestroy )(CUmipmappedArray hMipmappedArray);
+
+    CUresult ( *cuTexObjectCreate )( CUtexObject *pTexObject, const CUDA_RESOURCE_DESC *pResDesc, const CUDA_TEXTURE_DESC *pTexDesc, const CUDA_RESOURCE_VIEW_DESC *pResViewDesc );
+    CUresult ( *cuTexObjectDestroy )( CUtexObject texObject );
+    CUresult ( *cuSurfObjectCreate )( CUsurfObject *pSurfObject, const CUDA_RESOURCE_DESC *pResDesc );
+    CUresult ( *cuSurfObjectDestroy )( CUsurfObject surfObject );
+
     CUresult ( *cuImportExternalMemory )( CUexternalMemory *extMem_out, const CUDA_EXTERNAL_MEMORY_HANDLE_DESC *memHandleDesc );
     CUresult ( *cuExternalMemoryGetMappedBuffer )( CUdeviceptr *devPtr, CUexternalMemory extMem, const CUDA_EXTERNAL_MEMORY_BUFFER_DESC *bufferDesc );
+    CUresult ( *cuExternalMemoryGetMappedMipmappedArray )( CUmipmappedArray *mipmap, CUexternalMemory extMem, const CUDA_EXTERNAL_MEMORY_MIPMAPPED_ARRAY_DESC *mipmapDesc );
     CUresult ( *cuDestroyExternalMemory )( CUexternalMemory extMem );
 
     CUresult ( *cuImportExternalSemaphore )( CUexternalSemaphore *extSem_out, const CUDA_EXTERNAL_SEMAPHORE_HANDLE_DESC *semHandleDesc );
@@ -129,6 +138,7 @@ private:
 
 typedef std::shared_ptr<SemaphoreVkCudaDriverApiInterop> SemaphoreVkCudaDriverApiInteropPtr;
 
+
 /**
  * A CUDA driver API CUdeviceptr object created from a Vulkan buffer.
  */
@@ -154,6 +164,80 @@ protected:
 };
 
 typedef std::shared_ptr<BufferCudaDriverApiExternalMemoryVk> BufferCudaDriverApiExternalMemoryVkPtr;
+typedef BufferCudaDriverApiExternalMemoryVk BufferCudaExternalMemoryVk;
+typedef std::shared_ptr<BufferCudaExternalMemoryVk> BufferCudaExternalMemoryVkPtr;
+
+
+/**
+ * A CUDA driver API CUmipmappedArray object created from a Vulkan image.
+ */
+class DLL_OBJECT ImageCudaExternalMemoryVk
+{
+public:
+    explicit ImageCudaExternalMemoryVk(vk::ImagePtr& vulkanImage);
+    ImageCudaExternalMemoryVk(
+            vk::ImagePtr& vulkanImage, VkImageViewType imageViewType, bool surfaceLoadStore);
+    virtual ~ImageCudaExternalMemoryVk();
+
+    inline const sgl::vk::ImagePtr& getVulkanImage() { return vulkanImage; }
+    [[nodiscard]] inline CUmipmappedArray getCudaMipmappedArray() const { return cudaMipmappedArray; }
+
+protected:
+    void _initialize(vk::ImagePtr& _vulkanImage, VkImageViewType imageViewType, bool surfaceLoadStore);
+
+    sgl::vk::ImagePtr vulkanImage;
+    CUexternalMemory cudaExternalMemoryBuffer{};
+    CUmipmappedArray cudaMipmappedArray{};
+
+#ifdef _WIN32
+    HANDLE handle = nullptr;
+#else
+    int fileDescriptor = -1;
+#endif
+};
+
+typedef std::shared_ptr<ImageCudaExternalMemoryVk> ImageCudaExternalMemoryVkPtr;
+typedef ImageCudaExternalMemoryVk ImageCudaDriverApiExternalMemoryVk;
+typedef std::shared_ptr<ImageCudaDriverApiExternalMemoryVk> ImageCudaDriverApiExternalMemoryVkPtr;
+
+class TextureCudaExternalMemoryVk {
+public:
+    explicit TextureCudaExternalMemoryVk(vk::TexturePtr& vulkanTexture);
+    TextureCudaExternalMemoryVk(
+            vk::ImagePtr& vulkanImage, const ImageSamplerSettings& samplerSettings);
+    TextureCudaExternalMemoryVk(
+            vk::ImagePtr& vulkanImage, const ImageSamplerSettings& samplerSettings,
+            VkImageViewType imageViewType);
+    TextureCudaExternalMemoryVk(
+            vk::ImagePtr& vulkanImage, const ImageSamplerSettings& samplerSettings,
+            VkImageViewType imageViewType, VkImageSubresourceRange imageSubresourceRange);
+    ~TextureCudaExternalMemoryVk();
+
+    [[nodiscard]] inline CUtexObject getCudaTextureObject() const { return cudaTextureObject; }
+    inline const sgl::vk::ImagePtr& getVulkanImage() { return imageCudaExternalMemory->getVulkanImage(); }
+
+protected:
+    CUtexObject cudaTextureObject{};
+    ImageCudaExternalMemoryVkPtr imageCudaExternalMemory;
+};
+
+typedef std::shared_ptr<TextureCudaExternalMemoryVk> TextureCudaExternalMemoryVkPtr;
+
+class SurfaceCudaExternalMemoryVk {
+public:
+    SurfaceCudaExternalMemoryVk(vk::ImagePtr& vulkanImageView, VkImageViewType imageViewType);
+    explicit SurfaceCudaExternalMemoryVk(vk::ImageViewPtr& vulkanImageView);
+    ~SurfaceCudaExternalMemoryVk();
+
+    [[nodiscard]] inline CUtexObject getCudaSurfaceObject() const { return cudaSurfaceObject; }
+    inline const sgl::vk::ImagePtr& getVulkanImage() { return imageCudaExternalMemory->getVulkanImage(); }
+
+protected:
+    CUsurfObject cudaSurfaceObject{};
+    ImageCudaExternalMemoryVkPtr imageCudaExternalMemory;
+};
+
+typedef std::shared_ptr<SurfaceCudaExternalMemoryVk> SurfaceCudaExternalMemoryVkPtr;
 
 }}
 

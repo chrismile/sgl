@@ -303,6 +303,13 @@ void VideoWriter::readBackOldestFrameVulkan() {
     pushFrame(framebuffer);
 }
 
+void VideoWriter::setRenderer(vk::Renderer* renderer) {
+    this->renderer = renderer;
+    if (AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+        onSwapchainRecreated();
+    }
+}
+
 void VideoWriter::pushFramebufferImage(vk::ImagePtr& image) {
     if (!avfile) {
         openFile(filename, int(image->getImageSettings().width), int(image->getImageSettings().height), framerate);

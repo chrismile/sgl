@@ -68,6 +68,10 @@ public:
     std::string getPureFilename(const std::string &path);
     /// "Info.txt" -> "Info"
     std::string removeExtension(const std::string &path);
+    /// "Info.txt" -> "txt"
+    std::string getFileExtension(const std::string &path);
+    /// "Info.TXT" -> "txt"
+    std::string getFileExtensionLower(const std::string &path);
     /// "/home/user/Info.txt" -> "/home/user/"
     std::string getPathToFile(const std::string &path);
 
