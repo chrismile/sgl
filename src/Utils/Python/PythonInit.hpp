@@ -29,6 +29,9 @@
 #ifndef SGL_PYTHONINIT_HPP
 #define SGL_PYTHONINIT_HPP
 
+#include <string>
+#include <cstring>
+
 #if defined(PYTHONHOME_PATH) || defined(__APPLE__)
 #include <cstdlib>
 #endif
@@ -36,6 +39,9 @@
 #ifdef __APPLE__
 #include <mach-o/dyld.h>
 #endif
+
+#include <Utils/File/Logfile.hpp>
+#include <Utils/File/FileUtils.hpp>
 
 namespace sgl {
 
