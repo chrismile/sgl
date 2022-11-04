@@ -116,13 +116,16 @@ public:
     void setStaticImageView(const ImageViewPtr& imageView, uint32_t binding);
     void setImageSampler(const ImageSamplerPtr& imageSampler, uint32_t binding);
     void setStaticTexture(const TexturePtr& texture, uint32_t binding);
+    void setStaticImageViewArray(const std::vector<ImageViewPtr>& imageViewArray, uint32_t binding);
 
     void setStaticImageView(const ImageViewPtr& imageView, const std::string& descName);
     void setImageSampler(const ImageSamplerPtr& imageSampler, const std::string& descName);
     void setStaticTexture(const TexturePtr& texture, const std::string& descName);
+    void setStaticImageViewArray(const std::vector<ImageViewPtr>& imageViewArray, const std::string& descName);
     void setStaticImageViewOptional(const ImageViewPtr& imageView, const std::string& descName);
     void setImageSamplerOptional(const ImageSamplerPtr& imageSampler, const std::string& descName);
     void setStaticTextureOptional(const TexturePtr& texture, const std::string& descName);
+    void setStaticImageViewArrayOptional(const std::vector<ImageViewPtr>& imageViewArray, const std::string& descName);
 
     void setTopLevelAccelerationStructure(const TopLevelAccelerationStructurePtr& tlas, uint32_t binding);
     void setTopLevelAccelerationStructure(const TopLevelAccelerationStructurePtr& tlas, const std::string& descName);
@@ -167,6 +170,10 @@ public:
         std::map<uint32_t, ImageViewPtr> imageViews;
         std::map<uint32_t, ImageSamplerPtr> imageSamplers;
         std::map<uint32_t, TopLevelAccelerationStructurePtr> accelerationStructures;
+
+        // Arrays.
+        std::map<uint32_t, std::vector<ImageViewPtr>> imageViewArrays;
+
         VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
     };
     inline FrameData& getFrameData(uint32_t frameIdx) { return frameDataList.at(frameIdx); }
@@ -185,6 +192,7 @@ private:
     std::map<uint32_t, bool> buffersStatic;
     std::map<uint32_t, bool> bufferViewsStatic;
     std::map<uint32_t, bool> imageViewsStatic;
+    std::map<uint32_t, bool> imageViewArraysStatic;
     std::map<uint32_t, bool> accelerationStructuresStatic;
 
     std::vector<FrameData> frameDataList;

@@ -73,8 +73,11 @@ struct CudaDeviceApiFunctionTable {
     CUresult ( *cuMemcpyAsync )( CUdeviceptr dst, CUdeviceptr src, size_t ByteCount, CUstream hStream );
     CUresult ( *cuMemcpyDtoHAsync )( void *dstHost, CUdeviceptr srcDevice, size_t ByteCount, CUstream hStream );
     CUresult ( *cuMemcpyHtoDAsync )( CUdeviceptr dstDevice, const void *srcHost, size_t ByteCount, CUstream hStream );
+    CUresult ( *cuMemcpy2DAsync )( const CUDA_MEMCPY2D* pCopy, CUstream hStream );
+    CUresult ( *cuMemcpy3DAsync )( const CUDA_MEMCPY3D* pCopy, CUstream hStream );
 
     CUresult ( *cuMipmappedArrayDestroy )(CUmipmappedArray hMipmappedArray);
+    CUresult ( *cuMipmappedArrayGetLevel )( CUarray* pLevelArray, CUmipmappedArray hMipmappedArray, unsigned int level );
 
     CUresult ( *cuTexObjectCreate )( CUtexObject *pTexObject, const CUDA_RESOURCE_DESC *pResDesc, const CUDA_TEXTURE_DESC *pTexDesc, const CUDA_RESOURCE_VIEW_DESC *pResViewDesc );
     CUresult ( *cuTexObjectDestroy )( CUtexObject texObject );
@@ -181,6 +184,13 @@ public:
 
     inline const sgl::vk::ImagePtr& getVulkanImage() { return vulkanImage; }
     [[nodiscard]] inline CUmipmappedArray getCudaMipmappedArray() const { return cudaMipmappedArray; }
+    CUarray getCudaMipmappedArrayLevel(uint32_t level = 0);
+
+    /*
+     * Asynchronous copy from a device pointer to level 0 mipmap level.
+     */
+    void memcpyCudaDtoA2DAsync(CUdeviceptr devicePtr, CUstream stream);
+    void memcpyCudaDtoA3DAsync(CUdeviceptr devicePtr, CUstream stream);
 
 protected:
     void _initialize(vk::ImagePtr& _vulkanImage, VkImageViewType imageViewType, bool surfaceLoadStore);
@@ -188,6 +198,9 @@ protected:
     sgl::vk::ImagePtr vulkanImage;
     CUexternalMemory cudaExternalMemoryBuffer{};
     CUmipmappedArray cudaMipmappedArray{};
+
+    // Cache for storing the array for mipmap level 0.
+    CUarray cudaArrayLevel0{};
 
 #ifdef _WIN32
     HANDLE handle = nullptr;
@@ -215,6 +228,7 @@ public:
 
     [[nodiscard]] inline CUtexObject getCudaTextureObject() const { return cudaTextureObject; }
     inline const sgl::vk::ImagePtr& getVulkanImage() { return imageCudaExternalMemory->getVulkanImage(); }
+    inline const ImageCudaExternalMemoryVkPtr& getImageCudaExternalMemory() { return imageCudaExternalMemory; }
 
 protected:
     CUtexObject cudaTextureObject{};

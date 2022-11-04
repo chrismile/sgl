@@ -750,6 +750,41 @@ void Image::copyToImage(ImagePtr& destImage, VkImageAspectFlags aspectFlags, VkC
     }
 }
 
+void Image::copyToImage(
+        ImagePtr& destImage, VkImageAspectFlags srcAspectFlags, VkImageAspectFlags destAspectFlags,
+        VkCommandBuffer commandBuffer) {
+    bool transientCommandBuffer = commandBuffer == VK_NULL_HANDLE;
+    if (transientCommandBuffer) {
+        commandBuffer = device->beginSingleTimeCommands();
+    }
+
+    VkImageSubresourceLayers srcSubresource{};
+    srcSubresource.aspectMask = srcAspectFlags;
+    srcSubresource.mipLevel = 0;
+    srcSubresource.baseArrayLayer = 0;
+    srcSubresource.layerCount = imageSettings.arrayLayers;
+
+    VkImageSubresourceLayers dstSubresource{};
+    dstSubresource.aspectMask = destAspectFlags;
+    dstSubresource.mipLevel = 0;
+    dstSubresource.baseArrayLayer = 0;
+    dstSubresource.layerCount = imageSettings.arrayLayers;
+
+    VkImageCopy imageCopy{};
+    imageCopy.srcSubresource = srcSubresource;
+    imageCopy.srcOffset = { 0, 0, 0 };
+    imageCopy.dstSubresource = dstSubresource;
+    imageCopy.dstOffset = { 0, 0, 0 };
+    imageCopy.extent = { imageSettings.width, imageSettings.height, imageSettings.depth };
+    vkCmdCopyImage(
+            commandBuffer, this->image, this->imageLayout, destImage->image, destImage->imageLayout,
+            1, &imageCopy);
+
+    if (transientCommandBuffer) {
+        device->endSingleTimeCommands(commandBuffer);
+    }
+}
+
 void Image::blit(ImagePtr& destImage, VkCommandBuffer commandBuffer) {
     // Does the device support linear filtering for blit operations?
     if (imageSettings.format != cachedFormat) {

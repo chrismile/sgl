@@ -71,7 +71,10 @@ bool initializeCudaDeviceApiFunctionTable() {
     typedef CUresult ( *PFN_cuMemcpyAsync )( CUdeviceptr dst, CUdeviceptr src, size_t ByteCount, CUstream hStream );
     typedef CUresult ( *PFN_cuMemcpyDtoHAsync )( void *dstHost, CUdeviceptr srcDevice, size_t ByteCount, CUstream hStream );
     typedef CUresult ( *PFN_cuMemcpyHtoDAsync )( CUdeviceptr dstDevice, const void *srcHost, size_t ByteCount, CUstream hStream );
+    typedef CUresult ( *PFN_cuMemcpy2DAsync )( const CUDA_MEMCPY2D* pCopy, CUstream hStream );
+    typedef CUresult ( *PFN_cuMemcpy3DAsync )( const CUDA_MEMCPY3D* pCopy, CUstream hStream );
     typedef CUresult ( *PFN_cuMipmappedArrayDestroy )( CUmipmappedArray hMipmappedArray );
+    typedef CUresult ( *PFN_cuMipmappedArrayGetLevel )( CUarray* pLevelArray, CUmipmappedArray hMipmappedArray, unsigned int level );
     typedef CUresult ( *PFN_cuTexObjectCreate )( CUtexObject *pTexObject, const CUDA_RESOURCE_DESC *pResDesc, const CUDA_TEXTURE_DESC *pTexDesc, const CUDA_RESOURCE_VIEW_DESC *pResViewDesc );
     typedef CUresult ( *PFN_cuTexObjectDestroy )( CUtexObject texObject );
     typedef CUresult ( *PFN_cuSurfObjectCreate )( CUsurfObject *pSurfObject, const CUDA_RESOURCE_DESC *pResDesc );
@@ -117,7 +120,10 @@ bool initializeCudaDeviceApiFunctionTable() {
     g_cudaDeviceApiFunctionTable.cuMemcpyAsync = PFN_cuMemcpyAsync(dlsym(g_cudaLibraryHandle, TOSTRING(cuMemcpyAsync)));
     g_cudaDeviceApiFunctionTable.cuMemcpyDtoHAsync = PFN_cuMemcpyDtoHAsync(dlsym(g_cudaLibraryHandle, TOSTRING(cuMemcpyDtoHAsync)));
     g_cudaDeviceApiFunctionTable.cuMemcpyHtoDAsync = PFN_cuMemcpyHtoDAsync(dlsym(g_cudaLibraryHandle, TOSTRING(cuMemcpyHtoDAsync)));
+    g_cudaDeviceApiFunctionTable.cuMemcpy2DAsync = PFN_cuMemcpy2DAsync(dlsym(g_cudaLibraryHandle, TOSTRING(cuMemcpy2DAsync)));
+    g_cudaDeviceApiFunctionTable.cuMemcpy3DAsync = PFN_cuMemcpy3DAsync(dlsym(g_cudaLibraryHandle, TOSTRING(cuMemcpy3DAsync)));
     g_cudaDeviceApiFunctionTable.cuMipmappedArrayDestroy = PFN_cuMipmappedArrayDestroy(dlsym(g_cudaLibraryHandle, TOSTRING(cuMipmappedArrayDestroy)));
+    g_cudaDeviceApiFunctionTable.cuMipmappedArrayGetLevel = PFN_cuMipmappedArrayGetLevel(dlsym(g_cudaLibraryHandle, TOSTRING(cuMipmappedArrayGetLevel)));
     g_cudaDeviceApiFunctionTable.cuTexObjectCreate = PFN_cuTexObjectCreate(dlsym(g_cudaLibraryHandle, TOSTRING(cuTexObjectCreate)));
     g_cudaDeviceApiFunctionTable.cuTexObjectDestroy = PFN_cuTexObjectDestroy(dlsym(g_cudaLibraryHandle, TOSTRING(cuTexObjectDestroy)));
     g_cudaDeviceApiFunctionTable.cuSurfObjectCreate = PFN_cuSurfObjectCreate(dlsym(g_cudaLibraryHandle, TOSTRING(cuSurfObjectCreate)));
@@ -147,7 +153,13 @@ bool initializeCudaDeviceApiFunctionTable() {
             || !g_cudaDeviceApiFunctionTable.cuMemsetD8Async
             || !g_cudaDeviceApiFunctionTable.cuMemsetD16Async
             || !g_cudaDeviceApiFunctionTable.cuMemsetD32Async
+            || !g_cudaDeviceApiFunctionTable.cuMemcpyAsync
+            || !g_cudaDeviceApiFunctionTable.cuMemcpyDtoHAsync
+            || !g_cudaDeviceApiFunctionTable.cuMemcpyHtoDAsync
+            || !g_cudaDeviceApiFunctionTable.cuMemcpy2DAsync
+            || !g_cudaDeviceApiFunctionTable.cuMemcpy3DAsync
             || !g_cudaDeviceApiFunctionTable.cuMipmappedArrayDestroy
+            || !g_cudaDeviceApiFunctionTable.cuMipmappedArrayGetLevel
             || !g_cudaDeviceApiFunctionTable.cuTexObjectCreate
             || !g_cudaDeviceApiFunctionTable.cuTexObjectDestroy
             || !g_cudaDeviceApiFunctionTable.cuSurfObjectCreate
@@ -721,6 +733,62 @@ ImageCudaExternalMemoryVk::~ImageCudaExternalMemoryVk() {
         cuResult = g_cudaDeviceApiFunctionTable.cuDestroyExternalMemory(cudaExternalMemoryBuffer);
         checkCUresult(cuResult, "Error in cuDestroyExternalMemory: ");
     }
+}
+
+CUarray ImageCudaExternalMemoryVk::getCudaMipmappedArrayLevel(uint32_t level) {
+    if (level == 0 && cudaArrayLevel0) {
+        return cudaArrayLevel0;
+    }
+
+    CUarray levelArray;
+    CUresult cuResult = g_cudaDeviceApiFunctionTable.cuMipmappedArrayGetLevel(&levelArray, cudaMipmappedArray, level);
+    checkCUresult(cuResult, "Error in cuMipmappedArrayGetLevel: ");
+
+    if (level == 0) {
+        cudaArrayLevel0 = levelArray;
+    }
+
+    return levelArray;
+}
+
+void ImageCudaExternalMemoryVk::memcpyCudaDtoA2DAsync(CUdeviceptr devicePtr, CUstream stream) {
+    const sgl::vk::ImageSettings& imageSettings = vulkanImage->getImageSettings();
+    size_t entryByteSize = getImageFormatEntryByteSize(imageSettings.format);
+
+    CUDA_MEMCPY2D memcpySettings{};
+    memcpySettings.srcMemoryType = CU_MEMORYTYPE_DEVICE;
+    memcpySettings.srcDevice = devicePtr;
+    memcpySettings.srcPitch = imageSettings.width * entryByteSize;
+
+    memcpySettings.dstMemoryType = CU_MEMORYTYPE_ARRAY;
+    memcpySettings.dstArray = getCudaMipmappedArrayLevel(0);
+
+    memcpySettings.WidthInBytes = imageSettings.width * entryByteSize;
+    memcpySettings.Height = imageSettings.height;
+
+    CUresult cuResult = g_cudaDeviceApiFunctionTable.cuMemcpy2DAsync(&memcpySettings, stream);
+    checkCUresult(cuResult, "Error in cuMemcpy2DAsync: ");
+}
+
+void ImageCudaExternalMemoryVk::memcpyCudaDtoA3DAsync(CUdeviceptr devicePtr, CUstream stream) {
+    const sgl::vk::ImageSettings& imageSettings = vulkanImage->getImageSettings();
+    size_t entryByteSize = getImageFormatEntryByteSize(imageSettings.format);
+
+    CUDA_MEMCPY3D memcpySettings{};
+    memcpySettings.srcMemoryType = CU_MEMORYTYPE_DEVICE;
+    memcpySettings.srcDevice = devicePtr;
+    memcpySettings.srcPitch = imageSettings.width * entryByteSize;
+    memcpySettings.srcHeight = imageSettings.height;
+
+    memcpySettings.dstMemoryType = CU_MEMORYTYPE_ARRAY;
+    memcpySettings.dstArray = getCudaMipmappedArrayLevel(0);
+
+    memcpySettings.WidthInBytes = imageSettings.width * entryByteSize;
+    memcpySettings.Height = imageSettings.height;
+    memcpySettings.Depth = imageSettings.depth;
+
+    CUresult cuResult = g_cudaDeviceApiFunctionTable.cuMemcpy3DAsync(&memcpySettings, stream);
+    checkCUresult(cuResult, "Error in cuMemcpy3DAsync: ");
 }
 
 static CUresourceViewFormat getCudaResourceViewFormat(VkFormat format) {

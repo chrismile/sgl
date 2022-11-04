@@ -184,6 +184,19 @@ public:
             ImagePtr& destImage, VkImageAspectFlags aspectFlags, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 
     /**
+     * Copies the content of the image to the specified image.
+     * @param destImage The destination image.
+     * @param srcAspectFlags The source image aspect flags.
+     * @param destAspectFlags The destination image aspect flags.
+     * @param commandBuffer The command buffer. If VK_NULL_HANDLE is specified, a transient command buffer is used and
+     * the function will wait with vkQueueWaitIdle for the command to finish on the GPU.
+     * NOTE: This operation
+     */
+    void copyToImage(
+            ImagePtr& destImage, VkImageAspectFlags srcAspectFlags, VkImageAspectFlags destAspectFlags,
+            VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
+
+    /**
      * Blits the content of this image to a destination image and performs format conversion if necessary.
      * @param destImage The destination image.
      * @param commandBuffer The command buffer. If VK_NULL_HANDLE is specified, a transient command buffer is used and

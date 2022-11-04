@@ -159,6 +159,13 @@ void RenderData::setStaticTexture(const TexturePtr& texture, uint32_t binding) {
     setStaticImageView(texture->getImageView(), binding);
     setImageSampler(texture->getImageSampler(), binding);
 }
+void RenderData::setStaticImageViewArray(const std::vector<ImageViewPtr>& imageViewArray, uint32_t binding) {
+    for (FrameData& frameData : frameDataList) {
+        frameData.imageViewArrays[binding] = imageViewArray;
+    }
+    imageViewArraysStatic[binding] = true;
+    isDirty = true;
+}
 
 void RenderData::setStaticImageView(const ImageViewPtr& imageView, const std::string& descName) {
     const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, descName);
@@ -172,6 +179,10 @@ void RenderData::setStaticTexture(const TexturePtr& texture, const std::string& 
     const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, descName);
     setStaticImageView(texture->getImageView(), descriptorInfo.binding);
     setImageSampler(texture->getImageSampler(), descriptorInfo.binding);
+}
+void RenderData::setStaticImageViewArray(const std::vector<ImageViewPtr>& imageViewArray, const std::string& descName) {
+    const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, descName);
+    setStaticImageViewArray(imageViewArray, descriptorInfo.binding);
 }
 void RenderData::setStaticImageViewOptional(const ImageViewPtr& imageView, const std::string& descName) {
     uint32_t binding;
@@ -192,12 +203,19 @@ void RenderData::setStaticTextureOptional(const TexturePtr& texture, const std::
         setImageSampler(texture->getImageSampler(), binding);
     }
 }
+void RenderData::setStaticImageViewArrayOptional(
+        const std::vector<ImageViewPtr>& imageViewArray, const std::string& descName) {
+    uint32_t binding;
+    if (shaderStages->getDescriptorBindingByNameOptional(0, descName, binding)) {
+        setStaticImageViewArray(imageViewArray, binding);
+    }
+}
 
 void RenderData::setTopLevelAccelerationStructure(const TopLevelAccelerationStructurePtr& tlas, uint32_t binding) {
     for (FrameData& frameData : frameDataList) {
         frameData.accelerationStructures[binding] = tlas;
     }
-    imageViewsStatic[binding] = true;
+    accelerationStructuresStatic[binding] = true;
     isDirty = true;
 }
 void RenderData::setTopLevelAccelerationStructure(
@@ -220,7 +238,7 @@ void RenderData::setDynamicBuffer(const BufferPtr& buffer, uint32_t binding) {
         FrameData& frameData = frameDataList.at(i);
         frameData.buffers[binding] = buffer->copy(false);
     }
-    buffersStatic[binding] = true;
+    buffersStatic[binding] = false;
     isDirty = true;
 }
 void RenderData::setDynamicBuffer(const BufferPtr& buffer, const std::string& descName) {
@@ -240,7 +258,7 @@ void RenderData::setDynamicBufferView(const BufferViewPtr& bufferView, uint32_t 
         FrameData& frameData = frameDataList.at(i);
         frameData.bufferViews[binding] = bufferView->copy(true, false);
     }
-    bufferViewsStatic[binding] = true;
+    bufferViewsStatic[binding] = false;
     isDirty = true;
 }
 void RenderData::setDynamicBufferView(const BufferViewPtr& bufferView, const std::string& descName) {
@@ -260,7 +278,7 @@ void RenderData::setDynamicImageView(const ImageViewPtr& imageView, uint32_t bin
         FrameData& frameData = frameDataList.at(i);
         frameData.imageViews[binding] = imageView->copy(true, false);
     }
-    imageViewsStatic[binding] = true;
+    imageViewsStatic[binding] = false;
     isDirty = true;
 }
 void RenderData::setDynamicImageView(const ImageViewPtr& imageView, const std::string& descName) {
@@ -343,6 +361,9 @@ void RenderData::_updateDescriptorSets() {
             VkDescriptorBufferInfo bufferInfo;
             VkAccelerationStructureKHR accelerationStructure;
             VkWriteDescriptorSetAccelerationStructureKHR accelerationStructureInfo;
+
+            // Arrays.
+            std::vector<VkDescriptorImageInfo> imageInfoArray;
         };
         std::vector<DescWriteData> descWriteDataArray;
         descWriteDataArray.resize(descriptorSetInfo.size());
@@ -366,34 +387,57 @@ void RenderData::_updateDescriptorSets() {
                         || descriptorInfo.type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
                 if (descriptorInfo.type == VK_DESCRIPTOR_TYPE_SAMPLER
                             || descriptorInfo.type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
-                    auto it = frameData.imageSamplers.find(descriptorInfo.binding);
-                    if (it == frameData.imageSamplers.end()) {
+                    if (descriptorInfo.count == 1) {
+                        auto it = frameData.imageSamplers.find(descriptorInfo.binding);
+                        if (it == frameData.imageSamplers.end()) {
+                            Logfile::get()->throwError(
+                                    "Error in RenderData::_updateDescriptorSets: Couldn't find sampler with binding "
+                                    + std::to_string(descriptorInfo.binding) + ".");
+                        }
+                        descWriteData.imageInfo.sampler = it->second->getVkSampler();
+                    } else {
                         Logfile::get()->throwError(
-                                "Error in RenderData::_updateDescriptorSets: Couldn't find sampler with binding "
-                                + std::to_string(descriptorInfo.binding) + ".");
+                                "Error in RenderData::_updateDescriptorSets: Sampler arrays as used in binding "
+                                + std::to_string(descriptorInfo.binding) + " are not yet supported.");
                     }
-                    descWriteData.imageInfo.sampler = it->second->getVkSampler();
                 }
                 if (descriptorInfo.type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
                             || descriptorInfo.type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
                             || descriptorInfo.type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
                             || descriptorInfo.type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
-                    auto it = frameData.imageViews.find(descriptorInfo.binding);
-                    if (it == frameData.imageViews.end()) {
-                        Logfile::get()->throwError(
-                                "Error in RenderData::_updateDescriptorSets: Couldn't find image view with binding "
-                                + std::to_string(descriptorInfo.binding) + ".");
-                    }
-                    descWriteData.imageInfo.imageView = it->second->getVkImageView();
                     VkImageLayout imageLayout;
                     if (descriptorInfo.type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
                         imageLayout = VK_IMAGE_LAYOUT_GENERAL;
                     } else {
                         imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                     }
-                    descWriteData.imageInfo.imageLayout = imageLayout;
+                    if (descriptorInfo.count == 1) {
+                        auto it = frameData.imageViews.find(descriptorInfo.binding);
+                        if (it == frameData.imageViews.end()) {
+                            Logfile::get()->throwError(
+                                    "Error in RenderData::_updateDescriptorSets: Couldn't find image view with binding "
+                                    + std::to_string(descriptorInfo.binding) + ".");
+                        }
+                        descWriteData.imageInfo.imageView = it->second->getVkImageView();
+                        descWriteData.imageInfo.imageLayout = imageLayout;
+                    } else {
+                        auto it = frameData.imageViewArrays.find(descriptorInfo.binding);
+                        if (it == frameData.imageViewArrays.end()) {
+                            Logfile::get()->throwError(
+                                    "Error in RenderData::_updateDescriptorSets: Couldn't find image view with binding "
+                                    + std::to_string(descriptorInfo.binding) + ".");
+                        }
+                        for (uint32_t idx = 0; idx < descriptorInfo.count; idx++) {
+                            descWriteData.imageInfoArray.at(idx).imageView = it->second.at(idx)->getVkImageView();
+                            descWriteData.imageInfoArray.at(idx).imageLayout = imageLayout;
+                        }
+                    }
                 }
-                descriptorWrite.pImageInfo = &descWriteData.imageInfo;
+                if (descriptorInfo.count == 1) {
+                    descriptorWrite.pImageInfo = &descWriteData.imageInfo;
+                } else {
+                    descriptorWrite.pImageInfo = descWriteData.imageInfoArray.data();
+                }
             } else if (descriptorInfo.type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER
                        || descriptorInfo.type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) {
                 auto it = frameData.bufferViews.find(descriptorInfo.binding);
@@ -508,6 +552,15 @@ void RenderData::onSwapchainRecreated() {
                     } else {
                         Logfile::get()->throwError(
                                 "Error in RenderData::onSwapchainRecreated: Dynamic acceleration structures are "
+                                "not supported.");
+                    }
+                }
+                for (auto& it : firstFrameData.imageViewArrays) {
+                    if (imageViewArraysStatic[it.first]) {
+                        frameData.imageViewArrays.insert(it);
+                    } else {
+                        Logfile::get()->throwError(
+                                "Error in RenderData::onSwapchainRecreated: Dynamic image view arrays are "
                                 "not supported.");
                     }
                 }
