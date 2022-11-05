@@ -660,6 +660,19 @@ void Image::generateMipmaps(VkCommandBuffer commandBuffer) {
 }
 
 void Image::copyFromBuffer(BufferPtr& buffer, VkCommandBuffer commandBuffer) {
+    VkImageAspectFlags aspectMask;
+    if (isDepthStencilFormat(imageSettings.format)) {
+        aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        if (hasStencilComponent(imageSettings.format)) {
+            aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+        }
+    } else {
+        aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    }
+    copyFromBuffer(buffer, aspectMask, commandBuffer);
+}
+
+void Image::copyFromBuffer(BufferPtr& buffer, VkImageAspectFlags aspectMask, VkCommandBuffer commandBuffer) {
     bool transientCommandBuffer = commandBuffer == VK_NULL_HANDLE;
     if (transientCommandBuffer) {
         commandBuffer = device->beginSingleTimeCommands();
@@ -669,8 +682,7 @@ void Image::copyFromBuffer(BufferPtr& buffer, VkCommandBuffer commandBuffer) {
     region.bufferOffset = 0;
     region.bufferRowLength = 0;
     region.bufferImageHeight = 0;
-
-    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.aspectMask = aspectMask;
     region.imageSubresource.mipLevel = 0;
     region.imageSubresource.baseArrayLayer = 0;
     region.imageSubresource.layerCount = imageSettings.arrayLayers;
@@ -692,6 +704,19 @@ void Image::copyFromBuffer(BufferPtr& buffer, VkCommandBuffer commandBuffer) {
 }
 
 void Image::copyToBuffer(BufferPtr& buffer, VkCommandBuffer commandBuffer) {
+    VkImageAspectFlags aspectMask;
+    if (isDepthStencilFormat(imageSettings.format)) {
+        aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        if (hasStencilComponent(imageSettings.format)) {
+            aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+        }
+    } else {
+        aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    }
+    copyToBuffer(buffer, aspectMask, commandBuffer);
+}
+
+void Image::copyToBuffer(BufferPtr& buffer, VkImageAspectFlags aspectMask, VkCommandBuffer commandBuffer) {
     bool transientCommandBuffer = commandBuffer == VK_NULL_HANDLE;
     if (transientCommandBuffer) {
         commandBuffer = device->beginSingleTimeCommands();
@@ -702,7 +727,7 @@ void Image::copyToBuffer(BufferPtr& buffer, VkCommandBuffer commandBuffer) {
     region.bufferRowLength = 0;
     region.bufferImageHeight = 0;
 
-    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.aspectMask = aspectMask;
     region.imageSubresource.mipLevel = 0;
     region.imageSubresource.baseArrayLayer = 0;
     region.imageSubresource.layerCount = 1;

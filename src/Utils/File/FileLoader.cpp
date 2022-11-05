@@ -95,4 +95,53 @@ bool loadFileFromSource(
     return true;
 }
 
+bool loadFileFromSourceRanged(
+        const std::string& filename, uint8_t*& buffer, size_t& bufferSize,
+        size_t numBytesToRead, size_t& fileLength, bool isBinaryFile) {
+    buffer = nullptr;
+    bufferSize = 0;
+
+#ifdef __MINGW32__
+    // Carriage return was not counted in text mode when using MinGW.
+    isBinaryFile = true;
+#endif
+#if defined(__linux__) || defined(__MINGW32__) // __GNUC__? Does GCC generally work on non-POSIX systems?
+    FILE* file = fopen64(filename.c_str(), "rb");
+#else
+    FILE* file = fopen(filename.c_str(), "rb");
+#endif
+    if (!file) {
+        sgl::Logfile::get()->writeError(
+                std::string() + "Error in loadFileFromSource: File \"" + filename + "\" could not be opened.");
+        return false;
+    }
+#if defined(_WIN32) && !defined(__MINGW32__)
+    _fseeki64(file, 0, SEEK_END);
+    fileLength = _ftelli64(file);
+    _fseeki64(file, 0, SEEK_SET);
+#else
+    fseeko(file, 0, SEEK_END);
+    fileLength = ftello(file);
+    fseeko(file, 0, SEEK_SET);
+#endif
+
+    /**
+     * Read the 'numBytesToRead' bytes.
+     */
+    buffer = new uint8_t[numBytesToRead];
+    size_t readBytes = fread(buffer, 1, numBytesToRead, file);
+    fclose(file);
+
+    if (readBytes != numBytesToRead) {
+        sgl::Logfile::get()->writeError(
+                std::string() + "Error in loadFileFromSource: File \"" + filename + "\" could not be read.");
+        delete[] buffer;
+        buffer = nullptr;
+        return false;
+    }
+    bufferSize = numBytesToRead;
+
+    return true;
+}
+
 }

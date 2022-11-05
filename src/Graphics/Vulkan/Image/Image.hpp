@@ -159,10 +159,29 @@ public:
     /**
      * Copies the content of a buffer to this image.
      * @param buffer The copy source.
+     * @param aspectMask The aspect mask flags for the copy operation.
+     * @param commandBuffer The command buffer. If VK_NULL_HANDLE is specified, a transient command buffer is used and
+     * the function will wait with vkQueueWaitIdle for the command to finish on the GPU.
+     */
+    void copyFromBuffer(
+            BufferPtr& buffer, VkImageAspectFlags aspectMask, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
+
+    /**
+     * Copies the content of a buffer to this image.
+     * @param buffer The copy source.
      * @param commandBuffer The command buffer. If VK_NULL_HANDLE is specified, a transient command buffer is used and
      * the function will wait with vkQueueWaitIdle for the command to finish on the GPU.
      */
     void copyFromBuffer(BufferPtr& buffer, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
+
+    /**
+     * Copies the content of the image to the specified buffer.
+     * @param buffer The copy destination.
+     * @param aspectMask The aspect mask flags for the copy operation.
+     * @param commandBuffer The command buffer. If VK_NULL_HANDLE is specified, a transient command buffer is used and
+     * the function will wait with vkQueueWaitIdle for the command to finish on the GPU.
+     */
+    void copyToBuffer(BufferPtr& buffer, VkImageAspectFlags aspectMask, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 
     /**
      * Copies the content of the image to the specified buffer.

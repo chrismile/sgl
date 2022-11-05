@@ -56,6 +56,13 @@ namespace sgl {
 DLL_OBJECT bool loadFileFromSource(
         const std::string& filename, uint8_t*& buffer, size_t& bufferSize, bool isBinaryFile);
 
+/**
+ * Like @see loadFileFromSource, but only the first 'numBytesToRead' bytes are read.
+ */
+DLL_OBJECT bool loadFileFromSourceRanged(
+        const std::string& filename, uint8_t*& buffer, size_t& bufferSize,
+        size_t numBytesToRead, size_t& fileLength, bool isBinaryFile);
+
 }
 
 #endif //SGL_FILELOADER_HPP
