@@ -26,6 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <array>
 #include <cstring>
 #include "InteropCuda.hpp"
 
@@ -691,7 +692,7 @@ void ImageCudaExternalMemoryVk::_initialize(
         arrayDescriptor.Depth = imageSettings.arrayLayers;
     }
     arrayDescriptor.Format = getCudaArrayFormat(imageSettings.format);
-    arrayDescriptor.NumChannels = getImageFormatNumChannels(imageSettings.format);
+    arrayDescriptor.NumChannels = uint32_t(getImageFormatNumChannels(imageSettings.format));
     if (imageSettings.usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
         arrayDescriptor.Flags |= CUDA_ARRAY3D_COLOR_ATTACHMENT;
     }
