@@ -29,6 +29,12 @@ if (APPLE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-nullability-completeness")
 endif()
 
+if (MSVC)
+    set(DEFAULT_USE_TBB ON)
+else()
+    set(DEFAULT_USE_TBB OFF)
+endif()
+
 option(BUILD_STATIC_LIBRARY "Build static instead of dynamic library." OFF)
 option(USE_STATIC_STD_LIBRARIES "Link with standard libraries statically (only supported on Linux for now)." OFF)
 option(SUPPORT_OPENGL "Build with OpenGL support." ON)
@@ -39,7 +45,7 @@ option(USE_SGL_VULKAN_HEADERS "Build with Vulkan headers provided by sgl even if
 option(USE_SHADERC "Build with shaderc shader compiler backend." ON)
 option(USE_BOOST_LOCALE "Build with Boost::Locale support." OFF)
 option(USE_LIBARCHIVE "Build with libarchive support." ON)
-option(USE_TBB "Build with TBB threading support instead of using OpenMP." OFF)
+option(USE_TBB "Build with TBB threading support instead of using OpenMP." ${DEFAULT_USE_TBB})
 option(TRACY_ENABLE "Build with Tracy Profiler support." OFF)
 
 find_package(OpenGL QUIET)

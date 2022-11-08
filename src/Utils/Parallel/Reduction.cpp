@@ -34,7 +34,7 @@
 
 #include "Reduction.hpp"
 
-std::pair<float, float> reduceMinMax(const std::vector<float>& floatValues) {
+std::pair<float, float> reduceVectorMinMax(const std::vector<float>& floatValues) {
 #ifdef USE_TBB
 
     return tbb::parallel_reduce(
