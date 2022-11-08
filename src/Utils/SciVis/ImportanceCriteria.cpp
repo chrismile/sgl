@@ -28,31 +28,37 @@
 
 #include <algorithm>
 #include <glm/glm.hpp>
+
+#ifdef USE_TBB
+#include <tbb/parallel_for.h>
+#include <tbb/blocked_range.h>
+#endif
+
 #include <Math/Math.hpp>
+#include <Utils/Parallel/Reduction.hpp>
 #include "ImportanceCriteria.hpp"
 
 namespace sgl {
 
 /// https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/packUnorm.xhtml
 void packUnorm16Array(const std::vector<float>& floatVector, std::vector<uint16_t>& unormVector) {
-    float minValue = FLT_MAX;
-    float maxValue = -FLT_MAX;
-#if _OPENMP >= 201107
-    #pragma omp parallel for reduction(min:minValue) reduction(max:maxValue) shared(floatVector) default(none)
-#endif
-    for (size_t i = 0; i < floatVector.size(); i++) {
-        minValue = std::min(minValue, floatVector.at(i));
-        maxValue = std::max(maxValue, floatVector.at(i));
-    }
-
+    auto [minValue, maxValue] = reduceVectorMinMax(floatVector);
     unormVector.resize(floatVector.size());
+#ifdef USE_TBB
+    tbb::parallel_for(tbb::blocked_range<size_t>(0, unormVector.size()), [&](auto const& r) {
+        for (size_t i = r.begin(); i != r.end(); i++) {
+#else
 #if _OPENMP >= 200805
     #pragma omp parallel for shared(floatVector, unormVector, minValue, maxValue) default(none)
 #endif
     for (size_t i = 0; i < unormVector.size(); i++) {
+#endif
         unormVector.at(i) = uint16_t(glm::clamp(glm::round(
                 (floatVector.at(i) - minValue) / (maxValue - minValue) * 65535.0f), 0.0f, 65535.0f));
     }
+#ifdef USE_TBB
+    });
+#endif
 }
 
 /// https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/packUnorm.xhtml
@@ -69,12 +75,20 @@ void packUnorm16ArrayOfArrays(
 /// https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/unpackUnorm.xhtml
 void unpackUnorm16Array(const uint16_t* unormVector, size_t vectorSize, std::vector<float>& floatVector) {
     floatVector.resize(vectorSize);
+#ifdef USE_TBB
+    tbb::parallel_for(tbb::blocked_range<size_t>(0, vectorSize), [&](auto const& r) {
+        for (size_t i = r.begin(); i != r.end(); i++) {
+#else
 #if _OPENMP >= 200805
     #pragma omp parallel for shared(floatVector, unormVector, vectorSize) default(none)
 #endif
     for (size_t i = 0; i < vectorSize; i++) {
+#endif
         floatVector.at(i) = float(unormVector[i]) / 65535.0f;
     }
+#ifdef USE_TBB
+    });
+#endif
 }
 
 
@@ -179,17 +193,7 @@ std::vector<float> computeTotalAttributeDifference(
     std::vector<float> segmentAttributeDifferences;
     segmentAttributeDifferences.reserve(n);
 
-    float minAttribute = FLT_MAX;
-    float maxAttribute = -FLT_MAX;
-#if _OPENMP >= 201107
-    #pragma omp parallel for shared(vertexAttributes, n) reduction(min:minAttribute) reduction(max:maxAttribute) \
-    default(none)
-#endif
-    for (int i = 0; i < n; i++) {
-        minAttribute = std::min(minAttribute, vertexAttributes.at(i));
-        maxAttribute = std::max(maxAttribute, vertexAttributes.at(i));
-    }
-
+    auto [minAttribute, maxAttribute] = reduceVectorMinMax(vertexAttributes);
     float totalPressureDifference = maxAttribute - minAttribute;
     for (int i = 0; i < n; i++) {
         segmentAttributeDifferences.push_back(totalPressureDifference);

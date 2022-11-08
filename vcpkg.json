@@ -34,6 +34,15 @@
         "vulkan",
         "vulkan-headers",
         "shaderc",
-        "opencl"
-    ]
+        "opencl",
+        "tbb"
+    ],
+    "features": {
+        "tbb": {
+            "description": "Use TBB instead of OpenMP for multi-threading",
+            "dependencies": [
+                "tbb"
+            ]
+        }
+    }
 }
