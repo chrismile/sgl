@@ -26,6 +26,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <limits>
+#include <cstddef>
+
 #ifdef USE_TBB
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
