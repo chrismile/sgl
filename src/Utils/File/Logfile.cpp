@@ -31,7 +31,11 @@
 #include <fstream>
 
 #ifdef USE_TBB
+#if __has_include(<tbb/version.h>)
+#include <tbb/version.h>
+#else
 #include <tbb/tbb_stddef.h>
+#endif
 #endif
 
 #include <Utils/Convert.hpp>
