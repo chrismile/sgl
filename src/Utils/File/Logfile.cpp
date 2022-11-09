@@ -26,15 +26,21 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "Logfile.hpp"
 #include <string>
 #include <iostream>
 #include <fstream>
+
+#ifdef USE_TBB
+#include <tbb/tbb_stddef.h>
+#endif
+
 #include <Utils/Convert.hpp>
 #include <Utils/Dialog.hpp>
 #ifdef __unix__
 #include <Utils/File/Execute.hpp>
 #endif
+
+#include "Logfile.hpp"
 
 namespace sgl {
 
@@ -92,13 +98,23 @@ void Logfile::createLogfile(const std::string& filename, const std::string& appN
     write("Compiler: Unknown<br>");
 #endif
 
+#ifdef USE_TBB
+    write(
+            "Threading library: TBB (" + std::to_string(TBB_VERSION_MAJOR) + "."
+            + std::to_string(TBB_VERSION_MINOR) + ")<br>");
+#elif _OPENMP
+    write("Threading library: OpenMP (" + std::to_string(_OPENMP) + ")<br>");
+#else
+    write("Threading library: None<br>");
+#endif
+
 #ifdef __unix__
     std::string sysinfo = exec("uname -a");
     write(std::string() + "System info: " + sysinfo + "<br>");
 #endif
 
     // Write a link to the issues section of the project.
-    write("<br><a href='https://github.com/chrismile/sgl/issues'>Inform the developers about issues</a><br><br>");
+    write("<br><a href='https://github.com/chrismile/" + appName + "/issues'>Inform the developers about issues</a><br><br>");
 }
 
 // Writes the header.
