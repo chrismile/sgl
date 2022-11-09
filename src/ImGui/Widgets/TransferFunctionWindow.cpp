@@ -29,11 +29,6 @@
 #include <cmath>
 #include <glm/glm.hpp>
 
-#ifdef USE_TBB
-#include <tbb/parallel_reduce.h>
-#include <tbb/blocked_range.h>
-#endif
-
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <ImGui/imgui.h>
 #include <ImGui/imgui_internal.h>
@@ -44,6 +39,7 @@
 #include <Utils/XML.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
+#include <Utils/Parallel/Reduction.hpp>
 #include <Math/Math.hpp>
 #ifdef SUPPORT_OPENGL
 #include <GL/glew.h>
@@ -288,33 +284,7 @@ void TransferFunctionWindow::setHistogram(const std::vector<int>& occurences) {
 
 void TransferFunctionWindow::computeHistogram(const std::vector<float>& attributes) {
     this->attributes = attributes;
-    float minAttr = std::numeric_limits<float>::max();
-    float maxAttr = std::numeric_limits<float>::lowest();
-#ifdef USE_TBB
-    std::tie(minAttr, maxAttr) = tbb::parallel_reduce(
-            tbb::blocked_range<size_t>(0, attributes.size()),
-            std::make_pair(std::numeric_limits<float>::max(), std::numeric_limits<float>::lowest()),
-            [&](tbb::blocked_range<size_t> const& r, std::pair<float, float> init) -> std::pair<float, float> {
-                float& minAttr = init.first;
-                float& maxAttr = init.second;
-                for (auto i = r.begin(); i != r.end(); i++) {
-#else
-#if _OPENMP >= 201107
-    #pragma omp parallel for reduction(min: minAttr) reduction(max: maxAttr) shared(attributes) default(none)
-#endif
-    for (size_t i = 0; i < attributes.size(); i++) {
-#endif
-        float value = attributes.at(i);
-        minAttr = std::min(minAttr, value);
-        maxAttr = std::max(maxAttr, value);
-    }
-#ifdef USE_TBB
-                return init;
-            },
-            [&](std::pair<float, float> lhs, std::pair<float, float> rhs) -> std::pair<float, float> {
-                return { std::min(lhs.first, rhs.first), std::max(lhs.second, rhs.second) };
-            });
-#endif
+    auto [minAttr, maxAttr] = sgl::reduceFloatArrayMinMax(attributes);
     this->dataRange = glm::vec2(minAttr, maxAttr);
     this->selectedRange = glm::vec2(minAttr, maxAttr);
     recomputeHistogram();

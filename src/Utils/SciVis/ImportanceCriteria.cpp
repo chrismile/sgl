@@ -42,7 +42,7 @@ namespace sgl {
 
 /// https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/packUnorm.xhtml
 void packUnorm16Array(const std::vector<float>& floatVector, std::vector<uint16_t>& unormVector) {
-    auto [minValue, maxValue] = reduceVectorMinMax(floatVector);
+    auto [minValue, maxValue] = reduceFloatArrayMinMax(floatVector);
     unormVector.resize(floatVector.size());
 #ifdef USE_TBB
     tbb::parallel_for(tbb::blocked_range<size_t>(0, unormVector.size()), [&](auto const& r) {
@@ -193,7 +193,7 @@ std::vector<float> computeTotalAttributeDifference(
     std::vector<float> segmentAttributeDifferences;
     segmentAttributeDifferences.reserve(n);
 
-    auto [minAttribute, maxAttribute] = reduceVectorMinMax(vertexAttributes);
+    auto [minAttribute, maxAttribute] = reduceFloatArrayMinMax(vertexAttributes);
     float totalPressureDifference = maxAttribute - minAttribute;
     for (int i = 0; i < n; i++) {
         segmentAttributeDifferences.push_back(totalPressureDifference);

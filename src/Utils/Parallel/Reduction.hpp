@@ -31,7 +31,53 @@
 
 #include <vector>
 #include <map>
+#include <glm/vec3.hpp>
 
-DLL_OBJECT std::pair<float, float> reduceVectorMinMax(const std::vector<float>& floatValues);
+namespace sgl {
+
+class AABB3;
+
+/*
+ * Functions for the parallel min-max reduction of a float array.
+ * The first entry of the returned pair stores the minimum value, the second the maximum value.
+ */
+DLL_OBJECT std::pair<float, float> reduceFloatArrayMinMax(
+        const std::vector<float>& floatValues, std::pair<float, float> init);
+DLL_OBJECT std::pair<float, float> reduceFloatArrayMinMax(
+        const float* floatValues, size_t N, std::pair<float, float> init);
+inline std::pair<float, float> reduceFloatArrayMinMax(const std::vector<float>& floatValues) {
+    return reduceFloatArrayMinMax(
+            floatValues, std::make_pair(std::numeric_limits<float>::max(), std::numeric_limits<float>::lowest()));
+}
+inline std::pair<float, float> reduceFloatArrayMinMax(const float* floatValues, size_t N) {
+    return reduceFloatArrayMinMax(
+            floatValues, N, std::make_pair(std::numeric_limits<float>::max(), std::numeric_limits<float>::lowest()));
+}
+
+/*
+ * Functions for the parallel min-max reduction of a vec3 array.
+ */
+DLL_OBJECT sgl::AABB3 reduceVec3ArrayAabb(const std::vector<glm::vec3>& positions);
+DLL_OBJECT std::pair<float, float> reductionFunctionFloatMinMax(
+        std::pair<float, float> lhs, std::pair<float, float> rhs);
+
+/*
+ * Predicates for the use with TBB in the minimum and maximum reduction.
+ * STL only provides predicates for algebraic and logical operations, like "std::plus<>{}".
+ */
+struct min_predicate {
+    template<class T, class U>
+    constexpr decltype(auto) operator()(T&& t, U&& u) const{
+        return t > u ? std::forward<U>(u) : std::forward<T>(t);
+    }
+};
+struct max_predicate {
+    template<class T, class U>
+    constexpr decltype(auto) operator()(T&& t, U&& u) const{
+        return t < u ? std::forward<U>(u) : std::forward<T>(t);
+    }
+};
+
+}
 
 #endif //SGL_REDUCTION_HPP
