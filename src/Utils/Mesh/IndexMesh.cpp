@@ -28,12 +28,18 @@
 
 #include <chrono>
 #include <iostream>
+
 #include <Math/Math.hpp>
+#include <Math/Geometry/AABB3.hpp>
 #include <Utils/File/Logfile.hpp>
+#include <Utils/Parallel/Reduction.hpp>
+
 #include <tracy/Tracy.hpp>
 #include "Utils/SearchStructures/KdTree.hpp"
 #include "Utils/SearchStructures/HashedGrid.hpp"
 #include "IndexMesh.hpp"
+
+namespace sgl {
 
 void computeSharedIndexRepresentation(
         const std::vector<glm::vec3>& vertexPositions, const std::vector<glm::vec3>& vertexNormals,
@@ -41,8 +47,11 @@ void computeSharedIndexRepresentation(
         std::vector<glm::vec3>& vertexPositionsShared, std::vector<glm::vec3>& vertexNormalsShared) {
     ZoneScoped;
 
-    SearchStructure<uint32_t>* searchStructure = new HashedGrid<uint32_t>(
-            std::max(vertexPositions.size() / 4, size_t(1)), 1.0f / sgl::PI);
+    sgl::AABB3 aabb = sgl::reduceVec3ArrayAabb(vertexPositions);
+    size_t numEntries = std::max(vertexPositions.size() / 4, size_t(1));
+    float cellSize = glm::length(aabb.getExtent()) / std::cbrt(float(numEntries)) * 1.0f / sgl::PI;
+
+    SearchStructure<uint32_t>* searchStructure = new HashedGrid<uint32_t>(numEntries, cellSize);
     searchStructure->reserveDynamic(vertexPositions.size());
 
     const float EPSILON = 1e-5f;
@@ -93,4 +102,6 @@ void computeSharedIndexRepresentation(
     }
 
     delete searchStructure;
+}
+
 }

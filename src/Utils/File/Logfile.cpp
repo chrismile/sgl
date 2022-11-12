@@ -36,6 +36,8 @@
 #else
 #include <tbb/tbb_stddef.h>
 #endif
+#elif defined(_OPENMP)
+#include <omp.h>
 #endif
 
 #include <Utils/Convert.hpp>
@@ -107,7 +109,9 @@ void Logfile::createLogfile(const std::string& filename, const std::string& appN
             "Threading library: TBB (" + std::to_string(TBB_VERSION_MAJOR) + "."
             + std::to_string(TBB_VERSION_MINOR) + ")<br>");
 #elif _OPENMP
-    write("Threading library: OpenMP (" + std::to_string(_OPENMP) + ")<br>");
+    write(
+            "Threading library: OpenMP (" + std::to_string(_OPENMP) + "), "
+            + std::to_string(omp_get_max_threads()) + " threads<br>");
 #else
     write("Threading library: None<br>");
 #endif

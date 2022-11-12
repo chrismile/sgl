@@ -30,6 +30,8 @@
 #include <tracy/Tracy.hpp>
 #include "MeshSmoothing.hpp"
 
+namespace sgl {
+
 void createNeighborMap(
         const std::vector<uint32_t>& triangleIndices,
         std::unordered_map<uint32_t, std::unordered_set<uint32_t>>& neighborsMap) {
@@ -95,4 +97,6 @@ void laplacianSmoothing(
     if (numIterations % 2 == 1) {
         vertexPositions = pointsTmp;
     }
+}
+
 }

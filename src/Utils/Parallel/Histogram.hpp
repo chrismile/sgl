@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2021, Christoph Neuhauser
+ * Copyright (c) 2022, Christoph Neuhauser
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,25 +26,19 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_TRIANGLENORMALS_HPP
-#define SGL_TRIANGLENORMALS_HPP
+#ifndef SGL_HISTOGRAM_HPP
+#define SGL_HISTOGRAM_HPP
 
 #include <vector>
 
-#include <glm/vec3.hpp>
-
 namespace sgl {
 
-/**
- * Computes smooth normals for the passed triangle data.
- * @param triangleIndices A list of triangle indices. Three consecutive entries form one triangle.
- * @param vertexPositions The vertex positions.
- * @param vertexNormals The output vertex normals.
- */
-DLL_OBJECT void computeSmoothTriangleNormals(
-        const std::vector<uint32_t>& triangleIndices, const std::vector<glm::vec3>& vertexPositions,
-        std::vector<glm::vec3>& vertexNormals);
+DLL_OBJECT void computeHistogram(
+        std::vector<float>& histogram, int histogramResolution,
+        const float* values, size_t numValues, float minVal, float maxVal);
+DLL_OBJECT void computeHistogram(
+        std::vector<float>& histogram, int histogramResolution, const float* values, size_t numValues);
 
 }
 
-#endif //SGL_TRIANGLENORMALS_HPP
+#endif //SGL_HISTOGRAM_HPP

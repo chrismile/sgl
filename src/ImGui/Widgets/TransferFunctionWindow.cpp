@@ -40,6 +40,7 @@
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
 #include <Utils/Parallel/Reduction.hpp>
+#include <Utils/Parallel/Histogram.hpp>
 #include <Math/Math.hpp>
 #ifdef SUPPORT_OPENGL
 #include <GL/glew.h>
@@ -301,7 +302,10 @@ void TransferFunctionWindow::computeHistogram(const std::vector<float>& attribut
 
 
 void TransferFunctionWindow::recomputeHistogram() {
-    histogram.clear();
+    sgl::computeHistogram(
+            histogram, histogramResolution, attributes.data(), attributes.size(), selectedRange.x, selectedRange.y);
+
+    /*histogram.clear();
     histogram.resize(histogramResolution);
 
     for (float attr : attributes) {
@@ -318,7 +322,7 @@ void TransferFunctionWindow::recomputeHistogram() {
 
     for (float& num : histogram) {
         num /= maxNum;
-    }
+    }*/
 }
 
 

@@ -30,6 +30,8 @@
 
 #include "TriangleNormals.hpp"
 
+namespace sgl {
+
 void computeSmoothTriangleNormals(
         const std::vector<uint32_t>& triangleIndices, const std::vector<glm::vec3>& vertexPositions,
         std::vector<glm::vec3>& vertexNormals) {
@@ -54,4 +56,6 @@ void computeSmoothTriangleNormals(
         glm::vec3& vertexNormal = vertexNormals.at(i);
         vertexNormal = glm::normalize(vertexNormal);
     }
+}
+
 }

@@ -26,12 +26,14 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LINEVIS_INDEXMESH_HPP
-#define LINEVIS_INDEXMESH_HPP
+#ifndef SGL_INDEXMESH_HPP
+#define SGL_INDEXMESH_HPP
 
 #include <vector>
 
 #include <glm/vec3.hpp>
+
+namespace sgl {
 
 /**
  * Computes a shared index representation for the passed list of vertices.
@@ -57,4 +59,6 @@ DLL_OBJECT void computeSharedIndexRepresentation(
         std::vector<uint32_t>& triangleIndices,
         std::vector<glm::vec3>& vertexPositionsShared);
 
-#endif //LINEVIS_INDEXMESH_HPP
+}
+
+#endif //SGL_INDEXMESH_HPP
