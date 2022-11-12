@@ -29,11 +29,17 @@
 #ifndef SGL_MULTIVARTRANSFERFUNCTIONWINDOW_HPP
 #define SGL_MULTIVARTRANSFERFUNCTIONWINDOW_HPP
 
+#include <utility>
+
 #include <Utils/File/PathWatch.hpp>
 #include <ImGui/Widgets/TransferFunctionWindow.hpp>
+#ifdef SUPPORT_OPENGL
+#include <Graphics/Buffers/GeometryBuffer.hpp>
+#include <Graphics/Texture/Texture.hpp>
+#endif
 #ifdef SUPPORT_VULKAN
+#include <Graphics/Vulkan/Buffers/Buffer.hpp>
 #include <Graphics/Vulkan/Image/Image.hpp>
-#include <utility>
 #endif
 
 namespace sgl {
@@ -176,18 +182,19 @@ public:
     bool loadFromTfNameList(const std::vector<std::string> &tfNames);
 
     bool renderGui();
-
     void update(float dt);
-
     void setClearColor(const sgl::Color &_clearColor);
-
     void setUseLinearRGB(bool _useLinearRGB);
 
     // 1D array texture, with one 1D color (RGBA) texture slice per variable.
+#ifdef SUPPORT_OPENGL
+    sgl::TexturePtr& getTransferFunctionMapTexture();
+#endif
+#ifdef SUPPORT_VULKAN
     sgl::vk::TexturePtr &getTransferFunctionMapTextureVulkan();
+#endif
 
     bool getTransferFunctionMapRebuilt();
-
     std::vector<sgl::Color16> getTransferFunctionMap_sRGB(int varIdx);
 
     // Get data range.
@@ -207,7 +214,12 @@ public:
     }
 
     /// Returns the data range uniform buffer object.
+#ifdef SUPPORT_OPENGL
+    inline sgl::GeometryBufferPtr& getMinMaxSsbo() { return minMaxSsbo; }
+#endif
+#ifdef SUPPORT_VULKAN
     inline sgl::vk::BufferPtr &getMinMaxSsboVulkan() { return minMaxSsboVulkan; }
+#endif
 
 private:
     void updateAvailableFiles();
@@ -225,7 +237,12 @@ private:
     RequestAttributeValuesCallback requestAttributeValuesCallback{};
 
     // Data range shader storage buffer object.
+#ifdef SUPPORT_OPENGL
+    sgl::GeometryBufferPtr minMaxSsbo;
+#endif
+#ifdef SUPPORT_VULKAN
     sgl::vk::BufferPtr minMaxSsboVulkan;
+#endif
     std::vector<float> minMaxData;
 
     // GUI
@@ -241,8 +258,14 @@ private:
     std::string saveDirectory;
     std::vector<std::string> tfPresetFiles;
     std::vector<std::string> availableFiles;
+#ifdef SUPPORT_OPENGL
+    sgl::TexturePtr tfMapTexture;
+    sgl::TextureSettings tfMapTextureSettings;
+#endif
+#ifdef SUPPORT_VULKAN
     sgl::vk::TexturePtr tfMapTextureVulkan;
     sgl::vk::ImageSettings tfMapImageSettingsVulkan;
+#endif
 
     bool useLinearRGB = true;
     bool transferFunctionMapRebuilt = true;

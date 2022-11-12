@@ -29,6 +29,13 @@
 #include <atomic>
 #include <algorithm>
 #include <cmath>
+
+#ifdef USE_TBB
+#include <tbb/parallel_for.h>
+#include <tbb/parallel_reduce.h>
+#include <tbb/blocked_range.h>
+#endif
+
 #include "Reduction.hpp"
 #include "Histogram.hpp"
 

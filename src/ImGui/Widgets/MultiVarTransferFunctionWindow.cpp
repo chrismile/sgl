@@ -43,7 +43,15 @@
 #include <Utils/Parallel/Reduction.hpp>
 #include <Utils/Parallel/Histogram.hpp>
 #include <Math/Math.hpp>
+#ifdef SUPPORT_OPENGL
+#include <GL/glew.h>
+#include <memory>
+#include <Graphics/Renderer.hpp>
+#include <Graphics/Texture/TextureManager.hpp>
+#endif
+#ifdef SUPPORT_VULKAN
 #include <Graphics/Vulkan/Buffers/Buffer.hpp>
+#endif
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <ImGui/imgui.h>
@@ -816,8 +824,18 @@ MultiVarTransferFunctionWindow::MultiVarTransferFunctionWindow(
     directoryContentWatch.setPath(saveDirectory, true);
     directoryContentWatch.initialize();
 
-    tfMapImageSettingsVulkan.imageType = VK_IMAGE_TYPE_1D;
-    tfMapImageSettingsVulkan.format = VK_FORMAT_R16G16B16A16_UNORM;
+#ifdef SUPPORT_OPENGL
+    if (sgl::AppSettings::get()->getRenderSystem() == sgl::RenderSystem::OPENGL) {
+        tfMapTextureSettings.type = sgl::TEXTURE_1D_ARRAY;
+        tfMapTextureSettings.internalFormat = GL_RGBA16;
+    }
+#endif
+#ifdef SUPPORT_VULKAN
+    if (sgl::AppSettings::get()->getPrimaryDevice()) {
+        tfMapImageSettingsVulkan.imageType = VK_IMAGE_TYPE_1D;
+        tfMapImageSettingsVulkan.format = VK_FORMAT_R16G16B16A16_UNORM;
+    }
+#endif
 
     updateAvailableFiles();
 }
@@ -853,15 +871,27 @@ void MultiVarTransferFunctionWindow::setAttributeNames(const std::vector<std::st
         guiVarData.clear();
         guiVarData.reserve(names.size());
 
-        tfMapImageSettingsVulkan.width = TRANSFER_FUNCTION_TEXTURE_SIZE;
-        tfMapImageSettingsVulkan.arrayLayers = uint32_t(names.size());
-        tfMapTextureVulkan = std::make_shared<sgl::vk::Texture>(
-                sgl::AppSettings::get()->getPrimaryDevice(), tfMapImageSettingsVulkan,
-                VK_IMAGE_VIEW_TYPE_1D_ARRAY);
-        minMaxSsboVulkan = std::make_shared<sgl::vk::Buffer>(
-                sgl::AppSettings::get()->getPrimaryDevice(), names.size() * sizeof(glm::vec2),
-                VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                VMA_MEMORY_USAGE_GPU_ONLY);
+#ifdef SUPPORT_OPENGL
+        if (sgl::AppSettings::get()->getRenderSystem() == sgl::RenderSystem::OPENGL) {
+            tfMapTexture = sgl::TextureManager->createEmptyTexture(
+                    TRANSFER_FUNCTION_TEXTURE_SIZE, int(names.size()), tfMapTextureSettings);
+            minMaxSsbo = sgl::Renderer->createGeometryBuffer(
+                    names.size() * sizeof(glm::vec2), sgl::SHADER_STORAGE_BUFFER);
+        }
+#endif
+#ifdef SUPPORT_VULKAN
+        if (sgl::AppSettings::get()->getPrimaryDevice()) {
+            tfMapImageSettingsVulkan.width = TRANSFER_FUNCTION_TEXTURE_SIZE;
+            tfMapImageSettingsVulkan.arrayLayers = uint32_t(names.size());
+            tfMapTextureVulkan = std::make_shared<sgl::vk::Texture>(
+                    sgl::AppSettings::get()->getPrimaryDevice(), tfMapImageSettingsVulkan,
+                    VK_IMAGE_VIEW_TYPE_1D_ARRAY);
+            minMaxSsboVulkan = std::make_shared<sgl::vk::Buffer>(
+                    sgl::AppSettings::get()->getPrimaryDevice(), names.size() * sizeof(glm::vec2),
+                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                    VMA_MEMORY_USAGE_GPU_ONLY);
+        }
+#endif
 
         minMaxData.clear();
         minMaxData.resize(names.size() * 2, 0);
@@ -968,9 +998,16 @@ void MultiVarTransferFunctionWindow::setClearColor(const sgl::Color& _clearColor
     this->clearColor = _clearColor;
 }
 
+#ifdef SUPPORT_OPENGL
+sgl::TexturePtr& MultiVarTransferFunctionWindow::getTransferFunctionMapTexture() {
+    return tfMapTexture;
+}
+#endif
+#ifdef SUPPORT_VULKAN
 sgl::vk::TexturePtr& MultiVarTransferFunctionWindow::getTransferFunctionMapTextureVulkan() {
     return tfMapTextureVulkan;
 }
+#endif
 
 bool MultiVarTransferFunctionWindow::getTransferFunctionMapRebuilt() {
     if (transferFunctionMapRebuilt) {
@@ -1008,9 +1045,16 @@ void MultiVarTransferFunctionWindow::rebuildTransferFunctionMapComplete() {
 }
 
 void MultiVarTransferFunctionWindow::rebuildRangeSsbo() {
-    if (!minMaxSsboVulkan) {
+#ifdef SUPPORT_OPENGL
+    if (sgl::AppSettings::get()->getRenderSystem() == sgl::RenderSystem::OPENGL && !minMaxSsbo) {
         return;
     }
+#endif
+#ifdef SUPPORT_VULKAN
+    if (sgl::AppSettings::get()->getPrimaryDevice() && !minMaxSsboVulkan) {
+        return;
+    }
+#endif
 
     for (size_t varIdx = 0; varIdx < guiVarData.size(); varIdx++) {
         GuiVarData& varData = guiVarData.at(varIdx);
@@ -1018,25 +1062,61 @@ void MultiVarTransferFunctionWindow::rebuildRangeSsbo() {
         minMaxData[varIdx * 2] = range.x;
         minMaxData[varIdx * 2 + 1] = range.y;
     }
-    minMaxSsboVulkan->uploadData(minMaxData.size() * sizeof(float), minMaxData.data());
+
+#ifdef SUPPORT_OPENGL
+    if (sgl::AppSettings::get()->getRenderSystem() == sgl::RenderSystem::OPENGL) {
+        minMaxSsbo->subData(0, minMaxData.size() * sizeof(float), minMaxData.data());
+    }
+#endif
+#ifdef SUPPORT_VULKAN
+    if (sgl::AppSettings::get()->getPrimaryDevice()) {
+        minMaxSsboVulkan->uploadData(minMaxData.size() * sizeof(float), minMaxData.data());
+    }
+#endif
 }
 
 void MultiVarTransferFunctionWindow::rebuildTransferFunctionMap() {
     transferFunctionMapRebuilt = true;
 
-    if (!tfMapTextureVulkan) {
+#ifdef SUPPORT_VULKAN
+    if (sgl::AppSettings::get()->getPrimaryDevice() && !tfMapTextureVulkan) {
         return;
     }
-
-    if (useLinearRGB) {
-        tfMapTextureVulkan->getImage()->uploadData(
-                TRANSFER_FUNCTION_TEXTURE_SIZE * uint32_t(varNames.size()) * 8,
-                transferFunctionMap_linearRGB.data());
-    } else {
-        tfMapTextureVulkan->getImage()->uploadData(
-                TRANSFER_FUNCTION_TEXTURE_SIZE * uint32_t(varNames.size()) * 8,
-                transferFunctionMap_sRGB.data());
+#endif
+#ifdef SUPPORT_OPENGL
+    if (sgl::AppSettings::get()->getRenderSystem() == sgl::RenderSystem::OPENGL && !tfMapTexture) {
+        return;
     }
+#endif
+
+#ifdef SUPPORT_OPENGL
+    if (sgl::AppSettings::get()->getRenderSystem() == sgl::RenderSystem::OPENGL) {
+        sgl::PixelFormat pixelFormat;
+        pixelFormat.pixelType = GL_UNSIGNED_SHORT;
+        if (useLinearRGB) {
+            tfMapTexture->uploadPixelData(
+                    TRANSFER_FUNCTION_TEXTURE_SIZE, int(varNames.size()),
+                    transferFunctionMap_linearRGB.data(), pixelFormat);
+        } else {
+            tfMapTexture->uploadPixelData(
+                    TRANSFER_FUNCTION_TEXTURE_SIZE, int(varNames.size()),
+                    transferFunctionMap_sRGB.data(), pixelFormat);
+        }
+    }
+#endif
+#ifdef SUPPORT_VULKAN
+    if (sgl::AppSettings::get()->getPrimaryDevice()) {
+        if (useLinearRGB) {
+            tfMapTextureVulkan->getImage()->uploadData(
+                    TRANSFER_FUNCTION_TEXTURE_SIZE * uint32_t(varNames.size()) * 8,
+                    transferFunctionMap_linearRGB.data());
+        } else {
+            tfMapTextureVulkan->getImage()->uploadData(
+                    TRANSFER_FUNCTION_TEXTURE_SIZE * uint32_t(varNames.size()) * 8,
+                    transferFunctionMap_sRGB.data());
+        }
+    }
+#endif
 }
 
 bool MultiVarTransferFunctionWindow::renderGui() {
