@@ -33,6 +33,8 @@
 #include <cstring>
 #include <vector>
 
+#include "Convert.hpp"
+
 namespace sgl {
 
 /**
@@ -59,7 +61,7 @@ bool endsWith(const std::string& str, const std::string& postfix);
  * @param listObject The split parts.
  */
 template<class InputIterator>
-void splitString(const std::string &stringObject, char separator, InputIterator& listObject) {
+void splitString(const std::string& stringObject, char separator, InputIterator& listObject) {
     std::string buffer;
     for (char c : stringObject) {
         if (c != separator) {
@@ -86,7 +88,7 @@ void splitString(const std::string &stringObject, char separator, InputIterator&
  * 'boost::algorithm::split(listObject, stringObject, boost::is_any_of("\t "), boost::token_compress_on);'.
  */
 template<class InputIterator>
-void splitStringWhitespace(const std::string &stringObject, InputIterator& listObject) {
+void splitStringWhitespace(const std::string& stringObject, InputIterator& listObject) {
     std::string buffer;
     for (char c : stringObject) {
         if (c != ' ' && c != '\t') {
@@ -100,6 +102,59 @@ void splitStringWhitespace(const std::string &stringObject, InputIterator& listO
     }
     if (buffer.length() > 0) {
         listObject.push_back(buffer);
+        buffer = "";
+    }
+}
+
+/**
+ * Converts strings like "1 2 3" with separator ' ' to { 1, 2, 3 }.
+ * @tparam InputIterator The list class to use.
+ * @param stringObject The string to split.
+ * @param separator The separator to use for splitting.
+ * @param listObject The split parts.
+ */
+template<class T, class InputIterator>
+void splitStringTyped(const std::string& stringObject, char separator, InputIterator& listObject) {
+    std::string buffer;
+    for (char c : stringObject) {
+        if (c != separator) {
+            buffer += c;
+        } else {
+            if (buffer.length() > 0) {
+                listObject.push_back(sgl::fromString<T>(buffer));
+                buffer = "";
+            }
+        }
+    }
+    if (buffer.length() > 0) {
+        listObject.push_back(sgl::fromString<T>(buffer));
+        buffer = "";
+    }
+}
+
+/**
+ * Converts strings like "1 2 3" with separators ' ' and '\t' to { 1, 2, 3 }.
+ * @tparam InputIterator The list class to use.
+ * @param stringObject The string to split.
+ * @param listObject The split parts.
+ * NOTE: This is equivalent to
+ * 'boost::algorithm::split(listObject, stringObject, boost::is_any_of("\t "), boost::token_compress_on);'.
+ */
+template<class T, class InputIterator>
+void splitStringWhitespaceTyped(const std::string& stringObject, InputIterator& listObject) {
+    std::string buffer;
+    for (char c : stringObject) {
+        if (c != ' ' && c != '\t') {
+            buffer += c;
+        } else {
+            if (buffer.length() > 0) {
+                listObject.push_back(sgl::fromString<T>(buffer));
+                buffer = "";
+            }
+        }
+    }
+    if (buffer.length() > 0) {
+        listObject.push_back(sgl::fromString<T>(buffer));
         buffer = "";
     }
 }
