@@ -43,7 +43,7 @@ namespace sgl {
  * @param prefix The prefix.
  * @return Returns whether the full string starts with the passed prefix.
  */
-bool startsWith(const std::string& str, const std::string& prefix);
+DLL_OBJECT bool startsWith(const std::string& str, const std::string& prefix);
 
 /**
  * Returns whether @str ends with @postfix.
@@ -51,7 +51,7 @@ bool startsWith(const std::string& str, const std::string& prefix);
  * @param postfix The postfix.
  * @return Returns whether the full string starts with the passed postfix.
  */
-bool endsWith(const std::string& str, const std::string& postfix);
+DLL_OBJECT bool endsWith(const std::string& str, const std::string& postfix);
 
 /**
  * Converts strings like "This is a test!" with separator ' ' to { "This", "is", "a", "test!" }.
