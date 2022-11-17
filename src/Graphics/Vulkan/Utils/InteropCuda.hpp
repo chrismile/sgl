@@ -67,6 +67,8 @@ struct CudaDeviceApiFunctionTable {
 
     CUresult ( *cuMemAlloc )( CUdeviceptr *dptr, size_t bytesize );
     CUresult ( *cuMemFree )( CUdeviceptr dptr );
+    CUresult ( *cuMemAllocAsync )( CUdeviceptr *dptr, size_t bytesize, CUstream hStream );
+    CUresult ( *cuMemFreeAsync )( CUdeviceptr dptr, CUstream hStream );
     CUresult ( *cuMemsetD8Async )( CUdeviceptr dstDevice, unsigned char uc, size_t N, CUstream hStream );
     CUresult ( *cuMemsetD16Async )( CUdeviceptr dstDevice, unsigned short us, size_t N, CUstream hStream );
     CUresult ( *cuMemsetD32Async )( CUdeviceptr dstDevice, unsigned int ui, size_t N, CUstream hStream );
@@ -93,6 +95,15 @@ struct CudaDeviceApiFunctionTable {
     CUresult ( *cuSignalExternalSemaphoresAsync )( const CUexternalSemaphore *extSemArray, const CUDA_EXTERNAL_SEMAPHORE_SIGNAL_PARAMS *paramsArray, unsigned int numExtSems, CUstream stream );
     CUresult ( *cuWaitExternalSemaphoresAsync )( const CUexternalSemaphore *extSemArray, const CUDA_EXTERNAL_SEMAPHORE_WAIT_PARAMS *paramsArray, unsigned int numExtSems, CUstream stream );
     CUresult ( *cuDestroyExternalSemaphore )( CUexternalSemaphore extSem );
+
+    CUresult ( *cuModuleLoad )( CUmodule* module, const char* fname );
+    CUresult ( *cuModuleLoadData )( CUmodule* module, const void* image );
+    CUresult ( *cuModuleLoadDataEx )( CUmodule* module, const void* image, unsigned int numOptions, CUjit_option* options, void** optionValues );
+    CUresult ( *cuModuleLoadFatBinary )( CUmodule* module, const void* fatCubin );
+    CUresult ( *cuModuleUnload )( CUmodule hmod );
+    CUresult ( *cuModuleGetFunction )( CUfunction* hfunc, CUmodule hmod, const char* name );
+    CUresult ( *cuModuleGetGlobal )( CUdeviceptr* dptr, size_t* bytes, CUmodule hmod, const char* name );
+    CUresult ( *cuLaunchKernel )( CUfunction f, unsigned int gridDimX, unsigned int gridDimY, unsigned int gridDimZ, unsigned int blockDimX, unsigned int blockDimY, unsigned int blockDimZ, unsigned int sharedMemBytes, CUstream hStream, void** kernelParams, void** extra );
 };
 
 DLL_OBJECT extern CudaDeviceApiFunctionTable g_cudaDeviceApiFunctionTable;

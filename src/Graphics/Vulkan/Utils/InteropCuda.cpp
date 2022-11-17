@@ -66,6 +66,8 @@ bool initializeCudaDeviceApiFunctionTable() {
     typedef CUresult ( *PFN_cuStreamSynchronize )( CUstream hStream );
     typedef CUresult ( *PFN_cuMemAlloc )( CUdeviceptr *dptr, size_t bytesize );
     typedef CUresult ( *PFN_cuMemFree )( CUdeviceptr dptr );
+    typedef CUresult ( *PFN_cuMemAllocAsync )( CUdeviceptr *dptr, size_t bytesize, CUstream hStream );
+    typedef CUresult ( *PFN_cuMemFreeAsync )( CUdeviceptr dptr, CUstream hStream );
     typedef CUresult ( *PFN_cuMemsetD8Async )( CUdeviceptr dstDevice, unsigned char uc, size_t N, CUstream hStream );
     typedef CUresult ( *PFN_cuMemsetD16Async )( CUdeviceptr dstDevice, unsigned short us, size_t N, CUstream hStream );
     typedef CUresult ( *PFN_cuMemsetD32Async )( CUdeviceptr dstDevice, unsigned int ui, size_t N, CUstream hStream );
@@ -88,6 +90,14 @@ bool initializeCudaDeviceApiFunctionTable() {
     typedef CUresult ( *PFN_cuSignalExternalSemaphoresAsync )( const CUexternalSemaphore *extSemArray, const CUDA_EXTERNAL_SEMAPHORE_SIGNAL_PARAMS *paramsArray, unsigned int numExtSems, CUstream stream );
     typedef CUresult ( *PFN_cuWaitExternalSemaphoresAsync )( const CUexternalSemaphore *extSemArray, const CUDA_EXTERNAL_SEMAPHORE_WAIT_PARAMS *paramsArray, unsigned int numExtSems, CUstream stream );
     typedef CUresult ( *PFN_cuDestroyExternalSemaphore )( CUexternalSemaphore extSem );
+    typedef CUresult ( *PFN_cuModuleLoad )( CUmodule* module, const char* fname );
+    typedef CUresult ( *PFN_cuModuleLoadData )( CUmodule* module, const void* image );
+    typedef CUresult ( *PFN_cuModuleLoadDataEx )( CUmodule* module, const void* image, unsigned int numOptions, CUjit_option* options, void** optionValues );
+    typedef CUresult ( *PFN_cuModuleLoadFatBinary )( CUmodule* module, const void* fatCubin );
+    typedef CUresult ( *PFN_cuModuleUnload )( CUmodule hmod );
+    typedef CUresult ( *PFN_cuModuleGetFunction )( CUfunction* hfunc, CUmodule hmod, const char* name );
+    typedef CUresult ( *PFN_cuModuleGetGlobal )( CUdeviceptr* dptr, size_t* bytes, CUmodule hmod, const char* name );
+    typedef CUresult ( *PFN_cuLaunchKernel )( CUfunction f, unsigned int gridDimX, unsigned int gridDimY, unsigned int gridDimZ, unsigned int blockDimX, unsigned int blockDimY, unsigned int blockDimZ, unsigned int sharedMemBytes, CUstream hStream, void** kernelParams, void** extra );
 
 #if defined(__linux__)
     g_cudaLibraryHandle = dlopen("libcuda.so", RTLD_NOW | RTLD_LOCAL);
@@ -115,6 +125,8 @@ bool initializeCudaDeviceApiFunctionTable() {
     g_cudaDeviceApiFunctionTable.cuStreamSynchronize = PFN_cuStreamSynchronize(dlsym(g_cudaLibraryHandle, TOSTRING(cuStreamSynchronize)));
     g_cudaDeviceApiFunctionTable.cuMemAlloc = PFN_cuMemAlloc(dlsym(g_cudaLibraryHandle, TOSTRING(cuMemAlloc)));
     g_cudaDeviceApiFunctionTable.cuMemFree = PFN_cuMemFree(dlsym(g_cudaLibraryHandle, TOSTRING(cuMemFree)));
+    g_cudaDeviceApiFunctionTable.cuMemAllocAsync = PFN_cuMemAllocAsync(dlsym(g_cudaLibraryHandle, TOSTRING(cuMemAllocAsync)));
+    g_cudaDeviceApiFunctionTable.cuMemFreeAsync = PFN_cuMemFreeAsync(dlsym(g_cudaLibraryHandle, TOSTRING(cuMemFreeAsync)));
     g_cudaDeviceApiFunctionTable.cuMemsetD8Async = PFN_cuMemsetD8Async(dlsym(g_cudaLibraryHandle, TOSTRING(cuMemsetD8Async)));
     g_cudaDeviceApiFunctionTable.cuMemsetD16Async = PFN_cuMemsetD16Async(dlsym(g_cudaLibraryHandle, TOSTRING(cuMemsetD16Async)));
     g_cudaDeviceApiFunctionTable.cuMemsetD32Async = PFN_cuMemsetD32Async(dlsym(g_cudaLibraryHandle, TOSTRING(cuMemsetD32Async)));
@@ -137,6 +149,14 @@ bool initializeCudaDeviceApiFunctionTable() {
     g_cudaDeviceApiFunctionTable.cuSignalExternalSemaphoresAsync = PFN_cuSignalExternalSemaphoresAsync(dlsym(g_cudaLibraryHandle, TOSTRING(cuSignalExternalSemaphoresAsync)));
     g_cudaDeviceApiFunctionTable.cuWaitExternalSemaphoresAsync = PFN_cuWaitExternalSemaphoresAsync(dlsym(g_cudaLibraryHandle, TOSTRING(cuWaitExternalSemaphoresAsync)));
     g_cudaDeviceApiFunctionTable.cuDestroyExternalSemaphore = PFN_cuDestroyExternalSemaphore(dlsym(g_cudaLibraryHandle, TOSTRING(cuDestroyExternalSemaphore)));
+    g_cudaDeviceApiFunctionTable.cuModuleLoad = PFN_cuModuleLoad(dlsym(g_cudaLibraryHandle, TOSTRING(cuModuleLoad)));
+    g_cudaDeviceApiFunctionTable.cuModuleLoadData = PFN_cuModuleLoadData(dlsym(g_cudaLibraryHandle, TOSTRING(cuModuleLoadData)));
+    g_cudaDeviceApiFunctionTable.cuModuleLoadDataEx = PFN_cuModuleLoadDataEx(dlsym(g_cudaLibraryHandle, TOSTRING(cuModuleLoadDataEx)));
+    g_cudaDeviceApiFunctionTable.cuModuleLoadFatBinary = PFN_cuModuleLoadFatBinary(dlsym(g_cudaLibraryHandle, TOSTRING(cuModuleLoadFatBinary)));
+    g_cudaDeviceApiFunctionTable.cuModuleUnload = PFN_cuModuleUnload(dlsym(g_cudaLibraryHandle, TOSTRING(cuModuleUnload)));
+    g_cudaDeviceApiFunctionTable.cuModuleGetFunction = PFN_cuModuleGetFunction(dlsym(g_cudaLibraryHandle, TOSTRING(cuModuleGetFunction)));
+    g_cudaDeviceApiFunctionTable.cuModuleGetGlobal = PFN_cuModuleGetGlobal(dlsym(g_cudaLibraryHandle, TOSTRING(cuModuleGetGlobal)));
+    g_cudaDeviceApiFunctionTable.cuLaunchKernel = PFN_cuLaunchKernel(dlsym(g_cudaLibraryHandle, TOSTRING(cuLaunchKernel)));
 
     if (!g_cudaDeviceApiFunctionTable.cuInit
             || !g_cudaDeviceApiFunctionTable.cuGetErrorString
@@ -151,6 +171,8 @@ bool initializeCudaDeviceApiFunctionTable() {
             || !g_cudaDeviceApiFunctionTable.cuStreamSynchronize
             || !g_cudaDeviceApiFunctionTable.cuMemAlloc
             || !g_cudaDeviceApiFunctionTable.cuMemFree
+            || !g_cudaDeviceApiFunctionTable.cuMemAllocAsync
+            || !g_cudaDeviceApiFunctionTable.cuMemFreeAsync
             || !g_cudaDeviceApiFunctionTable.cuMemsetD8Async
             || !g_cudaDeviceApiFunctionTable.cuMemsetD16Async
             || !g_cudaDeviceApiFunctionTable.cuMemsetD32Async
@@ -172,7 +194,15 @@ bool initializeCudaDeviceApiFunctionTable() {
             || !g_cudaDeviceApiFunctionTable.cuImportExternalSemaphore
             || !g_cudaDeviceApiFunctionTable.cuSignalExternalSemaphoresAsync
             || !g_cudaDeviceApiFunctionTable.cuWaitExternalSemaphoresAsync
-            || !g_cudaDeviceApiFunctionTable.cuDestroyExternalSemaphore) {
+            || !g_cudaDeviceApiFunctionTable.cuDestroyExternalSemaphore
+            || !g_cudaDeviceApiFunctionTable.cuModuleLoad
+            || !g_cudaDeviceApiFunctionTable.cuModuleLoadData
+            || !g_cudaDeviceApiFunctionTable.cuModuleLoadDataEx
+            || !g_cudaDeviceApiFunctionTable.cuModuleLoadFatBinary
+            || !g_cudaDeviceApiFunctionTable.cuModuleUnload
+            || !g_cudaDeviceApiFunctionTable.cuModuleGetFunction
+            || !g_cudaDeviceApiFunctionTable.cuModuleGetGlobal
+            || !g_cudaDeviceApiFunctionTable.cuLaunchKernel) {
         sgl::Logfile::get()->throwError(
                 "Error in initializeCudaDeviceApiFunctionTable: "
                 "At least one function pointer could not be loaded.");
