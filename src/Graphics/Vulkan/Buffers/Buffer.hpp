@@ -227,13 +227,14 @@ public:
 
     VkDeviceAddress getVkDeviceAddress();
 
-    inline VkBuffer getVkBuffer() { return buffer; }
-    inline VkDeviceMemory getVkDeviceMemory() { return deviceMemory; }
-    inline Device* getDevice() { return device; }
+    [[nodiscard]] inline VkBuffer getVkBuffer() { return buffer; }
+    [[nodiscard]] inline Device* getDevice() { return device; }
     [[nodiscard]] inline size_t getSizeInBytes() const { return sizeInBytes; }
-    [[nodiscard]] inline VkDeviceSize getDeviceMemoryOffset() { return deviceMemoryOffset; }
     [[nodiscard]] inline VkBufferUsageFlags getVkBufferUsageFlags() const { return bufferUsageFlags; }
     [[nodiscard]] inline VmaMemoryUsage getVmaMemoryUsage() const { return memoryUsage; }
+    [[nodiscard]] inline VkDeviceMemory getVkDeviceMemory() { return deviceMemory; }
+    [[nodiscard]] inline VkDeviceSize getDeviceMemoryOffset() { return deviceMemoryOffset; }
+    [[nodiscard]] inline VkDeviceSize getDeviceMemorySize() { return deviceMemorySize; }
 
 #if defined(SUPPORT_OPENGL) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
     /**
@@ -273,6 +274,7 @@ private:
     // Exported memory for external use.
     VkDeviceMemory deviceMemory = VK_NULL_HANDLE;
     VkDeviceSize deviceMemoryOffset = 0;
+    VkDeviceSize deviceMemorySize = 0;
 
     VkBufferUsageFlags bufferUsageFlags = 0;
     VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;

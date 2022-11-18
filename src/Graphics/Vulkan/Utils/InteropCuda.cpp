@@ -66,6 +66,8 @@ bool initializeCudaDeviceApiFunctionTable() {
     typedef CUresult ( *PFN_cuStreamSynchronize )( CUstream hStream );
     typedef CUresult ( *PFN_cuMemAlloc )( CUdeviceptr *dptr, size_t bytesize );
     typedef CUresult ( *PFN_cuMemFree )( CUdeviceptr dptr );
+    typedef CUresult ( *PFN_cuMemcpyDtoH )( void *dstHost, CUdeviceptr srcDevice, size_t ByteCount );
+    typedef CUresult ( *PFN_cuMemcpyHtoD )( CUdeviceptr dstDevice, const void *srcHost, size_t ByteCount );
     typedef CUresult ( *PFN_cuMemAllocAsync )( CUdeviceptr *dptr, size_t bytesize, CUstream hStream );
     typedef CUresult ( *PFN_cuMemFreeAsync )( CUdeviceptr dptr, CUstream hStream );
     typedef CUresult ( *PFN_cuMemsetD8Async )( CUdeviceptr dstDevice, unsigned char uc, size_t N, CUstream hStream );
@@ -125,6 +127,8 @@ bool initializeCudaDeviceApiFunctionTable() {
     g_cudaDeviceApiFunctionTable.cuStreamSynchronize = PFN_cuStreamSynchronize(dlsym(g_cudaLibraryHandle, TOSTRING(cuStreamSynchronize)));
     g_cudaDeviceApiFunctionTable.cuMemAlloc = PFN_cuMemAlloc(dlsym(g_cudaLibraryHandle, TOSTRING(cuMemAlloc)));
     g_cudaDeviceApiFunctionTable.cuMemFree = PFN_cuMemFree(dlsym(g_cudaLibraryHandle, TOSTRING(cuMemFree)));
+    g_cudaDeviceApiFunctionTable.cuMemcpyDtoH = PFN_cuMemcpyDtoH(dlsym(g_cudaLibraryHandle, TOSTRING(cuMemcpyDtoH)));
+    g_cudaDeviceApiFunctionTable.cuMemcpyHtoD = PFN_cuMemcpyHtoD(dlsym(g_cudaLibraryHandle, TOSTRING(cuMemcpyHtoD)));
     g_cudaDeviceApiFunctionTable.cuMemAllocAsync = PFN_cuMemAllocAsync(dlsym(g_cudaLibraryHandle, TOSTRING(cuMemAllocAsync)));
     g_cudaDeviceApiFunctionTable.cuMemFreeAsync = PFN_cuMemFreeAsync(dlsym(g_cudaLibraryHandle, TOSTRING(cuMemFreeAsync)));
     g_cudaDeviceApiFunctionTable.cuMemsetD8Async = PFN_cuMemsetD8Async(dlsym(g_cudaLibraryHandle, TOSTRING(cuMemsetD8Async)));
@@ -171,6 +175,8 @@ bool initializeCudaDeviceApiFunctionTable() {
             || !g_cudaDeviceApiFunctionTable.cuStreamSynchronize
             || !g_cudaDeviceApiFunctionTable.cuMemAlloc
             || !g_cudaDeviceApiFunctionTable.cuMemFree
+            || !g_cudaDeviceApiFunctionTable.cuMemcpyDtoH
+            || !g_cudaDeviceApiFunctionTable.cuMemcpyHtoD
             || !g_cudaDeviceApiFunctionTable.cuMemAllocAsync
             || !g_cudaDeviceApiFunctionTable.cuMemFreeAsync
             || !g_cudaDeviceApiFunctionTable.cuMemsetD8Async
@@ -413,8 +419,10 @@ BufferCudaDriverApiExternalMemoryVk::BufferCudaDriverApiExternalMemoryVk(vk::Buf
     VkMemoryRequirements memoryRequirements{};
     vkGetBufferMemoryRequirements(device, vulkanBuffer->getVkBuffer(), &memoryRequirements);
 
+    /*CUDA_EXTERNAL_MEMORY_HANDLE_DESC externalMemoryHandleDesc{};
+    externalMemoryHandleDesc.size = memoryRequirements.size;*/
     CUDA_EXTERNAL_MEMORY_HANDLE_DESC externalMemoryHandleDesc{};
-    externalMemoryHandleDesc.size = memoryRequirements.size;
+    externalMemoryHandleDesc.size = vulkanBuffer->getDeviceMemorySize();
 
 #if defined(_WIN32)
     auto _vkGetMemoryWin32HandleKHR = (PFN_vkGetMemoryWin32HandleKHR)vkGetDeviceProcAddr(
@@ -627,11 +635,13 @@ void ImageCudaExternalMemoryVk::_initialize(
     VkDevice device = vulkanImage->getDevice()->getVkDevice();
     VkDeviceMemory deviceMemory = vulkanImage->getVkDeviceMemory();
 
-    VkMemoryRequirements memoryRequirements{};
+    /*VkMemoryRequirements memoryRequirements{};
     vkGetImageMemoryRequirements(device, vulkanImage->getVkImage(), &memoryRequirements);
+    CUDA_EXTERNAL_MEMORY_HANDLE_DESC externalMemoryHandleDesc{};
+    externalMemoryHandleDesc.size = memoryRequirements.size;*/
 
     CUDA_EXTERNAL_MEMORY_HANDLE_DESC externalMemoryHandleDesc{};
-    externalMemoryHandleDesc.size = memoryRequirements.size;
+    externalMemoryHandleDesc.size = vulkanImage->getDeviceMemorySize();
 
 #if defined(_WIN32)
     auto _vkGetMemoryWin32HandleKHR = (PFN_vkGetMemoryWin32HandleKHR)vkGetDeviceProcAddr(

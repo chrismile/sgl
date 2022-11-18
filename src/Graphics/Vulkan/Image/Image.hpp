@@ -278,6 +278,7 @@ public:
     [[nodiscard]] inline Device* getDevice() { return device; }
     [[nodiscard]] inline VkDeviceMemory getVkDeviceMemory() { return deviceMemory; }
     [[nodiscard]] inline VkDeviceSize getDeviceMemoryOffset() { return deviceMemoryOffset; }
+    [[nodiscard]] inline VkDeviceSize getDeviceMemorySize() { return deviceMemorySize; }
 
     void* mapMemory();
     void unmapMemory();
@@ -334,7 +335,7 @@ private:
 
     // Exported memory for external use.
     VkDeviceMemory deviceMemory = VK_NULL_HANDLE;
-    VkDeviceSize deviceMemorySizeInBytes = 0;
+    VkDeviceSize deviceMemorySize = 0;
     VkDeviceSize deviceMemoryOffset = 0;
 
 #ifdef _WIN32

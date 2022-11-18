@@ -100,6 +100,12 @@ Buffer::Buffer(
 
         deviceMemory = bufferAllocationInfo.deviceMemory;
         deviceMemoryOffset = bufferAllocationInfo.offset;
+        // The allocation info size is just the size of this allocation.
+        if (exportMemory) {
+            deviceMemorySize = device->getVmaDeviceMemoryAllocationSize(deviceMemory);
+        } else {
+            deviceMemorySize = bufferAllocationInfo.size;
+        }
     }
 
     if (exportMemory && useDedicatedAllocationForExportedMemory) {
@@ -124,6 +130,7 @@ Buffer::Buffer(
 
         VkMemoryRequirements memoryRequirements;
         vkGetBufferMemoryRequirements(device->getVkDevice(), buffer, &memoryRequirements);
+        deviceMemorySize = memoryRequirements.size;
 
         VkExportMemoryAllocateInfo exportMemoryAllocateInfo{};
         exportMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;

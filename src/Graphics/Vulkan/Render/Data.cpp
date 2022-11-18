@@ -340,6 +340,8 @@ void RenderData::_updateDescriptorSets() {
     const VkDescriptorSetLayout& descriptorSetLayout = descriptorSetLayouts.at(0);
     const std::vector<DescriptorInfo>& descriptorSetInfo = shaderStages->getDescriptorSetsInfo().find(0)->second;
 
+    uint32_t variableDescriptorCount = 0;
+    VkDescriptorSetVariableDescriptorCountAllocateInfo variableDescriptorCountAllocInfo{};
     for (FrameData& frameData : frameDataList) {
         if (frameData.descriptorSet == VK_NULL_HANDLE) {
             VkDescriptorSetAllocateInfo allocInfo{};
@@ -347,6 +349,29 @@ void RenderData::_updateDescriptorSets() {
             allocInfo.descriptorPool = renderer->getVkDescriptorPool();
             allocInfo.descriptorSetCount = 1;
             allocInfo.pSetLayouts = &descriptorSetLayout;
+
+            variableDescriptorCount = 0;
+            if (!frameData.imageViewArrays.empty()) {
+                for (const auto& imageViewArrray : frameData.imageViewArrays) {
+                    const DescriptorInfo& descriptorInfo = descriptorSetInfo.at(imageViewArrray.first);
+                    if (descriptorInfo.count == 0) {
+                        if (variableDescriptorCount > 0) {
+                            sgl::Logfile::get()->throwError(
+                                    "Error in RenderData::_updateDescriptorSets: Encountered more than one "
+                                    "variable descriptor count entry. Only one is allowed per descriptor set.");
+                        }
+                        variableDescriptorCount = uint32_t(frameData.imageViewArrays.begin()->second.size());
+                    }
+                }
+            }
+
+            if (variableDescriptorCount > 0) {
+                variableDescriptorCountAllocInfo.sType =
+                        VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO_EXT;
+                variableDescriptorCountAllocInfo.descriptorSetCount = 1;
+                variableDescriptorCountAllocInfo.pDescriptorCounts = &variableDescriptorCount;
+                allocInfo.pNext = &variableDescriptorCountAllocInfo;
+            }
 
             if (vkAllocateDescriptorSets(
                     device->getVkDevice(), &allocInfo, &frameData.descriptorSet) != VK_SUCCESS) {
@@ -427,7 +452,9 @@ void RenderData::_updateDescriptorSets() {
                                     "Error in RenderData::_updateDescriptorSets: Couldn't find image view with binding "
                                     + std::to_string(descriptorInfo.binding) + ".");
                         }
-                        for (uint32_t idx = 0; idx < descriptorInfo.count; idx++) {
+                        descriptorWrite.descriptorCount = uint32_t(it->second.size());
+                        descWriteData.imageInfoArray.resize(it->second.size());
+                        for (size_t idx = 0; idx < it->second.size(); idx++) {
                             descWriteData.imageInfoArray.at(idx).imageView = it->second.at(idx)->getVkImageView();
                             descWriteData.imageInfoArray.at(idx).imageLayout = imageLayout;
                         }

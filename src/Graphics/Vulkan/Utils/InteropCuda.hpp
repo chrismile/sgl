@@ -67,6 +67,8 @@ struct CudaDeviceApiFunctionTable {
 
     CUresult ( *cuMemAlloc )( CUdeviceptr *dptr, size_t bytesize );
     CUresult ( *cuMemFree )( CUdeviceptr dptr );
+    CUresult ( *cuMemcpyDtoH )( void *dstHost, CUdeviceptr srcDevice, size_t ByteCount );
+    CUresult ( *cuMemcpyHtoD )( CUdeviceptr dstDevice, const void *srcHost, size_t ByteCount );
     CUresult ( *cuMemAllocAsync )( CUdeviceptr *dptr, size_t bytesize, CUstream hStream );
     CUresult ( *cuMemFreeAsync )( CUdeviceptr dptr, CUstream hStream );
     CUresult ( *cuMemsetD8Async )( CUdeviceptr dstDevice, unsigned char uc, size_t N, CUstream hStream );

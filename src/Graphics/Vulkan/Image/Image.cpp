@@ -393,7 +393,12 @@ Image::Image(Device* device, const ImageSettings& imageSettings) : device(device
 
         deviceMemory = textureImageAllocationInfo.deviceMemory;
         deviceMemoryOffset = textureImageAllocationInfo.offset;
-        deviceMemorySizeInBytes = textureImageAllocationInfo.size;
+        // The allocation info size is just the size of this allocation.
+        if (imageSettings.exportMemory) {
+            deviceMemorySize = device->getVmaDeviceMemoryAllocationSize(deviceMemory);
+        } else {
+            deviceMemorySize = textureImageAllocationInfo.size;
+        }
     }
 
     if (imageSettings.exportMemory && imageSettings.useDedicatedAllocationForExportedMemory) {
@@ -419,7 +424,7 @@ Image::Image(Device* device, const ImageSettings& imageSettings) : device(device
 
         VkMemoryRequirements memoryRequirements;
         vkGetImageMemoryRequirements(device->getVkDevice(), image, &memoryRequirements);
-        deviceMemorySizeInBytes = memoryRequirements.size;
+        deviceMemorySize = memoryRequirements.size;
 
         VkExportMemoryAllocateInfo exportMemoryAllocateInfo = {};
         exportMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;
@@ -532,7 +537,7 @@ void Image::createFromD3D12SharedResourceHandle(HANDLE resourceHandle, const Ima
 
     VkMemoryRequirements memoryRequirements{};
     vkGetImageMemoryRequirements(device->getVkDevice(), image, &memoryRequirements);
-    deviceMemorySizeInBytes = memoryRequirements.size;
+    deviceMemorySize = memoryRequirements.size;
 
     /**
      * According to this code (https://github.com/krOoze/Hello_Triangle/blob/dxgi_interop/src/WSI/DxgiWsi.h), it seems
@@ -1241,7 +1246,7 @@ bool Image::createGlMemoryObject(GLuint& memoryObjectGl, InteropMemoryHandle& in
     }
     return createGlMemoryObjectFromVkDeviceMemory(
             memoryObjectGl, interopMemoryHandle,
-            device->getVkDevice(), deviceMemory, deviceMemorySizeInBytes);
+            device->getVkDevice(), deviceMemory, deviceMemorySize);
 }
 #endif
 

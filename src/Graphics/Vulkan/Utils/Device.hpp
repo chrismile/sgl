@@ -332,6 +332,9 @@ public:
     // Query memory pools (automatically created).
     VmaPool getExternalMemoryHandlePool(uint32_t memoryTypeIndex, bool isBuffer);
 
+    // Queries device memory size of device memory allocated by VMA.
+    VkDeviceSize getVmaDeviceMemoryAllocationSize(VkDeviceMemory deviceMemory);
+
     // Create a transient command buffer ready to execute commands (0xFFFFFFFF encodes graphics queue).
     VkCommandBuffer beginSingleTimeCommands(uint32_t queueIndex = 0xFFFFFFFF, bool beginCommandBuffer = true);
     void endSingleTimeCommands(
@@ -358,6 +361,10 @@ public:
 #ifdef _WIN32
     static std::vector<const char*> getD3D12InteropDeviceExtensions();
 #endif
+
+    // The functions below should only be called by the VMA callbacks.
+    void vmaAllocateDeviceMemoryCallback(uint32_t memoryType, VkDeviceMemory memory, VkDeviceSize size);
+    void vmaFreeDeviceMemoryCallback(uint32_t memoryType, VkDeviceMemory memory, VkDeviceSize size);
 
 private:
     void initializeDeviceExtensionList(VkPhysicalDevice physicalDevice);
@@ -411,6 +418,7 @@ private:
     VmaAllocator allocator = VK_NULL_HANDLE;
     std::unordered_map<MemoryPoolType, VmaPool> externalMemoryHandlePools;
     VkExportMemoryAllocateInfo exportMemoryAllocateInfo{}; ///< Must remain in scope for use in VMA.
+    std::unordered_map<VkDeviceMemory, VkDeviceSize> deviceMemoryToSizeMap;
 
     // Device properties.
     VkPhysicalDeviceProperties physicalDeviceProperties{};

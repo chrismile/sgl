@@ -346,11 +346,16 @@ void ShaderStages::createDescriptorSetLayouts() {
     }
     descriptorSetLayouts.resize(numDescriptorSets);
 
+    std::vector<VkDescriptorSetLayoutBinding> bindings;
+    std::vector<VkDescriptorBindingFlags> descriptorBindingFlags;
+    VkDescriptorSetLayoutBindingFlagsCreateInfo setLayoutBindingFlags{};
+    setLayoutBindingFlags.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
     for (uint32_t setIdx = 0; setIdx < numDescriptorSets; setIdx++) {
         VkDescriptorSetLayout& descriptorSetLayout = descriptorSetLayouts.at(setIdx);
         VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo{};
         descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        std::vector<VkDescriptorSetLayoutBinding> bindings;
+        bindings.clear();
+        descriptorBindingFlags.clear();
 
         auto it = descriptorSetsInfo.find(setIdx);
         if (it != descriptorSetsInfo.end()) {
@@ -363,6 +368,23 @@ void ShaderStages::createDescriptorSetLayouts() {
                 binding.descriptorType = descriptorInfo.type;
                 binding.pImmutableSamplers = nullptr;
                 binding.stageFlags = descriptorInfo.shaderStageFlags;
+                if (descriptorInfo.count == 0) {
+                    /*
+                     * TODO: "pDescriptorCounts[i] must be less than or equal to the descriptor count specified for
+                     * that binding when the descriptor set layout was created".
+                     */
+                    binding.descriptorCount = descriptorInfo.count;
+                    if (setLayoutBindingFlags.bindingCount > 0) {
+                        sgl::Logfile::get()->throwError(
+                                "Error in ShaderStages::createDescriptorSetLayouts: Encountered more than one "
+                                "variable descriptor count entry. Only one is allowed per descriptor set.");
+                    }
+                    descriptorBindingFlags.resize(bindings.size(), 0);
+                    descriptorBindingFlags.at(j) = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT;
+                    setLayoutBindingFlags.bindingCount = static_cast<uint32_t>(bindings.size());
+                    setLayoutBindingFlags.pBindingFlags = descriptorBindingFlags.data();
+                    descriptorSetLayoutInfo.pNext = &setLayoutBindingFlags;
+                }
             }
             descriptorSetLayoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
             descriptorSetLayoutInfo.pBindings = bindings.data();

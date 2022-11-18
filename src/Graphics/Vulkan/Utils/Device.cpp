@@ -233,8 +233,8 @@ bool Device::isDeviceSuitable(
         vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
 
         const size_t numVulkan11Features =
-                (sizeof(VkBool32) + (&requestedDeviceFeatures.requestedVulkan11Features.shaderDrawParameters)
-                 - (&requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess)) / sizeof(VkBool32);
+                1 + (&requestedDeviceFeatures.requestedVulkan11Features.shaderDrawParameters)
+                 - (&requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess);
         auto requestedVulkan11FeaturesArray = reinterpret_cast<const VkBool32*>(
                 &requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess);
         auto physicalDeviceVulkan11FeaturesArray = reinterpret_cast<VkBool32*>(
@@ -258,8 +258,8 @@ bool Device::isDeviceSuitable(
         vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
 
         const size_t numVulkan12Features =
-                (sizeof(VkBool32) + (&requestedDeviceFeatures.requestedVulkan12Features.subgroupBroadcastDynamicId)
-                 - (&requestedDeviceFeatures.requestedVulkan12Features.samplerMirrorClampToEdge)) / sizeof(VkBool32);
+                1 + (&requestedDeviceFeatures.requestedVulkan12Features.subgroupBroadcastDynamicId)
+                 - (&requestedDeviceFeatures.requestedVulkan12Features.samplerMirrorClampToEdge);
         auto requestedVulkan12FeaturesArray = reinterpret_cast<const VkBool32*>(
                 &requestedDeviceFeatures.requestedVulkan12Features.samplerMirrorClampToEdge);
         auto physicalDeviceVulkan12FeaturesArray = reinterpret_cast<VkBool32*>(
@@ -283,8 +283,8 @@ bool Device::isDeviceSuitable(
         vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
 
         const size_t numVulkan13Features =
-                (sizeof(VkBool32) + (&requestedDeviceFeatures.requestedVulkan13Features.maintenance4)
-                 - (&requestedDeviceFeatures.requestedVulkan13Features.robustImageAccess)) / sizeof(VkBool32);
+                1 + (&requestedDeviceFeatures.requestedVulkan13Features.maintenance4)
+                 - (&requestedDeviceFeatures.requestedVulkan13Features.robustImageAccess);
         auto requestedVulkan13FeaturesArray = reinterpret_cast<const VkBool32*>(
                 &requestedDeviceFeatures.requestedVulkan13Features.robustImageAccess);
         auto physicalDeviceVulkan13FeaturesArray = reinterpret_cast<VkBool32*>(
@@ -421,6 +421,210 @@ void Device::createLogicalDeviceAndQueues(
         VkPhysicalDevice physicalDevice, bool useValidationLayer, const std::vector<const char*>& layerNames,
         const std::vector<const char*>& deviceExtensions, const std::set<std::string>& deviceExtensionsSet,
         DeviceFeatures requestedDeviceFeatures, bool computeOnly) {
+    vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
+
+    /*
+     * If computeOnly is not set: Allocate two graphics & compute queues, and one compute-only queue. One of the
+     * graphics queues can be used as a present queue/primary rendering queue, and the other queue can be used in a
+     * worker thread. If the hardware doesn't support compute-only queues, three graphics & compute queues are
+     * allocated instead of two.
+     */
+    graphicsQueueIndex = findQueueFamilies(
+            physicalDevice, static_cast<VkQueueFlagBits>(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT));
+    computeQueueIndex = findQueueFamilies(
+            physicalDevice, static_cast<VkQueueFlagBits>(VK_QUEUE_COMPUTE_BIT));
+    workerThreadGraphicsQueueIndex = graphicsQueueIndex;
+
+    uint32_t queueFamilyPropertyCount = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyPropertyCount, nullptr);
+    queueFamilyProperties.resize(queueFamilyPropertyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyPropertyCount, queueFamilyProperties.data());
+
+    float queuePriorities[] = { 1.0, 1.0, 1.0 };
+
+    VkDeviceQueueCreateInfo graphicsQueueInfo = {};
+    graphicsQueueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    graphicsQueueInfo.pNext = nullptr;
+    graphicsQueueInfo.queueFamilyIndex = uint32_t(graphicsQueueIndex);
+    graphicsQueueInfo.queueCount = 2;
+    graphicsQueueInfo.pQueuePriorities = queuePriorities;
+
+    VkDeviceQueueCreateInfo computeQueueInfo = {};
+    computeQueueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    computeQueueInfo.pNext = nullptr;
+    computeQueueInfo.queueFamilyIndex = uint32_t(computeQueueIndex);
+    computeQueueInfo.queueCount = 1;
+    computeQueueInfo.pQueuePriorities = queuePriorities;
+
+    if (!computeOnly && graphicsQueueIndex == computeQueueIndex) {
+        graphicsQueueInfo.queueCount = 3;
+    }
+
+    if (!computeOnly && queueFamilyProperties.at(graphicsQueueIndex).queueCount < graphicsQueueInfo.queueCount) {
+        sgl::Logfile::get()->writeInfo(
+                "Warning: The used Vulkan driver does not support enough queues for multi-threaded rendering.");
+        graphicsQueueInfo.queueCount = std::min(
+                queueFamilyProperties.at(graphicsQueueIndex).queueCount, graphicsQueueInfo.queueCount);
+    }
+
+    VkDeviceQueueCreateInfo queueInfos[] = { graphicsQueueInfo, computeQueueInfo };
+    VkDeviceQueueCreateInfo* queueInfosPtr;
+    if (computeOnly) {
+        // Allocate only one compute-only queue.
+        queueInfosPtr = &queueInfos[1];
+    } else if (graphicsQueueIndex == computeQueueIndex) {
+        // Allocate three compute & graphics queues.
+        queueInfosPtr = &queueInfos[0];
+    } else {
+        // Allocate two compute & graphics queues and one compute-only queue.
+        queueInfosPtr = queueInfos;
+    }
+
+    // Enable all available optional features.
+    constexpr size_t numFeatures = sizeof(VkPhysicalDeviceFeatures) / sizeof(VkBool32);
+    auto requestedPhysicalDeviceFeaturesArray = reinterpret_cast<VkBool32*>(
+            &requestedDeviceFeatures.requestedPhysicalDeviceFeatures);
+    auto optionalPhysicalDeviceFeaturesArray = reinterpret_cast<const VkBool32*>(
+            &requestedDeviceFeatures.optionalPhysicalDeviceFeatures);
+    auto physicalDeviceFeaturesArray = reinterpret_cast<VkBool32*>(&physicalDeviceFeatures);
+    for (size_t i = 0; i < numFeatures; i++) {
+        if (optionalPhysicalDeviceFeaturesArray[i] && physicalDeviceFeaturesArray[i]) {
+            requestedPhysicalDeviceFeaturesArray[i] = VK_TRUE;
+        }
+    }
+
+#ifdef VK_VERSION_1_1
+    physicalDeviceVulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 1, 0)
+            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 1, 0)) {
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &physicalDeviceVulkan11Features;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        const size_t numVulkan11Features =
+                1 + (&requestedDeviceFeatures.requestedVulkan11Features.shaderDrawParameters)
+                 - (&requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess);
+        auto requestedVulkan11FeaturesArray = reinterpret_cast<VkBool32*>(
+                &requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess);
+        auto optionalVulkan11FeaturesArray = reinterpret_cast<VkBool32*>(
+                &requestedDeviceFeatures.optionalVulkan11Features.storageBuffer16BitAccess);
+        auto physicalDeviceVulkan11FeaturesArray = reinterpret_cast<VkBool32*>(
+                &physicalDeviceVulkan11Features.storageBuffer16BitAccess);
+        for (size_t i = 0; i < numVulkan11Features; i++) {
+            if (optionalVulkan11FeaturesArray[i] && physicalDeviceVulkan11FeaturesArray[i]) {
+                requestedVulkan11FeaturesArray[i] = VK_TRUE;
+            }
+        }
+    }
+#endif
+#ifdef VK_VERSION_1_2
+    physicalDeviceVulkan12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 2, 0)
+            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 2, 0)) {
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &physicalDeviceVulkan12Features;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        const size_t numVulkan12Features =
+                1 + (&requestedDeviceFeatures.requestedVulkan12Features.subgroupBroadcastDynamicId)
+                 - (&requestedDeviceFeatures.requestedVulkan12Features.samplerMirrorClampToEdge);
+        auto requestedVulkan12FeaturesArray = reinterpret_cast<VkBool32*>(
+                &requestedDeviceFeatures.requestedVulkan12Features.samplerMirrorClampToEdge);
+        auto optionalVulkan12FeaturesArray = reinterpret_cast<VkBool32*>(
+                &requestedDeviceFeatures.optionalVulkan12Features.samplerMirrorClampToEdge);
+        auto physicalDeviceVulkan12FeaturesArray = reinterpret_cast<VkBool32*>(
+                &physicalDeviceVulkan12Features.samplerMirrorClampToEdge);
+        for (size_t i = 0; i < numVulkan12Features; i++) {
+            if (optionalVulkan12FeaturesArray[i] && physicalDeviceVulkan12FeaturesArray[i]) {
+                requestedVulkan12FeaturesArray[i] = VK_TRUE;
+            }
+        }
+    }
+#endif
+#ifdef VK_VERSION_1_3
+    physicalDeviceVulkan13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 3, 0)
+            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 3, 0)) {
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &physicalDeviceVulkan13Features;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        const size_t numVulkan13Features =
+                1 + (&requestedDeviceFeatures.requestedVulkan13Features.maintenance4)
+                 - (&requestedDeviceFeatures.requestedVulkan13Features.robustImageAccess);
+        auto requestedVulkan13FeaturesArray = reinterpret_cast<VkBool32*>(
+                &requestedDeviceFeatures.requestedVulkan13Features.robustImageAccess);
+        auto optionalVulkan13FeaturesArray = reinterpret_cast<VkBool32*>(
+                &requestedDeviceFeatures.optionalVulkan13Features.robustImageAccess);
+        auto physicalDeviceVulkan13FeaturesArray = reinterpret_cast<VkBool32*>(
+                &physicalDeviceVulkan13Features.robustImageAccess);
+        for (size_t i = 0; i < numVulkan13Features; i++) {
+            if (optionalVulkan13FeaturesArray[i] && physicalDeviceVulkan13FeaturesArray[i]) {
+                requestedVulkan13FeaturesArray[i] = VK_TRUE;
+            }
+        }
+    }
+#endif
+
+
+    // Check if Vulkan 1.x extensions are used.
+#ifdef VK_VERSION_1_1
+    bool hasRequestedVulkan11Features = false;
+    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 1, 0)
+            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 1, 0)) {
+        const size_t numVulkan11Features =
+                1 + (&requestedDeviceFeatures.requestedVulkan11Features.shaderDrawParameters)
+                 - (&requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess);
+        auto requestedVulkan11FeaturesArray = reinterpret_cast<VkBool32*>(
+                &requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess);
+        for (size_t i = 0; i < numVulkan11Features; i++) {
+            if (requestedVulkan11FeaturesArray[i]) {
+                hasRequestedVulkan11Features = true;
+            }
+        }
+    }
+#endif
+#ifdef VK_VERSION_1_2
+    bool hasRequestedVulkan12Features = false;
+    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 2, 0)
+            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 2, 0)) {
+        const size_t numVulkan12Features =
+                1 + (&requestedDeviceFeatures.requestedVulkan12Features.subgroupBroadcastDynamicId)
+                 - (&requestedDeviceFeatures.requestedVulkan12Features.samplerMirrorClampToEdge);
+        auto requestedVulkan12FeaturesArray = reinterpret_cast<VkBool32*>(
+                &requestedDeviceFeatures.requestedVulkan12Features.samplerMirrorClampToEdge);
+        for (size_t i = 0; i < numVulkan12Features; i++) {
+            if (requestedVulkan12FeaturesArray[i]) {
+                hasRequestedVulkan12Features = true;
+            }
+        }
+    }
+#endif
+#ifdef VK_VERSION_1_3
+    bool hasRequestedVulkan13Features = false;
+    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 3, 0)
+            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 3, 0)) {
+        const size_t numVulkan13Features =
+                1 + (&requestedDeviceFeatures.requestedVulkan13Features.maintenance4)
+                 - (&requestedDeviceFeatures.requestedVulkan13Features.robustImageAccess);
+        auto requestedVulkan13FeaturesArray = reinterpret_cast<VkBool32*>(
+                &requestedDeviceFeatures.requestedVulkan13Features.robustImageAccess);
+        for (size_t i = 0; i < numVulkan13Features; i++) {
+            if (requestedVulkan13FeaturesArray[i]) {
+                hasRequestedVulkan13Features = true;
+            }
+        }
+
+        // SPIR-V 1.6 needs VkPhysicalDeviceVulkan13Features::maintenance4.
+        requestedDeviceFeatures.requestedVulkan13Features.maintenance4 = VK_TRUE;
+        hasRequestedVulkan13Features = true;
+    }
+#endif
+
+
     if (deviceExtensionsSet.find(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME) != deviceExtensionsSet.end()) {
         timelineSemaphoreFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
         VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
@@ -430,6 +634,11 @@ void Device::createLogicalDeviceAndQueues(
 
         if (requestedDeviceFeatures.timelineSemaphoreFeatures.timelineSemaphore == VK_FALSE) {
             requestedDeviceFeatures.timelineSemaphoreFeatures = timelineSemaphoreFeatures;
+        }
+        if (hasRequestedVulkan12Features) {
+            requestedDeviceFeatures.requestedVulkan12Features.timelineSemaphore =
+                    requestedDeviceFeatures.timelineSemaphoreFeatures.timelineSemaphore;
+            requestedDeviceFeatures.timelineSemaphoreFeatures.timelineSemaphore = VK_FALSE;
         }
     }
     if (deviceExtensionsSet.find(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME) != deviceExtensionsSet.end()) {
@@ -442,6 +651,17 @@ void Device::createLogicalDeviceAndQueues(
         if (requestedDeviceFeatures.bufferDeviceAddressFeatures.bufferDeviceAddress == VK_FALSE) {
             requestedDeviceFeatures.bufferDeviceAddressFeatures = bufferDeviceAddressFeatures;
         }
+        if (hasRequestedVulkan12Features) {
+            requestedDeviceFeatures.requestedVulkan12Features.bufferDeviceAddress =
+                    requestedDeviceFeatures.bufferDeviceAddressFeatures.bufferDeviceAddress;
+            requestedDeviceFeatures.requestedVulkan12Features.bufferDeviceAddressCaptureReplay =
+                    requestedDeviceFeatures.bufferDeviceAddressFeatures.bufferDeviceAddressCaptureReplay;
+            requestedDeviceFeatures.requestedVulkan12Features.bufferDeviceAddressMultiDevice =
+                    requestedDeviceFeatures.bufferDeviceAddressFeatures.bufferDeviceAddressMultiDevice;
+            requestedDeviceFeatures.bufferDeviceAddressFeatures.bufferDeviceAddress = VK_FALSE;
+            requestedDeviceFeatures.bufferDeviceAddressFeatures.bufferDeviceAddressCaptureReplay = VK_FALSE;
+            requestedDeviceFeatures.bufferDeviceAddressFeatures.bufferDeviceAddressMultiDevice = VK_FALSE;
+        }
     }
     if (deviceExtensionsSet.find(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME) != deviceExtensionsSet.end()) {
         scalarBlockLayoutFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES;
@@ -452,6 +672,11 @@ void Device::createLogicalDeviceAndQueues(
 
         if (requestedDeviceFeatures.scalarBlockLayoutFeatures.scalarBlockLayout == VK_FALSE) {
             requestedDeviceFeatures.scalarBlockLayoutFeatures = scalarBlockLayoutFeatures;
+        }
+        if (hasRequestedVulkan12Features) {
+            requestedDeviceFeatures.requestedVulkan12Features.scalarBlockLayout =
+                    requestedDeviceFeatures.scalarBlockLayoutFeatures.scalarBlockLayout;
+            requestedDeviceFeatures.scalarBlockLayoutFeatures.scalarBlockLayout = VK_FALSE;
         }
     }
     if (deviceExtensionsSet.find(VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME) != deviceExtensionsSet.end()
@@ -466,6 +691,11 @@ void Device::createLogicalDeviceAndQueues(
         if (requestedDeviceFeatures.uniformBufferStandardLayoutFeaturesKhr.uniformBufferStandardLayout == VK_FALSE) {
             requestedDeviceFeatures.uniformBufferStandardLayoutFeaturesKhr = uniformBufferStandardLayoutFeaturesKhr;
         }
+        if (hasRequestedVulkan12Features) {
+            requestedDeviceFeatures.requestedVulkan12Features.uniformBufferStandardLayout =
+                    requestedDeviceFeatures.uniformBufferStandardLayoutFeaturesKhr.uniformBufferStandardLayout;
+            requestedDeviceFeatures.uniformBufferStandardLayoutFeaturesKhr.uniformBufferStandardLayout = VK_FALSE;
+        }
     }
     if (deviceExtensionsSet.find(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME) != deviceExtensionsSet.end()) {
         shaderFloat16Int8Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES;
@@ -477,6 +707,14 @@ void Device::createLogicalDeviceAndQueues(
         if (requestedDeviceFeatures.shaderFloat16Int8Features.shaderFloat16 == VK_FALSE
                 && requestedDeviceFeatures.shaderFloat16Int8Features.shaderInt8 == VK_FALSE) {
             requestedDeviceFeatures.shaderFloat16Int8Features = shaderFloat16Int8Features;
+        }
+        if (hasRequestedVulkan12Features) {
+            requestedDeviceFeatures.requestedVulkan12Features.shaderFloat16 =
+                    requestedDeviceFeatures.shaderFloat16Int8Features.shaderFloat16;
+            requestedDeviceFeatures.requestedVulkan12Features.shaderInt8 =
+                    requestedDeviceFeatures.shaderFloat16Int8Features.shaderInt8;
+            requestedDeviceFeatures.shaderFloat16Int8Features.shaderFloat16 = VK_FALSE;
+            requestedDeviceFeatures.shaderFloat16Int8Features.shaderInt8 = VK_FALSE;
         }
     }
     if (deviceExtensionsSet.find(VK_KHR_8BIT_STORAGE_EXTENSION_NAME) != deviceExtensionsSet.end()) {
@@ -491,9 +729,20 @@ void Device::createLogicalDeviceAndQueues(
                 && requestedDeviceFeatures.device8BitStorageFeatures.storagePushConstant8 == VK_FALSE) {
             requestedDeviceFeatures.device8BitStorageFeatures = device8BitStorageFeatures;
         }
+        if (hasRequestedVulkan12Features) {
+            requestedDeviceFeatures.requestedVulkan12Features.storageBuffer8BitAccess =
+                    requestedDeviceFeatures.device8BitStorageFeatures.storageBuffer8BitAccess;
+            requestedDeviceFeatures.requestedVulkan12Features.uniformAndStorageBuffer8BitAccess =
+                    requestedDeviceFeatures.device8BitStorageFeatures.uniformAndStorageBuffer8BitAccess;
+            requestedDeviceFeatures.requestedVulkan12Features.storagePushConstant8 =
+                    requestedDeviceFeatures.device8BitStorageFeatures.storagePushConstant8;
+            requestedDeviceFeatures.device8BitStorageFeatures.storageBuffer8BitAccess = VK_FALSE;
+            requestedDeviceFeatures.device8BitStorageFeatures.uniformAndStorageBuffer8BitAccess = VK_FALSE;
+            requestedDeviceFeatures.device8BitStorageFeatures.storagePushConstant8 = VK_FALSE;
+        }
     }
     if ((requestedDeviceFeatures.optionalEnableShaderDrawParametersFeatures
-            || requestedDeviceFeatures.shaderDrawParametersFeatures.shaderDrawParameters)
+                || requestedDeviceFeatures.shaderDrawParametersFeatures.shaderDrawParameters)
             && instance->getInstanceVulkanVersion() >= VK_MAKE_API_VERSION(0, 1, 1, 0)) {
         shaderDrawParametersFeatures.sType =
                 VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES;
@@ -504,6 +753,11 @@ void Device::createLogicalDeviceAndQueues(
 
         if (requestedDeviceFeatures.shaderDrawParametersFeatures.shaderDrawParameters == VK_FALSE) {
             requestedDeviceFeatures.shaderDrawParametersFeatures = shaderDrawParametersFeatures;
+        }
+        if (hasRequestedVulkan11Features) {
+            requestedDeviceFeatures.requestedVulkan11Features.shaderDrawParameters =
+                    requestedDeviceFeatures.shaderDrawParametersFeatures.shaderDrawParameters;
+            requestedDeviceFeatures.shaderDrawParametersFeatures.shaderDrawParameters = VK_FALSE;
         }
     }
     if (deviceExtensionsSet.find(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) != deviceExtensionsSet.end()) {
@@ -588,208 +842,6 @@ void Device::createLogicalDeviceAndQueues(
         }
     }
 
-    //
-    /*
-     * If computeOnly is not set: Allocate two graphics & compute queues, and one compute-only queue. One of the
-     * graphics queues can be used as a present queue/primary rendering queue, and the other queue can be used in a
-     * worker thread. If the hardware doesn't support compute-only queues, three graphics & compute queues are
-     * allocated instead of two.
-     */
-    graphicsQueueIndex = findQueueFamilies(
-            physicalDevice, static_cast<VkQueueFlagBits>(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT));
-    computeQueueIndex = findQueueFamilies(
-            physicalDevice, static_cast<VkQueueFlagBits>(VK_QUEUE_COMPUTE_BIT));
-    workerThreadGraphicsQueueIndex = graphicsQueueIndex;
-
-    uint32_t queueFamilyPropertyCount = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyPropertyCount, nullptr);
-    queueFamilyProperties.resize(queueFamilyPropertyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyPropertyCount, queueFamilyProperties.data());
-
-    float queuePriorities[] = { 1.0, 1.0, 1.0 };
-
-    VkDeviceQueueCreateInfo graphicsQueueInfo = {};
-    graphicsQueueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    graphicsQueueInfo.pNext = nullptr;
-    graphicsQueueInfo.queueFamilyIndex = uint32_t(graphicsQueueIndex);
-    graphicsQueueInfo.queueCount = 2;
-    graphicsQueueInfo.pQueuePriorities = queuePriorities;
-
-    VkDeviceQueueCreateInfo computeQueueInfo = {};
-    computeQueueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    computeQueueInfo.pNext = nullptr;
-    computeQueueInfo.queueFamilyIndex = uint32_t(computeQueueIndex);
-    computeQueueInfo.queueCount = 1;
-    computeQueueInfo.pQueuePriorities = queuePriorities;
-
-    if (!computeOnly && graphicsQueueIndex == computeQueueIndex) {
-        graphicsQueueInfo.queueCount = 3;
-    }
-
-    if (!computeOnly && queueFamilyProperties.at(graphicsQueueIndex).queueCount < graphicsQueueInfo.queueCount) {
-        sgl::Logfile::get()->writeInfo(
-                "Warning: The used Vulkan driver does not support enough queues for multi-threaded rendering.");
-        graphicsQueueInfo.queueCount = std::min(
-                queueFamilyProperties.at(graphicsQueueIndex).queueCount, graphicsQueueInfo.queueCount);
-    }
-
-    VkDeviceQueueCreateInfo queueInfos[] = { graphicsQueueInfo, computeQueueInfo };
-    VkDeviceQueueCreateInfo* queueInfosPtr;
-    if (computeOnly) {
-        // Allocate only one compute-only queue.
-        queueInfosPtr = &queueInfos[1];
-    } else if (graphicsQueueIndex == computeQueueIndex) {
-        // Allocate three compute & graphics queues.
-        queueInfosPtr = &queueInfos[0];
-    } else {
-        // Allocate two compute & graphics queues and one compute-only queue.
-        queueInfosPtr = queueInfos;
-    }
-
-    // Enable all available optional features.
-    constexpr size_t numFeatures = sizeof(VkPhysicalDeviceFeatures) / sizeof(VkBool32);
-    auto requestedPhysicalDeviceFeaturesArray = reinterpret_cast<VkBool32*>(
-            &requestedDeviceFeatures.requestedPhysicalDeviceFeatures);
-    auto optionalPhysicalDeviceFeaturesArray = reinterpret_cast<const VkBool32*>(
-            &requestedDeviceFeatures.optionalPhysicalDeviceFeatures);
-    auto physicalDeviceFeaturesArray = reinterpret_cast<VkBool32*>(&physicalDeviceFeatures);
-    for (size_t i = 0; i < numFeatures; i++) {
-        if (optionalPhysicalDeviceFeaturesArray[i] && physicalDeviceFeaturesArray[i]) {
-            requestedPhysicalDeviceFeaturesArray[i] = VK_TRUE;
-        }
-    }
-
-#ifdef VK_VERSION_1_1
-    physicalDeviceVulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
-    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 1, 0)
-            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 1, 0)) {
-        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
-        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-        deviceFeatures2.pNext = &physicalDeviceVulkan11Features;
-        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
-
-        const size_t numVulkan11Features =
-                (sizeof(VkBool32) + (&requestedDeviceFeatures.requestedVulkan11Features.shaderDrawParameters)
-                 - (&requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess)) / sizeof(VkBool32);
-        auto requestedVulkan11FeaturesArray = reinterpret_cast<VkBool32*>(
-                &requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess);
-        auto optionalVulkan11FeaturesArray = reinterpret_cast<VkBool32*>(
-                &requestedDeviceFeatures.optionalVulkan11Features.storageBuffer16BitAccess);
-        auto physicalDeviceVulkan11FeaturesArray = reinterpret_cast<VkBool32*>(
-                &physicalDeviceVulkan11Features.storageBuffer16BitAccess);
-        for (size_t i = 0; i < numVulkan11Features; i++) {
-            if (optionalVulkan11FeaturesArray[i] && physicalDeviceVulkan11FeaturesArray[i]) {
-                requestedVulkan11FeaturesArray[i] = VK_TRUE;
-            }
-        }
-    }
-#endif
-#ifdef VK_VERSION_1_2
-    physicalDeviceVulkan12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 2, 0)
-            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 2, 0)) {
-        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
-        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-        deviceFeatures2.pNext = &physicalDeviceVulkan12Features;
-        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
-
-        const size_t numVulkan12Features =
-                (sizeof(VkBool32) + (&requestedDeviceFeatures.requestedVulkan12Features.subgroupBroadcastDynamicId)
-                 - (&requestedDeviceFeatures.requestedVulkan12Features.samplerMirrorClampToEdge)) / sizeof(VkBool32);
-        auto requestedVulkan12FeaturesArray = reinterpret_cast<VkBool32*>(
-                &requestedDeviceFeatures.requestedVulkan12Features.samplerMirrorClampToEdge);
-        auto optionalVulkan12FeaturesArray = reinterpret_cast<VkBool32*>(
-                &requestedDeviceFeatures.optionalVulkan12Features.samplerMirrorClampToEdge);
-        auto physicalDeviceVulkan12FeaturesArray = reinterpret_cast<VkBool32*>(
-                &physicalDeviceVulkan12Features.samplerMirrorClampToEdge);
-        for (size_t i = 0; i < numVulkan12Features; i++) {
-            if (optionalVulkan12FeaturesArray[i] && physicalDeviceVulkan12FeaturesArray[i]) {
-                requestedVulkan12FeaturesArray[i] = VK_TRUE;
-            }
-        }
-    }
-#endif
-#ifdef VK_VERSION_1_3
-    physicalDeviceVulkan13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
-    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 3, 0)
-            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 3, 0)) {
-        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
-        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-        deviceFeatures2.pNext = &physicalDeviceVulkan13Features;
-        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
-
-        const size_t numVulkan13Features =
-                (sizeof(VkBool32) + (&requestedDeviceFeatures.requestedVulkan13Features.maintenance4)
-                 - (&requestedDeviceFeatures.requestedVulkan13Features.robustImageAccess)) / sizeof(VkBool32);
-        auto requestedVulkan13FeaturesArray = reinterpret_cast<VkBool32*>(
-                &requestedDeviceFeatures.requestedVulkan13Features.robustImageAccess);
-        auto optionalVulkan13FeaturesArray = reinterpret_cast<VkBool32*>(
-                &requestedDeviceFeatures.optionalVulkan13Features.robustImageAccess);
-        auto physicalDeviceVulkan13FeaturesArray = reinterpret_cast<VkBool32*>(
-                &physicalDeviceVulkan13Features.robustImageAccess);
-        for (size_t i = 0; i < numVulkan13Features; i++) {
-            if (optionalVulkan13FeaturesArray[i] && physicalDeviceVulkan13FeaturesArray[i]) {
-                requestedVulkan13FeaturesArray[i] = VK_TRUE;
-            }
-        }
-    }
-#endif
-
-
-    // Check if Vulkan 1.x extensions are used.
-#ifdef VK_VERSION_1_1
-    bool hasRequestedVulkan11Features = false;
-    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 1, 0)
-            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 1, 0)) {
-        const size_t numVulkan11Features =
-                (sizeof(VkBool32) + (&requestedDeviceFeatures.requestedVulkan11Features.shaderDrawParameters)
-                 - (&requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess)) / sizeof(VkBool32);
-        auto requestedVulkan11FeaturesArray = reinterpret_cast<VkBool32*>(
-                &requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess);
-        for (size_t i = 0; i < numVulkan11Features; i++) {
-            if (requestedVulkan11FeaturesArray[i]) {
-                hasRequestedVulkan11Features = true;
-            }
-        }
-    }
-#endif
-#ifdef VK_VERSION_1_2
-    bool hasRequestedVulkan12Features = false;
-    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 2, 0)
-            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 2, 0)) {
-        const size_t numVulkan12Features =
-                (sizeof(VkBool32) + (&requestedDeviceFeatures.requestedVulkan12Features.subgroupBroadcastDynamicId)
-                 - (&requestedDeviceFeatures.requestedVulkan12Features.samplerMirrorClampToEdge)) / sizeof(VkBool32);
-        auto requestedVulkan12FeaturesArray = reinterpret_cast<VkBool32*>(
-                &requestedDeviceFeatures.requestedVulkan12Features.samplerMirrorClampToEdge);
-        for (size_t i = 0; i < numVulkan12Features; i++) {
-            if (requestedVulkan12FeaturesArray[i]) {
-                hasRequestedVulkan12Features = true;
-            }
-        }
-    }
-#endif
-#ifdef VK_VERSION_1_3
-    bool hasRequestedVulkan13Features = false;
-    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 3, 0)
-            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 3, 0)) {
-        const size_t numVulkan13Features =
-                (sizeof(VkBool32) + (&requestedDeviceFeatures.requestedVulkan13Features.maintenance4)
-                 - (&requestedDeviceFeatures.requestedVulkan13Features.robustImageAccess)) / sizeof(VkBool32);
-        auto requestedVulkan13FeaturesArray = reinterpret_cast<VkBool32*>(
-                &requestedDeviceFeatures.requestedVulkan13Features.robustImageAccess);
-        for (size_t i = 0; i < numVulkan13Features; i++) {
-            if (requestedVulkan13FeaturesArray[i]) {
-                hasRequestedVulkan13Features = true;
-            }
-        }
-
-        // SPIR-V 1.6 needs VkPhysicalDeviceVulkan13Features::maintenance4.
-        requestedDeviceFeatures.requestedVulkan13Features.maintenance4 = VK_TRUE;
-        hasRequestedVulkan13Features = true;
-    }
-#endif
-
 
     VkDeviceCreateInfo deviceInfo{};
     deviceInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -867,7 +919,6 @@ void Device::createLogicalDeviceAndQueues(
         *pNextPtr = &requestedDeviceFeatures.fragmentShaderBarycentricFeaturesNV;
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.fragmentShaderBarycentricFeaturesNV.pNext);
     }
-    vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
 #ifdef VK_VERSION_1_1
     if (hasRequestedVulkan11Features && getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 1, 0)
             && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 1, 0)) {
@@ -927,6 +978,42 @@ void Device::createLogicalDeviceAndQueues(
     mainThreadId = std::this_thread::get_id();
 }
 
+VKAPI_ATTR void VKAPI_CALL allocateDeviceMemoryCallback(
+        VmaAllocator VMA_NOT_NULL allocator,
+        uint32_t memoryType,
+        VkDeviceMemory VMA_NOT_NULL_NON_DISPATCHABLE memory,
+        VkDeviceSize size,
+        void* VMA_NULLABLE userData) {
+    auto* device = static_cast<Device*>(userData);
+    device->vmaAllocateDeviceMemoryCallback(memoryType, memory, size);
+}
+
+VKAPI_ATTR void VKAPI_CALL freeDeviceMemoryCallback(
+        VmaAllocator VMA_NOT_NULL allocator,
+        uint32_t memoryType,
+        VkDeviceMemory VMA_NOT_NULL_NON_DISPATCHABLE memory,
+        VkDeviceSize size,
+        void* VMA_NULLABLE userData) {
+    auto* device = static_cast<Device*>(userData);
+    device->vmaFreeDeviceMemoryCallback(memoryType, memory, size);
+}
+
+void Device::vmaAllocateDeviceMemoryCallback(uint32_t memoryType, VkDeviceMemory memory, VkDeviceSize size) {
+    deviceMemoryToSizeMap.insert(std::make_pair(memory, size));
+}
+
+void Device::vmaFreeDeviceMemoryCallback(uint32_t memoryType, VkDeviceMemory memory, VkDeviceSize size) {
+    deviceMemoryToSizeMap.erase(memory);
+}
+
+VkDeviceSize Device::getVmaDeviceMemoryAllocationSize(VkDeviceMemory deviceMemory) {
+    auto it = deviceMemoryToSizeMap.find(deviceMemory);
+    if (it == deviceMemoryToSizeMap.end()) {
+        sgl::Logfile::get()->throwError("Error in Device::getVmaDeviceMemoryAllocationSize: Device memory not found.");
+    }
+    return it->second;
+}
+
 void Device::createVulkanMemoryAllocator() {
     uint32_t vulkanApiVersion = std::min(instance->getInstanceVulkanVersion(), getApiVersion());
 
@@ -959,6 +1046,12 @@ void Device::createVulkanMemoryAllocator() {
     if (isDeviceExtensionSupported(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) {
         allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
     }
+
+    VmaDeviceMemoryCallbacks deviceMemoryCallbacks{};
+    deviceMemoryCallbacks.pfnAllocate = &allocateDeviceMemoryCallback;
+    deviceMemoryCallbacks.pfnFree = &freeDeviceMemoryCallback;
+    deviceMemoryCallbacks.pUserData = (void*)this;
+    allocatorInfo.pDeviceMemoryCallbacks = &deviceMemoryCallbacks;
 
     vmaCreateAllocator(&allocatorInfo, &allocator);
 }
