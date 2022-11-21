@@ -51,51 +51,55 @@ namespace sgl { namespace vk {
  */
 struct CudaDeviceApiFunctionTable {
     CUresult ( *cuInit )( unsigned int Flags );
-    CUresult ( *cuGetErrorString )( CUresult error, const char **pStr );
+    CUresult ( *cuGetErrorString )( CUresult error, const char** pStr );
 
-    CUresult ( *cuDeviceGet )(CUdevice *device, int ordinal);
-    CUresult ( *cuDeviceGetCount )(int *count);
-    CUresult ( *cuDeviceGetUuid )(CUuuid *uuid, CUdevice dev);
-    CUresult ( *cuDeviceGetAttribute )(int *pi, CUdevice_attribute attrib, CUdevice dev);
+    CUresult ( *cuDeviceGet )(CUdevice* device, int ordinal);
+    CUresult ( *cuDeviceGetCount )(int* count);
+    CUresult ( *cuDeviceGetUuid )(CUuuid* uuid, CUdevice dev);
+    CUresult ( *cuDeviceGetAttribute )(int* pi, CUdevice_attribute attrib, CUdevice dev);
 
-    CUresult ( *cuCtxCreate )( CUcontext *pctx, unsigned int flags, CUdevice dev );
+    CUresult ( *cuCtxCreate )( CUcontext* pctx, unsigned int flags, CUdevice dev );
     CUresult ( *cuCtxDestroy )( CUcontext ctx );
 
-    CUresult ( *cuStreamCreate )( CUstream *phStream, unsigned int Flags );
+    CUresult ( *cuStreamCreate )( CUstream* phStream, unsigned int Flags );
     CUresult ( *cuStreamDestroy )( CUstream hStream );
     CUresult ( *cuStreamSynchronize )( CUstream hStream );
 
-    CUresult ( *cuMemAlloc )( CUdeviceptr *dptr, size_t bytesize );
+    CUresult ( *cuMemAlloc )( CUdeviceptr* dptr, size_t bytesize );
     CUresult ( *cuMemFree )( CUdeviceptr dptr );
-    CUresult ( *cuMemcpyDtoH )( void *dstHost, CUdeviceptr srcDevice, size_t ByteCount );
-    CUresult ( *cuMemcpyHtoD )( CUdeviceptr dstDevice, const void *srcHost, size_t ByteCount );
-    CUresult ( *cuMemAllocAsync )( CUdeviceptr *dptr, size_t bytesize, CUstream hStream );
+    CUresult ( *cuMemcpyDtoH )( void* dstHost, CUdeviceptr srcDevice, size_t ByteCount );
+    CUresult ( *cuMemcpyHtoD )( CUdeviceptr dstDevice, const void* srcHost, size_t ByteCount );
+    CUresult ( *cuMemAllocAsync )( CUdeviceptr* dptr, size_t bytesize, CUstream hStream );
     CUresult ( *cuMemFreeAsync )( CUdeviceptr dptr, CUstream hStream );
     CUresult ( *cuMemsetD8Async )( CUdeviceptr dstDevice, unsigned char uc, size_t N, CUstream hStream );
     CUresult ( *cuMemsetD16Async )( CUdeviceptr dstDevice, unsigned short us, size_t N, CUstream hStream );
     CUresult ( *cuMemsetD32Async )( CUdeviceptr dstDevice, unsigned int ui, size_t N, CUstream hStream );
     CUresult ( *cuMemcpyAsync )( CUdeviceptr dst, CUdeviceptr src, size_t ByteCount, CUstream hStream );
-    CUresult ( *cuMemcpyDtoHAsync )( void *dstHost, CUdeviceptr srcDevice, size_t ByteCount, CUstream hStream );
-    CUresult ( *cuMemcpyHtoDAsync )( CUdeviceptr dstDevice, const void *srcHost, size_t ByteCount, CUstream hStream );
+    CUresult ( *cuMemcpyDtoHAsync )( void* dstHost, CUdeviceptr srcDevice, size_t ByteCount, CUstream hStream );
+    CUresult ( *cuMemcpyHtoDAsync )( CUdeviceptr dstDevice, const void* srcHost, size_t ByteCount, CUstream hStream );
     CUresult ( *cuMemcpy2DAsync )( const CUDA_MEMCPY2D* pCopy, CUstream hStream );
     CUresult ( *cuMemcpy3DAsync )( const CUDA_MEMCPY3D* pCopy, CUstream hStream );
 
-    CUresult ( *cuMipmappedArrayDestroy )(CUmipmappedArray hMipmappedArray);
+    CUresult ( *cuArrayCreate )( CUarray* pHandle, const CUDA_ARRAY_DESCRIPTOR* pAllocateArray );
+    CUresult ( *cuArray3DCreate )( CUarray* pHandle, const CUDA_ARRAY3D_DESCRIPTOR* pAllocateArray );
+    CUresult ( *cuArrayDestroy )( CUarray hArray );
+    CUresult ( *cuMipmappedArrayCreate )( CUmipmappedArray* pHandle, const CUDA_ARRAY3D_DESCRIPTOR* pMipmappedArrayDesc, unsigned int numMipmapLevels );
+    CUresult ( *cuMipmappedArrayDestroy )( CUmipmappedArray hMipmappedArray );
     CUresult ( *cuMipmappedArrayGetLevel )( CUarray* pLevelArray, CUmipmappedArray hMipmappedArray, unsigned int level );
 
-    CUresult ( *cuTexObjectCreate )( CUtexObject *pTexObject, const CUDA_RESOURCE_DESC *pResDesc, const CUDA_TEXTURE_DESC *pTexDesc, const CUDA_RESOURCE_VIEW_DESC *pResViewDesc );
+    CUresult ( *cuTexObjectCreate )( CUtexObject* pTexObject, const CUDA_RESOURCE_DESC* pResDesc, const CUDA_TEXTURE_DESC* pTexDesc, const CUDA_RESOURCE_VIEW_DESC* pResViewDesc );
     CUresult ( *cuTexObjectDestroy )( CUtexObject texObject );
-    CUresult ( *cuSurfObjectCreate )( CUsurfObject *pSurfObject, const CUDA_RESOURCE_DESC *pResDesc );
+    CUresult ( *cuSurfObjectCreate )( CUsurfObject* pSurfObject, const CUDA_RESOURCE_DESC* pResDesc );
     CUresult ( *cuSurfObjectDestroy )( CUsurfObject surfObject );
 
-    CUresult ( *cuImportExternalMemory )( CUexternalMemory *extMem_out, const CUDA_EXTERNAL_MEMORY_HANDLE_DESC *memHandleDesc );
-    CUresult ( *cuExternalMemoryGetMappedBuffer )( CUdeviceptr *devPtr, CUexternalMemory extMem, const CUDA_EXTERNAL_MEMORY_BUFFER_DESC *bufferDesc );
-    CUresult ( *cuExternalMemoryGetMappedMipmappedArray )( CUmipmappedArray *mipmap, CUexternalMemory extMem, const CUDA_EXTERNAL_MEMORY_MIPMAPPED_ARRAY_DESC *mipmapDesc );
+    CUresult ( *cuImportExternalMemory )( CUexternalMemory* extMem_out, const CUDA_EXTERNAL_MEMORY_HANDLE_DESC* memHandleDesc );
+    CUresult ( *cuExternalMemoryGetMappedBuffer )( CUdeviceptr* devPtr, CUexternalMemory extMem, const CUDA_EXTERNAL_MEMORY_BUFFER_DESC* bufferDesc );
+    CUresult ( *cuExternalMemoryGetMappedMipmappedArray )( CUmipmappedArray* mipmap, CUexternalMemory extMem, const CUDA_EXTERNAL_MEMORY_MIPMAPPED_ARRAY_DESC* mipmapDesc );
     CUresult ( *cuDestroyExternalMemory )( CUexternalMemory extMem );
 
-    CUresult ( *cuImportExternalSemaphore )( CUexternalSemaphore *extSem_out, const CUDA_EXTERNAL_SEMAPHORE_HANDLE_DESC *semHandleDesc );
-    CUresult ( *cuSignalExternalSemaphoresAsync )( const CUexternalSemaphore *extSemArray, const CUDA_EXTERNAL_SEMAPHORE_SIGNAL_PARAMS *paramsArray, unsigned int numExtSems, CUstream stream );
-    CUresult ( *cuWaitExternalSemaphoresAsync )( const CUexternalSemaphore *extSemArray, const CUDA_EXTERNAL_SEMAPHORE_WAIT_PARAMS *paramsArray, unsigned int numExtSems, CUstream stream );
+    CUresult ( *cuImportExternalSemaphore )( CUexternalSemaphore* extSem_out, const CUDA_EXTERNAL_SEMAPHORE_HANDLE_DESC* semHandleDesc );
+    CUresult ( *cuSignalExternalSemaphoresAsync )( const CUexternalSemaphore* extSemArray, const CUDA_EXTERNAL_SEMAPHORE_SIGNAL_PARAMS* paramsArray, unsigned int numExtSems, CUstream stream );
+    CUresult ( *cuWaitExternalSemaphoresAsync )( const CUexternalSemaphore* extSemArray, const CUDA_EXTERNAL_SEMAPHORE_WAIT_PARAMS* paramsArray, unsigned int numExtSems, CUstream stream );
     CUresult ( *cuDestroyExternalSemaphore )( CUexternalSemaphore extSem );
 
     CUresult ( *cuModuleLoad )( CUmodule* module, const char* fname );

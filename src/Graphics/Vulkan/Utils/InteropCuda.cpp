@@ -78,6 +78,10 @@ bool initializeCudaDeviceApiFunctionTable() {
     typedef CUresult ( *PFN_cuMemcpyHtoDAsync )( CUdeviceptr dstDevice, const void *srcHost, size_t ByteCount, CUstream hStream );
     typedef CUresult ( *PFN_cuMemcpy2DAsync )( const CUDA_MEMCPY2D* pCopy, CUstream hStream );
     typedef CUresult ( *PFN_cuMemcpy3DAsync )( const CUDA_MEMCPY3D* pCopy, CUstream hStream );
+    typedef CUresult ( *PFN_cuArrayCreate )( CUarray *pHandle, const CUDA_ARRAY_DESCRIPTOR *pAllocateArray );
+    typedef CUresult ( *PFN_cuArray3DCreate )( CUarray *pHandle, const CUDA_ARRAY3D_DESCRIPTOR *pAllocateArray );
+    typedef CUresult ( *PFN_cuArrayDestroy )( CUarray hArray );
+    typedef CUresult ( *PFN_cuMipmappedArrayCreate )( CUmipmappedArray *pHandle, const CUDA_ARRAY3D_DESCRIPTOR *pMipmappedArrayDesc, unsigned int numMipmapLevels );
     typedef CUresult ( *PFN_cuMipmappedArrayDestroy )( CUmipmappedArray hMipmappedArray );
     typedef CUresult ( *PFN_cuMipmappedArrayGetLevel )( CUarray* pLevelArray, CUmipmappedArray hMipmappedArray, unsigned int level );
     typedef CUresult ( *PFN_cuTexObjectCreate )( CUtexObject *pTexObject, const CUDA_RESOURCE_DESC *pResDesc, const CUDA_TEXTURE_DESC *pTexDesc, const CUDA_RESOURCE_VIEW_DESC *pResViewDesc );
@@ -100,6 +104,7 @@ bool initializeCudaDeviceApiFunctionTable() {
     typedef CUresult ( *PFN_cuModuleGetFunction )( CUfunction* hfunc, CUmodule hmod, const char* name );
     typedef CUresult ( *PFN_cuModuleGetGlobal )( CUdeviceptr* dptr, size_t* bytes, CUmodule hmod, const char* name );
     typedef CUresult ( *PFN_cuLaunchKernel )( CUfunction f, unsigned int gridDimX, unsigned int gridDimY, unsigned int gridDimZ, unsigned int blockDimX, unsigned int blockDimY, unsigned int blockDimZ, unsigned int sharedMemBytes, CUstream hStream, void** kernelParams, void** extra );
+
 
 #if defined(__linux__)
     g_cudaLibraryHandle = dlopen("libcuda.so", RTLD_NOW | RTLD_LOCAL);
@@ -139,6 +144,10 @@ bool initializeCudaDeviceApiFunctionTable() {
     g_cudaDeviceApiFunctionTable.cuMemcpyHtoDAsync = PFN_cuMemcpyHtoDAsync(dlsym(g_cudaLibraryHandle, TOSTRING(cuMemcpyHtoDAsync)));
     g_cudaDeviceApiFunctionTable.cuMemcpy2DAsync = PFN_cuMemcpy2DAsync(dlsym(g_cudaLibraryHandle, TOSTRING(cuMemcpy2DAsync)));
     g_cudaDeviceApiFunctionTable.cuMemcpy3DAsync = PFN_cuMemcpy3DAsync(dlsym(g_cudaLibraryHandle, TOSTRING(cuMemcpy3DAsync)));
+    g_cudaDeviceApiFunctionTable.cuArrayCreate = PFN_cuArrayCreate(dlsym(g_cudaLibraryHandle, TOSTRING(cuArrayCreate)));
+    g_cudaDeviceApiFunctionTable.cuArray3DCreate = PFN_cuArray3DCreate(dlsym(g_cudaLibraryHandle, TOSTRING(cuArray3DCreate)));
+    g_cudaDeviceApiFunctionTable.cuArrayDestroy = PFN_cuArrayDestroy(dlsym(g_cudaLibraryHandle, TOSTRING(cuArrayDestroy)));
+    g_cudaDeviceApiFunctionTable.cuMipmappedArrayCreate = PFN_cuMipmappedArrayCreate(dlsym(g_cudaLibraryHandle, TOSTRING(cuMipmappedArrayCreate)));
     g_cudaDeviceApiFunctionTable.cuMipmappedArrayDestroy = PFN_cuMipmappedArrayDestroy(dlsym(g_cudaLibraryHandle, TOSTRING(cuMipmappedArrayDestroy)));
     g_cudaDeviceApiFunctionTable.cuMipmappedArrayGetLevel = PFN_cuMipmappedArrayGetLevel(dlsym(g_cudaLibraryHandle, TOSTRING(cuMipmappedArrayGetLevel)));
     g_cudaDeviceApiFunctionTable.cuTexObjectCreate = PFN_cuTexObjectCreate(dlsym(g_cudaLibraryHandle, TOSTRING(cuTexObjectCreate)));
@@ -187,6 +196,10 @@ bool initializeCudaDeviceApiFunctionTable() {
             || !g_cudaDeviceApiFunctionTable.cuMemcpyHtoDAsync
             || !g_cudaDeviceApiFunctionTable.cuMemcpy2DAsync
             || !g_cudaDeviceApiFunctionTable.cuMemcpy3DAsync
+            || !g_cudaDeviceApiFunctionTable.cuArrayCreate
+            || !g_cudaDeviceApiFunctionTable.cuArray3DCreate
+            || !g_cudaDeviceApiFunctionTable.cuArrayDestroy
+            || !g_cudaDeviceApiFunctionTable.cuMipmappedArrayCreate
             || !g_cudaDeviceApiFunctionTable.cuMipmappedArrayDestroy
             || !g_cudaDeviceApiFunctionTable.cuMipmappedArrayGetLevel
             || !g_cudaDeviceApiFunctionTable.cuTexObjectCreate
