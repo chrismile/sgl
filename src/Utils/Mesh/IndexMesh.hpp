@@ -46,6 +46,11 @@ namespace sgl {
 DLL_OBJECT void computeSharedIndexRepresentation(
         const std::vector<glm::vec3>& vertexPositions, const std::vector<glm::vec3>& vertexNormals,
         std::vector<uint32_t>& triangleIndices,
+        std::vector<glm::vec3>& vertexPositionsShared, std::vector<glm::vec3>& vertexNormalsShared,
+        float EPSILON);
+DLL_OBJECT void computeSharedIndexRepresentation(
+        const std::vector<glm::vec3>& vertexPositions, const std::vector<glm::vec3>& vertexNormals,
+        std::vector<uint32_t>& triangleIndices,
         std::vector<glm::vec3>& vertexPositionsShared, std::vector<glm::vec3>& vertexNormalsShared);
 
 /**
@@ -54,6 +59,11 @@ DLL_OBJECT void computeSharedIndexRepresentation(
  * @param vertexPositionsShared The shared vertex positions (output).
  * @param triangleIndices A list of triangle indices. Three consecutive entries form one triangle.
  */
+DLL_OBJECT void computeSharedIndexRepresentation(
+        const std::vector<glm::vec3>& vertexPositions,
+        std::vector<uint32_t>& triangleIndices,
+        std::vector<glm::vec3>& vertexPositionsShared,
+        float EPSILON);
 DLL_OBJECT void computeSharedIndexRepresentation(
         const std::vector<glm::vec3>& vertexPositions,
         std::vector<uint32_t>& triangleIndices,

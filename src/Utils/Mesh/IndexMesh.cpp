@@ -44,7 +44,8 @@ namespace sgl {
 void computeSharedIndexRepresentation(
         const std::vector<glm::vec3>& vertexPositions, const std::vector<glm::vec3>& vertexNormals,
         std::vector<uint32_t>& triangleIndices,
-        std::vector<glm::vec3>& vertexPositionsShared, std::vector<glm::vec3>& vertexNormalsShared) {
+        std::vector<glm::vec3>& vertexPositionsShared, std::vector<glm::vec3>& vertexNormalsShared,
+        float EPSILON) {
     ZoneScoped;
 
     sgl::AABB3 aabb = sgl::reduceVec3ArrayAabb(vertexPositions);
@@ -54,7 +55,6 @@ void computeSharedIndexRepresentation(
     SearchStructure<uint32_t>* searchStructure = new HashedGrid<uint32_t>(numEntries, cellSize);
     searchStructure->reserveDynamic(vertexPositions.size());
 
-    const float EPSILON = 1e-5f;
     uint32_t uniqueVertexCounter = 0;
     std::vector<std::pair<glm::vec3, uint32_t>> searchCache;
     for (size_t i = 0; i < vertexPositions.size(); i++) {
@@ -77,14 +77,22 @@ void computeSharedIndexRepresentation(
 }
 
 void computeSharedIndexRepresentation(
+        const std::vector<glm::vec3>& vertexPositions, const std::vector<glm::vec3>& vertexNormals,
+        std::vector<uint32_t>& triangleIndices,
+        std::vector<glm::vec3>& vertexPositionsShared, std::vector<glm::vec3>& vertexNormalsShared) {
+    computeSharedIndexRepresentation(
+            vertexPositions, vertexNormals, triangleIndices, vertexPositionsShared, vertexNormalsShared, 1e-5f);
+}
+
+void computeSharedIndexRepresentation(
         const std::vector<glm::vec3>& vertexPositions,
         std::vector<uint32_t>& triangleIndices,
-        std::vector<glm::vec3>& vertexPositionsShared) {
+        std::vector<glm::vec3>& vertexPositionsShared,
+        float EPSILON) {
     SearchStructure<uint32_t>* searchStructure = new HashedGrid<uint32_t>(
             std::max(vertexPositions.size() / 4, size_t(1)), 1.0f / sgl::PI);
     searchStructure->reserveDynamic(vertexPositions.size());
 
-    const float EPSILON = 1e-5f;
     uint32_t uniqueVertexCounter = 0;
     std::vector<std::pair<glm::vec3, uint32_t>> searchCache;
     for (size_t i = 0; i < vertexPositions.size(); i++) {
@@ -102,6 +110,13 @@ void computeSharedIndexRepresentation(
     }
 
     delete searchStructure;
+}
+
+void computeSharedIndexRepresentation(
+        const std::vector<glm::vec3>& vertexPositions,
+        std::vector<uint32_t>& triangleIndices,
+        std::vector<glm::vec3>& vertexPositionsShared) {
+    computeSharedIndexRepresentation(vertexPositions, triangleIndices, vertexPositionsShared, 1e-5f);
 }
 
 }
