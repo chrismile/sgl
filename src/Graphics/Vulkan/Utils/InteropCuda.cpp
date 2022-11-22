@@ -996,41 +996,52 @@ static std::array<float, 4> getCudaBorderColor(VkBorderColor borderColor) {
     }
 }
 
-TextureCudaExternalMemoryVk::TextureCudaExternalMemoryVk(vk::TexturePtr& vulkanTexture)
+TextureCudaExternalMemoryVk::TextureCudaExternalMemoryVk(
+        vk::TexturePtr& vulkanTexture, const TextureCudaExternalMemorySettings& texCudaSettings)
         : TextureCudaExternalMemoryVk(
                 vulkanTexture->getImage(), vulkanTexture->getImageSampler()->getImageSamplerSettings(),
                 vulkanTexture->getImageView()->getVkImageViewType(),
-                vulkanTexture->getImageView()->getVkImageSubresourceRange()){
+                vulkanTexture->getImageView()->getVkImageSubresourceRange(),
+                texCudaSettings){
 }
 
 TextureCudaExternalMemoryVk::TextureCudaExternalMemoryVk(
-        vk::ImagePtr& vulkanImage, const ImageSamplerSettings& samplerSettings)
+        vk::ImagePtr& vulkanImage, const ImageSamplerSettings& samplerSettings,
+        const TextureCudaExternalMemorySettings& texCudaSettings)
         : TextureCudaExternalMemoryVk(
                 vulkanImage, samplerSettings, VkImageViewType(vulkanImage->getImageSettings().imageType),
                 VkImageSubresourceRange{
                     VK_IMAGE_ASPECT_COLOR_BIT, 0, vulkanImage->getImageSettings().mipLevels,
-                    0, vulkanImage->getImageSettings().arrayLayers }){
+                    0, vulkanImage->getImageSettings().arrayLayers },
+                texCudaSettings){
 }
 
 TextureCudaExternalMemoryVk::TextureCudaExternalMemoryVk(
         vk::ImagePtr& vulkanImage, const ImageSamplerSettings& samplerSettings,
-        VkImageViewType imageViewType)
+        VkImageViewType imageViewType, const TextureCudaExternalMemorySettings& texCudaSettings)
         : TextureCudaExternalMemoryVk(
                 vulkanImage, samplerSettings, imageViewType,
                 VkImageSubresourceRange{
                     VK_IMAGE_ASPECT_COLOR_BIT, 0, vulkanImage->getImageSettings().mipLevels,
-                    0, vulkanImage->getImageSettings().arrayLayers }) {
+                    0, vulkanImage->getImageSettings().arrayLayers },
+                texCudaSettings) {
 }
 
 TextureCudaExternalMemoryVk::TextureCudaExternalMemoryVk(
         vk::ImagePtr& vulkanImage, const ImageSamplerSettings& samplerSettings,
-        VkImageViewType imageViewType, VkImageSubresourceRange imageSubresourceRange) {
+        VkImageViewType imageViewType, VkImageSubresourceRange imageSubresourceRange,
+        const TextureCudaExternalMemorySettings& texCudaSettings) {
     imageCudaExternalMemory = std::make_shared<ImageCudaExternalMemoryVk>(vulkanImage, imageViewType, false);
     const auto& imageSettings = vulkanImage->getImageSettings();
 
     CUDA_RESOURCE_DESC cudaResourceDesc{};
-    cudaResourceDesc.resType = CU_RESOURCE_TYPE_MIPMAPPED_ARRAY;
-    cudaResourceDesc.res.mipmap.hMipmappedArray = imageCudaExternalMemory->getCudaMipmappedArray();
+    if (texCudaSettings.useMipmappedArray) {
+        cudaResourceDesc.resType = CU_RESOURCE_TYPE_MIPMAPPED_ARRAY;
+        cudaResourceDesc.res.mipmap.hMipmappedArray = imageCudaExternalMemory->getCudaMipmappedArray();
+    } else {
+        cudaResourceDesc.resType = CU_RESOURCE_TYPE_ARRAY;
+        cudaResourceDesc.res.array.hArray = imageCudaExternalMemory->getCudaMipmappedArrayLevel(0);
+    }
 
     CUDA_TEXTURE_DESC cudaTextureDesc{};
     cudaTextureDesc.addressMode[0] = getCudaSamplerAddressMode(samplerSettings.addressModeU);
@@ -1053,6 +1064,15 @@ TextureCudaExternalMemoryVk::TextureCudaExternalMemoryVk(
     cudaTextureDesc.maxMipmapLevelClamp = imageSettings.mipLevels <= 1 ? 0.0f : samplerSettings.maxLod;
     std::array<float, 4> borderColor = getCudaBorderColor(samplerSettings.borderColor);
     memcpy(cudaTextureDesc.borderColor, borderColor.data(), sizeof(float) * 4);
+    if (texCudaSettings.useNormalizedCoordinates || texCudaSettings.useMipmappedArray) {
+        cudaTextureDesc.flags |= CU_TRSF_NORMALIZED_COORDINATES;
+    }
+    if (!texCudaSettings.useTrilinearOptimization) {
+        cudaTextureDesc.flags |= CU_TRSF_DISABLE_TRILINEAR_OPTIMIZATION;
+    }
+    if (texCudaSettings.readAsInteger) {
+        cudaTextureDesc.flags |= CU_TRSF_READ_AS_INTEGER;
+    }
 
     CUDA_RESOURCE_VIEW_DESC cudaResourceViewDesc{};
     cudaResourceViewDesc.format = getCudaResourceViewFormat(imageSettings.format);

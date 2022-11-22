@@ -230,17 +230,32 @@ typedef std::shared_ptr<ImageCudaExternalMemoryVk> ImageCudaExternalMemoryVkPtr;
 typedef ImageCudaExternalMemoryVk ImageCudaDriverApiExternalMemoryVk;
 typedef std::shared_ptr<ImageCudaDriverApiExternalMemoryVk> ImageCudaDriverApiExternalMemoryVkPtr;
 
+struct TextureCudaExternalMemorySettings {
+    // Use CUDA mipmapped array or CUDA array at level 0.
+    bool useMipmappedArray = false;
+    // Whether to use normalized coordinates in the range [0, 1) or integer coordinates in the range [0, dim).
+    // NOTE: For CUDA mipmapped arrays, this value has to be set to true!
+    bool useNormalizedCoordinates = false;
+    // Whether to allow bilinear filtering in case it can closely approximate trilinear filtering.
+    bool useTrilinearOptimization = true;
+    // Whether to transform integer values to the range [0, 1] or not.
+    bool readAsInteger = false;
+};
+
 class TextureCudaExternalMemoryVk {
 public:
-    explicit TextureCudaExternalMemoryVk(vk::TexturePtr& vulkanTexture);
     TextureCudaExternalMemoryVk(
-            vk::ImagePtr& vulkanImage, const ImageSamplerSettings& samplerSettings);
-    TextureCudaExternalMemoryVk(
-            vk::ImagePtr& vulkanImage, const ImageSamplerSettings& samplerSettings,
-            VkImageViewType imageViewType);
+            vk::TexturePtr& vulkanTexture, const TextureCudaExternalMemorySettings& texCudaSettings = {});
     TextureCudaExternalMemoryVk(
             vk::ImagePtr& vulkanImage, const ImageSamplerSettings& samplerSettings,
-            VkImageViewType imageViewType, VkImageSubresourceRange imageSubresourceRange);
+            const TextureCudaExternalMemorySettings& texCudaSettings = {});
+    TextureCudaExternalMemoryVk(
+            vk::ImagePtr& vulkanImage, const ImageSamplerSettings& samplerSettings,
+            VkImageViewType imageViewType, const TextureCudaExternalMemorySettings& texCudaSettings = {});
+    TextureCudaExternalMemoryVk(
+            vk::ImagePtr& vulkanImage, const ImageSamplerSettings& samplerSettings,
+            VkImageViewType imageViewType, VkImageSubresourceRange imageSubresourceRange,
+            const TextureCudaExternalMemorySettings& texCudaSettings = {});
     ~TextureCudaExternalMemoryVk();
 
     [[nodiscard]] inline CUtexObject getCudaTextureObject() const { return cudaTextureObject; }
