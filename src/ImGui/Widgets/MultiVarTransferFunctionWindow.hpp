@@ -105,6 +105,7 @@ private:
     glm::vec2 selectedRange = glm::vec2(0.0f);
     std::vector<float> attributes;
     bool isEmpty = true;
+    bool isSelectedRangeFixed = false;
 
     // Drag-and-drop data
     sgl::SelectedPointType selectedPointType = sgl::SELECTED_POINT_TYPE_NONE;

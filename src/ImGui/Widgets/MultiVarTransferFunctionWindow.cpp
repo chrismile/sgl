@@ -452,6 +452,10 @@ bool GuiVarData::renderGui() {
         window->rebuildRangeSsbo();
         reRender = true;
     }
+    if (window->requestAttributeValuesCallback) {
+        ImGui::SameLine();
+        ImGui::Checkbox("Fix", &isSelectedRangeFixed);
+    }
 
     if (ImGui::SliderInt("Histogram Res.", &histogramResolution, 1, 256)) {
         computeHistogram();
@@ -941,7 +945,9 @@ void MultiVarTransferFunctionWindow::loadAttributeDataIfEmpty(int varIdx) {
         requestAttributeValuesCallback(varIdx, attributes, numAttributes, minVal, maxVal);
         varData.dataRange.x = minVal;
         varData.dataRange.y = maxVal;
-        varData.selectedRange = varData.dataRange;
+        if (!varData.isSelectedRangeFixed) {
+            varData.selectedRange = varData.dataRange;
+        }
         varData.isEmpty = false;
         varData.computeHistogram();
         varData.rebuildTransferFunctionMap();
