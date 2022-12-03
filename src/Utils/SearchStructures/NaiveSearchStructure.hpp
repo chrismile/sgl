@@ -32,6 +32,8 @@
 #include <vector>
 #include "SearchStructure.hpp"
 
+namespace sgl {
+
 /**
  * A naive O(n^2) search structure that always returns all points.
  */
@@ -101,5 +103,7 @@ public:
 private:
     std::vector<std::pair<glm::vec3, T>> pointsAndData;
 };
+
+}
 
 #endif //NAIVE_SEARCH_STRUCTURE_HPP_

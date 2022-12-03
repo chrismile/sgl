@@ -32,7 +32,11 @@
 #include <vector>
 #include <glm/vec3.hpp>
 
+namespace sgl {
+
 /// O(n^2) implementation.
 DLL_OBJECT glm::vec3 nearestNeighborNaive(const glm::vec3& point, const std::vector<glm::vec3>& searchPointList);
+
+}
 
 #endif //STRESSLINEVIS_NEARESTNEIGHBORNAIVE_HPP

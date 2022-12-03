@@ -30,6 +30,8 @@
 #define SGL_ARCHIVE_HPP
 
 #include <string>
+#include <memory>
+#include <unordered_map>
 
 namespace sgl {
 
@@ -69,6 +71,21 @@ enum ArchiveFileLoadReturnType {
  */
 DLL_OBJECT ArchiveFileLoadReturnType loadFileFromArchive(
         const std::string& filename, uint8_t*& buffer, size_t& bufferSize, bool verbose);
+
+struct ArchiveEntry {
+    std::shared_ptr<uint8_t[]> bufferData;
+    size_t bufferSize;
+};
+
+/**
+ * Loads all files from an archive using the library libarchive.
+ * @param filename The concatenated archive and local archive file filename.
+ * @param buffer A map of the file names to their content.
+ * @param verbose Whether to output information when, e.g., loading the archive fails.
+ * @return Whether reading was successful, or what type of error occured.
+ */
+DLL_OBJECT ArchiveFileLoadReturnType loadAllFilesFromArchive(
+        const std::string& filename, std::unordered_map<std::string, ArchiveEntry>& files, bool verbose);
 
 }
 

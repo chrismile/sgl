@@ -250,6 +250,9 @@ Window *AppSettings::createWindow() {
 #ifdef SUPPORT_VULKAN
     if (renderSystem == RenderSystem::VULKAN) {
         instance = new vk::Instance;
+        if (isDebugPrintfEnabled) {
+            instance->setIsDebugPrintfEnabled(isDebugPrintfEnabled);
+        }
 
 #if defined(__APPLE__)
         sdlVulkanLibraryLoaded = false;
@@ -287,6 +290,9 @@ HeadlessData AppSettings::createHeadless() {
         bool debugContext = false;
         settings.getValueOpt("window-debugContext", debugContext);
         instance = new vk::Instance;
+        if (isDebugPrintfEnabled) {
+            instance->setIsDebugPrintfEnabled(isDebugPrintfEnabled);
+        }
         instance->createInstance({}, debugContext);
         headlessData.instance = instance;
     } else {
@@ -297,6 +303,12 @@ HeadlessData AppSettings::createHeadless() {
 #endif
     return headlessData;
 }
+
+#ifdef SUPPORT_VULKAN
+void AppSettings::setVulkanDebugPrintfEnabled() {
+    isDebugPrintfEnabled = true;
+}
+#endif
 
 #if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
 void checkGlExtension(const char *extensionName, VulkanInteropCapabilities& vulkanInteropCapabilities) {
@@ -324,6 +336,9 @@ void AppSettings::initializeVulkanInteropSupport(
     }
 
     instance = new vk::Instance;
+    if (isDebugPrintfEnabled) {
+        instance->setIsDebugPrintfEnabled(isDebugPrintfEnabled);
+    }
 
     if (!sgl::SystemGL::get()->isGLExtensionAvailable("GL_EXT_memory_object")) {
         sgl::Logfile::get()->writeWarning(

@@ -64,11 +64,14 @@ public:
     [[nodiscard]] inline uint32_t getInstanceVulkanVersion() const { return instanceVulkanVersion; }
     [[nodiscard]] inline bool getUseValidationLayer() const { return useValidationLayer; }
     [[nodiscard]] inline const std::vector<const char*>& getInstanceLayerNames() const { return instanceLayerNames; }
-    inline const VkApplicationInfo& getApplicationInfo() { return appInfo; }
+    [[nodiscard]] inline const VkApplicationInfo& getApplicationInfo() const { return appInfo; }
     inline void setDebugCallback(std::function<void()> callback) { debugCallback = std::move(callback); }
     inline void callDebugCallback() { if (debugCallback) { debugCallback(); } }
     inline void setDebugMessageSeverityLevel(MessageSeverity messageSeverity) { messageSeverityLevel = messageSeverity; }
-    inline MessageSeverity getDebugMessageSeverityLevel() { return messageSeverityLevel; }
+    [[nodiscard]] inline MessageSeverity getDebugMessageSeverityLevel() const { return messageSeverityLevel; }
+    /// The device extension VK_KHR_shader_non_semantic_info must be enabled if shader debug printf is enabled.
+    inline void setIsDebugPrintfEnabled(bool enabled) { enableDebugPrintf = enabled; }
+    [[nodiscard]] inline bool getIsDebugPrintfEnabled() const { return enableDebugPrintf; }
 
     static std::string convertVulkanVersionToString(uint32_t version);
 
@@ -85,6 +88,7 @@ private:
     VkApplicationInfo appInfo = { };
 
     bool useValidationLayer = false;
+    bool enableDebugPrintf = false;
     MessageSeverity messageSeverityLevel = MESSAGE_SEVERITY_WARNING;
     std::set<std::string> availableInstanceExtensionNames;
     std::vector<const char*> instanceLayerNames;

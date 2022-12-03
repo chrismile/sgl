@@ -38,6 +38,8 @@
 #include <variant>
 #endif
 
+namespace sgl {
+
 //#define TRACY_PROFILE_TRACING
 
 /**
@@ -59,7 +61,7 @@ public:
      */
     [[nodiscard]] inline bool contains(const glm::vec3 &pt) const {
         if (pt.x >= min.x && pt.y >= min.y && pt.z >= min.z
-            && pt.x <= max.x && pt.y <= max.y && pt.z <= max.z)
+                && pt.x <= max.x && pt.y <= max.y && pt.z <= max.z)
             return true;
         return false;
     }
@@ -258,5 +260,7 @@ public:
         return closestPointAndData;
     }
 };
+
+}
 
 #endif //SEARCH_STRUCTURE_H_

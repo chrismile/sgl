@@ -146,12 +146,19 @@ public:
     /// 'initializeDataDirectory' needs to be called when not using 'createWindow' or 'createHeadless'.
     void initializeDataDirectory();
 #ifdef SUPPORT_VULKAN
+    /// Returns the Vulkan instance.
+    inline vk::Instance* getVulkanInstance() { return instance; }
     /// Set the primary device (used for, e.g., GUI rendering for ImGui).
     inline void setPrimaryDevice(vk::Device* device) { primaryDevice = device; }
     inline vk::Device* getPrimaryDevice() { return primaryDevice; }
     /// Set the used swapchain.
     inline void setSwapchain(vk::Swapchain* swapchain) { this->swapchain = swapchain; }
     inline vk::Swapchain* getSwapchain() { return swapchain; }
+    /**
+     * Enable Vulkan shader debug printf. In this case, the device extension VK_KHR_shader_non_semantic_info
+     * must be used.
+     */
+    void setVulkanDebugPrintfEnabled();
     /// Initialize instance and device for OpenGL-Vulkan interoperability. Must be called before initializeSubsystems.
 #if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
     void initializeVulkanInteropSupport(
@@ -181,10 +188,6 @@ public:
     Window* getMainWindow();
     Window* setMainWindow(Window* window);
 
-#ifdef SUPPORT_VULKAN
-    inline vk::Instance* getVulkanInstance() { return instance; }
-#endif
-
     void getCurrentDisplayMode(int& width, int& height, int& refreshRate, int displayIndex = 0);
     void getDesktopDisplayMode(int& width, int& height, int& refreshRate, int displayIndex = 0);
     glm::ivec2 getCurrentDisplayModeResolution(int displayIndex = 0);
@@ -209,6 +212,7 @@ private:
     vk::Swapchain* swapchain = nullptr;
     VulkanInteropCapabilities vulkanInteropCapabilities = VulkanInteropCapabilities::NOT_LOADED;
     bool sdlVulkanLibraryLoaded = false;
+    bool isDebugPrintfEnabled = false;
 #endif
 
     // Where the application data is stored.

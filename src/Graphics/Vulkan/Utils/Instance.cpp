@@ -27,6 +27,7 @@
  */
 
 #include <map>
+#include <iostream>
 #include <cstring>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
@@ -45,6 +46,10 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugCallback(
         sgl::Logfile::get()->writeError(
                 std::string() + "Validation layer: " + callbackData->pMessage);
         instance->callDebugCallback();
+    }
+    if (instance->getIsDebugPrintfEnabled() && messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
+        std::cout << callbackData->pMessage << std::endl;
+        sgl::Logfile::get()->write(std::string() + callbackData->pMessage + "<br>\n");
     }
     return VK_FALSE;
 }
@@ -122,6 +127,16 @@ void Instance::createInstance(std::vector<const char*> instanceExtensionNames, b
     instanceInfo.enabledExtensionCount = (uint32_t)instanceExtensionNames.size();
     instanceInfo.ppEnabledExtensionNames = instanceExtensionNames.data();
 
+    VkValidationFeaturesEXT validationFeatures{};
+    validationFeatures.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
+    VkValidationFeatureEnableEXT validationFeatureDebugPrintf;
+    validationFeatureDebugPrintf = VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT;
+    if (enableDebugPrintf) {
+        validationFeatures.enabledValidationFeatureCount = 1;
+        validationFeatures.pEnabledValidationFeatures = &validationFeatureDebugPrintf;
+        instanceInfo.pNext = &validationFeatures;
+    }
+
     VkResult res = vkCreateInstance(&instanceInfo, nullptr, &instance);
     if (res == VK_ERROR_EXTENSION_NOT_PRESENT) {
         std::vector<size_t> availableEnabledExtensionIndices;
@@ -191,6 +206,9 @@ void Instance::createInstance(std::vector<const char*> instanceExtensionNames, b
                 VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT
                 | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
                 | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        if (enableDebugPrintf) {
+            createInfo.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
+        }
         createInfo.messageType =
                 VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
                 | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT

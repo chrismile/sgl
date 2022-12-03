@@ -35,6 +35,8 @@
 
 #include "SearchStructure.hpp"
 
+namespace sgl {
+
 #ifdef __has_cpp_attribute
 #if __has_cpp_attribute(no_unique_address) && !(defined(__GNUC__) && (__cplusplus < 201100))
 #define ATTRIBUTE_NO_UNIQUE_ADDRESS [[no_unique_address]]
@@ -313,8 +315,8 @@ private:
         }
 
         if ((axis == 0 && point.x < node->point.x)
-            || (axis == 1 && point.y < node->point.y)
-            || (axis == 2 && point.z < node->point.z)) {
+                || (axis == 1 && point.y < node->point.y)
+                || (axis == 2 && point.z < node->point.z)) {
             node->left = _add(node->left, depth + 1, point, data);
         } else {
             node->right = _add(node->right, depth + 1, point, data);
@@ -386,5 +388,7 @@ private:
         }
     }
 };
+
+}
 
 #endif //KDTREE_H_

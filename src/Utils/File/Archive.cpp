@@ -34,6 +34,7 @@
 #include <archive.h>
 #include <archive_entry.h>
 
+#include "../StringUtils.hpp"
 #include "FileUtils.hpp"
 #include "Logfile.hpp"
 #include "Archive.hpp"
@@ -150,6 +151,85 @@ ArchiveFileLoadReturnType loadFileFromArchive(
             sgl::Logfile::get()->writeError("Error in loadFileFromArchive: Couldn't find file in archive.");
         }
         return ARCHIVE_FILE_LOAD_FILE_NOT_FOUND;
+    }
+
+    return ARCHIVE_FILE_LOAD_SUCCESSFUL;
+}
+
+ArchiveFileLoadReturnType loadAllFilesFromArchive(
+        const std::string& filenameArchive, std::unordered_map<std::string, ArchiveEntry>& files, bool verbose) {
+    std::string filenameLower = boost::to_lower_copy(filenameArchive);
+    std::string fileExtension;
+    bool foundArchive = false;
+    for (const char* const archiveExtension : archiveFileExtensions) {
+        if (sgl::endsWith(filenameLower, archiveExtension)) {
+            fileExtension = archiveExtension;
+            foundArchive = true;
+            break;
+        }
+    }
+
+    if (!foundArchive) {
+        for (const char* const archiveExtension : archiveFileExtensionsUnsupported) {
+            if (sgl::endsWith(filenameLower, archiveExtension)) {
+                sgl::Logfile::get()->writeError(
+                        std::string() + "Error in loadAllFilesFromArchive: Invalid archive format. Please use "
+                        + ".tar" + fileExtension + " instead of " + fileExtension);
+                return ARCHIVE_FILE_LOAD_FORMAT_UNSUPPORTED;
+            }
+        }
+        if (verbose) {
+            sgl::Logfile::get()->writeError("Error in loadAllFilesFromArchive: Couldn't determine archive format.");
+        }
+        return ARCHIVE_FILE_LOAD_FORMAT_NOT_FOUND;
+    }
+
+    if (!sgl::FileUtils::get()->exists(filenameArchive)) {
+        if (verbose) {
+            sgl::Logfile::get()->writeError("Error in loadAllFilesFromArchive: Couldn't find archive.");
+        }
+        return ARCHIVE_FILE_LOAD_ARCHIVE_NOT_FOUND;
+    }
+
+    archive* a = archive_read_new();
+    archive_read_support_filter_all(a);
+    if (boost::starts_with(fileExtension, ".tar") || fileExtension == ".zip" || fileExtension == ".7z") {
+        archive_read_support_format_all(a);
+    } else {
+        sgl::Logfile::get()->writeError("Error in loadAllFilesFromArchive: Raw format not supported.");
+        return ARCHIVE_FILE_LOAD_FORMAT_UNSUPPORTED;
+    }
+    int returnCode = archive_read_open_filename(a, filenameArchive.c_str(), 16384);
+    if (returnCode != ARCHIVE_OK) {
+        if (verbose) {
+            sgl::Logfile::get()->writeError("Error in loadAllFilesFromArchive: Invalid archive data.");
+        }
+        return ARCHIVE_FILE_LOAD_INVALID_ARCHIVE_DATA;
+    }
+
+    archive_entry* entry;
+    while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {
+        ArchiveEntry archiveEntry;
+        archiveEntry.bufferSize = archive_entry_size(entry);
+        archiveEntry.bufferData = std::shared_ptr<uint8_t[]>(new uint8_t[archiveEntry.bufferSize]);
+        size_t sizeRead = archive_read_data(a, archiveEntry.bufferData.get(), archiveEntry.bufferSize);
+        if (sizeRead != archiveEntry.bufferSize) {
+            if (verbose) {
+                sgl::Logfile::get()->writeError("Error in loadAllFilesFromArchive: Invalid archive data.");
+            }
+            files.clear();
+            return ARCHIVE_FILE_LOAD_INVALID_ARCHIVE_DATA;
+        }
+        files.insert(std::make_pair(archive_entry_pathname(entry), archiveEntry));
+    }
+
+    returnCode = archive_read_free(a);
+    if (returnCode != ARCHIVE_OK) {
+        if (verbose) {
+            sgl::Logfile::get()->writeError("Error in loadAllFilesFromArchive: Invalid archive data.");
+        }
+        files.clear();
+        return ARCHIVE_FILE_LOAD_INVALID_ARCHIVE_DATA;
     }
 
     return ARCHIVE_FILE_LOAD_SUCCESSFUL;

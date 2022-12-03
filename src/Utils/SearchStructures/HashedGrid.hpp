@@ -35,6 +35,8 @@
 #include <tracy/Tracy.hpp>
 #include "SearchStructure.hpp"
 
+namespace sgl {
+
 template<class T>
 class HashedGrid : public SearchStructure<T>
 {
@@ -288,5 +290,7 @@ private:
         return hashFunction(xg, yg, zg);
     }
 };
+
+}
 
 #endif //HASHED_GRID_H_

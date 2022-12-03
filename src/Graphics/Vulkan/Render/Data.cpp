@@ -160,6 +160,10 @@ void RenderData::setStaticTexture(const TexturePtr& texture, uint32_t binding) {
     setImageSampler(texture->getImageSampler(), binding);
 }
 void RenderData::setStaticImageViewArray(const std::vector<ImageViewPtr>& imageViewArray, uint32_t binding) {
+    if (imageViewArray.size() == 1) {
+        setStaticImageView(imageViewArray.front(), binding);
+        return;
+    }
     for (FrameData& frameData : frameDataList) {
         frameData.imageViewArrays[binding] = imageViewArray;
     }

@@ -31,6 +31,8 @@
 #include "NaiveSearchStructure.hpp"
 #include "NearestNeighborNaive.hpp"
 
+namespace sgl {
+
 glm::vec3 nearestNeighborNaive(const glm::vec3& point, const std::vector<glm::vec3>& searchPointList) {
     float closestPointDistance = std::numeric_limits<float>::max();
     glm::vec3 nearestNeighbor;
@@ -43,4 +45,6 @@ glm::vec3 nearestNeighborNaive(const glm::vec3& point, const std::vector<glm::ve
         }
     }
     return nearestNeighbor;
+}
+
 }
