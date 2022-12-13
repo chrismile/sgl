@@ -271,6 +271,10 @@ void Renderer::syncWithCpu() {
     auto commandBufferPtr = commandBuffers.at(frameIndex);
     frameCommandBuffers.push_back(commandBufferPtr);
     commandBuffer = commandBufferPtr->getVkCommandBuffer();
+    graphicsPipeline = GraphicsPipelinePtr();
+    computePipeline = ComputePipelinePtr();
+    rayTracingPipeline = RayTracingPipelinePtr();
+    lastFramebuffer = FramebufferPtr();
 
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
