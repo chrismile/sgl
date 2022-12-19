@@ -134,6 +134,30 @@ DLL_OBJECT void freeCudaDeviceApiFunctionTable();
  */
 DLL_OBJECT bool getMatchingCudaDevice(sgl::vk::Device* device, CUdevice* cuDevice);
 
+/*
+ * Wrapper for CUfunction objects and kernel launching.
+ */
+class CudaFunction {
+public:
+    explicit CudaFunction(CUfunction func) : func(func) {}
+
+    template<typename... Args>
+    void operator()(uint32_t gridSize, uint32_t blockSize, uint32_t sharedMemorySize, CUstream stream, Args... args) {
+        void* kernelParameters[] = { std::addressof(args)... };
+        sgl::vk::checkCUresult(sgl::vk::g_cudaDeviceApiFunctionTable.cuLaunchKernel(
+                func,
+                gridSize, 1, 1, //< Grid size.
+                blockSize, 1, 1, //< Block size.
+                sharedMemorySize, //< Dynamic shared memory size.
+                stream,
+                kernelParameters, //< Kernel parameters.
+                nullptr //< Extra (empty).
+        ), "Error in cuLaunchKernel: ");
+    }
+
+private:
+    CUfunction func;
+};
 
 /**
  * A CUDA driver API CUexternalSemaphore object created from a Vulkan semaphore.
