@@ -201,10 +201,10 @@ namespace IGFD
 #define fileSizeGigaBytes "Go"
 #endif // fileSizeGigaBytes
 #ifndef OverWriteDialogTitleString
-#define OverWriteDialogTitleString "The file Already Exist !"
+#define OverWriteDialogTitleString "The file already exists!"
 #endif // OverWriteDialogTitleString
 #ifndef OverWriteDialogMessageString
-#define OverWriteDialogMessageString "Would you like to OverWrite it ?"
+#define OverWriteDialogMessageString "Would you like to overwrite it?"
 #endif // OverWriteDialogMessageString
 #ifndef OverWriteDialogConfirmButtonString
 #define OverWriteDialogConfirmButtonString "Confirm"
@@ -329,7 +329,7 @@ namespace IGFD
 #endif
 
 	/////////////////////////////////////////////////////////////////////////////////////
-	//// FILE EXTENTIONS INFOS //////////////////////////////////////////////////////////
+	//// FILE EXTENSIONS INFOS //////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////////
 
 	IGFD::FileStyle::FileStyle() 
@@ -827,7 +827,7 @@ namespace IGFD
 					}
 					else
 					{
-						// maybe this ext is in an extention so we will 
+						// maybe this ext is in an extension, so we will
 						// explore the collections is they are existing
 						for (const auto& filter : infos.collectionfilters)
 						{
@@ -898,7 +898,7 @@ namespace IGFD
 						}
 					}
 
-					if (_flag.first & IGFD_FileStyleByExtention)
+					if (_flag.first & IGFD_FileStyleByExtension)
 					{
 						if (_file.first == vFileInfos->fileExt)
 						{
@@ -1101,7 +1101,7 @@ namespace IGFD
 	{
 		if (!puDLGFilters.empty() && !prSelectedFilter.empty())
 		{
-			// check if current file extention is covered by current filter
+			// check if current file extension is covered by current filter
 			// we do that here, for avoid doing that during filelist display
 			// for better fps
 			if (prSelectedFilter.exist(vTag) || prSelectedFilter.filter == ".*")
@@ -1158,13 +1158,13 @@ namespace IGFD
 		return prSelectedFilter;
 	}
 
-	std::string IGFD::FilterManager::ReplaceExtentionWithCurrentFilter(const std::string& vFile) const
+	std::string IGFD::FilterManager::ReplaceExtensionWithCurrentFilter(const std::string& vFile) const
 	{
 		auto result = vFile;
 
 		if (!result.empty())
 		{
-			// if not a collection we can replace the filter by the extention we want
+			// if not a collection we can replace the filter by the extension we want
 			if (prSelectedFilter.collectionfilters.empty())
 			{
 				size_t lastPoint = vFile.find_last_of('.');
@@ -1459,7 +1459,7 @@ namespace IGFD
 				return;
 
 		if (infos->fileType == 'f' ||
-			infos->fileType == 'l') // link can have the same extention of a file
+			infos->fileType == 'l') // link can have the same extension of a file
 		{
 			size_t lpt = infos->fileNameExt.find_last_of('.');
 			if (lpt != std::string::npos)
@@ -2234,7 +2234,7 @@ namespace IGFD
 	{
 		if (!puDLGDirectoryMode) // if not directory mode
 		{
-			return vFileDialogInternal.puFilterManager.ReplaceExtentionWithCurrentFilter(std::string(puFileNameBuffer));
+			return vFileDialogInternal.puFilterManager.ReplaceExtensionWithCurrentFilter(std::string(puFileNameBuffer));
 		}
 
 		return ""; // directory mode
@@ -4490,7 +4490,12 @@ namespace IGFD
 		return prFileDialogInternal.puFileManager.GetResultingFileName(prFileDialogInternal);
 	}
 
-	std::string IGFD::FileDialog::GetCurrentFilter()
+    std::string IGFD::FileDialog::GetCurrentFileNameRaw()
+    {
+        return prFileDialogInternal.puFileManager.puFileNameBuffer;
+    }
+
+    std::string IGFD::FileDialog::GetCurrentFilter()
 	{
 		return prFileDialogInternal.puFilterManager.GetSelectedFilter().filter;
 	}
@@ -5019,6 +5024,29 @@ IMGUIFILEDIALOG_API char* IGFD_GetCurrentFileName(ImGuiFileDialog* vContext)
 	}
 
 	return res;
+}
+
+IMGUIFILEDIALOG_API char* IGFD_GetCurrentFileNameRaw(ImGuiFileDialog* vContext)
+{
+    char* res = nullptr;
+
+    if (vContext)
+    {
+        auto s = vContext->GetCurrentFileNameRaw();
+        if (!s.empty())
+        {
+            size_t siz = s.size() + 1U;
+            res = new char[siz];
+#ifndef MSVC
+            strncpy(res, s.c_str(), siz);
+#else
+            strncpy_s(res, siz, s.c_str(), siz);
+#endif
+            res[siz - 1U] = '\0';
+        }
+    }
+
+    return res;
 }
 
 IMGUIFILEDIALOG_API char* IGFD_GetCurrentPath(ImGuiFileDialog* vContext)
