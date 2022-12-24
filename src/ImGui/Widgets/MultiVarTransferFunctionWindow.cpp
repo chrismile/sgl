@@ -865,6 +865,30 @@ void MultiVarTransferFunctionWindow::setAttributesValues(
     rebuildRangeSsbo();
 }
 
+void MultiVarTransferFunctionWindow::recreateTfMapTexture() {
+#ifdef SUPPORT_OPENGL
+    if (sgl::AppSettings::get()->getRenderSystem() == sgl::RenderSystem::OPENGL) {
+        tfMapTexture = sgl::TextureManager->createEmptyTexture(
+                TRANSFER_FUNCTION_TEXTURE_SIZE, int(varNames.size()), tfMapTextureSettings);
+        minMaxSsbo = sgl::Renderer->createGeometryBuffer(
+                varNames.size() * sizeof(glm::vec2), sgl::SHADER_STORAGE_BUFFER);
+    }
+#endif
+#ifdef SUPPORT_VULKAN
+    if (sgl::AppSettings::get()->getPrimaryDevice()) {
+        tfMapImageSettingsVulkan.width = TRANSFER_FUNCTION_TEXTURE_SIZE;
+        tfMapImageSettingsVulkan.arrayLayers = uint32_t(varNames.size());
+        tfMapTextureVulkan = std::make_shared<sgl::vk::Texture>(
+                sgl::AppSettings::get()->getPrimaryDevice(), tfMapImageSettingsVulkan,
+                VK_IMAGE_VIEW_TYPE_1D_ARRAY);
+        minMaxSsboVulkan = std::make_shared<sgl::vk::Buffer>(
+                sgl::AppSettings::get()->getPrimaryDevice(), varNames.size() * sizeof(glm::vec2),
+                VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                VMA_MEMORY_USAGE_GPU_ONLY);
+    }
+#endif
+}
+
 void MultiVarTransferFunctionWindow::setAttributeNames(const std::vector<std::string>& names) {
     varNames = names;
     transferFunctionMap_sRGB.resize(TRANSFER_FUNCTION_TEXTURE_SIZE * names.size());
@@ -875,30 +899,10 @@ void MultiVarTransferFunctionWindow::setAttributeNames(const std::vector<std::st
         guiVarData.clear();
         guiVarData.reserve(names.size());
 
-#ifdef SUPPORT_OPENGL
-        if (sgl::AppSettings::get()->getRenderSystem() == sgl::RenderSystem::OPENGL) {
-            tfMapTexture = sgl::TextureManager->createEmptyTexture(
-                    TRANSFER_FUNCTION_TEXTURE_SIZE, int(names.size()), tfMapTextureSettings);
-            minMaxSsbo = sgl::Renderer->createGeometryBuffer(
-                    names.size() * sizeof(glm::vec2), sgl::SHADER_STORAGE_BUFFER);
-        }
-#endif
-#ifdef SUPPORT_VULKAN
-        if (sgl::AppSettings::get()->getPrimaryDevice()) {
-            tfMapImageSettingsVulkan.width = TRANSFER_FUNCTION_TEXTURE_SIZE;
-            tfMapImageSettingsVulkan.arrayLayers = uint32_t(names.size());
-            tfMapTextureVulkan = std::make_shared<sgl::vk::Texture>(
-                    sgl::AppSettings::get()->getPrimaryDevice(), tfMapImageSettingsVulkan,
-                    VK_IMAGE_VIEW_TYPE_1D_ARRAY);
-            minMaxSsboVulkan = std::make_shared<sgl::vk::Buffer>(
-                    sgl::AppSettings::get()->getPrimaryDevice(), names.size() * sizeof(glm::vec2),
-                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                    VMA_MEMORY_USAGE_GPU_ONLY);
-        }
-#endif
+        recreateTfMapTexture();
 
         minMaxData.clear();
-        minMaxData.resize(names.size() * 2, 0);
+        minMaxData.resize(names.size() * 2, 0.0f);
 
         for (size_t varIdx = 0; varIdx < names.size(); varIdx++) {
             guiVarData.emplace_back(
@@ -959,6 +963,62 @@ void MultiVarTransferFunctionWindow::updateAttributeName(int varIdx, const std::
     GuiVarData& varData = guiVarData.at(varIdx);
     varData.setAttributeName(varIdx, attributeName);
     varNames.at(varIdx) = attributeName;
+}
+
+void MultiVarTransferFunctionWindow::removeAttribute(int varIdxRemove) {
+    size_t numVarsNew = varNames.size() - 1;
+    varNames.erase(varNames.begin() + varIdxRemove);
+    guiVarData.erase(guiVarData.begin() + varIdxRemove);
+    minMaxData.erase(minMaxData.begin() + varIdxRemove * 2, minMaxData.begin() + varIdxRemove * 2 + 2);
+
+    ptrdiff_t trafoRangeBegin = varIdxRemove * ptrdiff_t(TRANSFER_FUNCTION_TEXTURE_SIZE);
+    ptrdiff_t trafoRangeEnd = trafoRangeBegin + ptrdiff_t(TRANSFER_FUNCTION_TEXTURE_SIZE);
+    transferFunctionMap_sRGB.erase(
+            transferFunctionMap_sRGB.begin() + trafoRangeBegin,
+            transferFunctionMap_sRGB.begin() + trafoRangeEnd);
+    transferFunctionMap_linearRGB.erase(
+            transferFunctionMap_linearRGB.begin() + trafoRangeBegin,
+            transferFunctionMap_linearRGB.begin() + trafoRangeEnd);
+
+    for (size_t varIdx = 0; varIdx < numVarsNew; varIdx++) {
+        guiVarData.at(varIdx).transferFunctionMap_sRGB =
+                &transferFunctionMap_sRGB.at(TRANSFER_FUNCTION_TEXTURE_SIZE * varIdx);
+        guiVarData.at(varIdx).transferFunctionMap_linearRGB =
+                &transferFunctionMap_linearRGB.at(TRANSFER_FUNCTION_TEXTURE_SIZE * varIdx);
+    }
+
+    if (selectedVarIndex == numVarsNew) {
+        selectedVarIndex--;
+    }
+    currVarData = &guiVarData.at(selectedVarIndex);
+
+    recreateTfMapTexture();
+    rebuildTransferFunctionMapComplete();
+}
+
+void MultiVarTransferFunctionWindow::addAttributeName(const std::string& name) {
+    size_t varIdxNew = varNames.size();
+    varNames.push_back(name);
+    size_t numVarsNew = varNames.size();
+    minMaxData.resize(numVarsNew * 2, 0.0f);
+
+    transferFunctionMap_sRGB.resize(TRANSFER_FUNCTION_TEXTURE_SIZE * numVarsNew);
+    transferFunctionMap_linearRGB.resize(TRANSFER_FUNCTION_TEXTURE_SIZE * numVarsNew);
+
+    guiVarData.emplace_back(
+            this, tfPresetFiles.empty() ? "" : tfPresetFiles.at(varIdxNew % tfPresetFiles.size()),
+            &transferFunctionMap_sRGB.at(TRANSFER_FUNCTION_TEXTURE_SIZE * varIdxNew),
+            &transferFunctionMap_linearRGB.at(TRANSFER_FUNCTION_TEXTURE_SIZE * varIdxNew));
+    for (size_t varIdx = 0; varIdx < varIdxNew; varIdx++) {
+        guiVarData.at(varIdx).transferFunctionMap_sRGB =
+                &transferFunctionMap_sRGB.at(TRANSFER_FUNCTION_TEXTURE_SIZE * varIdx);
+        guiVarData.at(varIdx).transferFunctionMap_linearRGB =
+                &transferFunctionMap_linearRGB.at(TRANSFER_FUNCTION_TEXTURE_SIZE * varIdx);
+    }
+    currVarData = &guiVarData.at(selectedVarIndex);
+
+    recreateTfMapTexture();
+    rebuildTransferFunctionMapComplete();
 }
 
 

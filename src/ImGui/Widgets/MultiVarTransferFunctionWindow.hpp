@@ -177,6 +177,8 @@ public:
     void setAttributeDataDirty(int varIdx);
     void loadAttributeDataIfEmpty(int varIdx);
     void updateAttributeName(int varIdx, const std::string& attributeName);
+    void removeAttribute(int varIdx);
+    void addAttributeName(const std::string& name);
 
     //bool saveCurrentVarTfToFile(const std::string& filename);
     //bool loadTfFromFile(int varIdx, const std::string& filename);
@@ -227,6 +229,7 @@ private:
     void rebuildTransferFunctionMap();
     void rebuildTransferFunctionMapComplete();
     void rebuildRangeSsbo();
+    void recreateTfMapTexture();
 
     std::vector<std::string> varNames;
     std::vector<GuiVarData> guiVarData;
