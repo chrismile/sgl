@@ -99,6 +99,13 @@ public:
             const std::string& name, int* value, int minVal, int maxVal,
             const char* format = "%d", ImGuiSliderFlags flags = 0);
 
+    bool addDragInt(
+            const std::string& name, int* value, float speed = 1.0f, int minVal = 0, int maxVal = 0,
+            const char* format = "%d", ImGuiSliderFlags flags = 0);
+    bool addDragFloat(
+            const std::string& name, float* value, float speed = 1.0f, float minVal = 0.0f, float maxVal = 0.0f,
+            const char* format = "%.3f", ImGuiSliderFlags flags = 0);
+
     bool addColorEdit3(const std::string& label, float col[3], ImGuiColorEditFlags flags = 0);
     bool addColorEdit4(const std::string& label, float col[4], ImGuiColorEditFlags flags = 0);
 

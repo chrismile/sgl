@@ -256,6 +256,31 @@ ImGui::EditMode PropertyEditor::addSliderInt3Edit(
 }
 
 
+bool PropertyEditor::addDragInt(
+        const std::string& name, int* value, float speed, int minVal, int maxVal,
+        const char* format, ImGuiSliderFlags flags) {
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+    ImGui::TreeNodeEx(name.c_str(), treeNodeFlagsLeaf);
+    ImGui::TableNextColumn();
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    std::string internalId = "##" + name;
+    return ImGui::DragInt(internalId.c_str(), value, speed, minVal, maxVal, format, flags);
+}
+
+bool PropertyEditor::addDragFloat(
+        const std::string& name, float* value, float speed, float minVal, float maxVal,
+        const char* format, ImGuiSliderFlags flags) {
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+    ImGui::TreeNodeEx(name.c_str(), treeNodeFlagsLeaf);
+    ImGui::TableNextColumn();
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    std::string internalId = "##" + name;
+    return ImGui::DragFloat(internalId.c_str(), value, speed, minVal, maxVal, format, flags);
+}
+
+
 bool PropertyEditor::addColorEdit3(const std::string& label, float col[3], ImGuiColorEditFlags flags) {
     ImGui::TableNextRow();
     ImGui::TableNextColumn();
