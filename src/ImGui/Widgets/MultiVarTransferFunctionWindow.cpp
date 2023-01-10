@@ -985,6 +985,7 @@ void MultiVarTransferFunctionWindow::removeAttribute(int varIdxRemove) {
                 &transferFunctionMap_sRGB.at(TRANSFER_FUNCTION_TEXTURE_SIZE * varIdx);
         guiVarData.at(varIdx).transferFunctionMap_linearRGB =
                 &transferFunctionMap_linearRGB.at(TRANSFER_FUNCTION_TEXTURE_SIZE * varIdx);
+        guiVarData.at(varIdx).varIdx = int(varIdx);
     }
 
     if (selectedVarIndex == numVarsNew) {
@@ -1009,6 +1010,7 @@ void MultiVarTransferFunctionWindow::addAttributeName(const std::string& name) {
             this, tfPresetFiles.empty() ? "" : tfPresetFiles.at(varIdxNew % tfPresetFiles.size()),
             &transferFunctionMap_sRGB.at(TRANSFER_FUNCTION_TEXTURE_SIZE * varIdxNew),
             &transferFunctionMap_linearRGB.at(TRANSFER_FUNCTION_TEXTURE_SIZE * varIdxNew));
+    guiVarData.back().setAttributeName(int(guiVarData.size() - 1), name);
     for (size_t varIdx = 0; varIdx < varIdxNew; varIdx++) {
         guiVarData.at(varIdx).transferFunctionMap_sRGB =
                 &transferFunctionMap_sRGB.at(TRANSFER_FUNCTION_TEXTURE_SIZE * varIdx);
