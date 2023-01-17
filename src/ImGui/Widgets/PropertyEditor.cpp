@@ -83,6 +83,15 @@ bool PropertyEditor::beginNode(const std::string& nodeText) {
     return open;
 }
 
+bool PropertyEditor::beginNode(const std::string& nodeText, ImGuiTreeNodeFlags flags) {
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+    bool open = ImGui::TreeNodeEx(nodeText.c_str(), ImGuiTreeNodeFlags_SpanFullWidth | flags);
+    ImGui::TableNextColumn();
+    ImGui::TextDisabled("--");
+    return open;
+}
+
 void PropertyEditor::endNode() {
     ImGui::TreePop();
 }

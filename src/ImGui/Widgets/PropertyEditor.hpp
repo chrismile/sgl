@@ -54,6 +54,7 @@ public:
     void endTable();
 
     bool beginNode(const std::string& nodeText);
+    bool beginNode(const std::string& nodeText, ImGuiTreeNodeFlags flags);
     void endNode();
 
     void addText(const std::string& nodeText, const std::string& value);
