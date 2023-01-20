@@ -78,6 +78,7 @@ public:
     [[nodiscard]] inline uint32_t getMinImageCount() { return minImageCount; }
     [[nodiscard]] inline std::vector<ImageViewPtr>& getSwapchainImageViews() { return swapchainImageViews; }
     [[nodiscard]] inline const VkExtent2D& getSwapchainExtent() const { return swapchainExtent; }
+    [[nodiscard]] inline int getMaxNumFramesInFlight() const { return MAX_FRAMES_IN_FLIGHT; }
     [[nodiscard]] inline size_t getCurrentFrame() const { return currentFrame; }
     [[nodiscard]] inline uint32_t getImageIndex() const { return imageIndex; }
     [[nodiscard]] inline const std::vector<VkSemaphore>& getImageAvailableSemaphores() { return imageAvailableSemaphores; }

@@ -42,6 +42,7 @@
 namespace sgl {
 
 class Window;
+class OffscreenContext;
 
 #ifdef SUPPORT_VULKAN
 namespace vk { class Instance; class Device; class Swapchain; }
@@ -145,6 +146,12 @@ public:
     HeadlessData createHeadless();
     /// 'initializeDataDirectory' needs to be called when not using 'createWindow' or 'createHeadless'.
     void initializeDataDirectory();
+#ifdef SUPPORT_OPENGL
+    /// Sets an offscreen OpenGL context for use together with a Vulkan instance, device & swapchain.
+    void setOffscreenContext(sgl::OffscreenContext* _offscreenContext);
+    /// Returns the offscreen OpenGL context (or nullptr if not set).
+    inline sgl::OffscreenContext* getOffscreenContext() { return offscreenContext; }
+#endif
 #ifdef SUPPORT_VULKAN
     /// Returns the Vulkan instance.
     inline vk::Instance* getVulkanInstance() { return instance; }
@@ -205,6 +212,10 @@ private:
     RenderSystem renderSystem = RenderSystem::OPENGL;
     OperatingSystem operatingSystem;
     Window* mainWindow = nullptr;
+
+#ifdef SUPPORT_OPENGL
+    sgl::OffscreenContext* offscreenContext = nullptr;
+#endif
 
 #ifdef SUPPORT_VULKAN
     vk::Instance* instance = nullptr;

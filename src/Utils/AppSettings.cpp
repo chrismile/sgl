@@ -455,6 +455,10 @@ void AppSettings::setRenderSystem(RenderSystem renderSystem) {
     this->renderSystem = renderSystem;
 }
 
+void AppSettings::setOffscreenContext(sgl::OffscreenContext* _offscreenContext) {
+    offscreenContext = _offscreenContext;
+}
+
 void AppSettings::initializeSubsystems() {
     /*if (TTF_Init() == -1) {
         Logfile::get()->writeError("ERROR: SDLWindow::initializeAudio: Couldn't initialize SDL_ttf!");
@@ -466,7 +470,20 @@ void AppSettings::initializeSubsystems() {
     //AudioManager = new SDLMixerAudioManager;
 
 #ifdef SUPPORT_OPENGL
-    if (renderSystem == RenderSystem::OPENGL) {
+    if (offscreenContext) {
+        // Initialize GLEW (usually done by the window).
+        glewExperimental = GL_TRUE;
+        GLenum glewError = glewInit();
+        if (glewError == GLEW_ERROR_NO_GLX_DISPLAY) {
+            Logfile::get()->writeWarning(
+                    "Warning in AppSettings::initializeSubsystems: GLEW is not built with EGL support.");
+        } else if (glewError != GLEW_OK) {
+            Logfile::get()->writeError(
+                    std::string() + "Error in AppSettings::initializeSubsystems: glewInit: "
+                    + (char*)glewGetErrorString(glewError));
+        }
+    }
+    if (renderSystem == RenderSystem::OPENGL || offscreenContext) {
         TextureManager = new TextureManagerGL;
         ShaderManager = new ShaderManagerGL;
         Renderer = new RendererGL;
@@ -512,7 +529,7 @@ void AppSettings::release() {
     }
 
 #ifdef SUPPORT_OPENGL
-    if (renderSystem == RenderSystem::OPENGL) {
+    if (renderSystem == RenderSystem::OPENGL || offscreenContext) {
         if (Renderer) {
             delete Renderer;
             Renderer = nullptr;

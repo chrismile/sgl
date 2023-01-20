@@ -202,6 +202,26 @@ void BlitRenderPass::setNormalizedCoordinatesAabb(const sgl::AABB2& aabb) {
             vertexBuffer);
 }
 
+void BlitRenderPass::setNormalizedCoordinatesAabb(const sgl::AABB2& aabb, bool flipY) {
+    if (!flipY) {
+        setNormalizedCoordinatesAabb(aabb);
+        return;
+    }
+    std::vector<float> vertexData = {
+            aabb.min.x, aabb.max.y, 0.0f, 0.0f, 0.0f,
+            aabb.max.x, aabb.max.y, 0.0f, 1.0f, 0.0f,
+            aabb.max.x, aabb.min.y, 0.0f, 1.0f, 1.0f,
+            aabb.min.x, aabb.min.y, 0.0f, 0.0f, 1.0f,
+    };
+    vertexBuffer->updateData(
+            vertexData.size() * sizeof(float), vertexData.data(),
+            renderer->getVkCommandBuffer());
+    renderer->insertBufferMemoryBarrier(
+            VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
+            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
+            vertexBuffer);
+}
+
 void BlitRenderPass::loadShader() {
     shaderStages = sgl::vk::ShaderManager->getShaderStages(shaderIds);
 }

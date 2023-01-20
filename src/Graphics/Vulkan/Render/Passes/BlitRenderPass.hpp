@@ -56,6 +56,7 @@ public:
 
     // Public interface.
     void setNormalizedCoordinatesAabb(const sgl::AABB2& aabb);
+    void setNormalizedCoordinatesAabb(const sgl::AABB2& aabb, bool flipY); ///< For use with OpenGL texture interop.
     virtual void setInputTexture(sgl::vk::TexturePtr& texture);
     virtual void setOutputImage(sgl::vk::ImageViewPtr& imageView);
     virtual void setOutputImages(std::vector<sgl::vk::ImageViewPtr>& imageViews);

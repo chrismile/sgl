@@ -96,7 +96,7 @@ public:
     float getScaleDependentSize(float width);
     ImVec2 getScaleDependentSize(int width, int height);
 
-    // Insert your ImGui code between "renderStart" and "renderEnd"
+    // Insert your ImGui code between "renderStart" and "renderEnd".
     void renderStart();
     void renderEnd();
     void processSDLEvent(const SDL_Event &event);
