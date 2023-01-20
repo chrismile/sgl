@@ -280,8 +280,8 @@ void NanoVGWidget::_initialize() {
 }
 
 void NanoVGWidget::onWindowSizeChanged() {
-    fboWidthDisplay = std::ceil(float(windowWidth) * scaleFactor);
-    fboHeightDisplay = std::ceil(float(windowHeight) * scaleFactor);
+    fboWidthDisplay = int(std::ceil(float(windowWidth) * scaleFactor));
+    fboHeightDisplay = int(std::ceil(float(windowHeight) * scaleFactor));
     fboWidthInternal = fboWidthDisplay * supersamplingFactor;
     fboHeightInternal = fboHeightDisplay * supersamplingFactor;
 

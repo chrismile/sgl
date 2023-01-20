@@ -35,7 +35,7 @@ typedef void* EGLDisplay;
 typedef void* EGLContext;
 typedef void* EGLSurface;
 #if defined(_WIN32) && !defined(_WINDEF_)
-class HINSTANCE__;
+struct HINSTANCE__;
 typedef HINSTANCE__* HINSTANCE;
 typedef HINSTANCE HMODULE;
 #endif

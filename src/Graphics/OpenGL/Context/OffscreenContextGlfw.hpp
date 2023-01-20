@@ -34,7 +34,7 @@
 struct GLFWwindow;
 typedef struct GLFWwindow GLFWwindow;
 #if defined(_WIN32) && !defined(_WINDEF_)
-class HINSTANCE__;
+struct HINSTANCE__;
 typedef HINSTANCE__* HINSTANCE;
 typedef HINSTANCE HMODULE;
 #endif
