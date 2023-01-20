@@ -31,6 +31,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <optional>
 #include <cmath>
 #include <glm/glm.hpp>
 
