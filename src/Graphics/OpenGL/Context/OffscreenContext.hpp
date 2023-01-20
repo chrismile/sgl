@@ -50,8 +50,8 @@ class Device;
  * @param verbose Whether debug output is desired.
  * @return The offscreen context object (or nullptr).
  */
-OffscreenContext* createOffscreenContext(sgl::vk::Device* vulkanDevice, bool verbose);
-void destroyOffscreenContext(OffscreenContext* offscreenContext);
+DLL_OBJECT OffscreenContext* createOffscreenContext(sgl::vk::Device* vulkanDevice, bool verbose);
+DLL_OBJECT void destroyOffscreenContext(OffscreenContext* offscreenContext);
 
 }
 
