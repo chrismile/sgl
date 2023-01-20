@@ -455,9 +455,11 @@ void AppSettings::setRenderSystem(RenderSystem renderSystem) {
     this->renderSystem = renderSystem;
 }
 
+#ifdef SUPPORT_OPENGL
 void AppSettings::setOffscreenContext(sgl::OffscreenContext* _offscreenContext) {
     offscreenContext = _offscreenContext;
 }
+#endif
 
 void AppSettings::initializeSubsystems() {
     /*if (TTF_Init() == -1) {

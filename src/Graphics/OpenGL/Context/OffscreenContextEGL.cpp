@@ -33,7 +33,10 @@
 #include <EGL/eglext.h>
 
 #include <Utils/File/Logfile.hpp>
+
+#ifdef SUPPORT_VULKAN
 #include <Graphics/Vulkan/Utils/Device.hpp>
+#endif
 
 #include "OffscreenContextEGL.hpp"
 
@@ -45,7 +48,8 @@
 #define NOMINMAX
 #endif
 #include <windows.h>
-#include <vulkan/vulkan_win32.h>
+#elif defined(__APPLE__)
+#include <dlfcn.h>
 #endif
 
 #ifdef _WIN32
@@ -170,6 +174,7 @@ bool OffscreenContextEGL::initialize() {
                 "device querying is not available.", false);
     }
 
+#ifdef SUPPORT_VULKAN
     if (!params.useDefaultDisplay) {
         EGLint numEglDevices = 0;
         if (!f->eglQueryDevicesEXT(0, nullptr, &numEglDevices)) {
@@ -247,6 +252,9 @@ bool OffscreenContextEGL::initialize() {
 
         delete[] eglDevices;
     }
+#else
+    params.useDefaultDisplay = true;
+#endif
 
     /*
      * TODO: The 'offscreen' backend of SDL2 calls eglGetPlatformDisplayEXT for all devices until it finds one where

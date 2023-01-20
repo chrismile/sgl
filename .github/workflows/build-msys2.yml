@@ -39,6 +39,7 @@ jobs:
           mingw64/mingw-w64-x86_64-SDL2
           mingw64/mingw-w64-x86_64-SDL2_image
           mingw64/mingw-w64-x86_64-glew
+          mingw64/mingw-w64-x86_64-glfw
           mingw64/mingw-w64-x86_64-vulkan-headers
           mingw64/mingw-w64-x86_64-vulkan-loader
           mingw64/mingw-w64-x86_64-vulkan-validation-layers

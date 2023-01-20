@@ -34,8 +34,10 @@
 typedef void* EGLDisplay;
 typedef void* EGLContext;
 typedef void* EGLSurface;
-#ifdef _WIN32
-typedef void* HMODULE;
+#if defined(_WIN32) && !defined(_WINDEF_)
+class HINSTANCE__;
+typedef HINSTANCE__* HINSTANCE;
+typedef HINSTANCE HMODULE;
 #endif
 
 namespace sgl {

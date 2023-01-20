@@ -87,7 +87,8 @@
 #define NOMINMAX
 #endif
 #include <windows.h>
-#include <vulkan/vulkan_win32.h>
+#elif defined(__APPLE__)
+#include <dlfcn.h>
 #endif
 
 #ifdef _WIN32

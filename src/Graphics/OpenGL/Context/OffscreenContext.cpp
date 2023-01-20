@@ -26,13 +26,16 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef _WIN32
 #include "OffscreenContextEGL.hpp"
+#endif
 #include "OffscreenContextGlfw.hpp"
 
 namespace sgl {
 
 OffscreenContext* createOffscreenContext(sgl::vk::Device* vulkanDevice, bool verbose) {
     sgl::OffscreenContext* offscreenContext = nullptr;
+#ifndef _WIN32
     sgl::OffscreenContextEGLParams paramsEgl{};
     paramsEgl.device = vulkanDevice;
     offscreenContext = new sgl::OffscreenContextEGL(paramsEgl);
@@ -40,13 +43,16 @@ OffscreenContext* createOffscreenContext(sgl::vk::Device* vulkanDevice, bool ver
 
     if (!offscreenContext->getIsInitialized()) {
         delete offscreenContext;
+#endif
         offscreenContext = new sgl::OffscreenContextGlfw();
         offscreenContext->initialize();
         if (!offscreenContext->getIsInitialized()) {
             delete offscreenContext;
             offscreenContext = nullptr;
         }
+#ifndef _WIN32
     }
+#endif
 
     return offscreenContext;
 }
