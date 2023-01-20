@@ -137,7 +137,7 @@ DLL_OBJECT bool getMatchingCudaDevice(sgl::vk::Device* device, CUdevice* cuDevic
 /*
  * Wrapper for CUfunction objects and kernel launching.
  */
-class CudaFunction {
+class DLL_OBJECT CudaFunction {
 public:
     explicit CudaFunction(CUfunction func) : func(func) {}
 
@@ -254,7 +254,7 @@ typedef std::shared_ptr<ImageCudaExternalMemoryVk> ImageCudaExternalMemoryVkPtr;
 typedef ImageCudaExternalMemoryVk ImageCudaDriverApiExternalMemoryVk;
 typedef std::shared_ptr<ImageCudaDriverApiExternalMemoryVk> ImageCudaDriverApiExternalMemoryVkPtr;
 
-struct TextureCudaExternalMemorySettings {
+struct DLL_OBJECT TextureCudaExternalMemorySettings {
     // Use CUDA mipmapped array or CUDA array at level 0.
     bool useMipmappedArray = false;
     // Whether to use normalized coordinates in the range [0, 1) or integer coordinates in the range [0, dim).
@@ -266,7 +266,7 @@ struct TextureCudaExternalMemorySettings {
     bool readAsInteger = false;
 };
 
-class TextureCudaExternalMemoryVk {
+class DLL_OBJECT TextureCudaExternalMemoryVk {
 public:
     TextureCudaExternalMemoryVk(
             vk::TexturePtr& vulkanTexture, const TextureCudaExternalMemorySettings& texCudaSettings = {});
@@ -293,7 +293,7 @@ protected:
 
 typedef std::shared_ptr<TextureCudaExternalMemoryVk> TextureCudaExternalMemoryVkPtr;
 
-class SurfaceCudaExternalMemoryVk {
+class DLL_OBJECT SurfaceCudaExternalMemoryVk {
 public:
     SurfaceCudaExternalMemoryVk(vk::ImagePtr& vulkanImageView, VkImageViewType imageViewType);
     explicit SurfaceCudaExternalMemoryVk(vk::ImageViewPtr& vulkanImageView);
