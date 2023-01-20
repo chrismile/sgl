@@ -264,6 +264,7 @@ if (${SUPPORT_OPENGL} AND ${OpenGL_FOUND} AND ${GLEW_FOUND})
     target_include_directories(sgl PRIVATE ${OPENGL_INCLUDE_DIRS} ${GLEW_INCLUDE_DIRS})
     if (glfw3_FOUND)
         target_link_libraries(sgl PRIVATE glfw)
+        target_compile_definitions(sgl PUBLIC SUPPORT_GLFW)
     endif()
 
     if (${GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT})

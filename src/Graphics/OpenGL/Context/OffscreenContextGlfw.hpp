@@ -67,12 +67,10 @@ public:
 private:
     bool isInitialized = false;
     bool glfwInitCalled = false;
-#ifndef SUPPORT_GLFW
 #ifdef _WIN32
     HMODULE glfwHandle = nullptr;
 #else
     void* glfwHandle = nullptr;
-#endif
 #endif
     OffscreenContextGlfwParams params = {};
     GLFWwindow* glfwWindow = nullptr;
