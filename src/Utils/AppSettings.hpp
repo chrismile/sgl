@@ -151,6 +151,8 @@ public:
     void setOffscreenContext(sgl::OffscreenContext* _offscreenContext);
     /// Returns the offscreen OpenGL context (or nullptr if not set).
     inline sgl::OffscreenContext* getOffscreenContext() { return offscreenContext; }
+    /// Initializes the OpenGL function pointers for the offscreen context.
+    void initializeOffscreenContextFunctionPointers();
 #endif
 #ifdef SUPPORT_VULKAN
     /// Returns the Vulkan instance.
@@ -166,13 +168,33 @@ public:
      * must be used.
      */
     void setVulkanDebugPrintfEnabled();
-    /// Initialize instance and device for OpenGL-Vulkan interoperability. Must be called before initializeSubsystems.
+    [[nodiscard]] inline const std::vector<const char*>& getRequiredVulkanInstanceExtensions() const {
+        return requiredInstanceExtensionNames;
+    }
 #if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
+    /// Initialize instance and device for OpenGL-Vulkan interoperability. Must be called before initializeSubsystems.
     void initializeVulkanInteropSupport(
             const std::vector<const char*>& requiredDeviceExtensionNames = {},
             const std::vector<const char*>& optionalDeviceExtensionNames = {},
             const vk::DeviceFeatures& requestedDeviceFeatures = vk::DeviceFeatures());
     inline VulkanInteropCapabilities getVulkanInteropCapabilities() { return vulkanInteropCapabilities; }
+    /**
+     * Enables Vulkan to OpenGL offscreen context interop support. Must be called before createWindow.
+     * The difference to initializeVulkanInteropSupport is that in this case, a Vulkan swapchain is used for rendering
+     * to the main window.
+     */
+    void enableVulkanOffscreenOpenGLContextInteropSupport();
+    [[nodiscard]] inline bool getInstanceSupportsVulkanOpenGLInterop() const {
+        return instanceSupportsVulkanOpenGLInterop;
+    }
+    /// Returns a list of Vulkan extensions necessary for interop with OpenGL.
+    std::vector<const char*> getVulkanOpenGLInteropDeviceExtensions();
+    /// Checks whether the Vulkan extensions necessary for interop with OpenGL are available.
+    bool checkVulkanOpenGLInteropDeviceExtensionsSupported(sgl::vk::Device* device);
+    /// Returns a list of OpenGL extensions necessary for interop with Vulkan.
+    std::vector<const char*> getOpenGLVulkanInteropExtensions();
+    /// Checks whether the OpenGL extensions necessary for interop with Vulkan are available.
+    bool checkOpenGLVulkanInteropExtensionsSupported();
 #endif
 //#if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
 //    void initializeCudaInteropSupport(
@@ -215,12 +237,16 @@ private:
 
 #ifdef SUPPORT_OPENGL
     sgl::OffscreenContext* offscreenContext = nullptr;
+    bool shallEnableVulkanOffscreenOpenGLContextInteropSupport = false;
+    bool instanceSupportsVulkanOpenGLInterop = false;
+    bool offscreenContextFunctionPointersInitialized = false;
 #endif
 
 #ifdef SUPPORT_VULKAN
     vk::Instance* instance = nullptr;
     vk::Device* primaryDevice = nullptr;
     vk::Swapchain* swapchain = nullptr;
+    std::vector<const char*> requiredInstanceExtensionNames;
     VulkanInteropCapabilities vulkanInteropCapabilities = VulkanInteropCapabilities::NOT_LOADED;
     bool sdlVulkanLibraryLoaded = false;
     bool isDebugPrintfEnabled = false;

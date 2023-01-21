@@ -194,7 +194,8 @@ void AppSettings::initializeDataDirectory() {
     }
     if (!sgl::FileUtils::get()->directoryExists(dataDirectory)) {
         sgl::Logfile::get()->writeError(
-                "Error: AppSettings::createWindow: Data directory \"" + dataDirectory + "\" does not exist.");
+                "Error: AppSettings::initializeDataDirectory: Data directory \""
+                + dataDirectory + "\" does not exist.");
         exit(1);
     }
 }
@@ -253,6 +254,25 @@ Window *AppSettings::createWindow() {
         if (isDebugPrintfEnabled) {
             instance->setIsDebugPrintfEnabled(isDebugPrintfEnabled);
         }
+
+#ifdef SUPPORT_OPENGL
+        if (shallEnableVulkanOffscreenOpenGLContextInteropSupport) {
+            instanceSupportsVulkanOpenGLInterop = true;
+
+            requiredInstanceExtensionNames = {
+                    VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME,
+                    VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME
+            };
+            if (!instance->getInstanceExtensionsAvailable(requiredInstanceExtensionNames)) {
+                sgl::Logfile::get()->writeWarning(
+                        "Warning in AppSettings::createWindow: The Vulkan instance extensions "
+                        "VK_KHR_external_memory_capabilities or VK_KHR_external_semaphore_capabilities are not supported "
+                        "on this system. Disabling OpenGL interoperability support.", false);
+                instanceSupportsVulkanOpenGLInterop = false;
+                requiredInstanceExtensionNames = {};
+            }
+        }
+#endif
 
 #if defined(__APPLE__)
         sdlVulkanLibraryLoaded = false;
@@ -364,7 +384,7 @@ void AppSettings::initializeVulkanInteropSupport(
     openglExtensionNames.push_back("GL_EXT_memory_object_fd");
     openglExtensionNames.push_back("GL_EXT_semaphore_fd");
 #endif
-    for (const char *extensionName : openglExtensionNames) {
+    for (const char* extensionName : openglExtensionNames) {
         if (vulkanInteropCapabilities == VulkanInteropCapabilities::NO_INTEROP) {
             break;
         }
@@ -438,6 +458,71 @@ void AppSettings::initializeVulkanInteropSupport(
         }
     }
 }
+
+void AppSettings::enableVulkanOffscreenOpenGLContextInteropSupport() {
+    shallEnableVulkanOffscreenOpenGLContextInteropSupport = true;
+}
+
+std::vector<const char*> AppSettings::getVulkanOpenGLInteropDeviceExtensions() {
+    std::vector<const char*> externalMemoryDeviceExtensionNames;
+#ifdef _WIN32
+    externalMemoryDeviceExtensionNames = {
+                VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME, VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME,
+                VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME, VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME
+        };
+#else
+    externalMemoryDeviceExtensionNames = {
+            VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME, VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME,
+            VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME, VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME
+    };
+#endif
+    return externalMemoryDeviceExtensionNames;
+}
+
+bool AppSettings::checkVulkanOpenGLInteropDeviceExtensionsSupported(sgl::vk::Device* device) {
+    std::vector<const char*> externalMemoryDeviceExtensionNames = getVulkanOpenGLInteropDeviceExtensions();
+    for (const char* deviceExtension : externalMemoryDeviceExtensionNames) {
+        if (!device->isDeviceExtensionSupported(deviceExtension)) {
+            // "Please update your GPU drivers if you are using the old version of the INTEL iGPU i965 Linux drivers."
+            sgl::Logfile::get()->writeWarning(
+                    std::string() + "Warning in AppSettings::checkVulkanOpenGLInteropDeviceExtensionsSupported: "
+                    "The Vulkan device extension " + deviceExtension + " is not supported on this system. "
+                    "Disabling OpenGL interop support. Please try updating your GPU drivers.", false);
+            return false;
+        }
+    }
+    return true;
+}
+
+std::vector<const char*> AppSettings::getOpenGLVulkanInteropExtensions() {
+    std::vector<const char*> openglExtensionNames = {
+            "GL_EXT_memory_object", "GL_EXT_semaphore"
+    };
+#ifdef _WIN32
+    // Use Win32 memory objects.
+    openglExtensionNames.push_back("GL_EXT_memory_object_win32");
+    openglExtensionNames.push_back("GL_EXT_semaphore_win32");
+#else
+    // Use POSIX file descriptors for external handles.
+    openglExtensionNames.push_back("GL_EXT_memory_object_fd");
+    openglExtensionNames.push_back("GL_EXT_semaphore_fd");
+#endif
+    return openglExtensionNames;
+}
+
+bool AppSettings::checkOpenGLVulkanInteropExtensionsSupported() {
+    std::vector<const char*> openglExtensionNames = getOpenGLVulkanInteropExtensions();
+    for (const char* extensionName : openglExtensionNames) {
+        if (!sgl::SystemGL::get()->isGLExtensionAvailable(extensionName)) {
+            sgl::Logfile::get()->writeInfo(
+                    std::string() + "Warning in AppSettings::checkOpenGLVulkanInteropExtensionsSupported: "
+                    "The OpenGL extension " + extensionName + " is not supported on this system. "
+                    "Disabling OpenGL interop support.");
+            return false;
+        }
+    }
+    return true;
+}
 #endif
 
 void AppSettings::setDataDirectory(const std::string& dataDirectory) {
@@ -459,6 +544,22 @@ void AppSettings::setRenderSystem(RenderSystem renderSystem) {
 void AppSettings::setOffscreenContext(sgl::OffscreenContext* _offscreenContext) {
     offscreenContext = _offscreenContext;
 }
+
+void AppSettings::initializeOffscreenContextFunctionPointers() {
+    if (offscreenContextFunctionPointersInitialized) {
+        return;
+    }
+    glewExperimental = GL_TRUE;
+    GLenum glewError = glewInit();
+    if (glewError == GLEW_ERROR_NO_GLX_DISPLAY) {
+        Logfile::get()->writeWarning("Warning: GLEW is not built with EGL support.");
+    } else if (glewError != GLEW_OK) {
+        Logfile::get()->writeError(
+                std::string() + "Error in AppSettings::initializeOffscreenContextFunctionPointers: glewInit: "
+                + (char*)glewGetErrorString(glewError));
+    }
+    offscreenContextFunctionPointersInitialized = true;
+}
 #endif
 
 void AppSettings::initializeSubsystems() {
@@ -474,16 +575,7 @@ void AppSettings::initializeSubsystems() {
 #ifdef SUPPORT_OPENGL
     if (offscreenContext) {
         // Initialize GLEW (usually done by the window).
-        glewExperimental = GL_TRUE;
-        GLenum glewError = glewInit();
-        if (glewError == GLEW_ERROR_NO_GLX_DISPLAY) {
-            Logfile::get()->writeWarning(
-                    "Warning in AppSettings::initializeSubsystems: GLEW is not built with EGL support.");
-        } else if (glewError != GLEW_OK) {
-            Logfile::get()->writeError(
-                    std::string() + "Error in AppSettings::initializeSubsystems: glewInit: "
-                    + (char*)glewGetErrorString(glewError));
-        }
+        initializeOffscreenContextFunctionPointers();
     }
     if (renderSystem == RenderSystem::OPENGL || offscreenContext) {
         TextureManager = new TextureManagerGL;

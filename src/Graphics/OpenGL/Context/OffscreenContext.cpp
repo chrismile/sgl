@@ -26,6 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <Utils/AppSettings.hpp>
+
 #ifndef _WIN32
 #include "OffscreenContextEGL.hpp"
 #endif
@@ -34,6 +36,18 @@
 namespace sgl {
 
 OffscreenContext* createOffscreenContext(sgl::vk::Device* vulkanDevice, bool verbose) {
+#ifdef SUPPORT_VULKAN
+    // Check whether the Vulkan instance and device support OpenGL interop.
+    if (vulkanDevice) {
+        if (!sgl::AppSettings::get()->getInstanceSupportsVulkanOpenGLInterop()) {
+            return nullptr;
+        }
+        if (!sgl::AppSettings::get()->checkVulkanOpenGLInteropDeviceExtensionsSupported(vulkanDevice)) {
+            return nullptr;
+        }
+    }
+#endif
+
     sgl::OffscreenContext* offscreenContext = nullptr;
 #ifndef _WIN32
     sgl::OffscreenContextEGLParams paramsEgl{};
@@ -51,6 +65,18 @@ OffscreenContext* createOffscreenContext(sgl::vk::Device* vulkanDevice, bool ver
             offscreenContext = nullptr;
         }
 #ifndef _WIN32
+    }
+#endif
+
+#ifdef SUPPORT_VULKAN
+    // Check whether the OpenGL context supports Vulkan interop.
+    if (offscreenContext && vulkanDevice) {
+        offscreenContext->makeCurrent();
+        sgl::AppSettings::get()->initializeOffscreenContextFunctionPointers();
+        if (!sgl::AppSettings::get()->checkOpenGLVulkanInteropExtensionsSupported()) {
+            delete offscreenContext;
+            offscreenContext = nullptr;
+        }
     }
 #endif
 

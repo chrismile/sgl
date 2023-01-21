@@ -284,8 +284,8 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
          * The array "instanceExtensionNames" holds the name of all extensions that get requested. First, user-specified
          * extensions are added. Then, extensions required by SDL are added using "SDL_Vulkan_GetInstanceExtensions".
          */
-        std::vector<const char*> instanceExtensionNames = {
-        };
+        std::vector<const char*> instanceExtensionNames =
+                sgl::AppSettings::get()->getRequiredVulkanInstanceExtensions();
         uint32_t extensionCount;
         SDL_Vulkan_GetInstanceExtensions(sdlWindow, &extensionCount, nullptr);
         size_t additionalExtensionCount = instanceExtensionNames.size();
