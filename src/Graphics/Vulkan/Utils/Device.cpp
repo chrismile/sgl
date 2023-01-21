@@ -1014,6 +1014,72 @@ VkDeviceSize Device::getVmaDeviceMemoryAllocationSize(VkDeviceMemory deviceMemor
     return it->second;
 }
 
+bool Device::getNeedsDedicatedAllocationForExternalMemoryImage(
+        VkFormat format, VkImageType type, VkImageTiling tiling, VkImageUsageFlags usage, VkImageCreateFlags flags,
+        VkExternalMemoryHandleTypeFlagBits handleType) {
+    ExternalMemoryImageConfigTuple configTuple = { format, type, tiling, usage, flags, handleType };
+    auto it = needsDedicatedAllocationForExternalMemoryImageMap.find(configTuple);
+    if (it != needsDedicatedAllocationForExternalMemoryImageMap.end()) {
+        return it->second;
+    }
+
+    // Passing VkMemoryDedicatedAllocateInfo is necessary, e.g., with the AMD Windows driver.
+    // Part (1): Query the external image format properties.
+    VkPhysicalDeviceExternalImageFormatInfo externalImageFormatInfo{};
+    externalImageFormatInfo.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO;
+    externalImageFormatInfo.handleType = handleType;
+    VkPhysicalDeviceImageFormatInfo2 imageFormatInfo{};
+    imageFormatInfo.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2;
+    imageFormatInfo.format = format;
+    imageFormatInfo.type = type;
+    imageFormatInfo.tiling = tiling;
+    imageFormatInfo.usage = usage;
+    imageFormatInfo.pNext = &externalImageFormatInfo;
+    VkExternalImageFormatProperties externalImageFormatProperties{};
+    externalImageFormatProperties.sType = VK_STRUCTURE_TYPE_EXTERNAL_IMAGE_FORMAT_PROPERTIES;
+    VkImageFormatProperties2 imageFormatProperties{};
+    imageFormatProperties.sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_PROPERTIES_2;
+    imageFormatProperties.pNext = &externalImageFormatProperties;
+    vkGetPhysicalDeviceImageFormatProperties2(physicalDevice, &imageFormatInfo, &imageFormatProperties);
+
+    // Part (2): Detect if a dedicated allocation is necessary.
+    bool needsDedicatedAllocation =
+            (externalImageFormatProperties.externalMemoryProperties.externalMemoryFeatures
+             & VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT) != 0;
+    needsDedicatedAllocationForExternalMemoryImageMap.insert(std::make_pair(configTuple, needsDedicatedAllocation));
+
+    return needsDedicatedAllocation;
+}
+
+bool Device::getNeedsDedicatedAllocationForExternalMemoryBuffer(
+        VkBufferUsageFlags usage, VkBufferCreateFlags flags, VkExternalMemoryHandleTypeFlagBits handleType) {
+    ExternalMemoryBufferConfigTuple configTuple = { usage, flags, handleType };
+    auto it = needsDedicatedAllocationForExternalMemoryBufferMap.find(configTuple);
+    if (it != needsDedicatedAllocationForExternalMemoryBufferMap.end()) {
+        return it->second;
+    }
+
+    // Passing VkMemoryDedicatedAllocateInfo is necessary, e.g., with the AMD Windows driver.
+    // Part (1): Query the external buffer properties.
+    VkPhysicalDeviceExternalBufferInfo externalBufferInfo{};
+    externalBufferInfo.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO;
+    externalBufferInfo.usage = usage;
+    externalBufferInfo.flags = flags;
+    externalBufferInfo.handleType = handleType;
+    VkExternalBufferProperties externalBufferProperties{};
+    externalBufferProperties.sType = VK_STRUCTURE_TYPE_EXTERNAL_BUFFER_PROPERTIES;
+    vkGetPhysicalDeviceExternalBufferProperties(
+            physicalDevice, &externalBufferInfo, &externalBufferProperties);
+
+    // Part (2): Detect if a dedicated allocation is necessary.
+    bool needsDedicatedAllocation =
+            (externalBufferProperties.externalMemoryProperties.externalMemoryFeatures
+             & VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT) != 0;
+    needsDedicatedAllocationForExternalMemoryBufferMap.insert(std::make_pair(configTuple, needsDedicatedAllocation));
+
+    return needsDedicatedAllocation;
+}
+
 void Device::createVulkanMemoryAllocator() {
     uint32_t vulkanApiVersion = std::min(instance->getInstanceVulkanVersion(), getApiVersion());
 

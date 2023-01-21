@@ -63,8 +63,9 @@ Buffer::Buffer(
     VmaAllocationCreateInfo allocCreateInfo{};
     allocCreateInfo.usage = memoryUsage;
 
-    if (exportMemory && !useDedicatedAllocationForExportedMemory) {
-        VkExternalMemoryHandleTypeFlags handleTypes = 0;
+    VkExternalMemoryHandleTypeFlags handleTypes = 0;
+    bool needsDedicatedAllocation = false;
+    if (exportMemory) {
 #if defined(_WIN32)
         handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
 #elif defined(__linux__)
@@ -73,11 +74,22 @@ Buffer::Buffer(
         Logfile::get()->throwError(
                 "Error in Buffer::Buffer: External memory is only supported on Linux, Android and Windows systems!");
 #endif
-
         externalMemoryBufferCreateInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO;
         externalMemoryBufferCreateInfo.handleTypes = handleTypes;
         bufferCreateInfo.pNext = &externalMemoryBufferCreateInfo;
 
+        needsDedicatedAllocation = device->getNeedsDedicatedAllocationForExternalMemoryBuffer(
+                usage, 0, VkExternalMemoryHandleTypeFlagBits(handleTypes));
+        if (needsDedicatedAllocation && !useDedicatedAllocationForExportedMemory) {
+            sgl::Logfile::get()->writeWarning(
+                    "Warning in Buffer::Buffer: External memory allocation without a dedicated allocation was "
+                    "requested on a system only supporting external memory with dedicated allocations. Switching to "
+                    "dedicated allocation.");
+            useDedicatedAllocationForExportedMemory = true;
+        }
+    }
+
+    if (exportMemory && !useDedicatedAllocationForExportedMemory) {
         uint32_t memoryTypeIndex = 0;
         VkResult res = vmaFindMemoryTypeIndexForBufferInfo(
                 device->getAllocator(), &bufferCreateInfo, &allocCreateInfo, &memoryTypeIndex);
@@ -109,20 +121,6 @@ Buffer::Buffer(
     }
 
     if (exportMemory && useDedicatedAllocationForExportedMemory) {
-        VkExternalMemoryHandleTypeFlags handleTypes = 0;
-#if defined(_WIN32)
-        handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
-#elif defined(__linux__)
-        handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
-#else
-        Logfile::get()->throwError(
-                "Error in Buffer::Buffer: External memory is only supported on Linux, Android and Windows systems!");
-#endif
-
-        externalMemoryBufferCreateInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO;
-        externalMemoryBufferCreateInfo.handleTypes = handleTypes;
-        bufferCreateInfo.pNext = &externalMemoryBufferCreateInfo;
-
         // If the memory should be exported for external use, we need to allocate the memory manually.
         if (vkCreateBuffer(device->getVkDevice(), &bufferCreateInfo, nullptr, &buffer) != VK_SUCCESS) {
             Logfile::get()->throwError("Error in Buffer::Buffer: Failed to create a buffer!");
@@ -135,6 +133,14 @@ Buffer::Buffer(
         VkExportMemoryAllocateInfo exportMemoryAllocateInfo{};
         exportMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;
         exportMemoryAllocateInfo.handleTypes = handleTypes;
+
+        // Pass the dedicated allocate info to the pNext chain if necessary.
+        VkMemoryDedicatedAllocateInfo memoryDedicatedAllocateInfo{};
+        if (needsDedicatedAllocation) {
+            memoryDedicatedAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO;
+            memoryDedicatedAllocateInfo.buffer = buffer;
+            exportMemoryAllocateInfo.pNext = &memoryDedicatedAllocateInfo;
+        }
 
         VkMemoryPropertyFlags memoryPropertyFlags = convertVmaMemoryUsageToVkMemoryPropertyFlags(memoryUsage);
 

@@ -356,8 +356,10 @@ Image::Image(Device* device, const ImageSettings& imageSettings) : device(device
     VmaAllocationInfo textureImageAllocationInfo{};
     VkExternalMemoryImageCreateInfo externalMemoryImageCreateInfo = {};
 
-    if (imageSettings.exportMemory && !imageSettings.useDedicatedAllocationForExportedMemory) {
-        VkExternalMemoryHandleTypeFlags handleTypes = 0;
+    VkExternalMemoryHandleTypeFlags handleTypes = 0;
+    bool needsDedicatedAllocation = false;
+    bool useDedicatedAllocationForExportedMemory = imageSettings.useDedicatedAllocationForExportedMemory;
+    if (imageSettings.exportMemory) {
 #if defined(_WIN32)
         handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
 #elif defined(__linux__)
@@ -366,11 +368,23 @@ Image::Image(Device* device, const ImageSettings& imageSettings) : device(device
         Logfile::get()->throwError(
                 "Error in Image::Image: External memory is only supported on Linux, Android and Windows systems!");
 #endif
-
         externalMemoryImageCreateInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;
         externalMemoryImageCreateInfo.handleTypes = handleTypes;
         imageCreateInfo.pNext = &externalMemoryImageCreateInfo;
 
+        needsDedicatedAllocation = device->getNeedsDedicatedAllocationForExternalMemoryImage(
+                imageSettings.format, imageSettings.imageType, imageSettings.tiling, imageSettings.usage, 0,
+                VkExternalMemoryHandleTypeFlagBits(handleTypes));
+        if (needsDedicatedAllocation && !useDedicatedAllocationForExportedMemory) {
+            sgl::Logfile::get()->writeWarning(
+                    "Warning in Image::Image: External memory allocation without a dedicated allocation was "
+                    "requested on a system only supporting external memory with dedicated allocations. Switching to "
+                    "dedicated allocation.");
+            useDedicatedAllocationForExportedMemory = true;
+        }
+    }
+
+    if (imageSettings.exportMemory && !useDedicatedAllocationForExportedMemory) {
         uint32_t memoryTypeIndex = 0;
         VkResult res = vmaFindMemoryTypeIndexForImageInfo(
                 device->getAllocator(), &imageCreateInfo, &allocCreateInfo, &memoryTypeIndex);
@@ -384,7 +398,7 @@ Image::Image(Device* device, const ImageSettings& imageSettings) : device(device
         allocCreateInfo.pool = pool;
     }
 
-    if (!imageSettings.exportMemory || !imageSettings.useDedicatedAllocationForExportedMemory) {
+    if (!imageSettings.exportMemory || !useDedicatedAllocationForExportedMemory) {
         if (vmaCreateImage(
                 device->getAllocator(), &imageCreateInfo, &allocCreateInfo, &image,
                 &imageAllocation, &textureImageAllocationInfo) != VK_SUCCESS) {
@@ -401,22 +415,7 @@ Image::Image(Device* device, const ImageSettings& imageSettings) : device(device
         }
     }
 
-    if (imageSettings.exportMemory && imageSettings.useDedicatedAllocationForExportedMemory) {
-        VkExternalMemoryHandleTypeFlags handleTypes = 0;
-#if defined(_WIN32)
-        handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
-#elif defined(__linux__)
-        handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
-#else
-        Logfile::get()->throwError(
-                "Error in Image::Image: External memory is only supported on Linux, Android and Windows systems!");
-#endif
-
-        VkExternalMemoryImageCreateInfo externalMemoryImageCreateInfo = {};
-        externalMemoryImageCreateInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;
-        externalMemoryImageCreateInfo.handleTypes = handleTypes;
-        imageCreateInfo.pNext = &externalMemoryImageCreateInfo;
-
+    if (imageSettings.exportMemory && useDedicatedAllocationForExportedMemory) {
         // If the memory should be exported for external use, we need to allocate the memory manually.
         if (vkCreateImage(device->getVkDevice(), &imageCreateInfo, nullptr, &image) != VK_SUCCESS) {
             Logfile::get()->throwError("Error in Image::Image: Failed to create an image!");
@@ -426,9 +425,17 @@ Image::Image(Device* device, const ImageSettings& imageSettings) : device(device
         vkGetImageMemoryRequirements(device->getVkDevice(), image, &memoryRequirements);
         deviceMemorySize = memoryRequirements.size;
 
-        VkExportMemoryAllocateInfo exportMemoryAllocateInfo = {};
+        VkExportMemoryAllocateInfo exportMemoryAllocateInfo{};
         exportMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;
         exportMemoryAllocateInfo.handleTypes = handleTypes;
+
+        // Pass the dedicated allocate info to the pNext chain if necessary.
+        VkMemoryDedicatedAllocateInfo memoryDedicatedAllocateInfo{};
+        if (needsDedicatedAllocation) {
+            memoryDedicatedAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO;
+            memoryDedicatedAllocateInfo.image = image;
+            exportMemoryAllocateInfo.pNext = &memoryDedicatedAllocateInfo;
+        }
 
         VkMemoryPropertyFlags memoryPropertyFlags = convertVmaMemoryUsageToVkMemoryPropertyFlags(
                 imageSettings.memoryUsage);

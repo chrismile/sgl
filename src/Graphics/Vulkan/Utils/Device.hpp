@@ -30,10 +30,12 @@
 #define SGL_DEVICE_HPP
 
 #include <string>
+#include <tuple>
 #include <vector>
 #include <set>
-#include <functional>
+#include <map>
 #include <unordered_map>
+#include <functional>
 #include <thread>
 //#include <boost/container_hash/hash_fwd.hpp>
 
@@ -335,6 +337,13 @@ public:
     // Queries device memory size of device memory allocated by VMA.
     VkDeviceSize getVmaDeviceMemoryAllocationSize(VkDeviceMemory deviceMemory);
 
+    // Query information about external memory support of the device driver.
+    bool getNeedsDedicatedAllocationForExternalMemoryImage(
+            VkFormat format, VkImageType type, VkImageTiling tiling, VkImageUsageFlags usage, VkImageCreateFlags flags,
+            VkExternalMemoryHandleTypeFlagBits handleType);
+    bool getNeedsDedicatedAllocationForExternalMemoryBuffer(
+            VkBufferUsageFlags usage, VkBufferCreateFlags flags, VkExternalMemoryHandleTypeFlagBits handleType);
+
     // Create a transient command buffer ready to execute commands (0xFFFFFFFF encodes graphics queue).
     VkCommandBuffer beginSingleTimeCommands(uint32_t queueIndex = 0xFFFFFFFF, bool beginCommandBuffer = true);
     void endSingleTimeCommands(
@@ -419,6 +428,14 @@ private:
     std::unordered_map<MemoryPoolType, VmaPool> externalMemoryHandlePools;
     VkExportMemoryAllocateInfo exportMemoryAllocateInfo{}; ///< Must remain in scope for use in VMA.
     std::unordered_map<VkDeviceMemory, VkDeviceSize> deviceMemoryToSizeMap;
+
+    // Information on external memory properties.
+    typedef std::tuple<VkFormat, VkImageType, VkImageTiling, VkImageUsageFlags, VkImageCreateFlags,
+            VkExternalMemoryHandleTypeFlagBits> ExternalMemoryImageConfigTuple;
+    std::map<ExternalMemoryImageConfigTuple, bool> needsDedicatedAllocationForExternalMemoryImageMap;
+    typedef std::tuple<VkBufferUsageFlags, VkBufferCreateFlags,
+            VkExternalMemoryHandleTypeFlagBits> ExternalMemoryBufferConfigTuple;
+    std::map<ExternalMemoryBufferConfigTuple, bool> needsDedicatedAllocationForExternalMemoryBufferMap;
 
     // Device properties.
     VkPhysicalDeviceProperties physicalDeviceProperties{};
