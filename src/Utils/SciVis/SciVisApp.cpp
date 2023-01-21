@@ -414,8 +414,11 @@ void SciVisApp::preRender() {
 #ifdef SUPPORT_VULKAN
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN && reRender) {
         rendererVk->transitionImageLayout(sceneTextureVk->getImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        sceneTextureVk->getImageView()->clearColor(
-                clearColor.getFloatColorRGBA(), rendererVk->getVkCommandBuffer());
+        auto clearColorBg = clearColor.getFloatColorRGBA();
+        if (useDockSpaceMode) {
+            clearColorBg = sgl::ImGuiWrapper::get()->getBackgroundClearColor();
+        }
+        sceneTextureVk->getImageView()->clearColor(clearColorBg, rendererVk->getVkCommandBuffer());
         rendererVk->transitionImageLayout(
                 sceneTextureVk->getImage(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
         rendererVk->transitionImageLayout(
@@ -436,8 +439,12 @@ void SciVisApp::prepareReRender() {
 #ifdef SUPPORT_OPENGL
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
         sgl::Renderer->bindFBO(sceneFramebuffer);
+        auto clearColorBg = clearColor;
+        if (useDockSpaceMode) {
+            clearColorBg = sgl::colorFromVec4(sgl::ImGuiWrapper::get()->getBackgroundClearColor());
+        }
         sgl::Renderer->clearFramebuffer(
-                GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT, clearColor);
+                GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT, clearColorBg);
 
         sgl::Renderer->setProjectionMatrix(camera->getProjectionMatrix());
         sgl::Renderer->setViewMatrix(camera->getViewMatrix());

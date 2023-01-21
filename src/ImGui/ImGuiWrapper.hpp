@@ -30,7 +30,10 @@
 #define SGL_IMGUIWRAPPER_HPP
 
 #include <vector>
+#include <glm/vec4.hpp>
+
 #include <Utils/Singleton.hpp>
+
 #include "imgui.h"
 
 #ifdef SUPPORT_VULKAN
@@ -125,6 +128,14 @@ public:
         windowSizes.at(currentWindowIdx) = windowSize;
     }
 
+    //
+    /**
+     * In dockspace mode, the background may not be covered completely due to fractional scaling.
+     * In this case, we do not want to use the clear color of the dock windows, but a color matching the ImGui style.
+     * @return The best background clear color for dockspace mode.
+     */
+    [[nodiscard]] inline const glm::vec4& getBackgroundClearColor() const { return backgroundClearColor; }
+
     void renderDemoWindow();
     void showHelpMarker(const char* desc);
 
@@ -152,6 +163,7 @@ private:
     std::vector<ImGuiViewport*> windowViewports;
     std::vector<ImVec2> windowPositions;
     std::vector<ImVec2> windowSizes;
+    glm::vec4 backgroundClearColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
 #ifdef SUPPORT_VULKAN
     bool initialized = false;

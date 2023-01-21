@@ -146,6 +146,11 @@ void ImGuiWrapper::initialize(
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
 
+    auto windowBgColor = style.Colors[ImGuiCol_WindowBg];
+    //float backgroundLuminance = (0.2126f * windowBgColor.x + 0.7152f * windowBgColor.y + 0.0722f * windowBgColor.z);
+    //useDarkBackground = backgroundLuminance <= 0.5f;
+    backgroundClearColor = glm::vec4(windowBgColor.x, windowBgColor.y, windowBgColor.z, 1.0f);
+
     // Load fonts with specified range.
     ImVector<ImWchar> fontRanges;
     ImFontGlyphRangesBuilder builder;
