@@ -76,6 +76,10 @@ protected:
     sgl::vk::Renderer* rendererVk = nullptr;
 #endif
 
+    // For debuggers.
+    virtual void beginFrameMarker() {}
+    virtual void endFrameMarker() {}
+
 private:
     bool running;
     uint64_t fpsCounterUpdateFrequency;

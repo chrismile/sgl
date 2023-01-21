@@ -409,12 +409,29 @@ void NanoVGWidget::renderStart() {
     if (nanoVgBackend == NanoVGBackend::OPENGL) {
 #ifdef SUPPORT_VULKAN
         if (renderSystem == RenderSystem::VULKAN) {
+            GLenum srcLayout = GL_LAYOUT_COLOR_ATTACHMENT_EXT;
+            if (shallClearBeforeRender) {
+                rendererVk->insertImageMemoryBarrier(
+                        renderTargetImageViewVk,
+                        VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                        VK_ACCESS_NONE_KHR, VK_ACCESS_TRANSFER_WRITE_BIT);
+                srcLayout = GL_LAYOUT_TRANSFER_DST_EXT;
+            } else {
+                if (renderTargetImageViewVk->getImage()->getVkImageLayout() == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+                    srcLayout = GL_LAYOUT_COLOR_ATTACHMENT_EXT;
+                } else if (renderTargetImageViewVk->getImage()->getVkImageLayout() == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+                    srcLayout = GL_LAYOUT_SHADER_READ_ONLY_EXT;
+                } else if (renderTargetImageViewVk->getImage()->getVkImageLayout() == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+                    srcLayout = GL_LAYOUT_TRANSFER_DST_EXT;
+                }
+            }
+
             sgl::vk::CommandBufferPtr commandBufferPre = rendererVk->getCommandBuffer();
             commandBufferPre->pushSignalSemaphore(interopSyncVkGl->getRenderReadySemaphore());
             rendererVk->endCommandBuffer();
             rendererVk->submitToQueue();
-            interopSyncVkGl->getRenderReadySemaphore()->waitSemaphoreGl(
-                    renderTargetGl, GL_LAYOUT_COLOR_ATTACHMENT_EXT);
+            interopSyncVkGl->getRenderReadySemaphore()->waitSemaphoreGl(renderTargetGl, srcLayout);
         }
 #endif
         glDisable(GL_DEPTH_TEST);
@@ -493,14 +510,26 @@ void NanoVGWidget::renderEnd() {
 #if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
     if (nanoVgBackend == NanoVGBackend::OPENGL && renderSystem == RenderSystem::VULKAN) {
         vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
-        interopSyncVkGl->getRenderFinishedSemaphore()->signalSemaphoreGl(
-                renderTargetGl, GL_LAYOUT_SHADER_READ_ONLY_EXT);
+        GLenum dstLayout = GL_LAYOUT_COLOR_ATTACHMENT_EXT;
+        if (renderTargetImageViewVk->getImage()->getVkImageLayout() == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+            dstLayout = GL_LAYOUT_COLOR_ATTACHMENT_EXT;
+        } else if (renderTargetImageViewVk->getImage()->getVkImageLayout() == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+            dstLayout = GL_LAYOUT_SHADER_READ_ONLY_EXT;
+        } else if (renderTargetImageViewVk->getImage()->getVkImageLayout() == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+            dstLayout = GL_LAYOUT_TRANSFER_DST_EXT;
+        }
+        interopSyncVkGl->getRenderFinishedSemaphore()->signalSemaphoreGl(renderTargetGl, dstLayout);
         sgl::vk::CommandBufferPtr commandBufferPost =
                 commandBuffersPost.at(swapchain ? swapchain->getCurrentFrame() : 0);
         commandBufferPost->pushWaitSemaphore(
                 interopSyncVkGl->getRenderFinishedSemaphore(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
         rendererVk->pushCommandBuffer(commandBufferPost);
         rendererVk->beginCommandBuffer();
+        rendererVk->insertImageMemoryBarrier(
+                renderTargetImageViewVk,
+                renderTargetImageViewVk->getImage()->getVkImageLayout(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                VK_ACCESS_NONE_KHR, VK_ACCESS_SHADER_READ_BIT);
         interopSyncVkGl->frameFinished();
     }
 #endif

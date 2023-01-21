@@ -132,6 +132,8 @@ void AppLogic::run() {
             break;
         }
 
+        beginFrameMarker();
+
         if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
             window->clear(Color(0, 0, 0));
         }
@@ -183,6 +185,8 @@ void AppLogic::run() {
             Timer->waitForFPSLimit();
             window->flip();
         }
+
+        endFrameMarker();
 
 #ifdef TRACY_ENABLE
         FrameMark;
