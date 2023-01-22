@@ -509,6 +509,7 @@ void NanoVGWidget::renderEnd() {
 
 #if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
     if (nanoVgBackend == NanoVGBackend::OPENGL && renderSystem == RenderSystem::VULKAN) {
+        sgl::vk::Device* device = sgl::AppSettings::get()->getPrimaryDevice();
         vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
         GLenum dstLayout = GL_LAYOUT_COLOR_ATTACHMENT_EXT;
         if (renderTargetImageViewVk->getImage()->getVkImageLayout() == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
@@ -519,6 +520,10 @@ void NanoVGWidget::renderEnd() {
             dstLayout = GL_LAYOUT_TRANSFER_DST_EXT;
         }
         interopSyncVkGl->getRenderFinishedSemaphore()->signalSemaphoreGl(renderTargetGl, dstLayout);
+        // 2023-01-22: With the Intel driver contained in Mesa 22.0.5, the synchronization didn't work as expected.
+        if (device->getDeviceDriverId() == VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA) {
+            glFinish();
+        }
         sgl::vk::CommandBufferPtr commandBufferPost =
                 commandBuffersPost.at(swapchain ? swapchain->getCurrentFrame() : 0);
         commandBufferPost->pushWaitSemaphore(

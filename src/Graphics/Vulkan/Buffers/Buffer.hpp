@@ -275,6 +275,7 @@ private:
     VkDeviceMemory deviceMemory = VK_NULL_HANDLE;
     VkDeviceSize deviceMemoryOffset = 0;
     VkDeviceSize deviceMemorySize = 0;
+    bool isDedicatedAllocation = false;
 
     VkBufferUsageFlags bufferUsageFlags = 0;
     VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;

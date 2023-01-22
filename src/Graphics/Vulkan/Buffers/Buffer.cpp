@@ -80,6 +80,7 @@ Buffer::Buffer(
 
         needsDedicatedAllocation = device->getNeedsDedicatedAllocationForExternalMemoryBuffer(
                 usage, 0, VkExternalMemoryHandleTypeFlagBits(handleTypes));
+        isDedicatedAllocation = needsDedicatedAllocation;
         if (needsDedicatedAllocation && !useDedicatedAllocationForExportedMemory) {
             sgl::Logfile::get()->writeWarning(
                     "Warning in Buffer::Buffer: External memory allocation without a dedicated allocation was "
@@ -556,7 +557,7 @@ bool Buffer::createGlMemoryObject(GLuint& memoryObjectGl, InteropMemoryHandle& i
     }
     return createGlMemoryObjectFromVkDeviceMemory(
             memoryObjectGl, interopMemoryHandle,
-            device->getVkDevice(), deviceMemory, sizeInBytes);
+            device->getVkDevice(), deviceMemory, sizeInBytes, isDedicatedAllocation);
 }
 #endif
 

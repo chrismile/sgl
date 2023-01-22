@@ -46,9 +46,19 @@
 
 #include "Interop.hpp"
 
+#ifndef GL_NV_timeline_semaphore
+#define GL_SEMAPHORE_TYPE_NV 0x95B3
+#define GL_SEMAPHORE_TYPE_BINARY_NV 0x95B4
+#define GL_SEMAPHORE_TYPE_TIMELINE_NV 0x95B5
+#define GL_TIMELINE_SEMAPHORE_VALUE_NV 0x9595
+#define GL_MAX_TIMELINE_SEMAPHORE_VALUE_DIFFERENCE_NV 0x95B6
+#endif
+
 namespace sgl {
 
-SemaphoreVkGlInterop::SemaphoreVkGlInterop(sgl::vk::Device* device, VkSemaphoreCreateFlags semaphoreCreateFlags) {
+SemaphoreVkGlInterop::SemaphoreVkGlInterop(
+        sgl::vk::Device* device, VkSemaphoreCreateFlags semaphoreCreateFlags,
+        VkSemaphoreType semaphoreType, uint64_t timelineSemaphoreInitialValue) {
     VkExportSemaphoreCreateInfo exportSemaphoreCreateInfo = {};
     exportSemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO;
 #if defined(_WIN32)
@@ -61,8 +71,8 @@ SemaphoreVkGlInterop::SemaphoreVkGlInterop(sgl::vk::Device* device, VkSemaphoreC
                 "Linux, Android and Windows systems!");
 #endif
     _initialize(
-            device, semaphoreCreateFlags, VK_SEMAPHORE_TYPE_BINARY, 0,
-            &exportSemaphoreCreateInfo);
+            device, semaphoreCreateFlags, semaphoreType,
+            timelineSemaphoreInitialValue, &exportSemaphoreCreateInfo);
 
     /*
      * https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_external_objects_fd.txt
@@ -75,6 +85,20 @@ SemaphoreVkGlInterop::SemaphoreVkGlInterop(sgl::vk::Device* device, VkSemaphoreC
      */
 
     glGenSemaphoresEXT(1, &semaphoreGl);
+
+#ifdef GL_NV_timeline_semaphore
+    if (semaphoreType == VK_SEMAPHORE_TYPE_TIMELINE) {
+        GLenum semaphoreTypeGl = GL_SEMAPHORE_TYPE_TIMELINE_NV;
+        glSemaphoreParameterivNV(semaphoreGl, GL_SEMAPHORE_TYPE_NV, (GLint*)&semaphoreTypeGl);
+    }
+#else
+    if (semaphoreType == VK_SEMAPHORE_TYPE_TIMELINE) {
+        sgl::Logfile::get()->throwError(
+                "Error in SemaphoreVkGlInterop::SemaphoreVkGlInterop: Function pointer for "
+                "glSemaphoreParameterivNV is not loaded.");
+    }
+#endif
+
 #if defined(_WIN32)
     auto _vkGetSemaphoreWin32HandleKHR = (PFN_vkGetSemaphoreWin32HandleKHR)vkGetDeviceProcAddr(
                 device->getVkDevice(), "vkGetSemaphoreWin32HandleKHR");
@@ -129,6 +153,10 @@ SemaphoreVkGlInterop::SemaphoreVkGlInterop(sgl::vk::Device* device, VkSemaphoreC
 
 SemaphoreVkGlInterop::~SemaphoreVkGlInterop() {
     glDeleteSemaphoresEXT(1, &semaphoreGl);
+}
+
+void SemaphoreVkGlInterop::setTimelineValueGl(uint64_t value) {
+    glSemaphoreParameterui64vEXT(semaphoreGl, GL_TIMELINE_SEMAPHORE_VALUE_NV, &value);
 }
 
 /*
@@ -365,7 +393,7 @@ bool isDeviceCompatibleWithOpenGl(VkPhysicalDevice physicalDevice) {
 
 bool createGlMemoryObjectFromVkDeviceMemory(
         GLuint& memoryObjectGl, InteropMemoryHandle& interopMemoryHandle,
-        VkDevice device, VkDeviceMemory deviceMemory, size_t sizeInBytes) {
+        VkDevice device, VkDeviceMemory deviceMemory, size_t sizeInBytes, bool isDedicatedAllocation) {
     /*
      * https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_external_objects_fd.txt
      * - ImportMemoryFdEXT: "A successful import operation transfers ownership of <fd> to the GL implementation, and
@@ -400,7 +428,7 @@ bool createGlMemoryObjectFromVkDeviceMemory(
     glImportMemoryWin32HandleEXT(memoryObjectGl, sizeInBytes, GL_HANDLE_TYPE_OPAQUE_WIN32_EXT, handle);
     interopMemoryHandle.handle = handle;
 #elif defined(__linux__)
-    auto _vkGetMemoryFdKHR = (PFN_vkGetMemoryFdKHR)vkGetDeviceProcAddr(device, "vkGetMemoryFdKHR");
+    auto _vkGetMemoryFdKHR = (PFN_vkGetMemoryFdKHR) vkGetDeviceProcAddr(device, "vkGetMemoryFdKHR");
     if (!_vkGetMemoryFdKHR) {
         Logfile::get()->throwError(
                 "Error in Buffer::createGlMemoryObject: vkGetMemoryFdKHR was not found!");
@@ -421,6 +449,12 @@ bool createGlMemoryObjectFromVkDeviceMemory(
     }
 
     glCreateMemoryObjectsEXT(1, &memoryObjectGl);
+
+    if (isDedicatedAllocation) {
+        GLint isDedicatedInt = GL_TRUE;
+        glMemoryObjectParameterivEXT(memoryObjectGl, GL_DEDICATED_MEMORY_OBJECT_EXT, &isDedicatedInt);
+    }
+
     glImportMemoryFdEXT(memoryObjectGl, sizeInBytes, GL_HANDLE_TYPE_OPAQUE_FD_EXT, fileDescriptor);
     fileDescriptor = -1;
     interopMemoryHandle.fileDescriptor = fileDescriptor;

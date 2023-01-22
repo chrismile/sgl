@@ -337,6 +337,7 @@ private:
     VkDeviceMemory deviceMemory = VK_NULL_HANDLE;
     VkDeviceSize deviceMemorySize = 0;
     VkDeviceSize deviceMemoryOffset = 0;
+    bool isDedicatedAllocation = false;
 
 #ifdef _WIN32
     HANDLE handle = nullptr;

@@ -55,7 +55,17 @@ typedef std::shared_ptr<Texture> TexturePtr;
 
 class DLL_OBJECT SemaphoreVkGlInterop : public vk::Semaphore {
 public:
-    explicit SemaphoreVkGlInterop(sgl::vk::Device* device, VkSemaphoreCreateFlags semaphoreCreateFlags = 0);
+    /**
+     * Creates a semaphore object shared between Vulkan and OpenGL.
+     * @param device The device associated with the semaphore.
+     * @param semaphoreCreateFlags The semaphore creation flags.
+     * @param semaphoreType VK_SEMAPHORE_TYPE_BINARY or VK_SEMAPHORE_TYPE_TIMELINE. Timeline semaphores are only
+     * supported by the extension GL_NV_timeline_semaphore, which may not be available on most systems.
+     * @param timelineSemaphoreInitialValue If semaphoreType is set to VK_SEMAPHORE_TYPE_TIMELINE
+     */
+    explicit SemaphoreVkGlInterop(
+            sgl::vk::Device* device, VkSemaphoreCreateFlags semaphoreCreateFlags = 0,
+            VkSemaphoreType semaphoreType = VK_SEMAPHORE_TYPE_BINARY, uint64_t timelineSemaphoreInitialValue = 0);
     ~SemaphoreVkGlInterop() override;
 
     /*
@@ -71,6 +81,9 @@ public:
      *  GL_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_EXT | VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL_KHR
      *  GL_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_EXT | VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL_KHR
      */
+
+    /// Set the timeline semaphore value (can only be used if GL_NV_timeline_semaphore is supported).
+    void setTimelineValueGl(uint64_t value);
 
     /// Signal semaphore without any barriers.
     void signalSemaphoreGl();
@@ -176,7 +189,7 @@ union InteropMemoryHandle {
  */
 DLL_OBJECT bool createGlMemoryObjectFromVkDeviceMemory(
         GLuint& memoryObjectGl, InteropMemoryHandle& interopMemoryHandle,
-        VkDevice device, VkDeviceMemory deviceMemory, size_t sizeInBytes);
+        VkDevice device, VkDeviceMemory deviceMemory, size_t sizeInBytes, bool isDedicatedAllocation);
 
 }
 

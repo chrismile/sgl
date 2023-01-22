@@ -375,6 +375,7 @@ Image::Image(Device* device, const ImageSettings& imageSettings) : device(device
         needsDedicatedAllocation = device->getNeedsDedicatedAllocationForExternalMemoryImage(
                 imageSettings.format, imageSettings.imageType, imageSettings.tiling, imageSettings.usage, 0,
                 VkExternalMemoryHandleTypeFlagBits(handleTypes));
+        isDedicatedAllocation = needsDedicatedAllocation;
         if (needsDedicatedAllocation && !useDedicatedAllocationForExportedMemory) {
             sgl::Logfile::get()->writeWarning(
                     "Warning in Image::Image: External memory allocation without a dedicated allocation was "
@@ -1253,7 +1254,7 @@ bool Image::createGlMemoryObject(GLuint& memoryObjectGl, InteropMemoryHandle& in
     }
     return createGlMemoryObjectFromVkDeviceMemory(
             memoryObjectGl, interopMemoryHandle,
-            device->getVkDevice(), deviceMemory, deviceMemorySize);
+            device->getVkDevice(), deviceMemory, deviceMemorySize, isDedicatedAllocation);
 }
 #endif
 
