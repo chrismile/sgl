@@ -97,6 +97,7 @@
 
 struct GLFWmonitor;
 typedef struct GLFWmonitor GLFWmonitor;
+typedef void (*GLFWglproc)(void);
 typedef int (*PFNGLFWINITPROC)();
 typedef void (*PFNGLFWTERMINATEPROC)();
 typedef const char* (*PFNGLFWGETVERSIONSTRINGPROC)();
@@ -104,6 +105,7 @@ typedef void (*PFNGLFWWINDOWHINTPROC)(int hint, int value);
 typedef GLFWwindow* (*PFNGLFWCREATEWINDOWPROC)(int width, int height, const char* title, GLFWmonitor* monitor, GLFWwindow* share);
 typedef void (*PFNGLFWDESTROYWINDOWPROC)(GLFWwindow* window);
 typedef void (*PFNGLFWMAKECONTEXTCURRENTPROC)(GLFWwindow* window);
+typedef GLFWglproc (*PFNGLFWGETPROCADDRESSPROC)(const char* procname);
 
 namespace sgl {
 
@@ -117,6 +119,7 @@ struct OffscreenContextGlfwFunctionTable {
     PFNGLFWCREATEWINDOWPROC glfwCreateWindow;
     PFNGLFWDESTROYWINDOWPROC glfwDestroyWindow;
     PFNGLFWMAKECONTEXTCURRENTPROC glfwMakeContextCurrent;
+    PFNGLFWGETPROCADDRESSPROC glfwGetProcAddress;
 };
 
 #ifndef TOSTRING
@@ -148,6 +151,7 @@ bool OffscreenContextGlfw::loadFunctionTable() {
     f->glfwCreateWindow = PFNGLFWCREATEWINDOWPROC(dlsym(glfwHandle, TOSTRING(glfwCreateWindow)));
     f->glfwDestroyWindow = PFNGLFWDESTROYWINDOWPROC(dlsym(glfwHandle, TOSTRING(glfwDestroyWindow)));
     f->glfwMakeContextCurrent = PFNGLFWMAKECONTEXTCURRENTPROC(dlsym(glfwHandle, TOSTRING(glfwMakeContextCurrent)));
+    f->glfwGetProcAddress = PFNGLFWGETPROCADDRESSPROC(dlsym(glfwHandle, TOSTRING(glfwGetProcAddress)));
 
     if (!f->glfwInit
             || !f->glfwTerminate
@@ -155,7 +159,8 @@ bool OffscreenContextGlfw::loadFunctionTable() {
             || !f->glfwWindowHint
             || !f->glfwCreateWindow
             || !f->glfwDestroyWindow
-            || !f->glfwMakeContextCurrent) {
+            || !f->glfwMakeContextCurrent
+            || !f->glfwGetProcAddress) {
         sgl::Logfile::get()->writeError(
                 "Error in OffscreenContextGlfw::loadFunctionTable: "
                 "At least one function pointer could not be loaded.", false);
@@ -171,6 +176,7 @@ bool OffscreenContextGlfw::loadFunctionTable() {
     f->glfwCreateWindow = &glfwCreateWindow;
     f->glfwDestroyWindow = &glfwDestroyWindow;
     f->glfwMakeContextCurrent = &glfwMakeContextCurrent;
+    f->glfwGetProcAddress = &glfwGetProcAddress;
 
 #endif
 
@@ -239,6 +245,13 @@ void OffscreenContextGlfw::makeCurrent() {
         sgl::Logfile::get()->throwError("Error in OffscreenContextGlfw::makeCurrent: Context is not initialized.");
     }
     f->glfwMakeContextCurrent(glfwWindow);
+}
+
+void* OffscreenContextGlfw::getFunctionPointer(const char* functionName) {
+    if (!isInitialized) {
+        sgl::Logfile::get()->throwError("Error in OffscreenContextGlfw::makeCurrent: Context is not initialized.");
+    }
+    return (void*)f->glfwGetProcAddress(functionName);
 }
 
 }

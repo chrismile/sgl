@@ -93,6 +93,10 @@ public:
     /// Sets the window icon.
     void setWindowIconFromFile(const std::string& imageFilename) override;
 
+#ifdef SUPPORT_OPENGL
+    void* getOpenGLFunctionPointer(const char* functionName) override;
+#endif
+
     /// Getting SDL specific data
     inline SDL_Window *getSDLWindow() { return sdlWindow; }
 #ifdef SUPPORT_OPENGL

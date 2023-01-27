@@ -37,6 +37,7 @@ public:
     virtual bool initialize()=0;
     virtual ~OffscreenContext() = default;
     virtual void makeCurrent()=0;
+    virtual void* getFunctionPointer(const char* functionName)=0;
     [[nodiscard]] virtual bool getIsInitialized() const=0;
 };
 

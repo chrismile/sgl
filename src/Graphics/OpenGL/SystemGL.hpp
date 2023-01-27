@@ -66,6 +66,9 @@ public:
     void setPremulAlphaEnabled(bool enabled);
     [[nodiscard]] bool isPremulAphaEnabled() const { return premulAlphaEnabled; }
 
+    /// Load OpenGL function pointers from the current context.
+    void* getFunctionPointer(const char* functionName);
+
 private:
     std::unordered_set<std::string> extensions;
     std::string versionString;

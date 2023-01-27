@@ -399,4 +399,12 @@ void OffscreenContextEGL::makeCurrent() {
     }
 }
 
+void* OffscreenContextEGL::getFunctionPointer(const char* functionName) {
+    if (!isInitialized) {
+        sgl::Logfile::get()->throwError(
+                "Error in OffscreenContextEGL::getFunctionPointer: Context is not initialized.");
+    }
+    return (void*)f->eglGetProcAddress(functionName);
+}
+
 }

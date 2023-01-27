@@ -46,12 +46,15 @@
 
 #include "Interop.hpp"
 
+// https://registry.khronos.org/OpenGL/extensions/NV/NV_timeline_semaphore.txt
 #ifndef GL_NV_timeline_semaphore
 #define GL_SEMAPHORE_TYPE_NV 0x95B3
 #define GL_SEMAPHORE_TYPE_BINARY_NV 0x95B4
 #define GL_SEMAPHORE_TYPE_TIMELINE_NV 0x95B5
 #define GL_TIMELINE_SEMAPHORE_VALUE_NV 0x9595
 #define GL_MAX_TIMELINE_SEMAPHORE_VALUE_DIFFERENCE_NV 0x95B6
+typedef void (GLAPIENTRY * PFNGLCREATESEMAPHORESNVPROC) (GLsizei n, GLuint* semaphores);
+typedef void (GLAPIENTRY * PFNGLSEMAPHOREPARAMETERIVNVPROC) (GLuint semaphore, GLenum pname, const GLint* params);
 #endif
 
 namespace sgl {
@@ -84,20 +87,34 @@ SemaphoreVkGlInterop::SemaphoreVkGlInterop(
      * appropriate system call when it is no longer needed."
      */
 
-    glGenSemaphoresEXT(1, &semaphoreGl);
+    if (semaphoreType == VK_SEMAPHORE_TYPE_BINARY) {
+        glGenSemaphoresEXT(1, &semaphoreGl);
+    } else if (semaphoreType == VK_SEMAPHORE_TYPE_TIMELINE) {
+#ifndef GL_NV_timeline_semaphore
+        auto glCreateSemaphoresNV =
+                (PFNGLCREATESEMAPHORESNVPROC)sgl::SystemGL::get()->getFunctionPointer("glCreateSemaphoresNV");
+        if (!glCreateSemaphoresNV) {
+            sgl::Logfile::get()->throwError(
+                    "Error in SemaphoreVkGlInterop::SemaphoreVkGlInterop: Function pointer for "
+                    "glCreateSemaphoresNV could not be loaded.");
+        }
+#endif
+        glCreateSemaphoresNV(1, &semaphoreGl);
+    }
 
-#ifdef GL_NV_timeline_semaphore
     if (semaphoreType == VK_SEMAPHORE_TYPE_TIMELINE) {
+#ifndef GL_NV_timeline_semaphore
+        auto glSemaphoreParameterivNV =
+                (PFNGLSEMAPHOREPARAMETERIVNVPROC)sgl::SystemGL::get()->getFunctionPointer("glSemaphoreParameterivNV");
+        if (!glSemaphoreParameterivNV) {
+            sgl::Logfile::get()->throwError(
+                    "Error in SemaphoreVkGlInterop::SemaphoreVkGlInterop: Function pointer for "
+                    "glSemaphoreParameterivNV could not be loaded.");
+        }
+#endif
         GLenum semaphoreTypeGl = GL_SEMAPHORE_TYPE_TIMELINE_NV;
         glSemaphoreParameterivNV(semaphoreGl, GL_SEMAPHORE_TYPE_NV, (GLint*)&semaphoreTypeGl);
     }
-#else
-    if (semaphoreType == VK_SEMAPHORE_TYPE_TIMELINE) {
-        sgl::Logfile::get()->throwError(
-                "Error in SemaphoreVkGlInterop::SemaphoreVkGlInterop: Function pointer for "
-                "glSemaphoreParameterivNV is not loaded.");
-    }
-#endif
 
 #if defined(_WIN32)
     auto _vkGetSemaphoreWin32HandleKHR = (PFN_vkGetSemaphoreWin32HandleKHR)vkGetDeviceProcAddr(

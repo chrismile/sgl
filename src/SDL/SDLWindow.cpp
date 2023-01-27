@@ -663,4 +663,10 @@ void SDLWindow::setWindowIconFromFile(const std::string& imageFilename) {
     SDL_FreeSurface(surface);
 }
 
+#ifdef SUPPORT_OPENGL
+void* SDLWindow::getOpenGLFunctionPointer(const char* functionName) {
+    return SDL_GL_GetProcAddress(functionName);
+}
+#endif
+
 }

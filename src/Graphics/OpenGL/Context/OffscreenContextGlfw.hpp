@@ -62,6 +62,7 @@ public:
     bool initialize() override;
     ~OffscreenContextGlfw() override;
     void makeCurrent() override;
+    void* getFunctionPointer(const char* functionName) override;
     [[nodiscard]] bool getIsInitialized() const override { return isInitialized; }
 
 private:

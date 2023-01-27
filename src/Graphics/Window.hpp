@@ -154,6 +154,10 @@ public:
     virtual glm::ivec2 getWindowResolution()=0;
     virtual void setWindowSize(int width, int height)=0;
 
+#ifdef SUPPORT_OPENGL
+    virtual void* getOpenGLFunctionPointer(const char* functionName)=0;
+#endif
+
 #ifdef SUPPORT_VULKAN
     virtual VkSurfaceKHR getVkSurface()=0;
 #endif

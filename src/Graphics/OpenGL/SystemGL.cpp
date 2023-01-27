@@ -31,7 +31,10 @@
 #include <Utils/File/Logfile.hpp>
 #include <Utils/Convert.hpp>
 #include <Utils/AppSettings.hpp>
+#include <Graphics/Window.hpp>
 #include <Graphics/Texture/TextureManager.hpp>
+#include <Graphics/Texture/TextureManager.hpp>
+#include <Graphics/OpenGL/Context/OffscreenContext.hpp>
 #include <list>
 
 namespace sgl {
@@ -108,6 +111,20 @@ bool SystemGL::openglVersionMinimum(int major, int minor /* = 0 */) {
 
 void SystemGL::setPremulAlphaEnabled(bool enabled) {
     premulAlphaEnabled = enabled;
+}
+
+void* SystemGL::getFunctionPointer(const char* functionName) {
+    if (AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
+        return AppSettings::get()->getMainWindow()->getOpenGLFunctionPointer(functionName);
+    } else {
+        auto* offscreenContext = AppSettings::get()->getOffscreenContext();
+        if (offscreenContext) {
+            return offscreenContext->getFunctionPointer(functionName);
+        } else {
+            sgl::Logfile::get()->writeError("Error in SystemGL::getFunctionPointer: No context created by sgl found.");
+            return nullptr;
+        }
+    }
 }
 
 }
