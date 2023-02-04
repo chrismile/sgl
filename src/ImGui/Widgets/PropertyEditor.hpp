@@ -99,6 +99,9 @@ public:
     ImGui::EditMode addSliderInt3Edit(
             const std::string& name, int* value, int minVal, int maxVal,
             const char* format = "%d", ImGuiSliderFlags flags = 0);
+    ImGui::EditMode addSliderIntPowerOfTwoEdit(
+            const std::string& name, int* value, int minVal, int maxVal,
+            const char* format = "%d", ImGuiSliderFlags flags = 0);
 
     bool addDragInt(
             const std::string& name, int* value, float speed = 1.0f, int minVal = 0, int maxVal = 0,

@@ -344,4 +344,8 @@ std::string Instance::convertVulkanVersionToString(uint32_t version) {
     return versionString;
 }
 
+PFN_vkGetInstanceProcAddr Instance::getVkInstanceProcAddrFunctionPointer() {
+    return vkGetInstanceProcAddr;
+}
+
 }}

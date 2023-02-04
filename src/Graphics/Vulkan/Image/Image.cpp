@@ -1123,6 +1123,10 @@ void Image::insertMemoryBarrierSubresource(
     this->imageLayout = newLayout;
 }
 
+void Image::overwriteImageLayout(VkImageLayout newLayout) {
+    imageLayout = newLayout;
+}
+
 void Image::_generateMipmaps(VkCommandBuffer commandBuffer) {
     // Does the device support linear filtering for blit operations?
     if (imageSettings.format != cachedFormat) {

@@ -58,6 +58,10 @@ public:
 
     /// Returns whether the passed instance extensions are available.
     bool getInstanceExtensionsAvailable(const std::vector<const char*>& instanceExtensionNames);
+    /// Returns whether the passed instance extensions are available.
+    [[nodiscard]] const std::vector<const char*>& getEnabledInstanceExtensionNames() const {
+        return enabledInstanceExtensionNames;
+    }
 
     // Access to internal data.
     inline VkInstance getVkInstance() { return instance; }
@@ -75,6 +79,9 @@ public:
 
     static std::string convertVulkanVersionToString(uint32_t version);
 
+    // Access to function pointers from volk.
+    static PFN_vkGetInstanceProcAddr getVkInstanceProcAddrFunctionPointer();
+
 private:
     // Helper functions.
     bool checkRequestedLayersAvailable(const std::vector<const char*> &requestedLayers) const;
@@ -91,6 +98,7 @@ private:
     bool enableDebugPrintf = false;
     MessageSeverity messageSeverityLevel = MESSAGE_SEVERITY_WARNING;
     std::set<std::string> availableInstanceExtensionNames;
+    std::vector<const char*> enabledInstanceExtensionNames;
     std::vector<const char*> instanceLayerNames;
     std::function<void()> debugCallback;
 };

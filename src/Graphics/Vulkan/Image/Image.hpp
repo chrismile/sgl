@@ -271,14 +271,16 @@ public:
 
     /// Transitions the image layout from the old layout to the new layout.
     [[nodiscard]] inline VkImageLayout getVkImageLayout() const { return imageLayout; }
+    /// Overwrites the image layout if it was changed outside of sgl.
+    void overwriteImageLayout(VkImageLayout newLayout);
 
     /// For access from the framebuffer after a subpass has finished.
     inline void _updateLayout(VkImageLayout newLayout) { imageLayout = newLayout; }
 
     [[nodiscard]] inline Device* getDevice() { return device; }
     [[nodiscard]] inline VkDeviceMemory getVkDeviceMemory() { return deviceMemory; }
-    [[nodiscard]] inline VkDeviceSize getDeviceMemoryOffset() { return deviceMemoryOffset; }
-    [[nodiscard]] inline VkDeviceSize getDeviceMemorySize() { return deviceMemorySize; }
+    [[nodiscard]] inline VkDeviceSize getDeviceMemoryOffset() const { return deviceMemoryOffset; }
+    [[nodiscard]] inline VkDeviceSize getDeviceMemorySize() const { return deviceMemorySize; }
 
     void* mapMemory();
     void unmapMemory();

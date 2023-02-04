@@ -264,6 +264,18 @@ ImGui::EditMode PropertyEditor::addSliderInt3Edit(
     return ImGui::SliderInt3Edit(internalId.c_str(), value, minVal, maxVal, format, flags);
 }
 
+ImGui::EditMode PropertyEditor::addSliderIntPowerOfTwoEdit(
+        const std::string& name, int* value, int minVal, int maxVal,
+        const char* format, ImGuiSliderFlags flags) {
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+    ImGui::TreeNodeEx(name.c_str(), treeNodeFlagsLeaf);
+    ImGui::TableNextColumn();
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    std::string internalId = "##" + name;
+    return ImGui::SliderIntPowerOfTwoEdit(internalId.c_str(), value, minVal, maxVal, format, flags);
+}
+
 
 bool PropertyEditor::addDragInt(
         const std::string& name, int* value, float speed, int minVal, int maxVal,

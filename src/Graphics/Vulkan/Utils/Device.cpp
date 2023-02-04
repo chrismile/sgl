@@ -1342,10 +1342,10 @@ void Device::createDeviceSwapchain(
 #endif
 
     VkSurfaceKHR surface = window->getVkSurface();
-    std::vector<const char*> deviceExtensions;
+    enabledDeviceExtensionNames = {};
     physicalDevice = createPhysicalDeviceBinding(
             surface, requiredDeviceExtensions, optionalDeviceExtensions,
-            deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures, computeOnly);
+            deviceExtensionsSet, enabledDeviceExtensionNames, requestedDeviceFeatures, computeOnly);
     if (!physicalDevice) {
         return;
     }
@@ -1355,10 +1355,10 @@ void Device::createDeviceSwapchain(
 
     createLogicalDeviceAndQueues(
             physicalDevice, instance->getUseValidationLayer(),
-            instance->getInstanceLayerNames(), deviceExtensions,
+            instance->getInstanceLayerNames(), enabledDeviceExtensionNames,
             deviceExtensionsSet, requestedDeviceFeatures, computeOnly);
 
-    writeDeviceInfoToLog(deviceExtensions);
+    writeDeviceInfoToLog(enabledDeviceExtensionNames);
 
     createVulkanMemoryAllocator();
 }
@@ -1375,10 +1375,10 @@ void Device::createDeviceHeadless(
     optionalDeviceExtensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 #endif
 
-    std::vector<const char*> deviceExtensions;
+    enabledDeviceExtensionNames = {};
     physicalDevice = createPhysicalDeviceBinding(
             nullptr, requiredDeviceExtensions, optionalDeviceExtensions,
-            deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures, computeOnly);
+            deviceExtensionsSet, enabledDeviceExtensionNames, requestedDeviceFeatures, computeOnly);
     if (!physicalDevice) {
         return;
     }
@@ -1388,10 +1388,10 @@ void Device::createDeviceHeadless(
 
     createLogicalDeviceAndQueues(
             physicalDevice, instance->getUseValidationLayer(),
-            instance->getInstanceLayerNames(), deviceExtensions,
+            instance->getInstanceLayerNames(), enabledDeviceExtensionNames,
             deviceExtensionsSet, requestedDeviceFeatures, computeOnly);
 
-    writeDeviceInfoToLog(deviceExtensions);
+    writeDeviceInfoToLog(enabledDeviceExtensionNames);
 
     createVulkanMemoryAllocator();
 }
@@ -1728,6 +1728,14 @@ void Device::endSingleTimeMultipleCommands(
     commandPoolType.queueFamilyIndex = queueIndex;
     VkCommandPool commandPool = commandPools.find(commandPoolType)->second;
     vkFreeCommandBuffers(device, commandPool, uint32_t(commandBuffers.size()), commandBuffers.data());
+}
+
+PFN_vkGetDeviceProcAddr Device::getVkDeviceProcAddrFunctionPointer() {
+    return vkGetDeviceProcAddr;
+}
+
+void Device::loadVolkDeviceFunctionTable(VolkDeviceTable* table) {
+    volkLoadDeviceTable(table, device);
 }
 
 }}

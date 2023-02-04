@@ -215,6 +215,9 @@ public:
 
     /// Returns whether the device extension is supported.
     bool isDeviceExtensionSupported(const std::string& name);
+    [[nodiscard]] const std::vector<const char*>& getEnabledDeviceExtensionNames() const {
+        return enabledDeviceExtensionNames;
+    }
 
     inline VkPhysicalDevice getVkPhysicalDevice() { return physicalDevice; }
     inline VkDevice getVkDevice() { return device; }
@@ -375,6 +378,10 @@ public:
     void vmaAllocateDeviceMemoryCallback(uint32_t memoryType, VkDeviceMemory memory, VkDeviceSize size);
     void vmaFreeDeviceMemoryCallback(uint32_t memoryType, VkDeviceMemory memory, VkDeviceSize size);
 
+    // Access to function pointers from volk.
+    static PFN_vkGetDeviceProcAddr getVkDeviceProcAddrFunctionPointer();
+    void loadVolkDeviceFunctionTable(VolkDeviceTable* table);
+
 private:
     void initializeDeviceExtensionList(VkPhysicalDevice physicalDevice);
     void printAvailableDeviceExtensionList();
@@ -418,6 +425,7 @@ private:
 
     // Enabled device extensions.
     std::set<std::string> deviceExtensionsSet;
+    std::vector<const char*> enabledDeviceExtensionNames;
 
     // Theoretically available (but not necessarily enabled) device extensions.
     std::set<std::string> availableDeviceExtensionNames;
