@@ -114,6 +114,7 @@ void NanoVGWidget::setSettings(NanoVGSettings nanoVgSettings) {
     numMsaaSamples = nanoVgSettings.numMsaaSamples;
     supersamplingFactor = nanoVgSettings.supersamplingFactor;
     shallClearBeforeRender = nanoVgSettings.shallClearBeforeRender;
+    clearColor = nanoVgSettings.clearColor;
 
     nanoVgBackend = nanoVgSettings.nanoVgBackend;
 
@@ -184,7 +185,11 @@ void NanoVGWidget::_initialize() {
     }
     initialized = true;
 
-    scaleFactor = sgl::ImGuiWrapper::get()->getScaleFactor();
+    if (customScaleFactor <= 0.0f) {
+        scaleFactor = sgl::ImGuiWrapper::get()->getScaleFactor();
+    } else {
+        scaleFactor = customScaleFactor;
+    }
 
 #if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN)
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
@@ -439,7 +444,7 @@ void NanoVGWidget::renderStart() {
         sgl::Renderer->bindFBO(framebufferGl);
         glViewport(0, 0, fboWidthInternal, fboHeightInternal);
         if (shallClearBeforeRender) {
-            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+            glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
             glClearDepth(0.0f);
             glClearStencil(0);
             glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -460,7 +465,7 @@ void NanoVGWidget::renderStart() {
         if (shallClearBeforeRender) {
             renderTargetImageViewVk->transitionImageLayout(
                     VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, rendererVk->getVkCommandBuffer());
-            renderTargetImageViewVk->clearColor(glm::vec4(0.0f), rendererVk->getVkCommandBuffer());
+            renderTargetImageViewVk->clearColor(clearColor, rendererVk->getVkCommandBuffer());
         }
         renderTargetImageViewVk->transitionImageLayout(
                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, rendererVk->getVkCommandBuffer());
@@ -471,7 +476,7 @@ void NanoVGWidget::renderStart() {
         vgVk->createInfo.renderpass = framebufferVk->getVkRenderPass();
 
         VkClearValue clearValues[2];
-        clearValues[0].color = { { 0.0f, 0.0f, 0.0f, 0.0f } };
+        clearValues[0].color = { { clearColor.r, clearColor.g, clearColor.b, clearColor.a } };
         clearValues[1].depthStencil = { 1.0f, 0 };
 
         VkRenderPassBeginInfo renderPassBeginInfo{};
@@ -620,7 +625,9 @@ void NanoVGWidget::_createBlitRenderPass() {
     blitPassVk->setBlendMode(vk::BlendMode::BACK_TO_FRONT_PREMUL_ALPHA);
     blitPassVk->setOutputImageInitialLayout(blitInitialLayoutVk);
     blitPassVk->setOutputImageFinalLayout(blitFinalLayoutVk);
-    blitPassVk->setAttachmentLoadOp(VK_ATTACHMENT_LOAD_OP_LOAD);
+    blitPassVk->setAttachmentLoadOp(
+            blitInitialLayoutVk == VK_IMAGE_LAYOUT_UNDEFINED
+            ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD);
     //blitPassVk->setDepthWriteEnabled(false);
     //blitPassVk->setDepthTestEnabled(false);
     //blitPassVk->setDepthCompareOp(VK_COMPARE_OP_ALWAYS);

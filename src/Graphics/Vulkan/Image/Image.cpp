@@ -1461,7 +1461,7 @@ ImageSampler::ImageSampler(Device* device, const ImageSamplerSettings& samplerSe
     samplerInfo.mipmapMode = samplerSettings.mipmapMode;
     samplerInfo.mipLodBias = samplerSettings.mipLodBias;
     samplerInfo.minLod = samplerSettings.minLod;
-    if (maxLodOverwrite < 0.0f) {
+    if (maxLodOverwrite > 0.0f) {
         samplerInfo.maxLod = maxLodOverwrite;
     } else {
         samplerInfo.maxLod = samplerSettings.maxLod;

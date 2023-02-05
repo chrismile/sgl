@@ -32,6 +32,8 @@
 #include <vector>
 #include <memory>
 
+#include <glm/vec4.hpp>
+
 #ifdef SUPPORT_OPENGL
 namespace sgl {
 class Texture;
@@ -90,6 +92,7 @@ struct DLL_OBJECT NanoVGSettings {
     NanoVGBackend nanoVgBackend;
     bool useDebugging;
     bool shallClearBeforeRender = true;
+    glm::vec4 clearColor = glm::vec4(0.0f);
     bool useMsaa = false;
     bool useStencilStrokes = false;
     int numMsaaSamples = 8;
@@ -132,6 +135,8 @@ protected:
 
     NVGcontext* vg = nullptr;
     float windowWidth = 1.0f, windowHeight = 1.0f;
+    float windowOffsetX = 20, windowOffsetY = 20;
+    float customScaleFactor = 0.0f;
 
     [[nodiscard]] inline float getWindowOffsetX() const { return windowOffsetX; }
     [[nodiscard]] inline float getWindowOffsetY() const { return windowOffsetY; }
@@ -142,11 +147,11 @@ private:
     NanoVGBackend nanoVgBackend = NanoVGBackend::VULKAN;
     int flags = 0;
     bool shallClearBeforeRender = true;
+    glm::vec4 clearColor = glm::vec4(0.0f);
 
-    float windowOffsetX = 20, windowOffsetY = 20;
-    float scaleFactor = 1.0f;
     int fboWidthInternal = 1, fboHeightInternal = 1;
     int fboWidthDisplay = 1, fboHeightDisplay = 1;
+    float scaleFactor = 1.0f;
     bool useMsaa = false;
     int numMsaaSamples = 8;
     int supersamplingFactor = 4;

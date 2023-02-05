@@ -30,7 +30,8 @@
 #define NOMINMAX
 #endif
 
-#define VMA_IMPLEMENTATION
+#define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
+
 #include <Utils/File/Logfile.hpp>
 #include <Math/Math.hpp>
 #include <Graphics/Window.hpp>
@@ -1547,7 +1548,7 @@ VkDeviceSize Device::getMemoryHeapBudget(uint32_t memoryHeapIndex) {
 }
 
 VkDeviceSize Device::getMemoryHeapBudgetVma(uint32_t memoryHeapIndex) {
-    auto* budgets = new VmaBudget[allocator->GetMemoryHeapCount()];
+    auto* budgets = new VmaBudget[physicalDeviceMemoryProperties.memoryHeapCount];
     vmaGetHeapBudgets(allocator, budgets);
     VkDeviceSize heapBudget = budgets[memoryHeapIndex].budget;
     delete[] budgets;
