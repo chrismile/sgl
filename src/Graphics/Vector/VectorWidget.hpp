@@ -71,9 +71,14 @@ class Renderer;
 
 namespace sgl {
 
+struct DLL_OBJECT VectorWidgetSettings {
+    bool shallClearBeforeRender = true;
+    glm::vec4 clearColor = glm::vec4(0.0f);
+};
+
 class DLL_OBJECT VectorWidget {
 public:
-    VectorWidget();
+    explicit VectorWidget(const VectorWidgetSettings& vectorWidgetSettings = {});
     virtual ~VectorWidget();
     void setDefaultBackendId(const std::string& defaultId);
 
@@ -148,6 +153,7 @@ protected:
     VectorBackend* vectorBackend = nullptr;
 
 private:
+    bool initialized = false;
     bool shallClearBeforeRender = true;
     glm::vec4 clearColor = glm::vec4(0.0f);
 
@@ -161,7 +167,6 @@ private:
 #endif
 
 #ifdef SUPPORT_VULKAN
-    bool initialized = false;
     vk::Renderer* rendererVk = nullptr;
     vk::ImageViewPtr renderTargetImageViewVk;
     vk::TexturePtr renderTargetTextureVk;

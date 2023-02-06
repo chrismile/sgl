@@ -26,6 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <Math/Geometry/MatrixUtil.hpp>
 #include <Utils/AppSettings.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <ImGui/ImGuiWrapper.hpp>
@@ -70,7 +71,9 @@ private:
 };
 #endif
 
-VectorWidget::VectorWidget() {
+VectorWidget::VectorWidget(const VectorWidgetSettings& vectorWidgetSettings) {
+    shallClearBeforeRender = vectorWidgetSettings.shallClearBeforeRender;
+    clearColor = vectorWidgetSettings.clearColor;
 }
 
 VectorWidget::~VectorWidget() {
@@ -208,8 +211,11 @@ void VectorWidget::createDefaultBackend() {
         }
         vectorBackend = it->second.createBackendFunctor();
 #ifdef SUPPORT_VULKAN
-        vectorBackend->setRendererVk(rendererVk);
+        if (rendererVk) {
+            vectorBackend->setRendererVk(rendererVk);
+        }
 #endif
+        vectorBackend->setClearSettings(shallClearBeforeRender, clearColor);
         vectorBackend->initialize();
     }
 }

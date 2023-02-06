@@ -76,8 +76,6 @@ struct DLL_OBJECT NanoVGSettings {
     NanoVGSettings();
     RenderSystem renderBackend;
     bool useDebugging;
-    bool shallClearBeforeRender = true;
-    glm::vec4 clearColor = glm::vec4(0.0f);
     bool useMsaa = false;
     bool useStencilStrokes = false;
     int numMsaaSamples = 8;

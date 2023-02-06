@@ -28,13 +28,14 @@
 
 #include "nanovg/nanovg.h"
 
+#include <Utils/File/Logfile.hpp>
+
 #ifdef SUPPORT_OPENGL
 #include <GL/glew.h>
 #include <Graphics/Renderer.hpp>
 #include <Graphics/Buffers/FBO.hpp>
 #include <Graphics/Texture/Texture.hpp>
 #include <Graphics/Texture/TextureManager.hpp>
-#include <Graphics/OpenGL/RendererGL.hpp>
 #include <Graphics/OpenGL/ShaderManager.hpp>
 #include <Graphics/OpenGL/Texture.hpp>
 #define NANOVG_GL3_IMPLEMENTATION
@@ -50,16 +51,6 @@
 #include <memory>
 #define NANOVG_VULKAN_IMPLEMENTATION
 #include "nanovg/nanovg_vk.h"
-#endif
-
-#ifdef SUPPORT_OPENGL
-#include <GL/glew.h>
-#include <Graphics/Renderer.hpp>
-#include <Graphics/Buffers/FBO.hpp>
-#include <Graphics/Texture/Texture.hpp>
-#include <Graphics/Texture/TextureManager.hpp>
-#include <Graphics/OpenGL/RendererGL.hpp>
-#include <Graphics/OpenGL/Texture.hpp>
 #endif
 
 #if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
@@ -99,8 +90,6 @@ VectorBackendNanoVG::VectorBackendNanoVG(VectorWidget* vectorWidget, const NanoV
     useMsaa = nanoVgSettings.useMsaa;
     numMsaaSamples = nanoVgSettings.numMsaaSamples;
     supersamplingFactor = nanoVgSettings.supersamplingFactor;
-    shallClearBeforeRender = nanoVgSettings.shallClearBeforeRender;
-    clearColor = nanoVgSettings.clearColor;
 
     renderBackend = nanoVgSettings.renderBackend;
 
@@ -136,7 +125,7 @@ void VectorBackendNanoVG::initialize() {
     }
     initialized = true;
 
-#if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN)
+#if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
 #endif
 
@@ -319,7 +308,7 @@ void VectorBackendNanoVG::renderStart() {
         initialize();
     }
 
-#if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN)
+#ifdef SUPPORT_VULKAN
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
 #endif
 
@@ -421,7 +410,7 @@ void VectorBackendNanoVG::renderStart() {
 void VectorBackendNanoVG::renderEnd() {
     nvgEndFrame(vg);
 
-#if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN)
+#if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
 #endif
 

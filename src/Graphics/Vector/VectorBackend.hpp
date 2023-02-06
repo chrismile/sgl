@@ -98,7 +98,12 @@ public:
     inline void setRendererVk(vk::Renderer* renderer) { rendererVk = renderer; }
 #endif
 
-    void setWidgetSize(
+    inline void setClearSettings(bool _shallClearBeforeRender, const glm::vec4& _clearColor) {
+        shallClearBeforeRender = _shallClearBeforeRender;
+        clearColor = _clearColor;
+    }
+
+    inline void setWidgetSize(
             float _scaleFactor, int _supersamplingFactor, float _windowWidth, float _windowHeight,
             int _fboWidthInternal, int _fboHeightInternal, int _fboWidthDisplay, int _fboHeightDisplay) {
         scaleFactor = _scaleFactor;
