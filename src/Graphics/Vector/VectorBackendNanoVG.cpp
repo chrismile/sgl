@@ -26,13 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <Utils/AppSettings.hpp>
-#include <Utils/File/Logfile.hpp>
-#include <ImGui/ImGuiWrapper.hpp>
-#include <Graphics/Window.hpp>
-#include <Input/Mouse.hpp>
-
-#include "nanovg.h"
+#include "nanovg/nanovg.h"
 
 #ifdef SUPPORT_OPENGL
 #include <GL/glew.h>
@@ -44,7 +38,7 @@
 #include <Graphics/OpenGL/ShaderManager.hpp>
 #include <Graphics/OpenGL/Texture.hpp>
 #define NANOVG_GL3_IMPLEMENTATION
-#include "nanovg_gl.h"
+#include "nanovg/nanovg_gl.h"
 #endif
 
 #ifdef SUPPORT_VULKAN
@@ -55,47 +49,38 @@
 #include <Graphics/Vulkan/Render/Passes/BlitRenderPass.hpp>
 #include <memory>
 #define NANOVG_VULKAN_IMPLEMENTATION
-#include "nanovg_vk.h"
+#include "nanovg/nanovg_vk.h"
+#endif
+
+#ifdef SUPPORT_OPENGL
+#include <GL/glew.h>
+#include <Graphics/Renderer.hpp>
+#include <Graphics/Buffers/FBO.hpp>
+#include <Graphics/Texture/Texture.hpp>
+#include <Graphics/Texture/TextureManager.hpp>
+#include <Graphics/OpenGL/RendererGL.hpp>
+#include <Graphics/OpenGL/Texture.hpp>
 #endif
 
 #if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
 #include <Graphics/Vulkan/Utils/Interop.hpp>
-#include <utility>
 #endif
 
-#include "NanoVGWidget.hpp"
+#include "VectorWidget.hpp"
+#include "VectorBackendNanoVG.hpp"
 
 namespace sgl {
-
-#ifdef SUPPORT_VULKAN
-class BlitRenderPassNanoVG : public sgl::vk::BlitRenderPass {
-public:
-    BlitRenderPassNanoVG(
-            sgl::vk::Renderer* renderer, std::vector<std::string> customShaderIds,
-            sgl::vk::BufferPtr blitMatrixBuffer)
-            : BlitRenderPass(renderer, std::move(customShaderIds)), blitMatrixBuffer(std::move(blitMatrixBuffer)) {}
-
-protected:
-    void createRasterData(sgl::vk::Renderer* renderer, sgl::vk::GraphicsPipelinePtr& graphicsPipeline) override {
-        BlitRenderPass::createRasterData(renderer, graphicsPipeline);
-        rasterData->setStaticBuffer(blitMatrixBuffer, "BlitMatrixBuffer");
-    }
-
-private:
-    sgl::vk::BufferPtr blitMatrixBuffer;
-};
-#endif
 
 NanoVGSettings::NanoVGSettings() {
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
     if (renderSystem == RenderSystem::OPENGL) {
-        nanoVgBackend = NanoVGBackend::OPENGL;
+        renderBackend = RenderSystem::OPENGL;
     } else if (renderSystem == RenderSystem::VULKAN) {
-        nanoVgBackend = NanoVGBackend::VULKAN;
+        renderBackend = RenderSystem::VULKAN;
     } else {
         sgl::Logfile::get()->throwError(
                 "Error in NanoVGSettings::NanoVGSettings: Encountered unsupported render system.");
-        nanoVgBackend = NanoVGBackend::VULKAN;
+        renderBackend = RenderSystem::VULKAN;
     }
 
 #ifndef NDEBUG
@@ -105,28 +90,29 @@ NanoVGSettings::NanoVGSettings() {
 #endif
 }
 
-NanoVGWidget::NanoVGWidget(NanoVGSettings nanoVgSettings) {
-    setSettings(nanoVgSettings);
+bool VectorBackendNanoVG::checkIsSupported() {
+    return true;
 }
 
-void NanoVGWidget::setSettings(NanoVGSettings nanoVgSettings) {
+VectorBackendNanoVG::VectorBackendNanoVG(VectorWidget* vectorWidget, const NanoVGSettings& nanoVgSettings)
+        : VectorBackend(vectorWidget) {
     useMsaa = nanoVgSettings.useMsaa;
     numMsaaSamples = nanoVgSettings.numMsaaSamples;
     supersamplingFactor = nanoVgSettings.supersamplingFactor;
     shallClearBeforeRender = nanoVgSettings.shallClearBeforeRender;
     clearColor = nanoVgSettings.clearColor;
 
-    nanoVgBackend = nanoVgSettings.nanoVgBackend;
+    renderBackend = nanoVgSettings.renderBackend;
 
 #ifndef SUPPORT_OPENGL
-    if (nanoVgBackend == NanoVGBackend::OPENGL) {
+    if (renderBackend == RenderSystem::OPENGL) {
         sgl::Logfile::get()->throwError(
                 "Error in NanoVGWrapper::NanoVGWrapper: OpenGL backend selected, but OpenGL is not supported.");
     }
 #endif
 
 #ifndef SUPPORT_VULKAN
-    if (nanoVgBackend == NanoVGBackend::VULKAN) {
+    if (renderBackend == RenderSystem::VULKAN) {
         sgl::Logfile::get()->throwError(
                 "Error in NanoVGWrapper::NanoVGWrapper: Vulkan backend selected, but Vulkan is not supported.");
     }
@@ -144,76 +130,25 @@ void NanoVGWidget::setSettings(NanoVGSettings nanoVgSettings) {
     }
 }
 
-NanoVGWidget::~NanoVGWidget() {
-#ifdef SUPPORT_OPENGL
-    if (nanoVgBackend == NanoVGBackend::OPENGL) {
-        if (vg) {
-            nvgDeleteGL3(vg);
-            vg = nullptr;
-        }
-    }
-#endif
-
-#ifdef SUPPORT_VULKAN
-    if (nanoVgBackend == NanoVGBackend::VULKAN) {
-        vk::Device* device = AppSettings::get()->getPrimaryDevice();
-        if (!nanovgCommandBuffers.empty()) {
-            vkFreeCommandBuffers(
-                    device->getVkDevice(), commandPool,
-                    uint32_t(nanovgCommandBuffers.size()), nanovgCommandBuffers.data());
-            nanovgCommandBuffers.clear();
-        }
-        for (auto* vgEntry : vgArray) {
-            nvgDeleteVk(vgEntry);
-        }
-        vgArray.clear();
-    }
-#endif
-}
-
-void NanoVGWidget::_initializeFont(NVGcontext* vgCurrent) {
-    std::string fontFilename = sgl::AppSettings::get()->getDataDirectory() + "Fonts/DroidSans.ttf";
-    int font = nvgCreateFont(vgCurrent, "sans", fontFilename.c_str());
-    if (font == -1) {
-        sgl::Logfile::get()->throwError("Error in NanoVGWrapper::_initializeFont: Couldn't find the font file.");
-    }
-}
-
-void NanoVGWidget::_initialize() {
+void VectorBackendNanoVG::initialize() {
     if (initialized) {
         return;
     }
     initialized = true;
-
-    if (customScaleFactor <= 0.0f) {
-        scaleFactor = sgl::ImGuiWrapper::get()->getScaleFactor();
-    } else {
-        scaleFactor = customScaleFactor;
-    }
 
 #if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN)
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
 #endif
 
 #ifdef SUPPORT_OPENGL
-    if (nanoVgBackend == NanoVGBackend::OPENGL) {
+    if (renderBackend == RenderSystem::OPENGL) {
         vg = nvgCreateGL3(flags);
         _initializeFont(vg);
-    }
-    if (renderSystem == RenderSystem::OPENGL) {
-        blitShader = sgl::ShaderManager->getShaderProgram(
-                { "BlitPremulAlpha.Vertex", "BlitPremulAlpha.FragmentBlit" });
-        blitMsaaShader = sgl::ShaderManager->getShaderProgram(
-                { "BlitPremulAlpha.Vertex", "BlitPremulAlpha.FragmentBlitMS" });
-        blitDownscaleShader = sgl::ShaderManager->getShaderProgram(
-                { "BlitPremulAlpha.Vertex", "BlitPremulAlpha.FragmentBlitDownscale" });
-        blitDownscaleMsaaShader = sgl::ShaderManager->getShaderProgram(
-                { "BlitPremulAlpha.Vertex", "BlitPremulAlpha.FragmentBlitDownscaleMS" });
     }
 #endif
 
 #ifdef SUPPORT_VULKAN
-    if (nanoVgBackend == NanoVGBackend::VULKAN) {
+    if (renderBackend == RenderSystem::VULKAN) {
         vk::Device* device = AppSettings::get()->getPrimaryDevice();
         vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
 
@@ -222,15 +157,8 @@ void NanoVGWidget::_initialize() {
         nanovgCommandBuffers = device->allocateCommandBuffers(
                 commandPoolType, &commandPool, swapchain ? uint32_t(swapchain->getMaxNumFramesInFlight()) : 1);
 
-        /*vk::CommandPoolType commandPoolType;
-        commandPoolType.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        int maxNumFramesInFlight = swapchain ? swapchain->getMaxNumFramesInFlight() : 1;
-        for (int i = 0; i < maxNumFramesInFlight; i++) {
-            nanovgCommandBuffers.push_back(std::make_shared<sgl::vk::CommandBuffer>(device, commandPoolType));
-        }*/
-
         if (!framebufferVk) {
-            onWindowSizeChanged();
+            vectorWidget->onWindowSizeChanged();
         }
 
         VkQueue graphicsQueue = device->getGraphicsQueue();
@@ -247,12 +175,12 @@ void NanoVGWidget::_initialize() {
             vgArray[i] = nvgCreateVk(vknvgCreateInfo, flags, graphicsQueue);
             _initializeFont(vgArray[i]);
         }
-
+        vg = vgArray[0];
     }
 #endif
 
 #if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
-    if (nanoVgBackend == NanoVGBackend::OPENGL && renderSystem == RenderSystem::VULKAN) {
+    if (renderBackend == RenderSystem::OPENGL && renderSystem == RenderSystem::VULKAN) {
         vk::Device* device = AppSettings::get()->getPrimaryDevice();
         vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
 
@@ -266,40 +194,63 @@ void NanoVGWidget::_initialize() {
 #endif
 
 #if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
-    if ((nanoVgBackend == NanoVGBackend::OPENGL) != (renderSystem == RenderSystem::OPENGL)) {
+    if ((renderBackend == RenderSystem::OPENGL) != (renderSystem == RenderSystem::OPENGL)) {
         vk::Device* device = AppSettings::get()->getPrimaryDevice();
         vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
         int maxNumFramesInFlight = swapchain ? swapchain->getMaxNumFramesInFlight() : 1;
         interopSyncVkGl = std::make_shared<sgl::InteropSyncVkGl>(device, maxNumFramesInFlight);
     }
 #endif
-
-#if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
-    if (renderSystem == RenderSystem::VULKAN) {
-        vk::Device* device = AppSettings::get()->getPrimaryDevice();
-        blitMatrixBuffer = std::make_shared<sgl::vk::Buffer>(
-                device, sizeof(glm::mat4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                VMA_MEMORY_USAGE_GPU_ONLY);
-    }
-#endif
 }
 
-void NanoVGWidget::onWindowSizeChanged() {
-    fboWidthDisplay = int(std::ceil(float(windowWidth) * scaleFactor));
-    fboHeightDisplay = int(std::ceil(float(windowHeight) * scaleFactor));
-    fboWidthInternal = fboWidthDisplay * supersamplingFactor;
-    fboHeightInternal = fboHeightDisplay * supersamplingFactor;
-
+void VectorBackendNanoVG::destroy() {
     if (!initialized) {
-        _initialize();
+        return;
     }
 
+#ifdef SUPPORT_OPENGL
+    if (renderBackend == RenderSystem::OPENGL) {
+        if (vg) {
+            nvgDeleteGL3(vg);
+            vg = nullptr;
+        }
+    }
+#endif
+
+#ifdef SUPPORT_VULKAN
+    if (renderBackend == RenderSystem::VULKAN) {
+        vk::Device* device = AppSettings::get()->getPrimaryDevice();
+        if (!nanovgCommandBuffers.empty()) {
+            vkFreeCommandBuffers(
+                    device->getVkDevice(), commandPool,
+                    uint32_t(nanovgCommandBuffers.size()), nanovgCommandBuffers.data());
+            nanovgCommandBuffers.clear();
+        }
+        for (auto* vgEntry : vgArray) {
+            nvgDeleteVk(vgEntry);
+        }
+        vgArray.clear();
+    }
+#endif
+
+    initialized = false;
+}
+
+void VectorBackendNanoVG::_initializeFont(NVGcontext* vgCurrent) {
+    std::string fontFilename = sgl::AppSettings::get()->getDataDirectory() + "Fonts/DroidSans.ttf";
+    int font = nvgCreateFont(vgCurrent, "sans", fontFilename.c_str());
+    if (font == -1) {
+        sgl::Logfile::get()->throwError("Error in NanoVGWrapper::_initializeFont: Couldn't find the font file.");
+    }
+}
+
+void VectorBackendNanoVG::onResize() {
 #if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN)
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
 #endif
 
 #ifdef SUPPORT_OPENGL
-    if (renderSystem == RenderSystem::OPENGL && nanoVgBackend != NanoVGBackend::VULKAN) {
+    if (renderSystem == RenderSystem::OPENGL && renderBackend != RenderSystem::VULKAN) {
         sgl::TextureSettings textureSettingsColor;
         textureSettingsColor.internalFormat = GL_RGBA8;
         if (useMsaa) {
@@ -313,7 +264,7 @@ void NanoVGWidget::onWindowSizeChanged() {
 #endif
 
 #ifdef SUPPORT_VULKAN
-    if (renderSystem == RenderSystem::VULKAN || nanoVgBackend == NanoVGBackend::VULKAN) {
+    if (renderSystem == RenderSystem::VULKAN || renderBackend == RenderSystem::VULKAN) {
         sgl::vk::Device* device = sgl::AppSettings::get()->getPrimaryDevice();
 
         sgl::vk::ImageSettings imageSettings;
@@ -326,14 +277,14 @@ void NanoVGWidget::onWindowSizeChanged() {
             imageSettings.numSamples = VkSampleCountFlagBits(numMsaaSamples);
         }
 #ifdef SUPPORT_OPENGL
-        if (nanoVgBackend == NanoVGBackend::OPENGL) {
+        if (renderBackend == RenderSystem::OPENGL) {
             imageSettings.exportMemory = true;
         }
 #endif
         sgl::vk::ImageSamplerSettings samplerSettings;
         renderTargetTextureVk = std::make_shared<sgl::vk::Texture>(device, imageSettings, samplerSettings);
 #ifdef SUPPORT_OPENGL
-        if (nanoVgBackend == NanoVGBackend::OPENGL) {
+        if (renderBackend == RenderSystem::OPENGL) {
             renderTargetGl = sgl::TexturePtr(new sgl::TextureGLExternalMemoryVk(renderTargetTextureVk));
         }
 #endif
@@ -351,7 +302,7 @@ void NanoVGWidget::onWindowSizeChanged() {
 #endif
 
 #ifdef SUPPORT_OPENGL
-    if (nanoVgBackend == NanoVGBackend::OPENGL) {
+    if (renderBackend == RenderSystem::OPENGL) {
         depthStencilRbo = sgl::Renderer->createRBO(
                 fboWidthInternal, fboHeightInternal, sgl::RBO_DEPTH24_STENCIL8,
                 useMsaa ? numMsaaSamples : 0);
@@ -361,49 +312,11 @@ void NanoVGWidget::onWindowSizeChanged() {
         framebufferGl->bindRenderbuffer(depthStencilRbo, sgl::DEPTH_STENCIL_ATTACHMENT);
     }
 #endif
-
-#ifdef SUPPORT_VULKAN
-    if (renderSystem == RenderSystem::VULKAN || nanoVgBackend == NanoVGBackend::VULKAN) {
-        if (blitTargetVk) {
-            _createBlitRenderPass();
-        }
-    }
-#endif
 }
 
-bool NanoVGWidget::isMouseOverDiagram() const {
-    glm::vec2 mousePosition(sgl::Mouse->getX(), sgl::Mouse->getY());
-    mousePosition.y = float(sgl::AppSettings::get()->getMainWindow()->getHeight()) - mousePosition.y - 1.0f;
-
-    sgl::AABB2 aabb;
-    aabb.min = glm::vec2(windowOffsetX, windowOffsetY);
-    aabb.max = glm::vec2(windowOffsetX + float(fboWidthDisplay), windowOffsetY + float(fboHeightDisplay));
-
-    return aabb.contains(mousePosition);
-}
-
-bool NanoVGWidget::isMouseOverDiagram(int parentX, int parentY, int parentWidth, int parentHeight) const {
-    glm::vec2 mousePosition(sgl::Mouse->getX(), sgl::Mouse->getY());
-    mousePosition.y = float(sgl::AppSettings::get()->getMainWindow()->getHeight()) - mousePosition.y - 1.0f;
-    mousePosition.x -= float(parentX);
-    mousePosition.y -= float(sgl::AppSettings::get()->getMainWindow()->getHeight() - parentY - 1 + parentHeight);
-
-    sgl::AABB2 aabb;
-    aabb.min = glm::vec2(windowOffsetX, windowOffsetY);
-    aabb.max = glm::vec2(windowOffsetX + float(fboWidthDisplay), windowOffsetY + float(fboHeightDisplay));
-
-    return aabb.contains(mousePosition);
-}
-
-void NanoVGWidget::render() {
-    renderStart();
-    renderBase();
-    renderEnd();
-}
-
-void NanoVGWidget::renderStart() {
+void VectorBackendNanoVG::renderStart() {
     if (!initialized) {
-        _initialize();
+        initialize();
     }
 
 #if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN)
@@ -411,7 +324,7 @@ void NanoVGWidget::renderStart() {
 #endif
 
 #ifdef SUPPORT_OPENGL
-    if (nanoVgBackend == NanoVGBackend::OPENGL) {
+    if (renderBackend == RenderSystem::OPENGL) {
 #ifdef SUPPORT_VULKAN
         if (renderSystem == RenderSystem::VULKAN) {
             GLenum srcLayout = GL_LAYOUT_COLOR_ATTACHMENT_EXT;
@@ -453,7 +366,7 @@ void NanoVGWidget::renderStart() {
 #endif
 
 #ifdef SUPPORT_VULKAN
-    if (nanoVgBackend == NanoVGBackend::VULKAN) {
+    if (renderBackend == RenderSystem::VULKAN) {
         vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
         size_t currentFrameIdx = 0;
         if (swapchain) {
@@ -505,7 +418,7 @@ void NanoVGWidget::renderStart() {
     nvgBeginFrame(vg, windowWidth, windowHeight, scaleFactor * float(supersamplingFactor));
 }
 
-void NanoVGWidget::renderEnd() {
+void VectorBackendNanoVG::renderEnd() {
     nvgEndFrame(vg);
 
 #if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN)
@@ -513,7 +426,7 @@ void NanoVGWidget::renderEnd() {
 #endif
 
 #if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
-    if (nanoVgBackend == NanoVGBackend::OPENGL && renderSystem == RenderSystem::VULKAN) {
+    if (renderBackend == RenderSystem::OPENGL && renderSystem == RenderSystem::VULKAN) {
         sgl::vk::Device* device = sgl::AppSettings::get()->getPrimaryDevice();
         vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
         GLenum dstLayout = GL_LAYOUT_COLOR_ATTACHMENT_EXT;
@@ -545,147 +458,13 @@ void NanoVGWidget::renderEnd() {
 #endif
 
 #ifdef SUPPORT_VULKAN
-    if (nanoVgBackend == NanoVGBackend::VULKAN) {
-        /*vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
-        size_t currentFrameIdx = 0;
-        if (swapchain) {
-            currentFrameIdx = swapchain->getCurrentFrame();
-        }
-        VkCommandBuffer commandBuffer = nanovgCommandBuffers.at(currentFrameIdx)->getVkCommandBuffer();*/
+    if (renderBackend == RenderSystem::VULKAN) {
         VkCommandBuffer commandBuffer = rendererVk->getVkCommandBuffer();
         vkCmdEndRenderPass(commandBuffer);
         rendererVk->clearGraphicsPipeline();
-
-        //vkEndCommandBuffer(commandBuffer);
-        //auto commandBuffer = rendererVk->getCommandBuffer();
-        //rendererVk->pushCommandBuffer();
     }
 #endif
 }
 
-#ifdef SUPPORT_OPENGL
-void NanoVGWidget::blitToTargetGl(sgl::FramebufferObjectPtr& sceneFramebuffer) {
-    RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
-    if (renderSystem == RenderSystem::OPENGL) {
-        glDisable(GL_CULL_FACE);
-        sgl::ShaderManager->invalidateBindings();
-        static_cast<sgl::RendererGL*>(sgl::Renderer)->resetShaderProgram();
-        sgl::Renderer->bindFBO(sceneFramebuffer);
-        glViewport(0, 0, sceneFramebuffer->getWidth(), sceneFramebuffer->getHeight());
-        sgl::Renderer->setProjectionMatrix(sgl::matrixOrthogonalProjection(
-                0.0f, float(sceneFramebuffer->getWidth()),
-                0.0f, float(sceneFramebuffer->getHeight()),
-                -1.0f, 1.0f));
-        sgl::Renderer->setViewMatrix(sgl::matrixIdentity());
-        sgl::Renderer->setModelMatrix(sgl::matrixIdentity());
-        sgl::AABB2 aabb;
-        aabb.min = glm::vec2(windowOffsetX, windowOffsetY);
-        aabb.max = glm::vec2(windowOffsetX + float(fboWidthDisplay), windowOffsetY + float(fboHeightDisplay));
-        // Normal alpha blending
-        //glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
-        // Premultiplied alpha.
-        glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-        if (supersamplingFactor <= 1) {
-            sgl::Renderer->blitTexture(renderTargetGl, aabb);
-        } else {
-            sgl::ShaderProgramPtr blitShader;
-            if (useMsaa) {
-                blitShader = blitDownscaleMsaaShader;
-            } else {
-                blitShader = blitDownscaleShader;
-            }
-            blitShader->setUniform("supersamplingFactor", supersamplingFactor);
-            sgl::Renderer->blitTexture(renderTargetGl, aabb, blitShader);
-        }
-    }
-}
-#endif
-
-#ifdef SUPPORT_VULKAN
-void NanoVGWidget::_createBlitRenderPass() {
-    std::vector<std::string> shaderIds;
-    shaderIds.reserve(2);
-    shaderIds.emplace_back("BlitPremulAlpha.Vertex");
-    if (supersamplingFactor <= 1) {
-        if (!useMsaa) {
-            shaderIds.emplace_back("BlitPremulAlpha.FragmentBlit");
-        } else {
-            shaderIds.emplace_back("BlitPremulAlpha.FragmentBlitMS");
-        }
-    } else {
-        if (!useMsaa) {
-            shaderIds.emplace_back("BlitPremulAlpha.FragmentBlitDownscale");
-        } else {
-            shaderIds.emplace_back("BlitPremulAlpha.FragmentBlitDownscaleMS");
-        }
-    }
-    blitPassVk = std::make_shared<BlitRenderPassNanoVG>(rendererVk, shaderIds, blitMatrixBuffer);
-
-    const auto& blitImageSettings = blitTargetVk->getImage()->getImageSettings();
-    blitPassVk->setBlendMode(vk::BlendMode::BACK_TO_FRONT_PREMUL_ALPHA);
-    blitPassVk->setOutputImageInitialLayout(blitInitialLayoutVk);
-    blitPassVk->setOutputImageFinalLayout(blitFinalLayoutVk);
-    blitPassVk->setAttachmentLoadOp(
-            blitInitialLayoutVk == VK_IMAGE_LAYOUT_UNDEFINED
-            ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD);
-    //blitPassVk->setDepthWriteEnabled(false);
-    //blitPassVk->setDepthTestEnabled(false);
-    //blitPassVk->setDepthCompareOp(VK_COMPARE_OP_ALWAYS);
-    blitPassVk->setCullMode(sgl::vk::CullMode::CULL_NONE);
-    blitPassVk->setInputTexture(renderTargetTextureVk);
-    blitPassVk->setOutputImage(blitTargetVk);
-    blitPassVk->recreateSwapchain(blitImageSettings.width, blitImageSettings.height);
 }
 
-void NanoVGWidget::setBlitTargetVk(
-        vk::ImageViewPtr& _blitTargetVk, VkImageLayout initialLayout, VkImageLayout finalLayout) {
-    blitTargetVk = _blitTargetVk;
-    blitInitialLayoutVk = initialLayout;
-    blitFinalLayoutVk = finalLayout;
-    _createBlitRenderPass();
-}
-
-void NanoVGWidget::blitToTargetVk() {
-    glm::mat4 blitMatrix = sgl::matrixOrthogonalProjection(
-            0.0f, float(blitTargetVk->getImage()->getImageSettings().width),
-            0.0f, float(blitTargetVk->getImage()->getImageSettings().height),
-            0.0f, 1.0f);
-    sgl::AABB2 aabb;
-    aabb.min = glm::vec2(windowOffsetX, windowOffsetY);
-    aabb.max = glm::vec2(windowOffsetX + float(fboWidthDisplay), windowOffsetY + float(fboHeightDisplay));
-    blitPassVk->setNormalizedCoordinatesAabb(aabb, nanoVgBackend == NanoVGBackend::OPENGL);
-    blitMatrixBuffer->updateData(sizeof(glm::mat4), &blitMatrix, rendererVk->getVkCommandBuffer());
-    rendererVk->insertBufferMemoryBarrier(
-            VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
-            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
-            blitMatrixBuffer);
-    renderTargetImageViewVk->transitionImageLayout(
-            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, rendererVk->getVkCommandBuffer());
-
-    blitPassVk->buildIfNecessary();
-    if (supersamplingFactor <= 1 && useMsaa) {
-        // FragmentBlitMS
-        rendererVk->pushConstants(
-                blitPassVk->getGraphicsPipeline(), VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                int32_t(renderTargetImageViewVk->getImage()->getImageSettings().numSamples));
-    }
-    if (supersamplingFactor > 1 && !useMsaa) {
-        // FragmentBlitDownscale
-        rendererVk->pushConstants(
-                blitPassVk->getGraphicsPipeline(), VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                int32_t(supersamplingFactor));
-    }
-    if (supersamplingFactor > 1 && useMsaa) {
-        // FragmentBlitDownscaleMS
-        rendererVk->pushConstants(
-                blitPassVk->getGraphicsPipeline(), VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                int32_t(renderTargetImageViewVk->getImage()->getImageSettings().numSamples));
-        rendererVk->pushConstants(
-                blitPassVk->getGraphicsPipeline(), VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(int32_t),
-                int32_t(supersamplingFactor));
-    }
-    blitPassVk->render();
-}
-#endif
-
-}

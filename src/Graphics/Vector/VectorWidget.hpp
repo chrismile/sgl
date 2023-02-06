@@ -26,13 +26,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef CORRERENDER_NANOVGWRAPPER_HPP
-#define CORRERENDER_NANOVGWRAPPER_HPP
+#ifndef SGL_VECTORWIDGET_HPP
+#define SGL_VECTORWIDGET_HPP
 
-#include <vector>
+#include <map>
 #include <memory>
 
 #include <glm/vec4.hpp>
+
+#include "VectorBackend.hpp"
 
 #ifdef SUPPORT_OPENGL
 namespace sgl {
@@ -67,43 +69,13 @@ class Renderer;
 }}
 #endif
 
-#if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
-namespace sgl {
-class InteropSyncVkGl;
-typedef std::shared_ptr<InteropSyncVkGl> InteropSyncVkGlPtr;
-}
-#endif
-
-struct NVGcontext;
-typedef struct NVGcontext NVGcontext;
-
 namespace sgl {
 
-/**
- * A different backend than the render system can be used.
- * In this case, resource sharing is used between OpenGL and Vulkan.
- */
-enum class NanoVGBackend {
-    OPENGL, VULKAN
-};
-
-struct DLL_OBJECT NanoVGSettings {
-    NanoVGSettings();
-    NanoVGBackend nanoVgBackend;
-    bool useDebugging;
-    bool shallClearBeforeRender = true;
-    glm::vec4 clearColor = glm::vec4(0.0f);
-    bool useMsaa = false;
-    bool useStencilStrokes = false;
-    int numMsaaSamples = 8;
-    int supersamplingFactor = 4;
-};
-
-class DLL_OBJECT NanoVGWidget {
+class DLL_OBJECT VectorWidget {
 public:
-    explicit NanoVGWidget(NanoVGSettings nanoVgSettings = {});
-    void setSettings(NanoVGSettings nanoVgSettings);
-    virtual ~NanoVGWidget();
+    VectorWidget();
+    virtual ~VectorWidget();
+    void setDefaultBackendId(const std::string& defaultId);
 
     virtual void update(float dt) {}
     void render();
@@ -119,35 +91,52 @@ public:
 
 #ifdef SUPPORT_VULKAN
     [[nodiscard]] inline const vk::TexturePtr& getRenderTargetTextureVk() { return renderTargetTextureVk; }
-    void setRendererVk(vk::Renderer* renderer) { rendererVk = renderer; }
+    inline void setRendererVk(vk::Renderer* renderer) { rendererVk = renderer; }
     void setBlitTargetVk(vk::ImageViewPtr& blitTargetVk, VkImageLayout initialLayout, VkImageLayout finalLayout);
     void blitToTargetVk();
 #endif
 
-protected:
-    void _initialize();
-    void renderStart();
-    void renderEnd();
+    // public only for VectorBackend subclasses.
     void onWindowSizeChanged();
 
-    /// This function can be overridden by derived classes to add NanoVG calls.
-    virtual void renderBase() {}
+protected:
+    void _initialize();
 
-    NVGcontext* vg = nullptr;
-    float windowWidth = 1.0f, windowHeight = 1.0f;
-    float windowOffsetX = 20, windowOffsetY = 20;
-    float customScaleFactor = 0.0f;
+    template <typename T>
+    void registerRenderBackendIfSupported(std::function<void()> renderFunctor) {
+        bool isSupported = T::checkIsSupported();
+        if (!isSupported) {
+            return;
+        }
+
+        VectorBackendFactory factory;
+        factory.id = T::getClassID();
+        factory.createBackendFunctor = [this]() { return new T(this); };
+        factory.renderFunctor = std::move(renderFunctor);
+        factories.insert(std::make_pair(factory.id, factory));
+    }
+
+    template <typename T, typename BackendSettings>
+    void registerRenderBackendIfSupported(std::function<void()> renderFunctor, const BackendSettings& backendSettings) {
+        bool isSupported = T::checkIsSupported();
+        if (!isSupported) {
+            return;
+        }
+
+        VectorBackendFactory factory;
+        factory.id = T::getClassID();
+        factory.createBackendFunctor = [this, backendSettings]() { return new T(this, backendSettings); };
+        factory.renderFunctor = std::move(renderFunctor);
+        factories.insert(std::make_pair(factory.id, factory));
+    }
 
     [[nodiscard]] inline float getWindowOffsetX() const { return windowOffsetX; }
     [[nodiscard]] inline float getWindowOffsetY() const { return windowOffsetY; }
     [[nodiscard]] inline float getScaleFactor() const { return scaleFactor; }
 
-private:
-    void _initializeFont(NVGcontext* vgCurrent);
-    NanoVGBackend nanoVgBackend = NanoVGBackend::VULKAN;
-    int flags = 0;
-    bool shallClearBeforeRender = true;
-    glm::vec4 clearColor = glm::vec4(0.0f);
+    float windowWidth = 1.0f, windowHeight = 1.0f;
+    float windowOffsetX = 20, windowOffsetY = 20;
+    float customScaleFactor = 0.0f;
 
     int fboWidthInternal = 1, fboHeightInternal = 1;
     int fboWidthDisplay = 1, fboHeightDisplay = 1;
@@ -156,21 +145,24 @@ private:
     int numMsaaSamples = 8;
     int supersamplingFactor = 4;
 
+    VectorBackend* vectorBackend = nullptr;
+
+private:
+    bool shallClearBeforeRender = true;
+    glm::vec4 clearColor = glm::vec4(0.0f);
+
+    void createDefaultBackend();
+    std::string defaultBackendId;
+    std::map<std::string, VectorBackendFactory> factories;
+
 #ifdef SUPPORT_OPENGL
-    sgl::FramebufferObjectPtr framebufferGl;
     sgl::TexturePtr renderTargetGl;
-    sgl::RenderbufferObjectPtr depthStencilRbo;
     sgl::ShaderProgramPtr blitShader, blitMsaaShader, blitDownscaleShader, blitDownscaleMsaaShader;
 #endif
 
 #ifdef SUPPORT_VULKAN
     bool initialized = false;
-    std::vector<NVGcontext*> vgArray;
     vk::Renderer* rendererVk = nullptr;
-    VkCommandPool commandPool = VK_NULL_HANDLE;
-    //std::vector<sgl::vk::CommandBufferPtr> nanovgCommandBuffers;
-    std::vector<VkCommandBuffer> nanovgCommandBuffers;
-    vk::FramebufferPtr framebufferVk;
     vk::ImageViewPtr renderTargetImageViewVk;
     vk::TexturePtr renderTargetTextureVk;
 
@@ -181,13 +173,8 @@ private:
     VkImageLayout blitFinalLayoutVk;
     sgl::vk::BufferPtr blitMatrixBuffer;
 #endif
-
-#if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
-    std::vector<sgl::vk::CommandBufferPtr> commandBuffersPost;
-    sgl::InteropSyncVkGlPtr interopSyncVkGl;
-#endif
 };
 
 }
 
-#endif //CORRERENDER_NANOVGWRAPPER_HPP
+#endif //SGL_VECTORWIDGET_HPP

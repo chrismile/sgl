@@ -27,7 +27,7 @@
 
 #ifndef NVG_NO_STB
 //#define STB_IMAGE_IMPLEMENTATION
-#include "../stb/stb_image.h"
+#include <Graphics/Vulkan/libs/stb/stb_image.h>
 #endif
 
 #ifdef _MSC_VER
