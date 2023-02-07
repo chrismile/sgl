@@ -67,11 +67,15 @@ NanoVGSettings::NanoVGSettings() {
     if (renderSystem == RenderSystem::OPENGL) {
         renderBackend = RenderSystem::OPENGL;
     } else if (renderSystem == RenderSystem::VULKAN) {
+#ifdef SUPPORT_OPENGL
         if (sgl::AppSettings::get()->getOffscreenContext()) {
             renderBackend = RenderSystem::OPENGL;
         } else {
+#endif
             renderBackend = RenderSystem::VULKAN;
+#ifdef SUPPORT_OPENGL
         }
+#endif
     } else {
         sgl::Logfile::get()->throwError(
                 "Error in NanoVGSettings::NanoVGSettings: Encountered unsupported render system.");
