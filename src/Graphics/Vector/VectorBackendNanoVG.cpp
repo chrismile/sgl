@@ -251,7 +251,7 @@ void VectorBackendNanoVG::onResize() {
     if (renderSystem == RenderSystem::OPENGL && renderBackend != RenderSystem::VULKAN) {
         sgl::TextureSettings textureSettingsColor;
         textureSettingsColor.internalFormat = GL_RGBA8;
-        if (msaaMode == NanoVgAAMode::MSAA) {
+        if (msaaMode == NanoVgAAMode::MSAA && numMsaaSamples > 1) {
             renderTargetGl = sgl::TextureManager->createMultisampledTexture(
                     fboWidthInternal, fboHeightInternal, numMsaaSamples, textureSettingsColor.internalFormat);
         } else {
@@ -271,7 +271,7 @@ void VectorBackendNanoVG::onResize() {
         imageSettings.format = VK_FORMAT_R8G8B8A8_UNORM;
         imageSettings.usage =
                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-        if (msaaMode == NanoVgAAMode::MSAA) {
+        if (msaaMode == NanoVgAAMode::MSAA && numMsaaSamples > 1) {
             imageSettings.numSamples = VkSampleCountFlagBits(numMsaaSamples);
         }
 #ifdef SUPPORT_OPENGL
@@ -303,7 +303,7 @@ void VectorBackendNanoVG::onResize() {
     if (renderBackend == RenderSystem::OPENGL) {
         depthStencilRbo = sgl::Renderer->createRBO(
                 fboWidthInternal, fboHeightInternal, sgl::RBO_DEPTH24_STENCIL8,
-                msaaMode == NanoVgAAMode::MSAA ? numMsaaSamples : 0);
+                msaaMode == NanoVgAAMode::MSAA && numMsaaSamples > 1 ? numMsaaSamples : 0);
 
         framebufferGl = sgl::Renderer->createFBO();
         framebufferGl->bindTexture(renderTargetGl, sgl::COLOR_ATTACHMENT);
