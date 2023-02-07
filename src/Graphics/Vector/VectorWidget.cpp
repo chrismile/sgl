@@ -29,8 +29,9 @@
 #include <Math/Geometry/MatrixUtil.hpp>
 #include <Utils/AppSettings.hpp>
 #include <Utils/File/Logfile.hpp>
-#include <ImGui/ImGuiWrapper.hpp>
 #include <Graphics/Window.hpp>
+#include <ImGui/ImGuiWrapper.hpp>
+#include <ImGui/Widgets/PropertyEditor.hpp>
 #include <Input/Mouse.hpp>
 
 #ifdef SUPPORT_OPENGL
@@ -93,6 +94,10 @@ void VectorWidget::_initialize() {
         return;
     }
     initialized = true;
+
+    for (const auto& factory : factories) {
+        vectorBackendIds.push_back(factory.first);
+    }
 
     if (customScaleFactor <= 0.0f) {
         scaleFactor = sgl::ImGuiWrapper::get()->getScaleFactor();
@@ -160,17 +165,27 @@ void VectorWidget::onWindowSizeChanged() {
 #ifdef SUPPORT_VULKAN
     if (renderSystem == RenderSystem::VULKAN || renderBackend == RenderSystem::VULKAN) {
         renderTargetTextureVk = vectorBackend->getRenderTargetTextureVk();
-        renderTargetImageViewVk = renderTargetTextureVk->getImageView();
-    }
-#endif
-
-#ifdef SUPPORT_VULKAN
-    if (renderSystem == RenderSystem::VULKAN || renderBackend == RenderSystem::VULKAN) {
+        if (renderTargetTextureVk) {
+            renderTargetImageViewVk = renderTargetTextureVk->getImageView();
+        } else {
+            renderTargetImageViewVk = {};
+        }
         if (blitTargetVk) {
-            _createBlitRenderPass();
+            if (renderTargetImageViewVk) {
+                _createBlitRenderPass();
+            } else {
+                blitRenderPassCreateLater = true;
+            }
         }
     }
 #endif
+}
+
+void VectorWidget::setSupersamplingFactor(int _supersamplingFactor, bool recomputeWindowSize) {
+    supersamplingFactor = _supersamplingFactor;
+    if (recomputeWindowSize) {
+        onWindowSizeChanged();
+    }
 }
 
 bool VectorWidget::isMouseOverDiagram() const {
@@ -210,6 +225,8 @@ void VectorWidget::createDefaultBackend() {
             sgl::Logfile::get()->throwError("Error in VectorWidget::render: Could not create default backend!");
         }
         vectorBackend = it->second.createBackendFunctor();
+        selectedVectorBackendIdx = int(std::find(
+                vectorBackendIds.begin(), vectorBackendIds.end(), it->first) - vectorBackendIds.begin());
 #ifdef SUPPORT_VULKAN
         if (rendererVk) {
             vectorBackend->setRendererVk(rendererVk);
@@ -218,6 +235,44 @@ void VectorWidget::createDefaultBackend() {
         vectorBackend->setClearSettings(shallClearBeforeRender, clearColor);
         vectorBackend->initialize();
     }
+}
+
+bool VectorWidget::renderGuiPropertyEditor(sgl::PropertyEditor& propertyEditor) {
+    bool reRender = false;
+
+    if (propertyEditor.addCombo(
+            "Vector Backend", &selectedVectorBackendIdx, vectorBackendIds.data(), int(vectorBackendIds.size()))) {
+        reRender = true;
+        if (vectorBackend) {
+            vectorBackend->destroy();
+            delete vectorBackend;
+            vectorBackend = nullptr;
+        }
+
+        auto it = factories.find(vectorBackendIds.at(selectedVectorBackendIdx));
+        if (it == factories.end()) {
+            sgl::Logfile::get()->throwError(
+                    "Error in VectorWidget::renderGuiPropertyEditor: Could not create selected backend!");
+        }
+        vectorBackend = it->second.createBackendFunctor();
+#ifdef SUPPORT_VULKAN
+        if (rendererVk) {
+            vectorBackend->setRendererVk(rendererVk);
+        }
+#endif
+        vectorBackend->setClearSettings(shallClearBeforeRender, clearColor);
+        vectorBackend->initialize();
+        onWindowSizeChanged();
+    }
+
+    if (vectorBackend && propertyEditor.beginNode(std::string(vectorBackend->getID()) + "###vector_backend")) {
+        if (vectorBackend->renderGuiPropertyEditor(propertyEditor)) {
+            reRender = true;
+        }
+        propertyEditor.endNode();
+    }
+
+    return reRender;
 }
 
 void VectorWidget::render() {
@@ -258,6 +313,7 @@ void VectorWidget::blitToTargetGl(sgl::FramebufferObjectPtr& sceneFramebuffer) {
             sgl::Renderer->blitTexture(renderTargetGl, aabb);
         } else {
             sgl::ShaderProgramPtr blitShader;
+            bool useMsaa = renderTargetGl->getNumSamples() > 1;
             if (useMsaa) {
                 blitShader = blitDownscaleMsaaShader;
             } else {
@@ -272,23 +328,28 @@ void VectorWidget::blitToTargetGl(sgl::FramebufferObjectPtr& sceneFramebuffer) {
 
 #ifdef SUPPORT_VULKAN
 void VectorWidget::_createBlitRenderPass() {
-    std::vector<std::string> shaderIds;
-    shaderIds.reserve(2);
-    shaderIds.emplace_back("BlitPremulAlpha.Vertex");
-    if (supersamplingFactor <= 1) {
-        if (!useMsaa) {
-            shaderIds.emplace_back("BlitPremulAlpha.FragmentBlit");
+    bool useMsaa = renderTargetImageViewVk->getImage()->getImageSettings().numSamples != VK_SAMPLE_COUNT_1_BIT;
+    if (!blitPassVk || cachedBlitPassSupersampling != supersamplingFactor || cachedBlitPassMsaa != useMsaa) {
+        std::vector<std::string> shaderIds;
+        shaderIds.reserve(2);
+        shaderIds.emplace_back("BlitPremulAlpha.Vertex");
+        if (supersamplingFactor <= 1) {
+            if (!useMsaa) {
+                shaderIds.emplace_back("BlitPremulAlpha.FragmentBlit");
+            } else {
+                shaderIds.emplace_back("BlitPremulAlpha.FragmentBlitMS");
+            }
         } else {
-            shaderIds.emplace_back("BlitPremulAlpha.FragmentBlitMS");
+            if (!useMsaa) {
+                shaderIds.emplace_back("BlitPremulAlpha.FragmentBlitDownscale");
+            } else {
+                shaderIds.emplace_back("BlitPremulAlpha.FragmentBlitDownscaleMS");
+            }
         }
-    } else {
-        if (!useMsaa) {
-            shaderIds.emplace_back("BlitPremulAlpha.FragmentBlitDownscale");
-        } else {
-            shaderIds.emplace_back("BlitPremulAlpha.FragmentBlitDownscaleMS");
-        }
+        blitPassVk = std::make_shared<BlindRenderPassAffine>(rendererVk, shaderIds, blitMatrixBuffer);
+        cachedBlitPassSupersampling = supersamplingFactor;
+        cachedBlitPassMsaa = useMsaa;
     }
-    blitPassVk = std::make_shared<BlindRenderPassAffine>(rendererVk, shaderIds, blitMatrixBuffer);
 
     const auto& blitImageSettings = blitTargetVk->getImage()->getImageSettings();
     blitPassVk->setBlendMode(vk::BlendMode::BACK_TO_FRONT_PREMUL_ALPHA);
@@ -297,9 +358,6 @@ void VectorWidget::_createBlitRenderPass() {
     blitPassVk->setAttachmentLoadOp(
             blitInitialLayoutVk == VK_IMAGE_LAYOUT_UNDEFINED
             ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD);
-    //blitPassVk->setDepthWriteEnabled(false);
-    //blitPassVk->setDepthTestEnabled(false);
-    //blitPassVk->setDepthCompareOp(VK_COMPARE_OP_ALWAYS);
     blitPassVk->setCullMode(sgl::vk::CullMode::CULL_NONE);
     blitPassVk->setInputTexture(renderTargetTextureVk);
     blitPassVk->setOutputImage(blitTargetVk);
@@ -311,10 +369,21 @@ void VectorWidget::setBlitTargetVk(
     blitTargetVk = _blitTargetVk;
     blitInitialLayoutVk = initialLayout;
     blitFinalLayoutVk = finalLayout;
-    _createBlitRenderPass();
+    if (renderTargetImageViewVk) {
+        _createBlitRenderPass();
+    } else {
+        blitRenderPassCreateLater = true;
+    }
 }
 
 void VectorWidget::blitToTargetVk() {
+    if (blitRenderPassCreateLater) {
+        renderTargetTextureVk = vectorBackend->getRenderTargetTextureVk();
+        renderTargetImageViewVk = renderTargetTextureVk->getImageView();
+        _createBlitRenderPass();
+        blitRenderPassCreateLater = false;
+    }
+
     RenderSystem renderBackend = vectorBackend->getRenderBackend();
     glm::mat4 blitMatrix = sgl::matrixOrthogonalProjection(
             0.0f, float(blitTargetVk->getImage()->getImageSettings().width),
@@ -332,6 +401,7 @@ void VectorWidget::blitToTargetVk() {
     renderTargetImageViewVk->transitionImageLayout(
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, rendererVk->getVkCommandBuffer());
 
+    bool useMsaa = renderTargetImageViewVk->getImage()->getImageSettings().numSamples != VK_SAMPLE_COUNT_1_BIT;
     blitPassVk->buildIfNecessary();
     if (supersamplingFactor <= 1 && useMsaa) {
         // FragmentBlitMS
@@ -355,6 +425,8 @@ void VectorWidget::blitToTargetVk() {
                 int32_t(supersamplingFactor));
     }
     blitPassVk->render();
+
+    vectorBackend->onRenderFinished();
 }
 #endif
 

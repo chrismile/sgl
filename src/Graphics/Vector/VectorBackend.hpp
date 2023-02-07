@@ -56,6 +56,7 @@ class Renderer;
 
 namespace sgl {
 
+class PropertyEditor;
 class VectorBackend;
 class VectorWidget;
 
@@ -86,6 +87,8 @@ public:
     virtual void onResize()=0;
     virtual void renderStart()=0;
     virtual void renderEnd()=0;
+    virtual void onRenderFinished() {}
+    virtual bool renderGuiPropertyEditor(sgl::PropertyEditor& propertyEditor) { return false; }
 
     [[nodiscard]] RenderSystem getRenderBackend() const { return renderBackend; }
 

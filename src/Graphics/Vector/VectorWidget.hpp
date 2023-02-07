@@ -84,6 +84,7 @@ public:
 
     virtual void update(float dt) {}
     void render();
+    virtual bool renderGuiPropertyEditor(sgl::PropertyEditor& propertyEditor);
 
     /// Returns whether the mouse is over the area of the window.
     [[nodiscard]] bool isMouseOverDiagram() const;
@@ -103,6 +104,7 @@ public:
 
     // public only for VectorBackend subclasses.
     void onWindowSizeChanged();
+    void setSupersamplingFactor(int _supersamplingFactor, bool recomputeWindowSize = true);
 
 protected:
     void _initialize();
@@ -146,8 +148,6 @@ protected:
     int fboWidthInternal = 1, fboHeightInternal = 1;
     int fboWidthDisplay = 1, fboHeightDisplay = 1;
     float scaleFactor = 1.0f;
-    bool useMsaa = false;
-    int numMsaaSamples = 8;
     int supersamplingFactor = 4;
 
     VectorBackend* vectorBackend = nullptr;
@@ -160,6 +160,8 @@ private:
     void createDefaultBackend();
     std::string defaultBackendId;
     std::map<std::string, VectorBackendFactory> factories;
+    std::vector<std::string> vectorBackendIds;
+    int selectedVectorBackendIdx = 0;
 
 #ifdef SUPPORT_OPENGL
     sgl::TexturePtr renderTargetGl;
@@ -172,6 +174,9 @@ private:
     vk::TexturePtr renderTargetTextureVk;
 
     void _createBlitRenderPass();
+    bool blitRenderPassCreateLater = false; ///< If backend creates texture while rendering.
+    int cachedBlitPassSupersampling = 0;
+    bool cachedBlitPassMsaa = false;
     sgl::vk::BlitRenderPassPtr blitPassVk;
     vk::ImageViewPtr blitTargetVk;
     VkImageLayout blitInitialLayoutVk;

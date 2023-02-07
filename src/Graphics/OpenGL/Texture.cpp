@@ -286,19 +286,26 @@ TextureGLExternalMemoryVk::TextureGLExternalMemoryVk(vk::TexturePtr& vulkanTextu
 
     glTexParameteri(target, GL_TEXTURE_TILING_EXT, textureTiling);
 
-    glTexParameteri(target, GL_TEXTURE_MAG_FILTER, settings.textureMagFilter);
-    glTexParameteri(target, GL_TEXTURE_MIN_FILTER, settings.textureMinFilter);
+    /*
+     * https://registry.khronos.org/OpenGL-Refpages/gl4/html/glTexParameter.xhtml
+     * "GL_INVALID_ENUM is generated if the effective target is either GL_TEXTURE_2D_MULTISAMPLE or
+     * GL_TEXTURE_2D_MULTISAMPLE_ARRAY, and pname is any of the sampler states."
+     */
+    if (imageSettings.numSamples == VK_SAMPLE_COUNT_1_BIT) {
+        glTexParameteri(target, GL_TEXTURE_MAG_FILTER, settings.textureMagFilter);
+        glTexParameteri(target, GL_TEXTURE_MIN_FILTER, settings.textureMinFilter);
 
-    if (settings.anisotropicFilter) {
-        glTexParameterf(target, GL_TEXTURE_MAX_ANISOTROPY_EXT, imageSamplerSettings.maxAnisotropy);
-    }
+        if (settings.anisotropicFilter) {
+            glTexParameterf(target, GL_TEXTURE_MAX_ANISOTROPY_EXT, imageSamplerSettings.maxAnisotropy);
+        }
 
-    glTexParameteri(target, GL_TEXTURE_WRAP_S, settings.textureWrapS);
-    if (imageSettings.imageType == VK_IMAGE_TYPE_2D || imageSettings.imageType == VK_IMAGE_TYPE_3D) {
-        glTexParameteri(target, GL_TEXTURE_WRAP_T, settings.textureWrapT);
-    }
-    if (imageSettings.imageType == VK_IMAGE_TYPE_3D) {
-        glTexParameteri(target, GL_TEXTURE_WRAP_R, settings.textureWrapR);
+        glTexParameteri(target, GL_TEXTURE_WRAP_S, settings.textureWrapS);
+        if (imageSettings.imageType == VK_IMAGE_TYPE_2D || imageSettings.imageType == VK_IMAGE_TYPE_3D) {
+            glTexParameteri(target, GL_TEXTURE_WRAP_T, settings.textureWrapT);
+        }
+        if (imageSettings.imageType == VK_IMAGE_TYPE_3D) {
+            glTexParameteri(target, GL_TEXTURE_WRAP_R, settings.textureWrapR);
+        }
     }
 
     if (imageSettings.imageType == VK_IMAGE_TYPE_1D && imageSettings.numSamples == VK_SAMPLE_COUNT_1_BIT) {

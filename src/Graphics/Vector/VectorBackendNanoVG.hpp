@@ -72,14 +72,18 @@ typedef struct NVGcontext NVGcontext;
 
 namespace sgl {
 
+enum class NanoVgAAMode {
+    OFF, INTERNAL, MSAA
+};
+
 struct DLL_OBJECT NanoVGSettings {
     NanoVGSettings();
     RenderSystem renderBackend;
-    bool useDebugging;
-    bool useMsaa = false;
-    bool useStencilStrokes = false;
-    int numMsaaSamples = 8;
+    NanoVgAAMode msaaMode = NanoVgAAMode::INTERNAL;
+    int numMsaaSamples = 8; ///< If useMsaa == NanoVgAAMode::MSAA.
     int supersamplingFactor = 4;
+    bool useStencilStrokes = false;
+    bool useDebugging;
 };
 
 class DLL_OBJECT VectorBackendNanoVG : public VectorBackend {
@@ -94,6 +98,7 @@ public:
     void onResize() override;
     void renderStart() override;
     void renderEnd() override;
+    bool renderGuiPropertyEditor(sgl::PropertyEditor& propertyEditor) override;
 
     [[nodiscard]] inline NVGcontext* getContext() { return vg; }
 
@@ -103,8 +108,10 @@ private:
     int flags = 0;
     NVGcontext* vg = nullptr;
 
-    bool useMsaa = false;
+    NanoVgAAMode msaaMode = NanoVgAAMode::INTERNAL;
     int numMsaaSamples = 8;
+    bool useStencilStrokes = false;
+    bool useDebugging = false;
 
 #ifdef SUPPORT_OPENGL
     sgl::FramebufferObjectPtr framebufferGl;

@@ -29,6 +29,7 @@
 #include "nanovg/nanovg.h"
 
 #include <Utils/File/Logfile.hpp>
+#include <ImGui/Widgets/PropertyEditor.hpp>
 
 #ifdef SUPPORT_OPENGL
 #include <GL/glew.h>
@@ -48,7 +49,6 @@
 #include <Graphics/Vulkan/Render/Renderer.hpp>
 #include <Graphics/Vulkan/Render/CommandBuffer.hpp>
 #include <Graphics/Vulkan/Render/Passes/BlitRenderPass.hpp>
-#include <memory>
 #define NANOVG_VULKAN_IMPLEMENTATION
 #include "nanovg/nanovg_vk.h"
 #endif
@@ -67,7 +67,11 @@ NanoVGSettings::NanoVGSettings() {
     if (renderSystem == RenderSystem::OPENGL) {
         renderBackend = RenderSystem::OPENGL;
     } else if (renderSystem == RenderSystem::VULKAN) {
-        renderBackend = RenderSystem::VULKAN;
+        if (sgl::AppSettings::get()->getOffscreenContext()) {
+            renderBackend = RenderSystem::OPENGL;
+        } else {
+            renderBackend = RenderSystem::VULKAN;
+        }
     } else {
         sgl::Logfile::get()->throwError(
                 "Error in NanoVGSettings::NanoVGSettings: Encountered unsupported render system.");
@@ -87,36 +91,10 @@ bool VectorBackendNanoVG::checkIsSupported() {
 
 VectorBackendNanoVG::VectorBackendNanoVG(VectorWidget* vectorWidget, const NanoVGSettings& nanoVgSettings)
         : VectorBackend(vectorWidget) {
-    useMsaa = nanoVgSettings.useMsaa;
+    msaaMode = nanoVgSettings.msaaMode;
     numMsaaSamples = nanoVgSettings.numMsaaSamples;
     supersamplingFactor = nanoVgSettings.supersamplingFactor;
-
     renderBackend = nanoVgSettings.renderBackend;
-
-#ifndef SUPPORT_OPENGL
-    if (renderBackend == RenderSystem::OPENGL) {
-        sgl::Logfile::get()->throwError(
-                "Error in NanoVGWrapper::NanoVGWrapper: OpenGL backend selected, but OpenGL is not supported.");
-    }
-#endif
-
-#ifndef SUPPORT_VULKAN
-    if (renderBackend == RenderSystem::VULKAN) {
-        sgl::Logfile::get()->throwError(
-                "Error in NanoVGWrapper::NanoVGWrapper: Vulkan backend selected, but Vulkan is not supported.");
-    }
-#endif
-
-    flags = {};
-    if (nanoVgSettings.useStencilStrokes) {
-        flags |= NVG_STENCIL_STROKES;
-    }
-    if (!useMsaa) {
-        flags |= NVG_ANTIALIAS;
-    }
-    if (nanoVgSettings.useDebugging) {
-        flags |= NVG_DEBUG;
-    }
 }
 
 void VectorBackendNanoVG::initialize() {
@@ -124,6 +102,31 @@ void VectorBackendNanoVG::initialize() {
         return;
     }
     initialized = true;
+
+#ifndef SUPPORT_OPENGL
+    if (renderBackend == RenderSystem::OPENGL) {
+        sgl::Logfile::get()->throwError(
+                "Error in VectorBackendNanoVG::initialize: OpenGL backend selected, but OpenGL is not supported.");
+    }
+#endif
+
+#ifndef SUPPORT_VULKAN
+    if (renderBackend == RenderSystem::VULKAN) {
+        sgl::Logfile::get()->throwError(
+                "Error in VectorBackendNanoVG::initialize: Vulkan backend selected, but Vulkan is not supported.");
+    }
+#endif
+
+    flags = {};
+    if (useStencilStrokes) {
+        flags |= NVG_STENCIL_STROKES;
+    }
+    if (msaaMode == NanoVgAAMode::INTERNAL) {
+        flags |= NVG_ANTIALIAS;
+    }
+    if (useDebugging) {
+        flags |= NVG_DEBUG;
+    }
 
 #if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
@@ -209,6 +212,8 @@ void VectorBackendNanoVG::destroy() {
 #ifdef SUPPORT_VULKAN
     if (renderBackend == RenderSystem::VULKAN) {
         vk::Device* device = AppSettings::get()->getPrimaryDevice();
+        renderTargetTextureVk = {};
+        renderTargetImageViewVk = {};
         if (!nanovgCommandBuffers.empty()) {
             vkFreeCommandBuffers(
                     device->getVkDevice(), commandPool,
@@ -242,7 +247,7 @@ void VectorBackendNanoVG::onResize() {
     if (renderSystem == RenderSystem::OPENGL && renderBackend != RenderSystem::VULKAN) {
         sgl::TextureSettings textureSettingsColor;
         textureSettingsColor.internalFormat = GL_RGBA8;
-        if (useMsaa) {
+        if (msaaMode == NanoVgAAMode::MSAA) {
             renderTargetGl = sgl::TextureManager->createMultisampledTexture(
                     fboWidthInternal, fboHeightInternal, numMsaaSamples, textureSettingsColor.internalFormat);
         } else {
@@ -262,7 +267,7 @@ void VectorBackendNanoVG::onResize() {
         imageSettings.format = VK_FORMAT_R8G8B8A8_UNORM;
         imageSettings.usage =
                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-        if (useMsaa) {
+        if (msaaMode == NanoVgAAMode::MSAA) {
             imageSettings.numSamples = VkSampleCountFlagBits(numMsaaSamples);
         }
 #ifdef SUPPORT_OPENGL
@@ -294,7 +299,7 @@ void VectorBackendNanoVG::onResize() {
     if (renderBackend == RenderSystem::OPENGL) {
         depthStencilRbo = sgl::Renderer->createRBO(
                 fboWidthInternal, fboHeightInternal, sgl::RBO_DEPTH24_STENCIL8,
-                useMsaa ? numMsaaSamples : 0);
+                msaaMode == NanoVgAAMode::MSAA ? numMsaaSamples : 0);
 
         framebufferGl = sgl::Renderer->createFBO();
         framebufferGl->bindTexture(renderTargetGl, sgl::COLOR_ATTACHMENT);
@@ -455,5 +460,56 @@ void VectorBackendNanoVG::renderEnd() {
 #endif
 }
 
+static const char* const RENDER_BACKEND_NAMES[] = { "OpenGL", "Vulkan" };
+static const char* const NANOVG_AA_MODE[] = { "Off", "Internal AA", "MSAA" };
+
+bool VectorBackendNanoVG::renderGuiPropertyEditor(sgl::PropertyEditor& propertyEditor) {
+    bool reRender = VectorBackend::renderGuiPropertyEditor(propertyEditor);
+    bool recreate = false;
+
+    if (propertyEditor.addCombo("AA Mode", (int*)&msaaMode, NANOVG_AA_MODE, IM_ARRAYSIZE(NANOVG_AA_MODE))) {
+        recreate = true;
+    }
+    if (msaaMode == NanoVgAAMode::MSAA) {
+        int maxMsaaSamples = 32;
+#ifdef SUPPORT_VULKAN
+        RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
+        if (renderSystem == RenderSystem::VULKAN || renderBackend == RenderSystem::VULKAN) {
+            maxMsaaSamples = int(rendererVk->getDevice()->getMaxUsableSampleCount());
+        }
+#endif
+        if (propertyEditor.addSliderIntPowerOfTwo("#MSAA Samples", &numMsaaSamples, 1, maxMsaaSamples)) {
+            numMsaaSamples = glm::clamp(numMsaaSamples, 1, maxMsaaSamples);
+            recreate = true;
+        }
+    }
+    if (propertyEditor.addSliderIntPowerOfTwo("SSAA Factor", &supersamplingFactor, 1, 4)) {
+        vectorWidget->setSupersamplingFactor(supersamplingFactor, false);
+        recreate = true;
+    }
+    if (propertyEditor.addCheckbox("Stencil Strokes", &useStencilStrokes)) {
+        recreate = true;
+    }
+
+#if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
+    RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
+    if (renderSystem == RenderSystem::VULKAN && sgl::AppSettings::get()->getOffscreenContext()) {
+        int renderBackendIdx = renderBackend == RenderSystem::OPENGL ? 0 : 1;
+        if (propertyEditor.addCombo("Render Backend", &renderBackendIdx, RENDER_BACKEND_NAMES, 2)) {
+            renderBackend = renderBackendIdx == 0 ? RenderSystem::OPENGL : RenderSystem::VULKAN;
+            recreate = true;
+        }
+    }
+#endif
+
+    if (recreate) {
+        destroy();
+        initialize();
+        vectorWidget->onWindowSizeChanged();
+        reRender = true;
+    }
+
+    return reRender;
 }
 
+}
