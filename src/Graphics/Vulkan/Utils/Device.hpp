@@ -121,6 +121,8 @@ struct DLL_OBJECT DeviceFeatures {
         rayQueryFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
         fragmentShaderInterlockFeatures.sType =
                 VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_INTERLOCK_FEATURES_EXT;
+        shaderAtomicFloatFeatures.sType =
+                VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT;
         meshShaderFeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
 #ifdef VK_EXT_mesh_shader
         meshShaderFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
@@ -151,6 +153,7 @@ struct DLL_OBJECT DeviceFeatures {
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures{};
     VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures{};
     VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT fragmentShaderInterlockFeatures{};
+    VkPhysicalDeviceShaderAtomicFloatFeaturesEXT shaderAtomicFloatFeatures{};
     VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragmentShaderBarycentricFeaturesNV{};
     VkPhysicalDeviceMeshShaderFeaturesNV meshShaderFeaturesNV{};
 #ifdef VK_EXT_mesh_shader
@@ -487,6 +490,7 @@ private:
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures{};
     VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures{};
     VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT fragmentShaderInterlockFeatures{};
+    VkPhysicalDeviceShaderAtomicFloatFeaturesEXT shaderAtomicFloatFeatures{};
     VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragmentShaderBarycentricFeaturesNV{};
     VkPhysicalDeviceMeshShaderFeaturesNV meshShaderFeaturesNV{};
 #ifdef VK_EXT_mesh_shader
