@@ -104,7 +104,7 @@ bool initializeCudaDeviceApiFunctionTable() {
     typedef CUresult ( *PFN_cuModuleGetFunction )( CUfunction* hfunc, CUmodule hmod, const char* name );
     typedef CUresult ( *PFN_cuModuleGetGlobal )( CUdeviceptr* dptr, size_t* bytes, CUmodule hmod, const char* name );
     typedef CUresult ( *PFN_cuLaunchKernel )( CUfunction f, unsigned int gridDimX, unsigned int gridDimY, unsigned int gridDimZ, unsigned int blockDimX, unsigned int blockDimY, unsigned int blockDimZ, unsigned int sharedMemBytes, CUstream hStream, void** kernelParams, void** extra );
-
+    typedef CUresult ( *PFN_cuOccupancyMaxPotentialBlockSize )( int *minGridSize, int *blockSize, CUfunction func, CUoccupancyB2DSize blockSizeToDynamicSMemSize, size_t dynamicSMemSize, int blockSizeLimit );
 
 #if defined(__linux__)
     g_cudaLibraryHandle = dlopen("libcuda.so", RTLD_NOW | RTLD_LOCAL);
@@ -170,6 +170,7 @@ bool initializeCudaDeviceApiFunctionTable() {
     g_cudaDeviceApiFunctionTable.cuModuleGetFunction = PFN_cuModuleGetFunction(dlsym(g_cudaLibraryHandle, TOSTRING(cuModuleGetFunction)));
     g_cudaDeviceApiFunctionTable.cuModuleGetGlobal = PFN_cuModuleGetGlobal(dlsym(g_cudaLibraryHandle, TOSTRING(cuModuleGetGlobal)));
     g_cudaDeviceApiFunctionTable.cuLaunchKernel = PFN_cuLaunchKernel(dlsym(g_cudaLibraryHandle, TOSTRING(cuLaunchKernel)));
+    g_cudaDeviceApiFunctionTable.cuOccupancyMaxPotentialBlockSize = PFN_cuOccupancyMaxPotentialBlockSize(dlsym(g_cudaLibraryHandle, TOSTRING(cuOccupancyMaxPotentialBlockSize)));
 
     if (!g_cudaDeviceApiFunctionTable.cuInit
             || !g_cudaDeviceApiFunctionTable.cuGetErrorString
@@ -221,7 +222,8 @@ bool initializeCudaDeviceApiFunctionTable() {
             || !g_cudaDeviceApiFunctionTable.cuModuleUnload
             || !g_cudaDeviceApiFunctionTable.cuModuleGetFunction
             || !g_cudaDeviceApiFunctionTable.cuModuleGetGlobal
-            || !g_cudaDeviceApiFunctionTable.cuLaunchKernel) {
+            || !g_cudaDeviceApiFunctionTable.cuLaunchKernel
+            || !g_cudaDeviceApiFunctionTable.cuOccupancyMaxPotentialBlockSize) {
         sgl::Logfile::get()->throwError(
                 "Error in initializeCudaDeviceApiFunctionTable: "
                 "At least one function pointer could not be loaded.");
