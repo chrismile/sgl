@@ -259,14 +259,14 @@ bool initializeNvrtcFunctionTable() {
     }
 #endif
 
-    g_nvrtcFunctionTable.nvrtcGetErrorString = PFN_nvrtcGetErrorString(dlsym(g_cudaLibraryHandle, TOSTRING(nvrtcGetErrorString)));
-    g_nvrtcFunctionTable.nvrtcCreateProgram = PFN_nvrtcCreateProgram(dlsym(g_cudaLibraryHandle, TOSTRING(nvrtcCreateProgram)));
-    g_nvrtcFunctionTable.nvrtcDestroyProgram = PFN_nvrtcDestroyProgram(dlsym(g_cudaLibraryHandle, TOSTRING(nvrtcDestroyProgram)));
-    g_nvrtcFunctionTable.nvrtcCompileProgram = PFN_nvrtcCompileProgram(dlsym(g_cudaLibraryHandle, TOSTRING(nvrtcCompileProgram)));
-    g_nvrtcFunctionTable.nvrtcGetProgramLogSize = PFN_nvrtcGetProgramLogSize(dlsym(g_cudaLibraryHandle, TOSTRING(nvrtcGetProgramLogSize)));
-    g_nvrtcFunctionTable.nvrtcGetProgramLog = PFN_nvrtcGetProgramLog(dlsym(g_cudaLibraryHandle, TOSTRING(nvrtcGetProgramLog)));
-    g_nvrtcFunctionTable.nvrtcGetPTXSize = PFN_nvrtcGetPTXSize(dlsym(g_cudaLibraryHandle, TOSTRING(nvrtcGetPTXSize)));
-    g_nvrtcFunctionTable.nvrtcGetPTX = PFN_nvrtcGetPTX(dlsym(g_cudaLibraryHandle, TOSTRING(nvrtcGetPTX)));
+    g_nvrtcFunctionTable.nvrtcGetErrorString = PFN_nvrtcGetErrorString(dlsym(g_nvrtcLibraryHandle, TOSTRING(nvrtcGetErrorString)));
+    g_nvrtcFunctionTable.nvrtcCreateProgram = PFN_nvrtcCreateProgram(dlsym(g_nvrtcLibraryHandle, TOSTRING(nvrtcCreateProgram)));
+    g_nvrtcFunctionTable.nvrtcDestroyProgram = PFN_nvrtcDestroyProgram(dlsym(g_nvrtcLibraryHandle, TOSTRING(nvrtcDestroyProgram)));
+    g_nvrtcFunctionTable.nvrtcCompileProgram = PFN_nvrtcCompileProgram(dlsym(g_nvrtcLibraryHandle, TOSTRING(nvrtcCompileProgram)));
+    g_nvrtcFunctionTable.nvrtcGetProgramLogSize = PFN_nvrtcGetProgramLogSize(dlsym(g_nvrtcLibraryHandle, TOSTRING(nvrtcGetProgramLogSize)));
+    g_nvrtcFunctionTable.nvrtcGetProgramLog = PFN_nvrtcGetProgramLog(dlsym(g_nvrtcLibraryHandle, TOSTRING(nvrtcGetProgramLog)));
+    g_nvrtcFunctionTable.nvrtcGetPTXSize = PFN_nvrtcGetPTXSize(dlsym(g_nvrtcLibraryHandle, TOSTRING(nvrtcGetPTXSize)));
+    g_nvrtcFunctionTable.nvrtcGetPTX = PFN_nvrtcGetPTX(dlsym(g_nvrtcLibraryHandle, TOSTRING(nvrtcGetPTX)));
 
     if (!g_nvrtcFunctionTable.nvrtcGetErrorString
             || !g_nvrtcFunctionTable.nvrtcCreateProgram
