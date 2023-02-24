@@ -44,12 +44,15 @@
 namespace sgl { namespace vk {
 
 CudaDeviceApiFunctionTable g_cudaDeviceApiFunctionTable{};
+NvrtcFunctionTable g_nvrtcFunctionTable{};
 
 #ifdef _WIN32
 HMODULE g_cudaLibraryHandle = nullptr;
+HMODULE g_nvrtcLibraryHandle = nullptr;
 #define dlsym GetProcAddress
 #else
 void* g_cudaLibraryHandle = nullptr;
+void* g_nvrtcLibraryHandle = nullptr;
 #endif
 
 bool initializeCudaDeviceApiFunctionTable() {
@@ -232,6 +235,55 @@ bool initializeCudaDeviceApiFunctionTable() {
     return true;
 }
 
+bool initializeNvrtcFunctionTable() {
+    typedef const char* ( *PFN_nvrtcGetErrorString )( nvrtcResult result );
+    typedef nvrtcResult ( *PFN_nvrtcCreateProgram )( nvrtcProgram* prog, const char* src, const char* name, int numHeaders, const char* const* headers, const char* const* includeNames );
+    typedef nvrtcResult ( *PFN_nvrtcDestroyProgram )( nvrtcProgram* prog );
+    typedef nvrtcResult ( *PFN_nvrtcCompileProgram )( nvrtcProgram prog, int numOptions, const char* const* options );
+    typedef nvrtcResult ( *PFN_nvrtcGetProgramLogSize )( nvrtcProgram prog, size_t* logSizeRet );
+    typedef nvrtcResult ( *PFN_nvrtcGetProgramLog )( nvrtcProgram prog, char* log );
+    typedef nvrtcResult ( *PFN_nvrtcGetPTXSize )( nvrtcProgram prog, size_t* ptxSizeRet );
+    typedef nvrtcResult ( *PFN_nvrtcGetPTX )( nvrtcProgram prog, char* ptx );
+
+#if defined(__linux__)
+    g_nvrtcLibraryHandle = dlopen("libnvrtc.so", RTLD_NOW | RTLD_LOCAL);
+    if (!g_nvrtcLibraryHandle) {
+        sgl::Logfile::get()->writeInfo("initializeNvrtcFunctionTable: Could not load libnvrtc.so.");
+        return false;
+    }
+#elif defined(_WIN32)
+    g_nvrtcLibraryHandle = LoadLibraryA("nvrtc.dll");
+    if (!g_nvrtcLibraryHandle) {
+        sgl::Logfile::get()->writeInfo("initializeNvrtcFunctionTable: Could not load nvrtc.dll.");
+        return false;
+    }
+#endif
+
+    g_nvrtcFunctionTable.nvrtcGetErrorString = PFN_nvrtcGetErrorString(dlsym(g_cudaLibraryHandle, TOSTRING(nvrtcGetErrorString)));
+    g_nvrtcFunctionTable.nvrtcCreateProgram = PFN_nvrtcCreateProgram(dlsym(g_cudaLibraryHandle, TOSTRING(nvrtcCreateProgram)));
+    g_nvrtcFunctionTable.nvrtcDestroyProgram = PFN_nvrtcDestroyProgram(dlsym(g_cudaLibraryHandle, TOSTRING(nvrtcDestroyProgram)));
+    g_nvrtcFunctionTable.nvrtcCompileProgram = PFN_nvrtcCompileProgram(dlsym(g_cudaLibraryHandle, TOSTRING(nvrtcCompileProgram)));
+    g_nvrtcFunctionTable.nvrtcGetProgramLogSize = PFN_nvrtcGetProgramLogSize(dlsym(g_cudaLibraryHandle, TOSTRING(nvrtcGetProgramLogSize)));
+    g_nvrtcFunctionTable.nvrtcGetProgramLog = PFN_nvrtcGetProgramLog(dlsym(g_cudaLibraryHandle, TOSTRING(nvrtcGetProgramLog)));
+    g_nvrtcFunctionTable.nvrtcGetPTXSize = PFN_nvrtcGetPTXSize(dlsym(g_cudaLibraryHandle, TOSTRING(nvrtcGetPTXSize)));
+    g_nvrtcFunctionTable.nvrtcGetPTX = PFN_nvrtcGetPTX(dlsym(g_cudaLibraryHandle, TOSTRING(nvrtcGetPTX)));
+
+    if (!g_nvrtcFunctionTable.nvrtcGetErrorString
+            || !g_nvrtcFunctionTable.nvrtcCreateProgram
+            || !g_nvrtcFunctionTable.nvrtcDestroyProgram
+            || !g_nvrtcFunctionTable.nvrtcCompileProgram
+            || !g_nvrtcFunctionTable.nvrtcGetProgramLogSize
+            || !g_nvrtcFunctionTable.nvrtcGetProgramLog
+            || !g_nvrtcFunctionTable.nvrtcGetPTXSize
+            || !g_nvrtcFunctionTable.nvrtcGetPTX) {
+        sgl::Logfile::get()->throwError(
+                "Error in initializeNvrtcFunctionTable: "
+                "At least one function pointer could not be loaded.");
+    }
+
+    return true;
+}
+
 #ifdef _WIN32
 #undef dlsym
 #endif
@@ -248,6 +300,21 @@ void freeCudaDeviceApiFunctionTable() {
         FreeLibrary(g_cudaLibraryHandle);
 #endif
         g_cudaLibraryHandle = {};
+    }
+}
+
+bool getIsNvrtcFunctionTableInitialized() {
+    return g_nvrtcLibraryHandle != nullptr;
+}
+
+void freeNvrtcFunctionTable() {
+    if (g_nvrtcLibraryHandle) {
+#if defined(__linux__)
+        dlclose(g_nvrtcLibraryHandle);
+#elif defined(_WIN32)
+        FreeLibrary(g_nvrtcLibraryHandle);
+#endif
+        g_nvrtcLibraryHandle = {};
     }
 }
 
@@ -295,6 +362,13 @@ void _checkCUresult(CUresult cuResult, const char* text, const char* locationTex
         } else {
             sgl::Logfile::get()->throwError(std::string() + locationText + ": " + "Error in cuGetErrorString.");
         }
+    }
+}
+
+void _checkNvrtcResult(nvrtcResult result, const char* text, const char* locationText) {
+    if (result != NVRTC_SUCCESS) {
+        throw std::runtime_error(
+                std::string() + locationText + ": " + text + g_nvrtcFunctionTable.nvrtcGetErrorString(result));
     }
 }
 

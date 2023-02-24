@@ -36,8 +36,9 @@
 
 #if __has_include(<cuda.h>)
 #include <cuda.h>
+#include <nvrtc.h>
 #else
-#include "DynlinkCuda.hpp"
+#error "CUDA headers could not be found."
 #endif
 
 #ifdef _WIN32
@@ -115,6 +116,19 @@ struct CudaDeviceApiFunctionTable {
 
 DLL_OBJECT extern CudaDeviceApiFunctionTable g_cudaDeviceApiFunctionTable;
 
+struct NvrtcFunctionTable {
+    const char* ( *nvrtcGetErrorString )( nvrtcResult result );
+    nvrtcResult ( *nvrtcCreateProgram )( nvrtcProgram* prog, const char* src, const char* name, int numHeaders, const char* const* headers, const char* const* includeNames );
+    nvrtcResult ( *nvrtcDestroyProgram )( nvrtcProgram* prog );
+    nvrtcResult ( *nvrtcCompileProgram )( nvrtcProgram prog, int numOptions, const char* const* options );
+    nvrtcResult ( *nvrtcGetProgramLogSize )( nvrtcProgram prog, size_t* logSizeRet );
+    nvrtcResult ( *nvrtcGetProgramLog )( nvrtcProgram prog, char* log );
+    nvrtcResult ( *nvrtcGetPTXSize )( nvrtcProgram prog, size_t* ptxSizeRet );
+    nvrtcResult ( *nvrtcGetPTX )( nvrtcProgram prog, char* ptx );
+};
+
+DLL_OBJECT extern NvrtcFunctionTable g_nvrtcFunctionTable;
+
 #ifndef TOSTRING
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
@@ -126,6 +140,13 @@ DLL_OBJECT void _checkCUresult(CUresult cuResult, const char* text, const char* 
 DLL_OBJECT bool initializeCudaDeviceApiFunctionTable();
 DLL_OBJECT bool getIsCudaDeviceApiFunctionTableInitialized();
 DLL_OBJECT void freeCudaDeviceApiFunctionTable();
+
+void _checkNvrtcResult(nvrtcResult result, const char* text, const char* locationText);
+#define checkNvrtcResult(result, text) _checkNvrtcResult(result, text, __FILE__ ":" TOSTRING(__LINE__))
+
+DLL_OBJECT bool initializeNvrtcFunctionTable();
+DLL_OBJECT bool getIsNvrtcFunctionTableInitialized();
+DLL_OBJECT void freeNvrtcFunctionTable();
 
 /**
  * Returns the closest matching CUDA device.
