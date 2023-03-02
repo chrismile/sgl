@@ -188,9 +188,23 @@ void VectorWidget::setSupersamplingFactor(int _supersamplingFactor, bool recompu
     }
 }
 
-bool VectorWidget::isMouseOverDiagram() const {
+void VectorWidget::syncRendererWithCpu() {
+#ifdef SUPPORT_VULKAN
+    RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
+    RenderSystem renderBackend = vectorBackend->getRenderBackend();
+    if (renderSystem == RenderSystem::VULKAN || renderBackend == RenderSystem::VULKAN) {
+        rendererVk->getDevice()->waitGraphicsQueueIdle();
+    }
+#endif
+}
+
+bool VectorWidget::getIsMouseOverDiagram() const {
     glm::vec2 mousePosition(sgl::Mouse->getX(), sgl::Mouse->getY());
-    mousePosition.y = float(sgl::AppSettings::get()->getMainWindow()->getHeight()) - mousePosition.y - 1.0f;
+
+    RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
+    if (renderSystem == RenderSystem::OPENGL) {
+        mousePosition.y = float(sgl::AppSettings::get()->getMainWindow()->getHeight()) - mousePosition.y - 1.0f;
+    }
 
     sgl::AABB2 aabb;
     aabb.min = glm::vec2(windowOffsetX, windowOffsetY);
@@ -199,17 +213,31 @@ bool VectorWidget::isMouseOverDiagram() const {
     return aabb.contains(mousePosition);
 }
 
-bool VectorWidget::isMouseOverDiagram(int parentX, int parentY, int parentWidth, int parentHeight) const {
+bool VectorWidget::getIsMouseOverDiagram(int parentX, int parentY, int parentWidth, int parentHeight) const {
     glm::vec2 mousePosition(sgl::Mouse->getX(), sgl::Mouse->getY());
-    mousePosition.y = float(sgl::AppSettings::get()->getMainWindow()->getHeight()) - mousePosition.y - 1.0f;
     mousePosition.x -= float(parentX);
-    mousePosition.y -= float(sgl::AppSettings::get()->getMainWindow()->getHeight() - parentY - 1 + parentHeight);
+
+    RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
+    if (renderSystem == RenderSystem::VULKAN) {
+        mousePosition.y -= float(parentY);
+    } else {
+        mousePosition.y = float(sgl::AppSettings::get()->getMainWindow()->getHeight()) - mousePosition.y - 1.0f;
+        mousePosition.y -= float(sgl::AppSettings::get()->getMainWindow()->getHeight() - parentY - 1 + parentHeight);
+    }
 
     sgl::AABB2 aabb;
     aabb.min = glm::vec2(windowOffsetX, windowOffsetY);
     aabb.max = glm::vec2(windowOffsetX + float(fboWidthDisplay), windowOffsetY + float(fboHeightDisplay));
 
     return aabb.contains(mousePosition);
+}
+
+bool VectorWidget::getIsMouseOverDiagram(const glm::ivec2& mousePositionPx) const {
+    sgl::AABB2 aabb;
+    aabb.min = glm::vec2(windowOffsetX, windowOffsetY);
+    aabb.max = glm::vec2(windowOffsetX + float(fboWidthDisplay), windowOffsetY + float(fboHeightDisplay));
+
+    return aabb.contains(mousePositionPx);
 }
 
 void VectorWidget::createDefaultBackend() {

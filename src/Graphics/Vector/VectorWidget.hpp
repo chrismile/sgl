@@ -86,9 +86,13 @@ public:
     void render();
     virtual bool renderGuiPropertyEditor(sgl::PropertyEditor& propertyEditor);
 
-    /// Returns whether the mouse is over the area of the window.
-    [[nodiscard]] bool isMouseOverDiagram() const;
-    [[nodiscard]] bool isMouseOverDiagram(int parentX, int parentY, int parentWidth, int parentHeight) const;
+    // Returns whether the mouse is over the area of the window.
+    /// Assumes the rendering area is the main window and aligned with position (0,0) of the mouse.
+    [[nodiscard]] bool getIsMouseOverDiagram() const;
+    /// Assumes the rendering area of the passed size is aligned with position (parentX,parentY) of the mouse.
+    [[nodiscard]] bool getIsMouseOverDiagram(int parentX, int parentY, int parentWidth, int parentHeight) const;
+    /// Assumes the rendering area is aligned with position (0,0) of the mouse.
+    [[nodiscard]] bool getIsMouseOverDiagram(const glm::ivec2& mousePositionPx) const;
 
 #ifdef SUPPORT_OPENGL
     [[nodiscard]] inline const sgl::TexturePtr& getRenderTargetTextureGl() { return renderTargetGl; }
@@ -105,6 +109,9 @@ public:
     // public only for VectorBackend subclasses.
     void onWindowSizeChanged();
     void setSupersamplingFactor(int _supersamplingFactor, bool recomputeWindowSize = true);
+
+    /// Must be called for Vulkan backend before @see onWindowSizeChanged to make sure textures are no longer in use.
+    void syncRendererWithCpu();
 
 protected:
     void _initialize();
