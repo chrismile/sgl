@@ -74,6 +74,10 @@ namespace sgl {
 SDLWindow::SDLWindow() = default;
 
 SDLWindow::~SDLWindow() {
+    for (auto& entry : cursors) {
+        SDL_FreeCursor(entry.second);
+    }
+    cursors.clear();
 #ifdef SUPPORT_OPENGL
     if (renderSystem == RenderSystem::OPENGL) {
         SDL_GL_DeleteContext(glContext);
@@ -661,6 +665,61 @@ void SDLWindow::setWindowIconFromFile(const std::string& imageFilename) {
 
     SDL_SetWindowIcon(sdlWindow, surface);
     SDL_FreeSurface(surface);
+}
+
+void SDLWindow::setCursorType(CursorType cursorType) {
+    if (currentCursorType == cursorType) {
+        return;
+    }
+    currentCursorType = cursorType;
+    if (cursorType == CursorType::DEFAULT) {
+        SDL_SetCursor(SDL_GetDefaultCursor());
+        return;
+    }
+
+    auto it = cursors.find(cursorType);
+    if (it != cursors.end()) {
+        SDL_SetCursor(it->second);
+    } else {
+        SDL_SystemCursor sdlCursorType = SDL_SYSTEM_CURSOR_ARROW;
+        if (cursorType == CursorType::ARROW) {
+            sdlCursorType = SDL_SYSTEM_CURSOR_ARROW;
+        } else if (cursorType == CursorType::IBEAM) {
+            sdlCursorType = SDL_SYSTEM_CURSOR_IBEAM;
+        } else if (cursorType == CursorType::WAIT) {
+            sdlCursorType = SDL_SYSTEM_CURSOR_WAIT;
+        } else if (cursorType == CursorType::CROSSHAIR) {
+            sdlCursorType = SDL_SYSTEM_CURSOR_CROSSHAIR;
+        } else if (cursorType == CursorType::WAITARROW) {
+            sdlCursorType = SDL_SYSTEM_CURSOR_WAITARROW;
+        } else if (cursorType == CursorType::SIZENWSE) {
+            sdlCursorType = SDL_SYSTEM_CURSOR_SIZENWSE;
+        } else if (cursorType == CursorType::SIZENESW) {
+            sdlCursorType = SDL_SYSTEM_CURSOR_SIZENESW;
+        } else if (cursorType == CursorType::SIZEWE) {
+            sdlCursorType = SDL_SYSTEM_CURSOR_SIZEWE;
+        } else if (cursorType == CursorType::SIZENS) {
+            sdlCursorType = SDL_SYSTEM_CURSOR_SIZENS;
+        } else if (cursorType == CursorType::SIZEALL) {
+            sdlCursorType = SDL_SYSTEM_CURSOR_SIZEALL;
+        } else if (cursorType == CursorType::NO) {
+            sdlCursorType = SDL_SYSTEM_CURSOR_NO;
+        } else if (cursorType == CursorType::HAND) {
+            sdlCursorType = SDL_SYSTEM_CURSOR_HAND;
+        }
+        SDL_Cursor* cursor = SDL_CreateSystemCursor(sdlCursorType);
+        SDL_SetCursor(cursor);
+        cursors[cursorType] = cursor;
+    }
+}
+
+
+void SDLWindow::setShowCursor(bool _show) {
+    if (showCursor == _show) {
+        return;
+    }
+    showCursor = _show;
+    SDL_ShowCursor(showCursor ? SDL_TRUE : SDL_FALSE);
 }
 
 #ifdef SUPPORT_OPENGL

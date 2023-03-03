@@ -106,6 +106,8 @@ public:
     void blitToTargetVk();
 #endif
 
+    std::pair<uint32_t, uint32_t> getBlitTargetSize();
+
     // public only for VectorBackend subclasses.
     void onWindowSizeChanged();
     void setSupersamplingFactor(int _supersamplingFactor, bool recomputeWindowSize = true);

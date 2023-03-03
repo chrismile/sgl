@@ -100,6 +100,11 @@ struct DLL_OBJECT WindowSettings {
     }
 };
 
+/// Cursor type, see https://wiki.libsdl.org/SDL2/SDL_SystemCursor.
+enum class CursorType {
+    DEFAULT, ARROW, IBEAM, WAIT, CROSSHAIR, WAITARROW, SIZENWSE, SIZENESW, SIZEWE, SIZENS, SIZEALL, NO, HAND
+};
+
 class SettingsFile;
 
 /// Use AppSettings (Utils/AppSettings.hpp) to create a window using the user's preferred settings
@@ -132,6 +137,10 @@ public:
 
     /// Sets the window icon.
     virtual void setWindowIconFromFile(const std::string& imageFilename) {}
+
+    /// Sets the window cursor.
+    virtual void setCursorType(CursorType cursorType) {}
+    virtual void setShowCursor(bool _show) {}
 
     /// Utility functions and getters & setters for the main window attributes.
     // Virtual and pixel size is equivalent on Linux and Windows, but not on macOS.

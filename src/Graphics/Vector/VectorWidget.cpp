@@ -315,6 +315,22 @@ void VectorWidget::render() {
     vectorBackend->renderEnd();
 }
 
+std::pair<uint32_t, uint32_t> VectorWidget::getBlitTargetSize() {
+    RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
+#ifdef SUPPORT_VULKAN
+    if (renderSystem == RenderSystem::VULKAN) {
+        const auto& imageSettings = blitTargetVk->getImage()->getImageSettings();
+        return std::make_pair(imageSettings.width, imageSettings.height);
+    }
+#endif
+#ifdef SUPPORT_OPENGL
+    if (renderSystem == RenderSystem::OPENGL) {
+        return std::make_pair(uint32_t(renderTargetGl->getW()), uint32_t(renderTargetGl->getH()));
+    }
+#endif
+    return std::make_pair(0u, 0u);
+}
+
 #ifdef SUPPORT_OPENGL
 void VectorWidget::blitToTargetGl(sgl::FramebufferObjectPtr& sceneFramebuffer) {
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();

@@ -29,6 +29,8 @@
 #ifndef SRC_SDL_SDLWINDOW_HPP_
 #define SRC_SDL_SDLWINDOW_HPP_
 
+#include <unordered_map>
+
 #include <SDL2/SDL.h>
 #include <Graphics/Window.hpp>
 
@@ -93,6 +95,10 @@ public:
     /// Sets the window icon.
     void setWindowIconFromFile(const std::string& imageFilename) override;
 
+    /// Sets the window cursor.
+    void setCursorType(CursorType _cursorType) override;
+    void setShowCursor(bool _show) override;
+
 #ifdef SUPPORT_OPENGL
     void* getOpenGLFunctionPointer(const char* functionName) override;
 #endif
@@ -116,6 +122,11 @@ private:
     /// For toggle fullscreen: Resolution before going fullscreen
     SDL_DisplayMode oldDisplayMode{};
     bool isFirstFrame = true;
+
+    /// Application cursor type.
+    std::unordered_map<CursorType, SDL_Cursor*> cursors;
+    CursorType currentCursorType = CursorType::DEFAULT;
+    bool showCursor = true;
 
     SDL_Window *sdlWindow = nullptr;
 
