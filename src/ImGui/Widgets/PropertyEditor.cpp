@@ -155,6 +155,30 @@ bool PropertyEditor::addSliderIntPowerOfTwo(
     return ImGui::SliderIntPowerOfTwo(internalId.c_str(), value, minVal, maxVal, format, flags);
 }
 
+bool PropertyEditor::addSliderInt2PowerOfTwo(
+        const std::string& name, int* value, int minVal, int maxVal,
+        const char* format, ImGuiSliderFlags flags) {
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+    ImGui::TreeNodeEx(name.c_str(), treeNodeFlagsLeaf);
+    ImGui::TableNextColumn();
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    std::string internalId = "##" + name;
+    return ImGui::SliderInt2PowerOfTwo(internalId.c_str(), value, minVal, maxVal, format, flags);
+}
+
+bool PropertyEditor::addSliderInt3PowerOfTwo(
+        const std::string& name, int* value, int minVal, int maxVal,
+        const char* format, ImGuiSliderFlags flags) {
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+    ImGui::TreeNodeEx(name.c_str(), treeNodeFlagsLeaf);
+    ImGui::TableNextColumn();
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    std::string internalId = "##" + name;
+    return ImGui::SliderInt3PowerOfTwo(internalId.c_str(), value, minVal, maxVal, format, flags);
+}
+
 bool PropertyEditor::addSliderFloat(
         const std::string& name, float* value, float minVal, float maxVal,
         const char* format, ImGuiSliderFlags flags) {
@@ -274,6 +298,30 @@ ImGui::EditMode PropertyEditor::addSliderIntPowerOfTwoEdit(
     ImGui::SetNextItemWidth(-FLT_MIN);
     std::string internalId = "##" + name;
     return ImGui::SliderIntPowerOfTwoEdit(internalId.c_str(), value, minVal, maxVal, format, flags);
+}
+
+ImGui::EditMode PropertyEditor::addSliderInt2PowerOfTwoEdit(
+        const std::string& name, int* value, int minVal, int maxVal,
+        const char* format, ImGuiSliderFlags flags) {
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+    ImGui::TreeNodeEx(name.c_str(), treeNodeFlagsLeaf);
+    ImGui::TableNextColumn();
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    std::string internalId = "##" + name;
+    return ImGui::SliderInt2PowerOfTwoEdit(internalId.c_str(), value, minVal, maxVal, format, flags);
+}
+
+ImGui::EditMode PropertyEditor::addSliderInt3PowerOfTwoEdit(
+        const std::string& name, int* value, int minVal, int maxVal,
+        const char* format, ImGuiSliderFlags flags) {
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+    ImGui::TreeNodeEx(name.c_str(), treeNodeFlagsLeaf);
+    ImGui::TableNextColumn();
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    std::string internalId = "##" + name;
+    return ImGui::SliderInt3PowerOfTwoEdit(internalId.c_str(), value, minVal, maxVal, format, flags);
 }
 
 

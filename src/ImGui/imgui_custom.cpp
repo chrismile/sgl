@@ -422,6 +422,50 @@ bool ImGui::SliderIntPowerOfTwo(const char* label, int* v, int v_min, int v_max,
     return value_changed;
 }
 
+bool ImGui::SliderIntNPowerOfTwo(const char* label, int* v, int components, int v_min, int v_max, const char* format, ImGuiSliderFlags flags)
+{
+    ImGuiWindow* window = GetCurrentWindow();
+    if (window->SkipItems)
+        return false;
+
+    ImGuiContext& g = *GImGui;
+    bool value_changed = false;
+    BeginGroup();
+    PushID(label);
+    PushMultiItemsWidths(components, CalcItemWidth());
+    for (int i = 0; i < components; i++)
+    {
+        PushID(i);
+        if (i > 0)
+            SameLine(0, g.Style.ItemInnerSpacing.x);
+        value_changed |= SliderIntPowerOfTwo("", v, v_min, v_max, format, flags);
+        PopID();
+        PopItemWidth();
+        v++;
+    }
+    PopID();
+
+    const char* label_end = FindRenderedTextEnd(label);
+    if (label != label_end)
+    {
+        SameLine(0, g.Style.ItemInnerSpacing.x);
+        TextEx(label, label_end);
+    }
+
+    EndGroup();
+    return value_changed;
+}
+
+bool ImGui::SliderInt2PowerOfTwo(const char* label, int v[2], int v_min, int v_max, const char* format, ImGuiSliderFlags flags)
+{
+    return SliderIntNPowerOfTwo(label, v, 2, v_min, v_max, format, flags);
+}
+
+bool ImGui::SliderInt3PowerOfTwo(const char* label, int v[3], int v_min, int v_max, const char* format, ImGuiSliderFlags flags)
+{
+    return SliderIntNPowerOfTwo(label, v, 3, v_min, v_max, format, flags);
+}
+
 
 
 bool ImGui::SliderScalarNoLiveEdit(const char* label, ImGuiDataType data_type, void* p_data, const void* p_min, const void* p_max, const char* format, ImGuiSliderFlags flags)
@@ -615,6 +659,30 @@ ImGui::EditMode ImGui::VSliderIntEdit(const char* label, const ImVec2& size, int
 ImGui::EditMode ImGui::SliderIntPowerOfTwoEdit(const char* label, int* v, int v_min, int v_max, const char* format, ImGuiSliderFlags flags)
 {
     bool isEdited = SliderIntPowerOfTwo(label, v, v_min, v_max, format, flags);
+    if (ImGui::IsItemDeactivatedAfterEdit()) {
+        return EditMode::INPUT_FINISHED;
+    } else if (isEdited) {
+        return EditMode::LIVE_EDIT;
+    } else {
+        return EditMode::NO_CHANGE;
+    }
+}
+
+ImGui::EditMode ImGui::SliderInt2PowerOfTwoEdit(const char* label, int v[2], int v_min, int v_max, const char* format, ImGuiSliderFlags flags)
+{
+    bool isEdited = SliderInt2PowerOfTwo(label, v, v_min, v_max, format, flags);
+    if (ImGui::IsItemDeactivatedAfterEdit()) {
+        return EditMode::INPUT_FINISHED;
+    } else if (isEdited) {
+        return EditMode::LIVE_EDIT;
+    } else {
+        return EditMode::NO_CHANGE;
+    }
+}
+
+ImGui::EditMode ImGui::SliderInt3PowerOfTwoEdit(const char* label, int v[3], int v_min, int v_max, const char* format, ImGuiSliderFlags flags)
+{
+    bool isEdited = SliderInt3PowerOfTwo(label, v, v_min, v_max, format, flags);
     if (ImGui::IsItemDeactivatedAfterEdit()) {
         return EditMode::INPUT_FINISHED;
     } else if (isEdited) {

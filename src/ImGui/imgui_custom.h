@@ -85,6 +85,9 @@ IMGUI_API bool SliderIntActive(const char* label, int* v, int v_min, int v_max, 
 IMGUI_API bool SliderScalarActive(const char* label, ImGuiDataType data_type, void* p_data, const void* p_min, const void* p_max, bool is_active, const char* format = NULL, ImGuiSliderFlags flags = 0);
 
 IMGUI_API bool SliderIntPowerOfTwo(const char* label, int* v, int v_min, int v_max, const char* format = NULL, ImGuiSliderFlags flags = 0);
+IMGUI_API bool SliderIntNPowerOfTwo(const char* label, int* v, int components, int v_min, int v_max, const char* format = NULL, ImGuiSliderFlags flags = 0);
+IMGUI_API bool SliderInt2PowerOfTwo(const char* label, int v[2], int v_min, int v_max, const char* format = NULL, ImGuiSliderFlags flags = 0);
+IMGUI_API bool SliderInt3PowerOfTwo(const char* label, int v[3], int v_min, int v_max, const char* format = NULL, ImGuiSliderFlags flags = 0);
 
 /*
  * Only changes the returns true/changes the value v if the editing has finished.
@@ -126,6 +129,8 @@ IMGUI_API EditMode VSliderFloatEdit(const char* label, const ImVec2& size, float
 IMGUI_API EditMode VSliderIntEdit(const char* label, const ImVec2& size, int* v, int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0);
 IMGUI_API EditMode VSliderScalarEdit(const char* label, const ImVec2& size, ImGuiDataType data_type, void* p_data, const void* p_min, const void* p_max, const char* format = NULL, ImGuiSliderFlags flags = 0);
 IMGUI_API EditMode SliderIntPowerOfTwoEdit(const char* label, int* v, int v_min, int v_max, const char* format = NULL, ImGuiSliderFlags flags = 0);
+IMGUI_API EditMode SliderInt2PowerOfTwoEdit(const char* label, int v[2], int v_min, int v_max, const char* format = NULL, ImGuiSliderFlags flags = 0);
+IMGUI_API EditMode SliderInt3PowerOfTwoEdit(const char* label, int v[3], int v_min, int v_max, const char* format = NULL, ImGuiSliderFlags flags = 0);
 
 IMGUI_API void HelpMarker(const char* label);
 
