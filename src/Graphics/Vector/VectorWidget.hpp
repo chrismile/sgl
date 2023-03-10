@@ -94,6 +94,7 @@ public:
     /// Assumes the rendering area is aligned with position (0,0) of the mouse.
     [[nodiscard]] bool getIsMouseOverDiagram(const glm::ivec2& mousePositionPx) const;
 
+
 #ifdef SUPPORT_OPENGL
     [[nodiscard]] inline const sgl::TexturePtr& getRenderTargetTextureGl() { return renderTargetGl; }
     void blitToTargetGl(sgl::FramebufferObjectPtr& sceneFramebuffer);
@@ -106,6 +107,7 @@ public:
     void blitToTargetVk();
 #endif
 
+    void setBlitTargetSupersamplingFactor(int f);
     std::pair<uint32_t, uint32_t> getBlitTargetSize();
 
     // public only for VectorBackend subclasses.
@@ -171,6 +173,7 @@ private:
     std::map<std::string, VectorBackendFactory> factories;
     std::vector<std::string> vectorBackendIds;
     int selectedVectorBackendIdx = 0;
+    int blitTargetSupersamplingFactor = 1;
 
 #ifdef SUPPORT_OPENGL
     sgl::TexturePtr renderTargetGl;

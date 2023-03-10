@@ -331,6 +331,10 @@ std::pair<uint32_t, uint32_t> VectorWidget::getBlitTargetSize() {
     return std::make_pair(0u, 0u);
 }
 
+void VectorWidget::setBlitTargetSupersamplingFactor(int f) {
+    blitTargetSupersamplingFactor = f;
+}
+
 #ifdef SUPPORT_OPENGL
 void VectorWidget::blitToTargetGl(sgl::FramebufferObjectPtr& sceneFramebuffer) {
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
@@ -341,8 +345,8 @@ void VectorWidget::blitToTargetGl(sgl::FramebufferObjectPtr& sceneFramebuffer) {
         sgl::Renderer->bindFBO(sceneFramebuffer);
         glViewport(0, 0, sceneFramebuffer->getWidth(), sceneFramebuffer->getHeight());
         sgl::Renderer->setProjectionMatrix(sgl::matrixOrthogonalProjection(
-                0.0f, float(sceneFramebuffer->getWidth()),
-                0.0f, float(sceneFramebuffer->getHeight()),
+                0.0f, float(int(sceneFramebuffer->getWidth() / blitTargetSupersamplingFactor)),
+                0.0f, float(int(sceneFramebuffer->getHeight() / blitTargetSupersamplingFactor)),
                 -1.0f, 1.0f));
         sgl::Renderer->setViewMatrix(sgl::matrixIdentity());
         sgl::Renderer->setModelMatrix(sgl::matrixIdentity());
@@ -430,8 +434,8 @@ void VectorWidget::blitToTargetVk() {
 
     RenderSystem renderBackend = vectorBackend->getRenderBackend();
     glm::mat4 blitMatrix = sgl::matrixOrthogonalProjection(
-            0.0f, float(blitTargetVk->getImage()->getImageSettings().width),
-            0.0f, float(blitTargetVk->getImage()->getImageSettings().height),
+            0.0f, float(int(blitTargetVk->getImage()->getImageSettings().width / uint32_t(blitTargetSupersamplingFactor))),
+            0.0f, float(int(blitTargetVk->getImage()->getImageSettings().height / uint32_t(blitTargetSupersamplingFactor))),
             0.0f, 1.0f);
     sgl::AABB2 aabb;
     aabb.min = glm::vec2(windowOffsetX, windowOffsetY);
