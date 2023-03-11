@@ -139,7 +139,16 @@ public:
     KdTreed(const KdTreed& other) = delete;
 
     /**
-     * Builds a k-d-tree from the passed point and data array.
+     * Clears the content of the k-d-tree.
+     */
+    void clear() {
+        root = nullptr;
+        nodes.clear();
+        nodeCounter = 0;
+    }
+
+    /**
+     * Builds a k-d-tree from the passed point array.
      * @param points The point array.
      * @param dataArray The data array.
      */
@@ -156,6 +165,26 @@ public:
         nodes.resize(points.size());
         nodeCounter = 0;
         root = _build(pointsCopy, 0, 0, points.size());
+    }
+
+    /**
+     * Builds a k-d-tree from the passed point array.
+     * This version of the function uses the passed points array.
+     * @param points The point array.
+     * @param dataArray The data array.
+     */
+    void buildInplace(std::vector<vec>& points) {
+#ifdef TRACY_PROFILE_TRACING
+        ZoneScoped;
+#endif
+
+        if (points.empty()) {
+            return;
+        }
+
+        nodes.resize(points.size());
+        nodeCounter = 0;
+        root = _build(points, 0, 0, points.size());
     }
 
     /**
