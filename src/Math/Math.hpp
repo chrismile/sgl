@@ -79,6 +79,9 @@ inline int iceil(int x, int y) { return (x - 1) / y + 1; }
 // Avoids going into negative for x == 0 and overflow.
 inline uint32_t uiceil(uint32_t x, uint32_t y) { return x > 0 ? (x - 1) / y + 1 : 0; }
 
+// Fast integer square root, i.e., floor(sqrt(s)).
+DLL_OBJECT uint32_t uisqrt(uint32_t s);
+
 inline int nextMultiple(int num, int multiple) {
     int remainder = num % multiple;
     if (remainder == 0) {
