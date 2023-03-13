@@ -186,6 +186,10 @@ public:
 
     bool renderGui();
     void update(float dt);
+
+    [[nodiscard]] inline bool getShowWindow() const { return showWindow; }
+    [[nodiscard]] inline bool& getShowWindow() { return showWindow; }
+    inline void setShowWindow(bool show) { showWindow = show; }
     void setClearColor(const sgl::Color &_clearColor);
     void setUseLinearRGB(bool _useLinearRGB);
 
