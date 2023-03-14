@@ -99,6 +99,7 @@ public:
     void renderStart() override;
     void renderEnd() override;
     bool renderGuiPropertyEditor(sgl::PropertyEditor& propertyEditor) override;
+    void copyVectorBackendSettingsFrom(VectorBackend* backend) override;
 
     [[nodiscard]] inline NVGcontext* getContext() { return vg; }
 

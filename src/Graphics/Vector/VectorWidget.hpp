@@ -85,6 +85,7 @@ public:
     virtual void update(float dt) {}
     void render();
     virtual bool renderGuiPropertyEditor(sgl::PropertyEditor& propertyEditor);
+    virtual void copyVectorWidgetSettingsFrom(sgl::VectorWidget* vectorWidget);
 
     // Returns whether the mouse is over the area of the window.
     /// Assumes the rendering area is the main window and aligned with position (0,0) of the mouse.
@@ -169,6 +170,7 @@ private:
     glm::vec4 clearColor = glm::vec4(0.0f);
 
     void createDefaultBackend();
+    void onSelectedBackendIdxChanged();
     std::string defaultBackendId;
     std::map<std::string, VectorBackendFactory> factories;
     std::vector<std::string> vectorBackendIds;

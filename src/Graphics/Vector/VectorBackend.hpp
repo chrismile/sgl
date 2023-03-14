@@ -89,6 +89,7 @@ public:
     virtual void renderEnd()=0;
     virtual void onRenderFinished() {}
     virtual bool renderGuiPropertyEditor(sgl::PropertyEditor& propertyEditor) { return false; }
+    virtual void copyVectorBackendSettingsFrom(VectorBackend* backend)=0;
 
     [[nodiscard]] RenderSystem getRenderBackend() const { return renderBackend; }
 

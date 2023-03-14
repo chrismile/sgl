@@ -516,4 +516,47 @@ bool VectorBackendNanoVG::renderGuiPropertyEditor(sgl::PropertyEditor& propertyE
     return reRender;
 }
 
+void VectorBackendNanoVG::copyVectorBackendSettingsFrom(VectorBackend* backend) {
+    if (getID() != backend->getID()) {
+        sgl::Logfile::get()->throwError(
+                "Error in VectorBackendNanoVG::copyVectorBackendSettingsFrom: Vector backend ID mismatch.");
+    }
+
+    auto* nanovgBackend = static_cast<VectorBackendNanoVG*>(backend);
+
+    bool recreate = false;
+    if (msaaMode != nanovgBackend->msaaMode) {
+        msaaMode = nanovgBackend->msaaMode;
+        recreate = true;
+    }
+    if (numMsaaSamples != nanovgBackend->numMsaaSamples) {
+        numMsaaSamples = nanovgBackend->numMsaaSamples;
+        if (msaaMode == NanoVgAAMode::MSAA) {
+            recreate = true;
+        }
+    }
+    if (supersamplingFactor != nanovgBackend->supersamplingFactor) {
+        supersamplingFactor = nanovgBackend->supersamplingFactor;
+        vectorWidget->setSupersamplingFactor(supersamplingFactor, false);
+        recreate = true;
+    }
+    if (useStencilStrokes != nanovgBackend->useStencilStrokes) {
+        useStencilStrokes = nanovgBackend->useStencilStrokes;
+        recreate = true;
+    }
+
+#if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
+    if (renderBackend != nanovgBackend->renderBackend) {
+        renderBackend = nanovgBackend->renderBackend;
+        recreate = true;
+    }
+#endif
+
+    if (recreate) {
+        destroy();
+        initialize();
+        vectorWidget->onWindowSizeChanged();
+    }
+}
+
 }

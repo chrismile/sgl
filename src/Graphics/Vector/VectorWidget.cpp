@@ -265,32 +265,36 @@ void VectorWidget::createDefaultBackend() {
     }
 }
 
+void VectorWidget::onSelectedBackendIdxChanged() {
+    if (vectorBackend) {
+        vectorBackend->destroy();
+        delete vectorBackend;
+        vectorBackend = nullptr;
+    }
+
+    auto it = factories.find(vectorBackendIds.at(selectedVectorBackendIdx));
+    if (it == factories.end()) {
+        sgl::Logfile::get()->throwError(
+                "Error in VectorWidget::renderGuiPropertyEditor: Could not create selected backend!");
+    }
+    vectorBackend = it->second.createBackendFunctor();
+#ifdef SUPPORT_VULKAN
+    if (rendererVk) {
+        vectorBackend->setRendererVk(rendererVk);
+    }
+#endif
+    vectorBackend->setClearSettings(shallClearBeforeRender, clearColor);
+    vectorBackend->initialize();
+    onWindowSizeChanged();
+}
+
 bool VectorWidget::renderGuiPropertyEditor(sgl::PropertyEditor& propertyEditor) {
     bool reRender = false;
 
     if (propertyEditor.addCombo(
             "Vector Backend", &selectedVectorBackendIdx, vectorBackendIds.data(), int(vectorBackendIds.size()))) {
         reRender = true;
-        if (vectorBackend) {
-            vectorBackend->destroy();
-            delete vectorBackend;
-            vectorBackend = nullptr;
-        }
-
-        auto it = factories.find(vectorBackendIds.at(selectedVectorBackendIdx));
-        if (it == factories.end()) {
-            sgl::Logfile::get()->throwError(
-                    "Error in VectorWidget::renderGuiPropertyEditor: Could not create selected backend!");
-        }
-        vectorBackend = it->second.createBackendFunctor();
-#ifdef SUPPORT_VULKAN
-        if (rendererVk) {
-            vectorBackend->setRendererVk(rendererVk);
-        }
-#endif
-        vectorBackend->setClearSettings(shallClearBeforeRender, clearColor);
-        vectorBackend->initialize();
-        onWindowSizeChanged();
+        onSelectedBackendIdxChanged();
     }
 
     if (vectorBackend && propertyEditor.beginNode(std::string(vectorBackend->getID()) + "###vector_backend")) {
@@ -301,6 +305,18 @@ bool VectorWidget::renderGuiPropertyEditor(sgl::PropertyEditor& propertyEditor) 
     }
 
     return reRender;
+}
+
+void VectorWidget::copyVectorWidgetSettingsFrom(sgl::VectorWidget* vectorWidget) {
+    if (vectorBackendIds != vectorWidget->vectorBackendIds) {
+        sgl::Logfile::get()->throwError(
+                "Error in VectorWidget::copyVectorWidgetSettingsFrom: Vector backend IDs mismatch.");
+    }
+    if (selectedVectorBackendIdx != vectorWidget->selectedVectorBackendIdx) {
+        selectedVectorBackendIdx = vectorWidget->selectedVectorBackendIdx;
+        onSelectedBackendIdxChanged();
+    }
+    vectorBackend->copyVectorBackendSettingsFrom(vectorWidget->vectorBackend);
 }
 
 void VectorWidget::render() {
