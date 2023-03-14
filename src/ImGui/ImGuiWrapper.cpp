@@ -209,9 +209,11 @@ void ImGuiWrapper::shutdown() {
         imguiCommandBuffers.clear();
         framebuffer = vk::FramebufferPtr();
         renderTargetImageView = vk::ImageViewPtr();
-
         vkDestroyDescriptorPool(device->getVkDevice(), imguiDescriptorPool, nullptr);
-        ImGui_ImplVulkan_Shutdown();
+
+        if (initialized) {
+            ImGui_ImplVulkan_Shutdown();
+        }
         //vkFreeCommandBuffers(
         //        device->getVkDevice(), commandPool,
         //        uint32_t(imguiCommandBuffers.size()), imguiCommandBuffers.data());

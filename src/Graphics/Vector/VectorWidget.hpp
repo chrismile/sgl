@@ -120,6 +120,8 @@ public:
 
 protected:
     void _initialize();
+    virtual void onBackendCreated() {}
+    virtual void onBackendDestroyed() {}
 
     template <typename T>
     void registerRenderBackendIfSupported(std::function<void()> renderFunctor) {

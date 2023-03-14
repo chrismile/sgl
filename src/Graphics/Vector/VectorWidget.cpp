@@ -79,6 +79,7 @@ VectorWidget::VectorWidget(const VectorWidgetSettings& vectorWidgetSettings) {
 
 VectorWidget::~VectorWidget() {
     if (vectorBackend) {
+        onBackendDestroyed();
         vectorBackend->destroy();
         delete vectorBackend;
         vectorBackend = nullptr;
@@ -268,11 +269,13 @@ void VectorWidget::createDefaultBackend() {
 #endif
         vectorBackend->setClearSettings(shallClearBeforeRender, clearColor);
         vectorBackend->initialize();
+        onBackendCreated();
     }
 }
 
 void VectorWidget::onSelectedBackendIdxChanged() {
     if (vectorBackend) {
+        onBackendDestroyed();
         vectorBackend->destroy();
         delete vectorBackend;
         vectorBackend = nullptr;
@@ -291,6 +294,7 @@ void VectorWidget::onSelectedBackendIdxChanged() {
 #endif
     vectorBackend->setClearSettings(shallClearBeforeRender, clearColor);
     vectorBackend->initialize();
+    onBackendCreated();
     onWindowSizeChanged();
 }
 
