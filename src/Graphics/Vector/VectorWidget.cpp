@@ -149,6 +149,12 @@ void VectorWidget::onWindowSizeChanged() {
 #if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN)
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
     RenderSystem renderBackend = vectorBackend->getRenderBackend();
+    if (renderSystem == RenderSystem::VULKAN || renderBackend == RenderSystem::VULKAN) {
+        fboWidthDisplay = std::max(fboWidthDisplay, 1);
+        fboHeightDisplay = std::max(fboHeightDisplay, 1);
+        fboWidthInternal = std::max(fboWidthInternal, 1);
+        fboHeightInternal = std::max(fboHeightInternal, 1);
+    }
 #endif
 
     vectorBackend->setWidgetSize(
