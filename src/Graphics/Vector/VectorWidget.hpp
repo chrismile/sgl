@@ -163,6 +163,7 @@ protected:
     int fboWidthDisplay = 1, fboHeightDisplay = 1;
     float scaleFactor = 1.0f;
     int supersamplingFactor = 4;
+    int blitTargetSupersamplingFactor = 1;
 
     VectorBackend* vectorBackend = nullptr;
 
@@ -177,7 +178,6 @@ private:
     std::map<std::string, VectorBackendFactory> factories;
     std::vector<std::string> vectorBackendIds;
     int selectedVectorBackendIdx = 0;
-    int blitTargetSupersamplingFactor = 1;
 
 #ifdef SUPPORT_OPENGL
     sgl::TexturePtr renderTargetGl;
