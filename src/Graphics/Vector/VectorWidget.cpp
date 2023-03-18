@@ -162,6 +162,7 @@ void VectorWidget::onWindowSizeChanged() {
             scaleFactor, supersamplingFactor, windowWidth, windowHeight,
             fboWidthInternal, fboHeightInternal, fboWidthDisplay, fboHeightDisplay);
     vectorBackend->onResize();
+    isFirstRender = true;
 
 #ifdef SUPPORT_OPENGL
     if (renderSystem == RenderSystem::OPENGL || renderBackend == RenderSystem::OPENGL) {
@@ -329,6 +330,10 @@ void VectorWidget::copyVectorWidgetSettingsFrom(sgl::VectorWidget* vectorWidget)
     vectorBackend->copyVectorBackendSettingsFrom(vectorWidget->vectorBackend);
 }
 
+bool VectorWidget::getIsFirstRender() {
+    return isFirstRender;
+}
+
 void VectorWidget::render() {
     createDefaultBackend();
     vectorBackend->renderStart();
@@ -339,6 +344,7 @@ void VectorWidget::render() {
         sgl::Logfile::get()->throwError("");
     }
     vectorBackend->renderEnd();
+    isFirstRender = false;
 }
 
 std::pair<uint32_t, uint32_t> VectorWidget::getBlitTargetSize() {

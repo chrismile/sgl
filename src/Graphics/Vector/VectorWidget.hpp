@@ -86,6 +86,7 @@ public:
     void render();
     virtual bool renderGuiPropertyEditor(sgl::PropertyEditor& propertyEditor);
     virtual void copyVectorWidgetSettingsFrom(sgl::VectorWidget* vectorWidget);
+    bool getIsFirstRender();
 
     // Returns whether the mouse is over the area of the window.
     /// Assumes the rendering area is the main window and aligned with position (0,0) of the mouse.
@@ -171,6 +172,7 @@ private:
     bool initialized = false;
     bool shallClearBeforeRender = true;
     glm::vec4 clearColor = glm::vec4(0.0f);
+    bool isFirstRender = true; // First rendered frame since reset (e.g. through resize)?
 
     void createDefaultBackend();
     void onSelectedBackendIdxChanged();
