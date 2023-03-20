@@ -341,7 +341,7 @@ void VectorWidget::render() {
     if (it != factories.end()) {
         it->second.renderFunctor();
     } else {
-        sgl::Logfile::get()->throwError("");
+        sgl::Logfile::get()->throwError("Error in VectorWidget::render: Unknown vector backend ID.");
     }
     vectorBackend->renderEnd();
     isFirstRender = false;

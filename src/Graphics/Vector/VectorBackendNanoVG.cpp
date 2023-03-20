@@ -348,6 +348,12 @@ void VectorBackendNanoVG::renderStart() {
             rendererVk->endCommandBuffer();
             rendererVk->submitToQueue();
             interopSyncVkGl->getRenderReadySemaphore()->waitSemaphoreGl(renderTargetGl, srcLayout);
+
+            vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
+            sgl::vk::CommandBufferPtr commandBufferPost =
+                    commandBuffersPost.at(swapchain ? swapchain->getCurrentFrame() : 0);
+            rendererVk->pushCommandBuffer(commandBufferPost);
+            rendererVk->beginCommandBuffer();
         }
 #endif
         glDisable(GL_DEPTH_TEST);
@@ -444,8 +450,6 @@ void VectorBackendNanoVG::renderEnd() {
                 commandBuffersPost.at(swapchain ? swapchain->getCurrentFrame() : 0);
         commandBufferPost->pushWaitSemaphore(
                 interopSyncVkGl->getRenderFinishedSemaphore(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-        rendererVk->pushCommandBuffer(commandBufferPost);
-        rendererVk->beginCommandBuffer();
         rendererVk->insertImageMemoryBarrier(
                 renderTargetImageViewVk,
                 renderTargetImageViewVk->getImage()->getVkImageLayout(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
