@@ -119,4 +119,156 @@ void computeHistogram(
     computeHistogram(histogram, histogramResolution, values, numValues, minVal, maxVal);
 }
 
+
+void computeHistogramUnormByte(
+        std::vector<float>& histogram, int histogramResolution,
+        const uint8_t* values, size_t numValues, float minVal, float maxVal) {
+    std::vector<std::atomic<int>> histogramAtomic(histogramResolution);
+    for (int histIdx = 0; histIdx < histogramResolution; histIdx++) {
+        histogramAtomic.at(histIdx) = 0;
+    }
+
+#ifdef USE_TBB
+    tbb::parallel_for(tbb::blocked_range<size_t>(0, numValues), [&](auto const& r) {
+        for (auto valIdx = r.begin(); valIdx != r.end(); valIdx++) {
+#else
+#if _OPENMP >= 201107
+    #pragma omp parallel for shared(values, numValues, minVal, maxVal, histogramResolution, histogramAtomic) default(none)
+#endif
+    for (size_t valIdx = 0; valIdx < numValues; valIdx++) {
+#endif
+        float value = float(values[valIdx]) / 255.0f;
+        int histIdx = std::clamp(
+                static_cast<int>((value - minVal) / (maxVal - minVal) * static_cast<float>(histogramResolution)),
+                0, histogramResolution - 1);
+        histogramAtomic.at(histIdx)++;
+    }
+#ifdef USE_TBB
+    });
+#endif
+
+    histogram.resize(histogramResolution);
+    for (int histIdx = 0; histIdx < histogramResolution; histIdx++) {
+        histogram.at(histIdx) = float(histogramAtomic.at(histIdx));
+    }
+
+    // Normalize values of histogram.
+#ifdef USE_TBB
+    float histogramMax = tbb::parallel_reduce(
+        tbb::blocked_range<int>(0, histogramResolution), 0.0f,
+        [&](tbb::blocked_range<int> const& r, float histogramMax) {
+            for (auto histIdx = r.begin(); histIdx != r.end(); histIdx++) {
+#else
+    float histogramMax = 0.0f;
+#if _OPENMP >= 201107
+    #pragma omp parallel for shared(histogram, histogramResolution) reduction(max: histogramMax) default(none)
+#endif
+    for (int histIdx = 0; histIdx < histogramResolution; histIdx++) {
+#endif
+        histogramMax = std::max(histogramMax, histogram.at(histIdx));
+    }
+#ifdef USE_TBB
+    return histogramMax;
+        }, sgl::max_predicate());
+#endif
+
+#ifdef USE_TBB
+    tbb::parallel_for(tbb::blocked_range<int>(0, histogramResolution), [&](auto const& r) {
+        for (auto histIdx = r.begin(); histIdx != r.end(); histIdx++) {
+#else
+#if _OPENMP >= 201107
+    #pragma omp parallel for shared(histogram, histogramResolution, histogramMax) default(none)
+#endif
+    for (int histIdx = 0; histIdx < histogramResolution; histIdx++) {
+#endif
+        histogram.at(histIdx) /= histogramMax;
+    }
+#ifdef USE_TBB
+    });
+#endif
+}
+
+void computeHistogramUnormByte(
+        std::vector<float>& histogram, int histogramResolution,
+        const uint8_t* values, size_t numValues) {
+    auto [minVal, maxVal] = sgl::reduceUnormByteArrayMinMax(values, numValues);
+    computeHistogramUnormByte(histogram, histogramResolution, values, numValues, minVal, maxVal);
+}
+
+
+void computeHistogramUnormShort(
+        std::vector<float>& histogram, int histogramResolution,
+        const uint16_t* values, size_t numValues, float minVal, float maxVal) {
+    std::vector<std::atomic<int>> histogramAtomic(histogramResolution);
+    for (int histIdx = 0; histIdx < histogramResolution; histIdx++) {
+        histogramAtomic.at(histIdx) = 0;
+    }
+
+#ifdef USE_TBB
+    tbb::parallel_for(tbb::blocked_range<size_t>(0, numValues), [&](auto const& r) {
+        for (auto valIdx = r.begin(); valIdx != r.end(); valIdx++) {
+#else
+#if _OPENMP >= 201107
+    #pragma omp parallel for shared(values, numValues, minVal, maxVal, histogramResolution, histogramAtomic) default(none)
+#endif
+    for (size_t valIdx = 0; valIdx < numValues; valIdx++) {
+#endif
+        float value = float(values[valIdx]) / 65535.0f;
+        int histIdx = std::clamp(
+                static_cast<int>((value - minVal) / (maxVal - minVal) * static_cast<float>(histogramResolution)),
+                0, histogramResolution - 1);
+        histogramAtomic.at(histIdx)++;
+    }
+#ifdef USE_TBB
+    });
+#endif
+
+    histogram.resize(histogramResolution);
+    for (int histIdx = 0; histIdx < histogramResolution; histIdx++) {
+        histogram.at(histIdx) = float(histogramAtomic.at(histIdx));
+    }
+
+    // Normalize values of histogram.
+#ifdef USE_TBB
+    float histogramMax = tbb::parallel_reduce(
+        tbb::blocked_range<int>(0, histogramResolution), 0.0f,
+        [&](tbb::blocked_range<int> const& r, float histogramMax) {
+            for (auto histIdx = r.begin(); histIdx != r.end(); histIdx++) {
+#else
+    float histogramMax = 0.0f;
+#if _OPENMP >= 201107
+    #pragma omp parallel for shared(histogram, histogramResolution) reduction(max: histogramMax) default(none)
+#endif
+    for (int histIdx = 0; histIdx < histogramResolution; histIdx++) {
+#endif
+        histogramMax = std::max(histogramMax, histogram.at(histIdx));
+    }
+#ifdef USE_TBB
+    return histogramMax;
+        }, sgl::max_predicate());
+#endif
+
+#ifdef USE_TBB
+    tbb::parallel_for(tbb::blocked_range<int>(0, histogramResolution), [&](auto const& r) {
+        for (auto histIdx = r.begin(); histIdx != r.end(); histIdx++) {
+#else
+#if _OPENMP >= 201107
+    #pragma omp parallel for shared(histogram, histogramResolution, histogramMax) default(none)
+#endif
+    for (int histIdx = 0; histIdx < histogramResolution; histIdx++) {
+#endif
+        histogram.at(histIdx) /= histogramMax;
+    }
+#ifdef USE_TBB
+    });
+#endif
+}
+
+void computeHistogramUnormShort(
+        std::vector<float>& histogram, int histogramResolution,
+        const uint16_t* values, size_t numValues) {
+    auto [minVal, maxVal] = sgl::reduceUnormShortArrayMinMax(values, numValues);
+    computeHistogramUnormShort(histogram, histogramResolution, values, numValues, minVal, maxVal);
+}
+
 }

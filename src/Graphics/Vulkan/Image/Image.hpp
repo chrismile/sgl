@@ -145,7 +145,7 @@ public:
      * VMA_MEMORY_USAGE_GPU_ONLY.
      */
     void uploadData(
-            VkDeviceSize sizeInBytes, void* data, bool generateMipmaps = true,
+            VkDeviceSize sizeInBytes, const void* data, bool generateMipmaps = true,
             VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 
     /**

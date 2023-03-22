@@ -165,11 +165,11 @@ public:
 
     /*
      * Secondary interface, where attribute data is not supplied through @see setAttributesValues, but when used
-     * through a callback.
+     * through a callback. 'nb' is the number of bytes per component. It is assumed 1 means ubyte, 2 means ushort,
+     * and 4 means float. 'attributes' and 'nb' may be a null pointer.
      */
-    // Secondary interface, where data .
     using RequestAttributeValuesCallback = std::function<void(
-            int varIdx, std::shared_ptr<float[]>& attributes, size_t& numAttributes, float& minVal, float& maxVal)>;
+            int varIdx, const void** attributes, int* nb, size_t& numAttributes, float& minVal, float& maxVal)>;
     inline void setRequestAttributeValuesCallback(RequestAttributeValuesCallback callback) {
         requestAttributeValuesCallback = std::move(callback);
     }

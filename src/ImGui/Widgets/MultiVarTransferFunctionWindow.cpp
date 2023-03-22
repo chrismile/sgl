@@ -247,13 +247,28 @@ void GuiVarData::setAttributeValues(const std::vector<float>& _attributes, float
 
 void GuiVarData::computeHistogram() {
     if (window->requestAttributeValuesCallback) {
-        std::shared_ptr<float[]> attributesSharedPtr;
+        const void* attributesPtr = nullptr;
+        int numBytesPerComponent = 0;
         size_t numAttributes = 0;
         float minVal, maxVal;
-        window->requestAttributeValuesCallback(varIdx, attributesSharedPtr, numAttributes, minVal, maxVal);
-        sgl::computeHistogram(
-                histogram, histogramResolution, attributesSharedPtr.get(), numAttributes,
-                selectedRange.x, selectedRange.y);
+        window->requestAttributeValuesCallback(
+                varIdx, &attributesPtr, &numBytesPerComponent, numAttributes, minVal, maxVal);
+        if (numBytesPerComponent == 1) {
+            sgl::computeHistogramUnormByte(
+                    histogram, histogramResolution, static_cast<const uint8_t*>(attributesPtr), numAttributes,
+                    selectedRange.x, selectedRange.y);
+        } else if (numBytesPerComponent == 2) {
+            sgl::computeHistogramUnormShort(
+                    histogram, histogramResolution, static_cast<const uint16_t*>(attributesPtr), numAttributes,
+                    selectedRange.x, selectedRange.y);
+        } else if (numBytesPerComponent == 4) {
+            sgl::computeHistogram(
+                    histogram, histogramResolution, static_cast<const float*>(attributesPtr), numAttributes,
+                    selectedRange.x, selectedRange.y);
+        } else {
+            sgl::Logfile::get()->throwError(
+                    "Error in GuiVarData::computeHistogram: Invalid number of bytes per component.");
+        }
     } else {
         sgl::computeHistogram(
                 histogram, histogramResolution, attributes.data(), attributes.size(),
@@ -942,11 +957,10 @@ void MultiVarTransferFunctionWindow::setAttributeDataDirty(int varIdx) {
 void MultiVarTransferFunctionWindow::loadAttributeDataIfEmpty(int varIdx) {
     GuiVarData& varData = guiVarData.at(varIdx);
     if (varData.isEmpty) {
-        std::shared_ptr<float[]> attributes;
         size_t numAttributes = 0;
         float minVal = std::numeric_limits<float>::max();
         float maxVal = std::numeric_limits<float>::lowest();
-        requestAttributeValuesCallback(varIdx, attributes, numAttributes, minVal, maxVal);
+        requestAttributeValuesCallback(varIdx, nullptr, nullptr, numAttributes, minVal, maxVal);
         varData.dataRange.x = minVal;
         varData.dataRange.y = maxVal;
         if (!varData.isSelectedRangeFixed) {

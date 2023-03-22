@@ -39,6 +39,18 @@ DLL_OBJECT void computeHistogram(
 DLL_OBJECT void computeHistogram(
         std::vector<float>& histogram, int histogramResolution, const float* values, size_t numValues);
 
+// For 8-bit and 16-bit UNORM data (i.e., integer values normalized to [0, 1]).
+DLL_OBJECT void computeHistogramUnormByte(
+        std::vector<float>& histogram, int histogramResolution,
+        const uint8_t* values, size_t numValues, float minVal, float maxVal);
+DLL_OBJECT void computeHistogramUnormByte(
+        std::vector<float>& histogram, int histogramResolution, const uint8_t* values, size_t numValues);
+DLL_OBJECT void computeHistogramUnormShort(
+        std::vector<float>& histogram, int histogramResolution,
+        const uint16_t* values, size_t numValues, float minVal, float maxVal);
+DLL_OBJECT void computeHistogramUnormShort(
+        std::vector<float>& histogram, int histogramResolution, const uint16_t* values, size_t numValues);
+
 }
 
 #endif //SGL_HISTOGRAM_HPP

@@ -616,7 +616,8 @@ ImagePtr Image::copy(bool copyContent, VkImageAspectFlags aspectFlags) {
     return newImage;
 }
 
-void Image::uploadData(VkDeviceSize sizeInBytes, void* data, bool generateMipmaps, VkCommandBuffer commandBuffer) {
+void Image::uploadData(
+        VkDeviceSize sizeInBytes, const void* data, bool generateMipmaps, VkCommandBuffer commandBuffer) {
     if (imageSettings.mipLevels <= 1) {
         generateMipmaps = false;
     }

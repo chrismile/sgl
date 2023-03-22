@@ -54,6 +54,20 @@ inline std::pair<float, float> reduceFloatArrayMinMax(const float* floatValues, 
             floatValues, N, std::make_pair(std::numeric_limits<float>::max(), std::numeric_limits<float>::lowest()));
 }
 
+// For 8-bit and 16-bit UNORM data (i.e., integer values normalized to [0, 1]).
+DLL_OBJECT std::pair<float, float> reduceUnormByteArrayMinMax(
+        const uint8_t* values, size_t N, std::pair<float, float> init);
+inline std::pair<float, float> reduceUnormByteArrayMinMax(const uint8_t* values, size_t N) {
+    return reduceUnormByteArrayMinMax(
+            values, N, std::make_pair(std::numeric_limits<float>::max(), std::numeric_limits<float>::lowest()));
+}
+DLL_OBJECT std::pair<float, float> reduceUnormShortArrayMinMax(
+        const uint16_t* values, size_t N, std::pair<float, float> init);
+inline std::pair<float, float> reduceUnormShortArrayMinMax(const uint16_t* values, size_t N) {
+    return reduceUnormShortArrayMinMax(
+            values, N, std::make_pair(std::numeric_limits<float>::max(), std::numeric_limits<float>::lowest()));
+}
+
 /*
  * Functions for the parallel min-max reduction of a vec3 array.
  */
