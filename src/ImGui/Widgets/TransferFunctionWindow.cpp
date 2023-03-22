@@ -175,7 +175,7 @@ bool TransferFunctionWindow::loadFunctionFromFile(const std::string& filename) {
     const char* interpolationColorSpaceName = tfNode->Attribute("interpolation_colorspace");
     if (interpolationColorSpaceName != nullptr) {
         for (int i = 0; i < 2; i++) {
-            if (strcmp(interpolationColorSpaceName, COLOR_SPACE_NAMES[interpolationColorSpace]) == 0) {
+            if (strcmp(interpolationColorSpaceName, COLOR_SPACE_NAMES[i]) == 0) {
                 interpolationColorSpace = (ColorSpace)i;
             }
         }
