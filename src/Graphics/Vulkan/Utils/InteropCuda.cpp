@@ -965,36 +965,36 @@ static CUresourceViewFormat getCudaResourceViewFormat(VkFormat format) {
         case VK_FORMAT_R32G32B32A32_SINT:
             return CU_RES_VIEW_FORMAT_SINT_4X32;
 
-        // TODO: Test if UNORM formats should really use float32.
+        // UNORM formats use UINT instead of FLOAT.
         case VK_FORMAT_R8_UNORM:
-            return CU_RES_VIEW_FORMAT_FLOAT_1X32;
+            return CU_RES_VIEW_FORMAT_UINT_1X8;
         case VK_FORMAT_R8G8_UNORM:
-            return CU_RES_VIEW_FORMAT_FLOAT_2X32;
+            return CU_RES_VIEW_FORMAT_UINT_2X8;
         case VK_FORMAT_R8G8B8A8_UNORM:
         case VK_FORMAT_B8G8R8A8_UNORM:
         case VK_FORMAT_A8B8G8R8_UNORM_PACK32:
-            return CU_RES_VIEW_FORMAT_FLOAT_4X32;
+            return CU_RES_VIEW_FORMAT_UINT_4X8;
         case VK_FORMAT_R16_UNORM:
         case VK_FORMAT_D16_UNORM:
-            return CU_RES_VIEW_FORMAT_FLOAT_1X32;
+            return CU_RES_VIEW_FORMAT_UINT_1X16;
         case VK_FORMAT_R16G16_UNORM:
-            return CU_RES_VIEW_FORMAT_FLOAT_2X32;
+            return CU_RES_VIEW_FORMAT_UINT_2X16;
         case VK_FORMAT_R16G16B16A16_UNORM:
-            return CU_RES_VIEW_FORMAT_FLOAT_4X32;
+            return CU_RES_VIEW_FORMAT_UINT_4X16;
         case VK_FORMAT_R8_SNORM:
-            return CU_RES_VIEW_FORMAT_FLOAT_1X32;
+            return CU_RES_VIEW_FORMAT_UINT_1X8;
         case VK_FORMAT_R8G8_SNORM:
-            return CU_RES_VIEW_FORMAT_FLOAT_2X32;
+            return CU_RES_VIEW_FORMAT_UINT_2X8;
         case VK_FORMAT_R8G8B8A8_SNORM:
         case VK_FORMAT_B8G8R8A8_SNORM:
         case VK_FORMAT_A8B8G8R8_SNORM_PACK32:
-            return CU_RES_VIEW_FORMAT_FLOAT_4X32;
+            return CU_RES_VIEW_FORMAT_UINT_4X8;
         case VK_FORMAT_R16_SNORM:
-            return CU_RES_VIEW_FORMAT_FLOAT_1X32;
+            return CU_RES_VIEW_FORMAT_UINT_1X16;
         case VK_FORMAT_R16G16_SNORM:
-            return CU_RES_VIEW_FORMAT_FLOAT_2X32;
+            return CU_RES_VIEW_FORMAT_UINT_2X16;
         case VK_FORMAT_R16G16B16A16_SNORM:
-            return CU_RES_VIEW_FORMAT_FLOAT_4X32;
+            return CU_RES_VIEW_FORMAT_UINT_4X16;
 
         case VK_FORMAT_R16_SFLOAT:
             return CU_RES_VIEW_FORMAT_FLOAT_1X16;
