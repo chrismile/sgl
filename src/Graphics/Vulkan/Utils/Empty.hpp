@@ -26,34 +26,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "../libs/volk/volk.h"
+#ifndef SGL_EMPTY_HPP
+#define SGL_EMPTY_HPP
 
-#ifdef __GNUC__
 /*
- * If the application is linked to another library using VMA, this could lead to wrong symbol lookups.
- * Thus, sgl shouldn't export the VMA symbols to begin with, as they only need to be visible to sgl.
+ * VMA_CONFIGURATION_USER_INCLUDES_H is set to avoid including <cassert> in vk_mem_alloc.h.
+ * Otherwise, on recent versions of Arch Linux/Manjaro, GCC complains about undefined references to __assert_fail.
+ * This is due to the use of "GCC visibility push(hidden)" in VmaImpl.cpp, which avoids exporting the symbols of VMA
+ * to avoid clashes with other linked libraries also using VMA.
+ * Unlike other headers, assert.h undefines _ASSERT_H and assert when being included multiple times.
  */
-#include <cstdint>
-#include <cstdlib>
-#include <cstring>
-#include <utility>
-#include <type_traits>
-#if __cplusplus >= 202002L || _MSVC_LANG >= 202002L // C++20
-#include <bit> // For std::popcount
-#endif
-#include <cassert>
-#include <algorithm>
-#include <mutex>
-#include <shared_mutex>
-#include <atomic>
-#pragma GCC visibility push(hidden)
-#define VMA_CONFIGURATION_USER_INCLUDES_H "Graphics/Vulkan/Utils/Empty.hpp"
-#endif
 
-#define VMA_IMPLEMENTATION
-#include "../libs/VMA/vk_mem_alloc.h"
-
-#ifdef __GNUC__
-#pragma GCC visibility pop
-#endif
-
+#endif //SGL_EMPTY_HPP
