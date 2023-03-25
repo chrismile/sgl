@@ -281,6 +281,7 @@ public:
     [[nodiscard]] inline VkDeviceMemory getVkDeviceMemory() { return deviceMemory; }
     [[nodiscard]] inline VkDeviceSize getDeviceMemoryOffset() const { return deviceMemoryOffset; }
     [[nodiscard]] inline VkDeviceSize getDeviceMemorySize() const { return deviceMemorySize; }
+    [[nodiscard]] inline VkDeviceSize getDeviceMemoryAllocationSize() const { return deviceMemoryAllocationSize; }
 
     void* mapMemory();
     void unmapMemory();
@@ -339,6 +340,7 @@ private:
     VkDeviceMemory deviceMemory = VK_NULL_HANDLE;
     VkDeviceSize deviceMemorySize = 0;
     VkDeviceSize deviceMemoryOffset = 0;
+    VkDeviceSize deviceMemoryAllocationSize = 0;
     bool isDedicatedAllocation = false;
 
 #ifdef _WIN32

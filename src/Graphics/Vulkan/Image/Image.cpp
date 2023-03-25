@@ -409,6 +409,7 @@ Image::Image(Device* device, const ImageSettings& imageSettings) : device(device
         deviceMemory = textureImageAllocationInfo.deviceMemory;
         deviceMemoryOffset = textureImageAllocationInfo.offset;
         // The allocation info size is just the size of this allocation.
+        deviceMemoryAllocationSize = textureImageAllocationInfo.size;
         if (imageSettings.exportMemory) {
             deviceMemorySize = device->getVmaDeviceMemoryAllocationSize(deviceMemory);
         } else {
@@ -424,6 +425,7 @@ Image::Image(Device* device, const ImageSettings& imageSettings) : device(device
 
         VkMemoryRequirements memoryRequirements;
         vkGetImageMemoryRequirements(device->getVkDevice(), image, &memoryRequirements);
+        deviceMemoryAllocationSize = memoryRequirements.size;
         deviceMemorySize = memoryRequirements.size;
 
         VkExportMemoryAllocateInfo exportMemoryAllocateInfo{};
@@ -545,6 +547,7 @@ void Image::createFromD3D12SharedResourceHandle(HANDLE resourceHandle, const Ima
 
     VkMemoryRequirements memoryRequirements{};
     vkGetImageMemoryRequirements(device->getVkDevice(), image, &memoryRequirements);
+    deviceMemoryAllocationSize = memoryRequirements.size;
     deviceMemorySize = memoryRequirements.size;
 
     /**
