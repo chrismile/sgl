@@ -248,23 +248,25 @@ void GuiVarData::setAttributeValues(const std::vector<float>& _attributes, float
 void GuiVarData::computeHistogram() {
     if (window->requestAttributeValuesCallback) {
         const void* attributesPtr = nullptr;
-        int numBytesPerComponent = 0;
+        ScalarDataFormat fmt = ScalarDataFormat::FLOAT;
         size_t numAttributes = 0;
         float minVal, maxVal;
         window->requestAttributeValuesCallback(
-                varIdx, &attributesPtr, &numBytesPerComponent, numAttributes, minVal, maxVal);
-        if (numBytesPerComponent == 1) {
-            sgl::computeHistogramUnormByte(
-                    histogram, histogramResolution, static_cast<const uint8_t*>(attributesPtr), numAttributes,
-                    selectedRange.x, selectedRange.y);
-        } else if (numBytesPerComponent == 2) {
-            sgl::computeHistogramUnormShort(
-                    histogram, histogramResolution, static_cast<const uint16_t*>(attributesPtr), numAttributes,
-                    selectedRange.x, selectedRange.y);
-        } else if (numBytesPerComponent == 4) {
+                varIdx, &attributesPtr, &fmt, numAttributes, minVal, maxVal);
+        if (fmt == ScalarDataFormat::FLOAT) {
             sgl::computeHistogram(
                     histogram, histogramResolution, static_cast<const float*>(attributesPtr), numAttributes,
                     selectedRange.x, selectedRange.y);
+        } else if (fmt == ScalarDataFormat::BYTE) {
+            sgl::computeHistogramUnormByte(
+                    histogram, histogramResolution, static_cast<const uint8_t*>(attributesPtr), numAttributes,
+                    selectedRange.x, selectedRange.y);
+        } else if (fmt == ScalarDataFormat::SHORT) {
+            sgl::computeHistogramUnormShort(
+                    histogram, histogramResolution, static_cast<const uint16_t*>(attributesPtr), numAttributes,
+                    selectedRange.x, selectedRange.y);
+        } else if (fmt == ScalarDataFormat::FLOAT16) {
+            sgl::Logfile::get()->throwError("Error in GuiVarData::computeHistogram: FLOAT16 is not yet supported.");
         } else {
             sgl::Logfile::get()->throwError(
                     "Error in GuiVarData::computeHistogram: Invalid number of bytes per component.");

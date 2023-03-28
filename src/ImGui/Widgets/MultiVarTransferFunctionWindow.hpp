@@ -32,6 +32,7 @@
 #include <utility>
 
 #include <Utils/File/PathWatch.hpp>
+#include <Utils/SciVis/ScalarDataFormat.hpp>
 #include <ImGui/Widgets/TransferFunctionWindow.hpp>
 #ifdef SUPPORT_OPENGL
 #include <Graphics/Buffers/GeometryBuffer.hpp>
@@ -165,11 +166,10 @@ public:
 
     /*
      * Secondary interface, where attribute data is not supplied through @see setAttributesValues, but when used
-     * through a callback. 'nb' is the number of bytes per component. It is assumed 1 means ubyte, 2 means ushort,
-     * and 4 means float. 'attributes' and 'nb' may be a null pointer.
+     * through a callback. 'fmt' is the format of the entries. 'attributes' and 'fmt' may be a null pointer.
      */
     using RequestAttributeValuesCallback = std::function<void(
-            int varIdx, const void** attributes, int* nb, size_t& numAttributes, float& minVal, float& maxVal)>;
+            int varIdx, const void** attributes, ScalarDataFormat* fmt, size_t& numAttributes, float& minVal, float& maxVal)>;
     inline void setRequestAttributeValuesCallback(RequestAttributeValuesCallback callback) {
         requestAttributeValuesCallback = std::move(callback);
     }
