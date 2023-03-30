@@ -179,6 +179,7 @@ public:
     void updateAttributeName(int varIdx, const std::string& attributeName);
     void removeAttribute(int varIdx);
     void addAttributeName(const std::string& name);
+    bool getIsSelectedRangeFixed(int varIdx);
 
     //bool saveCurrentVarTfToFile(const std::string& filename);
     //bool loadTfFromFile(int varIdx, const std::string& filename);

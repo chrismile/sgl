@@ -1039,6 +1039,10 @@ void MultiVarTransferFunctionWindow::addAttributeName(const std::string& name) {
     rebuildTransferFunctionMapComplete();
 }
 
+bool MultiVarTransferFunctionWindow::getIsSelectedRangeFixed(int varIdx) {
+    return guiVarData.at(varIdx).isSelectedRangeFixed;
+}
+
 
 bool MultiVarTransferFunctionWindow::loadFromTfNameList(const std::vector<std::string>& tfNames) {
     if (tfNames.size() != guiVarData.size()) {
