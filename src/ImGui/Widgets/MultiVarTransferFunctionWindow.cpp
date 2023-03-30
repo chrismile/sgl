@@ -1011,6 +1011,7 @@ void MultiVarTransferFunctionWindow::removeAttribute(int varIdxRemove) {
 
     recreateTfMapTexture();
     rebuildTransferFunctionMapComplete();
+    rebuildRangeSsbo();
 }
 
 void MultiVarTransferFunctionWindow::addAttributeName(const std::string& name) {
@@ -1037,6 +1038,7 @@ void MultiVarTransferFunctionWindow::addAttributeName(const std::string& name) {
 
     recreateTfMapTexture();
     rebuildTransferFunctionMapComplete();
+    rebuildRangeSsbo();
 }
 
 bool MultiVarTransferFunctionWindow::getIsSelectedRangeFixed(int varIdx) {
