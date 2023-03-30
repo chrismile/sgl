@@ -907,7 +907,7 @@ void Renderer::submitToQueue(
     if (device->getIsMainThread()) {
         queue = useGraphicsQueue ? device->getGraphicsQueue() : device->getComputeQueue();
     } else {
-        queue = device->getWorkerThreadGraphicsQueue();
+        queue = useGraphicsQueue ? device->getWorkerThreadGraphicsQueue() : device->getComputeQueue();
     }
     if (vkQueueSubmit(queue, 1, &submitInfo, fenceVk) != VK_SUCCESS) {
         sgl::Logfile::get()->throwError(
