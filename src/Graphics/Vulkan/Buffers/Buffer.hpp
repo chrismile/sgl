@@ -114,6 +114,16 @@ public:
     /**
      * Uploads memory to the GPU. If memoryUsage is not VMA_MEMORY_USAGE_CPU_ONLY, VMA_MEMORY_USAGE_CPU_TO_GPU or
      * VMA_MEMORY_USAGE_CPU_COPY, a staging buffer is used for uploading.
+     * NOTE: This version of uploadData will wait for the copy operation to finish and upload using a staging buffer
+     * of the specified chunk size.
+     * @param sizeInBytesData The size of the data to upload in bytes.
+     * @param dataPtr Data that is uploaded to the GPU.
+     */
+    void uploadDataChunked(size_t sizeInBytesData, size_t chunkSize, const void* dataPtr);
+
+    /**
+     * Uploads memory to the GPU. If memoryUsage is not VMA_MEMORY_USAGE_CPU_ONLY, VMA_MEMORY_USAGE_CPU_TO_GPU or
+     * VMA_MEMORY_USAGE_CPU_COPY, a staging buffer is used for uploading.
      * NOTE: The version of uploadData with four parameters needs to be called in order to save the staging buffer when
      * using a custom command buffer in combination with VMA_MEMORY_USAGE_GPU_ONLY buffers.
      * @param sizeInBytesData The size of the data to upload in bytes.
@@ -233,8 +243,9 @@ public:
     [[nodiscard]] inline VkBufferUsageFlags getVkBufferUsageFlags() const { return bufferUsageFlags; }
     [[nodiscard]] inline VmaMemoryUsage getVmaMemoryUsage() const { return memoryUsage; }
     [[nodiscard]] inline VkDeviceMemory getVkDeviceMemory() { return deviceMemory; }
-    [[nodiscard]] inline VkDeviceSize getDeviceMemoryOffset() { return deviceMemoryOffset; }
-    [[nodiscard]] inline VkDeviceSize getDeviceMemorySize() { return deviceMemorySize; }
+    [[nodiscard]] inline VkDeviceSize getDeviceMemoryOffset() const { return deviceMemoryOffset; }
+    [[nodiscard]] inline VkDeviceSize getDeviceMemorySize() const { return deviceMemorySize; }
+    [[nodiscard]] inline VkDeviceSize getDeviceMemoryAllocationSize() const { return deviceMemoryAllocationSize; }
 
 #if defined(SUPPORT_OPENGL) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
     /**
@@ -275,6 +286,7 @@ private:
     VkDeviceMemory deviceMemory = VK_NULL_HANDLE;
     VkDeviceSize deviceMemoryOffset = 0;
     VkDeviceSize deviceMemorySize = 0;
+    VkDeviceSize deviceMemoryAllocationSize = 0;
     bool isDedicatedAllocation = false;
 
     VkBufferUsageFlags bufferUsageFlags = 0;

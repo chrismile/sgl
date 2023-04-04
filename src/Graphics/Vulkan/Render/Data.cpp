@@ -89,6 +89,29 @@ void RenderData::setStaticBufferOptional(const BufferPtr& buffer, const std::str
         setStaticBuffer(buffer, binding);
     }
 }
+
+void RenderData::setStaticBufferArray(const std::vector<BufferPtr>& bufferArray, uint32_t binding) {
+    if (bufferArray.size() == 1) {
+        setStaticBuffer(bufferArray.front(), binding);
+        return;
+    }
+    for (FrameData& frameData : frameDataList) {
+        frameData.bufferArrays[binding] = bufferArray;
+    }
+    buffersStatic[binding] = true;
+    isDirty = true;
+}
+void RenderData::setStaticBufferArray(const std::vector<BufferPtr>& bufferArray, const std::string& descName) {
+    const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, descName);
+    setStaticBufferArray(bufferArray, descriptorInfo.binding);
+}
+void RenderData::setStaticBufferOptionalArray(const std::vector<BufferPtr>& bufferArray, const std::string& descName) {
+    uint32_t binding;
+    if (shaderStages->getDescriptorBindingByNameOptional(0, descName, binding)) {
+        setStaticBufferArray(bufferArray, binding);
+    }
+}
+
 void RenderData::setStaticBufferUnused(uint32_t binding) {
     const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByBinding(0, binding);
     for (FrameData& frameData : frameDataList) {
@@ -355,17 +378,26 @@ void RenderData::_updateDescriptorSets() {
             allocInfo.pSetLayouts = &descriptorSetLayout;
 
             variableDescriptorCount = 0;
-            if (!frameData.imageViewArrays.empty()) {
-                for (const auto& imageViewArrray : frameData.imageViewArrays) {
-                    const DescriptorInfo& descriptorInfo = descriptorSetInfo.at(imageViewArrray.first);
-                    if (descriptorInfo.count == 0) {
-                        if (variableDescriptorCount > 0) {
-                            sgl::Logfile::get()->throwError(
-                                    "Error in RenderData::_updateDescriptorSets: Encountered more than one "
-                                    "variable descriptor count entry. Only one is allowed per descriptor set.");
-                        }
-                        variableDescriptorCount = uint32_t(frameData.imageViewArrays.begin()->second.size());
+            for (const auto& bufferArrray : frameData.bufferArrays) {
+                const DescriptorInfo& descriptorInfo = descriptorSetInfo.at(bufferArrray.first);
+                if (descriptorInfo.count == 0) {
+                    if (variableDescriptorCount > 0) {
+                        sgl::Logfile::get()->throwError(
+                                "Error in RenderData::_updateDescriptorSets: Encountered more than one "
+                                "variable descriptor count entry. Only one is allowed per descriptor set.");
                     }
+                    variableDescriptorCount = uint32_t(frameData.bufferArrays.begin()->second.size());
+                }
+            }
+            for (const auto& imageViewArrray : frameData.imageViewArrays) {
+                const DescriptorInfo& descriptorInfo = descriptorSetInfo.at(imageViewArrray.first);
+                if (descriptorInfo.count == 0) {
+                    if (variableDescriptorCount > 0) {
+                        sgl::Logfile::get()->throwError(
+                                "Error in RenderData::_updateDescriptorSets: Encountered more than one "
+                                "variable descriptor count entry. Only one is allowed per descriptor set.");
+                    }
+                    variableDescriptorCount = uint32_t(frameData.imageViewArrays.begin()->second.size());
                 }
             }
 
@@ -392,6 +424,7 @@ void RenderData::_updateDescriptorSets() {
             VkWriteDescriptorSetAccelerationStructureKHR accelerationStructureInfo;
 
             // Arrays.
+            std::vector<VkDescriptorBufferInfo> bufferInfoArray;
             std::vector<VkDescriptorImageInfo> imageInfoArray;
         };
         std::vector<DescWriteData> descWriteDataArray;
@@ -483,20 +516,45 @@ void RenderData::_updateDescriptorSets() {
                        || descriptorInfo.type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
                        || descriptorInfo.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC
                        || descriptorInfo.type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) {
-                auto it = frameData.buffers.find(descriptorInfo.binding);
-                if (it == frameData.buffers.end()) {
-                    Logfile::get()->throwError(
-                            "Error in RenderData::_updateDescriptorSets: Couldn't find buffer with binding "
-                            + std::to_string(descriptorInfo.binding) + ".");
-                }
-                descWriteData.bufferInfo.buffer = it->second->getVkBuffer();
-                descWriteData.bufferInfo.offset = 0;
-                if (descriptorInfo.size > 0) {
-                    descWriteData.bufferInfo.range = std::min(it->second->getSizeInBytes(), size_t(descriptorInfo.size));
+                if (descriptorInfo.count == 1) {
+                    auto it = frameData.buffers.find(descriptorInfo.binding);
+                    if (it == frameData.buffers.end()) {
+                        Logfile::get()->throwError(
+                                "Error in RenderData::_updateDescriptorSets: Couldn't find buffer with binding "
+                                + std::to_string(descriptorInfo.binding) + ".");
+                    }
+                    descWriteData.bufferInfo.buffer = it->second->getVkBuffer();
+                    descWriteData.bufferInfo.offset = 0;
+                    if (descriptorInfo.size > 0) {
+                        descWriteData.bufferInfo.range = std::min(it->second->getSizeInBytes(), size_t(descriptorInfo.size));
+                    } else {
+                        descWriteData.bufferInfo.range = it->second->getSizeInBytes();
+                    }
                 } else {
-                    descWriteData.bufferInfo.range = it->second->getSizeInBytes();
+                    auto it = frameData.bufferArrays.find(descriptorInfo.binding);
+                    if (it == frameData.bufferArrays.end()) {
+                        Logfile::get()->throwError(
+                                "Error in RenderData::_updateDescriptorSets: Couldn't find buffer with binding "
+                                + std::to_string(descriptorInfo.binding) + ".");
+                    }
+                    descriptorWrite.descriptorCount = uint32_t(it->second.size());
+                    descWriteData.bufferInfoArray.resize(it->second.size());
+                    for (size_t idx = 0; idx < it->second.size(); idx++) {
+                        descWriteData.bufferInfoArray.at(idx).buffer = it->second.at(idx)->getVkBuffer();
+                        descWriteData.bufferInfoArray.at(idx).offset = 0;
+                        if (descriptorInfo.size > 0) {
+                            descWriteData.bufferInfoArray.at(idx).range = std::min(
+                                    it->second.at(idx)->getSizeInBytes(), size_t(descriptorInfo.size));
+                        } else {
+                            descWriteData.bufferInfoArray.at(idx).range = it->second.at(idx)->getSizeInBytes();
+                        }
+                    }
                 }
-                descriptorWrite.pBufferInfo = &descWriteData.bufferInfo;
+                if (descriptorInfo.count == 1) {
+                    descriptorWrite.pBufferInfo = &descWriteData.bufferInfo;
+                } else {
+                    descriptorWrite.pBufferInfo = descWriteData.bufferInfoArray.data();
+                }
             } else if (descriptorInfo.type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
                 auto it = frameData.accelerationStructures.find(descriptorInfo.binding);
                 if (it == frameData.accelerationStructures.end()) {
@@ -583,6 +641,15 @@ void RenderData::onSwapchainRecreated() {
                     } else {
                         Logfile::get()->throwError(
                                 "Error in RenderData::onSwapchainRecreated: Dynamic acceleration structures are "
+                                "not supported.");
+                    }
+                }
+                for (auto& it : firstFrameData.bufferArrays) {
+                    if (bufferArraysStatic[it.first]) {
+                        frameData.bufferArrays.insert(it);
+                    } else {
+                        Logfile::get()->throwError(
+                                "Error in RenderData::onSwapchainRecreated: Dynamic buffer arrays are "
                                 "not supported.");
                     }
                 }

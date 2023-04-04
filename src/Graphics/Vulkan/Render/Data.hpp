@@ -108,6 +108,9 @@ public:
     void setStaticBuffer(const BufferPtr& buffer, uint32_t binding);
     void setStaticBuffer(const BufferPtr& buffer, const std::string& descName);
     void setStaticBufferOptional(const BufferPtr& buffer, const std::string& descName);
+    void setStaticBufferArray(const std::vector<BufferPtr>& bufferArray, uint32_t binding);
+    void setStaticBufferArray(const std::vector<BufferPtr>& bufferArray, const std::string& descName);
+    void setStaticBufferOptionalArray(const std::vector<BufferPtr>& bufferArray, const std::string& descName);
 
     void setStaticBufferView(const BufferViewPtr& bufferView, uint32_t binding);
     void setStaticBufferView(const BufferViewPtr& bufferView, const std::string& descName);
@@ -172,6 +175,7 @@ public:
         std::map<uint32_t, TopLevelAccelerationStructurePtr> accelerationStructures;
 
         // Arrays.
+        std::map<uint32_t, std::vector<BufferPtr>> bufferArrays;
         std::map<uint32_t, std::vector<ImageViewPtr>> imageViewArrays;
 
         VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
@@ -191,6 +195,7 @@ private:
 
     std::map<uint32_t, bool> buffersStatic;
     std::map<uint32_t, bool> bufferViewsStatic;
+    std::map<uint32_t, bool> bufferArraysStatic;
     std::map<uint32_t, bool> imageViewsStatic;
     std::map<uint32_t, bool> imageViewArraysStatic;
     std::map<uint32_t, bool> accelerationStructuresStatic;

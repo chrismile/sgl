@@ -114,6 +114,7 @@ Buffer::Buffer(
         deviceMemory = bufferAllocationInfo.deviceMemory;
         deviceMemoryOffset = bufferAllocationInfo.offset;
         // The allocation info size is just the size of this allocation.
+        deviceMemoryAllocationSize = bufferAllocationInfo.size;
         if (exportMemory) {
             deviceMemorySize = device->getVmaDeviceMemoryAllocationSize(deviceMemory);
         } else {
@@ -129,6 +130,7 @@ Buffer::Buffer(
 
         VkMemoryRequirements memoryRequirements;
         vkGetBufferMemoryRequirements(device->getVkDevice(), buffer, &memoryRequirements);
+        deviceMemoryAllocationSize = memoryRequirements.size;
         deviceMemorySize = memoryRequirements.size;
 
         VkExportMemoryAllocateInfo exportMemoryAllocateInfo{};
@@ -150,7 +152,16 @@ Buffer::Buffer(
         memoryAllocateInfo.allocationSize = memoryRequirements.size;
         memoryAllocateInfo.memoryTypeIndex = device->findMemoryTypeIndex(
                 memoryRequirements.memoryTypeBits, memoryPropertyFlags);
-        memoryAllocateInfo.pNext = &exportMemoryAllocateInfo;
+
+        VkMemoryAllocateFlagsInfo memoryAllocateFlagsInfo{};
+        if ((usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) != 0) {
+            memoryAllocateFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
+            memoryAllocateFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+            memoryAllocateFlagsInfo.pNext = &exportMemoryAllocateInfo;
+            memoryAllocateInfo.pNext = &memoryAllocateFlagsInfo;
+        } else {
+            memoryAllocateInfo.pNext = &exportMemoryAllocateInfo;
+        }
 
         if (memoryAllocateInfo.memoryTypeIndex == std::numeric_limits<uint32_t>::max()) {
             Logfile::get()->throwError("Error in Buffer::Buffer: No suitable memory type index found!");
@@ -170,7 +181,8 @@ Buffer::Buffer(
         : Buffer(
                 device, sizeInBytes, usage, memoryUsage, queueExclusive, exportMemory,
                 useDedicatedAllocationForExportedMemory) {
-    uploadData(sizeInBytes, dataPtr);
+    // Upload in chunks of max. 2GB to avoid overly large staging buffers.
+    uploadDataChunked(sizeInBytes, size_t(1) << size_t(31), dataPtr);
 }
 
 Buffer::~Buffer() {
@@ -300,7 +312,7 @@ void Buffer::uploadData(size_t sizeInBytesData, const void* dataPtr) {
     }
 
     if (memoryUsage == VMA_MEMORY_USAGE_CPU_ONLY || memoryUsage == VMA_MEMORY_USAGE_CPU_TO_GPU
-            || memoryUsage == VMA_MEMORY_USAGE_CPU_COPY) {
+        || memoryUsage == VMA_MEMORY_USAGE_CPU_COPY) {
         void* mappedData = mapMemory();
         memcpy(mappedData, dataPtr, sizeInBytesData);
         unmapMemory();
@@ -328,6 +340,56 @@ void Buffer::uploadData(size_t sizeInBytesData, const void* dataPtr) {
                 commandBuffer, stagingBuffer->getVkBuffer(), this->getVkBuffer(), 1, &bufferCopy);
 
         device->endSingleTimeCommands(commandBuffer);
+    }
+}
+
+void Buffer::uploadDataChunked(size_t sizeInBytesData, size_t chunkSize, const void *dataPtr) {
+    if (sizeInBytesData > sizeInBytes) {
+        sgl::Logfile::get()->throwError(
+                "Error in Buffer::uploadDataChunked: sizeInBytesData > sizeInBytes");
+    }
+
+    if (memoryUsage == VMA_MEMORY_USAGE_CPU_ONLY || memoryUsage == VMA_MEMORY_USAGE_CPU_TO_GPU
+            || memoryUsage == VMA_MEMORY_USAGE_CPU_COPY) {
+        void* mappedData = mapMemory();
+        memcpy(mappedData, dataPtr, sizeInBytesData);
+        unmapMemory();
+    } else {
+        if ((bufferUsageFlags & VK_BUFFER_USAGE_TRANSFER_DST_BIT) == 0) {
+            sgl::Logfile::get()->throwError(
+                    "Error in Buffer::uploadDataChunked: Buffer usage flag VK_BUFFER_USAGE_TRANSFER_DST_BIT not set!");
+        }
+
+        size_t chunkSizeReal = std::min(chunkSize, sizeInBytesData);
+        BufferPtr stagingBuffer(new Buffer(
+                device, chunkSizeReal,
+                VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY,
+                true, true, true));
+
+        size_t sizeLeft = sizeInBytesData;
+        size_t writeOffset = 0;
+        void* mappedData = stagingBuffer->mapMemory();
+        while (sizeLeft > 0) {
+            size_t copySize = std::min(chunkSizeReal, sizeLeft);
+            memcpy(mappedData, dataPtr, copySize);
+
+            VkCommandBuffer commandBuffer = device->beginSingleTimeCommands();
+            VkBufferCopy bufferCopy{};
+            bufferCopy.size = copySize;
+            bufferCopy.srcOffset = 0;
+            bufferCopy.dstOffset = writeOffset;
+            vkCmdCopyBuffer(
+                    commandBuffer, stagingBuffer->getVkBuffer(), this->getVkBuffer(), 1, &bufferCopy);
+            device->endSingleTimeCommands(commandBuffer);
+
+            if (sizeLeft <= chunkSizeReal) {
+                sizeLeft = 0;
+            }  else {
+                sizeLeft -= chunkSizeReal;
+            }
+            writeOffset += chunkSizeReal;
+        }
+        stagingBuffer->unmapMemory();
     }
 }
 
@@ -530,12 +592,25 @@ void* Buffer::mapMemory() {
     }
 
     void* dataPointer = nullptr;
-    vmaMapMemory(device->getAllocator(), bufferAllocation, &dataPointer);
+    if (bufferAllocation) {
+        vmaMapMemory(device->getAllocator(), bufferAllocation, &dataPointer);
+    } else if (deviceMemory) {
+        VkResult result = vkMapMemory(
+                device->getVkDevice(), deviceMemory, deviceMemoryOffset, sizeInBytes, 0, &dataPointer);
+        if (result != VK_SUCCESS) {
+            sgl::Logfile::get()->throwError(
+                    "Error in Buffer::mapMemory: vkMapMemory failed.");
+        }
+    }
     return dataPointer;
 }
 
 void Buffer::unmapMemory() {
-    vmaUnmapMemory(device->getAllocator(), bufferAllocation);
+    if (bufferAllocation) {
+        vmaUnmapMemory(device->getAllocator(), bufferAllocation);
+    } else if (deviceMemory) {
+        vkUnmapMemory(device->getVkDevice(), deviceMemory);
+    }
 }
 
 VkDeviceAddress Buffer::getVkDeviceAddress() {
