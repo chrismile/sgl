@@ -362,9 +362,7 @@ void Buffer::uploadDataChunked(size_t sizeInBytesData, size_t chunkSize, const v
 
         size_t chunkSizeReal = std::min(chunkSize, sizeInBytesData);
         BufferPtr stagingBuffer(new Buffer(
-                device, chunkSizeReal,
-                VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY,
-                true, true, true));
+                device, chunkSizeReal, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY, queueExclusive));
 
         size_t sizeLeft = sizeInBytesData;
         size_t writeOffset = 0;
