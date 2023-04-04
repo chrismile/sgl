@@ -110,7 +110,7 @@ public:
     void setStaticBufferOptional(const BufferPtr& buffer, const std::string& descName);
     void setStaticBufferArray(const std::vector<BufferPtr>& bufferArray, uint32_t binding);
     void setStaticBufferArray(const std::vector<BufferPtr>& bufferArray, const std::string& descName);
-    void setStaticBufferOptionalArray(const std::vector<BufferPtr>& bufferArray, const std::string& descName);
+    void setStaticBufferArrayOptional(const std::vector<BufferPtr>& bufferArray, const std::string& descName);
 
     void setStaticBufferView(const BufferViewPtr& bufferView, uint32_t binding);
     void setStaticBufferView(const BufferViewPtr& bufferView, const std::string& descName);

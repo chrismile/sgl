@@ -105,7 +105,7 @@ void RenderData::setStaticBufferArray(const std::vector<BufferPtr>& bufferArray,
     const DescriptorInfo& descriptorInfo = shaderStages->getDescriptorInfoByName(0, descName);
     setStaticBufferArray(bufferArray, descriptorInfo.binding);
 }
-void RenderData::setStaticBufferOptionalArray(const std::vector<BufferPtr>& bufferArray, const std::string& descName) {
+void RenderData::setStaticBufferArrayOptional(const std::vector<BufferPtr>& bufferArray, const std::string& descName) {
     uint32_t binding;
     if (shaderStages->getDescriptorBindingByNameOptional(0, descName, binding)) {
         setStaticBufferArray(bufferArray, binding);
