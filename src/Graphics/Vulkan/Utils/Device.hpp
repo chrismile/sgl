@@ -248,6 +248,8 @@ public:
     inline const VkPhysicalDeviceIDProperties& getDeviceIDProperties() const { return physicalDeviceIDProperties; }
     inline const uint8_t* getPipelineCacheUuid() const { return physicalDeviceProperties.pipelineCacheUUID; }
     inline const VkPhysicalDeviceLimits& getLimits() const { return physicalDeviceProperties.limits; }
+    inline uint32_t getMaxStorageBufferRange() const { return physicalDeviceProperties.limits.maxStorageBufferRange; }
+    inline VkDeviceSize getMaxMemoryAllocationSize() const { return physicalDeviceVulkan11Properties.maxMemoryAllocationSize; }
     inline const VkPhysicalDeviceSparseProperties& getSparseProperties() const { return physicalDeviceProperties.sparseProperties; }
     inline const VkPhysicalDeviceFeatures& getPhysicalDeviceFeatures() { return physicalDeviceFeatures; }
     inline const VkPhysicalDeviceShaderFloat16Int8Features& getPhysicalDeviceShaderFloat16Int8Features() const {
@@ -456,8 +458,10 @@ private:
     VkPhysicalDeviceFeatures physicalDeviceFeatures{};
 #ifdef VK_VERSION_1_1
     VkPhysicalDeviceVulkan11Features physicalDeviceVulkan11Features{};
+    VkPhysicalDeviceVulkan11Properties physicalDeviceVulkan11Properties{};
 #else
     VkPhysicalDeviceVulkan11Features_Compat physicalDeviceVulkan11Features{};
+    VkPhysicalDeviceVulkan11Properties_Compat physicalDeviceVulkan11Properties{};
 #endif
 #ifdef VK_VERSION_1_2
     VkPhysicalDeviceVulkan12Features physicalDeviceVulkan12Features{};
