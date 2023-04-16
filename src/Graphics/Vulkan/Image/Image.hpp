@@ -175,6 +175,16 @@ public:
     void copyFromBuffer(BufferPtr& buffer, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 
     /**
+     * Copies the content of a buffer to an array layer of this image.
+     * @param buffer The copy source.
+     * @param baseArrayLayer The array layer of the image to copy the content of the buffer to.
+     * @param commandBuffer The command buffer. If VK_NULL_HANDLE is specified, a transient command buffer is used and
+     * the function will wait with vkQueueWaitIdle for the command to finish on the GPU.
+     */
+    void copyFromBufferLayered(
+            BufferPtr& buffer, uint32_t baseArrayLayer, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
+
+    /**
      * Copies the content of the image to the specified buffer.
      * @param buffer The copy destination.
      * @param aspectMask The aspect mask flags for the copy operation.
@@ -190,6 +200,16 @@ public:
      * the function will wait with vkQueueWaitIdle for the command to finish on the GPU.
      */
     void copyToBuffer(BufferPtr& buffer, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
+
+    /**
+     * Copies the content of the image to the specified buffer.
+     * @param buffer The copy destination.
+     * @param baseArrayLayer The array layer of the image to copy the content of the buffer to.
+     * @param commandBuffer The command buffer. If VK_NULL_HANDLE is specified, a transient command buffer is used and
+     * the function will wait with vkQueueWaitIdle for the command to finish on the GPU.
+     */
+    void copyToBufferLayered(
+            BufferPtr& buffer, uint32_t baseArrayLayer, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 
     /**
      * Copies the content of the image to the specified image.
