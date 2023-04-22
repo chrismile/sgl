@@ -314,7 +314,7 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
         glEnable(GL_MULTISAMPLE);
     }
 
-    if (renderSystem == RenderSystem::OPENGL && windowSettings.vSync) {
+    if (renderSystem == RenderSystem::OPENGL) {
         if (windowSettings.vSync) {
             SDL_GL_SetSwapInterval(-1);
 
