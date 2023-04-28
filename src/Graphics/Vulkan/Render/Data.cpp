@@ -378,9 +378,19 @@ void RenderData::_updateDescriptorSets() {
             allocInfo.pSetLayouts = &descriptorSetLayout;
 
             variableDescriptorCount = 0;
-            for (const auto& bufferArrray : frameData.bufferArrays) {
-                const DescriptorInfo& descriptorInfo = descriptorSetInfo.at(bufferArrray.first);
-                if (descriptorInfo.count == 0) {
+            for (const auto& bufferArray : frameData.bufferArrays) {
+                const DescriptorInfo* descriptorInfo = nullptr;
+                for (const auto& descriptorInfoCurrent : descriptorSetInfo) {
+                    if (descriptorInfoCurrent.binding == bufferArray.first) {
+                        descriptorInfo = &descriptorInfoCurrent;
+                        break;
+                    }
+                }
+                if (!descriptorInfo) {
+                    sgl::Logfile::get()->throwError(
+                            "Error in RenderData::_updateDescriptorSets: No descriptor found for buffer array.");
+                }
+                if (descriptorInfo->count == 0) {
                     if (variableDescriptorCount > 0) {
                         sgl::Logfile::get()->throwError(
                                 "Error in RenderData::_updateDescriptorSets: Encountered more than one "
@@ -389,9 +399,19 @@ void RenderData::_updateDescriptorSets() {
                     variableDescriptorCount = uint32_t(frameData.bufferArrays.begin()->second.size());
                 }
             }
-            for (const auto& imageViewArrray : frameData.imageViewArrays) {
-                const DescriptorInfo& descriptorInfo = descriptorSetInfo.at(imageViewArrray.first);
-                if (descriptorInfo.count == 0) {
+            for (const auto& imageViewArray : frameData.imageViewArrays) {
+                const DescriptorInfo* descriptorInfo = nullptr;
+                for (const auto& descriptorInfoCurrent : descriptorSetInfo) {
+                    if (descriptorInfoCurrent.binding == imageViewArray.first) {
+                        descriptorInfo = &descriptorInfoCurrent;
+                        break;
+                    }
+                }
+                if (!descriptorInfo) {
+                    sgl::Logfile::get()->throwError(
+                            "Error in RenderData::_updateDescriptorSets: No descriptor found for image array.");
+                }
+                if (descriptorInfo->count == 0) {
                     if (variableDescriptorCount > 0) {
                         sgl::Logfile::get()->throwError(
                                 "Error in RenderData::_updateDescriptorSets: Encountered more than one "
