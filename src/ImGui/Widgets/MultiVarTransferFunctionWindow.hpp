@@ -214,11 +214,19 @@ public:
     // Get data range.
     [[nodiscard]] inline float getDataRangeMin(int varIdx) const { return guiVarData.at(varIdx).dataRange.x; }
     [[nodiscard]] inline float getDataRangeMax(int varIdx) const { return guiVarData.at(varIdx).dataRange.y; }
-    [[nodiscard]] inline const glm::vec2 &getDataRange(int varIdx) const { return guiVarData.at(varIdx).dataRange; }
+    [[nodiscard]] inline const glm::vec2& getDataRange(int varIdx) const { return guiVarData.at(varIdx).dataRange; }
     [[nodiscard]] inline float getSelectedRangeMin(int varIdx) const { return guiVarData.at(varIdx).selectedRange.x; }
     [[nodiscard]] inline float getSelectedRangeMax(int varIdx) const { return guiVarData.at(varIdx).selectedRange.y; }
-    [[nodiscard]] inline const glm::vec2 &getSelectedRange(int varIdx) const {
+    [[nodiscard]] inline const glm::vec2& getSelectedRange(int varIdx) const {
         return guiVarData.at(varIdx).selectedRange;
+    }
+    [[nodiscard]] inline std::pair<float, float> getSelectedRangePair(int varIdx) {
+        auto& varData = guiVarData.at(varIdx);
+        if (requestAttributeValuesCallback && varData.isEmpty) {
+            loadAttributeDataIfEmpty(varIdx);
+        }
+        const glm::vec2 selectedRange = varData.selectedRange;
+        return std::make_pair(selectedRange.x, selectedRange.y);
     }
 
     inline void setSelectedRange(int varIdx, const glm::vec2 &range) {
@@ -232,7 +240,7 @@ public:
     inline sgl::GeometryBufferPtr& getMinMaxSsbo() { return minMaxSsbo; }
 #endif
 #ifdef SUPPORT_VULKAN
-    inline sgl::vk::BufferPtr &getMinMaxSsboVulkan() { return minMaxSsboVulkan; }
+    inline sgl::vk::BufferPtr& getMinMaxSsboVulkan() { return minMaxSsboVulkan; }
 #endif
 
 private:
@@ -245,7 +253,7 @@ private:
     std::vector<std::string> varNames;
     std::vector<GuiVarData> guiVarData;
     size_t selectedVarIndex = 0;
-    GuiVarData *currVarData = nullptr;
+    GuiVarData* currVarData = nullptr;
     bool useAttributeArrays = false;
 
     // Secondary, on-request loading interface.
