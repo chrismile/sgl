@@ -204,6 +204,12 @@ public:
 
     bool getTransferFunctionMapRebuilt();
     std::vector<sgl::Color16> getTransferFunctionMap_sRGB(int varIdx);
+    std::vector<glm::vec4> getTransferFunctionMap_sRGBDownscaled(int varIdx, int numEntries);
+
+    void setTransferFunction(
+            int varIdx, const std::vector<OpacityPoint>& opacityPoints,
+            const std::vector<sgl::ColorPoint_sRGB>& colorPoints,
+            ColorSpace interpolationColorSpace = COLOR_SPACE_LINEAR_RGB);
 
     // Get data range.
     [[nodiscard]] inline float getDataRangeMin(int varIdx) const { return guiVarData.at(varIdx).dataRange.x; }

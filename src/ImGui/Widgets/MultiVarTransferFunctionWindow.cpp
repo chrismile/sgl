@@ -1114,6 +1114,39 @@ std::vector<sgl::Color16> MultiVarTransferFunctionWindow::getTransferFunctionMap
             transferFunctionMap_sRGB.cbegin() + int(TRANSFER_FUNCTION_TEXTURE_SIZE) * (varIdx + 1));
 }
 
+std::vector<glm::vec4> MultiVarTransferFunctionWindow::getTransferFunctionMap_sRGBDownscaled(
+        int varIdx, int numEntries) {
+    std::vector<glm::vec4> colorsSubsampled;
+    colorsSubsampled.reserve(numEntries);
+    int idxOffset = int(TRANSFER_FUNCTION_TEXTURE_SIZE) * varIdx;
+    auto Ni = float(TRANSFER_FUNCTION_TEXTURE_SIZE - 1);
+    auto Nj = float(numEntries - 1);
+    for (int j = 0; j < numEntries; j++) {
+        float t = float(j) / Nj;
+        float t0 = std::floor(t * Ni);
+        float t1 = std::ceil(t * Ni);
+        float f = t * Ni - t0;
+        int i0 = int(t0);
+        int i1 = int(t1);
+        glm::vec4 c0 = transferFunctionMap_sRGB.at(idxOffset + i0).getFloatColorRGBA();
+        glm::vec4 c1 = transferFunctionMap_sRGB.at(idxOffset + i1).getFloatColorRGBA();
+        colorsSubsampled.push_back(glm::mix(c0, c1, f));
+    }
+    return colorsSubsampled;
+}
+
+void MultiVarTransferFunctionWindow::setTransferFunction(
+        int varIdx, const std::vector<OpacityPoint>& opacityPoints,
+        const std::vector<sgl::ColorPoint_sRGB>& colorPoints,
+        ColorSpace interpolationColorSpace) {
+    GuiVarData& varData = guiVarData.at(varIdx);
+    varData.selectedPointType = sgl::SELECTED_POINT_TYPE_NONE;
+    varData.interpolationColorSpace = interpolationColorSpace;
+    varData.opacityPoints = opacityPoints;
+    varData.colorPoints = colorPoints;
+    varData.rebuildTransferFunctionMap();
+}
+
 void MultiVarTransferFunctionWindow::update(float dt) {
     directoryContentWatch.update([this] { this->updateAvailableFiles(); });
     if (currVarData) {
