@@ -46,6 +46,8 @@
 #include <mutex>
 #include <shared_mutex>
 #include <atomic>
+// Missing include for MinGW.
+#include <cstdio>
 #pragma GCC visibility push(hidden)
 #define VMA_CONFIGURATION_USER_INCLUDES_H "Graphics/Vulkan/Utils/Empty.hpp"
 #endif
