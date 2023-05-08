@@ -799,30 +799,48 @@ void GuiVarData::dragPoint() {
 bool GuiVarData::selectNearestOpacityPoint(int& currentSelectionIndex, const glm::vec2& mousePosWidget) {
     float scaleFactor = sgl::ImGuiWrapper::get()->getScaleFactor();
 
+    int closestPointIdx = -1;
+    float closestDistance = std::numeric_limits<float>::max();
     for (int i = 0; i < (int)opacityPoints.size(); i++) {
         glm::vec2 centerPt = glm::vec2(
                 opacityPoints.at(i).position * opacityGraphBox.getWidth(),
                 (1.0f - opacityPoints.at(i).opacity) * opacityGraphBox.getHeight());
-        if (glm::length(centerPt - mousePosWidget) < scaleFactor * 10.0f) {
-            currentSelectionIndex = i;
-            return true;
+        float currentDistance = glm::length(centerPt - mousePosWidget);
+        if (currentDistance < scaleFactor * 10.0f && currentDistance < closestDistance) {
+            closestPointIdx = i;
+            closestDistance = currentDistance;
         }
     }
+
+    if (closestPointIdx >= 0) {
+        currentSelectionIndex = closestPointIdx;
+        return true;
+    }
+
     return false;
 }
 
 bool GuiVarData::selectNearestColorPoint(int& currentSelectionIndex, const glm::vec2& mousePosWidget) {
     float scaleFactor = sgl::ImGuiWrapper::get()->getScaleFactor();
 
+    int closestPointIdx = -1;
+    float closestDistance = std::numeric_limits<float>::max();
     for (int i = 0; i < (int)colorPoints.size(); i++) {
         ImVec2 centerPt = ImVec2(
                 colorPoints.at(i).position * colorBarBox.getWidth(),
                 colorBarBox.getHeight()/2);
-        if (glm::abs(centerPt.x - mousePosWidget.x) < scaleFactor * 10.0f) {
-            currentSelectionIndex = i;
-            return true;
+        float currentDistance = glm::abs(centerPt.x - mousePosWidget.x);
+        if (currentDistance < scaleFactor * 10.0f && currentDistance < closestDistance) {
+            closestPointIdx = i;
+            closestDistance = currentDistance;
         }
     }
+
+    if (closestPointIdx >= 0) {
+        currentSelectionIndex = closestPointIdx;
+        return true;
+    }
+
     return false;
 }
 
