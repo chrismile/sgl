@@ -117,20 +117,28 @@ public:
     void insertImageMemoryBarrier(
             const vk::ImagePtr& image, VkImageLayout oldLayout, VkImageLayout newLayout,
             VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
-            VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask);
+            VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+            uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            uint32_t dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED);
     void insertImageMemoryBarriers(
             const std::vector<vk::ImagePtr>& images, VkImageLayout oldLayout, VkImageLayout newLayout,
             VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
-            VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask);
+            VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+            uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            uint32_t dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED);
     void insertImageMemoryBarrier(
             const vk::ImageViewPtr& imageView, VkImageLayout oldLayout, VkImageLayout newLayout,
             VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
-            VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask);
+            VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+            uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            uint32_t dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED);
     void insertImageMemoryBarrierSubresource(
             const vk::ImagePtr& image, VkImageLayout oldLayout, VkImageLayout newLayout,
             VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
             VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
-            uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount);
+            uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount,
+            uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            uint32_t dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED);
 
     // Push constants.
     void pushConstants(

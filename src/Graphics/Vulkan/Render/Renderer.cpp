@@ -688,20 +688,24 @@ void Renderer::transitionImageLayoutSubresource(
 void Renderer::insertImageMemoryBarrier(
         const vk::ImagePtr& image, VkImageLayout oldLayout, VkImageLayout newLayout,
         VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
-        VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask) {
-    image->insertMemoryBarrier(commandBuffer, oldLayout, newLayout, srcStage, dstStage, srcAccessMask, dstAccessMask);
+        VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+        uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex) {
+    image->insertMemoryBarrier(
+            commandBuffer, oldLayout, newLayout, srcStage, dstStage, srcAccessMask, dstAccessMask,
+            srcQueueFamilyIndex, dstQueueFamilyIndex);
 }
 
 void Renderer::insertImageMemoryBarriers(
         const std::vector<vk::ImagePtr>& images, VkImageLayout oldLayout, VkImageLayout newLayout,
         VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
-        VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask) {
+        VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+        uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex) {
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     barrier.oldLayout = oldLayout;
     barrier.newLayout = newLayout;
-    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.srcQueueFamilyIndex = srcQueueFamilyIndex;
+    barrier.dstQueueFamilyIndex = dstQueueFamilyIndex;
     barrier.subresourceRange.baseMipLevel = 0;
     barrier.subresourceRange.baseArrayLayer = 0;
     barrier.srcAccessMask = srcAccessMask;
@@ -738,19 +742,22 @@ void Renderer::insertImageMemoryBarriers(
 void Renderer::insertImageMemoryBarrier(
         const vk::ImageViewPtr& imageView, VkImageLayout oldLayout, VkImageLayout newLayout,
         VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
-        VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask) {
+        VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+        uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex) {
     imageView->insertMemoryBarrier(
-            commandBuffer, oldLayout, newLayout, srcStage, dstStage, srcAccessMask, dstAccessMask);
+            commandBuffer, oldLayout, newLayout, srcStage, dstStage, srcAccessMask, dstAccessMask,
+            srcQueueFamilyIndex, dstQueueFamilyIndex);
 }
 
 void Renderer::insertImageMemoryBarrierSubresource(
         const vk::ImagePtr& image, VkImageLayout oldLayout, VkImageLayout newLayout,
         VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
         VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
-        uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount) {
+        uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount,
+        uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex) {
     image->insertMemoryBarrierSubresource(
             commandBuffer, oldLayout, newLayout, srcStage, dstStage, srcAccessMask, dstAccessMask,
-            baseMipLevel, levelCount, baseArrayLayer, layerCount);
+            baseMipLevel, levelCount, baseArrayLayer, layerCount, srcQueueFamilyIndex, dstQueueFamilyIndex);
 }
 
 void Renderer::pushConstants(

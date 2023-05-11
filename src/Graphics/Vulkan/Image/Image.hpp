@@ -79,6 +79,7 @@ struct DLL_OBJECT ImageSettings {
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     VkSharingMode sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    uint32_t queueFamilyIndexCount = 0; // Only for sharingMode == VK_SHARING_MODE_CONCURRENT.
     bool exportMemory = false; // Whether to export the memory for external use, e.g., in OpenGL.
     /**
      * Whether to use a dedicated allocation instead of using VMA. At the moment, this is only supported for exported
@@ -266,7 +267,9 @@ public:
     void insertMemoryBarrier(
             VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout,
             VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
-            VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask);
+            VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+            uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            uint32_t dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED);
     void transitionImageLayoutSubresource(
             VkImageLayout newLayout,
             uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount);
@@ -278,12 +281,16 @@ public:
             uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount);
     void transitionImageLayoutSubresource(
             VkImageLayout oldLayout, VkImageLayout newLayout, VkCommandBuffer commandBuffer,
-            uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount);
+            uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount,
+            uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            uint32_t dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED);
     void insertMemoryBarrierSubresource(
             VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout,
             VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
             VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
-            uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount);
+            uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount,
+            uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            uint32_t dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED);
 
     /// The subresource layout contains information necessary when accessing the image data on the CPU (e.g., stride).
     [[nodiscard]] VkSubresourceLayout getSubresourceLayout(
@@ -410,7 +417,9 @@ public:
     void insertMemoryBarrier(
             VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout,
             VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
-            VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask);
+            VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+            uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            uint32_t dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED);
 
     inline Device* getDevice() { return device; }
     inline ImagePtr& getImage() { return image; }

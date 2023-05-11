@@ -347,6 +347,7 @@ Image::Image(Device* device, const ImageSettings& imageSettings) : device(device
     imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     imageCreateInfo.usage = imageSettings.usage;
     imageCreateInfo.sharingMode = imageSettings.sharingMode;
+    imageCreateInfo.queueFamilyIndexCount = imageSettings.queueFamilyIndexCount;
     imageCreateInfo.samples = imageSettings.numSamples;
     imageCreateInfo.flags = 0;
 
@@ -513,6 +514,7 @@ void Image::createFromD3D12SharedResourceHandle(HANDLE resourceHandle, const Ima
     imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     imageCreateInfo.usage = imageSettings.usage;
     imageCreateInfo.sharingMode = imageSettings.sharingMode;
+    imageCreateInfo.queueFamilyIndexCount = imageSettings.queueFamilyIndexCount;
     imageCreateInfo.samples = imageSettings.numSamples;
     imageCreateInfo.flags = 0;
 
@@ -1035,11 +1037,13 @@ void Image::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayo
 void Image::insertMemoryBarrier(
         VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout,
         VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
-        VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask) {
+        VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+        uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex) {
     Image::insertMemoryBarrierSubresource(
             commandBuffer, oldLayout, newLayout, srcStage, dstStage, srcAccessMask, dstAccessMask,
             0, this->getImageSettings().mipLevels,
-            0, this->getImageSettings().arrayLayers);
+            0, this->getImageSettings().arrayLayers,
+            srcQueueFamilyIndex, dstQueueFamilyIndex);
 }
 
 void Image::transitionImageLayoutSubresource(
@@ -1067,13 +1071,14 @@ void Image::transitionImageLayoutSubresource(
 
 void Image::transitionImageLayoutSubresource(
         VkImageLayout oldLayout, VkImageLayout newLayout, VkCommandBuffer commandBuffer,
-        uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount) {
+        uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount,
+        uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex) {
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     barrier.oldLayout = oldLayout;
     barrier.newLayout = newLayout;
-    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.srcQueueFamilyIndex = srcQueueFamilyIndex;
+    barrier.dstQueueFamilyIndex = dstQueueFamilyIndex;
     barrier.image = image;
     barrier.subresourceRange.baseMipLevel = baseMipLevel;
     barrier.subresourceRange.levelCount = levelCount;
@@ -1155,13 +1160,14 @@ void Image::insertMemoryBarrierSubresource(
         VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout,
         VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
         VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
-        uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount) {
+        uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount,
+        uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex) {
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     barrier.oldLayout = oldLayout;
     barrier.newLayout = newLayout;
-    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.srcQueueFamilyIndex = srcQueueFamilyIndex;
+    barrier.dstQueueFamilyIndex = dstQueueFamilyIndex;
     barrier.image = this->getVkImage();
     barrier.subresourceRange.baseMipLevel = baseMipLevel;
     barrier.subresourceRange.levelCount = levelCount;
@@ -1455,11 +1461,13 @@ void ImageView::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout new
 void ImageView::insertMemoryBarrier(
         VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout,
         VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
-        VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask) {
+        VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+        uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex) {
     image->insertMemoryBarrierSubresource(
             commandBuffer, oldLayout, newLayout, srcStage, dstStage, srcAccessMask, dstAccessMask,
             subresourceRange.baseMipLevel, subresourceRange.levelCount,
-            subresourceRange.baseArrayLayer, subresourceRange.layerCount);
+            subresourceRange.baseArrayLayer, subresourceRange.layerCount,
+            srcQueueFamilyIndex, dstQueueFamilyIndex);
 }
 
 
