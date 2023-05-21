@@ -850,6 +850,7 @@ void Device::createLogicalDeviceAndQueues(
             requestedDeviceFeatures.shaderAtomicFloatFeatures = shaderAtomicFloatFeatures;
         }
     }
+#ifdef VK_EXT_shader_atomic_float2
     if (deviceExtensionsSet.find(VK_EXT_SHADER_ATOMIC_FLOAT_2_EXTENSION_NAME) != deviceExtensionsSet.end()) {
         shaderAtomicFloat2Features.sType =
                 VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_2_FEATURES_EXT;
@@ -862,6 +863,7 @@ void Device::createLogicalDeviceAndQueues(
             requestedDeviceFeatures.shaderAtomicFloat2Features = shaderAtomicFloat2Features;
         }
     }
+#endif
     if (deviceExtensionsSet.find(VK_NV_MESH_SHADER_EXTENSION_NAME) != deviceExtensionsSet.end()) {
         meshShaderFeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
         VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
@@ -976,10 +978,12 @@ void Device::createLogicalDeviceAndQueues(
         *pNextPtr = &requestedDeviceFeatures.shaderAtomicFloatFeatures;
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.shaderAtomicFloatFeatures.pNext);
     }
+#ifdef VK_EXT_shader_atomic_float2
     if (requestedDeviceFeatures.shaderAtomicFloat2Features.shaderBufferFloat32AtomicMinMax) {
         *pNextPtr = &requestedDeviceFeatures.shaderAtomicFloat2Features;
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.shaderAtomicFloat2Features.pNext);
     }
+#endif
     if (requestedDeviceFeatures.meshShaderFeaturesNV.meshShader) {
         *pNextPtr = &requestedDeviceFeatures.meshShaderFeaturesNV;
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.meshShaderFeaturesNV.pNext);

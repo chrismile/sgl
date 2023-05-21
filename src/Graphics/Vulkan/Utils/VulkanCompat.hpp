@@ -254,6 +254,23 @@ typedef struct VkPhysicalDeviceVulkan13Properties_Compat {
     VkDeviceSize          maxBufferSize;
 } VkPhysicalDeviceVulkan13Properties_Compat;
 
+typedef struct VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT_Compat {
+    VkStructureType    sType;
+    void*              pNext;
+    VkBool32           shaderBufferFloat16Atomics;
+    VkBool32           shaderBufferFloat16AtomicAdd;
+    VkBool32           shaderBufferFloat16AtomicMinMax;
+    VkBool32           shaderBufferFloat32AtomicMinMax;
+    VkBool32           shaderBufferFloat64AtomicMinMax;
+    VkBool32           shaderSharedFloat16Atomics;
+    VkBool32           shaderSharedFloat16AtomicAdd;
+    VkBool32           shaderSharedFloat16AtomicMinMax;
+    VkBool32           shaderSharedFloat32AtomicMinMax;
+    VkBool32           shaderSharedFloat64AtomicMinMax;
+    VkBool32           shaderImageFloat32AtomicMinMax;
+    VkBool32           sparseImageFloat32AtomicMinMax;
+} VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT_Compat;
+
 typedef struct VkPhysicalDeviceMeshShaderFeaturesEXT_Compat {
     VkStructureType    sType;
     void*              pNext;

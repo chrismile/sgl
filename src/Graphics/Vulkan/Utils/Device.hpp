@@ -127,8 +127,10 @@ struct DLL_OBJECT DeviceFeatures {
                 VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_ATOMIC_INT64_FEATURES_EXT;
         shaderAtomicFloatFeatures.sType =
                 VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT;
+#ifdef VK_EXT_shader_atomic_float2
         shaderAtomicFloat2Features.sType =
                 VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_2_FEATURES_EXT;
+#endif
         meshShaderFeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
 #ifdef VK_EXT_mesh_shader
         meshShaderFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
@@ -162,7 +164,11 @@ struct DLL_OBJECT DeviceFeatures {
     VkPhysicalDeviceShaderAtomicInt64FeaturesKHR shaderAtomicInt64Features{};
     VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT shaderImageAtomicInt64Features{};
     VkPhysicalDeviceShaderAtomicFloatFeaturesEXT shaderAtomicFloatFeatures{};
+#ifdef VK_EXT_shader_atomic_float2
     VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT shaderAtomicFloat2Features{};
+#else
+    VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT_Compat shaderAtomicFloat2Features{};
+#endif
     VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragmentShaderBarycentricFeaturesNV{};
     VkPhysicalDeviceMeshShaderFeaturesNV meshShaderFeaturesNV{};
 #ifdef VK_EXT_mesh_shader
@@ -276,9 +282,11 @@ public:
     inline const VkPhysicalDeviceShaderAtomicFloatFeaturesEXT& getPhysicalDeviceShaderAtomicFloatFeatures() const {
         return shaderAtomicFloatFeatures;
     }
+#ifdef VK_EXT_shader_atomic_float2
     inline const VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT& getPhysicalDeviceShaderAtomicFloat2Features() const {
         return shaderAtomicFloat2Features;
     }
+#endif
     inline const VkPhysicalDeviceShaderDrawParametersFeatures& getPhysicalDeviceShaderDrawParametersFeatures() const {
         return shaderDrawParametersFeatures;
     }
@@ -518,7 +526,11 @@ private:
     VkPhysicalDeviceShaderAtomicInt64FeaturesKHR shaderAtomicInt64Features{};
     VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT shaderImageAtomicInt64Features{};
     VkPhysicalDeviceShaderAtomicFloatFeaturesEXT shaderAtomicFloatFeatures{};
+#ifdef VK_EXT_shader_atomic_float2
     VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT shaderAtomicFloat2Features{};
+#else
+    VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT_Compat shaderAtomicFloat2Features{};
+#endif
     VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragmentShaderBarycentricFeaturesNV{};
     VkPhysicalDeviceMeshShaderFeaturesNV meshShaderFeaturesNV{};
 #ifdef VK_EXT_mesh_shader
