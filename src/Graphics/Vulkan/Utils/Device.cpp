@@ -812,6 +812,32 @@ void Device::createLogicalDeviceAndQueues(
             requestedDeviceFeatures.fragmentShaderInterlockFeatures = fragmentShaderInterlockFeatures;
         }
     }
+    if (deviceExtensionsSet.find(VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME) != deviceExtensionsSet.end()) {
+        shaderAtomicInt64Features.sType =
+                VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES_KHR;
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &shaderAtomicInt64Features;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        if (requestedDeviceFeatures.shaderAtomicInt64Features.shaderBufferInt64Atomics == VK_FALSE
+            && requestedDeviceFeatures.shaderAtomicInt64Features.shaderSharedInt64Atomics == VK_FALSE) {
+            requestedDeviceFeatures.shaderAtomicInt64Features = shaderAtomicInt64Features;
+        }
+    }
+    if (deviceExtensionsSet.find(VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME) != deviceExtensionsSet.end()) {
+        shaderImageAtomicInt64Features.sType =
+                VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_ATOMIC_INT64_FEATURES_EXT;
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &shaderImageAtomicInt64Features;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        if (requestedDeviceFeatures.shaderImageAtomicInt64Features.shaderImageInt64Atomics == VK_FALSE
+                && requestedDeviceFeatures.shaderImageAtomicInt64Features.sparseImageInt64Atomics == VK_FALSE) {
+            requestedDeviceFeatures.shaderImageAtomicInt64Features = shaderImageAtomicInt64Features;
+        }
+    }
     if (deviceExtensionsSet.find(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME) != deviceExtensionsSet.end()) {
         shaderAtomicFloatFeatures.sType =
                 VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT;
@@ -935,6 +961,16 @@ void Device::createLogicalDeviceAndQueues(
     if (requestedDeviceFeatures.fragmentShaderInterlockFeatures.fragmentShaderPixelInterlock) {
         *pNextPtr = &requestedDeviceFeatures.fragmentShaderInterlockFeatures;
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.fragmentShaderInterlockFeatures.pNext);
+    }
+    if (requestedDeviceFeatures.shaderAtomicInt64Features.shaderBufferInt64Atomics
+            || requestedDeviceFeatures.shaderAtomicInt64Features.shaderSharedInt64Atomics) {
+        *pNextPtr = &requestedDeviceFeatures.shaderAtomicInt64Features;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.shaderAtomicInt64Features.pNext);
+    }
+    if (requestedDeviceFeatures.shaderImageAtomicInt64Features.shaderImageInt64Atomics
+            || requestedDeviceFeatures.shaderImageAtomicInt64Features.sparseImageInt64Atomics) {
+        *pNextPtr = &requestedDeviceFeatures.shaderImageAtomicInt64Features;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.shaderImageAtomicInt64Features.pNext);
     }
     if (requestedDeviceFeatures.shaderAtomicFloatFeatures.shaderBufferFloat32Atomics) {
         *pNextPtr = &requestedDeviceFeatures.shaderAtomicFloatFeatures;
