@@ -760,17 +760,17 @@ void GuiVarData::dragPoint() {
         if (currentSelectionIndex == 0) {
             normalizedPosition.x = 0.0f;
         }
-        if (currentSelectionIndex == int(opacityPoints.size())-1) {
+        if (currentSelectionIndex == int(opacityPoints.size()) - 1) {
             normalizedPosition.x = 1.0f;
         }
         // Clip to neighbors!
         if (currentSelectionIndex != 0
-            && normalizedPosition.x < opacityPoints.at(currentSelectionIndex-1).position) {
-            normalizedPosition.x = opacityPoints.at(currentSelectionIndex-1).position;
+                && normalizedPosition.x < opacityPoints.at(currentSelectionIndex - 1).position) {
+            normalizedPosition.x = opacityPoints.at(currentSelectionIndex - 1).position;
         }
-        if (currentSelectionIndex != int(opacityPoints.size())-1
-            && normalizedPosition.x > opacityPoints.at(currentSelectionIndex+1).position) {
-            normalizedPosition.x = opacityPoints.at(currentSelectionIndex+1).position;
+        if (currentSelectionIndex != int(opacityPoints.size()) - 1
+                && normalizedPosition.x > opacityPoints.at(currentSelectionIndex + 1).position) {
+            normalizedPosition.x = opacityPoints.at(currentSelectionIndex + 1).position;
         }
         opacityPoints.at(currentSelectionIndex).position = normalizedPosition.x;
         opacityPoints.at(currentSelectionIndex).opacity = normalizedPosition.y;
@@ -782,12 +782,12 @@ void GuiVarData::dragPoint() {
         normalizedPosition = glm::clamp(normalizedPosition, 0.0f, 1.0f);
         // Clip to neighbors!
         if (currentSelectionIndex != 0
-            && normalizedPosition < colorPoints.at(currentSelectionIndex-1).position) {
-            normalizedPosition = colorPoints.at(currentSelectionIndex-1).position;
+                && normalizedPosition < colorPoints.at(currentSelectionIndex - 1).position) {
+            normalizedPosition = colorPoints.at(currentSelectionIndex - 1).position;
         }
-        if (currentSelectionIndex != int(colorPoints.size())-1
-            && normalizedPosition > colorPoints.at(currentSelectionIndex+1).position) {
-            normalizedPosition = colorPoints.at(currentSelectionIndex+1).position;
+        if (currentSelectionIndex != int(colorPoints.size()) - 1
+                && normalizedPosition > colorPoints.at(currentSelectionIndex + 1).position) {
+            normalizedPosition = colorPoints.at(currentSelectionIndex + 1).position;
         }
         colorPoints.at(currentSelectionIndex).position = normalizedPosition;
     }
@@ -1163,6 +1163,7 @@ void MultiVarTransferFunctionWindow::setTransferFunction(
     varData.opacityPoints = opacityPoints;
     varData.colorPoints = colorPoints;
     varData.rebuildTransferFunctionMap();
+    reRender = true;
 }
 
 void MultiVarTransferFunctionWindow::update(float dt) {
