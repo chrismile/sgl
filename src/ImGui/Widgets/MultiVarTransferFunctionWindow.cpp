@@ -930,9 +930,10 @@ void MultiVarTransferFunctionWindow::setAttributeNames(const std::vector<std::st
     transferFunctionMap_linearRGB.resize(TRANSFER_FUNCTION_TEXTURE_SIZE * names.size());
     selectedVarIndex = 0;
 
-    if (guiVarData.size() != names.size()){
+    if (guiVarData.size() != names.size()) {
         guiVarData.clear();
         guiVarData.reserve(names.size());
+        dirtyIndices.resize(names.size());
 
         recreateTfMapTexture();
 
@@ -1004,6 +1005,7 @@ void MultiVarTransferFunctionWindow::removeAttribute(int varIdxRemove) {
     varNames.erase(varNames.begin() + varIdxRemove);
     guiVarData.erase(guiVarData.begin() + varIdxRemove);
     minMaxData.erase(minMaxData.begin() + varIdxRemove * 2, minMaxData.begin() + varIdxRemove * 2 + 2);
+    dirtyIndices.erase(dirtyIndices.begin() + varIdxRemove);
 
     ptrdiff_t trafoRangeBegin = varIdxRemove * ptrdiff_t(TRANSFER_FUNCTION_TEXTURE_SIZE);
     ptrdiff_t trafoRangeEnd = trafoRangeBegin + ptrdiff_t(TRANSFER_FUNCTION_TEXTURE_SIZE);
@@ -1053,6 +1055,7 @@ void MultiVarTransferFunctionWindow::addAttributeName(const std::string& name) {
                 &transferFunctionMap_linearRGB.at(TRANSFER_FUNCTION_TEXTURE_SIZE * varIdx);
     }
     currVarData = &guiVarData.at(selectedVarIndex);
+    dirtyIndices.emplace_back(true);
 
     recreateTfMapTexture();
     rebuildTransferFunctionMapComplete();
@@ -1126,6 +1129,16 @@ bool MultiVarTransferFunctionWindow::getTransferFunctionMapRebuilt() {
     return false;
 }
 
+bool MultiVarTransferFunctionWindow::getIsVariableDirty(int varIdx) {
+    return dirtyIndices.at(varIdx);
+}
+
+void MultiVarTransferFunctionWindow::resetDirty() {
+    for (size_t i = 0; i < dirtyIndices.size(); i++) {
+        dirtyIndices.at(i) = false;
+    }
+}
+
 std::vector<sgl::Color16> MultiVarTransferFunctionWindow::getTransferFunctionMap_sRGB(int varIdx) {
     return std::vector<sgl::Color16>(
             transferFunctionMap_sRGB.cbegin() + int(TRANSFER_FUNCTION_TEXTURE_SIZE) * varIdx,
@@ -1163,6 +1176,7 @@ void MultiVarTransferFunctionWindow::setTransferFunction(
     varData.opacityPoints = opacityPoints;
     varData.colorPoints = colorPoints;
     varData.rebuildTransferFunctionMap();
+    dirtyIndices.at(varIdx) = true;
     reRender = true;
 }
 
@@ -1281,7 +1295,10 @@ bool MultiVarTransferFunctionWindow::renderGui() {
             }
 
             if (currVarData) {
-                reRender = currVarData->renderGui() || reRender;
+                if (currVarData->renderGui()) {
+                    dirtyIndices.at(selectedVarIndex) = true;
+                    reRender = true;
+                }
             }
         }
         ImGui::End();

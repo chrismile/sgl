@@ -203,6 +203,8 @@ public:
 #endif
 
     bool getTransferFunctionMapRebuilt();
+    bool getIsVariableDirty(int varIdx);
+    void resetDirty();
     std::vector<sgl::Color16> getTransferFunctionMap_sRGB(int varIdx);
     std::vector<glm::vec4> getTransferFunctionMap_sRGBDownscaled(int varIdx, int numEntries);
 
@@ -252,6 +254,7 @@ private:
 
     std::vector<std::string> varNames;
     std::vector<GuiVarData> guiVarData;
+    std::vector<bool> dirtyIndices;
     size_t selectedVarIndex = 0;
     GuiVarData* currVarData = nullptr;
     bool useAttributeArrays = false;
