@@ -92,6 +92,13 @@ struct max_predicate {
     }
 };
 
+struct plus_pair_predicate {
+    template<class T, class U>
+    constexpr decltype(auto) operator()(std::pair<T, U>&& t, std::pair<T, U>&& u) const{
+        return std::make_pair(t.first + u.first, t.second + u.second);
+    }
+};
+
 }
 
 #endif //SGL_REDUCTION_HPP
