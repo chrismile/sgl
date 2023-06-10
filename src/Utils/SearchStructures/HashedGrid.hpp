@@ -46,7 +46,7 @@ public:
      * @param numEntries The number of entries the hash array should have.
      * @param cellSize The size of a cell in x, y and z direction (uniform).
      */
-	explicit HashedGrid(size_t numEntries = 53, float cellSize = 0.1) : cellSize(cellSize) {
+    explicit HashedGrid(size_t numEntries = 53, float cellSize = 0.1) : cellSize(cellSize) {
         hashTableEntries.resize(numEntries);
     }
 
@@ -255,41 +255,44 @@ private:
 
 
     /**
-	 * The hash function.
-	 * @param x The integer grid cell position in x direction.
-	 * @param y The integer grid cell position in y direction.
-	 * @param z The integer grid cell position in z direction.
-	 */
-	size_t hashFunction(ptrdiff_t x, ptrdiff_t y, ptrdiff_t z) {
-        // Hash Function: H(i,j,k) = (ip_1 xor jp_2 xor jp_3) mod n
-        const ptrdiff_t PRIME_NUMBERS[] = { 50331653, 12582917, 3145739 };
-        return static_cast<size_t>(((x * PRIME_NUMBERS[0]) ^ (y * PRIME_NUMBERS[1])) ^ (z * PRIME_NUMBERS[2])) % hashTableEntries.size();
-    }
+     * The hash function.
+     * @param x The integer grid cell position in x direction.
+     * @param y The integer grid cell position in y direction.
+     * @param z The integer grid cell position in z direction.
+     */
+    size_t hashFunction(ptrdiff_t x, ptrdiff_t y, ptrdiff_t z);
 
-	/**
-	 * Converts a floating point point position to an integer grid position.
-	 * @param pos The point position.
-	 * @param xg The integer grid cell position in x direction. 
-	 * @param yg The integer grid cell position in y direction. 
-	 * @param zg The integer grid cell position in z direction. 
-	 */
-	void convertPointToGridPosition(const glm::vec3& pos, ptrdiff_t& xg, ptrdiff_t& yg, ptrdiff_t& zg) {
+    /**
+     * Converts a floating point point position to an integer grid position.
+     * @param pos The point position.
+     * @param xg The integer grid cell position in x direction. 
+     * @param yg The integer grid cell position in y direction. 
+     * @param zg The integer grid cell position in z direction. 
+     */
+    void convertPointToGridPosition(const glm::vec3& pos, ptrdiff_t& xg, ptrdiff_t& yg, ptrdiff_t& zg) {
         xg = static_cast<ptrdiff_t>(std::floor(pos.x / cellSize));
         yg = static_cast<ptrdiff_t>(std::floor(pos.y / cellSize));
         zg = static_cast<ptrdiff_t>(std::floor(pos.z / cellSize));
     }
 
     /**
-	 * Converts a point position to its according hash map entry index.
-	 * @param pos The point position.
-	 * @return The index in the hash map the point belongs to.
-	 */
-	size_t convertPointPositionToTableIndex(const glm::vec3& pos) {
+     * Converts a point position to its according hash map entry index.
+     * @param pos The point position.
+     * @return The index in the hash map the point belongs to.
+     */
+    size_t convertPointPositionToTableIndex(const glm::vec3& pos) {
         ptrdiff_t xg, yg, zg;
         convertPointToGridPosition(pos, xg, yg, zg);
         return hashFunction(xg, yg, zg);
     }
 };
+
+template<class T>
+size_t HashedGrid<T>::hashFunction(ptrdiff_t x, ptrdiff_t y, ptrdiff_t z) {
+    // Hash Function: H(i,j,k) = (ip_1 xor jp_2 xor jp_3) mod n
+    const ptrdiff_t PRIME_NUMBERS[] = { 50331653, 12582917, 3145739 };
+    return static_cast<size_t>(((x * PRIME_NUMBERS[0]) ^ (y * PRIME_NUMBERS[1])) ^ (z * PRIME_NUMBERS[2])) % hashTableEntries.size();
+}
 
 }
 

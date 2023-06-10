@@ -48,8 +48,8 @@ namespace sgl {
 class AxisAlignedBox
 {
 public:
-	AxisAlignedBox() = default;
-	AxisAlignedBox(const glm::vec3& min, const glm::vec3& max) : min(min), max(max) {}
+    AxisAlignedBox() = default;
+    AxisAlignedBox(const glm::vec3& min, const glm::vec3& max) : min(min), max(max) {}
 
     /// The minimum and maximum coordinate corners of the 3D cuboid.
     glm::vec3 min{}, max{};
