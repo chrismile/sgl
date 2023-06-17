@@ -49,6 +49,54 @@ const char* const archiveFileExtensionsUnsupported[] = {
         ".gz", ".bz2", ".xz", ".lzma"
 };
 
+static ArchiveFileLoadReturnType loadFileFromArchive(
+        archive* a, bool isRaw, const std::string& filenameLocal, uint8_t*& buffer, size_t& bufferSize, bool verbose) {
+    bool foundArchiveEntry = false;
+    archive_entry* entry;
+    while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {
+        if (filenameLocal == archive_entry_pathname(entry) || isRaw) {
+            bufferSize = archive_entry_size(entry);
+            buffer = new uint8_t[bufferSize];
+            size_t sizeRead = archive_read_data(a, buffer, bufferSize);
+            if (sizeRead != bufferSize) {
+                if (verbose) {
+                    sgl::Logfile::get()->writeError("Error in loadFileFromArchive: Invalid archive data.");
+                }
+                delete[] buffer;
+                buffer = nullptr;
+                bufferSize = 0;
+                return ARCHIVE_FILE_LOAD_INVALID_ARCHIVE_DATA;
+            }
+            foundArchiveEntry = true;
+            break;
+        } else {
+            archive_read_data_skip(a);
+        }
+    }
+
+    auto returnCode = archive_read_free(a);
+    if (returnCode != ARCHIVE_OK) {
+        if (verbose) {
+            sgl::Logfile::get()->writeError("Error in loadFileFromArchive: Invalid archive data.");
+        }
+        if (!foundArchiveEntry) {
+            delete[] buffer;
+            buffer = nullptr;
+            bufferSize = 0;
+        }
+        return ARCHIVE_FILE_LOAD_INVALID_ARCHIVE_DATA;
+    }
+
+    if (!foundArchiveEntry) {
+        if (verbose) {
+            sgl::Logfile::get()->writeError("Error in loadFileFromArchive: Couldn't find file in archive.");
+        }
+        return ARCHIVE_FILE_LOAD_FILE_NOT_FOUND;
+    }
+
+    return ARCHIVE_FILE_LOAD_SUCCESSFUL;
+}
+
 ArchiveFileLoadReturnType loadFileFromArchive(
         const std::string& filename, uint8_t*& buffer, size_t& bufferSize, bool verbose) {
     std::string filenameArchive;
@@ -74,8 +122,8 @@ ArchiveFileLoadReturnType loadFileFromArchive(
             const size_t extensionPos = filenameLower.find(archiveExtension);
             if (extensionPos != std::string::npos) {
                 sgl::Logfile::get()->writeError(
-                        std::string() + "Error in loadFileFromArchive: Invalid archive format. Please use "
-                        + ".tar" + fileExtension + " instead of " + fileExtension);
+                        "Error in loadFileFromArchive: Invalid archive format. Please use .tar"
+                        + fileExtension + " instead of " + fileExtension);
                 return ARCHIVE_FILE_LOAD_FORMAT_UNSUPPORTED;
             }
         }
@@ -110,54 +158,65 @@ ArchiveFileLoadReturnType loadFileFromArchive(
         return ARCHIVE_FILE_LOAD_INVALID_ARCHIVE_DATA;
     }
 
-    bool foundArchiveEntry = false;
-    archive_entry* entry;
-    while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {
-        if (filenameLocal == archive_entry_pathname(entry) || isRaw) {
-            bufferSize = archive_entry_size(entry);
-            buffer = new uint8_t[bufferSize];
-            size_t sizeRead = archive_read_data(a, buffer, bufferSize);
-            if (sizeRead != bufferSize) {
-                if (verbose) {
-                    sgl::Logfile::get()->writeError("Error in loadFileFromArchive: Invalid archive data.");
-                }
-                delete[] buffer;
-                buffer = nullptr;
-                bufferSize = 0;
-                return ARCHIVE_FILE_LOAD_INVALID_ARCHIVE_DATA;
-            }
-            foundArchiveEntry = true;
-            break;
-        } else {
-            archive_read_data_skip(a);
-        }
-    }
+    return loadFileFromArchive(a, isRaw, filenameLocal, buffer, bufferSize, verbose);
+}
 
-    returnCode = archive_read_free(a);
+ArchiveFileLoadReturnType loadFileFromArchiveBuffer(
+        const uint8_t* archiveBuffer, size_t archiveBufferSize, bool isRaw, const std::string& filenameLocal,
+        uint8_t*& buffer, size_t& bufferSize, bool verbose) {
+    archive* a = archive_read_new();
+    archive_read_support_filter_all(a);
+    if (isRaw) {
+        archive_read_support_format_raw(a);
+    } else {
+        archive_read_support_format_all(a);
+    }
+    int returnCode = archive_read_open_memory(a, archiveBuffer, archiveBufferSize);
     if (returnCode != ARCHIVE_OK) {
         if (verbose) {
-            sgl::Logfile::get()->writeError("Error in loadFileFromArchive: Invalid archive data.");
-        }
-        if (!foundArchiveEntry) {
-            delete[] buffer;
-            buffer = nullptr;
-            bufferSize = 0;
+            sgl::Logfile::get()->writeError("Error in loadFileFromArchiveBuffer: Invalid archive data.");
         }
         return ARCHIVE_FILE_LOAD_INVALID_ARCHIVE_DATA;
     }
 
-    if (!foundArchiveEntry) {
-        if (verbose) {
-            sgl::Logfile::get()->writeError("Error in loadFileFromArchive: Couldn't find file in archive.");
+    return loadFileFromArchive(a, isRaw, filenameLocal, buffer, bufferSize, verbose);
+}
+
+
+
+ArchiveFileLoadReturnType loadAllFilesFromArchive(
+        archive* a, std::unordered_map<std::string, ArchiveEntry>& files, bool verbose) {
+    archive_entry* entry;
+    while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {
+        ArchiveEntry archiveEntry;
+        archiveEntry.bufferSize = archive_entry_size(entry);
+        archiveEntry.bufferData = std::shared_ptr<uint8_t[]>(new uint8_t[archiveEntry.bufferSize]);
+        size_t sizeRead = archive_read_data(a, archiveEntry.bufferData.get(), archiveEntry.bufferSize);
+        if (sizeRead != archiveEntry.bufferSize) {
+            if (verbose) {
+                sgl::Logfile::get()->writeError("Error in loadAllFilesFromArchive: Invalid archive data.");
+            }
+            files.clear();
+            return ARCHIVE_FILE_LOAD_INVALID_ARCHIVE_DATA;
         }
-        return ARCHIVE_FILE_LOAD_FILE_NOT_FOUND;
+        files.insert(std::make_pair(archive_entry_pathname(entry), archiveEntry));
+    }
+
+    auto returnCode = archive_read_free(a);
+    if (returnCode != ARCHIVE_OK) {
+        if (verbose) {
+            sgl::Logfile::get()->writeError("Error in loadAllFilesFromArchive: Invalid archive data.");
+        }
+        files.clear();
+        return ARCHIVE_FILE_LOAD_INVALID_ARCHIVE_DATA;
     }
 
     return ARCHIVE_FILE_LOAD_SUCCESSFUL;
 }
 
 ArchiveFileLoadReturnType loadAllFilesFromArchive(
-        const std::string& filenameArchive, std::unordered_map<std::string, ArchiveEntry>& files, bool verbose) {
+        const std::string& filenameArchive,
+        std::unordered_map<std::string, ArchiveEntry>& files, bool verbose) {
     std::string filenameLower = boost::to_lower_copy(filenameArchive);
     std::string fileExtension;
     bool foundArchive = false;
@@ -173,8 +232,8 @@ ArchiveFileLoadReturnType loadAllFilesFromArchive(
         for (const char* const archiveExtension : archiveFileExtensionsUnsupported) {
             if (sgl::endsWith(filenameLower, archiveExtension)) {
                 sgl::Logfile::get()->writeError(
-                        std::string() + "Error in loadAllFilesFromArchive: Invalid archive format. Please use "
-                        + ".tar" + fileExtension + " instead of " + fileExtension);
+                        "Error in loadAllFilesFromArchive: Invalid archive format. Please use .tar"
+                        + fileExtension + " instead of " + fileExtension);
                 return ARCHIVE_FILE_LOAD_FORMAT_UNSUPPORTED;
             }
         }
@@ -207,32 +266,24 @@ ArchiveFileLoadReturnType loadAllFilesFromArchive(
         return ARCHIVE_FILE_LOAD_INVALID_ARCHIVE_DATA;
     }
 
-    archive_entry* entry;
-    while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {
-        ArchiveEntry archiveEntry;
-        archiveEntry.bufferSize = archive_entry_size(entry);
-        archiveEntry.bufferData = std::shared_ptr<uint8_t[]>(new uint8_t[archiveEntry.bufferSize]);
-        size_t sizeRead = archive_read_data(a, archiveEntry.bufferData.get(), archiveEntry.bufferSize);
-        if (sizeRead != archiveEntry.bufferSize) {
-            if (verbose) {
-                sgl::Logfile::get()->writeError("Error in loadAllFilesFromArchive: Invalid archive data.");
-            }
-            files.clear();
-            return ARCHIVE_FILE_LOAD_INVALID_ARCHIVE_DATA;
-        }
-        files.insert(std::make_pair(archive_entry_pathname(entry), archiveEntry));
-    }
+    return loadAllFilesFromArchive(a, files, verbose);
+}
 
-    returnCode = archive_read_free(a);
+ArchiveFileLoadReturnType loadAllFilesFromArchiveBuffer(
+        const uint8_t* archiveBuffer, size_t archiveBufferSize,
+        std::unordered_map<std::string, ArchiveEntry>& files, bool verbose) {
+    archive* a = archive_read_new();
+    archive_read_support_filter_all(a);
+    archive_read_support_format_all(a);
+    int returnCode = archive_read_open_memory(a, archiveBuffer, archiveBufferSize);
     if (returnCode != ARCHIVE_OK) {
         if (verbose) {
-            sgl::Logfile::get()->writeError("Error in loadAllFilesFromArchive: Invalid archive data.");
+            sgl::Logfile::get()->writeError("Error in loadAllFilesFromArchiveBuffer: Invalid archive data.");
         }
-        files.clear();
         return ARCHIVE_FILE_LOAD_INVALID_ARCHIVE_DATA;
     }
 
-    return ARCHIVE_FILE_LOAD_SUCCESSFUL;
+    return loadAllFilesFromArchive(a, files, verbose);
 }
 
 }

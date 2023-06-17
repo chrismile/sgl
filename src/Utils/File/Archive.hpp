@@ -70,7 +70,11 @@ enum ArchiveFileLoadReturnType {
  * }
  */
 DLL_OBJECT ArchiveFileLoadReturnType loadFileFromArchive(
-        const std::string& filename, uint8_t*& buffer, size_t& bufferSize, bool verbose);
+        const std::string& filename,
+        uint8_t*& buffer, size_t& bufferSize, bool verbose);
+DLL_OBJECT ArchiveFileLoadReturnType loadFileFromArchiveBuffer(
+        const uint8_t* archiveBuffer, size_t archiveBufferSize, bool isRaw, const std::string& filenameLocal,
+        uint8_t*& buffer, size_t& bufferSize, bool verbose);
 
 struct ArchiveEntry {
     std::shared_ptr<uint8_t[]> bufferData;
@@ -85,7 +89,11 @@ struct ArchiveEntry {
  * @return Whether reading was successful, or what type of error occured.
  */
 DLL_OBJECT ArchiveFileLoadReturnType loadAllFilesFromArchive(
-        const std::string& filename, std::unordered_map<std::string, ArchiveEntry>& files, bool verbose);
+        const std::string& filename,
+        std::unordered_map<std::string, ArchiveEntry>& files, bool verbose);
+DLL_OBJECT ArchiveFileLoadReturnType loadAllFilesFromArchiveBuffer(
+        const uint8_t* archiveBuffer, size_t archiveBufferSize,
+        std::unordered_map<std::string, ArchiveEntry>& files, bool verbose);
 
 }
 
