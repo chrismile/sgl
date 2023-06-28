@@ -94,25 +94,7 @@ GuiVarData::GuiVarData(
     }
 }
 
-bool GuiVarData::saveTfToFile(const std::string& filename) {
-#ifdef _MSC_VER
-    FILE* file = nullptr;
-    errno_t errorCode = fopen_s(&file, filename.c_str(), "w");
-    if (errorCode != 0) {
-        sgl::Logfile::get()->writeError(
-                std::string() + "Error in GuiVarData::saveTfToFile: Couldn't create file \"" + filename + "\"!");
-        return false;
-    }
-#else
-    FILE* file = fopen(filename.c_str(), "w");
-#endif
-    if (file == nullptr) {
-        sgl::Logfile::get()->writeError(
-                std::string() + "Error in GuiVarData::saveTfToFile: Couldn't create file \"" + filename + "\"!");
-        return false;
-    }
-
-    XMLPrinter printer(file);
+void GuiVarData::writeToXml(XMLPrinter& printer) {
     printer.OpenElement("TransferFunction");
     printer.PushAttribute("colorspace", "sRGB"); // Currently only sRGB supported for points
     printer.PushAttribute("interpolation_colorspace", sgl::COLOR_SPACE_NAMES[interpolationColorSpace]);
@@ -141,23 +123,43 @@ bool GuiVarData::saveTfToFile(const std::string& filename) {
     printer.CloseElement();
 
     printer.CloseElement();
+}
+
+bool GuiVarData::saveTfToFile(const std::string& filename) {
+#ifdef _MSC_VER
+    FILE* file = nullptr;
+    errno_t errorCode = fopen_s(&file, filename.c_str(), "w");
+    if (errorCode != 0) {
+        sgl::Logfile::get()->writeError(
+                std::string() + "Error in GuiVarData::saveTfToFile: Couldn't create file \"" + filename + "\"!");
+        return false;
+    }
+#else
+    FILE* file = fopen(filename.c_str(), "w");
+#endif
+    if (file == nullptr) {
+        sgl::Logfile::get()->writeError(
+                std::string() + "Error in GuiVarData::saveTfToFile: Couldn't create file \"" + filename + "\"!");
+        return false;
+    }
+
+    XMLPrinter printer(file);
+    writeToXml(printer);
 
     fclose(file);
     return true;
 }
 
-bool GuiVarData::loadTfFromFile(const std::string& filename) {
-    XMLDocument doc;
-    if (doc.LoadFile(filename.c_str()) != 0) {
-        sgl::Logfile::get()->writeError(
-                std::string() + "MultiVarTransferFunctionWindow::loadFunctionFromFile: Couldn't open file \""
-                + filename + "\"!");
-        return false;
-    }
+std::string GuiVarData::serializeXmlString() {
+    XMLPrinter printer;
+    writeToXml(printer);
+    return std::string(printer.CStr(), printer.CStrSize());
+}
+
+bool GuiVarData::readFromXml(XMLDocument& doc) {
     XMLElement* tfNode = doc.FirstChildElement("TransferFunction");
     if (tfNode == nullptr) {
-        sgl::Logfile::get()->writeError(
-                "MultiVarTransferFunctionWindow::loadFunctionFromFile: No \"TransferFunction\" node found!");
+        sgl::Logfile::get()->writeError("Error in GuiVarData::readFromXml: No \"TransferFunction\" node found.");
         return false;
     }
 
@@ -225,6 +227,27 @@ bool GuiVarData::loadTfFromFile(const std::string& filename) {
     selectedPointType = sgl::SELECTED_POINT_TYPE_NONE;
     rebuildTransferFunctionMap();
     return true;
+}
+
+bool GuiVarData::loadTfFromFile(const std::string& filename) {
+    XMLDocument doc;
+    if (doc.LoadFile(filename.c_str()) != 0) {
+        sgl::Logfile::get()->writeError(
+                std::string() + "Error in GuiVarData::loadTfFromFile: Couldn't open file \""
+                + filename + "\".");
+        return false;
+    }
+    return readFromXml(doc);
+}
+
+bool GuiVarData::deserializeXmlString(const std::string& xmlString) {
+    XMLDocument doc;
+    if (doc.Parse(xmlString.c_str(), xmlString.size()) != 0) {
+        sgl::Logfile::get()->writeError(
+                std::string() + "Error in GuiVarData::deserializeXmlString: Couldn't parse passed string.");
+        return false;
+    }
+    return readFromXml(doc);
 }
 
 void GuiVarData::setAttributeName(int _varIdx, const std::string& name) {
@@ -429,6 +452,14 @@ void GuiVarData::rebuildTransferFunctionMap_sRGB() {
                 sgl::TransferFunctionWindow::sRGBToLinearRGB(sRGBColorAtIdx), opacityAtIdx));
         transferFunctionMap_sRGB[i] = sgl::Color16(glm::vec4(sRGBColorAtIdx, opacityAtIdx));
     }
+}
+
+bool GuiVarData::getIsSelectedRangeFixed() {
+    return isSelectedRangeFixed;
+}
+
+void GuiVarData::setIsSelectedRangeFixed(bool _isSelectedRangeFixed) {
+    isSelectedRangeFixed = _isSelectedRangeFixed;
 }
 
 bool GuiVarData::renderGui() {
@@ -1066,6 +1097,10 @@ bool MultiVarTransferFunctionWindow::getIsSelectedRangeFixed(int varIdx) {
     return guiVarData.at(varIdx).isSelectedRangeFixed;
 }
 
+void MultiVarTransferFunctionWindow::setIsSelectedRangeFixed(int varIdx, bool _isSelectedRangeFixed) {
+    guiVarData.at(varIdx).setIsSelectedRangeFixed(_isSelectedRangeFixed);
+}
+
 
 bool MultiVarTransferFunctionWindow::loadFromTfNameList(const std::vector<std::string>& tfNames) {
     if (tfNames.size() != guiVarData.size()) {
@@ -1079,6 +1114,14 @@ bool MultiVarTransferFunctionWindow::loadFromTfNameList(const std::vector<std::s
         varData.loadTfFromFile(saveDirectory + tfNames.at(varIdx));
     }
     return true;
+}
+
+std::string MultiVarTransferFunctionWindow::serializeXmlString(int varIdx) {
+    return guiVarData.at(varIdx).serializeXmlString();
+}
+
+bool MultiVarTransferFunctionWindow::deserializeXmlString(int varIdx, const std::string &xmlString) {
+    return guiVarData.at(varIdx).deserializeXmlString(xmlString);
 }
 
 void MultiVarTransferFunctionWindow::updateAvailableFiles() {

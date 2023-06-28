@@ -43,6 +43,11 @@
 #include <Graphics/Vulkan/Image/Image.hpp>
 #endif
 
+namespace tinyxml2 {
+class XMLDocument;
+class XMLPrinter;
+}
+
 namespace sgl {
 
 class MultiVarTransferFunctionWindow;
@@ -64,8 +69,12 @@ public:
             sgl::Color16 *transferFunctionMap_linearRGB);
 
     bool saveTfToFile(const std::string &filename);
-
     bool loadTfFromFile(const std::string &filename);
+
+    std::string serializeXmlString();
+    bool deserializeXmlString(const std::string &xmlString);
+    bool getIsSelectedRangeFixed();
+    void setIsSelectedRangeFixed(bool _isSelectedRangeFixed);
 
     void setAttributeName(int varIdx, const std::string& name);
     void setAttributeValues(const std::vector<float>& _attributes);
@@ -84,6 +93,9 @@ public:
     [[nodiscard]] inline const glm::vec2 &getSelectedRange() const { return selectedRange; }
 
 private:
+    void writeToXml(tinyxml2::XMLPrinter& printer);
+    bool readFromXml(tinyxml2::XMLDocument& doc);
+
     void computeHistogram();
     void renderFileDialog();
     void renderOpacityGraph();
@@ -180,10 +192,13 @@ public:
     void removeAttribute(int varIdx);
     void addAttributeName(const std::string& name);
     bool getIsSelectedRangeFixed(int varIdx);
+    void setIsSelectedRangeFixed(int varIdx, bool _isSelectedRangeFixed);
 
     //bool saveCurrentVarTfToFile(const std::string& filename);
     //bool loadTfFromFile(int varIdx, const std::string& filename);
     bool loadFromTfNameList(const std::vector<std::string> &tfNames);
+    std::string serializeXmlString(int varIdx);
+    bool deserializeXmlString(int varIdx, const std::string &xmlString);
 
     bool renderGui();
     void update(float dt);
@@ -233,7 +248,9 @@ public:
 
     inline void setSelectedRange(int varIdx, const glm::vec2 &range) {
         guiVarData.at(varIdx).selectedRange = range;
-        guiVarData.at(varIdx).computeHistogram();
+        if (!guiVarData.at(varIdx).isEmpty) {
+            guiVarData.at(varIdx).computeHistogram();
+        }
         guiVarData.at(varIdx).window->rebuildRangeSsbo();
     }
 
