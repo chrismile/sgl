@@ -58,6 +58,10 @@ if (${SUPPORT_OPENGL})
         MESSAGE(STATUS "Found OpenGL and GLEW. Enabling OpenGL support.")
     endif()
 endif()
+if (NOT UNIX OR APPLE OR (NOT ${SUPPORT_OPENGL}) OR (NOT ${OpenGL_FOUND}) OR (NOT ${GLEW_FOUND}))
+    list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/OpenGL/Context/OffscreenContextGLX.cpp)
+    list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/OpenGL/Context/OffscreenContextGLX.hpp)
+endif()
 if ((NOT ${SUPPORT_OPENGL}) OR (NOT ${OpenGL_FOUND}) OR (NOT ${GLEW_FOUND}))
     file(GLOB_RECURSE OPENGL_SOURCES
             src/Graphics/OpenGL/*.cpp src/Graphics/OpenGL/*.c src/Graphics/OpenGL/*.h src/Graphics/OpenGL/*.hpp

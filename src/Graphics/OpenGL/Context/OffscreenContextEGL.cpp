@@ -32,6 +32,7 @@
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 
+#include <Utils/StringUtils.hpp>
 #include <Utils/File/Logfile.hpp>
 
 #ifdef SUPPORT_VULKAN
@@ -65,6 +66,19 @@ OffscreenContextEGL::OffscreenContextEGL(OffscreenContextEGLParams params) : par
 typedef EGLBoolean (EGLAPIENTRYP PFNEGLQUERYDEVICEBINARYEXTPROC) (EGLDeviceEXT device, EGLint name, EGLint max_size, void *value, EGLint *size);
 #define EGL_DEVICE_UUID_EXT 0x335C
 #define EGL_DRIVER_UUID_EXT 0x335D
+#endif
+
+#ifndef EGL_EXT_device_query_name
+#define EGL_RENDERER_EXT 0x335F
+#endif
+
+#ifndef EGL_EXT_device_drm
+#define EGL_DRM_DEVICE_FILE_EXT 0x3233
+#define EGL_DRM_MASTER_FD_EXT 0x333C
+#endif
+
+#ifndef EGL_EXT_device_drm_render_node
+#define EGL_DRM_RENDER_NODE_FILE_EXT 0x3377
 #endif
 
 struct OffscreenContextEGLFunctionTable {
@@ -166,8 +180,10 @@ bool OffscreenContextEGL::initialize() {
         params.useDefaultDisplay = true;
     }
 
+    // For some reason, Mesa 23.1 does not provide eglQueryDeviceBinaryEXT/EGL_EXT_device_persistent_id.
+
     if (params.device && (!f->eglQueryDevicesEXT || !f->eglQueryDeviceStringEXT
-                          || !f->eglGetPlatformDisplayEXT || !f->eglQueryDeviceBinaryEXT)) {
+                          || !f->eglGetPlatformDisplayEXT || (!params.tryUseZinkIfAvailable && !f->eglQueryDeviceBinaryEXT))) {
         params.useDefaultDisplay = true;
         sgl::Logfile::get()->writeWarning(
                 "Warning in OffscreenContextEGL::initialize: At least one EGL extension necessary for "
@@ -211,7 +227,33 @@ bool OffscreenContextEGL::initialize() {
                 return false;
             }
             std::string deviceExtensionsString(deviceExtensions);
-            if (deviceExtensionsString.find("EGL_EXT_device_persistent_id") == std::string::npos) {
+            sgl::Logfile::get()->write("Device #" + std::to_string(i) + " Extensions: " + deviceExtensions, BLUE);
+            std::vector<std::string> deviceExtensionsVector;
+            sgl::splitStringWhitespace(deviceExtensionsString, deviceExtensionsVector);
+            std::set<std::string> deviceExtensionsSet(deviceExtensionsVector.begin(), deviceExtensionsVector.end());
+
+            if (deviceExtensionsSet.find("EGL_EXT_device_query_name") != deviceExtensionsSet.end()) {
+                const char* deviceVendor = f->eglQueryDeviceStringEXT(eglDevices[i], EGL_VENDOR);
+                const char* deviceRenderer = f->eglQueryDeviceStringEXT(eglDevices[i], EGL_RENDERER_EXT);
+                sgl::Logfile::get()->write("Device #" + std::to_string(i) + " Vendor: " + deviceVendor, BLUE);
+                sgl::Logfile::get()->write("Device #" + std::to_string(i) + " Renderer: " + deviceRenderer, BLUE);
+            }
+
+            if (deviceExtensionsSet.find("EGL_EXT_device_drm") != deviceExtensionsSet.end()) {
+                const char* deviceDrmFile = f->eglQueryDeviceStringEXT(eglDevices[i], EGL_DRM_DEVICE_FILE_EXT);
+                sgl::Logfile::get()->write("Device #" + std::to_string(i) + " DRM File: " + deviceDrmFile, BLUE);
+            }
+
+            if (deviceExtensionsSet.find("EGL_EXT_device_drm_render_node") != deviceExtensionsSet.end()) {
+                const char* deviceDrmRenderNodeFile = f->eglQueryDeviceStringEXT(
+                        eglDevices[i], EGL_DRM_RENDER_NODE_FILE_EXT);
+                if (deviceDrmRenderNodeFile) {
+                    sgl::Logfile::get()->write(
+                            "Device #" + std::to_string(i) + " DRM Render Node File: " + deviceDrmRenderNodeFile, BLUE);
+                }
+            }
+
+            if (deviceExtensionsSet.find("EGL_EXT_device_persistent_id") == deviceExtensionsSet.end()) {
                 sgl::Logfile::get()->write(
                         "Discarding EGL device #" + std::to_string(i)
                         + " due to not supporting EGL_EXT_device_persistent_id.", BLUE);
@@ -221,7 +263,7 @@ bool OffscreenContextEGL::initialize() {
             const size_t UUID_SIZE = VK_UUID_SIZE;
             uint8_t deviceUuid[VK_UUID_SIZE];
             EGLint uuidSize = 0;
-            if (!f->eglQueryDeviceBinaryEXT(
+            if (f->eglQueryDeviceBinaryEXT && !f->eglQueryDeviceBinaryEXT(
                     eglDevices[i], EGL_DEVICE_UUID_EXT, EGLint(VK_UUID_SIZE), deviceUuid, &uuidSize)) {
                 EGLint errorCode = f->eglGetError();
                 sgl::Logfile::get()->writeError(
@@ -229,9 +271,10 @@ bool OffscreenContextEGL::initialize() {
                         + std::to_string(errorCode) + ").", false);
                 return false;
             }
-            if (strncmp((const char*)deviceUuid, (const char*)physicalDeviceIdProperties.deviceUUID, UUID_SIZE) == 0) {
+            if (f->eglQueryDeviceBinaryEXT && strncmp(
+                    (const char*)deviceUuid, (const char*)physicalDeviceIdProperties.deviceUUID, UUID_SIZE) == 0) {
                 matchingDeviceIdx = i;
-                break;
+                //break;
             }
         }
 
@@ -282,6 +325,9 @@ bool OffscreenContextEGL::initialize() {
     sgl::Logfile::get()->writeInfo(
             "OffscreenContextEGL::initialize: EGL version "
             + std::to_string(major) + "." + std::to_string(minor) + ".");
+
+    const char* displayVendor = f->eglQueryString(eglDisplay, EGL_VENDOR);
+    sgl::Logfile::get()->write(std::string() + "EGL Display Vendor: " + displayVendor, BLUE);
 
     EGLint numConfigs;
     EGLConfig eglConfig;

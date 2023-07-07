@@ -222,10 +222,13 @@ void RendererGL::errorCheck() {
 
 // Creation functions
 FramebufferObjectPtr RendererGL::createFBO() {
-    if (SystemGL::get()->openglVersionMinimum(3,2)) {
+    if (SystemGL::get()->openglVersionMinimum(4, 5)) {
+        return FramebufferObjectPtr(new FramebufferObjectGLNamed);
+    } else if (SystemGL::get()->openglVersionMinimum(3, 2)) {
         return FramebufferObjectPtr(new FramebufferObjectGL);
+    } else {
+        return FramebufferObjectPtr(new FramebufferObjectGL2);
     }
-    return FramebufferObjectPtr(new FramebufferObjectGL2);
 }
 
 RenderbufferObjectPtr RendererGL::createRBO(int _width, int _height, RenderbufferType rboType, int _samples /* = 0 */) {

@@ -52,13 +52,17 @@ class Device;
  *   failed during tests. This is weird, as createPBuffer = false does not fail when using the default display.
  * - A Vulkan device can be passed. If EGL_EXT_device_persistent_id is available, the device UUID will be used for
  *   initializing the correct context. If it is not available, the Vulkan device will be ignored.
+ * - As of 2023-07-06, the NVIDIA 535.54.03 driver seems to have problems with Vulkan-OpenGL interoperability,
+ *   causing kernel soft lockups. Consequently, Zink (an OpenGL to Vulkan translation layer) will be used by default
+ *   if it is found on the system.
  */
 struct DLL_OBJECT OffscreenContextEGLParams {
     bool useDefaultDisplay = false;
     bool createPBuffer = true;
     int pbufferWidth = 32;
     int pbufferHeight = 32;
-    // If EGL_EXT_device_persistent_id is supported,
+    bool tryUseZinkIfAvailable = true;
+    // If EGL_EXT_device_persistent_id is supported.
     sgl::vk::Device* device = nullptr;
 };
 

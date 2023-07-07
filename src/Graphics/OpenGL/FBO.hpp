@@ -57,6 +57,7 @@ public:
     unsigned int getID() override { return id; }
 
 protected:
+    explicit FramebufferObjectGL(bool hasColorAttachment);
     virtual bool checkStatus();
     unsigned int id;
     std::map<FramebufferAttachment, TexturePtr> textures;
@@ -64,6 +65,24 @@ protected:
     std::vector<GLuint> colorAttachments;
     int width, height;
     bool hasColorAttachment;
+};
+
+/**
+ * This implementation uses OpenGL 4.5 features. This is necessary for offscreen rendering.
+ * On Mesa Zink, when no pbuffer is bound, unbinding the currently bound framebuffer results in the error
+ * GL_FRAMEBUFFER_UNDEFINED, as no default framebuffer exists.
+ * Using named commands from OpenGL 4.5, like glNamedFramebufferTexture, fixes this problem.
+ */
+class DLL_OBJECT FramebufferObjectGLNamed : public FramebufferObjectGL {
+public:
+    FramebufferObjectGLNamed();
+    ~FramebufferObjectGLNamed() override;
+    bool bindTexture(TexturePtr texture, FramebufferAttachment attachment = COLOR_ATTACHMENT) override;
+    bool bindRenderbuffer(RenderbufferObjectPtr renderbuffer, FramebufferAttachment attachment = DEPTH_ATTACHMENT) override;
+    unsigned int _bindInternal() override;
+
+protected:
+    bool checkStatus() override;
 };
 
 class DLL_OBJECT FramebufferObjectGL2 : public FramebufferObjectGL

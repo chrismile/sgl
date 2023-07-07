@@ -41,6 +41,10 @@ FramebufferObjectGL::FramebufferObjectGL() : id(0), width(0), height(0) {
     hasColorAttachment = false;
 }
 
+FramebufferObjectGL::FramebufferObjectGL(bool hasColorAttachment)
+        : id(0), width(0), height(0), hasColorAttachment(hasColorAttachment) {
+}
+
 FramebufferObjectGL::~FramebufferObjectGL() {
     textures.clear();
     rbos.clear();
@@ -95,6 +99,81 @@ unsigned int FramebufferObjectGL::_bindInternal() {
     glBindFramebuffer(GL_FRAMEBUFFER, id);
 
     if (!hasColorAttachment) {
+        glNamedFramebufferDrawBuffer(id, GL_NONE);
+        glNamedFramebufferReadBuffer(id, GL_NONE);
+        hasColorAttachment = true; // Only call once
+    }
+
+    // More than one color attachment
+    if (textures.size() > 1) {
+        if (colorAttachments.empty()) {
+            colorAttachments.reserve(textures.size());
+            for (auto& texture : textures) {
+                if (texture.first >= COLOR_ATTACHMENT0 && texture.first <= COLOR_ATTACHMENT15) {
+                    colorAttachments.push_back(texture.first);
+                }
+            }
+        }
+        if (colorAttachments.size() > 1) {
+            glNamedFramebufferDrawBuffers(id, GLsizei(colorAttachments.size()), &colorAttachments.front());
+        }
+    }
+
+    return id;
+}
+
+
+// OpenGL 4.5
+
+FramebufferObjectGLNamed::FramebufferObjectGLNamed() : FramebufferObjectGL(false) {
+    glCreateFramebuffers(1, &id);
+}
+
+FramebufferObjectGLNamed::~FramebufferObjectGLNamed() {
+}
+
+bool FramebufferObjectGLNamed::bindTexture(TexturePtr texture, FramebufferAttachment attachment) {
+    if (attachment >= COLOR_ATTACHMENT0 && attachment <= COLOR_ATTACHMENT15) {
+        hasColorAttachment = true;
+    }
+
+    textures[attachment] = texture;
+    TextureGL* textureGL = (TextureGL*)texture.get();
+
+    int oglTexture = textureGL->getTexture();
+    width = textureGL->getW();
+    height = textureGL->getH();
+    glNamedFramebufferTexture(id, attachment, oglTexture, 0);
+    bool status = checkStatus();
+    return status;
+}
+
+bool FramebufferObjectGLNamed::bindRenderbuffer(RenderbufferObjectPtr renderbuffer, FramebufferAttachment attachment) {
+    rbos[attachment] = renderbuffer;
+    RenderbufferObjectGL* rbo = (RenderbufferObjectGL*)renderbuffer.get();
+    glNamedFramebufferRenderbuffer(id, attachment, GL_RENDERBUFFER, rbo->getID());
+    bool status = checkStatus();
+    return status;
+}
+
+bool FramebufferObjectGLNamed::checkStatus() {
+    GLenum status = glCheckNamedFramebufferStatus(id, GL_FRAMEBUFFER);
+    switch(status) {
+        case GL_FRAMEBUFFER_COMPLETE:
+            break;
+        default:
+            Logfile::get()->writeError(
+                    std::string() + "Error: FramebufferObjectGLNamed::checkStatus(): "
+                    + "Invalid FBO status " + toString(status) + "!");
+            return false;
+    }
+    return true;
+}
+
+unsigned int FramebufferObjectGLNamed::_bindInternal() {
+    glBindFramebuffer(GL_FRAMEBUFFER, id);
+
+    if (!hasColorAttachment) {
         glDrawBuffer(GL_NONE);
         glReadBuffer(GL_NONE);
         hasColorAttachment = true; // Only call once
@@ -117,7 +196,6 @@ unsigned int FramebufferObjectGL::_bindInternal() {
 
     return id;
 }
-
 
 
 // OpenGL 2

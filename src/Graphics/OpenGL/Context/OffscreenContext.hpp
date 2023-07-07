@@ -45,6 +45,10 @@ namespace vk {
 class Device;
 }
 
+struct DLL_OBJECT OffscreenContextParams {
+    bool tryUseZinkIfAvailable = true;
+};
+
 /**
  * Creates an offscreen OpenGL context. Returns nullptr if creating the context was not possible.
  * @param vulkanDevice The Vulkan device to which the context should be compatible if possible (can be nullptr).
@@ -52,6 +56,8 @@ class Device;
  * @return The offscreen context object (or nullptr).
  */
 DLL_OBJECT OffscreenContext* createOffscreenContext(sgl::vk::Device* vulkanDevice, bool verbose);
+DLL_OBJECT OffscreenContext* createOffscreenContext(
+        sgl::vk::Device* vulkanDevice, OffscreenContextParams params, bool verbose);
 DLL_OBJECT void destroyOffscreenContext(OffscreenContext* offscreenContext);
 
 }

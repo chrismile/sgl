@@ -28,6 +28,9 @@
 
 #include <Utils/AppSettings.hpp>
 
+#ifdef __linux__
+#include "OffscreenContextGLX.hpp"
+#endif
 #ifndef _WIN32
 #include "OffscreenContextEGL.hpp"
 #endif
@@ -35,7 +38,15 @@
 
 namespace sgl {
 
-OffscreenContext* createOffscreenContext(sgl::vk::Device* vulkanDevice, bool verbose) {
+DLL_OBJECT OffscreenContext* createOffscreenContext(
+        sgl::vk::Device* vulkanDevice, bool verbose) {
+    OffscreenContextParams params{};
+    params.tryUseZinkIfAvailable = false;
+    return createOffscreenContext(vulkanDevice, params, verbose);
+}
+
+OffscreenContext* createOffscreenContext(
+        sgl::vk::Device* vulkanDevice, OffscreenContextParams params, bool verbose) {
 #ifdef SUPPORT_VULKAN
     // Check whether the Vulkan instance and device support OpenGL interop.
     if (vulkanDevice) {
@@ -49,22 +60,40 @@ OffscreenContext* createOffscreenContext(sgl::vk::Device* vulkanDevice, bool ver
 #endif
 
     sgl::OffscreenContext* offscreenContext = nullptr;
-#ifndef _WIN32
-    sgl::OffscreenContextEGLParams paramsEgl{};
-    paramsEgl.device = vulkanDevice;
-    offscreenContext = new sgl::OffscreenContextEGL(paramsEgl);
-    offscreenContext->initialize();
-
-    if (!offscreenContext->getIsInitialized()) {
-        delete offscreenContext;
-#endif
-        offscreenContext = new sgl::OffscreenContextGlfw();
+#ifdef __linux__
+    if (params.tryUseZinkIfAvailable) {
+        sgl::OffscreenContextGLXParams paramsGlx{};
+        paramsGlx.device = vulkanDevice;
+        offscreenContext = new sgl::OffscreenContextGLX(paramsGlx);
         offscreenContext->initialize();
-        if (!offscreenContext->getIsInitialized()) {
+    }
+
+    if (!offscreenContext || !offscreenContext->getIsInitialized()) {
+        if (offscreenContext) {
             delete offscreenContext;
             offscreenContext = nullptr;
         }
+
+#endif
 #ifndef _WIN32
+        sgl::OffscreenContextEGLParams paramsEgl{};
+        paramsEgl.device = vulkanDevice;
+        offscreenContext = new sgl::OffscreenContextEGL(paramsEgl);
+        offscreenContext->initialize();
+
+        if (!offscreenContext->getIsInitialized()) {
+            delete offscreenContext;
+#endif
+            offscreenContext = new sgl::OffscreenContextGlfw();
+            offscreenContext->initialize();
+            if (!offscreenContext->getIsInitialized()) {
+                delete offscreenContext;
+                offscreenContext = nullptr;
+            }
+#ifndef _WIN32
+        }
+#endif
+#ifdef __linux__
     }
 #endif
 
