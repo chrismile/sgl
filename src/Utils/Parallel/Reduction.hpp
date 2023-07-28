@@ -84,17 +84,29 @@ struct min_predicate {
     constexpr decltype(auto) operator()(T&& t, U&& u) const{
         return t > u ? std::forward<U>(u) : std::forward<T>(t);
     }
+    template<class T, class U>
+    constexpr decltype(auto) operator()(const T& t, const U& u) const{
+        return t > u ? u : t;
+    }
 };
 struct max_predicate {
     template<class T, class U>
     constexpr decltype(auto) operator()(T&& t, U&& u) const{
         return t < u ? std::forward<U>(u) : std::forward<T>(t);
     }
+    template<class T, class U>
+    constexpr decltype(auto) operator()(const T& t, const U& u) const{
+        return t < u ? u : t;
+    }
 };
 
 struct plus_pair_predicate {
     template<class T, class U>
     constexpr decltype(auto) operator()(std::pair<T, U>&& t, std::pair<T, U>&& u) const{
+        return std::make_pair(t.first + u.first, t.second + u.second);
+    }
+    template<class T, class U>
+    constexpr decltype(auto) operator()(const std::pair<T, U>& t, const std::pair<T, U>& u) const{
         return std::make_pair(t.first + u.first, t.second + u.second);
     }
 };
