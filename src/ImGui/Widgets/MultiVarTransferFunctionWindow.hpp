@@ -222,6 +222,7 @@ public:
     void resetDirty();
     std::vector<sgl::Color16> getTransferFunctionMap_sRGB(int varIdx);
     std::vector<glm::vec4> getTransferFunctionMap_sRGBDownscaled(int varIdx, int numEntries);
+    std::vector<glm::vec4> getTransferFunctionMap_sRGBPremulDownscaled(int varIdx, int numEntries);
 
     void setTransferFunction(
             int varIdx, const std::vector<OpacityPoint>& opacityPoints,

@@ -1209,6 +1209,33 @@ std::vector<glm::vec4> MultiVarTransferFunctionWindow::getTransferFunctionMap_sR
     return colorsSubsampled;
 }
 
+std::vector<glm::vec4> MultiVarTransferFunctionWindow::getTransferFunctionMap_sRGBPremulDownscaled(
+        int varIdx, int numEntries) {
+    std::vector<glm::vec4> colorsSubsampled;
+    colorsSubsampled.reserve(numEntries);
+    int idxOffset = int(TRANSFER_FUNCTION_TEXTURE_SIZE) * varIdx;
+    auto Ni = float(TRANSFER_FUNCTION_TEXTURE_SIZE - 1);
+    auto Nj = float(numEntries - 1);
+    for (int j = 0; j < numEntries; j++) {
+        float t = float(j) / Nj;
+        float t0 = std::floor(t * Ni);
+        float t1 = std::ceil(t * Ni);
+        float f = t * Ni - t0;
+        int i0 = int(t0);
+        int i1 = int(t1);
+        glm::vec4 c0 = transferFunctionMap_sRGB.at(idxOffset + i0).getFloatColorRGBA();
+        glm::vec4 c1 = transferFunctionMap_sRGB.at(idxOffset + i1).getFloatColorRGBA();
+        c0.r *= c0.a;
+        c0.g *= c0.a;
+        c0.b *= c0.a;
+        c1.r *= c1.a;
+        c1.g *= c1.a;
+        c1.b *= c1.a;
+        colorsSubsampled.push_back(glm::mix(c0, c1, f));
+    }
+    return colorsSubsampled;
+}
+
 void MultiVarTransferFunctionWindow::setTransferFunction(
         int varIdx, const std::vector<OpacityPoint>& opacityPoints,
         const std::vector<sgl::ColorPoint_sRGB>& colorPoints,
