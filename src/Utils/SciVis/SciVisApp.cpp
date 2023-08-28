@@ -130,7 +130,7 @@ SciVisApp::SciVisApp(float fovy)
     turntableMouseButtonIndex = sgl::clamp(turntableMouseButtonIndex, 1, 5);
     updateCameraNavigationMode();
 
-    camera->setNearClipDistance(0.001f);
+    camera->setNearClipDistance(0.01f);
     camera->setFarClipDistance(100.0f);
     camera->setOrientation(glm::quat(1.0f, 0.0f, 0.0f, 0.0f));
     camera->setFOVy(fovy);
