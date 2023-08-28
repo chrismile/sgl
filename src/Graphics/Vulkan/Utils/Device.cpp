@@ -888,6 +888,45 @@ void Device::createLogicalDeviceAndQueues(
         }
     }
 #endif
+#ifdef VK_AMDX_shader_enqueue
+    if (deviceExtensionsSet.find(VK_AMDX_SHADER_ENQUEUE_EXTENSION_NAME) != deviceExtensionsSet.end()) {
+        shaderEnqueueFeaturesAMDX.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ENQUEUE_FEATURES_AMDX;
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &shaderEnqueueFeaturesAMDX;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        if (requestedDeviceFeatures.shaderEnqueueFeaturesAMDX.shaderEnqueue == VK_FALSE) {
+            requestedDeviceFeatures.shaderEnqueueFeaturesAMDX = shaderEnqueueFeaturesAMDX;
+        }
+    }
+#endif
+#ifdef VK_NV_device_generated_commands
+    if (deviceExtensionsSet.find(VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME) != deviceExtensionsSet.end()) {
+        deviceGeneratedCommandsFeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_FEATURES_NV;
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &deviceGeneratedCommandsFeaturesNV;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        if (requestedDeviceFeatures.deviceGeneratedCommandsFeaturesNV.deviceGeneratedCommands == VK_FALSE) {
+            requestedDeviceFeatures.deviceGeneratedCommandsFeaturesNV = deviceGeneratedCommandsFeaturesNV;
+        }
+    }
+#endif
+#ifdef VK_NV_device_generated_commands_compute
+    if (deviceExtensionsSet.find(VK_NV_DEVICE_GENERATED_COMMANDS_COMPUTE_EXTENSION_NAME) != deviceExtensionsSet.end()) {
+        deviceGeneratedCommandsComputeFeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_COMPUTE_FEATURES_NV;
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &deviceGeneratedCommandsComputeFeaturesNV;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        if (requestedDeviceFeatures.deviceGeneratedCommandsComputeFeaturesNV.deviceGeneratedCompute == VK_FALSE) {
+            requestedDeviceFeatures.deviceGeneratedCommandsComputeFeaturesNV = deviceGeneratedCommandsComputeFeaturesNV;
+        }
+    }
+#endif
     if (deviceExtensionsSet.find(VK_NV_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME) != deviceExtensionsSet.end()) {
         fragmentShaderBarycentricFeaturesNV.sType =
                 VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_NV;
@@ -992,6 +1031,24 @@ void Device::createLogicalDeviceAndQueues(
     if (requestedDeviceFeatures.meshShaderFeaturesEXT.meshShader) {
         *pNextPtr = &requestedDeviceFeatures.meshShaderFeaturesEXT;
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.meshShaderFeaturesEXT.pNext);
+    }
+#endif
+#ifdef VK_AMDX_shader_enqueue
+    if (requestedDeviceFeatures.shaderEnqueueFeaturesAMDX.shaderEnqueue) {
+        *pNextPtr = &requestedDeviceFeatures.shaderEnqueueFeaturesAMDX;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.shaderEnqueueFeaturesAMDX.pNext);
+    }
+#endif
+#ifdef VK_NV_device_generated_commands
+    if (requestedDeviceFeatures.deviceGeneratedCommandsFeaturesNV.deviceGeneratedCommands) {
+        *pNextPtr = &requestedDeviceFeatures.deviceGeneratedCommandsFeaturesNV;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.deviceGeneratedCommandsFeaturesNV.pNext);
+    }
+#endif
+#ifdef VK_NV_device_generated_commands_compute
+    if (requestedDeviceFeatures.deviceGeneratedCommandsComputeFeaturesNV.deviceGeneratedCompute) {
+        *pNextPtr = &requestedDeviceFeatures.deviceGeneratedCommandsComputeFeaturesNV;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.deviceGeneratedCommandsComputeFeaturesNV.pNext);
     }
 #endif
     if (requestedDeviceFeatures.fragmentShaderBarycentricFeaturesNV.fragmentShaderBarycentric) {
@@ -1375,8 +1432,67 @@ void Device::_getDeviceInformation() {
         vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
     }
 #endif
-
+#ifdef VK_AMDX_shader_enqueue
+    if (isDeviceExtensionSupported(VK_AMDX_SHADER_ENQUEUE_EXTENSION_NAME)) {
+        shaderEnqueuePropertiesAMDX = {};
+        shaderEnqueuePropertiesAMDX.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ENQUEUE_PROPERTIES_AMDX;
+        VkPhysicalDeviceProperties2 deviceProperties2 = {};
+        deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        deviceProperties2.pNext = &shaderEnqueuePropertiesAMDX;
+        vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
+    }
+#endif
+#ifdef VK_NV_device_generated_commands
+    if (isDeviceExtensionSupported(VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME)) {
+        deviceGeneratedCommandsPropertiesNV = {};
+        deviceGeneratedCommandsPropertiesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_PROPERTIES_NV;
+        VkPhysicalDeviceProperties2 deviceProperties2 = {};
+        deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        deviceProperties2.pNext = &deviceGeneratedCommandsPropertiesNV;
+        vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
+    }
+#endif
 }
+
+#ifdef VK_AMDX_shader_enqueue
+/// Warning: Instable API for testing only, may be removed at any point of time in the future.
+FunctionTableShaderEnqueueAMDX Device::getFunctionTableShaderEnqueueAMDX() {
+    FunctionTableShaderEnqueueAMDX funcTable{};
+    funcTable.vkCmdDispatchGraphAMDX = vkCmdDispatchGraphAMDX;
+    funcTable.vkCmdDispatchGraphIndirectAMDX = vkCmdDispatchGraphIndirectAMDX;
+    funcTable.vkCmdDispatchGraphIndirectCountAMDX = vkCmdDispatchGraphIndirectCountAMDX;
+    funcTable.vkCmdInitializeGraphScratchMemoryAMDX = vkCmdInitializeGraphScratchMemoryAMDX;
+    funcTable.vkCreateExecutionGraphPipelinesAMDX = vkCreateExecutionGraphPipelinesAMDX;
+    funcTable.vkGetExecutionGraphPipelineNodeIndexAMDX = vkGetExecutionGraphPipelineNodeIndexAMDX;
+    funcTable.vkGetExecutionGraphPipelineScratchSizeAMDX = vkGetExecutionGraphPipelineScratchSizeAMDX;
+    return funcTable;
+}
+#endif
+
+#ifdef VK_AMDX_shader_enqueue
+/// Warning: Instable API for testing only, may be removed at any point of time in the future.
+FunctionTableDeviceGeneratedCommandsNV Device::getFunctionTableDeviceGeneratedCommandsNV() {
+    FunctionTableDeviceGeneratedCommandsNV funcTable{};
+    funcTable.vkCmdBindPipelineShaderGroupNV = vkCmdBindPipelineShaderGroupNV;
+    funcTable.vkCmdExecuteGeneratedCommandsNV = vkCmdExecuteGeneratedCommandsNV;
+    funcTable.vkCmdPreprocessGeneratedCommandsNV = vkCmdPreprocessGeneratedCommandsNV;
+    funcTable.vkCreateIndirectCommandsLayoutNV = vkCreateIndirectCommandsLayoutNV;
+    funcTable.vkDestroyIndirectCommandsLayoutNV = vkDestroyIndirectCommandsLayoutNV;
+    funcTable.vkGetGeneratedCommandsMemoryRequirementsNV = vkGetGeneratedCommandsMemoryRequirementsNV;
+    return funcTable;
+}
+#endif
+
+#ifdef VK_AMDX_shader_enqueue
+/// Warning: Instable API for testing only, may be removed at any point of time in the future.
+FunctionTableDeviceGeneratedCommandsComputeNV Device::getFunctionTableDeviceGeneratedCommandsComputeNV() {
+    FunctionTableDeviceGeneratedCommandsComputeNV funcTable{};
+    funcTable.vkCmdUpdatePipelineIndirectBufferNV = vkCmdUpdatePipelineIndirectBufferNV;
+    funcTable.vkGetPipelineIndirectDeviceAddressNV = vkGetPipelineIndirectDeviceAddressNV;
+    funcTable.vkGetPipelineIndirectMemoryRequirementsNV = vkGetPipelineIndirectMemoryRequirementsNV;
+    return funcTable;
+}
+#endif
 
 void Device::writeDeviceInfoToLog(const std::vector<const char*>& deviceExtensions) {
     sgl::Logfile::get()->write(

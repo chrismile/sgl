@@ -39,6 +39,8 @@
 #include <thread>
 //#include <boost/container_hash/hash_fwd.hpp>
 
+#define VK_ENABLE_BETA_EXTENSIONS
+
 #include <Defs.hpp>
 #include "../libs/volk/volk.h"
 #include "../libs/VMA/vk_mem_alloc.h"
@@ -135,6 +137,15 @@ struct DLL_OBJECT DeviceFeatures {
 #ifdef VK_EXT_mesh_shader
         meshShaderFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
 #endif
+#ifdef VK_AMDX_shader_enqueue
+        shaderEnqueueFeaturesAMDX.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ENQUEUE_FEATURES_AMDX;
+#endif
+#ifdef VK_NV_device_generated_commands
+        deviceGeneratedCommandsFeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_FEATURES_NV;
+#endif
+#ifdef VK_NV_device_generated_commands_compute
+        deviceGeneratedCommandsComputeFeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_COMPUTE_FEATURES_NV;
+#endif
 #ifdef VK_VERSION_1_1
         requestedVulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
         optionalVulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
@@ -175,6 +186,21 @@ struct DLL_OBJECT DeviceFeatures {
     VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeaturesEXT{};
 #else
     VkPhysicalDeviceMeshShaderFeaturesEXT_Compat meshShaderFeaturesEXT{};
+#endif
+#ifdef VK_AMDX_shader_enqueue
+    VkPhysicalDeviceShaderEnqueueFeaturesAMDX shaderEnqueueFeaturesAMDX{};
+#else
+    VkPhysicalDeviceShaderEnqueueFeaturesAMDX_Compat shaderEnqueueFeaturesAMDX{};
+#endif
+#ifdef VK_NV_device_generated_commands
+    VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV deviceGeneratedCommandsFeaturesNV{};
+#else
+    VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV_Compat deviceGeneratedCommandsFeaturesNV{};
+#endif
+#ifdef VK_NV_device_generated_commands_compute
+    VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV deviceGeneratedCommandsComputeFeaturesNV{};
+#else
+    VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV_Compat deviceGeneratedCommandsComputeFeaturesNV{};
 #endif
     // The following features have no extensions, thus use
     bool optionalEnableShaderDrawParametersFeatures = false;
@@ -318,6 +344,34 @@ public:
         return meshShaderFeaturesEXT;
     }
 #endif
+#ifdef VK_AMDX_shader_enqueue
+    inline const VkPhysicalDeviceShaderEnqueuePropertiesAMDX& getPhysicalDeviceShaderEnqueuePropertiesAMDX() const {
+        return shaderEnqueuePropertiesAMDX;
+    }
+    inline const VkPhysicalDeviceShaderEnqueueFeaturesAMDX& getPhysicalDeviceShaderEnqueueFeaturesAMDX() const {
+        return shaderEnqueueFeaturesAMDX;
+    }
+    /// Warning: Instable API for testing only, may be removed at any point of time in the future.
+    FunctionTableShaderEnqueueAMDX getFunctionTableShaderEnqueueAMDX();
+#endif
+#ifdef VK_NV_device_generated_commands
+    inline const VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV& getPhysicalDeviceDeviceGeneratedCommandsPropertiesNV() const {
+        return deviceGeneratedCommandsPropertiesNV;
+    }
+    inline const VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV& getPhysicalDeviceDeviceGeneratedCommandsFeaturesNV() const {
+        return deviceGeneratedCommandsFeaturesNV;
+    }
+    /// Warning: Instable API for testing only, may be removed at any point of time in the future.
+    FunctionTableDeviceGeneratedCommandsNV getFunctionTableDeviceGeneratedCommandsNV();
+#endif
+#ifdef VK_NV_device_generated_commands_compute
+    inline const VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV& getPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV() const {
+        return deviceGeneratedCommandsComputeFeaturesNV;
+    }
+    /// Warning: Instable API for testing only, may be removed at any point of time in the future.
+    FunctionTableDeviceGeneratedCommandsComputeNV getFunctionTableDeviceGeneratedCommandsComputeNV();
+#endif
+
     VkSampleCountFlagBits getMaxUsableSampleCount() const;
 
     VkFormat getSupportedDepthFormat(
@@ -511,6 +565,16 @@ private:
 #else
     VkPhysicalDeviceMeshShaderPropertiesEXT_Compat meshShaderPropertiesEXT{};
 #endif
+#ifdef VK_AMDX_shader_enqueue
+    VkPhysicalDeviceShaderEnqueuePropertiesAMDX shaderEnqueuePropertiesAMDX{};
+#else
+    VkPhysicalDeviceShaderEnqueuePropertiesAMDX_Compat shaderEnqueuePropertiesAMDX{};
+#endif
+#ifdef VK_NV_device_generated_commands
+    VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV deviceGeneratedCommandsPropertiesNV{};
+#else
+    VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV_Compat deviceGeneratedCommandsPropertiesNV{};
+#endif
 
     VkPhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeatures{};
     VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures{};
@@ -537,6 +601,21 @@ private:
     VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeaturesEXT{};
 #else
     VkPhysicalDeviceMeshShaderFeaturesEXT_Compat meshShaderFeaturesEXT{};
+#endif
+#ifdef VK_AMDX_shader_enqueue
+    VkPhysicalDeviceShaderEnqueueFeaturesAMDX shaderEnqueueFeaturesAMDX{};
+#else
+    VkPhysicalDeviceShaderEnqueueFeaturesAMDX_Compat shaderEnqueueFeaturesAMDX{};
+#endif
+#ifdef VK_NV_device_generated_commands
+    VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV deviceGeneratedCommandsFeaturesNV{};
+#else
+    VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV_Compat deviceGeneratedCommandsFeaturesNV{};
+#endif
+#ifdef VK_NV_device_generated_commands_compute
+    VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV deviceGeneratedCommandsComputeFeaturesNV{};
+#else
+    VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV_Compat deviceGeneratedCommandsComputeFeaturesNV{};
 #endif
 
     // Queues for the logical device.

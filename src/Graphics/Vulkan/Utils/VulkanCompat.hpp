@@ -314,4 +314,79 @@ typedef struct VkPhysicalDeviceMeshShaderPropertiesEXT_Compat {
     VkBool32           prefersCompactPrimitiveOutput;
 } VkPhysicalDeviceMeshShaderPropertiesEXT_Compat;
 
+typedef struct VkPhysicalDeviceShaderEnqueueFeaturesAMDX_Compat {
+    VkStructureType    sType;
+    void*              pNext;
+    VkBool32           shaderEnqueue;
+} VkPhysicalDeviceShaderEnqueueFeaturesAMDX_Compat;
+
+typedef struct VkPhysicalDeviceShaderEnqueuePropertiesAMDX_Compat {
+    VkStructureType    sType;
+    void*              pNext;
+    uint32_t           maxExecutionGraphDepth;
+    uint32_t           maxExecutionGraphShaderOutputNodes;
+    uint32_t           maxExecutionGraphShaderPayloadSize;
+    uint32_t           maxExecutionGraphShaderPayloadCount;
+    uint32_t           executionGraphDispatchAddressAlignment;
+} VkPhysicalDeviceShaderEnqueuePropertiesAMDX_Compat;
+
+#ifdef VK_AMDX_shader_enqueue
+struct FunctionTableShaderEnqueueAMDX {
+    PFN_vkCmdDispatchGraphAMDX vkCmdDispatchGraphAMDX;
+    PFN_vkCmdDispatchGraphIndirectAMDX vkCmdDispatchGraphIndirectAMDX;
+    PFN_vkCmdDispatchGraphIndirectCountAMDX vkCmdDispatchGraphIndirectCountAMDX;
+    PFN_vkCmdInitializeGraphScratchMemoryAMDX vkCmdInitializeGraphScratchMemoryAMDX;
+    PFN_vkCreateExecutionGraphPipelinesAMDX vkCreateExecutionGraphPipelinesAMDX;
+    PFN_vkGetExecutionGraphPipelineNodeIndexAMDX vkGetExecutionGraphPipelineNodeIndexAMDX;
+    PFN_vkGetExecutionGraphPipelineScratchSizeAMDX vkGetExecutionGraphPipelineScratchSizeAMDX;
+};
+#endif
+
+typedef struct VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV_Compat {
+    VkStructureType    sType;
+    void*              pNext;
+    uint32_t           maxGraphicsShaderGroupCount;
+    uint32_t           maxIndirectSequenceCount;
+    uint32_t           maxIndirectCommandsTokenCount;
+    uint32_t           maxIndirectCommandsStreamCount;
+    uint32_t           maxIndirectCommandsTokenOffset;
+    uint32_t           maxIndirectCommandsStreamStride;
+    uint32_t           minSequencesCountBufferOffsetAlignment;
+    uint32_t           minSequencesIndexBufferOffsetAlignment;
+    uint32_t           minIndirectCommandsBufferOffsetAlignment;
+} VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV_Compat;
+
+typedef struct VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV_Compat {
+    VkStructureType    sType;
+    void*              pNext;
+    VkBool32           deviceGeneratedCommands;
+} VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV_Compat;
+
+#ifdef VK_NV_device_generated_commands
+struct FunctionTableDeviceGeneratedCommandsNV {
+    PFN_vkCmdBindPipelineShaderGroupNV vkCmdBindPipelineShaderGroupNV;
+    PFN_vkCmdExecuteGeneratedCommandsNV vkCmdExecuteGeneratedCommandsNV;
+    PFN_vkCmdPreprocessGeneratedCommandsNV vkCmdPreprocessGeneratedCommandsNV;
+    PFN_vkCreateIndirectCommandsLayoutNV vkCreateIndirectCommandsLayoutNV;
+    PFN_vkDestroyIndirectCommandsLayoutNV vkDestroyIndirectCommandsLayoutNV;
+    PFN_vkGetGeneratedCommandsMemoryRequirementsNV vkGetGeneratedCommandsMemoryRequirementsNV;
+};
+#endif
+
+typedef struct VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV_Compat {
+    VkStructureType    sType;
+    void*              pNext;
+    VkBool32           deviceGeneratedCompute;
+    VkBool32           deviceGeneratedComputePipelines;
+    VkBool32           deviceGeneratedComputeCaptureReplay;
+} VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV_Compat;
+
+#ifdef VK_NV_device_generated_commands_compute
+struct FunctionTableDeviceGeneratedCommandsComputeNV {
+    PFN_vkCmdUpdatePipelineIndirectBufferNV vkCmdUpdatePipelineIndirectBufferNV;
+    PFN_vkGetPipelineIndirectDeviceAddressNV vkGetPipelineIndirectDeviceAddressNV;
+    PFN_vkGetPipelineIndirectMemoryRequirementsNV vkGetPipelineIndirectMemoryRequirementsNV;
+};
+#endif
+
 #endif //SGL_VULKANCOMPAT_HPP
