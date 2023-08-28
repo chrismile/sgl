@@ -1,3 +1,6 @@
+// Change by Christoph Neuhauser (date: 2023-08-28).
+#define VK_ENABLE_BETA_EXTENSIONS
+
 /* This file is part of volk library; see volk.h for version/license details */
 /* clang-format off */
 #include "volk.h"

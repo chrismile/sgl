@@ -40,6 +40,7 @@
 //#include <boost/container_hash/hash_fwd.hpp>
 
 #define VK_ENABLE_BETA_EXTENSIONS
+// Build with vcpkg headers and beta extensions broken as of 2023-08-28.
 
 #include <Defs.hpp>
 #include "../libs/volk/volk.h"

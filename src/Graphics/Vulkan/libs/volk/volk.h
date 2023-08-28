@@ -59,6 +59,13 @@
 #	undef VK_HUAWEI_subpass_shading
 #endif
 
+// Change by Christoph Neuhauser (date: 2023-08-28) to fix build with VK_ENABLE_BETA_EXTENSIONS and VK_KHR_video_decode_queue/VK_KHR_video_queue.
+#if VK_HEADER_VERSION < 262
+#	undef VK_KHR_video_decode_queue
+#	undef VK_KHR_video_encode_queue
+#	undef VK_KHR_video_queue
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
