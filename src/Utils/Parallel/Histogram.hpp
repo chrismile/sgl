@@ -30,6 +30,7 @@
 #define SGL_HISTOGRAM_HPP
 
 #include <vector>
+#include <Utils/SciVis/ScalarDataFormat.hpp>
 
 namespace sgl {
 
@@ -50,6 +51,13 @@ DLL_OBJECT void computeHistogramUnormShort(
         const uint16_t* values, size_t numValues, float minVal, float maxVal);
 DLL_OBJECT void computeHistogramUnormShort(
         std::vector<float>& histogram, int histogramResolution, const uint16_t* values, size_t numValues);
+
+// For 2D histograms.
+DLL_OBJECT void computeHistogram2d(
+        std::vector<float>& histogram2d, int histogramResolution,
+        ScalarDataFormat formatX, ScalarDataFormat formatY,
+        const void* valuesX, const void* valuesY, size_t numValues,
+        float minValX, float maxValX, float minValY, float maxValY);
 
 }
 

@@ -36,6 +36,7 @@
 #include <tbb/blocked_range.h>
 #endif
 
+#include <Utils/File/Logfile.hpp>
 #include "Reduction.hpp"
 #include "Histogram.hpp"
 
@@ -269,6 +270,156 @@ void computeHistogramUnormShort(
         const uint16_t* values, size_t numValues) {
     auto [minVal, maxVal] = sgl::reduceUnormShortArrayMinMax(values, numValues);
     computeHistogramUnormShort(histogram, histogramResolution, values, numValues, minVal, maxVal);
+}
+
+
+
+template<class Tx, class Ty>
+void computeHistogram2dTemplated(
+        std::vector<float>& histogram, int histogramResolution,
+        const Tx* valuesX, const Ty* valuesY, size_t numValues,
+        float minValX, float maxValX, float minValY, float maxValY) {
+        int histogramResolution2d = histogramResolution * histogramResolution;
+    std::vector<std::atomic<int>> histogramAtomic(histogramResolution2d);
+    for (int histIdx = 0; histIdx < histogramResolution2d; histIdx++) {
+        histogramAtomic.at(histIdx) = 0;
+    }
+
+#ifdef USE_TBB
+    tbb::parallel_for(tbb::blocked_range<size_t>(0, numValues), [&](auto const& r) {
+        for (auto valIdx = r.begin(); valIdx != r.end(); valIdx++) {
+#else
+#if _OPENMP >= 201107
+    #pragma omp parallel for shared(valuesX, valuesY, numValues, minValX, maxValX, minValY, maxValY) \
+            shared(histogramResolution, histogramAtomic) default(none)
+#endif
+    for (size_t valIdx = 0; valIdx < numValues; valIdx++) {
+#endif
+        float valueX = 0.0f, valueY = 0.0f;
+        if constexpr (std::is_same<Tx, float>()) {
+            valueX = valuesX[valIdx];
+        } else if constexpr (std::is_same<Tx, uint8_t>()) {
+            valueX = float(valuesX[valIdx]) / 255.0f;
+        } else if constexpr (std::is_same<Tx, uint16_t>()) {
+            valueX = float(valuesX[valIdx]) / 65535.0f;
+        }
+        if constexpr (std::is_same<Ty, float>()) {
+            valueY = valuesY[valIdx];
+        } else if constexpr (std::is_same<Ty, uint8_t>()) {
+            valueY = float(valuesY[valIdx]) / 255.0f;
+        } else if constexpr (std::is_same<Ty, uint16_t>()) {
+            valueY = float(valuesY[valIdx]) / 65535.0f;
+        }
+        if (std::isnan(valueX) || std::isnan(valueY)) {
+            continue;
+        }
+        int histIdxX = std::clamp(
+                static_cast<int>((valueX - minValX) / (maxValX - minValX) * static_cast<float>(histogramResolution)),
+                0, histogramResolution - 1);
+        int histIdxY = std::clamp(
+                static_cast<int>((valueY - minValY) / (maxValY - minValY) * static_cast<float>(histogramResolution)),
+                0, histogramResolution - 1);
+        histogramAtomic.at(histIdxX + histIdxY * histogramResolution)++;
+    }
+#ifdef USE_TBB
+    });
+#endif
+
+    histogram.resize(histogramResolution2d);
+    for (int histIdx = 0; histIdx < histogramResolution2d; histIdx++) {
+        histogram.at(histIdx) = float(histogramAtomic.at(histIdx));
+    }
+
+    // Normalize values of histogram.
+#ifdef USE_TBB
+    float histogramMax = tbb::parallel_reduce(
+        tbb::blocked_range<int>(0, histogramResolution), 0.0f,
+        [&](tbb::blocked_range<int> const& r, float histogramMax) {
+            for (auto histIdx = r.begin(); histIdx != r.end(); histIdx++) {
+#else
+    float histogramMax = 0.0f;
+#if _OPENMP >= 201107
+    #pragma omp parallel for shared(histogram, histogramResolution2d) reduction(max: histogramMax) default(none)
+#endif
+    for (int histIdx = 0; histIdx < histogramResolution2d; histIdx++) {
+#endif
+        histogramMax = std::max(histogramMax, histogram.at(histIdx));
+    }
+#ifdef USE_TBB
+    return histogramMax;
+        }, sgl::max_predicate());
+#endif
+
+#ifdef USE_TBB
+    tbb::parallel_for(tbb::blocked_range<int>(0, histogramResolution), [&](auto const& r) {
+        for (auto histIdx = r.begin(); histIdx != r.end(); histIdx++) {
+#else
+#if _OPENMP >= 201107
+    #pragma omp parallel for shared(histogram, histogramResolution2d, histogramMax) default(none)
+#endif
+    for (int histIdx = 0; histIdx < histogramResolution2d; histIdx++) {
+#endif
+        histogram.at(histIdx) /= histogramMax;
+    }
+#ifdef USE_TBB
+    });
+#endif
+}
+
+void computeHistogram2d(
+        std::vector<float>& histogram2d, int histogramResolution,
+        ScalarDataFormat formatX, ScalarDataFormat formatY,
+        const void* valuesX, const void* valuesY, size_t numValues,
+        float minValX, float maxValX, float minValY, float maxValY) {
+    if (formatX == ScalarDataFormat::FLOAT && formatY == ScalarDataFormat::FLOAT) {
+        computeHistogram2dTemplated(
+                histogram2d, histogramResolution,
+                reinterpret_cast<const float*>(valuesX), reinterpret_cast<const float*>(valuesY),
+                numValues, minValX, maxValX, minValY, maxValY);
+    } else if (formatX == ScalarDataFormat::BYTE && formatY == ScalarDataFormat::FLOAT) {
+        computeHistogram2dTemplated(
+                histogram2d, histogramResolution,
+                reinterpret_cast<const uint8_t*>(valuesX), reinterpret_cast<const float*>(valuesY),
+                numValues, minValX, maxValX, minValY, maxValY);
+    } else if (formatX == ScalarDataFormat::SHORT && formatY == ScalarDataFormat::FLOAT) {
+        computeHistogram2dTemplated(
+                histogram2d, histogramResolution,
+                reinterpret_cast<const uint16_t*>(valuesX), reinterpret_cast<const float*>(valuesY),
+                numValues, minValX, maxValX, minValY, maxValY);
+    } else if (formatX == ScalarDataFormat::FLOAT && formatY == ScalarDataFormat::BYTE) {
+        computeHistogram2dTemplated(
+                histogram2d, histogramResolution,
+                reinterpret_cast<const float*>(valuesX), reinterpret_cast<const uint8_t*>(valuesY),
+                numValues, minValX, maxValX, minValY, maxValY);
+    } else if (formatX == ScalarDataFormat::BYTE && formatY == ScalarDataFormat::BYTE) {
+        computeHistogram2dTemplated(
+                histogram2d, histogramResolution,
+                reinterpret_cast<const uint8_t*>(valuesX), reinterpret_cast<const uint8_t*>(valuesY),
+                numValues, minValX, maxValX, minValY, maxValY);
+    } else if (formatX == ScalarDataFormat::SHORT && formatY == ScalarDataFormat::BYTE) {
+        computeHistogram2dTemplated(
+                histogram2d, histogramResolution,
+                reinterpret_cast<const uint16_t*>(valuesX), reinterpret_cast<const uint8_t*>(valuesY),
+                numValues, minValX, maxValX, minValY, maxValY);
+    } else if (formatX == ScalarDataFormat::FLOAT && formatY == ScalarDataFormat::SHORT) {
+        computeHistogram2dTemplated(
+                histogram2d, histogramResolution,
+                reinterpret_cast<const float*>(valuesX), reinterpret_cast<const uint16_t*>(valuesY),
+                numValues, minValX, maxValX, minValY, maxValY);
+    } else if (formatX == ScalarDataFormat::BYTE && formatY == ScalarDataFormat::SHORT) {
+        computeHistogram2dTemplated(
+                histogram2d, histogramResolution,
+                reinterpret_cast<const uint8_t*>(valuesX), reinterpret_cast<const uint16_t*>(valuesY),
+                numValues, minValX, maxValX, minValY, maxValY);
+    } else if (formatX == ScalarDataFormat::SHORT && formatY == ScalarDataFormat::SHORT) {
+        computeHistogram2dTemplated(
+                histogram2d, histogramResolution,
+                reinterpret_cast<const uint16_t*>(valuesX), reinterpret_cast<const uint16_t*>(valuesY),
+                numValues, minValX, maxValX, minValY, maxValY);
+    } else {
+        sgl::Logfile::get()->writeError("Error in computeHistogram2d: Float16 is not yet supported.");
+        histogram2d.resize(histogramResolution * histogramResolution);
+    }
 }
 
 }
