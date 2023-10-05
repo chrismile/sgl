@@ -210,7 +210,7 @@ private:
     int standardPositionX = 0;
     int standardPositionY = 1334;
     float opacitySelection = 1.0f;
-    ImVec4 colorSelection = ImColor(255, 255, 255, 255);
+    ImVec4 colorSelection = static_cast<ImVec4>(ImColor(255, 255, 255, 255));
     sgl::Color clearColor;
     ColorSpace interpolationColorSpace;
 

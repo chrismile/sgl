@@ -128,7 +128,7 @@ private:
     sgl::AABB2 opacityGraphBox, colorBarBox;
     glm::vec2 oldMousePosWidget;
     float opacitySelection = 1.0f;
-    ImVec4 colorSelection = ImColor(255, 255, 255, 255);
+    ImVec4 colorSelection = static_cast<ImVec4>(ImColor(255, 255, 255, 255));
     bool reRender = false;
 
     std::string saveFileString = "Standard.xml";
