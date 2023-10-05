@@ -141,7 +141,7 @@ DLL_OBJECT bool initializeCudaDeviceApiFunctionTable();
 DLL_OBJECT bool getIsCudaDeviceApiFunctionTableInitialized();
 DLL_OBJECT void freeCudaDeviceApiFunctionTable();
 
-void _checkNvrtcResult(nvrtcResult result, const char* text, const char* locationText);
+DLL_OBJECT void _checkNvrtcResult(nvrtcResult result, const char* text, const char* locationText);
 #define checkNvrtcResult(result, text) _checkNvrtcResult(result, text, __FILE__ ":" TOSTRING(__LINE__))
 
 DLL_OBJECT bool initializeNvrtcFunctionTable();
