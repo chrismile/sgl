@@ -28,6 +28,9 @@
 
 #include <array>
 #include <cstring>
+
+#include <Utils/StringUtils.hpp>
+#include <Utils/File/FileUtils.hpp>
 #include "InteropCuda.hpp"
 
 #if defined(__linux__)
@@ -252,9 +255,42 @@ bool initializeNvrtcFunctionTable() {
         return false;
     }
 #elif defined(_WIN32)
-    g_nvrtcLibraryHandle = LoadLibraryA("nvrtc.dll");
+    std::vector<std::string> pathList;
+#ifdef _MSC_VER
+    char* pathEnvVar = nullptr;
+    size_t stringSize = 0;
+    if (_dupenv_s(&pathEnvVar, &stringSize, "PATH") != 0) {
+        pathEnvVar = nullptr;
+    }
+    sgl::splitString(pathEnvVar, ';', pathList);
+    free(pathEnvVar);
+    pathEnvVar = nullptr;
+#else
+    const char* pathEnvVar = getenv("PATH");
+    sgl::splitString(pathEnvVar, ';', pathList);
+#endif
+
+    std::string nvrtcDllFileName;
+    for (const std::string& pathDir : pathList) {
+        if (!sgl::FileUtils::get()->isDirectory(pathDir)) {
+            continue;
+        }
+        std::vector<std::string> filesInDir = sgl::FileUtils::get()->getFilesInDirectoryVector(pathDir);
+        for (const std::string& fileInDir : filesInDir) {
+            std::string fileName = sgl::FileUtils::get()->getPureFilename(fileInDir);
+            if (sgl::startsWith(fileName, "nvrtc64_") && sgl::endsWith(fileName, ".dll")) {
+                nvrtcDllFileName = fileName;
+            }
+        }
+    }
+    if (nvrtcDllFileName.empty()) {
+        sgl::Logfile::get()->writeInfo("initializeNvrtcFunctionTable: Could not find nvrtc.dll.");
+        return false;
+    }
+
+    g_nvrtcLibraryHandle = LoadLibraryA(nvrtcDllFileName.c_str());
     if (!g_nvrtcLibraryHandle) {
-        sgl::Logfile::get()->writeInfo("initializeNvrtcFunctionTable: Could not load nvrtc.dll.");
+        sgl::Logfile::get()->writeInfo("initializeNvrtcFunctionTable: Could not load " + nvrtcDllFileName + ".");
         return false;
     }
 #endif
