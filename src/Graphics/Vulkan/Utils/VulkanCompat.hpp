@@ -389,4 +389,30 @@ struct FunctionTableDeviceGeneratedCommandsComputeNV {
 };
 #endif
 
+typedef struct VkPhysicalDeviceCooperativeMatrixFeaturesNV_Compat {
+    VkStructureType    sType;
+    void*              pNext;
+    VkBool32           cooperativeMatrix;
+    VkBool32           cooperativeMatrixRobustBufferAccess;
+} VkPhysicalDeviceCooperativeMatrixFeaturesNV_Compat;
+
+typedef struct VkPhysicalDeviceCooperativeMatrixPropertiesNV_Compat {
+    VkStructureType       sType;
+    void*                 pNext;
+    VkShaderStageFlags    cooperativeMatrixSupportedStages;
+} VkPhysicalDeviceCooperativeMatrixPropertiesNV_Compat;
+
+typedef struct VkPhysicalDeviceCooperativeMatrixFeaturesKHR_Compat {
+    VkStructureType    sType;
+    void*              pNext;
+    VkBool32           cooperativeMatrix;
+    VkBool32           cooperativeMatrixRobustBufferAccess;
+} VkPhysicalDeviceCooperativeMatrixFeaturesKHR_Compat;
+
+typedef struct VkPhysicalDeviceCooperativeMatrixPropertiesKHR_Compat {
+    VkStructureType       sType;
+    void*                 pNext;
+    VkShaderStageFlags    cooperativeMatrixSupportedStages;
+} VkPhysicalDeviceCooperativeMatrixPropertiesKHR_Compat;
+
 #endif //SGL_VULKANCOMPAT_HPP

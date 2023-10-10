@@ -203,6 +203,16 @@ struct DLL_OBJECT DeviceFeatures {
 #else
     VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV_Compat deviceGeneratedCommandsComputeFeaturesNV{};
 #endif
+#ifdef VK_NV_cooperative_matrix
+    VkPhysicalDeviceCooperativeMatrixFeaturesNV cooperativeMatrixFeaturesNV{};
+#else
+    VkPhysicalDeviceCooperativeMatrixFeaturesNV_Compat cooperativeMatrixFeaturesNV{};
+#endif
+#ifdef VK_KHR_cooperative_matrix
+    VkPhysicalDeviceCooperativeMatrixFeaturesKHR cooperativeMatrixFeaturesKHR{};
+#else
+    VkPhysicalDeviceCooperativeMatrixFeaturesKHR_Compat cooperativeMatrixFeaturesKHR{};
+#endif
     // The following features have no extensions, thus use
     bool optionalEnableShaderDrawParametersFeatures = false;
     // Vulkan 1.x features are only enabled when at least one value in the struct is set to true.
@@ -371,6 +381,18 @@ public:
     }
     /// Warning: Instable API for testing only, may be removed at any point of time in the future.
     FunctionTableDeviceGeneratedCommandsComputeNV getFunctionTableDeviceGeneratedCommandsComputeNV();
+#endif
+#ifdef VK_NV_cooperative_matrix
+    inline const VkPhysicalDeviceCooperativeMatrixFeaturesNV& getCooperativeMatrixFeaturesNV() const {
+        return cooperativeMatrixFeaturesNV;
+    }
+    const std::vector<VkCooperativeMatrixPropertiesNV>& getSupportedCooperativeMatrixPropertiesNV();
+#endif
+#ifdef VK_KHR_cooperative_matrix
+    inline const VkPhysicalDeviceCooperativeMatrixFeaturesKHR& getCooperativeMatrixFeaturesKHR() const {
+        return cooperativeMatrixFeaturesKHR;
+    }
+    const std::vector<VkCooperativeMatrixPropertiesKHR>& getSupportedCooperativeMatrixPropertiesKHR();
 #endif
 
     VkSampleCountFlagBits getMaxUsableSampleCount() const;
@@ -618,6 +640,22 @@ private:
 #else
     VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV_Compat deviceGeneratedCommandsComputeFeaturesNV{};
 #endif
+#ifdef VK_NV_cooperative_matrix
+    VkPhysicalDeviceCooperativeMatrixFeaturesNV cooperativeMatrixFeaturesNV{};
+    std::vector<VkCooperativeMatrixPropertiesNV> supportedCooperativeMatrixPropertiesNV;
+#else
+    VkPhysicalDeviceCooperativeMatrixFeaturesNV_Compat cooperativeMatrixFeaturesNV{};
+    std::vector<VkPhysicalDeviceCooperativeMatrixFeaturesNV_Compat> supportedCooperativeMatrixPropertiesNV;
+#endif
+#ifdef VK_KHR_cooperative_matrix
+    VkPhysicalDeviceCooperativeMatrixFeaturesKHR cooperativeMatrixFeaturesKHR{};
+    std::vector<VkCooperativeMatrixPropertiesKHR> supportedCooperativeMatrixPropertiesKHR;
+#else
+    VkPhysicalDeviceCooperativeMatrixFeaturesKHR_Compat cooperativeMatrixFeaturesKHR{};
+    std::vector<VkPhysicalDeviceCooperativeMatrixFeaturesKHR_Compat> supportedCooperativeMatrixPropertiesKHR;
+#endif
+    bool isInitializedSupportedCooperativeMatrixPropertiesNV = false;
+    bool isInitializedSupportedCooperativeMatrixPropertiesKHR = false;
 
     // Queues for the logical device.
     std::vector<VkQueueFamilyProperties> queueFamilyProperties;
