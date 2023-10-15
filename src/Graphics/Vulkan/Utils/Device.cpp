@@ -724,6 +724,34 @@ void Device::createLogicalDeviceAndQueues(
             requestedDeviceFeatures.shaderFloat16Int8Features.shaderInt8 = VK_FALSE;
         }
     }
+    if (deviceExtensionsSet.find(VK_KHR_16BIT_STORAGE_EXTENSION_NAME) != deviceExtensionsSet.end()) {
+        device16BitStorageFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES;
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &device16BitStorageFeatures;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        if (requestedDeviceFeatures.device16BitStorageFeatures.storageBuffer16BitAccess == VK_FALSE
+                && requestedDeviceFeatures.device16BitStorageFeatures.uniformAndStorageBuffer16BitAccess == VK_FALSE
+                && requestedDeviceFeatures.device16BitStorageFeatures.storagePushConstant16 == VK_FALSE
+                && requestedDeviceFeatures.device16BitStorageFeatures.storageInputOutput16 == VK_FALSE) {
+            requestedDeviceFeatures.device16BitStorageFeatures = device16BitStorageFeatures;
+        }
+        if (hasRequestedVulkan12Features) {
+            requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess =
+                    requestedDeviceFeatures.device16BitStorageFeatures.storageBuffer16BitAccess;
+            requestedDeviceFeatures.requestedVulkan11Features.uniformAndStorageBuffer16BitAccess =
+                    requestedDeviceFeatures.device16BitStorageFeatures.uniformAndStorageBuffer16BitAccess;
+            requestedDeviceFeatures.requestedVulkan11Features.storagePushConstant16 =
+                    requestedDeviceFeatures.device16BitStorageFeatures.storagePushConstant16;
+            requestedDeviceFeatures.requestedVulkan11Features.storageInputOutput16 =
+                    requestedDeviceFeatures.device16BitStorageFeatures.storageInputOutput16;
+            requestedDeviceFeatures.device16BitStorageFeatures.storageBuffer16BitAccess = VK_FALSE;
+            requestedDeviceFeatures.device16BitStorageFeatures.uniformAndStorageBuffer16BitAccess = VK_FALSE;
+            requestedDeviceFeatures.device16BitStorageFeatures.storagePushConstant16 = VK_FALSE;
+            requestedDeviceFeatures.device16BitStorageFeatures.storageInputOutput16 = VK_FALSE;
+        }
+    }
     if (deviceExtensionsSet.find(VK_KHR_8BIT_STORAGE_EXTENSION_NAME) != deviceExtensionsSet.end()) {
         device8BitStorageFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES;
         VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
@@ -1002,6 +1030,13 @@ void Device::createLogicalDeviceAndQueues(
             || requestedDeviceFeatures.shaderFloat16Int8Features.shaderInt8) {
         *pNextPtr = &requestedDeviceFeatures.shaderFloat16Int8Features;
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.shaderFloat16Int8Features.pNext);
+    }
+    if (requestedDeviceFeatures.device16BitStorageFeatures.storageBuffer16BitAccess
+            || requestedDeviceFeatures.device16BitStorageFeatures.uniformAndStorageBuffer16BitAccess
+            || requestedDeviceFeatures.device16BitStorageFeatures.storagePushConstant16
+            || requestedDeviceFeatures.device16BitStorageFeatures.storageInputOutput16) {
+        *pNextPtr = &requestedDeviceFeatures.device16BitStorageFeatures;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.device16BitStorageFeatures.pNext);
     }
     if (requestedDeviceFeatures.device8BitStorageFeatures.storageBuffer8BitAccess
             || requestedDeviceFeatures.device8BitStorageFeatures.uniformAndStorageBuffer8BitAccess
@@ -1565,6 +1600,18 @@ const std::vector<VkCooperativeMatrixPropertiesKHR>& Device::getSupportedCoopera
     return supportedCooperativeMatrixPropertiesKHR;
 }
 #endif
+
+const VkPhysicalDeviceShaderCorePropertiesAMD& Device::getDeviceShaderCorePropertiesAMD() {
+    if (!isInitializedDeviceShaderCorePropertiesAMD) {
+        deviceShaderCorePropertiesAMD.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_PROPERTIES_AMD;
+        VkPhysicalDeviceProperties2 deviceProperties2 = {};
+        deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        deviceProperties2.pNext = &deviceShaderCorePropertiesAMD;
+        vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
+        isInitializedDeviceShaderCorePropertiesAMD = true;
+    }
+    return deviceShaderCorePropertiesAMD;
+}
 
 void Device::writeDeviceInfoToLog(const std::vector<const char*>& deviceExtensions) {
     sgl::Logfile::get()->write(

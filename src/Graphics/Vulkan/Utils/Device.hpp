@@ -117,6 +117,7 @@ struct DLL_OBJECT DeviceFeatures {
         uniformBufferStandardLayoutFeaturesKhr.sType =
                 VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES;
         shaderFloat16Int8Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES;
+        device16BitStorageFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES;
         device8BitStorageFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES;
         shaderDrawParametersFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES;
         accelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
@@ -167,6 +168,7 @@ struct DLL_OBJECT DeviceFeatures {
     VkPhysicalDeviceScalarBlockLayoutFeatures scalarBlockLayoutFeatures{};
     VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR uniformBufferStandardLayoutFeaturesKhr{};
     VkPhysicalDeviceShaderFloat16Int8Features shaderFloat16Int8Features{};
+    VkPhysicalDevice16BitStorageFeatures device16BitStorageFeatures{};
     VkPhysicalDevice8BitStorageFeatures device8BitStorageFeatures{};
     VkPhysicalDeviceShaderDrawParametersFeatures shaderDrawParametersFeatures{};
     VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures{};
@@ -307,6 +309,9 @@ public:
     inline const VkPhysicalDeviceShaderFloat16Int8Features& getPhysicalDeviceShaderFloat16Int8Features() const {
         return shaderFloat16Int8Features;
     }
+    inline const VkPhysicalDevice16BitStorageFeatures& getPhysicalDevice16BitStorageFeatures() const {
+        return device16BitStorageFeatures;
+    }
     inline const VkPhysicalDevice8BitStorageFeatures& getPhysicalDevice8BitStorageFeatures() const {
         return device8BitStorageFeatures;
     }
@@ -394,6 +399,7 @@ public:
     }
     const std::vector<VkCooperativeMatrixPropertiesKHR>& getSupportedCooperativeMatrixPropertiesKHR();
 #endif
+    const VkPhysicalDeviceShaderCorePropertiesAMD& getDeviceShaderCorePropertiesAMD();
 
     VkSampleCountFlagBits getMaxUsableSampleCount() const;
 
@@ -604,6 +610,7 @@ private:
     VkPhysicalDeviceScalarBlockLayoutFeatures scalarBlockLayoutFeatures{};
     VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR uniformBufferStandardLayoutFeaturesKhr{};
     VkPhysicalDeviceShaderFloat16Int8Features shaderFloat16Int8Features{};
+    VkPhysicalDevice16BitStorageFeatures device16BitStorageFeatures{};
     VkPhysicalDevice8BitStorageFeatures device8BitStorageFeatures{};
     VkPhysicalDeviceShaderDrawParametersFeatures shaderDrawParametersFeatures{};
     VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures{};
@@ -656,6 +663,10 @@ private:
 #endif
     bool isInitializedSupportedCooperativeMatrixPropertiesNV = false;
     bool isInitializedSupportedCooperativeMatrixPropertiesKHR = false;
+
+    // AMD-specific properties.
+    VkPhysicalDeviceShaderCorePropertiesAMD deviceShaderCorePropertiesAMD{};
+    bool isInitializedDeviceShaderCorePropertiesAMD = false;
 
     // Queues for the logical device.
     std::vector<VkQueueFamilyProperties> queueFamilyProperties;
