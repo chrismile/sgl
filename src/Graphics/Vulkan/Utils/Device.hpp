@@ -306,6 +306,23 @@ public:
     inline VkDeviceSize getMaxMemoryAllocationSize() const { return physicalDeviceVulkan11Properties.maxMemoryAllocationSize; }
     inline const VkPhysicalDeviceSparseProperties& getSparseProperties() const { return physicalDeviceProperties.sparseProperties; }
     inline const VkPhysicalDeviceFeatures& getPhysicalDeviceFeatures() { return physicalDeviceFeatures; }
+#ifdef VK_VERSION_1_1
+    const VkPhysicalDeviceVulkan11Features& getPhysicalDeviceVulkan11Features() const { return physicalDeviceVulkan11Features; }
+    const VkPhysicalDeviceVulkan11Properties& getPhysicalDeviceVulkan11Properties() const { return physicalDeviceVulkan11Properties; }
+#else
+    const VkPhysicalDeviceVulkan11Features_Compat& getPhysicalDeviceVulkan11Features() const { return physicalDeviceVulkan11Features; }
+    const VkPhysicalDeviceVulkan11Properties_Compat& getPhysicalDeviceVulkan11Properties() const { return physicalDeviceVulkan11Properties; }
+#endif
+#ifdef VK_VERSION_1_2
+    const VkPhysicalDeviceVulkan12Features& getPhysicalDeviceVulkan12Features() const { return physicalDeviceVulkan12Features; }
+#else
+    const VkPhysicalDeviceVulkan12Features_Compat& getPhysicalDeviceVulkan12Features() const { return physicalDeviceVulkan12Features; }
+#endif
+#ifdef VK_VERSION_1_3
+    const VkPhysicalDeviceVulkan13Features& getPhysicalDeviceVulkan13Features() const { return physicalDeviceVulkan13Features; }
+#else
+    const VkPhysicalDeviceVulkan13Features_Compat& getPhysicalDeviceVulkan13Features() const { return physicalDeviceVulkan13Features; }
+#endif
     inline const VkPhysicalDeviceShaderFloat16Int8Features& getPhysicalDeviceShaderFloat16Int8Features() const {
         return shaderFloat16Int8Features;
     }
