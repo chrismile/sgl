@@ -400,6 +400,7 @@ public:
     const std::vector<VkCooperativeMatrixPropertiesKHR>& getSupportedCooperativeMatrixPropertiesKHR();
 #endif
     const VkPhysicalDeviceShaderCorePropertiesAMD& getDeviceShaderCorePropertiesAMD();
+    const VkPhysicalDeviceShaderCoreProperties2AMD& getDeviceShaderCoreProperties2AMD();
 
     VkSampleCountFlagBits getMaxUsableSampleCount() const;
 
@@ -666,7 +667,9 @@ private:
 
     // AMD-specific properties.
     VkPhysicalDeviceShaderCorePropertiesAMD deviceShaderCorePropertiesAMD{};
+    VkPhysicalDeviceShaderCoreProperties2AMD deviceShaderCoreProperties2AMD{};
     bool isInitializedDeviceShaderCorePropertiesAMD = false;
+    bool isInitializedDeviceShaderCoreProperties2AMD = false;
 
     // Queues for the logical device.
     std::vector<VkQueueFamilyProperties> queueFamilyProperties;

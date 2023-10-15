@@ -59,8 +59,10 @@ DeviceThreadInfo getDeviceThreadInfo(sgl::vk::Device* device) {
     info.optimalWorkgroupSizePT = info.warpSize;
     info.optimalNumWorkgroupsPT = 64;
 
-    if (device->isDeviceExtensionSupported(VK_AMD_SHADER_CORE_PROPERTIES_EXTENSION_NAME)) {
+    if (device->isDeviceExtensionSupported(VK_AMD_SHADER_CORE_PROPERTIES_EXTENSION_NAME)
+            && device->isDeviceExtensionSupported(VK_AMD_SHADER_CORE_PROPERTIES_2_EXTENSION_NAME)) {
         const auto& shaderCoreProps = device->getDeviceShaderCorePropertiesAMD();
+        const auto& shaderCoreProps2 = device->getDeviceShaderCoreProperties2AMD();
         // TODO
         sgl::Logfile::get()->write("VkPhysicalDeviceShaderCorePropertiesAMD:", sgl::BLUE);
         sgl::Logfile::get()->write("- shaderEngineCount: " + std::to_string(shaderCoreProps.shaderEngineCount), sgl::BLUE);
@@ -77,6 +79,9 @@ DeviceThreadInfo getDeviceThreadInfo(sgl::vk::Device* device) {
         sgl::Logfile::get()->write("- minVgprAllocation: " + std::to_string(shaderCoreProps.minVgprAllocation), sgl::BLUE);
         sgl::Logfile::get()->write("- maxVgprAllocation: " + std::to_string(shaderCoreProps.maxVgprAllocation), sgl::BLUE);
         sgl::Logfile::get()->write("- vgprAllocationGranularity: " + std::to_string(shaderCoreProps.vgprAllocationGranularity), sgl::BLUE);
+        sgl::Logfile::get()->write("VkPhysicalDeviceShaderCoreProperties2AMD:", sgl::BLUE);
+        sgl::Logfile::get()->write("- shaderEngineCount: " + std::to_string(shaderCoreProps2.shaderCoreFeatures), sgl::BLUE);
+        sgl::Logfile::get()->write("- shaderEngineCount: " + std::to_string(shaderCoreProps2.activeComputeUnitCount), sgl::BLUE);
     }
 #ifdef SUPPORT_CUDA_INTEROP
     if (device->getDeviceDriverId() == VK_DRIVER_ID_NVIDIA_PROPRIETARY

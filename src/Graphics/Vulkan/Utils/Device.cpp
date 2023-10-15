@@ -1613,6 +1613,18 @@ const VkPhysicalDeviceShaderCorePropertiesAMD& Device::getDeviceShaderCoreProper
     return deviceShaderCorePropertiesAMD;
 }
 
+const VkPhysicalDeviceShaderCoreProperties2AMD& Device::getDeviceShaderCoreProperties2AMD() {
+    if (!isInitializedDeviceShaderCoreProperties2AMD) {
+        deviceShaderCoreProperties2AMD.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_PROPERTIES_2_AMD;
+        VkPhysicalDeviceProperties2 deviceProperties2 = {};
+        deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        deviceProperties2.pNext = &deviceShaderCoreProperties2AMD;
+        vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
+        isInitializedDeviceShaderCoreProperties2AMD = true;
+    }
+    return deviceShaderCoreProperties2AMD;
+}
+
 void Device::writeDeviceInfoToLog(const std::vector<const char*>& deviceExtensions) {
     sgl::Logfile::get()->write(
             std::string() + "Instance Vulkan version: "
@@ -1656,6 +1668,7 @@ void Device::createDeviceSwapchain(
 #endif
     // For device thread info.
     optionalDeviceExtensions.push_back(VK_AMD_SHADER_CORE_PROPERTIES_EXTENSION_NAME);
+    optionalDeviceExtensions.push_back(VK_AMD_SHADER_CORE_PROPERTIES_2_EXTENSION_NAME);
 
     VkSurfaceKHR surface = window->getVkSurface();
     enabledDeviceExtensionNames = {};
@@ -1692,6 +1705,7 @@ void Device::createDeviceHeadless(
 #endif
     // For device thread info.
     optionalDeviceExtensions.push_back(VK_AMD_SHADER_CORE_PROPERTIES_EXTENSION_NAME);
+    optionalDeviceExtensions.push_back(VK_AMD_SHADER_CORE_PROPERTIES_2_EXTENSION_NAME);
 
     enabledDeviceExtensionNames = {};
     physicalDevice = createPhysicalDeviceBinding(
