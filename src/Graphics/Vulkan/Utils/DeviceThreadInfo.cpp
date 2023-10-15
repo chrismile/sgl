@@ -88,7 +88,7 @@ DeviceThreadInfo getDeviceThreadInfo(sgl::vk::Device* device) {
         info.optimalNumWorkgroupsPT = shaderCoreProps2.activeComputeUnitCount;
     }
 #ifdef SUPPORT_CUDA_INTEROP
-    if (device->getDeviceDriverId() == VK_DRIVER_ID_NVIDIA_PROPRIETARY
+    else if (device->getDeviceDriverId() == VK_DRIVER_ID_NVIDIA_PROPRIETARY
             && sgl::vk::getIsCudaDeviceApiFunctionTableInitialized()) {
         CUdevice cuDevice = 0;
         bool foundDevice = sgl::vk::getMatchingCudaDevice(device, &cuDevice);
@@ -99,10 +99,7 @@ DeviceThreadInfo getDeviceThreadInfo(sgl::vk::Device* device) {
     }
 #endif
 #ifdef SUPPORT_OPENCL_INTEROP
-#ifdef SUPPORT_CUDA_INTEROP
-    else
-#endif
-    if (sgl::vk::getIsOpenCLFunctionTableInitialized()) {
+    else if (sgl::vk::getIsOpenCLFunctionTableInitialized()) {
         cl_int res;
         cl_device_id clDevice = getMatchingOpenCLDevice(device);
         if (clDevice != nullptr) {
