@@ -82,6 +82,8 @@ inline uint32_t uiceil(uint32_t x, uint32_t y) { return x > 0 ? (x - 1) / y + 1 
 // Fast integer square root, i.e., floor(sqrt(s)).
 DLL_OBJECT uint32_t uisqrt(uint32_t s);
 
+DLL_OBJECT uint32_t convertBitRepresentationFloatToUint32(float val);
+
 inline int nextMultiple(int num, int multiple) {
     int remainder = num % multiple;
     if (remainder == 0) {

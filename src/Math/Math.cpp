@@ -79,6 +79,17 @@ uint32_t uisqrt(uint32_t s) {
     return x0;
 }
 
+union FloatUint32Union {
+    float valFloat;
+    uint32_t valUint32;
+};
+
+uint32_t convertBitRepresentationFloatToUint32(float val) {
+    FloatUint32Union u;
+    u.valFloat = val;
+    return u.valUint32;
+}
+
 float vectorAngle(const glm::vec2 &u, const glm::vec2& v) {
     glm::vec2 un = glm::normalize(u);
     glm::vec2 vn = glm::normalize(v);
