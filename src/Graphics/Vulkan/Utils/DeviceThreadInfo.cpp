@@ -63,7 +63,6 @@ DeviceThreadInfo getDeviceThreadInfo(sgl::vk::Device* device) {
             && device->isDeviceExtensionSupported(VK_AMD_SHADER_CORE_PROPERTIES_2_EXTENSION_NAME)) {
         const auto& shaderCoreProps = device->getDeviceShaderCorePropertiesAMD();
         const auto& shaderCoreProps2 = device->getDeviceShaderCoreProperties2AMD();
-        // TODO
         sgl::Logfile::get()->write("VkPhysicalDeviceShaderCorePropertiesAMD:", sgl::BLUE);
         sgl::Logfile::get()->write("- shaderEngineCount: " + std::to_string(shaderCoreProps.shaderEngineCount), sgl::BLUE);
         sgl::Logfile::get()->write("- shaderArraysPerEngineCount: " + std::to_string(shaderCoreProps.shaderArraysPerEngineCount), sgl::BLUE);
@@ -80,8 +79,13 @@ DeviceThreadInfo getDeviceThreadInfo(sgl::vk::Device* device) {
         sgl::Logfile::get()->write("- maxVgprAllocation: " + std::to_string(shaderCoreProps.maxVgprAllocation), sgl::BLUE);
         sgl::Logfile::get()->write("- vgprAllocationGranularity: " + std::to_string(shaderCoreProps.vgprAllocationGranularity), sgl::BLUE);
         sgl::Logfile::get()->write("VkPhysicalDeviceShaderCoreProperties2AMD:", sgl::BLUE);
-        sgl::Logfile::get()->write("- shaderEngineCount: " + std::to_string(shaderCoreProps2.shaderCoreFeatures), sgl::BLUE);
-        sgl::Logfile::get()->write("- shaderEngineCount: " + std::to_string(shaderCoreProps2.activeComputeUnitCount), sgl::BLUE);
+        sgl::Logfile::get()->write("- shaderCoreFeatures: " + std::to_string(shaderCoreProps2.shaderCoreFeatures), sgl::BLUE);
+        sgl::Logfile::get()->write("- activeComputeUnitCount: " + std::to_string(shaderCoreProps2.activeComputeUnitCount), sgl::BLUE);
+        info.numMultiprocessors = shaderCoreProps2.activeComputeUnitCount;
+        info.numCoresPerMultiprocessor = shaderCoreProps.wavefrontSize; // == subgroupSize
+        info.numCoresTotal = info.numMultiprocessors * info.numCoresPerMultiprocessor;
+        info.numCudaCoresEquivalent = info.numCoresTotal * 2;
+        info.optimalNumWorkgroupsPT = shaderCoreProps2.activeComputeUnitCount;
     }
 #ifdef SUPPORT_CUDA_INTEROP
     if (device->getDeviceDriverId() == VK_DRIVER_ID_NVIDIA_PROPRIETARY
