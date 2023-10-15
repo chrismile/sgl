@@ -1654,6 +1654,8 @@ void Device::createDeviceSwapchain(
 #ifdef __APPLE__
     optionalDeviceExtensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 #endif
+    // For device thread info.
+    optionalDeviceExtensions.push_back(VK_AMD_SHADER_CORE_PROPERTIES_EXTENSION_NAME);
 
     VkSurfaceKHR surface = window->getVkSurface();
     enabledDeviceExtensionNames = {};
@@ -1688,6 +1690,8 @@ void Device::createDeviceHeadless(
 #ifdef __APPLE__
     optionalDeviceExtensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 #endif
+    // For device thread info.
+    optionalDeviceExtensions.push_back(VK_AMD_SHADER_CORE_PROPERTIES_EXTENSION_NAME);
 
     enabledDeviceExtensionNames = {};
     physicalDevice = createPhysicalDeviceBinding(
