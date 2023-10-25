@@ -80,6 +80,10 @@ void Instance::createInstance(std::vector<const char*> instanceExtensionNames, b
     useValidationLayer = _useValidationLayer;
     printAvailableInstanceExtensionList();
 
+#ifdef __APPLE__
+    instanceExtensionNames.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+#endif
+
     std::string instanceExtensionString;
     for (size_t i = 0; i < instanceExtensionNames.size(); i++) {
         instanceExtensionString += instanceExtensionNames.at(i);
@@ -126,6 +130,9 @@ void Instance::createInstance(std::vector<const char*> instanceExtensionNames, b
     instanceInfo.ppEnabledLayerNames = instanceLayerNames.data();
     instanceInfo.enabledExtensionCount = (uint32_t)instanceExtensionNames.size();
     instanceInfo.ppEnabledExtensionNames = instanceExtensionNames.data();
+#ifdef __APPLE__
+    instanceInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+#endif
 
     VkValidationFeaturesEXT validationFeatures{};
     validationFeatures.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
