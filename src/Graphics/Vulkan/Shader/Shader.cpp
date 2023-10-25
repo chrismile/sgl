@@ -53,6 +53,28 @@ ShaderModule::ShaderModule(
     createReflectData(spirvCode);
 }
 
+ShaderModule::ShaderModule(
+        Device* device, const std::string& shaderModuleId, ShaderModuleType shaderModuleType,
+        uint32_t requiredSubgroupSize, const std::vector<uint32_t>& spirvCode)
+        : device(device), shaderModuleId(shaderModuleId), shaderModuleType(shaderModuleType) {
+    VkShaderModuleCreateInfo createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    createInfo.codeSize = spirvCode.size() * sizeof(uint32_t);
+    createInfo.pCode = spirvCode.data();
+
+    VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT requiredSubgroupSizeCreateInfo{};
+    requiredSubgroupSizeCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO_EXT;
+    requiredSubgroupSizeCreateInfo.requiredSubgroupSize = requiredSubgroupSize;
+    createInfo.pNext = &requiredSubgroupSizeCreateInfo;
+
+    if (vkCreateShaderModule(device->getVkDevice(), &createInfo, nullptr, &vkShaderModule) != VK_SUCCESS) {
+        sgl::Logfile::get()->writeError("Error in ShaderModule::ShaderModule: Failed to create the shader module.");
+        exit(1);
+    }
+
+    createReflectData(spirvCode);
+}
+
 ShaderModule::~ShaderModule() {
     vkDestroyShaderModule(device->getVkDevice(), vkShaderModule, nullptr);
 }

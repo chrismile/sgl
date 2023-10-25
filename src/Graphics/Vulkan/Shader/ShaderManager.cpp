@@ -244,10 +244,24 @@ ShaderStagesPtr ShaderManagerVk::getShaderStages(const std::vector<std::string> 
 }
 
 ShaderStagesPtr ShaderManagerVk::getShaderStages(
+        const std::vector<std::string> &shaderIds, uint32_t subgroupSize, bool dumpTextDebug) {
+    return createShaderStages(shaderIds, subgroupSize, dumpTextDebug);
+}
+
+ShaderStagesPtr ShaderManagerVk::getShaderStages(
         const std::vector<std::string> &shaderIds, const std::map<std::string, std::string>& customPreprocessorDefines,
         bool dumpTextDebug) {
     tempPreprocessorDefines = customPreprocessorDefines;
     ShaderStagesPtr shaderStages = createShaderStages(shaderIds, dumpTextDebug);
+    tempPreprocessorDefines.clear();
+    return shaderStages;
+}
+
+ShaderStagesPtr ShaderManagerVk::getShaderStages(
+        const std::vector<std::string> &shaderIds, const std::map<std::string, std::string>& customPreprocessorDefines,
+        uint32_t subgroupSize, bool dumpTextDebug) {
+    tempPreprocessorDefines = customPreprocessorDefines;
+    ShaderStagesPtr shaderStages = createShaderStages(shaderIds, subgroupSize, dumpTextDebug);
     tempPreprocessorDefines.clear();
     return shaderStages;
 }
@@ -260,6 +274,15 @@ ShaderModulePtr ShaderManagerVk::getShaderModule(const std::string& shaderId, Sh
 }
 
 ShaderModulePtr ShaderManagerVk::getShaderModule(
+        const std::string& shaderId, ShaderModuleType shaderModuleType, uint32_t subgroupSize) {
+    ShaderModuleInfo info;
+    info.filename = shaderId;
+    info.shaderModuleType = shaderModuleType;
+    info.requiredSubgroupSize = subgroupSize;
+    return FileManager<ShaderModule, ShaderModuleInfo>::getAsset(info);
+}
+
+ShaderModulePtr ShaderManagerVk::getShaderModule(
         const std::string& shaderId, ShaderModuleType shaderModuleType,
         const std::map<std::string, std::string>& customPreprocessorDefines) {
     tempPreprocessorDefines = customPreprocessorDefines;
@@ -267,6 +290,22 @@ ShaderModulePtr ShaderManagerVk::getShaderModule(
     ShaderModuleInfo info;
     info.filename = shaderId;
     info.shaderModuleType = shaderModuleType;
+    ShaderModulePtr shaderModule = FileManager<ShaderModule, ShaderModuleInfo>::getAsset(info);
+
+    tempPreprocessorDefines.clear();
+    return shaderModule;
+}
+
+ShaderModulePtr ShaderManagerVk::getShaderModule(
+        const std::string& shaderId, ShaderModuleType shaderModuleType,
+        const std::map<std::string, std::string>& customPreprocessorDefines,
+        uint32_t subgroupSize) {
+    tempPreprocessorDefines = customPreprocessorDefines;
+
+    ShaderModuleInfo info;
+    info.filename = shaderId;
+    info.shaderModuleType = shaderModuleType;
+    info.requiredSubgroupSize = subgroupSize;
     ShaderModulePtr shaderModule = FileManager<ShaderModule, ShaderModuleInfo>::getAsset(info);
 
     tempPreprocessorDefines.clear();
@@ -364,14 +403,19 @@ ShaderModuleType getShaderModuleTypeFromString(const std::string& shaderId) {
     return shaderModuleType;
 }
 
-static bool dumpTextDebugStatic = false;
 ShaderStagesPtr ShaderManagerVk::createShaderStages(const std::vector<std::string>& shaderIds, bool dumpTextDebug) {
+    return createShaderStages(shaderIds, 0, dumpTextDebug);
+}
+
+static bool dumpTextDebugStatic = false;
+ShaderStagesPtr ShaderManagerVk::createShaderStages(
+        const std::vector<std::string>& shaderIds, uint32_t subgroupSize, bool dumpTextDebug) {
     dumpTextDebugStatic = dumpTextDebug;
 
     std::vector<ShaderModulePtr> shaderModules;
     for (const std::string &shaderId : shaderIds) {
         ShaderModuleType shaderModuleType = getShaderModuleTypeFromString(shaderId);
-        ShaderModulePtr shaderModule = getShaderModule(shaderId, shaderModuleType);
+        ShaderModulePtr shaderModule = getShaderModule(shaderId, shaderModuleType, subgroupSize);
         if (!shaderModule) {
             return ShaderStagesPtr();
         }
@@ -511,9 +555,17 @@ ShaderModulePtr ShaderManagerVk::loadAssetShaderc(
     }
 
     std::vector<uint32_t> compilationResultWords(compilationResult.cbegin(), compilationResult.cend());
-    ShaderModulePtr shaderModule(new ShaderModule(
-            device, shaderInfo.filename, shaderInfo.shaderModuleType,
-            compilationResultWords));
+    ShaderModulePtr shaderModule;
+    if (shaderInfo.requiredSubgroupSize > 0
+            && shaderInfo.requiredSubgroupSize != device->getPhysicalDeviceSubgroupProperties().subgroupSize) {
+        shaderModule = std::make_shared<ShaderModule>(
+                device, shaderInfo.filename, shaderInfo.shaderModuleType, shaderInfo.requiredSubgroupSize,
+                compilationResultWords);
+    } else {
+        shaderModule = std::make_shared<ShaderModule>(
+                device, shaderInfo.filename, shaderInfo.shaderModuleType,
+                compilationResultWords);
+    }
     return shaderModule;
 }
 #endif

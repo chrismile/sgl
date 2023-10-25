@@ -46,6 +46,7 @@ namespace sgl { namespace vk {
 struct DLL_OBJECT ShaderModuleInfo {
     std::string filename;
     ShaderModuleType shaderModuleType;
+    uint32_t requiredSubgroupSize = 0;
     bool operator <(const ShaderModuleInfo& rhs) const {
         return filename < rhs.filename;
     }
@@ -75,12 +76,24 @@ public:
     /// If dumpTextDebug, the pre-processed source will be dumped on the command line.
     ShaderStagesPtr getShaderStages(const std::vector<std::string>& shaderIds, bool dumpTextDebug = false);
     ShaderStagesPtr getShaderStages(
+            const std::vector<std::string>& shaderIds, uint32_t subgroupSize, bool dumpTextDebug = false);
+    ShaderStagesPtr getShaderStages(
             const std::vector<std::string>& shaderIds,
             const std::map<std::string, std::string>& customPreprocessorDefines, bool dumpTextDebug = false);
+    ShaderStagesPtr getShaderStages(
+            const std::vector<std::string>& shaderIds,
+            const std::map<std::string, std::string>& customPreprocessorDefines,
+            uint32_t subgroupSize, bool dumpTextDebug = false);
     ShaderModulePtr getShaderModule(const std::string& shaderId, ShaderModuleType shaderModuleType);
+    ShaderModulePtr getShaderModule(
+            const std::string& shaderId, ShaderModuleType shaderModuleType, uint32_t subgroupSize);
     ShaderModulePtr getShaderModule(
             const std::string& shaderId, ShaderModuleType shaderModuleType,
             const std::map<std::string, std::string>& customPreprocessorDefines);
+    ShaderModulePtr getShaderModule(
+            const std::string& shaderId, ShaderModuleType shaderModuleType,
+            const std::map<std::string, std::string>& customPreprocessorDefines,
+            uint32_t subgroupSize);
 
     //virtual ShaderAttributesPtr createShaderAttributes(ShaderStagesPtr& shader)=0;
 
@@ -139,6 +152,8 @@ protected:
             const ShaderModuleInfo& shaderInfo, const std::string& id, const std::string& shaderString);
 #endif
     ShaderStagesPtr createShaderStages(const std::vector<std::string>& shaderIds, bool dumpTextDebug);
+    ShaderStagesPtr createShaderStages(
+            const std::vector<std::string>& shaderIds, uint32_t subgroupSize, bool dumpTextDebug);
 
     /// Internal loading
     std::string loadHeaderFileString(const std::string& shaderName, std::string& prependContent);

@@ -89,6 +89,9 @@ public:
     ShaderModule(
             Device* device, const std::string& shaderModuleId, ShaderModuleType shaderModuleType,
             const std::vector<uint32_t>& spirvCode);
+    ShaderModule(
+            Device* device, const std::string& shaderModuleId, ShaderModuleType shaderModuleType,
+            uint32_t requiredSubgroupSize, const std::vector<uint32_t>& spirvCode);
     ~ShaderModule();
 
     bool getIsRayTracingShader();
