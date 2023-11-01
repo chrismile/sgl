@@ -268,7 +268,7 @@ void VideoWriter::onSwapchainRecreated() {
         vk::ImageSettings imageSettings;
         imageSettings.width = frameW;
         imageSettings.height = frameH;
-        imageSettings.format = VK_FORMAT_R8G8B8A8_UINT;
+        imageSettings.format = VK_FORMAT_R8G8B8A8_UNORM;
         imageSettings.tiling = VK_IMAGE_TILING_LINEAR;
         imageSettings.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         imageSettings.memoryUsage = VMA_MEMORY_USAGE_GPU_TO_CPU;

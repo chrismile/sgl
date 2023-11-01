@@ -30,7 +30,12 @@ VERSION HISTORY
 #ifndef SPIRV_REFLECT_H
 #define SPIRV_REFLECT_H
 
+#if defined(SPIRV_REFLECT_USE_SYSTEM_SPIRV_H)
+#include <spirv/unified1/spirv.h>
+#else
 #include "./include/spirv/unified1/spirv.h"
+#endif
+
 
 #include <stdint.h>
 #include <string.h>
@@ -74,15 +79,16 @@ typedef enum SpvReflectResult {
   SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_BLOCK_MEMBER_REFERENCE,
   SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_ENTRY_POINT,
   SPV_REFLECT_RESULT_ERROR_SPIRV_INVALID_EXECUTION_MODE,
+  SPV_REFLECT_RESULT_ERROR_SPIRV_MAX_RECURSIVE_EXCEEDED,
 } SpvReflectResult;
 
 /*! @enum SpvReflectModuleFlagBits
 
-SPV_REFLECT_MODULE_FLAG_NO_COPY - Disables copying of SPIR-V code 
-  when a SPIRV-Reflect shader module is created. It is the 
+SPV_REFLECT_MODULE_FLAG_NO_COPY - Disables copying of SPIR-V code
+  when a SPIRV-Reflect shader module is created. It is the
   responsibility of the calling program to ensure that the pointer
   remains valid and the memory it's pointing to is not freed while
-  SPIRV-Reflect operations are taking place. Freeing the backing 
+  SPIRV-Reflect operations are taking place. Freeing the backing
   memory will cause undefined behavior or most likely a crash.
   This is flag is intended for cases where the memory overhead of
   storing the copied SPIR-V is undesirable.
@@ -114,6 +120,7 @@ typedef enum SpvReflectTypeFlagBits {
   SPV_REFLECT_TYPE_FLAG_EXTERNAL_MASK                   = 0x00FF0000,
   SPV_REFLECT_TYPE_FLAG_STRUCT                          = 0x10000000,
   SPV_REFLECT_TYPE_FLAG_ARRAY                           = 0x20000000,
+  SPV_REFLECT_TYPE_FLAG_REF                             = 0x40000000,
 } SpvReflectTypeFlagBits;
 
 typedef uint32_t SpvReflectTypeFlags;
@@ -127,6 +134,9 @@ NOTE: HLSL row_major and column_major decorations are reversed
       SPIRV-Reflect reads the data as is and does not make any
       attempt to correct it to match what's in the source.
 
+      The Patch, PerVertex, and PerTask are used for Interface
+      variables that can have array
+
 */
 typedef enum SpvReflectDecorationFlagBits {
   SPV_REFLECT_DECORATION_NONE                   = 0x00000000,
@@ -139,6 +149,10 @@ typedef enum SpvReflectDecorationFlagBits {
   SPV_REFLECT_DECORATION_FLAT                   = 0x00000040,
   SPV_REFLECT_DECORATION_NON_WRITABLE           = 0x00000080,
   SPV_REFLECT_DECORATION_RELAXED_PRECISION      = 0x00000100,
+  SPV_REFLECT_DECORATION_NON_READABLE           = 0x00000200,
+  SPV_REFLECT_DECORATION_PATCH                  = 0x00000400,
+  SPV_REFLECT_DECORATION_PER_VERTEX             = 0x00000800,
+  SPV_REFLECT_DECORATION_PER_TASK               = 0x00001000,
 } SpvReflectDecorationFlagBits;
 
 typedef uint32_t SpvReflectDecorationFlags;
@@ -159,6 +173,18 @@ typedef enum SpvReflectResourceType {
 */
 typedef enum SpvReflectFormat {
   SPV_REFLECT_FORMAT_UNDEFINED           =   0, // = VK_FORMAT_UNDEFINED
+  SPV_REFLECT_FORMAT_R16_UINT            =  74, // = VK_FORMAT_R16_UINT
+  SPV_REFLECT_FORMAT_R16_SINT            =  75, // = VK_FORMAT_R16_SINT
+  SPV_REFLECT_FORMAT_R16_SFLOAT          =  76, // = VK_FORMAT_R16_SFLOAT
+  SPV_REFLECT_FORMAT_R16G16_UINT         =  81, // = VK_FORMAT_R16G16_UINT
+  SPV_REFLECT_FORMAT_R16G16_SINT         =  82, // = VK_FORMAT_R16G16_SINT
+  SPV_REFLECT_FORMAT_R16G16_SFLOAT       =  83, // = VK_FORMAT_R16G16_SFLOAT
+  SPV_REFLECT_FORMAT_R16G16B16_UINT      =  88, // = VK_FORMAT_R16G16B16_UINT
+  SPV_REFLECT_FORMAT_R16G16B16_SINT      =  89, // = VK_FORMAT_R16G16B16_SINT
+  SPV_REFLECT_FORMAT_R16G16B16_SFLOAT    =  90, // = VK_FORMAT_R16G16B16_SFLOAT
+  SPV_REFLECT_FORMAT_R16G16B16A16_UINT   =  95, // = VK_FORMAT_R16G16B16A16_UINT
+  SPV_REFLECT_FORMAT_R16G16B16A16_SINT   =  96, // = VK_FORMAT_R16G16B16A16_SINT
+  SPV_REFLECT_FORMAT_R16G16B16A16_SFLOAT =  97, // = VK_FORMAT_R16G16B16A16_SFLOAT
   SPV_REFLECT_FORMAT_R32_UINT            =  98, // = VK_FORMAT_R32_UINT
   SPV_REFLECT_FORMAT_R32_SINT            =  99, // = VK_FORMAT_R32_SINT
   SPV_REFLECT_FORMAT_R32_SFLOAT          = 100, // = VK_FORMAT_R32_SFLOAT
@@ -224,7 +250,9 @@ typedef enum SpvReflectShaderStageFlagBits {
   SPV_REFLECT_SHADER_STAGE_FRAGMENT_BIT                = 0x00000010, // = VK_SHADER_STAGE_FRAGMENT_BIT
   SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT                 = 0x00000020, // = VK_SHADER_STAGE_COMPUTE_BIT
   SPV_REFLECT_SHADER_STAGE_TASK_BIT_NV                 = 0x00000040, // = VK_SHADER_STAGE_TASK_BIT_NV
+  SPV_REFLECT_SHADER_STAGE_TASK_BIT_EXT                = SPV_REFLECT_SHADER_STAGE_TASK_BIT_NV, // = VK_SHADER_STAGE_CALLABLE_BIT_EXT
   SPV_REFLECT_SHADER_STAGE_MESH_BIT_NV                 = 0x00000080, // = VK_SHADER_STAGE_MESH_BIT_NV
+  SPV_REFLECT_SHADER_STAGE_MESH_BIT_EXT                = SPV_REFLECT_SHADER_STAGE_MESH_BIT_NV, // = VK_SHADER_STAGE_CALLABLE_BIT_EXT
   SPV_REFLECT_SHADER_STAGE_RAYGEN_BIT_KHR              = 0x00000100, // = VK_SHADER_STAGE_RAYGEN_BIT_KHR
   SPV_REFLECT_SHADER_STAGE_ANY_HIT_BIT_KHR             = 0x00000200, // = VK_SHADER_STAGE_ANY_HIT_BIT_KHR
   SPV_REFLECT_SHADER_STAGE_CLOSEST_HIT_BIT_KHR         = 0x00000400, // = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR
@@ -286,10 +314,17 @@ typedef struct SpvReflectImageTraits {
   SpvImageFormat                    image_format;
 } SpvReflectImageTraits;
 
+typedef enum SpvReflectArrayDimType {
+  SPV_REFLECT_ARRAY_DIM_RUNTIME       = 0,         // OpTypeRuntimeArray
+  SPV_REFLECT_ARRAY_DIM_SPEC_CONSTANT = 0xFFFFFFFF // specialization constant
+} SpvReflectArrayDimType;
+
 typedef struct SpvReflectArrayTraits {
   uint32_t                          dims_count;
-  // Each entry is: 0xFFFFFFFF for a specialization constant dimension,
-  // 0 for a runtime array dimension, and the array length otherwise.
+  // Each entry is either:
+  // - specialization constant dimension
+  // - OpTypeRuntimeArray
+  // - the array length otherwise
   uint32_t                          dims[SPV_REFLECT_MAX_ARRAY_DIMS];
   // Stores Ids for dimensions that are specialization constants
   uint32_t                          spec_constant_op_ids[SPV_REFLECT_MAX_ARRAY_DIMS];
@@ -302,12 +337,13 @@ typedef struct SpvReflectBindingArrayTraits {
 } SpvReflectBindingArrayTraits;
 
 /*! @struct SpvReflectTypeDescription
-
+    @brief Information about an OpType* instruction
 */
 typedef struct SpvReflectTypeDescription {
   uint32_t                          id;
   SpvOp                             op;
   const char*                       type_name;
+  // Non-NULL if type is member of a struct
   const char*                       struct_member_name;
   SpvStorageClass                   storage_class;
   SpvReflectTypeFlags               type_flags;
@@ -319,18 +355,25 @@ typedef struct SpvReflectTypeDescription {
     SpvReflectArrayTraits           array;
   } traits;
 
+  // If underlying type is a struct (ex. array of structs)
+  // this gives access to the OpTypeStruct
+  struct SpvReflectTypeDescription* struct_type_description;
+
+  // @deprecated use struct_type_description instead
   uint32_t                          member_count;
+  // @deprecated use struct_type_description instead
   struct SpvReflectTypeDescription* members;
 } SpvReflectTypeDescription;
 
 
 /*! @struct SpvReflectInterfaceVariable
-
+    @brief The OpVariable that is either an Input or Output to the module
 */
 typedef struct SpvReflectInterfaceVariable {
   uint32_t                            spirv_id;
   const char*                         name;
   uint32_t                            location;
+  uint32_t                            component;
   SpvStorageClass                     storage_class;
   const char*                         semantic;
   SpvReflectDecorationFlags           decoration_flags;
@@ -360,6 +403,7 @@ typedef struct SpvReflectInterfaceVariable {
 typedef struct SpvReflectBlockVariable {
   uint32_t                          spirv_id;
   const char*                       name;
+  // For Push Constants, this is the lowest offset of all memebers
   uint32_t                          offset;           // Measured in bytes
   uint32_t                          absolute_offset;  // Measured in bytes
   uint32_t                          size;             // Measured in bytes
@@ -373,6 +417,11 @@ typedef struct SpvReflectBlockVariable {
   struct SpvReflectBlockVariable*   members;
 
   SpvReflectTypeDescription*        type_description;
+
+  struct {
+    uint32_t                          offset;
+  } word_offset;
+
 } SpvReflectBlockVariable;
 
 /*! @struct SpvReflectDescriptorBinding
@@ -400,6 +449,8 @@ typedef struct SpvReflectDescriptorBinding {
     uint32_t                          binding;
     uint32_t                          set;
   } word_offset;
+
+  SpvReflectDecorationFlags           decoration_flags;
 } SpvReflectDescriptorBinding;
 
 /*! @struct SpvReflectDescriptorSet
@@ -411,6 +462,10 @@ typedef struct SpvReflectDescriptorSet {
   SpvReflectDescriptorBinding**     bindings;
 } SpvReflectDescriptorSet;
 
+typedef enum SpvReflectExecutionModeValue {
+  SPV_REFLECT_EXECUTION_MODE_SPEC_CONSTANT = 0xFFFFFFFF // specialization constant
+} SpvReflectExecutionModeValue;
+
 /*! @struct SpvReflectEntryPoint
 
  */
@@ -421,10 +476,10 @@ typedef struct SpvReflectEntryPoint {
   SpvExecutionModel                 spirv_execution_model;
   SpvReflectShaderStageFlagBits     shader_stage;
 
-  uint32_t                          input_variable_count;  
-  SpvReflectInterfaceVariable**     input_variables;       
-  uint32_t                          output_variable_count; 
-  SpvReflectInterfaceVariable**     output_variables;      
+  uint32_t                          input_variable_count;
+  SpvReflectInterfaceVariable**     input_variables;
+  uint32_t                          output_variable_count;
+  SpvReflectInterfaceVariable**     output_variables;
   uint32_t                          interface_variable_count;
   SpvReflectInterfaceVariable*      interface_variables;
 
@@ -436,6 +491,9 @@ typedef struct SpvReflectEntryPoint {
   uint32_t                          used_push_constant_count;
   uint32_t*                         used_push_constants;
 
+  uint32_t                          execution_mode_count;
+  SpvExecutionMode*                 execution_modes;
+
   struct LocalSize {
     uint32_t                        x;
     uint32_t                        y;
@@ -444,6 +502,14 @@ typedef struct SpvReflectEntryPoint {
   uint32_t                          invocations; // valid for geometry
   uint32_t                          output_vertices; // valid for geometry, tesselation
 } SpvReflectEntryPoint;
+
+/*! @struct SpvReflectCapability
+
+*/
+typedef struct SpvReflectCapability {
+  SpvCapability                     value;
+  uint32_t                          word_offset;
+} SpvReflectCapability;
 
 /*! @struct SpvReflectShaderModule
 
@@ -458,6 +524,8 @@ typedef struct SpvReflectShaderModule {
   uint32_t                          source_language_version;
   const char*                       source_file;
   const char*                       source_source;
+  uint32_t                          capability_count;
+  SpvReflectCapability*             capabilities;
   SpvExecutionModel                 spirv_execution_model;                            // Uses value(s) from first entry point
   SpvReflectShaderStageFlagBits     shader_stage;                                     // Uses value(s) from first entry point
   uint32_t                          descriptor_binding_count;                         // Uses value(s) from first entry point
@@ -1415,7 +1483,7 @@ const char* spvReflectBlockVariableTypeName(
 };
 #endif
 
-#if defined(__cplusplus)
+#if defined(__cplusplus) && !defined(SPIRV_REFLECT_DISABLE_CPP_BINDINGS)
 #include <cstdlib>
 #include <string>
 #include <vector>
@@ -1551,7 +1619,7 @@ inline ShaderModule::ShaderModule(size_t size, const void* p_code, SpvReflectMod
 /*! @fn ShaderModule
 
   @param  code
-  
+
 */
 inline ShaderModule::ShaderModule(const std::vector<uint8_t>& code, SpvReflectModuleFlags flags) {
   m_result = spvReflectCreateShaderModule2(
@@ -1564,7 +1632,7 @@ inline ShaderModule::ShaderModule(const std::vector<uint8_t>& code, SpvReflectMo
 /*! @fn ShaderModule
 
   @param  code
-  
+
 */
 inline ShaderModule::ShaderModule(const std::vector<uint32_t>& code, SpvReflectModuleFlags flags) {
   m_result = spvReflectCreateShaderModule2(
@@ -2267,5 +2335,5 @@ inline SpvReflectResult ShaderModule::ChangeOutputVariableLocation(
 }
 
 } // namespace spv_reflect
-#endif // defined(__cplusplus)
+#endif // defined(__cplusplus) && !defined(SPIRV_REFLECT_DISABLE_CPP_WRAPPER)
 #endif // SPIRV_REFLECT_H
