@@ -552,6 +552,7 @@ void Device::createLogicalDeviceAndQueues(
 #endif
 #ifdef VK_VERSION_1_3
     physicalDeviceVulkan13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+    physicalDeviceVulkan13Properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_PROPERTIES;
     if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 3, 0)
             && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 3, 0)) {
         VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
@@ -573,6 +574,11 @@ void Device::createLogicalDeviceAndQueues(
                 requestedVulkan13FeaturesArray[i] = VK_TRUE;
             }
         }
+
+        VkPhysicalDeviceProperties2 deviceProperties2 = {};
+        deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        deviceProperties2.pNext = &physicalDeviceVulkan13Properties;
+        vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
     }
 #endif
 

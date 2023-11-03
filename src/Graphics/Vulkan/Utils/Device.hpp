@@ -320,8 +320,10 @@ public:
 #endif
 #ifdef VK_VERSION_1_3
     const VkPhysicalDeviceVulkan13Features& getPhysicalDeviceVulkan13Features() const { return physicalDeviceVulkan13Features; }
+    const VkPhysicalDeviceVulkan13Properties& getPhysicalDeviceVulkan13Properties() const { return physicalDeviceVulkan13Properties; }
 #else
     const VkPhysicalDeviceVulkan13Features_Compat& getPhysicalDeviceVulkan13Features() const { return physicalDeviceVulkan13Features; }
+    const VkPhysicalDeviceVulkan13Properties_Compat& getPhysicalDeviceVulkan13Properties() const { return physicalDeviceVulkan13Properties; }
 #endif
     inline const VkPhysicalDeviceShaderFloat16Int8Features& getPhysicalDeviceShaderFloat16Int8Features() const {
         return shaderFloat16Int8Features;
@@ -600,8 +602,10 @@ private:
 #endif
 #ifdef VK_VERSION_1_3
     VkPhysicalDeviceVulkan13Features physicalDeviceVulkan13Features{};
+    VkPhysicalDeviceVulkan13Properties physicalDeviceVulkan13Properties{};
 #else
     VkPhysicalDeviceVulkan13Features_Compat physicalDeviceVulkan13Features{};
+    VkPhysicalDeviceVulkan13Properties_Compat physicalDeviceVulkan13Properties{};
 #endif
     VkPhysicalDeviceSubgroupProperties subgroupProperties{};
     VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties{};
