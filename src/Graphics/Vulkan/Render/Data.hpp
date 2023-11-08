@@ -258,6 +258,8 @@ public:
     [[nodiscard]] inline VkIndexType getIndexType() const { return indexType; }
     [[nodiscard]] inline VkBuffer getVkIndexBuffer() { return indexBuffer->getVkBuffer(); }
 
+    /// setNumVertices should only be used when using programmable fetching (i.e., no vertex or index buffer set).
+    void setNumVertices(size_t _numVertices);
     [[nodiscard]] inline size_t getNumVertices() const { return numVertices; }
     [[nodiscard]] inline const std::vector<VkBuffer>& getVkVertexBuffers() { return vulkanVertexBuffers; }
 

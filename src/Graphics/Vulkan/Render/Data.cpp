@@ -800,6 +800,14 @@ void RasterData::setIndexBuffer(const BufferPtr& buffer, VkIndexType indexType) 
     numIndices = buffer->getSizeInBytes() / getIndexTypeByteSize(indexType);
 }
 
+void RasterData::setNumVertices(size_t _numVertices) {
+    bool isFirstVertexBuffer = vertexBuffers.empty();
+    if (!isFirstVertexBuffer && numVertices != _numVertices) {
+        Logfile::get()->throwError("Error in RasterData::setNumVertices: Inconsistent number of vertices.");
+    }
+    numVertices = _numVertices;
+}
+
 void RasterData::setVertexBuffer(const BufferPtr& buffer, uint32_t binding) {
     bool isFirstVertexBuffer = vertexBuffers.empty();
 
