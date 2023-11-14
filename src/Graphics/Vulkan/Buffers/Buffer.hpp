@@ -55,8 +55,27 @@ typedef std::shared_ptr<Buffer> BufferPtr;
 class BufferView;
 typedef std::shared_ptr<BufferView> BufferViewPtr;
 
+struct DLL_OBJECT BufferSettings {
+    BufferSettings() = default;
+    size_t sizeInBytes = 0;
+    VkBufferUsageFlags usage = VkBufferUsageFlagBits(0);
+    VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    VkSharingMode sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    uint32_t queueFamilyIndexCount = 0; // Only for sharingMode == VK_SHARING_MODE_CONCURRENT.
+    const uint32_t* pQueueFamilyIndices = nullptr;
+    bool exportMemory = false; // Whether to export the memory for external use, e.g., in OpenGL.
+    /**
+     * Whether to use a dedicated allocation instead of using VMA. At the moment, this is only supported for exported
+     * memory. When not using dedicated allocations, multiple buffers may share one block of VkDeviceMemory.
+     * At the moment, some APIs (like OpenCL) may not support creating buffers with memory offsets when not using
+     * sub-buffers.
+     */
+    bool useDedicatedAllocationForExportedMemory = true;
+};
+
 class DLL_OBJECT Buffer {
 public:
+    Buffer(Device* device, const BufferSettings& bufferSettings);
     /**
      * @param device The device to allocate the buffer for.
      * @param sizeInBytes The size of the buffer in bytes.

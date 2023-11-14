@@ -348,6 +348,9 @@ Image::Image(Device* device, const ImageSettings& imageSettings) : device(device
     imageCreateInfo.usage = imageSettings.usage;
     imageCreateInfo.sharingMode = imageSettings.sharingMode;
     imageCreateInfo.queueFamilyIndexCount = imageSettings.queueFamilyIndexCount;
+    if (imageSettings.queueFamilyIndexCount > 0) {
+        imageCreateInfo.pQueueFamilyIndices = imageSettings.pQueueFamilyIndices;
+    }
     imageCreateInfo.samples = imageSettings.numSamples;
     imageCreateInfo.flags = 0;
 

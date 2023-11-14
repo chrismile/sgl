@@ -49,14 +49,27 @@ namespace sgl { namespace vk {
 
 Buffer::Buffer(
         Device* device, size_t sizeInBytes, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, bool queueExclusive,
-        bool exportMemory, bool useDedicatedAllocationForExportedMemory)
-        : device(device), sizeInBytes(sizeInBytes), bufferUsageFlags(usage), memoryUsage(memoryUsage),
-          queueExclusive(queueExclusive), exportMemory(exportMemory) {
+        bool exportMemory, bool useDedicatedAllocationForExportedMemory) : Buffer(device, BufferSettings{
+            sizeInBytes, usage, memoryUsage,
+            queueExclusive ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT, 0, nullptr,
+            exportMemory, useDedicatedAllocationForExportedMemory}) {}
+
+Buffer::Buffer(Device* device, const BufferSettings& bufferSettings)
+        : device(device), sizeInBytes(bufferSettings.sizeInBytes), bufferUsageFlags(bufferSettings.usage),
+          memoryUsage(bufferSettings.memoryUsage),
+          queueExclusive(bufferSettings.sharingMode == VK_SHARING_MODE_EXCLUSIVE),
+          exportMemory(bufferSettings.exportMemory) {
     VkBufferCreateInfo bufferCreateInfo{};
     bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferCreateInfo.size = sizeInBytes;
-    bufferCreateInfo.usage = usage;
+    bufferCreateInfo.usage = bufferUsageFlags;
     bufferCreateInfo.sharingMode = queueExclusive ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+    if (bufferSettings.sharingMode == VK_SHARING_MODE_CONCURRENT) {
+        uint32_t queueFamilyIndexCount = bufferSettings.queueFamilyIndexCount;
+        const uint32_t* pQueueFamilyIndices = bufferSettings.pQueueFamilyIndices;
+        bufferCreateInfo.queueFamilyIndexCount = queueFamilyIndexCount;
+        bufferCreateInfo.pQueueFamilyIndices = pQueueFamilyIndices;
+    }
 
     VkExternalMemoryBufferCreateInfo externalMemoryBufferCreateInfo{};
 
@@ -64,6 +77,7 @@ Buffer::Buffer(
     allocCreateInfo.usage = memoryUsage;
 
     VkExternalMemoryHandleTypeFlags handleTypes = 0;
+    bool useDedicatedAllocationForExportedMemory = bufferSettings.useDedicatedAllocationForExportedMemory;
     bool needsDedicatedAllocation = false;
     if (exportMemory) {
 #if defined(_WIN32)
@@ -79,7 +93,7 @@ Buffer::Buffer(
         bufferCreateInfo.pNext = &externalMemoryBufferCreateInfo;
 
         needsDedicatedAllocation = device->getNeedsDedicatedAllocationForExternalMemoryBuffer(
-                usage, 0, VkExternalMemoryHandleTypeFlagBits(handleTypes));
+                bufferUsageFlags, 0, VkExternalMemoryHandleTypeFlagBits(handleTypes));
         isDedicatedAllocation = needsDedicatedAllocation;
         if (needsDedicatedAllocation && !useDedicatedAllocationForExportedMemory) {
             sgl::Logfile::get()->writeWarning(
@@ -154,7 +168,7 @@ Buffer::Buffer(
                 memoryRequirements.memoryTypeBits, memoryPropertyFlags);
 
         VkMemoryAllocateFlagsInfo memoryAllocateFlagsInfo{};
-        if ((usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) != 0) {
+        if ((bufferUsageFlags & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) != 0) {
             memoryAllocateFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
             memoryAllocateFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
             memoryAllocateFlagsInfo.pNext = &exportMemoryAllocateInfo;
