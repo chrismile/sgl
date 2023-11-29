@@ -75,7 +75,7 @@ jobs:
             fi
           fi
           # Also install the dependencies for building GLEW here.
-          sudo apt install libxmu-dev libxi-dev libgl-dev libglu1-mesa-dev autopoint libtool
+          sudo apt install libxmu-dev libxi-dev libgl-dev libglu1-mesa-dev autopoint libtool gperf python3 python3-distutils python3-jinja2
         elif [ "$RUNNER_OS" == "Windows" ]; then
           # Chocolatey is broken as of 2023-07-07
           #choco install vulkan-sdk
