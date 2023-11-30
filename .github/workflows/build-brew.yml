@@ -38,14 +38,21 @@ jobs:
             echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.bash_profile
             eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           fi
-          brew install --force --overwrite gcc
+          brew install gcc
         elif [ "$RUNNER_OS" == "macOS" ]; then
+          export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1
+          brew update
+          #rm /usr/local/bin/2to3 || true
+          #rm /usr/local/bin/idle3 || true
+          #rm /usr/local/bin/pydoc3 || true
+          #rm /usr/local/bin/python3 || true
+          #rm /usr/local/bin/python3-config || true
           brew install --force --overwrite llvm libomp pkg-config
         else
           echo "$RUNNER_OS is not supported."
           exit 1
         fi
-        brew install --force --overwrite cmake zlib libpng glm sdl2 sdl2_image libarchive boost tinyxml2 opencl-headers
+        brew install cmake zlib libpng glm sdl2 sdl2_image libarchive boost tinyxml2 opencl-headers
 
     - name: Install Vulkan SDK
       shell: bash

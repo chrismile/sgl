@@ -29,8 +29,12 @@
 #include <iostream>
 #include <unordered_map>
 #include <GL/glew.h>
-#include <SDL2/SDL_image.h>
 
+#ifdef USE_SDL_IMAGE
+#include <SDL2/SDL_image.h>
+#endif
+
+#include <Utils/StringUtils.hpp>
 #include <Utils/File/ResourceManager.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/Convert.hpp>
@@ -247,6 +251,10 @@ TexturePtr TextureManagerGL::createTexture(
 
 
 TexturePtr TextureManagerGL::loadAsset(TextureInfo& textureInfo) {
+    GLint format = GL_RGBA;
+    int w = 0, h = 0;
+
+#ifdef USE_SDL_IMAGE
     ResourceBufferPtr resource = ResourceManager::get()->getFileSync(textureInfo.filename.c_str());
     if (!resource) {
         Logfile::get()->writeError(std::string() + "TextureManagerGL::loadFromFile: Unable to load image file "
@@ -254,7 +262,7 @@ TexturePtr TextureManagerGL::loadAsset(TextureInfo& textureInfo) {
         return TexturePtr();
     }
 
-    SDL_Surface* image = 0;
+   SDL_Surface* image = 0;
     SDL_RWops* rwops = SDL_RWFromMem(resource->getBuffer(), int(resource->getBufferSize()));
     if (rwops == nullptr) {
         Logfile::get()->writeError(std::string() + "TextureManagerGL::loadFromFile: SDL_RWFromMem failed (file: \""
@@ -272,12 +280,7 @@ TexturePtr TextureManagerGL::loadAsset(TextureInfo& textureInfo) {
         return TexturePtr();
     }
 
-    GLuint oglTexture;
-    SDL_Surface* sdlTexture;
-    GLint format = GL_RGBA;
-    int w = 0, h = 0;
-
-    sdlTexture = image;
+    SDL_Surface* sdlTexture = image;
 
     switch (image->format->BitsPerPixel) {
     case 24:
@@ -336,8 +339,31 @@ TexturePtr TextureManagerGL::loadAsset(TextureInfo& textureInfo) {
         }
     }
 
+    w = image->w;
+    h = image->h;
+#else
+    if (!sgl::endsWith(textureInfo.filename, ".png")) {
+        Logfile::get()->writeError(
+                std::string() + "TextureManagerGL::loadFromFile: Unsupported format for file "
+                + "\"" + textureInfo.filename + "\"!");
+        return {};
+    }
+    sgl::BitmapPtr bitmap = std::make_shared<sgl::Bitmap>();
+    bitmap->fromFile(textureInfo.filename.c_str());
+    if (bitmap->getBPP() != 32 || bitmap->getChannels() != 4) {
+        Logfile::get()->writeError(
+                std::string() + "TextureManagerGL::loadFromFile: Unsupported channels or bit depth for file "
+                + "\"" + textureInfo.filename + "\"!");
+        return {};
+    }
+
+    w = bitmap->getWidth();
+    h = bitmap->getHeight();
+#endif
+
 
     // Create an OpenGL texture for the image
+    GLuint oglTexture;
     glGenTextures(1, &oglTexture);
     glBindTexture(GL_TEXTURE_2D, oglTexture);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -357,12 +383,15 @@ TexturePtr TextureManagerGL::loadAsset(TextureInfo& textureInfo) {
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, maxAnisotropy);
     }
 
-    w = image->w;
-    h = image->h;
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, textureInfo.textureWrapS);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, textureInfo.textureWrapT);
-    glTexImage2D(GL_TEXTURE_2D, 0, format, w, h, 0, format, GL_UNSIGNED_BYTE, sdlTexture->pixels);
+#ifdef USE_SDL_IMAGE
+    void* dataPtr = sdlTexture->pixels;
+#else
+    void* dataPtr = bitmap->getPixels();
+#endif
+    glTexImage2D(GL_TEXTURE_2D, 0, format, w, h, 0, format, GL_UNSIGNED_BYTE, dataPtr);
 
     if (SystemGL::get()->openglVersionMinimum(3)) {
         glGenerateMipmap(GL_TEXTURE_2D);
@@ -372,10 +401,12 @@ TexturePtr TextureManagerGL::loadAsset(TextureInfo& textureInfo) {
             textureInfo.textureWrapS, textureInfo.textureWrapT);
     TexturePtr texture = TexturePtr(new TextureGL(oglTexture, w, h, settings, 0));
 
+#ifdef USE_SDL_IMAGE
     if (sdlTexture != image) {
         SDL_FreeSurface(sdlTexture);
     }
     SDL_FreeSurface(image);
+#endif
 
     return texture;
 

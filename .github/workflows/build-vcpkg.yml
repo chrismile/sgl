@@ -75,7 +75,7 @@ jobs:
             fi
           fi
           # Also install the dependencies for building GLEW here.
-          sudo apt install libxmu-dev libxi-dev libgl-dev libglu1-mesa-dev autopoint libtool gperf python3 python3-distutils python3-jinja2
+          sudo apt install libxmu-dev libxi-dev libgl-dev libglu1-mesa-dev
         elif [ "$RUNNER_OS" == "Windows" ]; then
           # Chocolatey is broken as of 2023-07-07
           #choco install vulkan-sdk
@@ -93,6 +93,13 @@ jobs:
           cd ~/VulkanSDK/$VULKAN_SDK_VERSION
           sudo ./install_vulkan.py || true
           sudo hdiutil unmount "${vulkan_dir}"
+          export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1
+          brew update
+          #rm /usr/local/bin/2to3 || true
+          #rm /usr/local/bin/idle3 || true
+          #rm /usr/local/bin/pydoc3 || true
+          #rm /usr/local/bin/python3 || true
+          #rm /usr/local/bin/python3-config || true
           brew install --force --overwrite llvm libomp pkg-config
         else
           echo "$RUNNER_OS is not supported."
@@ -103,7 +110,7 @@ jobs:
       uses: lukka/run-vcpkg@v11
       with:
         vcpkgGitCommitId: '4cac260c4b7331538d31886f57739fea0bffa27e'
-        #doNotCacheOnWorkflowFailure: true
+        doNotCacheOnWorkflowFailure: true
 
     - name: Create custom vcpkg triplet
       run: |
