@@ -113,7 +113,9 @@ static void pythonInit(int argc, char *argv[]) {
     pythonhomeEnvVar = nullptr;
 #endif
 #endif
-    wchar_t** argvWidestr = (wchar_t**)PyMem_Malloc(sizeof(wchar_t*) * argc);
+    // PyMem_Malloc causes segmentation fault on Fedora 39.
+    //wchar_t** argvWidestr = (wchar_t**)PyMem_Malloc(sizeof(wchar_t*) * argc);
+    wchar_t** argvWidestr = (wchar_t**)malloc(sizeof(wchar_t*) * argc);
     for (int i = 0; i < argc; i++) {
         wchar_t* argWidestr = Py_DecodeLocale(argv[i], nullptr);
         argvWidestr[i] = argWidestr;
