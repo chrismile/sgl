@@ -67,6 +67,9 @@ bool initializeCudaDeviceApiFunctionTable() {
     typedef CUresult ( *PFN_cuDeviceGetAttribute )(int *pi, CUdevice_attribute attrib, CUdevice dev);
     typedef CUresult ( *PFN_cuCtxCreate )( CUcontext *pctx, unsigned int flags, CUdevice dev );
     typedef CUresult ( *PFN_cuCtxDestroy )( CUcontext ctx );
+    typedef CUresult ( *PFN_cuCtxGetCurrent )( CUcontext* pctx );
+    typedef CUresult ( *PFN_cuCtxGetDevice )( CUdevice* device );
+    typedef CUresult ( *PFN_cuCtxSetCurrent )( CUcontext ctx );
     typedef CUresult ( *PFN_cuStreamCreate )( CUstream *phStream, unsigned int Flags );
     typedef CUresult ( *PFN_cuStreamDestroy )( CUstream hStream );
     typedef CUresult ( *PFN_cuStreamSynchronize )( CUstream hStream );
@@ -133,6 +136,9 @@ bool initializeCudaDeviceApiFunctionTable() {
     g_cudaDeviceApiFunctionTable.cuDeviceGetAttribute = PFN_cuDeviceGetAttribute(dlsym(g_cudaLibraryHandle, TOSTRING(cuDeviceGetAttribute)));
     g_cudaDeviceApiFunctionTable.cuCtxCreate = PFN_cuCtxCreate(dlsym(g_cudaLibraryHandle, TOSTRING(cuCtxCreate)));
     g_cudaDeviceApiFunctionTable.cuCtxDestroy = PFN_cuCtxDestroy(dlsym(g_cudaLibraryHandle, TOSTRING(cuCtxDestroy)));
+    g_cudaDeviceApiFunctionTable.cuCtxGetCurrent = PFN_cuCtxGetCurrent(dlsym(g_cudaLibraryHandle, TOSTRING(cuCtxGetCurrent)));
+    g_cudaDeviceApiFunctionTable.cuCtxGetDevice = PFN_cuCtxGetDevice(dlsym(g_cudaLibraryHandle, TOSTRING(cuCtxGetDevice)));
+    g_cudaDeviceApiFunctionTable.cuCtxSetCurrent = PFN_cuCtxSetCurrent(dlsym(g_cudaLibraryHandle, TOSTRING(cuCtxSetCurrent)));
     g_cudaDeviceApiFunctionTable.cuStreamCreate = PFN_cuStreamCreate(dlsym(g_cudaLibraryHandle, TOSTRING(cuStreamCreate)));
     g_cudaDeviceApiFunctionTable.cuStreamDestroy = PFN_cuStreamDestroy(dlsym(g_cudaLibraryHandle, TOSTRING(cuStreamDestroy)));
     g_cudaDeviceApiFunctionTable.cuStreamSynchronize = PFN_cuStreamSynchronize(dlsym(g_cudaLibraryHandle, TOSTRING(cuStreamSynchronize)));
@@ -186,6 +192,9 @@ bool initializeCudaDeviceApiFunctionTable() {
             || !g_cudaDeviceApiFunctionTable.cuDeviceGetAttribute
             || !g_cudaDeviceApiFunctionTable.cuCtxCreate
             || !g_cudaDeviceApiFunctionTable.cuCtxDestroy
+            || !g_cudaDeviceApiFunctionTable.cuCtxGetCurrent
+            || !g_cudaDeviceApiFunctionTable.cuCtxGetDevice
+            || !g_cudaDeviceApiFunctionTable.cuCtxSetCurrent
             || !g_cudaDeviceApiFunctionTable.cuStreamCreate
             || !g_cudaDeviceApiFunctionTable.cuStreamDestroy
             || !g_cudaDeviceApiFunctionTable.cuStreamSynchronize
