@@ -79,6 +79,13 @@ std::string toString(
     return ostr.str();
 }
 
+template <class T>
+std::string toHexString(T obj) {
+    std::ostringstream ostr;
+    ostr << std::hex << obj;
+    return ostr.str();
+}
+
 /// Append vector2 to vector1
 template<class T>
 void appendVector(std::vector<T> &vector1, std::vector<T> &vector2) {

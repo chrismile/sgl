@@ -261,6 +261,11 @@ void Renderer::syncWithCpu() {
                 "Error in Renderer::beginCommandBuffer: Could not record a command buffer.");
     }
 
+    sgl::vk::CommandBufferPtr commandBufferPtr;
+    Swapchain* swapchain = AppSettings::get()->getSwapchain();
+    if (!swapchain && frameIndex >= commandBuffers.size()) {
+        commandBufferPtr = frameCommandBuffers.back();
+    }
     submitToQueue();
     if (useGraphicsQueue) {
         device->waitGraphicsQueueIdle();
@@ -268,7 +273,9 @@ void Renderer::syncWithCpu() {
         device->waitComputeQueueIdle();
     }
 
-    auto commandBufferPtr = commandBuffers.at(frameIndex);
+    if (swapchain || frameIndex < commandBuffers.size()) {
+        commandBufferPtr = commandBuffers.at(frameIndex);
+    }
     frameCommandBuffers.push_back(commandBufferPtr);
     commandBuffer = commandBufferPtr->getVkCommandBuffer();
     graphicsPipeline = GraphicsPipelinePtr();
