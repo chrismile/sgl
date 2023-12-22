@@ -71,4 +71,19 @@ std::string getNiceNumberString(float number, int digits) {
     return outString;
 }
 
+std::string getNiceMemoryString(uint64_t numBytes, int digits) {
+    const char* UNIT_NAME_MAP[5] = {
+            "B", "KiB", "MiB", "GiB", "TiB"
+    };
+    constexpr uint64_t oneMaxUnit = 1024ull * 1024ull * 1024ull * 1024ull;
+    int unit = 4;
+    uint64_t unitSize = oneMaxUnit;
+    while (numBytes * 10 < unitSize && unit != 0) {
+        unitSize /= 1024ull;
+        unit--;
+    }
+    auto memoryInUnits = float(double(numBytes) / double(unitSize));
+    return getNiceNumberString(memoryInUnits, digits) + UNIT_NAME_MAP[unit];
+}
+
 }

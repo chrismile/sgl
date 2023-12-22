@@ -39,6 +39,9 @@ DLL_OBJECT std::string removeTrailingZeros(const std::string &numberString);
 /// Removes decimal points if more than maxDigits digits are used.
 DLL_OBJECT std::string getNiceNumberString(float number, int digits);
 
+/// Same as above, but uses the best unit out of {B, KiB, MiB, GiB, TiB}.
+DLL_OBJECT std::string getNiceMemoryString(uint64_t numBytes, int digits);
+
 }
 
 #endif //SGL_NUMBERFORMATTING_HPP

@@ -101,6 +101,8 @@ DLL_OBJECT bool isInteger(const std::string &stringObject);
 DLL_OBJECT bool isNumeric(const std::string &stringObject);
 /// Respects whether string contains decimal or hexadecimal number
 DLL_OBJECT int stringToNumber(const char *str);
+/// Converts e.g. 123456789 to "123,456,789"
+DLL_OBJECT std::string numberToCommaString(int64_t number);
 
 #ifdef USE_GLM
 

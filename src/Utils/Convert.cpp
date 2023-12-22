@@ -80,6 +80,21 @@ bool isNumeric(const std::string &stringObject) {
     return true;
 }
 
+// Converts e.g. 123456789 to "123,456,789"
+std::string numberToCommaString(int64_t number) {
+    if (number < 0) {
+        return std::string() + "-" + numberToCommaString(-number);
+    } else if (number < 1000) {
+        return sgl::toString(number);
+    } else {
+        std::string numberString = sgl::toString(number % 1000);
+        while (numberString.size() < 3) {
+            numberString = "0" + numberString;
+        }
+        return std::string() + numberToCommaString(number / 1000) + "," + numberString;
+    }
+}
+
 // --- Specializations of fromString ---
 
 template<>
