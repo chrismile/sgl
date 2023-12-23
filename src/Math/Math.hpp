@@ -78,6 +78,8 @@ inline int lastPowerOfTwo(int x) { return nextPowerOfTwo(x/2+1); }
 inline int iceil(int x, int y) { return (x - 1) / y + 1; }
 // Avoids going into negative for x == 0 and overflow.
 inline uint32_t uiceil(uint32_t x, uint32_t y) { return x > 0 ? (x - 1) / y + 1 : 0; }
+inline uint64_t ulceil(uint64_t x, uint64_t y) { return x > 0 ? (x - 1) / y + 1 : 0; }
+inline size_t sizeceil(size_t x, size_t y) { return x > 0 ? (x - 1) / y + 1 : 0; }
 
 // Fast integer square root, i.e., floor(sqrt(s)).
 DLL_OBJECT uint32_t uisqrt(uint32_t s);
