@@ -43,6 +43,17 @@
 #include <dlfcn.h>
 #endif
 
+/*
+ * CL_DEPTH_STENCIL was moved from cl.h to cl_gl.h.
+ * https://github.com/KhronosGroup/OpenCL-Headers/commit/10aaadf55d582934661ca9d66956696cf1d836dc
+ * First occurence: 2023-12-23, mingw-w64-ucrt-x86_64-opencl-headers, 2~2023.12.14-1
+*/
+#ifdef __APPLE__
+#include <OpenCL/cl_gl.h>
+#else
+#include <CL/cl_gl.h>
+#endif
+
 #include <Math/Math.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/StringUtils.hpp>

@@ -30,11 +30,13 @@
 #define SGL_INTEROPOPENCL_HPP
 
 #include <unordered_set>
+
 #ifdef SGL_NO_CL_3_0_SUPPORT
 #define CL_TARGET_OPENCL_VERSION 210
 #else
 #define CL_TARGET_OPENCL_VERSION 300
 #endif
+
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
 #include <OpenCL/cl_ext.h>
