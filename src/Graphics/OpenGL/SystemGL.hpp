@@ -29,10 +29,12 @@
 #ifndef GRAPHICS_OPENGL_SYSTEMGL_HPP_
 #define GRAPHICS_OPENGL_SYSTEMGL_HPP_
 
-#include <Defs.hpp>
-#include <Utils/Singleton.hpp>
 #include <string>
 #include <unordered_set>
+#include <cstdint>
+
+#include <Defs.hpp>
+#include <Utils/Singleton.hpp>
 
 namespace sgl {
 
@@ -68,6 +70,8 @@ public:
 
     /// Load OpenGL function pointers from the current context.
     void* getFunctionPointer(const char* functionName);
+
+    uint64_t getFreeMemoryBytes();
 
 private:
     std::unordered_set<std::string> extensions;

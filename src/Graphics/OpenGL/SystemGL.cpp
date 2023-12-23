@@ -127,4 +127,45 @@ void* SystemGL::getFunctionPointer(const char* functionName) {
     }
 }
 
+uint64_t SystemGL::getFreeMemoryBytes() {
+    if (sgl::SystemGL::get()->isGLExtensionAvailable("GL_NVX_gpu_memory_info")) {
+        GLint availableMemoryKB = 0;
+        glGetIntegerv(GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &availableMemoryKB);
+        return uint64_t(availableMemoryKB) * 1000ull;
+        /*GLint mem = 0;
+        glGetIntegerv(GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX, &mem);
+        std::cout << "Dedicated: " << sgl::getNiceMemoryString(uint64_t(mem) * 1000ull, 2) << std::endl;
+        glGetIntegerv(GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &mem);
+        std::cout << "Total:     " << sgl::getNiceMemoryString(uint64_t(mem) * 1000ull, 2) << std::endl;
+        glGetIntegerv(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &mem);
+        std::cout << "Current:   " << sgl::getNiceMemoryString(uint64_t(mem) * 1000ull, 2) << std::endl;*/
+    } else if (sgl::SystemGL::get()->isGLExtensionAvailable("GL_ATI_meminfo")) {
+        GLint param[4];
+        glGetIntegerv(GL_VBO_FREE_MEMORY_ATI, param);
+        return param[0];
+        /*glGetIntegerv(GL_VBO_FREE_MEMORY_ATI, param);
+        std::cout << "Total free pool:   " << sgl::getNiceMemoryString(uint64_t(param[0]) * 1000ull, 2) << std::endl;
+        std::cout << "Largest free pool: " << sgl::getNiceMemoryString(uint64_t(param[1]) * 1000ull, 2) << std::endl;
+        std::cout << "Total free aux:    " << sgl::getNiceMemoryString(uint64_t(param[2]) * 1000ull, 2) << std::endl;
+        std::cout << "Largest free aux:  " << sgl::getNiceMemoryString(uint64_t(param[3]) * 1000ull, 2) << std::endl;
+        glGetIntegerv(GL_TEXTURE_FREE_MEMORY_ATI, param);
+        std::cout << "Total free pool:   " << sgl::getNiceMemoryString(uint64_t(param[0]) * 1000ull, 2) << std::endl;
+        std::cout << "Largest free pool: " << sgl::getNiceMemoryString(uint64_t(param[1]) * 1000ull, 2) << std::endl;
+        std::cout << "Total free aux:    " << sgl::getNiceMemoryString(uint64_t(param[2]) * 1000ull, 2) << std::endl;
+        std::cout << "Largest free aux:  " << sgl::getNiceMemoryString(uint64_t(param[3]) * 1000ull, 2) << std::endl;
+        glGetIntegerv(GL_RENDERBUFFER_FREE_MEMORY_ATI, param);
+        std::cout << "Total free pool:   " << sgl::getNiceMemoryString(uint64_t(param[0]) * 1000ull, 2) << std::endl;
+        std::cout << "Largest free pool: " << sgl::getNiceMemoryString(uint64_t(param[1]) * 1000ull, 2) << std::endl;
+        std::cout << "Total free aux:    " << sgl::getNiceMemoryString(uint64_t(param[2]) * 1000ull, 2) << std::endl;
+        std::cout << "Largest free aux:  " << sgl::getNiceMemoryString(uint64_t(param[3]) * 1000ull, 2) << std::endl;*/
+    } else {
+        /*
+         * In Vulkan, we could use the minimum out of physicalDeviceVulkan11Properties.maxMemoryAllocationSize and
+         * physicalDeviceProperties.limits.maxStorageBufferRange. On NVIDIA hardware, this seems to be 4GiB - 1B, on AMD
+         * hardware it seems to be 2GiB. We will just assume OpenGL allows allocations of size 4GiB.
+         */
+        return (1ull << 32ull) - 1ull;
+    }
+}
+
 }
