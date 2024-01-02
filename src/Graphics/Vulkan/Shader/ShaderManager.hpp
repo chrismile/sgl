@@ -141,6 +141,13 @@ public:
     [[nodiscard]] const std::map<std::string, std::string>& getShaderFileMap() const { return shaderFileMap; }
     [[nodiscard]] const std::string& getShaderPathPrefix() const { return pathPrefix; }
 
+    /**
+     * @see After indexFiles was called by the constructor, this function can be used to resolve a shader file path.
+     */
+    std::string getShaderFileName(const std::string& pureFilename);
+
+    std::string loadHeaderFileString(const std::string& shaderName, std::string& prependContent);
+
 protected:
     ShaderModulePtr loadAsset(ShaderModuleInfo& shaderModuleInfo) override;
 #ifdef SUPPORT_SHADERC_BACKEND
@@ -156,7 +163,6 @@ protected:
             const std::vector<std::string>& shaderIds, uint32_t subgroupSize, bool dumpTextDebug);
 
     /// Internal loading
-    std::string loadHeaderFileString(const std::string& shaderName, std::string& prependContent);
     std::string getHeaderName(const std::string& lineString);
     std::string getImportedShaderString(
             const std::string& moduleName, const std::string& parentModuleName, std::string& prependContent);
@@ -169,7 +175,6 @@ protected:
      * "shaderFileMap". Therefore, the application can easily include files with relative paths.
      */
     void indexFiles(const std::string& file);
-    std::string getShaderFileName(const std::string& pureFilename);
 
     /// Directory in which to search for shaders (standard: Data/Shaders).
     std::string pathPrefix;

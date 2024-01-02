@@ -756,9 +756,7 @@ std::string ShaderManagerVk::loadHeaderFileString(const std::string &shaderName,
         }
     }
 
-
     file.close();
-    fileContent = fileContent;
     return fileContent;
 }
 
@@ -1008,6 +1006,15 @@ std::string ShaderManagerVk::getShaderString(const std::string &globalShaderName
                         + std::to_string(sourceStringNumber) + "\n";
             } else {
                 shaderContent += std::string() + "#line " + toString(lineNum) + "\n";
+            }
+        } else if (boost::starts_with(linestr, "#codefrag")) {
+            const std::string& codeFragmentName = getHeaderName(linestr);
+            auto codeFragIt = tempPreprocessorDefines.find(codeFragmentName);
+            if (codeFragIt != tempPreprocessorDefines.end()) {
+                shaderContent += "#line 1\n";
+                shaderContent += codeFragIt->second + "\n";
+                shaderContent += std::string() + "#line " + toString(lineNum) + "\n";
+                tempPreprocessorDefines.erase(codeFragmentName);
             }
         } else {
             shaderContent += std::string() + linestr + "\n";
