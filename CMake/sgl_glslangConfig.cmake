@@ -257,25 +257,42 @@ if(glslang_FOUND AND NOT TARGET glslang::glslang)
         endif()
     endif()
 
-
     if (MachineIndependent_LIBRARY AND GenericCodeGen_LIBRARY)
         # VULKAN_SDK and associated glslang 1.2.147.1 onwards
-        set(glslang_LIBRARIES
-            glslang::MachineIndependent
-            glslang::OSDependent
-            glslang::OGLCompiler
-            glslang::SPIRV
-            glslang::GenericCodeGen
-        )
+        if (OGLCompiler_LIBRARY)
+            set(glslang_LIBRARIES
+                    glslang::MachineIndependent
+                    glslang::OSDependent
+                    glslang::OGLCompiler
+                    glslang::SPIRV
+                    glslang::GenericCodeGen
+            )
+        else()
+            set(glslang_LIBRARIES
+                    glslang::MachineIndependent
+                    glslang::OSDependent
+                    glslang::SPIRV
+                    glslang::GenericCodeGen
+            )
+        endif()
     else()
         # VULKAN_SDK and associated glslang before 1.2.147.1
-        set(glslang_LIBRARIES
-            glslang::glslang
-            glslang::OSDependent
-            glslang::OGLCompiler
-            glslang::SPIRV
-            glslang::HLSL
-        )
+        if (OGLCompiler_LIBRARY)
+            set(glslang_LIBRARIES
+                    glslang::glslang
+                    glslang::OSDependent
+                    glslang::OGLCompiler
+                    glslang::SPIRV
+                    glslang::HLSL
+            )
+        else()
+            set(glslang_LIBRARIES
+                    glslang::glslang
+                    glslang::OSDependent
+                    glslang::SPIRV
+                    glslang::HLSL
+            )
+        endif()
     endif()
 
     if (SPIRV-Tools-opt_LIBRARY)
