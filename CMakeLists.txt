@@ -418,31 +418,35 @@ if (${SUPPORT_VULKAN} AND (${shaderc_FOUND} OR ${glslang_FOUND}))
         find_library(OGLCOMPILER_LIB_RELEASE OGLCompiler
                 PATHS ${VCPKG_RELEASE_LIB_DIR}
                 NO_DEFAULT_PATH)
-        add_library(OGLCompiler STATIC IMPORTED)
-        set_target_properties(OGLCompiler PROPERTIES
-                IMPORTED_LOCATION ${OGLCOMPILER_LIB_DEBUG}
-                IMPORTED_LOCATION_DEBUG ${OGLCOMPILER_LIB_DEBUG}
-                IMPORTED_LOCATION_RELEASE ${OGLCOMPILER_LIB_RELEASE}
-                INTERFACE_INCLUDE_DIRECTORIES "${VCPKG_INCLUDE_DIR}")
+        # https://github.com/KhronosGroup/glslang/pull/3426
+        if (OGLCOMPILER_LIB_DEBUG AND OGLCOMPILER_LIB_RELEASE)
+            set(OGL_COMPILER_HLSL_FOUND ON)
+            add_library(OGLCompiler STATIC IMPORTED)
+            set_target_properties(OGLCompiler PROPERTIES
+                    IMPORTED_LOCATION ${OGLCOMPILER_LIB_DEBUG}
+                    IMPORTED_LOCATION_DEBUG ${OGLCOMPILER_LIB_DEBUG}
+                    IMPORTED_LOCATION_RELEASE ${OGLCOMPILER_LIB_RELEASE}
+                    INTERFACE_INCLUDE_DIRECTORIES "${VCPKG_INCLUDE_DIR}")
 
-        if (MSVC)
-            find_library(HLSL_LIB_DEBUG HLSLd
-                    PATHS ${VCPKG_DEBUG_LIB_DIR}
+            if (MSVC)
+                find_library(HLSL_LIB_DEBUG HLSLd
+                        PATHS ${VCPKG_DEBUG_LIB_DIR}
+                        NO_DEFAULT_PATH)
+            else()
+                find_library(HLSL_LIB_DEBUG HLSL
+                        PATHS ${VCPKG_DEBUG_LIB_DIR}
+                        NO_DEFAULT_PATH)
+            endif()
+            find_library(HLSL_LIB_RELEASE HLSL
+                    PATHS ${VCPKG_RELEASE_LIB_DIR}
                     NO_DEFAULT_PATH)
-        else()
-            find_library(HLSL_LIB_DEBUG HLSL
-                    PATHS ${VCPKG_DEBUG_LIB_DIR}
-                    NO_DEFAULT_PATH)
+            add_library(HLSL STATIC IMPORTED)
+            set_target_properties(HLSL PROPERTIES
+                    IMPORTED_LOCATION ${HLSL_LIB_DEBUG}
+                    IMPORTED_LOCATION_DEBUG ${HLSL_LIB_DEBUG}
+                    IMPORTED_LOCATION_RELEASE ${HLSL_LIB_RELEASE}
+                    INTERFACE_INCLUDE_DIRECTORIES "${VCPKG_INCLUDE_DIR}")
         endif()
-        find_library(HLSL_LIB_RELEASE HLSL
-                PATHS ${VCPKG_RELEASE_LIB_DIR}
-                NO_DEFAULT_PATH)
-        add_library(HLSL STATIC IMPORTED)
-        set_target_properties(HLSL PROPERTIES
-                IMPORTED_LOCATION ${HLSL_LIB_DEBUG}
-                IMPORTED_LOCATION_DEBUG ${HLSL_LIB_DEBUG}
-                IMPORTED_LOCATION_RELEASE ${HLSL_LIB_RELEASE}
-                INTERFACE_INCLUDE_DIRECTORIES "${VCPKG_INCLUDE_DIR}")
 
         if (MSVC)
             find_library(SPIRV_LIB_DEBUG SPIRVd
@@ -531,7 +535,11 @@ if (${SUPPORT_VULKAN} AND (${shaderc_FOUND} OR ${glslang_FOUND}))
             target_link_libraries(shaderc INTERFACE shaderc_util)
         endif()
         target_link_libraries(shaderc INTERFACE spirvtoolsopt glslang::glslang)
-        target_link_libraries(shaderc INTERFACE OSDependent OGLCompiler HLSL SPIRV MachineIndependent GenericCodeGen)
+        if (OGL_COMPILER_HLSL_FOUND)
+            target_link_libraries(shaderc INTERFACE OSDependent OGLCompiler HLSL SPIRV MachineIndependent GenericCodeGen)
+        else()
+            target_link_libraries(shaderc INTERFACE OSDependent SPIRV MachineIndependent GenericCodeGen)
+        endif()
 
         set(GLSLANG_SHADERLANG_H_PATH "${VCPKG_INCLUDE_DIR}/glslang/Public/ShaderLang.h")
         set(SHADERC_ENV_H_PATH "${VCPKG_INCLUDE_DIR}/shaderc/env.h")
@@ -835,8 +843,10 @@ if (${BUILD_STATIC_LIBRARY})
         file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "set_target_properties(spirvtoolslink PROPERTIES IMPORTED_LOCATION ${SPIRV_TOOLS_LINK_LIB_DEBUG} IMPORTED_LOCATION_DEBUG ${SPIRV_TOOLS_LINK_LIB_DEBUG} IMPORTED_LOCATION_RELEASE ${SPIRV_TOOLS_LINK_LIB_RELEASE} INTERFACE_INCLUDE_DIRECTORIES \"${VCPKG_INCLUDE_DIR}\")\n")
         file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "add_library(OSDependent STATIC IMPORTED)\n")
         file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "set_target_properties(OSDependent PROPERTIES IMPORTED_LOCATION ${OSDEPENDENT_LIB_DEBUG} IMPORTED_LOCATION_DEBUG ${OSDEPENDENT_LIB_DEBUG} IMPORTED_LOCATION_RELEASE ${OSDEPENDENT_LIB_RELEASE} INTERFACE_INCLUDE_DIRECTORIES \"${VCPKG_INCLUDE_DIR}\")\n")
-        file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "add_library(OGLCompiler STATIC IMPORTED)\n")
-        file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "set_target_properties(OGLCompiler PROPERTIES IMPORTED_LOCATION ${OGLCOMPILER_LIB_DEBUG} IMPORTED_LOCATION_DEBUG ${OGLCOMPILER_LIB_DEBUG} IMPORTED_LOCATION_RELEASE ${OGLCOMPILER_LIB_RELEASE} INTERFACE_INCLUDE_DIRECTORIES \"${VCPKG_INCLUDE_DIR}\")\n")
+        if (OGL_COMPILER_HLSL_FOUND)
+            file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "add_library(OGLCompiler STATIC IMPORTED)\n")
+            file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "set_target_properties(OGLCompiler PROPERTIES IMPORTED_LOCATION ${OGLCOMPILER_LIB_DEBUG} IMPORTED_LOCATION_DEBUG ${OGLCOMPILER_LIB_DEBUG} IMPORTED_LOCATION_RELEASE ${OGLCOMPILER_LIB_RELEASE} INTERFACE_INCLUDE_DIRECTORIES \"${VCPKG_INCLUDE_DIR}\")\n")
+        endif()
         file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "add_library(HLSL STATIC IMPORTED)\n")
         file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "set_target_properties(HLSL PROPERTIES IMPORTED_LOCATION ${HLSL_LIB_DEBUG} IMPORTED_LOCATION_DEBUG ${HLSL_LIB_DEBUG} IMPORTED_LOCATION_RELEASE ${HLSL_LIB_RELEASE} INTERFACE_INCLUDE_DIRECTORIES \"${VCPKG_INCLUDE_DIR}\")\n")
         file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "add_library(SPIRV STATIC IMPORTED)\n")
@@ -850,7 +860,11 @@ if (${BUILD_STATIC_LIBRARY})
         file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "target_link_libraries(spirvtoolsopt INTERFACE spirvtools)\n")
         file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "target_link_libraries(shaderc INTERFACE shaderc_util)\n")
         file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "target_link_libraries(shaderc INTERFACE spirvtoolsopt glslang::glslang)\n")
-        file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "target_link_libraries(shaderc INTERFACE OSDependent OGLCompiler HLSL SPIRV MachineIndependent GenericCodeGen)\n")
+        if (OGL_COMPILER_HLSL_FOUND)
+            file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "target_link_libraries(shaderc INTERFACE OSDependent OGLCompiler HLSL SPIRV MachineIndependent GenericCodeGen)\n")
+        else()
+            file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "target_link_libraries(shaderc INTERFACE OSDependent SPIRV MachineIndependent GenericCodeGen)\n")
+        endif()
         file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "add_library(shaderc_util STATIC IMPORTED)\n")
         file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "set_target_properties(shaderc_util PROPERTIES IMPORTED_LOCATION ${SHADERC_UTIL_LIB_DEBUG} IMPORTED_LOCATION_DEBUG ${SHADERC_UTIL_LIB_DEBUG} IMPORTED_LOCATION_RELEASE ${SHADERC_UTIL_LIB_RELEASE} INTERFACE_INCLUDE_DIRECTORIES \"${VCPKG_INCLUDE_DIR}\")\n")
     endif()
