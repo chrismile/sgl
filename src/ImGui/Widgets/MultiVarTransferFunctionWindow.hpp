@@ -118,6 +118,7 @@ private:
     glm::vec2 selectedRange = glm::vec2(0.0f);
     std::vector<float> attributes;
     bool isEmpty = true;
+    bool recomputeMinMax = true;
     bool isSelectedRangeFixed = false;
 
     // Drag-and-drop data
@@ -193,6 +194,17 @@ public:
     void addAttributeName(const std::string& name);
     bool getIsSelectedRangeFixed(int varIdx);
     void setIsSelectedRangeFixed(int varIdx, bool _isSelectedRangeFixed);
+
+    /*
+     * Some programs may support computing the histogram themselves (e.g., on the GPU).
+     * The following callback (optional) should return 'true' if the histogram is calculated externally.
+     */
+    using RequestHistogramCallback = std::function<bool(
+            int varIdx, int histSize, std::vector<float>& histogram, float& selectedRangeMin, float& selectedRangeMax,
+            float& dataRangeMin, float& dataRangeMax, bool recomputeMinMax, bool isSelectedRangeFixed)>;
+    inline void setRequestHistogramCallback(RequestHistogramCallback callback) {
+        requestHistogramCallback = std::move(callback);
+    }
 
     //bool saveCurrentVarTfToFile(const std::string& filename);
     //bool loadTfFromFile(int varIdx, const std::string& filename);
@@ -279,6 +291,7 @@ private:
 
     // Secondary, on-request loading interface.
     RequestAttributeValuesCallback requestAttributeValuesCallback{};
+    RequestHistogramCallback requestHistogramCallback{};
 
     // Data range shader storage buffer object.
 #ifdef SUPPORT_OPENGL

@@ -269,6 +269,25 @@ void GuiVarData::setAttributeValues(const std::vector<float>& _attributes, float
 }
 
 void GuiVarData::computeHistogram() {
+    if (window->requestHistogramCallback && window->requestHistogramCallback(
+            varIdx, histogramResolution, histogram,
+            selectedRange.x, selectedRange.y, dataRange.x, dataRange.y,
+            recomputeMinMax, isSelectedRangeFixed)) {
+        recomputeMinMax = false;
+        return;
+    }
+    if (recomputeMinMax) {
+        size_t numAttributes = 0;
+        float minVal = std::numeric_limits<float>::max();
+        float maxVal = std::numeric_limits<float>::lowest();
+        window->requestAttributeValuesCallback(varIdx, nullptr, nullptr, numAttributes, minVal, maxVal);
+        dataRange.x = minVal;
+        dataRange.y = maxVal;
+        if (!isSelectedRangeFixed) {
+            selectedRange = dataRange;
+        }
+        recomputeMinMax = false;
+    }
     if (window->requestAttributeValuesCallback) {
         const void* attributesPtr = nullptr;
         ScalarDataFormat fmt = ScalarDataFormat::FLOAT;
@@ -1009,16 +1028,8 @@ void MultiVarTransferFunctionWindow::setAttributeDataDirty(int varIdx) {
 void MultiVarTransferFunctionWindow::loadAttributeDataIfEmpty(int varIdx) {
     GuiVarData& varData = guiVarData.at(varIdx);
     if (varData.isEmpty) {
-        size_t numAttributes = 0;
-        float minVal = std::numeric_limits<float>::max();
-        float maxVal = std::numeric_limits<float>::lowest();
-        requestAttributeValuesCallback(varIdx, nullptr, nullptr, numAttributes, minVal, maxVal);
-        varData.dataRange.x = minVal;
-        varData.dataRange.y = maxVal;
-        if (!varData.isSelectedRangeFixed) {
-            varData.selectedRange = varData.dataRange;
-        }
         varData.isEmpty = false;
+        varData.recomputeMinMax = true;
         varData.computeHistogram();
         varData.rebuildTransferFunctionMap();
         rebuildRangeSsbo();
