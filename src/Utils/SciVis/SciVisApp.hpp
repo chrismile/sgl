@@ -133,6 +133,8 @@ protected:
     virtual void hasMoved() {}
     /// Callback when the camera was reset.
     virtual void onCameraReset() {}
+    /// Callback when the clear color was changed.
+    virtual void onClearColorChanged() {}
 
     /// Scene data (e.g., camera, main framebuffer, ...).
     sgl::CameraPtr camera;

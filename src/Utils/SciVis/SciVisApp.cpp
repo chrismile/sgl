@@ -853,6 +853,7 @@ void SciVisApp::renderGuiPropertyEditorWindow() {
                     readbackHelperVk->setScreenshotTransparentBackground(screenshotTransparentBackground);
                 }
 #endif
+                onClearColorChanged();
             }
 
             ImGui::Separator();
