@@ -206,17 +206,14 @@ void ImGuiWrapper::shutdown() {
     if (renderSystem == RenderSystem::VULKAN) {
         vk::Device* device = AppSettings::get()->getPrimaryDevice();
 
+        if (initialized) {
+            ImGui_ImplVulkan_Shutdown();
+        }
+
         imguiCommandBuffers.clear();
         framebuffer = vk::FramebufferPtr();
         renderTargetImageView = vk::ImageViewPtr();
         vkDestroyDescriptorPool(device->getVkDevice(), imguiDescriptorPool, nullptr);
-
-        if (initialized) {
-            ImGui_ImplVulkan_Shutdown();
-        }
-        //vkFreeCommandBuffers(
-        //        device->getVkDevice(), commandPool,
-        //        uint32_t(imguiCommandBuffers.size()), imguiCommandBuffers.data());
     }
 #endif
     ImGui_ImplSDL2_Shutdown();
@@ -303,10 +300,8 @@ void ImGuiWrapper::renderStart() {
         }, instance->getVkInstance());
         ImGui_ImplVulkan_Init(&initInfo, framebuffer->getVkRenderPass());
 
-        VkCommandBuffer commandBuffer = device->beginSingleTimeCommands();
-        ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
-        device->endSingleTimeCommands(commandBuffer);
-        ImGui_ImplVulkan_DestroyFontUploadObjects();
+        //ImGui_ImplVulkan_CreateFontsTexture();
+        //ImGui_ImplVulkan_DestroyFontUploadObjects();
 
         onResolutionChanged();
     }

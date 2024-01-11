@@ -276,7 +276,7 @@ void GuiVarData::computeHistogram() {
         recomputeMinMax = false;
         return;
     }
-    if (recomputeMinMax) {
+    if (recomputeMinMax && window->requestAttributeValuesCallback) {
         size_t numAttributes = 0;
         float minVal = std::numeric_limits<float>::max();
         float maxVal = std::numeric_limits<float>::lowest();
