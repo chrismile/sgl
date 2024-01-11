@@ -47,7 +47,7 @@
 
 #include <tracy/Tracy.hpp>
 
-#include "imgui_impl_sdl.h"
+#include "imgui_impl_sdl2.h"
 #include "ImGuiFileDialog/CustomFont.cpp"
 #include "ImGuiWrapper.hpp"
 
