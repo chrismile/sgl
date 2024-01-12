@@ -462,7 +462,14 @@ static bool ImGui_ImplSDL2_Init(SDL_Window* window, SDL_Renderer* renderer, void
     const char* sdl_backend = SDL_GetCurrentVideoDriver();
     // 2024-01-11 (Christoph Neuhauser): Using SDL_GetGlobalMouseState breaks x11vnc.
     //const char* global_mouse_whitelist[] = { "windows", "cocoa", "x11", "DIVE", "VMAN" };
-    const char* global_mouse_whitelist[] = { "windows", "cocoa", "DIVE", "VMAN" };
+    const char* global_mouse_whitelist[] = {
+            "windows", "cocoa",
+#if SDL_VERSION_ATLEAST(2, 30, 0)
+            // https://github.com/libsdl-org/SDL/issues/8827
+            "x11",
+#endif
+            "DIVE", "VMAN"
+    };
     for (int n = 0; n < IM_ARRAYSIZE(global_mouse_whitelist); n++)
         if (strncmp(sdl_backend, global_mouse_whitelist[n], strlen(global_mouse_whitelist[n])) == 0)
             mouse_can_use_global_state = true;
