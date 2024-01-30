@@ -175,7 +175,8 @@ public:
     // Multi-var functions.
     void setAttributesValues(
             const std::vector<std::string>& names,
-            const std::vector<std::vector<float>>& allAttributes);
+            const std::vector<std::vector<float>>& allAttributes,
+            size_t defaultVarIndex = 0);
 
     /*
      * Secondary interface, where attribute data is not supplied through @see setAttributesValues, but when used
@@ -186,7 +187,7 @@ public:
     inline void setRequestAttributeValuesCallback(RequestAttributeValuesCallback callback) {
         requestAttributeValuesCallback = std::move(callback);
     }
-    void setAttributeNames(const std::vector<std::string>& names);
+    void setAttributeNames(const std::vector<std::string>& names, size_t defaultVarIndex = 0);
     void setAttributeDataDirty(int varIdx);
     void loadAttributeDataIfEmpty(int varIdx);
     void updateAttributeName(int varIdx, const std::string& attributeName);

@@ -936,10 +936,11 @@ MultiVarTransferFunctionWindow::~MultiVarTransferFunctionWindow() = default;
 
 void MultiVarTransferFunctionWindow::setAttributesValues(
         const std::vector<std::string>& names,
-        const std::vector<std::vector<float>>& allAttributes) {
+        const std::vector<std::vector<float>>& allAttributes,
+        size_t defaultVarIndex) {
     assert(names.size() == allAttributes.size());
     useAttributeArrays = true;
-    setAttributeNames(names);
+    setAttributeNames(names, defaultVarIndex);
 
     for (size_t varIdx = 0; varIdx < names.size(); varIdx++) {
         GuiVarData& varData = guiVarData.at(varIdx);
@@ -974,11 +975,11 @@ void MultiVarTransferFunctionWindow::recreateTfMapTexture() {
 #endif
 }
 
-void MultiVarTransferFunctionWindow::setAttributeNames(const std::vector<std::string>& names) {
+void MultiVarTransferFunctionWindow::setAttributeNames(const std::vector<std::string>& names, size_t defaultVarIndex) {
     varNames = names;
     transferFunctionMap_sRGB.resize(TRANSFER_FUNCTION_TEXTURE_SIZE * names.size());
     transferFunctionMap_linearRGB.resize(TRANSFER_FUNCTION_TEXTURE_SIZE * names.size());
-    selectedVarIndex = 0;
+    selectedVarIndex = defaultVarIndex;
 
     if (guiVarData.size() != names.size()) {
         guiVarData.clear();
