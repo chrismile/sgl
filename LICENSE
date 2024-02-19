@@ -116,9 +116,12 @@ SOFTWARE.
 
 ----------------------------------------------------------------------------
 
-License of the Vulkan-Headers
-(contained in src/Graphics/Vulkan/libs/Vulkan-Headers/[vulkan|vk_video]):
-https://github.com/KhronosGroup/Vulkan-Headers
+License of the Vulkan-Headers, https://github.com/KhronosGroup/Vulkan-Headers,
+(contained in src/Graphics/Vulkan/libs/Vulkan-Headers/[vulkan|vk_video])
+and the EGL headers, https://registry.khronos.org/EGL/,
+(contained in src/Graphics/Vulkan/libs/[EGL|KHR]):
+
+
 
                                  Apache License
                            Version 2.0, January 2004

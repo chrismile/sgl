@@ -29,8 +29,13 @@
 #include <cstring>
 
 #define EGL_EGLEXT_PROTOTYPES
+#if __has_include(<EGL/egl.h>)
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
+#else
+#include "../../Vulkan/libs/EGL/egl.h"
+#include "../../Vulkan/libs/EGL/eglext.h"
+#endif
 
 #include <Utils/StringUtils.hpp>
 #include <Utils/File/Logfile.hpp>
