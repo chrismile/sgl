@@ -169,19 +169,6 @@ if (${SUPPORT_OPENGL} AND ${OpenGL_FOUND} AND ${GLEW_FOUND})
         list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Vulkan/Utils/Interop.hpp)
         list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Vulkan/Utils/Interop.cpp)
     endif()
-
-    # Conda currently does not provide the EGL headers. We use the fallback provided by sgl in this case.
-    if (NOT WIN32)
-        if (NOT OPENGL_EGL_INCLUDE_DIRS)
-            MESSAGE(STATUS "OpenGL support was enabled, but the EGL header files were not found. Falling back to the EGL headers shipped with sgl.")
-            target_include_directories(sgl PUBLIC
-                    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Vulkan/libs>
-                    $<INSTALL_INTERFACE:include/sgl/Graphics/Vulkan/libs>
-            )
-        else()
-            MESSAGE(STATUS "Found EGL headers. Using includes from: ${OPENGL_EGL_INCLUDE_DIRS}.")
-        endif()
-    endif()
 endif()
 
 if (${SUPPORT_CUDA})
@@ -332,6 +319,21 @@ if (${SUPPORT_OPENGL} AND ${OpenGL_FOUND} AND ${GLEW_FOUND})
 
     if (${GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT})
         target_compile_definitions(sgl PUBLIC GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
+    endif()
+
+
+    # Conda currently does not provide the EGL headers. We use the fallback provided by sgl in this case.
+    if (NOT WIN32)
+        if (NOT OPENGL_EGL_INCLUDE_DIRS)
+            MESSAGE(STATUS "OpenGL support was enabled, but the EGL header files were not found. Falling back to the EGL headers shipped with sgl.")
+            target_include_directories(sgl PUBLIC
+                    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Vulkan/libs>
+                    $<INSTALL_INTERFACE:include/sgl/Graphics/Vulkan/libs>
+            )
+        else()
+            MESSAGE(STATUS "Found EGL headers. Using includes from: ${OPENGL_EGL_INCLUDE_DIRS}.")
+            target_include_directories(sgl PRIVATE ${OPENGL_EGL_INCLUDE_DIRS})
+        endif()
     endif()
 endif()
 
