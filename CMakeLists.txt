@@ -321,10 +321,10 @@ if (${SUPPORT_OPENGL} AND ${OpenGL_FOUND} AND ${GLEW_FOUND})
         target_compile_definitions(sgl PUBLIC GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
     endif()
 
-
     # Conda currently does not provide the EGL headers. We use the fallback provided by sgl in this case.
     if (NOT WIN32)
-        if (NOT OPENGL_EGL_INCLUDE_DIRS)
+        get_filename_component(COMPILER_EXE_NAME ${CMAKE_CXX_COMPILER} NAME)
+        if ((NOT OPENGL_EGL_INCLUDE_DIRS) OR (COMPILER_EXE_NAME MATCHES "conda"))
             MESSAGE(STATUS "OpenGL support was enabled, but the EGL header files were not found. Falling back to the EGL headers shipped with sgl.")
             target_include_directories(sgl PUBLIC
                     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Vulkan/libs>
