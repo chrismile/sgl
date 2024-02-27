@@ -238,13 +238,19 @@ bool OffscreenContextEGL::initialize() {
             if (deviceExtensionsSet.find("EGL_EXT_device_query_name") != deviceExtensionsSet.end()) {
                 const char* deviceVendor = f->eglQueryDeviceStringEXT(eglDevices[i], EGL_VENDOR);
                 const char* deviceRenderer = f->eglQueryDeviceStringEXT(eglDevices[i], EGL_RENDERER_EXT);
-                sgl::Logfile::get()->write("Device #" + std::to_string(i) + " Vendor: " + deviceVendor, BLUE);
-                sgl::Logfile::get()->write("Device #" + std::to_string(i) + " Renderer: " + deviceRenderer, BLUE);
+                if (deviceVendor) {
+                    sgl::Logfile::get()->write("Device #" + std::to_string(i) + " Vendor: " + deviceVendor, BLUE);
+                }
+                if (deviceRenderer) {
+                    sgl::Logfile::get()->write("Device #" + std::to_string(i) + " Renderer: " + deviceRenderer, BLUE);
+                }
             }
 
             if (deviceExtensionsSet.find("EGL_EXT_device_drm") != deviceExtensionsSet.end()) {
                 const char* deviceDrmFile = f->eglQueryDeviceStringEXT(eglDevices[i], EGL_DRM_DEVICE_FILE_EXT);
-                sgl::Logfile::get()->write("Device #" + std::to_string(i) + " DRM File: " + deviceDrmFile, BLUE);
+                if (deviceDrmFile) {
+                    sgl::Logfile::get()->write("Device #" + std::to_string(i) + " DRM File: " + deviceDrmFile, BLUE);
+                }
             }
 
             if (deviceExtensionsSet.find("EGL_EXT_device_drm_render_node") != deviceExtensionsSet.end()) {
