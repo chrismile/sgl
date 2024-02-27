@@ -112,8 +112,11 @@ bool OffscreenContextEGL::loadFunctionTable() {
 #if defined(__linux__)
     eglHandle = dlopen("libEGL.so", RTLD_NOW | RTLD_LOCAL);
     if (!eglHandle) {
-        sgl::Logfile::get()->writeError("OffscreenContextEGL::initialize: Could not load libEGL.so.", false);
-        return false;
+        eglHandle = dlopen("libEGL.so.1", RTLD_NOW | RTLD_LOCAL);
+        if (!eglHandle) {
+            sgl::Logfile::get()->writeError("OffscreenContextEGL::initialize: Could not load libEGL.so.", false);
+            return false;
+        }
     }
 #elif defined(_WIN32)
     eglHandle = LoadLibraryA("EGL.dll");

@@ -133,13 +133,13 @@ bool OffscreenContextGlfw::loadFunctionTable() {
 #if defined(__linux__)
     glfwHandle = dlopen("libglfw.so.3", RTLD_NOW | RTLD_LOCAL);
     if (!glfwHandle) {
-        sgl::Logfile::get()->writeError("OffscreenContextGlfw::initialize: Could not load libEGL.so.", false);
+        sgl::Logfile::get()->writeError("OffscreenContextGlfw::initialize: Could not load libglfw.so.3.", false);
         return false;
     }
 #elif defined(_WIN32)
     glfwHandle = LoadLibraryA("glfw3.dll");
     if (!glfwHandle) {
-        sgl::Logfile::get()->writeError("OffscreenContextGlfw::initialize: Could not load EGL.dll.", false);
+        sgl::Logfile::get()->writeError("OffscreenContextGlfw::initialize: Could not load glfw3.dll.", false);
         return false;
     }
 #endif

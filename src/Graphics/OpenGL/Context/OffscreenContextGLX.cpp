@@ -85,8 +85,11 @@ bool OffscreenContextGLX::loadFunctionTable() {
     }
     glxHandle = dlopen("libGLX.so", RTLD_NOW | RTLD_LOCAL);
     if (!glxHandle) {
-        sgl::Logfile::get()->writeError("OffscreenContextGLX::loadFunctionTable: Could not load libGLX.so.", false);
-        return false;
+        glxHandle = dlopen("libGLX.so.0", RTLD_NOW | RTLD_LOCAL);
+        if (!glxHandle) {
+            sgl::Logfile::get()->writeError("OffscreenContextGLX::loadFunctionTable: Could not load libGLX.so.", false);
+            return false;
+        }
     }
 
     f->dyn_XOpenDisplay = PFN_XOpenDisplay(dlsym(x11Handle, TOSTRING(XOpenDisplay)));

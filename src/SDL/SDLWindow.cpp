@@ -135,9 +135,12 @@ int getMaxSamplesGLImpl(int desiredSamples) {
     }
     void* libGLXso = dlopen("libGLX.so", RTLD_NOW | RTLD_LOCAL);
     if (!libGLXso) {
-        sgl::Logfile::get()->writeError("Error in getMaxSamplesGLImpl: Could not load libGLX.so!");
-        dlclose(libX11so);
-        return 1;
+        libGLXso = dlopen("libGLX.so.0", RTLD_NOW | RTLD_LOCAL);
+        if (!libGLXso) {
+            sgl::Logfile::get()->writeError("Error in getMaxSamplesGLImpl: Could not load libGLX.so!");
+            dlclose(libX11so);
+            return 1;
+        }
     }
 
     auto dyn_XOpenDisplay = PFN_XOpenDisplay(dlsym(libX11so, "XOpenDisplay"));
