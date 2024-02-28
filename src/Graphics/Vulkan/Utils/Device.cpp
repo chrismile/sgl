@@ -919,6 +919,9 @@ void Device::createLogicalDeviceAndQueues(
 
         if (requestedDeviceFeatures.meshShaderFeaturesEXT.meshShader == VK_FALSE) {
             requestedDeviceFeatures.meshShaderFeaturesEXT = meshShaderFeaturesEXT;
+            // Avoid enabling features relying on other extensions, cf. https://github.com/chrismile/LineVis/issues/6
+            requestedDeviceFeatures.meshShaderFeaturesEXT.multiviewMeshShader = VK_FALSE;
+            requestedDeviceFeatures.meshShaderFeaturesEXT.primitiveFragmentShadingRateMeshShader = VK_FALSE;
         }
     }
 #endif
