@@ -102,8 +102,25 @@ void Swapchain::create(Window* window) {
     createInfo.clipped = useClipping ? VK_TRUE : VK_FALSE;
     createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-    if (vkCreateSwapchainKHR(device->getVkDevice(), &createInfo, nullptr, &swapchain) != VK_SUCCESS) {
-        sgl::Logfile::get()->writeError("Error in Swapchain::create: Could not create a swapchain.");
+    VkResult retVal = vkCreateSwapchainKHR(device->getVkDevice(), &createInfo, nullptr, &swapchain);
+    if (retVal != VK_SUCCESS) {
+        std::string errorMessage = "Error in Swapchain::create: Could not create a swapchain.";
+        if (retVal == VK_ERROR_OUT_OF_HOST_MEMORY) {
+            errorMessage += " Error: VK_ERROR_OUT_OF_HOST_MEMORY.";
+        } else if (retVal == VK_ERROR_OUT_OF_DEVICE_MEMORY) {
+            errorMessage += " Error: VK_ERROR_OUT_OF_DEVICE_MEMORY.";
+        } else if (retVal == VK_ERROR_DEVICE_LOST) {
+            errorMessage += " Error: VK_ERROR_DEVICE_LOST.";
+        } else if (retVal == VK_ERROR_SURFACE_LOST_KHR) {
+            errorMessage += " Error: VK_ERROR_SURFACE_LOST_KHR.";
+        } else if (retVal == VK_ERROR_NATIVE_WINDOW_IN_USE_KHR) {
+            errorMessage += " Error: VK_ERROR_NATIVE_WINDOW_IN_USE_KHR.";
+        } else if (retVal == VK_ERROR_INITIALIZATION_FAILED) {
+            errorMessage += " Error: VK_ERROR_INITIALIZATION_FAILED.";
+        } else if (retVal == VK_ERROR_COMPRESSION_EXHAUSTED_EXT) {
+            errorMessage += " Error: VK_ERROR_COMPRESSION_EXHAUSTED_EXT.";
+        }
+        sgl::Logfile::get()->writeError(errorMessage);
         exit(1);
     }
 
