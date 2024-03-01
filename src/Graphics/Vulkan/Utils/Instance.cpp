@@ -278,6 +278,9 @@ bool Instance::checkRequestedLayersAvailable(const std::vector<const char*> &req
         if (isValidationLayer) {
             uint32_t validationLayerVersion = availableLayers[requestedLayer].specVersion;
             if ((validationLayerVersion & 0xFFFFF000u) < (getInstanceVulkanVersion() & 0xFFFFF000u)) {
+                sgl::Logfile::get()->write(
+                        "Disabling validation layer, as its version is older than the Vulkan instance version.",
+                        sgl::BLUE);
                 return false;
             }
         }
