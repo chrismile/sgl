@@ -261,7 +261,11 @@ void SciVisApp::createSceneFramebuffer() {
         vk::Swapchain* swapchain = sgl::AppSettings::get()->getSwapchain();
         compositedTextureBlitPass->setInputTexture(compositedTextureVk);
         compositedTextureBlitPass->setOutputImages(swapchain->getSwapchainImageViews());
-        compositedTextureBlitPass->setOutputImageFinalLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+        if (!window->getUseDownloadSwapchain()) {
+            compositedTextureBlitPass->setOutputImageFinalLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+        } else {
+            compositedTextureBlitPass->setOutputImageFinalLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+        }
         compositedTextureBlitPass->recreateSwapchain(width, height);
 
         readbackHelperVk->onSwapchainRecreated();

@@ -83,7 +83,7 @@ SDLWindow::~SDLWindow() {
     }
 #endif
 #ifdef SUPPORT_VULKAN
-    if (renderSystem == RenderSystem::VULKAN) {
+    if (renderSystem == RenderSystem::VULKAN && !windowSettings.useDownloadSwapchain) {
         sgl::vk::Instance* instance = sgl::AppSettings::get()->getVulkanInstance();
         vkDestroySurfaceKHR(instance->getVkInstance(), windowSurface, nullptr);
     }
@@ -264,7 +264,7 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
     }
 #endif
 #ifdef SUPPORT_VULKAN
-    if (renderSystem == RenderSystem::VULKAN) {
+    if (renderSystem == RenderSystem::VULKAN && !windowSettings.useDownloadSwapchain) {
         flags |= SDL_WINDOW_VULKAN;
     }
 #endif
@@ -285,7 +285,7 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
     }
 #endif
 #ifdef SUPPORT_VULKAN
-    if (renderSystem == RenderSystem::VULKAN) {
+    if (renderSystem == RenderSystem::VULKAN && !windowSettings.useDownloadSwapchain) {
         /*
          * The array "instanceExtensionNames" holds the name of all extensions that get requested. First, user-specified
          * extensions are added. Then, extensions required by SDL are added using "SDL_Vulkan_GetInstanceExtensions".
@@ -307,6 +307,10 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
                     std::string() + "Error in SDLWindow::initialize: Failed to create a Vulkan surface.");
             exit(-1);
         }
+    }
+    if (renderSystem == RenderSystem::VULKAN && windowSettings.useDownloadSwapchain) {
+        sgl::vk::Instance* instance = sgl::AppSettings::get()->getVulkanInstance();
+        instance->createInstance({}, windowSettings.debugContext);
     }
 #endif
     errorCheckSDLCritical();
@@ -345,7 +349,7 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
     }
 #endif
 #ifdef SUPPORT_VULKAN
-    if (renderSystem == RenderSystem::VULKAN) {
+    if (renderSystem == RenderSystem::VULKAN && !windowSettings.useDownloadSwapchain) {
         SDL_Vulkan_GetDrawableSize(sdlWindow, &windowSettings.pixelWidth, &windowSettings.pixelHeight);
     }
 #endif
@@ -389,7 +393,7 @@ void SDLWindow::setWindowVirtualSize(int width, int height) {
     }
 #endif
 #ifdef SUPPORT_VULKAN
-    if (renderSystem == RenderSystem::VULKAN) {
+    if (renderSystem == RenderSystem::VULKAN && !windowSettings.useDownloadSwapchain) {
         int oldWidth = 0, oldHeight = 0;
         int oldPixelWidth = 0, oldPixelHeight = 0;
         SDL_GetWindowSize(sdlWindow, &oldWidth, &oldHeight);
@@ -404,7 +408,7 @@ void SDLWindow::setWindowVirtualSize(int width, int height) {
         EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
     }
 #ifdef SUPPORT_VULKAN
-    if (renderSystem == RenderSystem::VULKAN) {
+    if (renderSystem == RenderSystem::VULKAN && !windowSettings.useDownloadSwapchain) {
         //sgl::vk::Device* device = sgl::AppSettings::get()->getPrimaryDevice();
         //device->waitIdle();
     }
@@ -428,7 +432,7 @@ void SDLWindow::setWindowPixelSize(int width, int height) {
     }
 #endif
 #ifdef SUPPORT_VULKAN
-    if (renderSystem == RenderSystem::VULKAN) {
+    if (renderSystem == RenderSystem::VULKAN && !windowSettings.useDownloadSwapchain) {
         int oldWidth = 0, oldHeight = 0;
         int oldPixelWidth = 0, oldPixelHeight = 0;
         SDL_GetWindowSize(sdlWindow, &oldWidth, &oldHeight);
@@ -443,7 +447,7 @@ void SDLWindow::setWindowPixelSize(int width, int height) {
         EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
     }
 #ifdef SUPPORT_VULKAN
-    if (renderSystem == RenderSystem::VULKAN) {
+    if (renderSystem == RenderSystem::VULKAN && !windowSettings.useDownloadSwapchain) {
         //sgl::vk::Device* device = sgl::AppSettings::get()->getPrimaryDevice();
         //device->waitIdle();
     }
@@ -514,7 +518,7 @@ bool SDLWindow::processEvents() {
                         }
 #endif
 #ifdef SUPPORT_VULKAN
-                        if (renderSystem == RenderSystem::VULKAN) {
+                        if (renderSystem == RenderSystem::VULKAN && !windowSettings.useDownloadSwapchain) {
                             SDL_Vulkan_GetDrawableSize(sdlWindow, &windowSettings.pixelWidth, &windowSettings.pixelHeight);
                         }
 #endif
@@ -588,6 +592,7 @@ void SDLWindow::serializeSettings(SettingsFile &settings) {
         windowSettings.windowPosition = getWindowPosition();
         settings.addKeyValue("window-windowPosition", windowSettings.windowPosition);
     }
+    settings.addKeyValue("window-useDownloadSwapchain", windowSettings.useDownloadSwapchain);
 }
 
 WindowSettings SDLWindow::deserializeSettings(const SettingsFile &settings) {
@@ -616,6 +621,7 @@ WindowSettings SDLWindow::deserializeSettings(const SettingsFile &settings) {
     settings.getValueOpt("window-debugContext", windowSettings.debugContext);
     settings.getValueOpt("window-savePosition", windowSettings.savePosition);
     settings.getValueOpt("window-windowPosition", windowSettings.windowPosition);
+    settings.getValueOpt("window-useDownloadSwapchain", windowSettings.useDownloadSwapchain);
     return windowSettings;
 }
 

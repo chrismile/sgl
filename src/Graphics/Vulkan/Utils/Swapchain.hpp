@@ -41,6 +41,10 @@ class Device;
 
 class CommandBuffer;
 typedef std::shared_ptr<CommandBuffer> CommandBufferPtr;
+class Fence;
+typedef std::shared_ptr<Fence> FencePtr;
+class Semaphore;
+typedef std::shared_ptr<Semaphore> SemaphorePtr;
 
 struct DLL_OBJECT SwapchainSupportInfo {
     VkSurfaceCapabilitiesKHR capabilities;
@@ -56,7 +60,7 @@ public:
      * @param device The device object.
      * @param useClipping The user may disable clipping to be able to read back pixels obscured by another window.
      */
-    Swapchain(Device* device, bool useClipping = true);
+    explicit Swapchain(Device* device, bool useClipping = true);
     ~Swapchain();
     void create(Window* window);
 
@@ -82,6 +86,7 @@ public:
     [[nodiscard]] inline size_t getCurrentFrame() const { return currentFrame; }
     [[nodiscard]] inline uint32_t getImageIndex() const { return imageIndex; }
     [[nodiscard]] inline const std::vector<VkSemaphore>& getImageAvailableSemaphores() { return imageAvailableSemaphores; }
+    [[nodiscard]] inline bool getUseDownloadSwapchain() const { return useDownloadSwapchain; }
 
 private:
     void createSwapchainImages();
@@ -96,9 +101,9 @@ private:
     VkSurfaceFormatKHR getSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
     VkPresentModeKHR getSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 
-    VkSwapchainKHR swapchain;
-    VkFormat swapchainImageFormat;
-    VkExtent2D swapchainExtent;
+    VkSwapchainKHR swapchain{};
+    VkFormat swapchainImageFormat{};
+    VkExtent2D swapchainExtent{};
 
     Device* device = nullptr;
     Window* window = nullptr;
@@ -106,6 +111,15 @@ private:
     std::vector<ImagePtr> swapchainImages;
     std::vector<ImageViewPtr> swapchainImageViews;
     std::vector<FramebufferPtr> swapchainFramebuffers;
+
+    void downloadSwapchainRender();
+    bool useDownloadSwapchain = false;
+    void* cpuSurface = nullptr; // Optional, only if download swapchain is used.
+    //void* cpuSurfaceWriteable = nullptr; // Optional, only if download swapchain is used.
+    ImagePtr swapchainImageCpu;
+    sgl::vk::SemaphorePtr frameRenderedSemaphore;
+    sgl::vk::FencePtr frameDownloadedFence;
+    sgl::vk::CommandBufferPtr frameDownloadCommandBuffer;
 
     const int MAX_FRAMES_IN_FLIGHT = 2;
     size_t currentFrame = 0;

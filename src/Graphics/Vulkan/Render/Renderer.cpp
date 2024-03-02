@@ -185,7 +185,7 @@ void Renderer::beginCommandBuffer() {
             frameCommandBuffers.push_back(commandBufferPtr);
             commandBuffer = commandBufferPtr->getVkCommandBuffer();
 
-            if (swapchain) {
+            if (swapchain && !swapchain->getUseDownloadSwapchain()) {
                 commandBufferPtr->pushWaitSemaphore(
                         swapchain->getImageAvailableSemaphores()[swapchain->getCurrentFrame()]);
             }

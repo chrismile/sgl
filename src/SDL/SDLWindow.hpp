@@ -103,6 +103,9 @@ public:
     void* getOpenGLFunctionPointer(const char* functionName) override;
 #endif
 
+    /// Whether to download all images from the GPU instead of using a swapchain.
+    [[nodiscard]] bool getUseDownloadSwapchain() const override { return windowSettings.useDownloadSwapchain; }
+
     /// Getting SDL specific data
     inline SDL_Window *getSDLWindow() { return sdlWindow; }
 #ifdef SUPPORT_OPENGL
@@ -128,7 +131,7 @@ private:
     CursorType currentCursorType = CursorType::DEFAULT;
     bool showCursor = true;
 
-    SDL_Window *sdlWindow = nullptr;
+    SDL_Window* sdlWindow = nullptr;
 
 #ifdef SUPPORT_OPENGL
     SDL_GLContext glContext = nullptr;

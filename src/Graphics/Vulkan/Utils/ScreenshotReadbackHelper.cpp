@@ -65,7 +65,7 @@ void ScreenshotReadbackHelper::onSwapchainRecreated(uint32_t width, uint32_t hei
         vk::ImageSettings imageSettings;
         imageSettings.width = width;
         imageSettings.height = height;
-        imageSettings.format = VK_FORMAT_R8G8B8A8_UINT;
+        imageSettings.format = VK_FORMAT_R8G8B8A8_UNORM;
         imageSettings.tiling = VK_IMAGE_TILING_LINEAR;
         imageSettings.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         imageSettings.memoryUsage = VMA_MEMORY_USAGE_GPU_TO_CPU;

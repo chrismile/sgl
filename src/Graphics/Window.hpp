@@ -77,6 +77,7 @@ struct DLL_OBJECT WindowSettings {
     bool debugContext;
     bool savePosition;
     glm::ivec2 windowPosition{};
+    bool useDownloadSwapchain;
 
     WindowSettings() {
         width = 1920;
@@ -97,6 +98,7 @@ struct DLL_OBJECT WindowSettings {
 #endif
         savePosition = false;
         windowPosition = glm::ivec2(std::numeric_limits<int>::min());
+        useDownloadSwapchain = false;
     }
 };
 
@@ -162,6 +164,9 @@ public:
     virtual int getHeight()=0;
     virtual glm::ivec2 getWindowResolution()=0;
     virtual void setWindowSize(int width, int height)=0;
+
+    /// Whether to download all images from the GPU instead of using a swapchain.
+    [[nodiscard]] virtual bool getUseDownloadSwapchain() const { return false; }
 
 #ifdef SUPPORT_OPENGL
     virtual void* getOpenGLFunctionPointer(const char* functionName)=0;

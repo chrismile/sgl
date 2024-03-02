@@ -1670,7 +1670,9 @@ void Device::createDeviceSwapchain(
     this->instance = instance;
     this->window = window;
 
-    requiredDeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    if (!window->getUseDownloadSwapchain()) {
+        requiredDeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    }
 
 #ifdef __APPLE__
     optionalDeviceExtensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);

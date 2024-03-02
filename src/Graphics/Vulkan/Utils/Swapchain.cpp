@@ -54,6 +54,47 @@ void Swapchain::create(Window* window) {
     VkSurfaceKHR surface = window->getVkSurface();
     WindowSettings windowSettings = window->getWindowSettings();
 
+    auto* sdlWindow = static_cast<SDLWindow*>(window);
+    useDownloadSwapchain = sdlWindow->getUseDownloadSwapchain();
+    if (useDownloadSwapchain) {
+        SDL_Window* sdlWindowData = sdlWindow->getSDLWindow();
+        cpuSurface = (void*)SDL_GetWindowSurface(sdlWindowData);
+        swapchainExtent = { uint32_t(sdlWindow->getWidth()), uint32_t(sdlWindow->getHeight()) };
+        swapchainImageFormat = VK_FORMAT_R8G8B8A8_UNORM;
+        minImageCount = 1;
+
+        // Create images.
+        swapchainImages.reserve(1);
+        swapchainImageViews.reserve(1);
+        ImageSettings imageSettings;
+        imageSettings.width = swapchainExtent.width;
+        imageSettings.height = swapchainExtent.height;
+        imageSettings.format = swapchainImageFormat;
+        imageSettings.usage =
+                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+        imageSettings.memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+        swapchainImages.push_back(std::make_shared<Image>(device, imageSettings));
+        swapchainImageViews.push_back(std::make_shared<ImageView>(
+                swapchainImages.at(0), VK_IMAGE_ASPECT_COLOR_BIT));
+        imageSettings.tiling = VK_IMAGE_TILING_LINEAR;
+        imageSettings.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        imageSettings.memoryUsage = VMA_MEMORY_USAGE_GPU_TO_CPU;
+        swapchainImageCpu = std::make_shared<Image>(device, imageSettings);
+        swapchainImageCpu->transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+        // Create auxiliary data.
+        if (!frameDownloadCommandBuffer) {
+            vk::CommandPoolType commandPoolType;
+            commandPoolType.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+            frameDownloadCommandBuffer = std::make_shared<CommandBuffer>(device, commandPoolType);
+            frameRenderedSemaphore = std::make_shared<Semaphore>(device);
+            frameDownloadedFence = std::make_shared<Fence>(device);
+        }
+
+        createSyncObjects();
+        return;
+    }
+
     SwapchainSupportInfo swapchainSupportInfo = querySwapchainSupportInfo(
             device->getVkPhysicalDevice(), surface, window);
     std::set<VkPresentModeKHR> presentModesSet(
@@ -189,12 +230,21 @@ void Swapchain::createSwapchainImageViews() {
 void Swapchain::recreateSwapchain() {
     int windowWidth = 0;
     int windowHeight = 0;
-    SDLWindow* sdlWindow = static_cast<SDLWindow*>(window);
+    auto* sdlWindow = static_cast<SDLWindow*>(window);
     SDL_Window* sdlWindowData = sdlWindow->getSDLWindow();
     isWaitingForResizeEnd = true;
-    while (windowWidth == 0 || windowHeight == 0) {
-        SDL_Vulkan_GetDrawableSize(sdlWindowData, &windowWidth, &windowHeight);
-        window->processEvents();
+    useDownloadSwapchain = sdlWindow->getUseDownloadSwapchain();
+    if (!useDownloadSwapchain) {
+        while (windowWidth == 0 || windowHeight == 0) {
+            SDL_Vulkan_GetDrawableSize(sdlWindowData, &windowWidth, &windowHeight);
+            window->processEvents();
+        }
+    } else {
+        while (windowWidth == 0 || windowHeight == 0) {
+            windowWidth = window->getWidth();
+            windowHeight = window->processEvents();
+            window->processEvents();
+        }
     }
     isWaitingForResizeEnd = false;
 
@@ -207,6 +257,12 @@ void Swapchain::recreateSwapchain() {
 }
 
 void Swapchain::beginFrame() {
+    auto* sdlWindow = static_cast<SDLWindow*>(window);
+    bool useDownloadSwapchain = sdlWindow->getUseDownloadSwapchain();
+    if (useDownloadSwapchain) {
+        return;
+    }
+
     vkWaitForFences(device->getVkDevice(), 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
     VkResult result = vkAcquireNextImageKHR(
@@ -242,29 +298,64 @@ void Swapchain::renderFrame(const std::vector<VkCommandBuffer>& commandBuffers) 
     submitInfo.pCommandBuffers = commandBuffers.data();
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
-    if (vkQueueSubmit(device->getGraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
+    if (useDownloadSwapchain) {
+        submitInfo.waitSemaphoreCount = 0;
+        submitInfo.pWaitSemaphores = {};
+        submitInfo.pWaitDstStageMask = {};
+        signalSemaphores[0] = frameRenderedSemaphore->getVkSemaphore();
+    }
+    VkFence fence = useDownloadSwapchain ? VK_NULL_HANDLE : inFlightFences[currentFrame];
+    if (vkQueueSubmit(device->getGraphicsQueue(), 1, &submitInfo, fence) != VK_SUCCESS) {
         sgl::Logfile::get()->throwError("Error in Swapchain::renderFrame: Could not submit to the graphics queue.");
     }
 
-    VkPresentInfoKHR presentInfo = {};
-    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores = signalSemaphores;
+    if (!useDownloadSwapchain) {
+        VkPresentInfoKHR presentInfo = {};
+        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        presentInfo.waitSemaphoreCount = 1;
+        presentInfo.pWaitSemaphores = signalSemaphores;
 
-    VkSwapchainKHR swapchains[] = { swapchain };
-    presentInfo.swapchainCount = 1;
-    presentInfo.pSwapchains = swapchains;
-    presentInfo.pImageIndices = &imageIndex;
-    presentInfo.pResults = nullptr;
-    VkResult result = vkQueuePresentKHR(device->getGraphicsQueue(), &presentInfo);
+        VkSwapchainKHR swapchains[] = { swapchain };
+        presentInfo.swapchainCount = 1;
+        presentInfo.pSwapchains = swapchains;
+        presentInfo.pImageIndices = &imageIndex;
+        presentInfo.pResults = nullptr;
+        VkResult result = vkQueuePresentKHR(device->getGraphicsQueue(), &presentInfo);
 
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-        recreateSwapchain();
-    } else if (result != VK_SUCCESS) {
-        sgl::Logfile::get()->writeError("Error in Swapchain::renderFrame: Failed to present swap chain image!");
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+            recreateSwapchain();
+        } else if (result != VK_SUCCESS) {
+            sgl::Logfile::get()->writeError("Error in Swapchain::renderFrame: Failed to present swap chain image!");
+        }
+        currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    } else {
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        vkBeginCommandBuffer(frameDownloadCommandBuffer->getVkCommandBuffer(), &beginInfo);
+        swapchainImages.front()->copyToImage(
+                swapchainImageCpu, VK_IMAGE_ASPECT_COLOR_BIT,
+                frameDownloadCommandBuffer->getVkCommandBuffer());
+        vkEndCommandBuffer(frameDownloadCommandBuffer->getVkCommandBuffer());
+
+        VkCommandBuffer frameDownloadCommandBuffers[] = { frameDownloadCommandBuffer->getVkCommandBuffer() };
+        waitSemaphores[0] = frameRenderedSemaphore->getVkSemaphore();
+        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.pWaitSemaphores = waitSemaphores;
+        waitStages[0] = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        submitInfo.pWaitDstStageMask = waitStages;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = frameDownloadCommandBuffers;
+        submitInfo.signalSemaphoreCount = 0;
+        submitInfo.pSignalSemaphores = {};
+        if (vkQueueSubmit(device->getGraphicsQueue(), 1, &submitInfo, frameDownloadedFence->getVkFence()) != VK_SUCCESS) {
+            sgl::Logfile::get()->throwError(
+                    "Error in Swapchain::renderFrame: Could not submit to the graphics queue.");
+        }
+        frameDownloadedFence->wait();
+        frameDownloadedFence->reset();
+        downloadSwapchainRender();
     }
-
-    currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
 void Swapchain::renderFrame(const std::vector<sgl::vk::CommandBufferPtr>& commandBuffers) {
@@ -277,8 +368,10 @@ void Swapchain::renderFrame(const std::vector<sgl::vk::CommandBufferPtr>& comman
 
     //VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
     VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
-
-    // The wait semaphore is added by sgl::vk::Renderer to ensure it GPU-CPU syncing is possible.
+    if (useDownloadSwapchain) {
+        signalSemaphores[0] = frameRenderedSemaphore->getVkSemaphore();
+    }
+    // The wait semaphore is added by sgl::vk::Renderer to ensure GPU-CPU syncing is possible.
     //commandBufferFirst->pushWaitSemaphore(waitSemaphores[0]);
     commandBufferLast->pushSignalSemaphore(signalSemaphores[0]);
 
@@ -313,9 +406,11 @@ void Swapchain::renderFrame(const std::vector<sgl::vk::CommandBufferPtr>& comman
         submitInfo.signalSemaphoreCount = uint32_t(commandBuffer->getSignalSemaphoresVk().size());
         submitInfo.pSignalSemaphores = commandBuffer->getSignalSemaphoresVk().data();
 
-        VkFence fence;
+        VkFence fence = VK_NULL_HANDLE;
         if (cmdBufIdx == commandBuffers.size() - 1) {
-            fence = inFlightFences[currentFrame];
+            if (!useDownloadSwapchain) {
+                fence = inFlightFences[currentFrame];
+            }
             assert(commandBuffer->getVkFence() == VK_NULL_HANDLE);
         } else {
             fence = commandBuffer->getVkFence();
@@ -326,6 +421,38 @@ void Swapchain::renderFrame(const std::vector<sgl::vk::CommandBufferPtr>& comman
         }
 
         commandBuffer->_clearSyncObjects();
+    }
+
+    if (useDownloadSwapchain) {
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        vkBeginCommandBuffer(frameDownloadCommandBuffer->getVkCommandBuffer(), &beginInfo);
+        swapchainImages.front()->copyToImage(
+                swapchainImageCpu, VK_IMAGE_ASPECT_COLOR_BIT,
+                frameDownloadCommandBuffer->getVkCommandBuffer());
+        vkEndCommandBuffer(frameDownloadCommandBuffer->getVkCommandBuffer());
+
+        VkCommandBuffer frameDownloadCommandBuffers[] = { frameDownloadCommandBuffer->getVkCommandBuffer() };
+        VkSubmitInfo submitInfo = {};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        VkSemaphore waitSemaphores[] = { frameRenderedSemaphore->getVkSemaphore() };
+        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.pWaitSemaphores = waitSemaphores;
+        VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
+        submitInfo.pWaitDstStageMask = waitStages;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = frameDownloadCommandBuffers;
+        submitInfo.signalSemaphoreCount = 0;
+        submitInfo.pSignalSemaphores = {};
+        if (vkQueueSubmit(device->getGraphicsQueue(), 1, &submitInfo, frameDownloadedFence->getVkFence()) != VK_SUCCESS) {
+            sgl::Logfile::get()->throwError(
+                    "Error in Swapchain::renderFrame: Could not submit to the graphics queue.");
+        }
+        frameDownloadedFence->wait();
+        frameDownloadedFence->reset();
+        downloadSwapchainRender();
+        return;
     }
 
     VkPresentInfoKHR presentInfo = {};
@@ -349,13 +476,49 @@ void Swapchain::renderFrame(const std::vector<sgl::vk::CommandBufferPtr>& comman
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
+void Swapchain::downloadSwapchainRender() {
+    auto* sdlWindow = static_cast<SDLWindow*>(window);
+    auto* cpuSurfaceSdl = reinterpret_cast<SDL_Surface*>(cpuSurface);
+    //auto* cpuSurfaceWriteableSdl = reinterpret_cast<SDL_Surface*>(cpuSurfaceWriteable);
+
+    int width = int(swapchainImageCpu->getImageSettings().width);
+    int height = int(swapchainImageCpu->getImageSettings().height);
+    VkSubresourceLayout subresourceLayout =
+            swapchainImageCpu->getSubresourceLayout(VK_IMAGE_ASPECT_COLOR_BIT);
+
+    auto* mappedData = reinterpret_cast<uint8_t*>(swapchainImageCpu->mapMemory());
+    auto* cpuSurfaceWriteableSdl = SDL_CreateRGBSurfaceFrom(
+            mappedData, width, height, 32, int(subresourceLayout.rowPitch),
+            0x000000FFu, 0x0000FF00u, 0x00FF0000u, 0xFF000000u);
+            //0x000000FFu, 0x0000FF00u, 0x00F0000u, 0xFF000000u);
+    /*SDL_LockSurface(cpuSurfaceWriteableSdl);
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            int writeLocation = (x + y * width) * 4;
+            int readLocation = int(subresourceLayout.offset) + x * 4 + int(subresourceLayout.rowPitch) * y;
+            for (int c = 0; c < 3; c++) {
+                bitmapPixels[writeLocation + c] = mappedData[readLocation + c];
+            }
+            bitmapPixels[writeLocation + 3] = 255;
+        }
+    }
+    SDL_UnlockSurface(cpuSurfaceWriteableSdl);*/
+    SDL_BlitSurface(cpuSurfaceWriteableSdl, NULL, cpuSurfaceSdl, NULL);
+    SDL_FreeSurface(cpuSurfaceWriteableSdl);
+    swapchainImageCpu->unmapMemory();
+    SDL_UpdateWindowSurface(sdlWindow->getSDLWindow());
+}
+
 void Swapchain::cleanupRecreate() {
     vkDeviceWaitIdle(device->getVkDevice());
 
     swapchainFramebuffers.clear();
     swapchainImages.clear();
     swapchainImageViews.clear();
-    vkDestroySwapchainKHR(device->getVkDevice(), swapchain, nullptr);
+    if (swapchain) {
+        vkDestroySwapchainKHR(device->getVkDevice(), swapchain, nullptr);
+        swapchain = {};
+    }
 }
 
 void Swapchain::cleanup() {
