@@ -26,15 +26,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "RemoteUtils.hpp"
+
+#ifdef __linux__
+
 #include <fstream>
 #include <cstdlib>
 #include <dirent.h>
 
 #include <Utils/StringUtils.hpp>
-
-#include "RemoteUtils.hpp"
-
-#ifdef __linux__
 
 /**
  * Returns the PID of a process with the passed name.
