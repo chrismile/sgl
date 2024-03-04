@@ -91,7 +91,10 @@ void Swapchain::create(Window* window) {
             frameDownloadedFence = std::make_shared<Fence>(device);
         }
 
-        createSyncObjects();
+        if (createFirstTime) {
+            createSyncObjects();
+            createFirstTime = false;
+        }
         return;
     }
 
