@@ -29,6 +29,11 @@
 #include <map>
 #include <iostream>
 #include <cstring>
+
+#ifdef __linux__
+#include <dlfcn.h>
+#endif
+
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
 #include "Status.hpp"
@@ -57,7 +62,12 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugCallback(
 Instance::Instance() {
     VkResult result = volkInitialize();
     if (result != VK_SUCCESS) {
+#ifdef __linux__
+        Logfile::get()->throwError(
+                std::string() + "Error in AppSettings::initializeVolk: volkInitialize failed: " + dlerror());
+#else
         Logfile::get()->throwError("Error in AppSettings::initializeVolk: volkInitialize failed.");
+#endif
     }
     instanceVulkanVersion = volkGetInstanceVersion();
 
