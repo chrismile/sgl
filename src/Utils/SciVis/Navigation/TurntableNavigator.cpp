@@ -53,8 +53,9 @@ bool TurntableNavigator::moveCameraMouse(sgl::CameraPtr &camera, float dt) {
         // Zoom in/out.
         if (sgl::Mouse->getScrollWheel() > 0.1 || sgl::Mouse->getScrollWheel() < -0.1) {
             // The scrolling distance depends on the distance between camera and look-at position.
+            float clippedDt = std::min(dt, 1.0f / 30.0f);
             float lookDist = glm::length(camera->getPosition() - camera->getLookAtLocation());
-            float moveAmount = sgl::Mouse->getScrollWheel() * MOVE_SPEED * dt * 80.0f * lookDist;
+            float moveAmount = sgl::Mouse->getScrollWheel() * MOVE_SPEED * clippedDt * 80.0f * lookDist;
             glm::vec3 translation =
                     std::min(moveAmount, lookDist - 1e-3f) * normalize(
                             camera->getLookAtLocation() - camera->getPosition());
