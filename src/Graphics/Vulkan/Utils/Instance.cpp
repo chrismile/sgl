@@ -88,21 +88,23 @@ Instance::~Instance() {
 
 void Instance::createInstance(std::vector<const char*> instanceExtensionNames, bool _useValidationLayer) {
     useValidationLayer = _useValidationLayer;
-    printAvailableInstanceExtensionList();
+    if (isFirstCreationRun) {
+        printAvailableInstanceExtensionList();
 
 #ifdef __APPLE__
-    instanceExtensionNames.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+        instanceExtensionNames.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 #endif
 
-    std::string instanceExtensionString;
-    for (size_t i = 0; i < instanceExtensionNames.size(); i++) {
-        instanceExtensionString += instanceExtensionNames.at(i);
-        if (i != instanceExtensionNames.size() - 1) {
-            instanceExtensionString += ", ";
+        std::string instanceExtensionString;
+        for (size_t i = 0; i < instanceExtensionNames.size(); i++) {
+            instanceExtensionString += instanceExtensionNames.at(i);
+            if (i != instanceExtensionNames.size() - 1) {
+                instanceExtensionString += ", ";
+            }
         }
+        sgl::Logfile::get()->write(
+                std::string() + "Used Vulkan instance extensions: " + instanceExtensionString, BLUE);
     }
-    sgl::Logfile::get()->write(
-            std::string() + "Used Vulkan instance extensions: " + instanceExtensionString, BLUE);
 
     appInfo = { };
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -128,7 +130,7 @@ void Instance::createInstance(std::vector<const char*> instanceExtensionNames, b
             instanceExtensionNames.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         }
     }
-    if (instanceVulkanVersion > VK_MAKE_API_VERSION(0, 1, 1, 0)) {
+    if (isFirstCreationRun && instanceVulkanVersion > VK_MAKE_API_VERSION(0, 1, 1, 0)) {
         instanceExtensionNames.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
 
@@ -153,6 +155,7 @@ void Instance::createInstance(std::vector<const char*> instanceExtensionNames, b
         validationFeatures.pEnabledValidationFeatures = &validationFeatureDebugPrintf;
         instanceInfo.pNext = &validationFeatures;
     }
+    isFirstCreationRun = false;
 
     VkResult res = vkCreateInstance(&instanceInfo, nullptr, &instance);
     if (res == VK_ERROR_EXTENSION_NOT_PRESENT) {
@@ -206,9 +209,22 @@ void Instance::createInstance(std::vector<const char*> instanceExtensionNames, b
                 availableEnabledLayerNames += ", ";
             }
         }
-        sgl::Logfile::get()->throwError(
-                std::string() + "Error in Instance::createInstance: Cannot find a specified layer. Enabled layers: "
-                + enabledLayerNames + ". Available enabled layers: " + availableEnabledLayerNames);
+
+        // On RHEL 8.6, the validation layer cannot be loaded due to the .so file being built with too new libc symbols.
+        if (enabledLayerNames == availableEnabledLayerNames && enabledLayerNames == "VK_LAYER_KHRONOS_validation") {
+            sgl::Logfile::get()->write(
+                    "Instance::createInstance: Disabling validation layer, as VK_LAYER_KHRONOS_validation is not "
+                    "available (probably due to undefined symbols in the library).", BLACK);
+            instanceExtensionNames.erase(
+                    std::remove(instanceExtensionNames.begin(), instanceExtensionNames.end(), VK_EXT_DEBUG_UTILS_EXTENSION_NAME),
+                    instanceExtensionNames.end());
+            createInstance(instanceExtensionNames, false);
+            return;
+        } else {
+            sgl::Logfile::get()->throwError(
+                    std::string() + "Error in Instance::createInstance: Cannot find a specified layer. Enabled layers: "
+                    + enabledLayerNames + ". Available enabled layers: " + availableEnabledLayerNames);
+        }
     } else if (res != VK_SUCCESS) {
         sgl::Logfile::get()->throwError(
                 std::string() + "Error in Instance::createInstance: Failed to create a Vulkan instance ("

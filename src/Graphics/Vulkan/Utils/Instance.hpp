@@ -94,6 +94,7 @@ private:
     uint32_t instanceVulkanVersion = VK_API_VERSION_1_0;
     VkApplicationInfo appInfo = { };
 
+    bool isFirstCreationRun = true;
     bool useValidationLayer = false;
     bool enableDebugPrintf = false;
     MessageSeverity messageSeverityLevel = MESSAGE_SEVERITY_WARNING;
