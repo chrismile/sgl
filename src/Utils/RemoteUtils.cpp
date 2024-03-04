@@ -35,6 +35,7 @@
 #include <dirent.h>
 
 #include <Utils/StringUtils.hpp>
+#include <Utils/File/Execute.hpp>
 
 /**
  * Returns the PID of a process with the passed name.
@@ -74,13 +75,18 @@ int getProcIdByName(const std::string& procName) {
 }
 
 bool guessUseDownloadSwapchain() {
-    bool useDownloadSwapchain = false;
-    bool x11vncUsed = getProcIdByName("x11vnc") >= 0;
+    // Heuristic #1: xdpyinfo contains the string "VNC" or "vnc".
+    std::string xdpyinfoOutput = sgl::exec("xdpyinfo 2>&1");
+    bool isVncUsed = xdpyinfoOutput.find("vnc") != std::string::npos || xdpyinfoOutput.find("VNC") != std::string::npos;
+
+    // Heuristic #2: A non-standard X11 display is used.
     const char* displayVar = getenv("DISPLAY");
-    if (displayVar && !sgl::startsWith(displayVar, ":0") && !x11vncUsed) {
-        useDownloadSwapchain = true;
-    }
-    return useDownloadSwapchain;
+    bool isNonStandardDisplay = displayVar && !sgl::startsWith(displayVar, ":0");
+
+    // Heuristic #3: x11vnc is not running.
+    bool x11vncUsed = getProcIdByName("x11vnc") >= 0;
+
+    return isVncUsed || (isNonStandardDisplay && !x11vncUsed);
 }
 
 #else
