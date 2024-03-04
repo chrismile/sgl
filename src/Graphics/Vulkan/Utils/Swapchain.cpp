@@ -30,6 +30,8 @@
 #include <set>
 #include <iostream>
 
+#include <boost/algorithm/string/predicate.hpp>
+
 #include <Utils/File/Logfile.hpp>
 #include <Utils/Events/EventManager.hpp>
 
@@ -58,7 +60,24 @@ void Swapchain::create(Window* window) {
     useDownloadSwapchain = sdlWindow->getUseDownloadSwapchain();
     if (useDownloadSwapchain) {
         SDL_Window* sdlWindowData = sdlWindow->getSDLWindow();
+        window->errorCheck();
         cpuSurface = (void*)SDL_GetWindowSurface(sdlWindowData);
+        if (createFirstTime) {
+            /*
+             * For some reason, this triggers SDL_Unsupported when called for the first time on a system using xrdp.
+             * I tried not calling SDL_GetWindowSurface after initial window creation, but then no resize events are triggered.
+             * SDL_HasWindowSurface in case of SDL_VERSION_ATLEAST(2, 28, 0) should thus also not help in this use-case.
+             */
+            while (SDL_GetError()[0] != '\0') {
+                std::string errorString = SDL_GetError();
+                bool openMessageBox = true;
+                if (boost::contains(errorString, "That operation is not supported")) {
+                    openMessageBox = false;
+                }
+                Logfile::get()->writeError(std::string() + "SDL error: " + errorString, openMessageBox);
+                SDL_ClearError();
+            }
+        }
         swapchainExtent = { uint32_t(sdlWindow->getWidth()), uint32_t(sdlWindow->getHeight()) };
         swapchainImageFormat = VK_FORMAT_R8G8B8A8_UNORM;
         minImageCount = 1;
