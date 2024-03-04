@@ -309,6 +309,7 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
         }
     }
     if (renderSystem == RenderSystem::VULKAN && windowSettings.useDownloadSwapchain) {
+        sgl::Logfile::get()->write("Using Vulkan download swapchain (i.e., manual copy to window).", sgl::BLUE);
         sgl::vk::Instance* instance = sgl::AppSettings::get()->getVulkanInstance();
         instance->createInstance({}, windowSettings.debugContext);
     }
