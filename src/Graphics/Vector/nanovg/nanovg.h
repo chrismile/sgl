@@ -17,6 +17,7 @@
 //
 
 // Change by Christoph Neuhauser (2023-01-20): Added DLL_OBJECT for exporting function symbols on Windows.
+// Change by Christoph Neuhauser (2024-03-07): Added option to update images from OpenGL and Vulkan memory.
 
 #ifndef NANOVG_H
 #define NANOVG_H
@@ -390,6 +391,10 @@ DLL_OBJECT void nvgImageSize(NVGcontext* ctx, int image, int* w, int* h);
 // Deletes created image.
 DLL_OBJECT void nvgDeleteImage(NVGcontext* ctx, int image);
 
+// Creates image by importing a graphics API-specific object (an OpenGL texture or a Vulkan image view).
+// Returns handle to the image.
+DLL_OBJECT int nvgImportImage(NVGcontext* ctx, int w, int h, int imageFlags, void* deviceData);
+
 //
 // Paints
 //
@@ -666,7 +671,8 @@ struct NVGparams {
 	int (*renderCreateTexture)(void* uptr, int type, int w, int h, int imageFlags, const unsigned char* data);
 	int (*renderDeleteTexture)(void* uptr, int image);
 	int (*renderUpdateTexture)(void* uptr, int image, int x, int y, int w, int h, const unsigned char* data);
-	int (*renderGetTextureSize)(void* uptr, int image, int* w, int* h);
+    int (*renderGetTextureSize)(void* uptr, int image, int* w, int* h);
+    int (*renderImportTexture)(void* uptr, int type, int w, int h, int imageFlags, void* deviceData);
 	void (*renderViewport)(void* uptr, float width, float height, float devicePixelRatio);
 	void (*renderCancel)(void* uptr);
 	void (*renderFlush)(void* uptr);

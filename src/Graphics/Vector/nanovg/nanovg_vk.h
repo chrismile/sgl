@@ -1816,6 +1816,7 @@ NVGcontext *nvgCreateVk(VKNVGCreateInfo createInfo, int flags, VkQueue queue) {
   params.renderDeleteTexture = vknvg_renderDeleteTexture;
   params.renderUpdateTexture = vknvg_renderUpdateTexture;
   params.renderGetTextureSize = vknvg_renderGetTextureSize;
+  params.renderImportTexture = {}; // TODO, implement.
   params.renderViewport = vknvg_renderViewport;
   params.renderCancel = vknvg_renderCancel;
   params.renderFlush = vknvg_renderFlush;

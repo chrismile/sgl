@@ -113,7 +113,7 @@ public:
     std::pair<uint32_t, uint32_t> getBlitTargetSize();
 
     // public only for VectorBackend subclasses.
-    void onWindowSizeChanged();
+    virtual void onWindowSizeChanged();
     void setSupersamplingFactor(int _supersamplingFactor, bool recomputeWindowSize = true);
 
     /// Must be called for Vulkan backend before @see onWindowSizeChanged to make sure textures are no longer in use.
@@ -168,6 +168,10 @@ protected:
 
     VectorBackend* vectorBackend = nullptr;
 
+#ifdef SUPPORT_VULKAN
+    vk::Renderer* rendererVk = nullptr;
+#endif
+
 private:
     bool initialized = false;
     bool shallClearBeforeRender = true;
@@ -187,7 +191,6 @@ private:
 #endif
 
 #ifdef SUPPORT_VULKAN
-    vk::Renderer* rendererVk = nullptr;
     vk::ImageViewPtr renderTargetImageViewVk;
     vk::TexturePtr renderTargetTextureVk;
 

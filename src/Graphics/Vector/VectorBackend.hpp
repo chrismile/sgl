@@ -60,6 +60,14 @@ class PropertyEditor;
 class VectorBackend;
 class VectorWidget;
 
+#if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
+struct DLL_OBJECT VectorBackendTextureInteropInfo {
+    sgl::TexturePtr texture;
+    VkImageLayout srcLayout;
+    VkImageLayout dstLayout;
+};
+#endif
+
 /**
  * Render system vs. render backend:
  * A different backend than the render system can be used.
@@ -90,6 +98,10 @@ public:
     virtual void onRenderFinished() {}
     virtual bool renderGuiPropertyEditor(sgl::PropertyEditor& propertyEditor) { return false; }
     virtual void copyVectorBackendSettingsFrom(VectorBackend* backend)=0;
+#if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
+    // Adds OpenGL image to backend (only valid for the current frame).
+    virtual void addImageGl(const sgl::TexturePtr& texture, VkImageLayout srcLayout, VkImageLayout dstLayout) {}
+#endif
 
     [[nodiscard]] RenderSystem getRenderBackend() const { return renderBackend; }
 

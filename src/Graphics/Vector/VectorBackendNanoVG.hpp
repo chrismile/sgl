@@ -100,6 +100,10 @@ public:
     void renderEnd() override;
     bool renderGuiPropertyEditor(sgl::PropertyEditor& propertyEditor) override;
     void copyVectorBackendSettingsFrom(VectorBackend* backend) override;
+#if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
+    // Adds OpenGL image to backend (only valid for the current frame).
+    void addImageGl(const sgl::TexturePtr& texture, VkImageLayout srcLayout, VkImageLayout dstLayout) override;
+#endif
 
     [[nodiscard]] inline NVGcontext* getContext() { return vg; }
 
@@ -129,6 +133,7 @@ private:
 #if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
     std::vector<sgl::vk::CommandBufferPtr> commandBuffersPost;
     sgl::InteropSyncVkGlPtr interopSyncVkGl;
+    std::vector<VectorBackendTextureInteropInfo> interopTextures;
 #endif
 };
 

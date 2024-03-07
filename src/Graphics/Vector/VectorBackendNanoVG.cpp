@@ -312,6 +312,25 @@ void VectorBackendNanoVG::onResize() {
 #endif
 }
 
+#if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
+void VectorBackendNanoVG::addImageGl(const sgl::TexturePtr& texture, VkImageLayout srcLayout, VkImageLayout dstLayout) {
+    interopTextures.push_back({ texture, srcLayout, dstLayout });
+}
+
+inline GLenum vulkanToOglImageLayout(VkImageLayout layout) {
+    if (layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+        return GL_LAYOUT_COLOR_ATTACHMENT_EXT;
+    } else if (layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+        return GL_LAYOUT_SHADER_READ_ONLY_EXT;
+    } else if (layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
+        return GL_LAYOUT_TRANSFER_SRC_EXT;
+    } else if (layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+        return GL_LAYOUT_TRANSFER_DST_EXT;
+    }
+    return GL_LAYOUT_GENERAL_EXT;
+}
+#endif
+
 void VectorBackendNanoVG::renderStart() {
     if (!initialized) {
         initialize();
@@ -347,7 +366,19 @@ void VectorBackendNanoVG::renderStart() {
             commandBufferPre->pushSignalSemaphore(interopSyncVkGl->getRenderReadySemaphore());
             rendererVk->endCommandBuffer();
             rendererVk->submitToQueue();
-            interopSyncVkGl->getRenderReadySemaphore()->waitSemaphoreGl(renderTargetGl, srcLayout);
+            if (interopTextures.empty()) {
+                interopSyncVkGl->getRenderReadySemaphore()->waitSemaphoreGl(renderTargetGl, srcLayout);
+            } else {
+                std::vector<sgl::TexturePtr> textures;
+                std::vector<GLenum> srcLayouts;
+                textures.push_back(renderTargetGl);
+                srcLayouts.push_back(srcLayout);
+                for (auto& texEntry : interopTextures) {
+                    textures.push_back(texEntry.texture);
+                    srcLayouts.push_back(vulkanToOglImageLayout(texEntry.srcLayout));
+                }
+                interopSyncVkGl->getRenderReadySemaphore()->waitSemaphoreGl(textures, srcLayouts);
+            }
 
             vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
             sgl::vk::CommandBufferPtr commandBufferPost =
@@ -441,7 +472,19 @@ void VectorBackendNanoVG::renderEnd() {
         } else if (renderTargetImageViewVk->getImage()->getVkImageLayout() == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
             dstLayout = GL_LAYOUT_TRANSFER_DST_EXT;
         }
-        interopSyncVkGl->getRenderFinishedSemaphore()->signalSemaphoreGl(renderTargetGl, dstLayout);
+        if (interopTextures.empty()) {
+            interopSyncVkGl->getRenderFinishedSemaphore()->signalSemaphoreGl(renderTargetGl, dstLayout);
+        } else {
+            std::vector<sgl::TexturePtr> textures;
+            std::vector<GLenum> dstLayouts;
+            textures.push_back(renderTargetGl);
+            dstLayouts.push_back(dstLayout);
+            for (auto& texEntry : interopTextures) {
+                textures.push_back(texEntry.texture);
+                dstLayouts.push_back(vulkanToOglImageLayout(texEntry.dstLayout));
+            }
+            interopSyncVkGl->getRenderFinishedSemaphore()->signalSemaphoreGl(textures, dstLayouts);
+        }
         // 2023-01-22: With the Intel driver contained in Mesa 22.0.5, the synchronization didn't work as expected.
         if (device->getDeviceDriverId() == VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA) {
             glFinish();
@@ -465,6 +508,10 @@ void VectorBackendNanoVG::renderEnd() {
         vkCmdEndRenderPass(commandBuffer);
         rendererVk->clearGraphicsPipeline();
     }
+#endif
+
+#if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
+    interopTextures.clear();
 #endif
 }
 
