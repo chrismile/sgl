@@ -26,7 +26,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <iostream>
 #include <algorithm>
 
 #include <ImGui/ImGuiWrapper.hpp>
@@ -44,6 +43,7 @@ float ColorLegendWidget::fontScaleResetValue = ColorLegendWidget::fontScaleStand
 float ColorLegendWidget::fontScale = fontScaleStandard;
 float ColorLegendWidget::textRegionWidthStandard = -1;
 float ColorLegendWidget::textRegionWidth = textRegionWidthStandard;
+bool ColorLegendWidget::showBackground = true;
 
 ColorLegendWidget::ColorLegendWidget() {
     if (regionHeightStandard == -1) {
@@ -102,8 +102,8 @@ void ColorLegendWidget::renderGui() {
 
     glm::vec3 clearColorFlt(clearColor.getFloatR(), clearColor.getFloatG(), clearColor.getFloatB());
     glm::vec3 textColorFlt(textColor.getFloatR(), textColor.getFloatG(), textColor.getFloatB());
-    glm::vec3 bgColor = glm::mix(clearColorFlt, textColorFlt, 0.1);
-    ImVec4 bgColorImGui = ImVec4(bgColor.r, bgColor.g, bgColor.b, 0.7f);
+    glm::vec3 bgColor = glm::mix(clearColorFlt, textColorFlt, 0.1f);
+    ImVec4 bgColorImGui = ImVec4(bgColor.r, bgColor.g, bgColor.b, showBackground ? 0.7f : 0.0f);
     ImGui::PushStyleColor(ImGuiCol_WindowBg, bgColorImGui);
     bool showContent = true;
     if (!useDockSpaceMode) {
@@ -123,12 +123,12 @@ void ColorLegendWidget::renderGui() {
             startPos = ImVec2(windowPos.x - cursorPos.x + startPos.x, windowPos.y - cursorPos.y + startPos.y);
         }
 
-        if (useDockSpaceMode) {
+        if (useDockSpaceMode && showBackground) {
             ImVec2 bgPos = ImVec2(startPos.x - contentOffset, startPos.y - contentOffset);
             drawList->AddRectFilled(
                     bgPos, ImVec2(bgPos.x + windowSize.x, bgPos.y + windowSize.y),
                     ImColor(bgColorImGui), 1.0f);
-            ImColor borderColor = ImColor(ImGui::GetStyleColorVec4(ImGuiCol_Border));
+            auto borderColor = ImColor(ImGui::GetStyleColorVec4(ImGuiCol_Border));
             drawList->AddRect(
                     bgPos, ImVec2(bgPos.x + windowSize.x, bgPos.y + windowSize.y),
                     borderColor, 3.0f);

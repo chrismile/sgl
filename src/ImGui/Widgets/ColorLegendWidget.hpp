@@ -70,6 +70,14 @@ public:
         ColorLegendWidget::textRegionWidth = textRegionWidthStandard;
     }
 
+    // Whether to render a translucent background rectangle.
+    [[nodiscard]] static bool getShowBackground() {
+        return ColorLegendWidget::showBackground;
+    }
+    static void setShowBackground(bool _showBackground) {
+        ColorLegendWidget::showBackground = _showBackground;
+    }
+
 private:
     int positionIndex = 0; ///< When placing many widgets next to each other.
     int numPositionsTotal = 1; ///< When placing many widgets next to each other.
@@ -89,6 +97,7 @@ private:
     static float fontScale;
     static float textRegionWidthStandard;
     static float textRegionWidth;
+    static bool showBackground;
 };
 
 }
