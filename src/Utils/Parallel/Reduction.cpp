@@ -35,6 +35,7 @@
 #include <tbb/blocked_range.h>
 #endif
 
+#include <Math/Geometry/AABB2.hpp>
 #include <Math/Geometry/AABB3.hpp>
 #include "Reduction.hpp"
 
@@ -167,6 +168,51 @@ std::pair<float, float> reduceUnormShortArrayMinMax(
         maxValue = std::max(maxValue, val);
     }
     return std::make_pair(minValue, maxValue);
+
+#endif
+}
+
+sgl::AABB2 reduceVec2ArrayAabb(const std::vector<glm::vec2>& positions) {
+#ifdef USE_TBB
+
+    return tbb::parallel_reduce(
+            tbb::blocked_range<size_t>(0, positions.size()), sgl::AABB2(),
+            [&positions](tbb::blocked_range<size_t> const& r, sgl::AABB2 init) {
+                for (auto i = r.begin(); i != r.end(); i++) {
+                    const glm::vec2& pt = positions.at(i);
+                    init.min.x = std::min(init.min.x, pt.x);
+                    init.min.y = std::min(init.min.y, pt.y);
+                    init.max.x = std::max(init.max.x, pt.x);
+                    init.max.y = std::max(init.max.y, pt.y);
+                }
+                return init;
+            },
+            [&](sgl::AABB2 lhs, sgl::AABB2 rhs) -> sgl::AABB2 {
+                lhs.combine(rhs);
+                return lhs;
+            });
+
+#else
+
+    float minX, minY, maxX, maxY;
+    minX = minY = std::numeric_limits<float>::max();
+    maxX = maxY = std::numeric_limits<float>::lowest();
+    size_t n = positions.size();
+#if _OPENMP >= 201107
+    #pragma omp parallel for shared(positions, n) default(none) reduction(min: minX) reduction(min: minY) \
+    reduction(max: maxX) reduction(max: maxY)
+#endif
+    for (size_t i = 0; i < n; i++) {
+        const glm::vec2& pt = positions.at(i);
+        minX = std::min(minX, pt.x);
+        minY = std::min(minY, pt.y);
+        maxX = std::max(maxX, pt.x);
+        maxY = std::max(maxY, pt.y);
+    }
+    sgl::AABB2 aabb;
+    aabb.min = glm::vec2(minX, minY);
+    aabb.max = glm::vec2(maxX, maxY);
+    return aabb;
 
 #endif
 }

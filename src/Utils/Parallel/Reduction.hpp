@@ -31,10 +31,12 @@
 
 #include <vector>
 #include <map>
+#include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 
 namespace sgl {
 
+class AABB2;
 class AABB3;
 
 /*
@@ -69,8 +71,9 @@ inline std::pair<float, float> reduceUnormShortArrayMinMax(const uint16_t* value
 }
 
 /*
- * Functions for the parallel min-max reduction of a vec3 array.
+ * Functions for the parallel min-max reduction of vec2 and vec3 array.
  */
+DLL_OBJECT sgl::AABB2 reduceVec2ArrayAabb(const std::vector<glm::vec2>& positions);
 DLL_OBJECT sgl::AABB3 reduceVec3ArrayAabb(const std::vector<glm::vec3>& positions);
 DLL_OBJECT std::pair<float, float> reductionFunctionFloatMinMax(
         std::pair<float, float> lhs, std::pair<float, float> rhs);
