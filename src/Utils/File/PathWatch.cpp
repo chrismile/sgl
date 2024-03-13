@@ -75,10 +75,12 @@ void PathWatch::initialize() {
                 "Error in PathWatch::initialize: inotify_add_watch (parent) for '" + parentDirectoryPath
                 + "' returned errno " + std::to_string(errno) + ": " + strerror(errno));
     }
-    data->pathWatchDesc = inotify_add_watch(
-            data->inotifyFileDesc, path.c_str(),
-            IN_CREATE | IN_DELETE | IN_DELETE_SELF | IN_MOVED_TO | IN_MOVED_FROM);
-    if (data->pathWatchDesc == -1) {
+    uint32_t flags = IN_CREATE | IN_DELETE | IN_DELETE_SELF | IN_MOVED_TO | IN_MOVED_FROM;
+    if (!isFolder) {
+        flags |= IN_MODIFY;
+    }
+    data->pathWatchDesc = inotify_add_watch(data->inotifyFileDesc, path.c_str(), flags);
+    if (data->pathWatchDesc == -1 && (isFolder || errno != ENOENT)) {
         sgl::Logfile::get()->writeError(
                 "Error in PathWatch::initialize: inotify_add_watch (path) for '" + path
                 + "' returned errno " + std::to_string(errno) + ": " + strerror(errno));
@@ -186,10 +188,12 @@ void PathWatch::update(std::function<void()> pathChangedCallback) {
                                     return;
                                 }
                             }
-                            data->pathWatchDesc = inotify_add_watch(
-                                    data->inotifyFileDesc, path.c_str(),
-                                    IN_CREATE | IN_DELETE | IN_DELETE_SELF | IN_MOVED_TO | IN_MOVED_FROM);
-                            if (data->pathWatchDesc == -1) {
+                            uint32_t flags = IN_CREATE | IN_DELETE | IN_DELETE_SELF | IN_MOVED_TO | IN_MOVED_FROM;
+                            if (!isFolder) {
+                                flags |= IN_MODIFY;
+                            }
+                            data->pathWatchDesc = inotify_add_watch(data->inotifyFileDesc, path.c_str(), flags);
+                            if (data->pathWatchDesc == -1 && (isFolder || errno != ENOENT)) {
                                 sgl::Logfile::get()->writeError(
                                         "Error in PathWatch::update: inotify_add_watch returned errno "
                                         + std::to_string(errno) + ": " + strerror(errno));
