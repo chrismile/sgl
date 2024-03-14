@@ -281,7 +281,7 @@ void PathWatch::initialize() {
         exit(GetLastError());
     }
 
-    if (sgl::FileUtils::get()->exists(path)) {
+    if (isFolder && sgl::FileUtils::get()->exists(path)) {
         data->pathHandle = ::CreateFileA(
                 path.c_str(), FILE_LIST_DIRECTORY,
                 FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr,
@@ -363,7 +363,7 @@ void PathWatch::update(std::function<void()> pathChangedCallback) {
                             data->pathHandle = INVALID_HANDLE_VALUE;
                             ResetEvent(data->pathOvl.hEvent);
                         }
-                        if (sgl::FileUtils::get()->exists(path)) {
+                        if (isFolder && sgl::FileUtils::get()->exists(path)) {
                             data->pathHandle = ::CreateFileA(
                                     path.c_str(), FILE_LIST_DIRECTORY,
                                     FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr,
@@ -469,9 +469,11 @@ void PathWatch::initialize() {
     data = new PathWatchImplData;
     data->parentChangeHandle = FindFirstChangeNotification(
             parentDirectoryPath.c_str(), FALSE, FILE_NOTIFY_CHANGE_DIR_NAME);
-    data->pathChangeHandle = FindFirstChangeNotification(
-            path.c_str(), FALSE,
-            FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_LAST_WRITE);
+    if (isFolder) {
+        data->pathChangeHandle = FindFirstChangeNotification(
+                path.c_str(), FALSE,
+                FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_LAST_WRITE);
+    }
 }
 
 void PathWatch::_freeInternal() {
@@ -513,7 +515,7 @@ void PathWatch::update(std::function<void()> pathChangedCallback) {
                 FindCloseChangeNotification(data->pathChangeHandle);
                 data->pathChangeHandle = nullptr;
             }
-            if (sgl::FileUtils::get()->exists(path)) {
+            if (isFolder && sgl::FileUtils::get()->exists(path)) {
                 data->pathChangeHandle = FindFirstChangeNotification(
                         path.c_str(), FALSE,
                         FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_LAST_WRITE);
