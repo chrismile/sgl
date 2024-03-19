@@ -35,6 +35,7 @@
 #include <tbb/blocked_range.h>
 #endif
 
+#include <Math/half/half.hpp>
 #include <Math/Geometry/AABB2.hpp>
 #include <Math/Geometry/AABB3.hpp>
 #include "Reduction.hpp"
@@ -147,7 +148,7 @@ std::pair<float, float> reduceUnormShortArrayMinMax(
             tbb::blocked_range<size_t>(0, N), init,
             [&values](tbb::blocked_range<size_t> const& r, std::pair<float, float> init) {
                 for (auto i = r.begin(); i != r.end(); i++) {
-                    float value = float(values[i]) / 255.0f;
+                    float value = float(values[i]) / 65535.0f;
                     init.first = std::min(init.first, value);
                     init.second = std::max(init.second, value);
                 }
@@ -159,11 +160,44 @@ std::pair<float, float> reduceUnormShortArrayMinMax(
     float minValue = std::numeric_limits<float>::max();
     float maxValue = std::numeric_limits<float>::lowest();
 #if _OPENMP >= 201107
-#pragma omp parallel for shared(values, N) reduction(min: minValue) reduction(max: maxValue) \
+    #pragma omp parallel for shared(values, N) reduction(min: minValue) reduction(max: maxValue) \
     default(none)
 #endif
     for (size_t i = 0; i < N; i++) {
         float val = float(values[i]) / 65535.0f;
+        minValue = std::min(minValue, val);
+        maxValue = std::max(maxValue, val);
+    }
+    return std::make_pair(minValue, maxValue);
+
+#endif
+}
+
+std::pair<float, float> reduceHalfFloatArrayMinMax(
+        const HalfFloat* values, size_t N, std::pair<float, float> init) {
+#ifdef USE_TBB
+
+    return tbb::parallel_reduce(
+            tbb::blocked_range<size_t>(0, N), init,
+            [&values](tbb::blocked_range<size_t> const& r, std::pair<float, float> init) {
+                for (auto i = r.begin(); i != r.end(); i++) {
+                    auto value = float(values[i]);
+                    init.first = std::min(init.first, value);
+                    init.second = std::max(init.second, value);
+                }
+                return init;
+            }, &reductionFunctionFloatMinMax);
+
+#else
+
+    float minValue = std::numeric_limits<float>::max();
+    float maxValue = std::numeric_limits<float>::lowest();
+#if _OPENMP >= 201107
+    #pragma omp parallel for shared(values, N) reduction(min: minValue) reduction(max: maxValue) \
+    default(none)
+#endif
+    for (size_t i = 0; i < N; i++) {
+        auto val = float(values[i]);
         minValue = std::min(minValue, val);
         maxValue = std::max(maxValue, val);
     }

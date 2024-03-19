@@ -940,7 +940,7 @@ endif()
 install(
         DIRECTORY ${CMAKE_SOURCE_DIR}/src/
         DESTINATION include/sgl
-        FILES_MATCHING PATTERN "*.h*"
+        FILES_MATCHING PATTERN "*.h*" PATTERN "*.inl"
 )
 
 include(CMakePackageConfigHelpers)

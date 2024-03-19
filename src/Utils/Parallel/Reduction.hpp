@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2022, Christoph Neuhauser
+ * Copyright (c) 2022-2024, Christoph Neuhauser
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,6 +33,8 @@
 #include <map>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
+
+class HalfFloat;
 
 namespace sgl {
 
@@ -67,6 +69,14 @@ DLL_OBJECT std::pair<float, float> reduceUnormShortArrayMinMax(
         const uint16_t* values, size_t N, std::pair<float, float> init);
 inline std::pair<float, float> reduceUnormShortArrayMinMax(const uint16_t* values, size_t N) {
     return reduceUnormShortArrayMinMax(
+            values, N, std::make_pair(std::numeric_limits<float>::max(), std::numeric_limits<float>::lowest()));
+}
+
+// For half float / float16 data.
+DLL_OBJECT std::pair<float, float> reduceHalfFloatArrayMinMax(
+        const HalfFloat* values, size_t N, std::pair<float, float> init);
+inline std::pair<float, float> reduceHalfFloatArrayMinMax(const HalfFloat* values, size_t N) {
+    return reduceHalfFloatArrayMinMax(
             values, N, std::make_pair(std::numeric_limits<float>::max(), std::numeric_limits<float>::lowest()));
 }
 

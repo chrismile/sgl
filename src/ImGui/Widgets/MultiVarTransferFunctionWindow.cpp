@@ -1113,6 +1113,15 @@ void MultiVarTransferFunctionWindow::setIsSelectedRangeFixed(int varIdx, bool _i
     guiVarData.at(varIdx).setIsSelectedRangeFixed(_isSelectedRangeFixed);
 }
 
+bool MultiVarTransferFunctionWindow::loadFunctionFromFile(int varIdx, const std::string& filename) {
+    if (size_t(varIdx) >= guiVarData.size()) {
+        sgl::Logfile::get()->writeError(
+                "MultiVarTransferFunctionWindow::loadFunctionFromFile: varIdx >= guiVarData.size()");
+        return false;
+    }
+    GuiVarData& varData = guiVarData.at(varIdx);
+    return varData.loadTfFromFile(filename);
+}
 
 bool MultiVarTransferFunctionWindow::loadFromTfNameList(const std::vector<std::string>& tfNames) {
     if (tfNames.size() != guiVarData.size()) {
@@ -1121,11 +1130,14 @@ bool MultiVarTransferFunctionWindow::loadFromTfNameList(const std::vector<std::s
         return false;
     }
 
+    bool succeeded = true;
     for (size_t varIdx = 0; varIdx < tfNames.size(); varIdx++) {
         GuiVarData& varData = guiVarData.at(varIdx);
-        varData.loadTfFromFile(saveDirectory + tfNames.at(varIdx));
+        if (!varData.loadTfFromFile(saveDirectory + tfNames.at(varIdx))) {
+            succeeded = false;
+        }
     }
-    return true;
+    return succeeded;
 }
 
 std::string MultiVarTransferFunctionWindow::serializeXmlString(int varIdx) {

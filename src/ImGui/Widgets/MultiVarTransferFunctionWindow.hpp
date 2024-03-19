@@ -207,8 +207,7 @@ public:
         requestHistogramCallback = std::move(callback);
     }
 
-    //bool saveCurrentVarTfToFile(const std::string& filename);
-    //bool loadTfFromFile(int varIdx, const std::string& filename);
+    bool loadFunctionFromFile(int varIdx, const std::string& filename);
     bool loadFromTfNameList(const std::vector<std::string> &tfNames);
     std::string serializeXmlString(int varIdx);
     bool deserializeXmlString(int varIdx, const std::string &xmlString);
