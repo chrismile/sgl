@@ -27,7 +27,9 @@
  */
 
 #include "nanovg/nanovg.h"
+#include "nanovg/nanovg_shared.h"
 
+#include <Math/Geometry/AABB2.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <ImGui/Widgets/PropertyEditor.hpp>
 
