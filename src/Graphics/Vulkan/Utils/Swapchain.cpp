@@ -53,7 +53,10 @@ Swapchain::~Swapchain() {
 
 void Swapchain::create(Window* window) {
     this->window = window;
-    VkSurfaceKHR surface = window->getVkSurface();
+    VkSurfaceKHR surface = {};
+    if (window) {
+        surface = window->getVkSurface();
+    }
     WindowSettings windowSettings = window->getWindowSettings();
 
     auto* sdlWindow = static_cast<SDLWindow*>(window);
@@ -555,6 +558,9 @@ void Swapchain::cleanup() {
 
 SwapchainSupportInfo querySwapchainSupportInfo(VkPhysicalDevice device, VkSurfaceKHR surface, Window* window) {
     SwapchainSupportInfo swapchainSupportInfo;
+    if (!surface) {
+        sgl::Logfile::get()->throwError("Error in querySwapchainSupportInfo: VkSurfaceKHR object is null.");
+    }
 
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &swapchainSupportInfo.capabilities);
 	if (window) {
