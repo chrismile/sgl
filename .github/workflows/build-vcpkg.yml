@@ -46,6 +46,8 @@ jobs:
         submodules: true
 
     - uses: lukka/get-cmake@latest
+      with:
+        cmakeVersion: 3.29.0
 
     - name: Install Vulkan SDK
       shell: bash
@@ -111,7 +113,7 @@ jobs:
       uses: lukka/run-vcpkg@v11
       with:
         vcpkgGitURL: 'https://github.com/chrismile/vcpkg.git'
-        vcpkgGitCommitId: '3a0b82e69003f3839e9eef842a64354492a2babe'
+        vcpkgGitCommitId: '63c165feef88e2fcfef8491619e7fe4ceded470c'
         doNotCacheOnWorkflowFailure: true
 
     - name: Create custom vcpkg triplet
