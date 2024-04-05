@@ -132,6 +132,13 @@ public:
     inline SettingsFile &getSettings() { return settings; }
 
     /**
+     * Sets the description of the functionality of the application.#
+     * This is used, e.g., on Linux for adding a desktop entry.
+     * @param description The description of the functionality of the application.
+     */
+    void setApplicationDescription(const std::string& description);
+
+    /**
      * Sets the icon to use, e.g., for the application window.
      * On Linux, this also creates an entry in the directory ~/.local/share/applications.
      * @param iconPath The path (local or global) to the application icon.
@@ -234,6 +241,7 @@ private:
     RenderSystem renderSystem = RenderSystem::OPENGL;
     OperatingSystem operatingSystem;
     Window* mainWindow = nullptr;
+    std::string applicationDescription;
 
 #ifdef SUPPORT_OPENGL
     sgl::OffscreenContext* offscreenContext = nullptr;

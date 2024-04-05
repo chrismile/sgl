@@ -138,6 +138,8 @@ AppSettings::AppSettings() {
 #ifdef MACOSX
     operatingSystem = OperatingSystem::MACOSX;
 #endif
+
+    applicationDescription = "An application using the library sgl";
 }
 
 // Load the settings from the configuration file
@@ -200,6 +202,10 @@ void AppSettings::initializeDataDirectory() {
     }
 }
 
+void AppSettings::setApplicationDescription(const std::string& description) {
+    applicationDescription = description;
+}
+
 void AppSettings::loadApplicationIconFromFile(const std::string& _iconPath) {
     iconPath = _iconPath;
     if (sgl::AppSettings::get()->getOS() == sgl::OperatingSystem::LINUX) {
@@ -210,7 +216,7 @@ void AppSettings::loadApplicationIconFromFile(const std::string& _iconPath) {
         desktopFile << "[Desktop Entry]\n";
         desktopFile << "Name=" << sgl::FileUtils::get()->getAppName() << "\n";
         desktopFile << "Icon=" << iconPathAbsolute << "\n";
-        desktopFile << "Comment=A visualization tool for rendering dense sets of 3D lines\n";
+        desktopFile << "Comment=" << applicationDescription << "\n";
         desktopFile << "Exec=\"" << sgl::FileUtils::get()->getExecutablePath() << "\" %u\n";
         desktopFile << "Path=" << sgl::FileUtils::get()->getExecutableDirectory() << "\n";
         desktopFile << "Version=1.0\n";
