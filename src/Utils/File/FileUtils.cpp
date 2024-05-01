@@ -34,8 +34,10 @@
 
 #define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem/path.hpp>
-#include <boost/filesystem/directory.hpp>
 #include <boost/filesystem/operations.hpp>
+#if __has_include(<boost/filesystem/directory.hpp>)
+#include <boost/filesystem/directory.hpp>
+#endif
 #undef BOOST_NO_CXX11_SCOPED_ENUMS
 
 #ifdef _WIN32
