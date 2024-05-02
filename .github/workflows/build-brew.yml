@@ -117,9 +117,7 @@ jobs:
           fi
         elif [ "$RUNNER_OS" == "macOS" ]; then
           source "$HOME/VulkanSDK/$(ls $HOME/VulkanSDK)/setup-env.sh"
-          params+=(-DCMAKE_FIND_USE_CMAKE_SYSTEM_PATH=False -DCMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH=False -DCMAKE_FIND_FRAMEWORK=Last -DCMAKE_FIND_APPBUNDLE=Never)
-          # -DZLIB_ROOT="/usr/local/opt/zlib"
-          params+=(-DZLIB_ROOT="$(brew --prefix)/opt/zlib")
+          params+=(-DCMAKE_FIND_USE_CMAKE_SYSTEM_PATH=False -DCMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH=False -DCMAKE_FIND_FRAMEWORK=Last -DCMAKE_FIND_APPBUNDLE=Never -DZLIB_ROOT="$(brew --prefix)/opt/zlib")
         fi
         cmake -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_PREFIX_PATH="$(brew --prefix)" "${params[@]}"
 

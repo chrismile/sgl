@@ -256,6 +256,12 @@ else()
     add_library(sgl SHARED ${SOURCES})
 endif()
 
+if (UNIX AND NOT APPLE)
+    # As of 2024-05-02, the following issue appeared on some CI pipeline configurations:
+    # /usr/bin/ld: libsgl.a(imgui_impl_opengl3.cpp.o): undefined reference to symbol 'dlclose@@GLIBC_2.2.5'
+    target_link_libraries(sgl PUBLIC ${CMAKE_DL_LIBS})
+endif()
+
 if (WIN32)
     target_compile_definitions(sgl PRIVATE WIN32)
 endif()
