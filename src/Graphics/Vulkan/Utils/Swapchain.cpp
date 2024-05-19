@@ -141,6 +141,12 @@ void Swapchain::create(Window* window) {
     swapchainExtent = swapchainSupportInfo.capabilities.currentExtent;
     swapchainImageFormat = surfaceFormat.format;
 
+    // On Wayland, the special value 0xFFFFFFFFu is used, as the window will adapt to the arbitrarily used size.
+    if (window && (swapchainExtent.width == 0xFFFFFFFFu || swapchainExtent.height == 0xFFFFFFFFu)) {
+        swapchainExtent.width = uint32_t(window->getWidth());
+        swapchainExtent.height = uint32_t(window->getHeight());
+    }
+
     // vulkan-tutorial.com recommends to use min + 1 (usually triple buffering).
     uint32_t imageCount = swapchainSupportInfo.capabilities.minImageCount + 1;
     const uint32_t maxImageCount = swapchainSupportInfo.capabilities.maxImageCount;
@@ -566,7 +572,11 @@ SwapchainSupportInfo querySwapchainSupportInfo(VkPhysicalDevice device, VkSurfac
 	if (window) {
         while (swapchainSupportInfo.capabilities.currentExtent.width == 0
                 || swapchainSupportInfo.capabilities.currentExtent.height == 0) {
-            vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &swapchainSupportInfo.capabilities);
+            VkResult errorCode = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
+                    device, surface, &swapchainSupportInfo.capabilities);
+            if (errorCode != VK_SUCCESS) {
+                sgl::Logfile::get()->writeError("Error in vkGetPhysicalDeviceSurfaceCapabilitiesKHR.");
+            }
             window->processEvents();
         }
     }

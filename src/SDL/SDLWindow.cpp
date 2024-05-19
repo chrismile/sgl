@@ -361,7 +361,10 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
         // Initialize GLEW
         glewExperimental = GL_TRUE;
         GLenum glewError = glewInit();
-        if (glewError != GLEW_OK) {
+        // NO_GLX_DISPLAY can trigger when using Wayland, but GLEW still seems to work even if not built with EGL support...
+        if (glewError == GLEW_ERROR_NO_GLX_DISPLAY) {
+            Logfile::get()->writeWarning("Warning: GLEW is not built with EGL support.");
+        } else if (glewError != GLEW_OK) {
             Logfile::get()->writeError(std::string() + "Error: SDLWindow::initializeOpenGL: glewInit: " + (char*)glewGetErrorString(glewError));
         }
 
