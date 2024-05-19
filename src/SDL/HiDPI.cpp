@@ -71,6 +71,12 @@ float getScreenScalingX11(Display* display) {
     }
 
     char* resourceString = dyn_XResourceManagerString(display);
+    if (!resourceString) {
+        sgl::Logfile::get()->writeError(
+                "Error in getScreenScalingX11: XResourceManagerString returned that no property exists!");
+        dlclose(libX11so);
+        return 1.0f;
+    }
     dyn_XrmInitialize();
     XrmDatabase database = dyn_XrmGetStringDatabase(resourceString);
 
