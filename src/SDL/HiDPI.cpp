@@ -148,6 +148,18 @@ float getHighDPIScaleFactor() {
         Logfile::get()->writeError(std::string() + "Couldn't get window information: " + SDL_GetError());
     }
 
+#ifdef __linux__
+    if (!scaleFactorSetManually) {
+        const char* gdkScaleVar = getenv("GDK_SCALE");
+        if (gdkScaleVar) {
+            try {
+                scaleFactorHiDPI = std::stof(gdkScaleVar);
+                scaleFactorSetManually = true;
+            } catch(std::invalid_argument& e) {}
+        }
+    }
+#endif
+
     if (!scaleFactorSetManually) {
         // If querying the DPI scaling factor from the OS is not supported, approximate a good screen
         // scaling factor by dividing the vertical dpi (vdpi) of screen #0 by 96.
