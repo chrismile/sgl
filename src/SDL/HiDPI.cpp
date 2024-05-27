@@ -44,7 +44,7 @@ namespace sgl
 {
 
 // Inspired by https://github.com/glfw/glfw/issues/1019
-float getScreenScalingX11(Display* display) {
+bool getScreenScalingX11(Display* display, float& scalingFactor) {
     typedef char* (*PFN_XResourceManagerString)(Display*);
     typedef void (*PFN_XrmInitialize)();
     typedef XrmDatabase (*PFN_XrmGetStringDatabase)(_Xconst char*);
@@ -54,7 +54,7 @@ float getScreenScalingX11(Display* display) {
     void* libX11so = dlopen("libX11.so", RTLD_NOW | RTLD_LOCAL);
     if (!libX11so) {
         sgl::Logfile::get()->writeError("Error in getScreenScalingX11: Could not load libX11.so!");
-        return 1.0f;
+        return false;
     }
 
     auto dyn_XResourceManagerString = PFN_XResourceManagerString(dlsym(libX11so, "XResourceManagerString"));
@@ -67,7 +67,7 @@ float getScreenScalingX11(Display* display) {
             || !dyn_XrmDestroyDatabase) {
         sgl::Logfile::get()->writeError("Error in getScreenScalingX11: Could not load all required functions!");
         dlclose(libX11so);
-        return 1.0f;
+        return false;
     }
 
     char* resourceString = dyn_XResourceManagerString(display);
@@ -75,22 +75,21 @@ float getScreenScalingX11(Display* display) {
         sgl::Logfile::get()->writeError(
                 "Error in getScreenScalingX11: XResourceManagerString returned that no property exists!");
         dlclose(libX11so);
-        return 1.0f;
+        return false;
     }
     dyn_XrmInitialize();
     XrmDatabase database = dyn_XrmGetStringDatabase(resourceString);
 
     XrmValue value;
     char* type = nullptr;
-    float scalingFactor = 1.0f;
+    scalingFactor = 1.0f;
     if (dyn_XrmGetResource(database, "Xft.dpi", "String", &type, &value) && value.addr) {
         scalingFactor = atof(value.addr) / 96.0f;
     }
     dyn_XrmDestroyDatabase(database);
-
     dlclose(libX11so);
 
-    return scalingFactor;
+    return true;
 }
 
 }
@@ -100,11 +99,12 @@ float getScreenScalingX11(Display* display) {
 namespace sgl
 {
 
-float getScreenScalingWindows() {
+bool getScreenScalingWindows(float& scalingFactor) {
     HDC hdcScreen = GetDC(nullptr); // HWND hWnd
     int dpi = GetDeviceCaps(hdcScreen, LOGPIXELSX);
     ReleaseDC(nullptr, hdcScreen);
-    return dpi / 96.0f;
+    scalingFactor = dpi / 96.0f;
+    return true;
 }
 
 }
@@ -121,6 +121,7 @@ float getHighDPIScaleFactor() {
     }
     scaleFactorRetrieved = true;
 
+    bool scaleFactorSetManually = false;
     SDL_Window *window = static_cast<sgl::SDLWindow *>(sgl::AppSettings::get()->getMainWindow())->getSDLWindow();
     SDL_SysWMinfo wminfo;
     SDL_VERSION(&wminfo.version);
@@ -128,43 +129,40 @@ float getHighDPIScaleFactor() {
         switch (wminfo.subsystem) {
             case SDL_SYSWM_X11:
 #if defined(SDL_VIDEO_DRIVER_X11)
-                scaleFactorHiDPI = getScreenScalingX11(wminfo.info.x11.display);
+                scaleFactorSetManually = getScreenScalingX11(wminfo.info.x11.display, scaleFactorHiDPI);
 #endif
                 break;
-            case SDL_SYSWM_COCOA:
-                // Standard DPI is supposedly 72 on macOS, but fonts seem to be too big in this case.
-                if ((SDL_GetWindowFlags(window) & SDL_WINDOW_ALLOW_HIGHDPI) != 0) {
-                    float ddpi = 96, hdpi = 96, vdpi = 96;
-                    if (SDL_GetDisplayDPI(0, &ddpi, &hdpi, &vdpi) == 0) {
-                        Logfile::get()->writeInfo(
-                                std::string() + "getHighDPIScaleFactor: ddpi: " + toString(ddpi)
-                                + ", hdpi: " + toString(hdpi) + ", vdpi: " + toString(vdpi));
-                        return hdpi / 96.0f;
-                    }
-                } else {
-                    return 1.0f;
-                }
             case SDL_SYSWM_WINDOWS:
 #if defined(SDL_VIDEO_DRIVER_WINDOWS)
-                scaleFactorHiDPI = getScreenScalingWindows();
+                scaleFactorSetManually = getScreenScalingWindows(scaleFactorHiDPI);
 #endif
+                break;
             case SDL_SYSWM_WAYLAND:
+            case SDL_SYSWM_COCOA:
             case SDL_SYSWM_ANDROID:
             default:
-                float ddpi = 96, hdpi = 96, vdpi = 96;
-                if (SDL_GetDisplayDPI(0, &ddpi, &hdpi, &vdpi) == 0) {
-                    // If querying the DPI scaling factor from the OS is not supported, approximate a good screen
-                    // scaling factor by dividing the vertical dpi (vdpi) of screen #0 by 96.
-                    //std::cout << "ddpi: " << ddpi << ", hdpi: " << hdpi << ", vdpi: " << vdpi << std::endl;
-                    Logfile::get()->writeInfo(std::string() + "getHighDPIScaleFactor: ddpi: " + toString(ddpi)
-                            + ", hdpi: " + toString(hdpi) + ", vdpi: " + toString(vdpi));
-                    return hdpi / 96.0f;
-                }
+                // No special functions so far; use fallback of screen DPI below.
                 break;
         }
     } else {
         Logfile::get()->writeError(std::string() + "Couldn't get window information: " + SDL_GetError());
     }
+
+    if (!scaleFactorSetManually) {
+        // If querying the DPI scaling factor from the OS is not supported, approximate a good screen
+        // scaling factor by dividing the vertical dpi (vdpi) of screen #0 by 96.
+        // Standard DPI is supposedly 72 on macOS, but fonts seem to be too big in this case.
+        if ((SDL_GetWindowFlags(window) & SDL_WINDOW_ALLOW_HIGHDPI) != 0) {
+            float ddpi = 96, hdpi = 96, vdpi = 96;
+            if (SDL_GetDisplayDPI(0, &ddpi, &hdpi, &vdpi) == 0) {
+                Logfile::get()->writeInfo(
+                        std::string() + "getHighDPIScaleFactor: ddpi: " + toString(ddpi)
+                        + ", hdpi: " + toString(hdpi) + ", vdpi: " + toString(vdpi));
+                scaleFactorHiDPI = hdpi / 96.0f;
+            }
+        }
+    }
+
     return scaleFactorHiDPI;
 }
 
