@@ -36,8 +36,10 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <cinttypes>
 #include <utility>
 #include <type_traits>
+#include <cstdio>
 #if __cplusplus >= 202002L || _MSVC_LANG >= 202002L // C++20
 #include <bit> // For std::popcount
 #endif
@@ -46,8 +48,6 @@
 #include <mutex>
 #include <shared_mutex>
 #include <atomic>
-// Missing include for MinGW.
-#include <cstdio>
 #pragma GCC visibility push(hidden)
 #define VMA_CONFIGURATION_USER_INCLUDES_H "Graphics/Vulkan/Utils/Empty.hpp"
 #endif

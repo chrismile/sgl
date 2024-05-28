@@ -158,6 +158,15 @@ float getHighDPIScaleFactor() {
             } catch(std::invalid_argument& e) {}
         }
     }
+    if (!scaleFactorSetManually) {
+        const char* qtScaleFactorVar = getenv("QT_SCALE_FACTOR");
+        if (qtScaleFactorVar) {
+            try {
+                scaleFactorHiDPI = std::stof(qtScaleFactorVar);
+                scaleFactorSetManually = true;
+            } catch(std::invalid_argument& e) {}
+        }
+    }
 #endif
 
     if (!scaleFactorSetManually) {
