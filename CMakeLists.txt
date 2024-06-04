@@ -38,6 +38,7 @@ endif()
 option(BUILD_STATIC_LIBRARY "Build static instead of dynamic library." OFF)
 option(USE_STATIC_STD_LIBRARIES "Link with standard libraries statically (only supported on Linux for now)." OFF)
 option(USE_GLIBCXX_DEBUG "Use the -D_GLIBCXX_DEBUG flag when compiling with GCC." OFF)
+option(USE_PRE_CXX11_ABI "Use the -D_GLIBCXX_USE_CXX11_ABI=0 flag when compiling with GCC." OFF)
 option(SUPPORT_OPENGL "Build with OpenGL support." ON)
 option(SUPPORT_VULKAN "Build with Vulkan support." ON)
 option(SUPPORT_CUDA "Build with Vulkan-CUDA interoperability support." ON)
@@ -290,6 +291,10 @@ endif()
 
 if((MSYS OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")) AND ${USE_GLIBCXX_DEBUG})
     target_compile_definitions(sgl PRIVATE _GLIBCXX_DEBUG)
+endif()
+
+if((MSYS OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")) AND ${USE_PRE_CXX11_ABI})
+    target_compile_definitions(sgl PUBLIC _GLIBCXX_USE_CXX11_ABI=0)
 endif()
 
 if (${TRACY_ENABLE})
