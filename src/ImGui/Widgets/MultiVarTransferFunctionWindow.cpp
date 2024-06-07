@@ -77,7 +77,7 @@ GuiVarData::GuiVarData(
 
     std::string tfFileName = window->saveDirectory + tfPresetFile;
     const std::string stdFileName = window->saveDirectory + "Standard.xml";
-    if (tfFileName.empty() || !sgl::FileUtils::get()->exists(tfFileName)) {
+    if (tfFileName.empty() || !sgl::FileUtils::get()->exists(tfFileName) || sgl::FileUtils::get()->isDirectory(tfFileName)) {
         tfFileName = stdFileName;
     }
     if (sgl::FileUtils::get()->exists(tfFileName) && !sgl::FileUtils::get()->isDirectory(tfFileName)) {
