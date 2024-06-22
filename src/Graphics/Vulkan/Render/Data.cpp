@@ -648,7 +648,7 @@ void RenderData::onSwapchainRecreated() {
                     }
                 }
                 for (auto& it : firstFrameData.imageSamplers) {
-                    if (buffersStatic[it.first]) {
+                    if (imageViewsStatic[it.first]) {
                         frameData.imageSamplers.insert(it);
                     } else {
                         Logfile::get()->throwError(
@@ -656,7 +656,7 @@ void RenderData::onSwapchainRecreated() {
                     }
                 }
                 for (auto& it : firstFrameData.accelerationStructures) {
-                    if (buffersStatic[it.first]) {
+                    if (accelerationStructuresStatic[it.first]) {
                         frameData.accelerationStructures.insert(it);
                     } else {
                         Logfile::get()->throwError(
