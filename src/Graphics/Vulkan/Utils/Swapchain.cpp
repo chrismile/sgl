@@ -201,6 +201,9 @@ void Swapchain::create(Window* window) {
     if (createFirstTime) {
         createSyncObjects();
         createFirstTime = false;
+    } else {
+        imagesInFlight.clear();
+        imagesInFlight.resize(swapchainImages.size(), VK_NULL_HANDLE);
     }
 }
 
@@ -208,7 +211,6 @@ void Swapchain::createSyncObjects() {
     imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
-    imagesInFlight.resize(swapchainImages.size(), VK_NULL_HANDLE);
 
     VkSemaphoreCreateInfo semaphoreInfo = {};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
