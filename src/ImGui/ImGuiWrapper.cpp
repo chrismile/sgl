@@ -252,7 +252,14 @@ void ImGuiWrapper::onResolutionChanged() {
         vk::Device* device = AppSettings::get()->getPrimaryDevice();
         vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
 
-        ImGui_ImplVulkan_SetMinImageCount(swapchain->getMinImageCount());
+        /// 2024-06-22: ImGui_ImplVulkan_SetMinImageCount in imgui_impl_vulkan.cpp does not support variable minimum
+        /// image counts in the docking branch, but Wayland seems to use them.
+        auto* window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
+        if (window->getUsesAnyWaylandBackend()) {
+            ImGui_ImplVulkan_SetMinImageCount(swapchain->getNumImages());
+        } else {
+            ImGui_ImplVulkan_SetMinImageCount(swapchain->getMinImageCount());
+        }
 
         if (!imguiCommandBuffers.empty()) {
             vkFreeCommandBuffers(
@@ -289,7 +296,14 @@ void ImGuiWrapper::renderStart() {
         initInfo.Queue = device->getGraphicsQueue();
         initInfo.PipelineCache = VK_NULL_HANDLE;
         initInfo.DescriptorPool = imguiDescriptorPool;
-        initInfo.MinImageCount = swapchain->getMinImageCount();
+        /// 2024-06-22: ImGui_ImplVulkan_SetMinImageCount in imgui_impl_vulkan.cpp does not support variable minimum
+        /// image counts in the docking branch, but Wayland seems to use them.
+        auto* window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
+        if (window->getUsesAnyWaylandBackend()) {
+            initInfo.MinImageCount = swapchain->getNumImages();
+        } else {
+            initInfo.MinImageCount = swapchain->getMinImageCount();
+        }
         initInfo.ImageCount = uint32_t(swapchain->getNumImages());
         initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
         initInfo.Allocator = nullptr;

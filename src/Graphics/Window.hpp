@@ -168,6 +168,13 @@ public:
     /// Whether to download all images from the GPU instead of using a swapchain.
     [[nodiscard]] virtual bool getUseDownloadSwapchain() const { return false; }
 
+    /// Returns whether the Wayland backend is used.
+    [[nodiscard]] virtual bool getUsesX11Backend() const { return false; }
+    [[nodiscard]] virtual bool getUsesWaylandBackend() const { return false; }
+    [[nodiscard]] virtual bool getUsesXWaylandBackend() const { return false; }
+    [[nodiscard]] virtual bool getUsesX11OrWaylandBackend() const { return false; }
+    [[nodiscard]] virtual bool getUsesAnyWaylandBackend() const { return false; }
+
 #ifdef SUPPORT_OPENGL
     virtual void* getOpenGLFunctionPointer(const char* functionName)=0;
 #endif

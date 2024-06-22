@@ -148,8 +148,12 @@ void Swapchain::create(Window* window) {
     }
 
     // vulkan-tutorial.com recommends to use min + 1 (usually triple buffering).
-    uint32_t imageCount = swapchainSupportInfo.capabilities.minImageCount + 1;
     const uint32_t maxImageCount = swapchainSupportInfo.capabilities.maxImageCount;
+    uint32_t imageCount = swapchainSupportInfo.capabilities.minImageCount + 1;
+    if (maxImageCount > 0 && window->getUsesAnyWaylandBackend()) {
+        imageCount = std::min(imageCount, uint32_t(3));
+        imageCount = std::clamp(imageCount, swapchainSupportInfo.capabilities.minImageCount, maxImageCount);
+    }
     if (maxImageCount > 0 && imageCount > maxImageCount) {
         imageCount = swapchainSupportInfo.capabilities.maxImageCount;
     }

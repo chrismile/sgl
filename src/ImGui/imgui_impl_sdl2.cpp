@@ -122,6 +122,7 @@ static const Uint32 SDL_WINDOW_VULKAN = 0x10000000;
 struct ImGui_ImplSDL2_Data
 {
     SDL_Window*     Window;
+    SDL_SYSWM_TYPE  Subsystem;
     SDL_Renderer*   Renderer;
     Uint64          Time;
     Uint32          MouseWindowID;
@@ -345,10 +346,13 @@ bool ImGui_ImplSDL2_ProcessEvent(const SDL_Event* event)
             io.AddMouseSourceEvent(event->motion.which == SDL_TOUCH_MOUSEID ? ImGuiMouseSource_TouchScreen : ImGuiMouseSource_Mouse);
             // https://github.com/ocornut/imgui/issues/3757#issuecomment-800921198
             // https://github.com/cmaughan/sonic-pi/blob/b65f3c6bc6d070f69f2bffe5b1f9d7f78cb7149b/app/gui/imgui/backends/imgui_impl_sdl.cpp#L354
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__linux__)
             // Fix for high DPI mac
             ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
             if (!platform_io.Monitors.empty() && platform_io.Monitors[0].DpiScale > 1.0f
+#if defined(__linux__)
+                    && bd->Subsystem == SDL_SYSWM_WAYLAND
+#endif
                     && (SDL_GetWindowFlags(bd->Window) & SDL_WINDOW_ALLOW_HIGHDPI) != 0)
             {
                 // The Framebuffer is scaled by an integer ceiling of the actual ratio, so 2.0 not 1.685 on Mac!
@@ -533,6 +537,7 @@ static bool ImGui_ImplSDL2_Init(SDL_Window* window, SDL_Renderer* renderer, void
     SDL_VERSION(&info.version);
     if (SDL_GetWindowWMInfo(window, &info))
     {
+        bd->Subsystem = info.subsystem;
 #if defined(SDL_VIDEO_DRIVER_WINDOWS)
         main_viewport->PlatformHandleRaw = (void*)info.info.win.window;
 #elif defined(__APPLE__) && defined(SDL_VIDEO_DRIVER_COCOA)
@@ -676,10 +681,13 @@ static void ImGui_ImplSDL2_UpdateMouseData()
             }
             // https://github.com/ocornut/imgui/issues/3757#issuecomment-800921198
             // https://github.com/cmaughan/sonic-pi/blob/b65f3c6bc6d070f69f2bffe5b1f9d7f78cb7149b/app/gui/imgui/backends/imgui_impl_sdl.cpp#L354
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__linux__)
             // Fix for high DPI mac
             ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
             if (!platform_io.Monitors.empty() && platform_io.Monitors[0].DpiScale > 1.0f
+#if defined(__linux__)
+                    && bd->Subsystem == SDL_SYSWM_WAYLAND
+#endif
                     && (SDL_GetWindowFlags(bd->Window) & SDL_WINDOW_ALLOW_HIGHDPI) != 0)
             {
                 // The Framebuffer is scaled by an integer ceiling of the actual ratio, so 2.0 not 1.685 on Mac!
@@ -862,10 +870,13 @@ void ImGui_ImplSDL2_NewFrame()
 
     // https://github.com/ocornut/imgui/issues/3757#issuecomment-800921198
     // https://github.com/cmaughan/sonic-pi/blob/b65f3c6bc6d070f69f2bffe5b1f9d7f78cb7149b/app/gui/imgui/backends/imgui_impl_sdl.cpp#L499
-#if defined(__APPLE__)
+#if defined(__APPLE__) || defined(__linux__)
     // On Apple, The window size is reported in Low DPI, even when running in high DPI mode
     ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
     if (!platform_io.Monitors.empty() && platform_io.Monitors[0].DpiScale > 1.0f && display_h != h
+#if defined(__linux__)
+            && bd->Subsystem == SDL_SYSWM_WAYLAND
+#endif
             && (SDL_GetWindowFlags(bd->Window) & SDL_WINDOW_ALLOW_HIGHDPI) != 0)
     {
         io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);

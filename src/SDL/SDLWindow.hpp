@@ -106,6 +106,13 @@ public:
     /// Whether to download all images from the GPU instead of using a swapchain.
     [[nodiscard]] bool getUseDownloadSwapchain() const override { return windowSettings.useDownloadSwapchain; }
 
+    /// Returns whether the Wayland backend is used.
+    [[nodiscard]] bool getUsesX11Backend() const override { return usesX11Backend; }
+    [[nodiscard]] bool getUsesWaylandBackend() const override { return usesWaylandBackend; }
+    [[nodiscard]] bool getUsesXWaylandBackend() const override { return usesXWaylandBackend; }
+    [[nodiscard]] bool getUsesX11OrWaylandBackend() const override { return usesX11Backend || usesWaylandBackend; }
+    [[nodiscard]] bool getUsesAnyWaylandBackend() const override { return usesWaylandBackend || usesXWaylandBackend; }
+
     /// Getting SDL specific data
     inline SDL_Window *getSDLWindow() { return sdlWindow; }
 #ifdef SUPPORT_OPENGL
@@ -118,6 +125,9 @@ public:
 private:
     RenderSystem renderSystem = RenderSystem::VULKAN;
     WindowSettings windowSettings;
+    bool usesX11Backend = false;
+    bool usesWaylandBackend = false;
+    bool usesXWaylandBackend = false;
 
     bool eventHandlerSet = false;
     std::function<void(const SDL_Event&)> eventHandler;
