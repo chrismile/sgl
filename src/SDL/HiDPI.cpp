@@ -122,10 +122,11 @@ float getHighDPIScaleFactor() {
     scaleFactorRetrieved = true;
 
     bool scaleFactorSetManually = false;
-    SDL_Window *window = static_cast<sgl::SDLWindow *>(sgl::AppSettings::get()->getMainWindow())->getSDLWindow();
+    auto* window = static_cast<sgl::SDLWindow*>(sgl::AppSettings::get()->getMainWindow());
+    SDL_Window* sdlWindow = window->getSDLWindow();
     SDL_SysWMinfo wminfo;
     SDL_VERSION(&wminfo.version);
-    if (SDL_GetWindowWMInfo(window, &wminfo)) {
+    if (SDL_GetWindowWMInfo(sdlWindow, &wminfo)) {
         switch (wminfo.subsystem) {
             case SDL_SYSWM_X11:
 #if defined(SDL_VIDEO_DRIVER_X11)
@@ -167,13 +168,19 @@ float getHighDPIScaleFactor() {
             } catch(std::invalid_argument& e) {}
         }
     }
+    if (!scaleFactorSetManually && (wminfo.subsystem == SDL_SYSWM_WAYLAND || wminfo.subsystem == SDL_SYSWM_COCOA)) {
+        if (window->getVirtualWidth() != window->getPixelWidth()) {
+            scaleFactorHiDPI = float(window->getPixelWidth()) / float(window->getVirtualWidth());
+            scaleFactorSetManually = true;
+        }
+    }
 #endif
 
     if (!scaleFactorSetManually) {
         // If querying the DPI scaling factor from the OS is not supported, approximate a good screen
         // scaling factor by dividing the vertical dpi (vdpi) of screen #0 by 96.
         // Standard DPI is supposedly 72 on macOS, but fonts seem to be too big in this case.
-        if ((SDL_GetWindowFlags(window) & SDL_WINDOW_ALLOW_HIGHDPI) != 0) {
+        if ((SDL_GetWindowFlags(sdlWindow) & SDL_WINDOW_ALLOW_HIGHDPI) != 0) {
             float ddpi = 96, hdpi = 96, vdpi = 96;
             if (SDL_GetDisplayDPI(0, &ddpi, &hdpi, &vdpi) == 0) {
                 Logfile::get()->writeInfo(
