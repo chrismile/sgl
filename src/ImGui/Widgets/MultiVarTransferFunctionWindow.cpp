@@ -240,6 +240,16 @@ bool GuiVarData::loadTfFromFile(const std::string& filename) {
     return readFromXml(doc);
 }
 
+bool GuiVarData::loadTfFromXmlString(const std::string &xmlString) {
+    XMLDocument doc;
+    if (doc.Parse(xmlString.c_str(), xmlString.size()) != 0) {
+        sgl::Logfile::get()->writeError(
+                std::string() + "Error in GuiVarData::loadTfFromXmlString: Error encountered while parsing data.");
+        return false;
+    }
+    return readFromXml(doc);
+}
+
 bool GuiVarData::deserializeXmlString(const std::string& xmlString) {
     XMLDocument doc;
     if (doc.Parse(xmlString.c_str(), xmlString.size()) != 0) {
@@ -1122,6 +1132,17 @@ bool MultiVarTransferFunctionWindow::loadFunctionFromFile(int varIdx, const std:
     GuiVarData& varData = guiVarData.at(varIdx);
     return varData.loadTfFromFile(filename);
 }
+
+bool MultiVarTransferFunctionWindow::loadFunctionFromXmlString(int varIdx, const std::string& xmlString) {
+    if (size_t(varIdx) >= guiVarData.size()) {
+        sgl::Logfile::get()->writeError(
+                "MultiVarTransferFunctionWindow::loadFunctionFromXmlString: varIdx >= guiVarData.size()");
+        return false;
+    }
+    GuiVarData& varData = guiVarData.at(varIdx);
+    return varData.loadTfFromXmlString(xmlString);
+}
+
 
 bool MultiVarTransferFunctionWindow::loadFromTfNameList(const std::vector<std::string>& tfNames) {
     if (tfNames.size() != guiVarData.size()) {

@@ -70,6 +70,7 @@ public:
 
     bool saveTfToFile(const std::string &filename);
     bool loadTfFromFile(const std::string &filename);
+    bool loadTfFromXmlString(const std::string &xmlString);
 
     std::string serializeXmlString();
     bool deserializeXmlString(const std::string &xmlString);
@@ -208,6 +209,7 @@ public:
     }
 
     bool loadFunctionFromFile(int varIdx, const std::string& filename);
+    bool loadFunctionFromXmlString(int varIdx, const std::string& xmlString);
     bool loadFromTfNameList(const std::vector<std::string> &tfNames);
     std::string serializeXmlString(int varIdx);
     bool deserializeXmlString(int varIdx, const std::string &xmlString);
