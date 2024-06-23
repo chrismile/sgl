@@ -357,7 +357,7 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
 
     windowSettings.pixelWidth = windowSettings.width;
     windowSettings.pixelHeight = windowSettings.height;
-//#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__linux__)
 #ifdef SUPPORT_OPENGL
     if (renderSystem == RenderSystem::OPENGL) {
         SDL_GL_GetDrawableSize(sdlWindow, &windowSettings.pixelWidth, &windowSettings.pixelHeight);
@@ -368,7 +368,7 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
         SDL_Vulkan_GetDrawableSize(sdlWindow, &windowSettings.pixelWidth, &windowSettings.pixelHeight);
     }
 #endif
-//#endif
+#endif
 
 #ifdef SUPPORT_OPENGL
     if (renderSystem == RenderSystem::OPENGL) {
@@ -399,7 +399,7 @@ void SDLWindow::setWindowVirtualSize(int width, int height) {
     windowSettings.height = height;
     windowSettings.pixelWidth = width;
     windowSettings.pixelHeight = height;
-//#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__linux__)
 #ifdef SUPPORT_OPENGL
     if (renderSystem == RenderSystem::OPENGL) {
         int oldWidth = 0, oldHeight = 0;
@@ -420,7 +420,7 @@ void SDLWindow::setWindowVirtualSize(int width, int height) {
         windowSettings.pixelWidth = height * oldPixelHeight / oldHeight;
     }
 #endif
-//#endif
+#endif
     SDL_SetWindowSize(sdlWindow, windowSettings.width, windowSettings.height);
     if (renderSystem != RenderSystem::VULKAN) {
         EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
@@ -438,7 +438,7 @@ void SDLWindow::setWindowPixelSize(int width, int height) {
     windowSettings.height = height;
     windowSettings.pixelWidth = width;
     windowSettings.pixelHeight = height;
-//#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__linux__)
 #ifdef SUPPORT_OPENGL
     if (renderSystem == RenderSystem::OPENGL) {
         int oldWidth = 0, oldHeight = 0;
@@ -459,7 +459,7 @@ void SDLWindow::setWindowPixelSize(int width, int height) {
         windowSettings.height = height * oldHeight / oldPixelHeight;
     }
 #endif
-//#endif
+#endif
     SDL_SetWindowSize(sdlWindow, windowSettings.width, windowSettings.height);
     if (renderSystem != RenderSystem::VULKAN) {
         EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
@@ -529,7 +529,7 @@ bool SDLWindow::processEvents() {
                         windowSettings.height = event.window.data2;
                         windowSettings.pixelWidth = windowSettings.width;
                         windowSettings.pixelHeight = windowSettings.height;
-//#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__linux__)
 #ifdef SUPPORT_OPENGL
                         if (renderSystem == RenderSystem::OPENGL) {
                             SDL_GL_GetDrawableSize(sdlWindow, &windowSettings.pixelWidth, &windowSettings.pixelHeight);
@@ -540,7 +540,7 @@ bool SDLWindow::processEvents() {
                             SDL_Vulkan_GetDrawableSize(sdlWindow, &windowSettings.pixelWidth, &windowSettings.pixelHeight);
                         }
 #endif
-//#endif
+#endif
                         if (renderSystem != RenderSystem::VULKAN) {
                             EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
                         }
