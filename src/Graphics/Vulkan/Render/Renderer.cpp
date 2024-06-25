@@ -691,21 +691,21 @@ void Renderer::traceRays(
 }
 
 void Renderer::transitionImageLayout(vk::ImagePtr& image, VkImageLayout newLayout) {
-    if (useGraphicsQueue) {
+    if (!useGraphicsQueue) {
         image->setUseInComputeQueueTemp(true);
     }
     image->transitionImageLayout(newLayout, commandBuffer);
-    if (useGraphicsQueue) {
+    if (!useGraphicsQueue) {
         image->setUseInComputeQueueTemp(false);
     }
 }
 
 void Renderer::transitionImageLayout(vk::ImageViewPtr& imageView, VkImageLayout newLayout) {
-    if (useGraphicsQueue) {
+    if (!useGraphicsQueue) {
         imageView->getImage()->setUseInComputeQueueTemp(true);
     }
     imageView->transitionImageLayout(newLayout, commandBuffer);
-    if (useGraphicsQueue) {
+    if (!useGraphicsQueue) {
         imageView->getImage()->setUseInComputeQueueTemp(false);
     }
 }
@@ -713,12 +713,12 @@ void Renderer::transitionImageLayout(vk::ImageViewPtr& imageView, VkImageLayout 
 void Renderer::transitionImageLayoutSubresource(
         vk::ImagePtr& image, VkImageLayout newLayout,
         uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount) {
-    if (useGraphicsQueue) {
+    if (!useGraphicsQueue) {
         image->setUseInComputeQueueTemp(true);
     }
     image->transitionImageLayoutSubresource(
             newLayout, commandBuffer, baseMipLevel, levelCount, baseArrayLayer, layerCount);
-    if (useGraphicsQueue) {
+    if (!useGraphicsQueue) {
         image->setUseInComputeQueueTemp(false);
     }
 }
