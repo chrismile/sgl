@@ -99,9 +99,12 @@ inline bool isDepthStencilFormat(VkFormat format) {
            || format == VK_FORMAT_D32_SFLOAT || format == VK_FORMAT_S8_UINT || format == VK_FORMAT_D16_UNORM_S8_UINT
            || format == VK_FORMAT_D24_UNORM_S8_UINT || format == VK_FORMAT_D32_SFLOAT_S8_UINT;
 }
-size_t getImageFormatEntryByteSize(VkFormat format);
+DLL_OBJECT size_t getImageFormatEntryByteSize(VkFormat format);
 
-size_t getImageFormatNumChannels(VkFormat format);
+DLL_OBJECT size_t getImageFormatNumChannels(VkFormat format);
+
+// Returns the GLSL format specifier of the format, e.g., "rgba32f" or "r16".
+DLL_OBJECT std::string getImageFormatGlslString(VkFormat format);
 
 class DLL_OBJECT Image {
     friend class Renderer;

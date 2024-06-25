@@ -333,6 +333,26 @@ size_t getImageFormatNumChannels(VkFormat format) {
     }
 }
 
+std::string getImageFormatGlslString(VkFormat format) {
+    // TODO: Support more formats.
+    if (format == VK_FORMAT_R32_SFLOAT) {
+        return "r32f";
+    } else if (format == VK_FORMAT_R32G32B32A32_SFLOAT) {
+        return "rgba32f";
+    } else if (format == VK_FORMAT_R8_UNORM) {
+        return "r8";
+    } else if (format == VK_FORMAT_R8G8B8A8_UNORM) {
+        return "rgba8";
+    } else if (format == VK_FORMAT_R16_UNORM) {
+        return "r16";
+    } else if (format == VK_FORMAT_R16G16B16A16_UNORM) {
+        return "rgba16";
+    } else {
+        sgl::Logfile::get()->throwError("Error in getImageFormatGlslString: Invalid format.");
+        return "r32f";
+    }
+}
+
 Image::Image(Device* device, const ImageSettings& imageSettings) : device(device), imageSettings(imageSettings) {
     VkImageCreateInfo imageCreateInfo{};
     imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;

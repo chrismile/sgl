@@ -78,6 +78,8 @@ public:
     void beginCommandBuffer();
     VkCommandBuffer endCommandBuffer();
     void setUseComputeQueue(bool _useComputeQueue);
+    [[nodiscard]] inline bool getUseGraphicsQueue() const { return useGraphicsQueue; }
+    [[nodiscard]] inline bool getUseComputeQueue() const { return !useGraphicsQueue; }
     /// Use VK_NULL_HANDLE to reset the custom command buffer.
     void setCustomCommandBuffer(VkCommandBuffer _commandBuffer, bool _useGraphicsQueue = true);
     void resetCustomCommandBuffer();
