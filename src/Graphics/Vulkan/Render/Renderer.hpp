@@ -77,6 +77,7 @@ public:
     // @see beginCommandBuffer and @see endCommandBuffer need to be called before calling any other command.
     void beginCommandBuffer();
     VkCommandBuffer endCommandBuffer();
+    void setUseComputeQueue(bool _useComputeQueue);
     /// Use VK_NULL_HANDLE to reset the custom command buffer.
     void setCustomCommandBuffer(VkCommandBuffer _commandBuffer, bool _useGraphicsQueue = true);
     void resetCustomCommandBuffer();

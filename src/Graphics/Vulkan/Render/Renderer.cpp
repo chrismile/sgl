@@ -168,6 +168,9 @@ void Renderer::beginCommandBuffer() {
                     commandBuffersVk.clear();
                 }
                 vk::CommandPoolType commandPoolType;
+                if (!useGraphicsQueue) {
+                    commandPoolType.queueFamilyIndex = device->getComputeQueueIndex();
+                }
                 commandPoolType.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
                 commandBuffersVk = device->allocateCommandBuffers(
                         commandPoolType, &commandPool, uint32_t(numImages));
@@ -227,6 +230,16 @@ std::vector<sgl::vk::CommandBufferPtr> Renderer::getFrameCommandBuffers() {
     std::vector<sgl::vk::CommandBufferPtr> frameCommandBuffersCopy = frameCommandBuffers;
     frameCommandBuffers = {};
     return frameCommandBuffersCopy;
+}
+
+void Renderer::setUseComputeQueue(bool _useComputeQueue) {
+    if (!frameCommandBuffers.empty()) {
+        sgl::Logfile::get()->throwError(
+                "Error in Renderer::setUseComputeQueue: Cannot change the used queue after beginCommandBuffer "
+                "has been called at least once.");
+    }
+    useGraphicsQueue = !_useComputeQueue;
+    cachedUseGraphicsQueue = useGraphicsQueue;
 }
 
 void Renderer::setCustomCommandBuffer(VkCommandBuffer _commandBuffer, bool _useGraphicsQueue) {
