@@ -29,6 +29,7 @@
 #ifndef SGL_IMAGE_HPP
 #define SGL_IMAGE_HPP
 
+#include <string>
 #include <memory>
 #include <algorithm>
 #include <cmath>
