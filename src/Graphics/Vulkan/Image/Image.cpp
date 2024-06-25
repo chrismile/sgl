@@ -1105,7 +1105,8 @@ void Image::transitionImageLayoutSubresource(
         sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
     } else if (oldLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
         barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        sourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        sourceStage =
+                usedInComputeQueueTemp ? VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT : VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
     } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
         barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
         sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
@@ -1127,7 +1128,8 @@ void Image::transitionImageLayoutSubresource(
 
     if (newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
         barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        destinationStage =
+                usedInComputeQueueTemp ? VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT : VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
     } else if (newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
         barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
         destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;

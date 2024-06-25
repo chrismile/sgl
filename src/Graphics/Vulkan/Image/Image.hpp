@@ -301,6 +301,8 @@ public:
     [[nodiscard]] inline VkImageLayout getVkImageLayout() const { return imageLayout; }
     /// Overwrites the image layout if it was changed outside of sgl.
     void overwriteImageLayout(VkImageLayout newLayout);
+    /// To avoid automatic vertex/fragment shader layout transitions
+    void setUseInComputeQueueTemp(bool _usedInCompute) { usedInComputeQueueTemp = _usedInCompute; }
 
     /// For access from the framebuffer after a subpass has finished.
     inline void _updateLayout(VkImageLayout newLayout) { imageLayout = newLayout; }
@@ -355,6 +357,7 @@ private:
     ImageSettings imageSettings;
     VkImage image = nullptr;
     VkImageLayout imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    bool usedInComputeQueueTemp = false; ///< To avoid automatic vertex/fragment shader layout transitions.
 
     // For looking up and caching the properties of the currently used format.
     VkFormat cachedFormat{};
