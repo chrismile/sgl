@@ -85,7 +85,7 @@ void BlitComputePass::loadShader() {
     preprocessorDefines.insert(std::make_pair("LOCAL_SIZE_Y", std::to_string(LOCAL_SIZE_Y)));
     preprocessorDefines.insert(std::make_pair(
             "OUTPUT_IMAGE_FORMAT", getImageFormatGlslString(outputImageView->getImage()->getImageSettings().format)));
-    shaderStages = sgl::vk::ShaderManager->getShaderStages(shaderIds);
+    shaderStages = sgl::vk::ShaderManager->getShaderStages(shaderIds, preprocessorDefines);
 }
 
 void BlitComputePass::createComputeData(sgl::vk::Renderer* renderer, sgl::vk::ComputePipelinePtr& computePipeline) {
