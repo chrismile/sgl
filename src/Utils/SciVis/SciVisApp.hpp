@@ -135,6 +135,8 @@ protected:
     virtual void onCameraReset() {}
     /// Callback when the clear color was changed.
     virtual void onClearColorChanged() {}
+    /// Callback when a file has been dropped on the program.
+    virtual void onFileDropped(const std::string& droppedFileName) {}
 
     /// Scene data (e.g., camera, main framebuffer, ...).
     sgl::CameraPtr camera;

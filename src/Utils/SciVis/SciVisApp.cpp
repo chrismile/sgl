@@ -374,6 +374,12 @@ void SciVisApp::processSDLEvent(const SDL_Event &event) {
         }
     }
 
+    if (event.type == SDL_DROPFILE) {
+        std::string droppedFileName = event.drop.file;
+        onFileDropped(droppedFileName);
+        SDL_free(event.drop.file);
+    }
+
     sgl::ImGuiWrapper::get()->processSDLEvent(event);
 }
 
