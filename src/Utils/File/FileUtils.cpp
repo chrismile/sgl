@@ -80,8 +80,12 @@ void FileUtils::initialize(const std::string &_appName, int _argc, const char *_
         }
     }
 
-    configDir = homeDirectory + "/.config/" + boost::to_lower_copy(appNameNoWhitespace) + "/";
+    std::string userConfigDir = homeDirectory + "/.config/";
+    configDir = userConfigDir + boost::to_lower_copy(appNameNoWhitespace) + "/";
     userDir = homeDirectory + "/";
+    if (!exists(userConfigDir)) {
+        createDirectory(userConfigDir);
+    }
 
     // Use the system-wide path "/var/games" if it is available on the system
     if (exists("/var/games")) {
