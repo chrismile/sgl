@@ -89,6 +89,16 @@ std::string getErrorTypeString(GLenum type) {
 // Uses KHR_debug. For more information see https://www.khronos.org/opengl/wiki/Debug_Output.
 void openglErrorCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message,
         const void* userParam) {
+    /*
+     * On Windows, calling vkDestroyDevice while an offscreen context is still existent leads to message ID 131154
+     * ("Pixel-path performance warning: Pixel transfer is synchronized with 3D rendering") with severity medium
+     * and type GL_DEBUG_TYPE_PERFORMANCE. We can ignore this warning, as this warning is completely irrelevant at
+     * application shutdown.
+     */
+    if (!Renderer && type == GL_DEBUG_TYPE_PERFORMANCE && id == 131154) {
+        return;
+    }
+
     Logfile::get()->writeError("OpenGL Error:", false);
     Logfile::get()->writeError("=============", false);
     Logfile::get()->writeError(std::string() + " Message ID: " + sgl::toString(id), false);
@@ -103,7 +113,13 @@ void openglErrorCallback(GLenum source, GLenum type, GLuint id, GLenum severity,
                 "OpenGL error (" + getErrorTypeString(type) + ")", message, dialog::Icon::ERROR);
     }
 
-    Renderer->callApplicationErrorCallback();
+    /*
+     * Guard with nullptr check, as Vulkan device deletion may cause performance warnings at a time when the OpenGL
+     * renderer has already been deleted.
+     */
+    if (Renderer) {
+        Renderer->callApplicationErrorCallback();
+    }
 }
 
 RendererGL::RendererGL() {
