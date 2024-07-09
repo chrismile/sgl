@@ -73,6 +73,63 @@ glm::ivec4 Camera::getViewportLTWH() {
             roundf(absMax.y - absMin.y)); // height
 }
 
+void Camera::resetOrientation() {
+    yaw = -sgl::PI/2.0f;
+    pitch = 0.0f;
+    transform.orientation = glm::identity<glm::quat>();
+    cameraRight = glm::vec3(1.0f, 0.0f, 0.0f);
+    cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+    cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+    orientationMode = ORT_YAW_PITCH | ORT_QUAT | ORT_CAM_VECTORS;
+    recalcModelMat = true;
+}
+
+void Camera::updateOrtMode(int _orientationMode) {
+    // Data for the selected mode dirty?
+    if ((orientationMode & _orientationMode) == 0) {
+        if (_orientationMode == ORT_QUAT && (orientationMode & ORT_CAM_VECTORS) != 0) {
+            CamVectors camVectors { cameraRight, cameraUp, cameraFront };
+            this->transform.orientation = convertCamVectorsToQuat(camVectors);
+            orientationMode = orientationMode | ORT_QUAT;
+        } else if (_orientationMode == ORT_CAM_VECTORS && (orientationMode & ORT_QUAT) != 0) {
+            CamVectors camVectors = convertQuatToCamVectors(this->transform.orientation);
+            cameraRight = camVectors.cameraRight;
+            cameraUp = camVectors.cameraUp;
+            cameraFront = camVectors.cameraFront;
+            orientationMode = orientationMode | ORT_CAM_VECTORS;
+        } else if (_orientationMode == ORT_YAW_PITCH && (orientationMode & ORT_CAM_VECTORS) != 0) {
+            CamVectors camVectors { cameraRight, cameraUp, cameraFront };
+            auto yawPitch = convertCamVectorsToYawPitch(camVectors);
+            yaw = yawPitch.first;
+            pitch = yawPitch.second;
+            orientationMode = orientationMode | ORT_YAW_PITCH;
+        } else if (_orientationMode == ORT_YAW_PITCH && (orientationMode & ORT_QUAT) != 0) {
+            CamVectors camVectors = convertQuatToCamVectors(this->transform.orientation);
+            cameraRight = camVectors.cameraRight;
+            cameraUp = camVectors.cameraUp;
+            cameraFront = camVectors.cameraFront;
+            auto yawPitch = convertCamVectorsToYawPitch(camVectors);
+            yaw = yawPitch.first;
+            pitch = yawPitch.second;
+            orientationMode = orientationMode | ORT_YAW_PITCH | ORT_CAM_VECTORS;
+        } else if ((orientationMode & ORT_YAW_PITCH) != 0) {
+            CamVectors camVectors = convertYawPitchToCamVectors(yaw, pitch);
+            cameraRight = camVectors.cameraRight;
+            cameraUp = camVectors.cameraUp;
+            cameraFront = camVectors.cameraFront;
+            this->transform.orientation = convertCamVectorsToQuat(camVectors);
+            orientationMode = orientationMode | ORT_CAM_VECTORS;
+            orientationMode = orientationMode | ORT_QUAT;
+        }
+    }
+}
+
+void Camera::clampPitch() {
+    // We don't want a flip-over at the poles of the unit sphere.
+    const float EPSILON = 0.001f;
+    pitch = sgl::clamp(pitch, -sgl::HALF_PI + EPSILON, sgl::HALF_PI - EPSILON);
+}
+
 glm::mat4 Camera::getRotationMatrix() {
     updateCamera();
     return glm::lookAt(glm::vec3(0.0f), cameraFront, cameraUp);
@@ -94,16 +151,13 @@ void Camera::overwriteViewMatrix(const glm::mat4 &viewMatrix) {
     cameraUp    =  glm::vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
     cameraFront = -glm::vec3(viewMatrix[0][2], viewMatrix[1][2], viewMatrix[2][2]);
 
-    //cameraFront.x = cos(yaw) * cos(pitch);
-    //cameraFront.y = sin(pitch);
-    //cameraFront.z = sin(yaw) * cos(pitch);
-    yaw = std::atan2(cameraFront.z, cameraFront.x);
-    pitch = std::asin(cameraFront.y);
+    this->transform.orientation = glm::quat_cast(glm::mat3(viewMatrix));
+    orientationMode = ORT_QUAT | ORT_CAM_VECTORS;
+
 }
 
 void Camera::setLookAtViewMatrix(const glm::vec3 &cameraPos, const glm::vec3 &lookAtPos, const glm::vec3 &upDir) {
     lookAtLocation = lookAtPos;
-    isPitchMode = false;
     overwriteViewMatrix(glm::lookAt(cameraPos, lookAtPos, upDir));
 }
 
@@ -114,7 +168,7 @@ void Camera::copyState(const CameraPtr& otherCamera) {
     this->cameraFront = otherCamera->cameraFront;
     this->yaw = otherCamera->yaw;
     this->pitch = otherCamera->pitch;
-    this->isPitchMode = otherCamera->isPitchMode;
+    this->orientationMode = otherCamera->orientationMode;
     this->lookAtLocation = otherCamera->lookAtLocation;
 
     this->projType = otherCamera->projType;
@@ -218,20 +272,7 @@ void Camera::updateCamera() {
         }
     }
     if (recalcModelMat) {
-        // We don't want a flip-over at the poles of the unit sphere.
-        const float EPSILON = 0.001f;
-        if (isPitchMode) {
-            pitch = sgl::clamp(pitch, -sgl::HALF_PI + EPSILON, sgl::HALF_PI - EPSILON);
-        }
-
-        cameraFront.x = cos(yaw) * cos(pitch);
-        cameraFront.y = sin(pitch);
-        cameraFront.z = sin(yaw) * cos(pitch);
-
-        cameraFront = glm::normalize(cameraFront);
-        cameraRight = glm::normalize(glm::cross(cameraFront, globalUp));
-        cameraUp    = glm::normalize(glm::cross(cameraRight, cameraFront));
-
+        updateOrtMode(ORT_CAM_VECTORS);
         modelMatrix = //glm::mat4(this->transform.orientation) *
                 glm::lookAt(glm::vec3(0.0f), cameraFront, cameraUp) *
                 matrixTranslation(-this->transform.position);

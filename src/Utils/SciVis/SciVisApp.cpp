@@ -65,6 +65,7 @@
 
 #include "Navigation/FirstPersonNavigator.hpp"
 #include "Navigation/TurntableNavigator.hpp"
+#include "Navigation/TrackballNavigator.hpp"
 #include "Navigation/CameraNavigator2D.hpp"
 #include "SciVisApp.hpp"
 
@@ -637,8 +638,7 @@ void SciVisApp::renderSceneSettingsGuiPre() {
 
     if (ImGui::Button("Reset Camera")) {
         camera->setOrientation(glm::quat(1.0f, 0.0f, 0.0f, 0.0f));
-        camera->setYaw(-sgl::PI/2.0f); //< around y axis
-        camera->setPitch(0.0f); //< around x axis
+        camera->resetOrientation();
         camera->setPosition(glm::vec3(0.0f, 0.0f, 0.8f));
         camera->setFOVy(standardFov);
         camera->resetLookAtLocation();
@@ -655,7 +655,8 @@ void SciVisApp::renderSceneSettingsGuiPre() {
             IM_ARRAYSIZE(CAMERA_NAVIGATION_MODE_NAMES))) {
         updateCameraNavigationMode();
     }
-    if (cameraNavigationMode == CameraNavigationMode::TURNTABLE) {
+    if (cameraNavigationMode == CameraNavigationMode::TURNTABLE
+            || cameraNavigationMode == CameraNavigationMode::TRACKBALL) {
         int turntableMouseButtonIndexZeroStart = turntableMouseButtonIndex - 1;
         if (ImGui::Combo(
                 "Mouse Button", &turntableMouseButtonIndexZeroStart, MOUSE_BUTTON_NAMES,
@@ -782,8 +783,7 @@ void SciVisApp::renderGuiPropertyEditorWindow() {
             if (propertyEditor.beginNode("Camera Settings")) {
                 if (propertyEditor.addButton("Reset Camera", "Reset")) {
                     camera->setOrientation(glm::quat(1.0f, 0.0f, 0.0f, 0.0f));
-                    camera->setYaw(-sgl::PI/2.0f); //< around y axis
-                    camera->setPitch(0.0f); //< around x axis
+                    camera->resetOrientation();
                     camera->setPosition(glm::vec3(0.0f, 0.0f, 0.8f));
                     camera->setFOVy(standardFov);
                     camera->resetLookAtLocation();
@@ -798,7 +798,8 @@ void SciVisApp::renderGuiPropertyEditorWindow() {
                         IM_ARRAYSIZE(CAMERA_NAVIGATION_MODE_NAMES))) {
                     updateCameraNavigationMode();
                 }
-                if (cameraNavigationMode == CameraNavigationMode::TURNTABLE) {
+                if (cameraNavigationMode == CameraNavigationMode::TURNTABLE
+                        || cameraNavigationMode == CameraNavigationMode::TRACKBALL) {
                     int turntableMouseButtonIndexZeroStart = turntableMouseButtonIndex - 1;
                     if (propertyEditor.addCombo(
                             "Mouse Button", &turntableMouseButtonIndexZeroStart, MOUSE_BUTTON_NAMES,
@@ -1043,6 +1044,9 @@ void SciVisApp::updateCameraNavigationMode() {
                 MOVE_SPEED, MOUSE_ROT_SPEED);
     } else if (cameraNavigationMode == CameraNavigationMode::TURNTABLE) {
         cameraNavigator = std::make_shared<TurntableNavigator>(
+                MOVE_SPEED, MOUSE_ROT_SPEED, turntableMouseButtonIndex);
+    } else if (cameraNavigationMode == CameraNavigationMode::TRACKBALL) {
+        cameraNavigator = std::make_shared<TrackballNavigator>(
                 MOVE_SPEED, MOUSE_ROT_SPEED, turntableMouseButtonIndex);
     } else if (cameraNavigationMode == CameraNavigationMode::CAMERA_2D) {
         cameraNavigator = std::make_shared<CameraNavigator2D>(

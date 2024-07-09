@@ -33,6 +33,7 @@
 #include <Utils/Events/Stream/Stream.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
+#include <Graphics/Scene/CameraHelper.hpp>
 
 #include <ImGui/ImGuiWrapper.hpp>
 #include <ImGui/imgui_stdlib.h>
@@ -54,6 +55,15 @@ public:
     float yaw;
     float pitch;
     float fovy;
+};
+
+class Checkpoint_v3 {
+public:
+    glm::vec3 position;
+    float yaw;
+    float pitch;
+    float fovy;
+    glm::vec3 lookAtLocation;
 };
 
 CheckpointWindow::CheckpointWindow(CameraPtr& camera) : camera(camera) {
@@ -161,19 +171,24 @@ bool CheckpointWindow::readFromFile(const std::string& filename) {
             Checkpoint checkpoint;
             stream.read(checkpointName);
             if (version == 1u) {
-                Checkpoint_v1 checkpointV1;
+                Checkpoint_v1 checkpointV1{};
                 stream.read(checkpointV1);
                 checkpoint.position = checkpointV1.position;
-                checkpoint.yaw = checkpointV1.yaw;
-                checkpoint.pitch = checkpointV1.pitch;
+                checkpoint.orientation = convertYawPitchToQuat(checkpointV1.yaw, checkpointV1.pitch);
                 checkpoint.fovy = atanf(1.0f / 2.0f) * 2.0f; // Old standard FoV.
             } else if (version == 2u) {
-                Checkpoint_v2 checkpointV2;
+                Checkpoint_v2 checkpointV2{};
                 stream.read(checkpointV2);
                 checkpoint.position = checkpointV2.position;
-                checkpoint.yaw = checkpointV2.yaw;
-                checkpoint.pitch = checkpointV2.pitch;
+                checkpoint.orientation = convertYawPitchToQuat(checkpointV2.yaw, checkpointV2.pitch);
                 checkpoint.fovy = checkpointV2.fovy;
+            } else if (version == 3u) {
+                Checkpoint_v3 checkpointV3{};
+                stream.read(checkpointV3);
+                checkpoint.position = checkpointV3.position;
+                checkpoint.orientation = convertYawPitchToQuat(checkpointV3.yaw, checkpointV3.pitch);
+                checkpoint.fovy = checkpointV3.fovy;
+                checkpoint.lookAtLocation = checkpointV3.lookAtLocation;
             } else {
                 stream.read(checkpoint);
             }
@@ -250,16 +265,14 @@ bool CheckpointWindow::renderGui() {
             //ImGui::Text("%f, %f", dataSetCheckpoint.second.yaw, dataSetCheckpoint.second.pitch); ImGui::NextColumn();
             if (ImGui::Button(loadLabel.c_str())) {
                 camera->setPosition(dataSetCheckpoint.second.position);
-                camera->setYaw(dataSetCheckpoint.second.yaw);
-                camera->setPitch(dataSetCheckpoint.second.pitch);
+                camera->setOrientation(dataSetCheckpoint.second.orientation);
                 camera->setFOVy(dataSetCheckpoint.second.fovy);
                 camera->setLookAtLocation(dataSetCheckpoint.second.lookAtLocation);
                 reRender = true;
             } ImGui::NextColumn();
             if (ImGui::Button(updateLabel.c_str())) {
                 dataSetCheckpoint.second.position = camera->getPosition();
-                dataSetCheckpoint.second.yaw = camera->getYaw();
-                dataSetCheckpoint.second.pitch = camera->getPitch();
+                dataSetCheckpoint.second.orientation = camera->getOrientation();
                 dataSetCheckpoint.second.fovy = camera->getFOVy();
                 dataSetCheckpoint.second.lookAtLocation = camera->getLookAtLocation();
             } ImGui::NextColumn();
@@ -272,12 +285,11 @@ bool CheckpointWindow::renderGui() {
         ImGui::Separator();
 
         if (ImGui::Button("Create Checkpoint")) {
-            Checkpoint checkpoint(
-                    camera->getPosition(),
-                    camera->getYaw(),
-                    camera->getPitch(),
-                    camera->getFOVy(),
-                    camera->getLookAtLocation());
+            Checkpoint checkpoint{};
+            checkpoint.position = camera->getPosition();
+            checkpoint.orientation = camera->getOrientation();
+            checkpoint.fovy = camera->getFOVy();
+            checkpoint.lookAtLocation = camera->getLookAtLocation();
             loadedDataSetCheckpoints.emplace_back("New Checkpoint", checkpoint);
         }
     }

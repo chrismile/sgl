@@ -29,12 +29,14 @@
 #ifndef SRC_GRAPHICS_SCENE_CAMERA_HPP_
 #define SRC_GRAPHICS_SCENE_CAMERA_HPP_
 
-#include "SceneNode.hpp"
 #include <Math/Math.hpp>
 #include <Math/Geometry/AABB3.hpp>
 #include <Math/Geometry/Plane.hpp>
 #include <Math/Geometry/AABB2.hpp>
 #include <Math/Geometry/Sphere.hpp>
+
+#include "SceneNode.hpp"
+#include "CameraHelper.hpp"
 
 namespace sgl {
 
@@ -87,15 +89,19 @@ public:
     void setFOVy(float fov)              { fovy = fov; invalidateFrustum(); }
 
     // View data
-    [[nodiscard]] inline float getYaw()   const { return yaw; }
-    [[nodiscard]] inline float getPitch() const { return pitch; }
-    inline void rotateYaw(float offset)         { recalcModelMat = true; yaw += offset; }
-    inline void setYaw(float newYaw)            { recalcModelMat = true; yaw = newYaw; }
-    inline void rotatePitch(float offset)       { recalcModelMat = true; pitch += offset; isPitchMode = true; }
-    inline void setPitch(float newPitch)        { recalcModelMat = true; pitch = newPitch; isPitchMode = true; }
-    [[nodiscard]] inline const glm::vec3 &getCameraFront()          { updateCamera(); return cameraFront; }
-    [[nodiscard]] inline const glm::vec3 &getCameraRight()          { updateCamera(); return cameraRight; }
-    [[nodiscard]] inline const glm::vec3 &getCameraUp()             { updateCamera(); return cameraUp; }
+    void resetOrientation();
+    void setOrientation(const glm::quat& ort) override { orientationMode = ORT_QUAT; recalcModelMat = true; transform.orientation = ort; }
+    glm::quat& getOrientation() override { updateOrtMode(ORT_YAW_PITCH); return transform.orientation; }
+    void rotate(const glm::quat& ort) override { updateOrtMode(ORT_YAW_PITCH); orientationMode = ORT_YAW_PITCH; recalcModelMat = true; transform.orientation *= ort; }
+    [[nodiscard]] inline float getYaw()   { updateOrtMode(ORT_YAW_PITCH); return yaw; }
+    [[nodiscard]] inline float getPitch() { updateOrtMode(ORT_YAW_PITCH); return pitch; }
+    inline void rotateYaw(float offset)   { updateOrtMode(ORT_YAW_PITCH); orientationMode = ORT_YAW_PITCH; recalcModelMat = true; yaw += offset; }
+    inline void setYaw(float newYaw)      { orientationMode = ORT_YAW_PITCH; recalcModelMat = true; yaw = newYaw; }
+    inline void rotatePitch(float offset) { updateOrtMode(ORT_YAW_PITCH); orientationMode = ORT_YAW_PITCH; recalcModelMat = true; pitch += offset; clampPitch(); }
+    inline void setPitch(float newPitch)  { orientationMode = ORT_YAW_PITCH; recalcModelMat = true; pitch = newPitch; clampPitch(); }
+    [[nodiscard]] inline const glm::vec3 &getCameraFront() { updateOrtMode(ORT_CAM_VECTORS); return cameraFront; }
+    [[nodiscard]] inline const glm::vec3 &getCameraRight() { updateOrtMode(ORT_CAM_VECTORS); return cameraRight; }
+    [[nodiscard]] inline const glm::vec3 &getCameraUp()    { updateOrtMode(ORT_CAM_VECTORS); return cameraUp; }
     [[nodiscard]] inline const glm::vec3 &getCameraGlobalUp() const { return globalUp; }
     [[nodiscard]] inline const glm::vec3 &getLookAtLocation() const { return lookAtLocation; }
     inline void setLookAtLocation(const glm::vec3 &position) { recalcModelMat = true; lookAtLocation = position; }
@@ -153,11 +159,13 @@ protected:
     RenderTargetPtr renderTarget;
 
     // View matrix data
-    float yaw = -sgl::PI/2.0f;   //< around y axis
+    void updateOrtMode(int _orientationMode);
+    void clampPitch();
+    int orientationMode = ORT_YAW_PITCH | ORT_QUAT | ORT_CAM_VECTORS;
+    float yaw = -sgl::PI/2.0f; //< around y axis
     float pitch = 0.0f; //< around x axis
     glm::vec3 globalUp = glm::vec3(0.0f, 1.0f, 0.0f);
     glm::vec3 cameraFront, cameraRight, cameraUp;
-    bool isPitchMode = true; // Pitch set explicitly?
 
     // If a navigation mode using look-at is used.
     glm::vec3 lookAtLocation{};
@@ -179,7 +187,6 @@ protected:
     glm::vec3 worldSpaceCorners[8];
     Plane frustumPlanes[6];
     bool recalcFrustum;
-
 };
 
 }
