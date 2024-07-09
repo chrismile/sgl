@@ -81,7 +81,7 @@ std::pair<float, float> convertCamVectorsToYawPitch(const CamVectors& camVectors
     float yaw = std::atan2(cameraFront.z, cameraFront.x);
     //pitch = std::asin(cameraFront.y);
     float pitch = std::atan2(cameraFront.y, cameraUp.y);
-    return { yaw, pitch };
+    return std::make_pair(yaw, pitch);
 }
 
 CamVectors convertQuatToCamVectors(const glm::quat& ort) {

@@ -29,6 +29,7 @@
 #ifndef SGL_CAMERAHELPER_HPP
 #define SGL_CAMERAHELPER_HPP
 
+#include <utility>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
