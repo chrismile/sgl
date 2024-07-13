@@ -192,9 +192,12 @@ void Swapchain::create(Window* window) {
             errorMessage += " Error: VK_ERROR_NATIVE_WINDOW_IN_USE_KHR.";
         } else if (retVal == VK_ERROR_INITIALIZATION_FAILED) {
             errorMessage += " Error: VK_ERROR_INITIALIZATION_FAILED.";
-        } else if (retVal == VK_ERROR_COMPRESSION_EXHAUSTED_EXT) {
+        }
+#ifdef VK_EXT_image_compression_control
+        else if (retVal == VK_ERROR_COMPRESSION_EXHAUSTED_EXT) {
             errorMessage += " Error: VK_ERROR_COMPRESSION_EXHAUSTED_EXT.";
         }
+#endif
         sgl::Logfile::get()->writeError(errorMessage);
         exit(1);
     }
