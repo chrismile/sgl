@@ -26,6 +26,17 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+// Allow using boost::algorithm, as Boost may be built with ICU support for Unicode.
+#ifdef USE_BOOST_ALGORITHM
+#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/case_conv.hpp>
+#include <boost/algorithm/string/trim.hpp>
+#include <boost/algorithm/string/replace.hpp>
+#else
+#include <algorithm>
+#include <cctype>
+#endif
+
 #include "StringUtils.hpp"
 
 namespace sgl {
@@ -36,6 +47,120 @@ bool startsWith(const std::string& str, const std::string& prefix) {
 
 bool endsWith(const std::string& str, const std::string& postfix) {
     return postfix.length() <= str.length() && std::equal(postfix.rbegin(), postfix.rend(), str.rbegin());
+}
+
+bool stringContains(const std::string& str, const std::string& substr) {
+#ifdef USE_BOOST_ALGORITHM
+    return boost::algorithm::contains(str, substr);
+#else
+    return str.find(substr) != std::string::npos;
+#endif
+}
+
+void toUpper(std::string& str) {
+#ifdef USE_BOOST_ALGORITHM
+    boost::to_upper(str);
+#else
+    std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c){ return std::toupper(c); });
+#endif
+}
+
+std::string toUpperCopy(const std::string& str) {
+#ifdef USE_BOOST_ALGORITHM
+    return boost::to_upper_copy(str);
+#else
+    std::string strCopy = str;
+    toUpper(strCopy);
+    return strCopy;
+#endif
+}
+
+void toLower(std::string& str) {
+#ifdef USE_BOOST_ALGORITHM
+    boost::to_lower(str);
+#else
+    std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c){ return std::tolower(c); });
+#endif
+}
+
+std::string toLowerCopy(const std::string& str) {
+#ifdef USE_BOOST_ALGORITHM
+    return boost::to_lower_copy(str);
+#else
+    std::string strCopy = str;
+    toLower(strCopy);
+    return strCopy;
+#endif
+}
+
+void stringTrim(std::string& str) {
+#ifdef USE_BOOST_ALGORITHM
+    return boost::trim(str);
+#else
+    str = stringTrimCopy(str);
+#endif
+}
+
+std::string stringTrimCopy(const std::string& str) {
+#ifdef USE_BOOST_ALGORITHM
+    return boost::trim_copy(str);
+#else
+    int N = int(str.size());
+    int start = 0, end = N - 1;
+    while (start < N) {
+        char c = str.at(start);
+        if (c != ' ' && c != '\t') {
+            break;
+        }
+        start++;
+    }
+    if (start == N) {
+        return "";
+    }
+    while (end >= 0) {
+        char c = str.at(end);
+        if (c != ' ' && c != '\t') {
+            break;
+        }
+        end--;
+    }
+    return str.substr(start, end - start + 1);
+#endif
+}
+
+void stringReplaceAll(std::string& str, const std::string& searchPattern, const std::string& replStr) {
+#ifdef USE_BOOST_ALGORITHM
+    boost::replace_all(str, searchPattern, replStr);
+#else
+    while (true) {
+        auto start = str.find(searchPattern);
+        if (start == std::string::npos) {
+            break;
+        }
+        str.replace(start, searchPattern.length(), replStr);
+    }
+#endif
+}
+
+std::string stringReplaceAllCopy(
+        const std::string& str, const std::string& searchPattern, const std::string& replStr) {
+#ifdef USE_BOOST_ALGORITHM
+    return boost::replace_all_copy(str, searchPattern, replStr);
+#else
+    std::string processedStr;
+    std::string::size_type startLast = 0;
+    while (true) {
+        auto start = str.find(searchPattern, startLast);
+        if (start == std::string::npos) {
+            processedStr += str.substr(startLast);
+            break;
+        }
+        processedStr += str.substr(startLast, start - startLast);
+        processedStr += replStr;
+        startLast = start + searchPattern.length();
+    }
+    return processedStr;
+#endif
 }
 
 }

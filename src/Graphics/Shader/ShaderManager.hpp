@@ -32,9 +32,6 @@
 #include <vector>
 #include <list>
 
-#include <boost/shared_ptr.hpp>
-#include <boost/weak_ptr.hpp>
-
 #include <Utils/Convert.hpp>
 #include <Utils/Singleton.hpp>
 #include <Utils/File/FileManager.hpp>

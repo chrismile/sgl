@@ -28,17 +28,11 @@
 
 #define _FILE_OFFSET_BITS 64
 
-#include "FileUtils.hpp"
+#include <algorithm>
 #include <fstream>
 #include <cstdlib>
 
-#define BOOST_NO_CXX11_SCOPED_ENUMS
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/operations.hpp>
-#if __has_include(<boost/filesystem/directory.hpp>)
-#include <boost/filesystem/directory.hpp>
-#endif
-#undef BOOST_NO_CXX11_SCOPED_ENUMS
+#include <filesystem>
 
 #ifdef _WIN32
 #define _WIN32_IE 0x0400
@@ -46,13 +40,15 @@
 #include <windef.h>
 #endif
 
-#include <Utils/File/Logfile.hpp>
-#include <boost/algorithm/string.hpp>
-
 #ifdef USE_BOOST_LOCALE
 #include <boost/locale.hpp>
 #include <boost/locale/collator.hpp>
 #endif
+
+#include <Utils/StringUtils.hpp>
+#include <Utils/File/Logfile.hpp>
+
+#include "FileUtils.hpp"
 
 namespace sgl {
 
@@ -63,8 +59,8 @@ void FileUtils::initialize(const std::string &_appName, int _argc, char *_argv[]
 void FileUtils::initialize(const std::string &_appName, int _argc, const char *_argv[]) {
     argc = _argc;
     argv = _argv;
-    execPath = boost::filesystem::absolute(argv[0]).string();
-    execDir = boost::filesystem::path(execPath).parent_path().string() + "/";
+    execPath = std::filesystem::absolute(argv[0]).string();
+    execDir = std::filesystem::path(execPath).parent_path().string() + "/";
 
     appName = _appName;
 #if defined(__unix__) || defined(__APPLE__)
@@ -81,7 +77,7 @@ void FileUtils::initialize(const std::string &_appName, int _argc, const char *_
     }
 
     std::string userConfigDir = homeDirectory + "/.config/";
-    configDir = userConfigDir + boost::to_lower_copy(appNameNoWhitespace) + "/";
+    configDir = userConfigDir + sgl::toLowerCopy(appNameNoWhitespace) + "/";
     userDir = homeDirectory + "/";
     if (!exists(userConfigDir)) {
         createDirectory(userConfigDir);
@@ -143,8 +139,8 @@ void FileUtils::initialize(const std::string &_appName, int _argc, const char *_
 
 // Check whether file has certain extension
 bool FileUtils::hasExtension(const char *fileString, const char *extension) {
-    std::string lowerFilename = boost::to_lower_copy(std::string(fileString));
-    return boost::ends_with(lowerFilename, extension);
+    std::string lowerFilename = sgl::toLowerCopy(std::string(fileString));
+    return sgl::endsWith(lowerFilename, extension);
 }
 
 std::string FileUtils::filenameWithoutExtension(const std::string &filename) {
@@ -181,7 +177,7 @@ std::string FileUtils::getFileExtension(const std::string &path) {
 std::string FileUtils::getFileExtensionLower(const std::string &path) {
     auto dotLocation = path.find_last_of('.');
     if (dotLocation != std::string::npos) {
-        return boost::to_lower_copy(path.substr(dotLocation + 1));
+        return sgl::toLowerCopy(path.substr(dotLocation + 1));
     }
     return "";
 }
@@ -197,21 +193,21 @@ std::string FileUtils::getPathToFile(const std::string &path) {
 
 
 std::list<std::string> FileUtils::getFilesInDirectoryList(const std::string &dirPath) {
-    boost::filesystem::path dir(dirPath);
-    if (!boost::filesystem::exists(dir)) {
+    std::filesystem::path dir(dirPath);
+    if (!std::filesystem::exists(dir)) {
         Logfile::get()->writeError(std::string() + "FileUtils::getFilesInDirectory: Path \""
                 + dir.string() + "\" does not exist!");
         return std::list<std::string>();
     }
-    if (!boost::filesystem::is_directory(dir)) {
+    if (!std::filesystem::is_directory(dir)) {
         Logfile::get()->writeError(std::string() + "FileUtils::getFilesInDirectory: \""
                 + dir.string() + "\" is not a directory!");
         return std::list<std::string>();
     }
 
     std::list<std::string> files;
-    boost::filesystem::directory_iterator end;
-    for (boost::filesystem::directory_iterator i(dir); i != end; ++i) {
+    std::filesystem::directory_iterator end;
+    for (std::filesystem::directory_iterator i(dir); i != end; ++i) {
         files.push_back(i->path().string());
 #ifdef _WIN32
         std::string &currPath = files.back();
@@ -225,21 +221,21 @@ std::list<std::string> FileUtils::getFilesInDirectoryList(const std::string &dir
 
 
 std::vector<std::string> FileUtils::getFilesInDirectoryVector(const std::string &dirPath) {
-    boost::filesystem::path dir(dirPath);
-    if (!boost::filesystem::exists(dir)) {
+    std::filesystem::path dir(dirPath);
+    if (!std::filesystem::exists(dir)) {
         Logfile::get()->writeError(std::string() + "FileUtils::getFilesInDirectoryAsVector: Path \""
                 + dir.string() + "\" does not exist!");
         return std::vector<std::string>();
     }
-    if (!boost::filesystem::is_directory(dir)) {
+    if (!std::filesystem::is_directory(dir)) {
         Logfile::get()->writeError(std::string() + "FileUtils::getFilesInDirectoryAsVector: \""
                 + dir.string() + "\" is not a directory!");
         return std::vector<std::string>();
     }
 
     std::vector<std::string> files;
-    boost::filesystem::directory_iterator end;
-    for (boost::filesystem::directory_iterator i(dir); i != end; ++i) {
+    std::filesystem::directory_iterator end;
+    for (std::filesystem::directory_iterator i(dir); i != end; ++i) {
         files.push_back(i->path().string());
 #ifdef _WIN32
         std::string &currPath = files.back();
@@ -283,15 +279,15 @@ std::vector<std::string> FileUtils::getPathAsList(const std::string &dirPath) {
 
 
 bool FileUtils::isDirectory(const std::string &dirPath) {
-    boost::filesystem::path dir(dirPath);
-    if (boost::filesystem::is_directory(dir))
+    std::filesystem::path dir(dirPath);
+    if (std::filesystem::is_directory(dir))
         return true;
     return false;
 }
 
 bool FileUtils::exists(const std::string &filePath) {
-    boost::filesystem::path dir(filePath);
-    if (boost::filesystem::exists(dir))
+    std::filesystem::path dir(filePath);
+    if (std::filesystem::exists(dir))
         return true;
     return false;
 }
@@ -317,8 +313,8 @@ void FileUtils::deleteFileEnding(std::string &path) {
 
 
 void FileUtils::createDirectory(const std::string &path) {
-    boost::filesystem::path dir(path);
-    boost::filesystem::create_directory(dir);
+    std::filesystem::path dir(path);
+    std::filesystem::create_directory(dir);
 }
 
 
@@ -347,19 +343,19 @@ void FileUtils::ensureDirectoryExists(const std::string &path) {
 }
 
 void FileUtils::rename(const std::string &filename, const std::string &newFilename) {
-    boost::filesystem::path file(filename);
-    boost::filesystem::path newFile(newFilename);
-    boost::filesystem::rename(file, newFilename);
+    std::filesystem::path file(filename);
+    std::filesystem::path newFile(newFilename);
+    std::filesystem::rename(file, newFilename);
 }
 
 bool FileUtils::removeFile(const std::string &filename) {
-    boost::filesystem::path file(filename);
-    return boost::filesystem::remove(filename);
+    std::filesystem::path file(filename);
+    return std::filesystem::remove(filename);
 }
 
 bool FileUtils::removeAll(const std::string &filename) {
-    boost::filesystem::path file(filename);
-    return boost::filesystem::remove_all(filename);
+    std::filesystem::path file(filename);
+    return std::filesystem::remove_all(filename);
 }
 
 void FileUtils::copyFileToDirectory(const std::string &sourceFile, const std::string &destinationDirectory) {
@@ -375,15 +371,15 @@ void FileUtils::copyFileToDirectory(const std::string &sourceFile, const std::st
         return;
     }
 
-    boost::filesystem::path file(sourceFile);
+    std::filesystem::path file(sourceFile);
     std::vector<std::string> filePath;
     splitPath(sourceFile, filePath);
-    boost::filesystem::path destination(destinationDirectory);
-    if (!boost::ends_with(destinationDirectory.c_str(), "/") || !boost::ends_with(destinationDirectory.c_str(), "\\"))
-        destination = boost::filesystem::path(destinationDirectory + "/" + filePath.at(filePath.size()-1));
+    std::filesystem::path destination(destinationDirectory);
+    if (!sgl::endsWith(destinationDirectory.c_str(), "/") || !sgl::endsWith(destinationDirectory.c_str(), "\\"))
+        destination = std::filesystem::path(destinationDirectory + "/" + filePath.at(filePath.size()-1));
     else
-        destination = boost::filesystem::path(destinationDirectory + filePath.at(filePath.size()-1));
-    boost::filesystem::copy_file(file, destination);
+        destination = std::filesystem::path(destinationDirectory + filePath.at(filePath.size()-1));
+    std::filesystem::copy_file(file, destination);
 }
 
 void FileUtils::splitPath(const std::string &path, std::list<std::string> &pathList) {
@@ -442,12 +438,26 @@ bool FileUtils::getIsPathAbsolute(const std::string &path) {
 #ifdef _WIN32
     bool isAbsolutePath =
             (path.size() > 1 && path.at(1) == ':')
-            || boost::starts_with(path, "/") || boost::starts_with(path, "\\");
+            || sgl::startsWith(path, "/") || sgl::startsWith(path, "\\");
 #else
     bool isAbsolutePath =
-            boost::starts_with(path, "/");
+            sgl::startsWith(path, "/");
 #endif
     return isAbsolutePath;
+}
+
+std::string FileUtils::getPathAbsolute(const std::string &path) {
+    return std::filesystem::absolute(path).string();
+}
+
+std::string FileUtils::getPathAbsoluteGeneric(const std::string &path) {
+    return std::filesystem::absolute(path).generic_string();
+}
+
+bool FileUtils::getPathAbsoluteEquivalent(const std::string &pathStr0, const std::string &pathStr1) {
+    auto path0 = std::filesystem::absolute(pathStr0);
+    auto path1 = std::filesystem::absolute(pathStr1);
+    return std::filesystem::equivalent(path0, path1);
 }
 
 size_t FileUtils::getFileSizeInBytes(const std::string &path) {
@@ -476,20 +486,21 @@ size_t FileUtils::getFileSizeInBytes(const std::string &path) {
 }
 
 bool FileUtils::pathsEquivalent(const std::string &pathStr0, const std::string &pathStr1) {
-    boost::filesystem::path path0(pathStr0);
-    boost::filesystem::path path1(pathStr1);
-    return boost::filesystem::equivalent(path0, path1);
+    std::filesystem::path path0(pathStr0);
+    std::filesystem::path path1(pathStr1);
+    return std::filesystem::equivalent(path0, path1);
 }
 
 struct CaseInsensitiveComparator {
     bool operator() (const std::string& lhs, const std::string& rhs) const {
-        std::string lowerCaseStringLhs = boost::to_lower_copy(lhs);
-        std::string lowerCaseStringRhs = boost::to_lower_copy(rhs);
+        std::string lowerCaseStringLhs = sgl::toLowerCopy(lhs);
+        std::string lowerCaseStringRhs = sgl::toLowerCopy(rhs);
         return lowerCaseStringLhs < lowerCaseStringRhs;
     }
 };
 
 void FileUtils::sortPathStrings(std::vector<std::string>& pathStrings) {
+    // TODO: Replace with ICU.
 #ifdef USE_BOOST_LOCALE
     std::sort(pathStrings.begin(), pathStrings.end(), boost::locale::comparator<char, boost::locale::collator_base::secondary>());
 #else

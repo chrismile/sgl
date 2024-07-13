@@ -28,7 +28,6 @@
 
 #include <iostream>
 #include <fstream>
-#include <boost/algorithm/string/predicate.hpp>
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>

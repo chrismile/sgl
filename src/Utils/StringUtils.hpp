@@ -54,6 +54,79 @@ DLL_OBJECT bool startsWith(const std::string& str, const std::string& prefix);
 DLL_OBJECT bool endsWith(const std::string& str, const std::string& postfix);
 
 /**
+ * Returns whether @str contains @substr.
+ * @param str The full string.
+ * @param substr The substring.
+ * @return Returns whether the full string contains the passed substring.
+ */
+DLL_OBJECT bool stringContains(const std::string& str, const std::string& substr);
+
+/**
+ * Converts a string to upper case (in-place).
+ * @param str The string to convert.
+ */
+DLL_OBJECT void toUpper(std::string& str);
+
+/**
+ * Converts a string to upper case and returns the new string.
+ * @param str The string to convert.
+ * @return The converted string.
+ */
+DLL_OBJECT std::string toUpperCopy(const std::string& str);
+
+/**
+ * Converts a string to lower case (in-place).
+ * @param str The string to convert.
+ */
+DLL_OBJECT void toLower(std::string& str);
+
+/**
+ * Converts a string to lower case and returns the new string.
+ * @param str The string to convert.
+ * @return The converted string.
+ */
+DLL_OBJECT std::string toLowerCopy(const std::string& str);
+
+/**
+ * Converts a string to lower case and returns the new string.
+ * @param str The string to convert.
+ * @return The converted string.
+ */
+DLL_OBJECT std::string toLowerCopy(const std::string& str);
+
+/**
+ * Remove all leading and trailing from @str (in-place).
+ * @param str The string to process.
+ * @return The string without leading and trailing
+ */
+DLL_OBJECT void stringTrim(std::string& str);
+
+/**
+ * Remove all leading and trailing from @str.
+ * @param str The string to process.
+ * @return The string without leading and trailing
+ */
+DLL_OBJECT std::string stringTrimCopy(const std::string& str);
+
+/**
+ * Replaces all occurrences of @searchPattern with @replString in @str (in-place).
+ * @param str The string to process.
+ * @param searchPattern The search pattern.
+ * @param replStr The string to replace the search pattern with.
+ */
+DLL_OBJECT void stringReplaceAll(std::string& str, const std::string& searchPattern, const std::string& replStr);
+
+/**
+ * Replaces all occurrences of @searchPattern with @replString in @str.
+ * @param str The string to process.
+ * @param searchPattern The search pattern.
+ * @param replStr The string to replace the search pattern with.
+ * @return The processed string.
+ */
+DLL_OBJECT std::string stringReplaceAllCopy(
+        const std::string& str, const std::string& searchPattern, const std::string& replStr);
+
+/**
  * Converts strings like "This is a test!" with separator ' ' to { "This", "is", "a", "test!" }.
  * @tparam InputIterator The list class to use.
  * @param stringObject The string to split.
@@ -65,6 +138,33 @@ void splitString(const std::string& stringObject, char separator, InputIterator&
     std::string buffer;
     for (char c : stringObject) {
         if (c != separator) {
+            buffer += c;
+        } else {
+            if (buffer.length() > 0) {
+                listObject.push_back(buffer);
+                buffer = "";
+            }
+        }
+    }
+    if (buffer.length() > 0) {
+        listObject.push_back(buffer);
+        buffer = "";
+    }
+}
+
+/**
+ * Converts strings like "This, is a test!" with separators ' ' and ',' to { "This", "is", "a", "test!" }.
+ * @tparam InputIterator The list class to use.
+ * @param stringObject The string to split.
+ * @param s0 The first separator to use for splitting.
+ * @param s1 The second separator to use for splitting.
+ * @param listObject The split parts.
+ */
+template<class InputIterator>
+void splitString2(const std::string& stringObject, InputIterator& listObject, char s0, char s1) {
+    std::string buffer;
+    for (char c : stringObject) {
+        if (c != s0 && c != s1) {
             buffer += c;
         } else {
             if (buffer.length() > 0) {

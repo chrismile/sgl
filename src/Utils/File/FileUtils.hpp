@@ -95,6 +95,9 @@ public:
     void splitPath(const std::string &path, std::vector<std::string> &list);
     void splitPathNoTrim(const std::string &path, std::vector<std::string> &list);
     bool getIsPathAbsolute(const std::string &path);
+    std::string getPathAbsolute(const std::string &path);
+    std::string getPathAbsoluteGeneric(const std::string &path);
+    bool getPathAbsoluteEquivalent(const std::string &pathStr0, const std::string &pathStr1);
     size_t getFileSizeInBytes(const std::string &path);
 
     // Do the two paths point to the same resource?

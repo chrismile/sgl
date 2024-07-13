@@ -26,8 +26,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <Utils/StringUtils.hpp>
+
 #include "Convert.hpp"
-#include <boost/algorithm/string/predicate.hpp>
 
 namespace sgl
 {
@@ -54,7 +55,7 @@ int fromHexString(const std::string &stringObject) {
 
 // Respects whether string contains decimal or hexadecimal number
 inline int stringToNumber(const char *str) {
-    if (boost::starts_with(str, "0x")) {
+    if (sgl::startsWith(str, "0x")) {
         return fromHexString(str);
     } else {
         return fromString<int>(str);

@@ -26,10 +26,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <boost/algorithm/string/predicate.hpp>
 #include <regex>
 
 #include <Utils/Convert.hpp>
+#include <Utils/StringUtils.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Math/Math.hpp>
 #include <Math/Geometry/MatrixUtil.hpp>
@@ -69,7 +69,7 @@ glm::mat4 parseTransformString(std::string transformString) {
         } else if (transformType == "rotate") {
             float rotationAngleRadians = 0.0f;
             // Degree or radians?
-            if (boost::ends_with(transformData.at(0), "°")) {
+            if (sgl::endsWith(transformData.at(0), "°")) {
                 std::string numberString =
                         transformData.at(0).substr(0, transformData.at(0).find_last_of("°") - 1);
                 rotationAngleRadians = sgl::fromString<float>(numberString) / 180.0f * sgl::PI;

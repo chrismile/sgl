@@ -29,9 +29,6 @@
 #include <iostream>
 #include <unordered_map>
 
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/algorithm/string.hpp>
-
 #include "../libs/volk/volk.h"
 
 #include <Utils/Convert.hpp>
@@ -314,82 +311,82 @@ ShaderModulePtr ShaderManagerVk::getShaderModule(
 
 
 ShaderModuleType getShaderModuleTypeFromString(const std::string& shaderId) {
-    std::string shaderIdLower = boost::algorithm::to_lower_copy(shaderId);
+    std::string shaderIdLower = sgl::toLowerCopy(shaderId);
     ShaderModuleType shaderModuleType = ShaderModuleType::UNKNOWN;
-    if (boost::algorithm::ends_with(shaderIdLower.c_str(), "vertex")) {
+    if (sgl::endsWith(shaderIdLower, "vertex")) {
         shaderModuleType = ShaderModuleType::VERTEX;
-    } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "fragment")) {
+    } else if (sgl::endsWith(shaderIdLower, "fragment")) {
         shaderModuleType = ShaderModuleType::FRAGMENT;
-    } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "geometry")) {
+    } else if (sgl::endsWith(shaderIdLower, "geometry")) {
         shaderModuleType = ShaderModuleType::GEOMETRY;
-    } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "tesselationevaluation")) {
+    } else if (sgl::endsWith(shaderIdLower, "tesselationevaluation")) {
         shaderModuleType = ShaderModuleType::TESSELATION_EVALUATION;
-    } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "tesselationcontrol")) {
+    } else if (sgl::endsWith(shaderIdLower, "tesselationcontrol")) {
         shaderModuleType = ShaderModuleType::TESSELATION_CONTROL;
-    } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "compute")) {
+    } else if (sgl::endsWith(shaderIdLower, "compute")) {
         shaderModuleType = ShaderModuleType::COMPUTE;
-    } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "raygen")) {
+    } else if (sgl::endsWith(shaderIdLower, "raygen")) {
         shaderModuleType = ShaderModuleType::RAYGEN;
-    } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "anyhit")) {
+    } else if (sgl::endsWith(shaderIdLower, "anyhit")) {
         shaderModuleType = ShaderModuleType::ANY_HIT;
-    } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "closesthit")) {
+    } else if (sgl::endsWith(shaderIdLower, "closesthit")) {
         shaderModuleType = ShaderModuleType::CLOSEST_HIT;
-    } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "miss")) {
+    } else if (sgl::endsWith(shaderIdLower, "miss")) {
         shaderModuleType = ShaderModuleType::MISS;
-    } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "intersection")) {
+    } else if (sgl::endsWith(shaderIdLower, "intersection")) {
         shaderModuleType = ShaderModuleType::INTERSECTION;
-    } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "callable")) {
+    } else if (sgl::endsWith(shaderIdLower, "callable")) {
         shaderModuleType = ShaderModuleType::CALLABLE;
-    } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "tasknv")) {
+    } else if (sgl::endsWith(shaderIdLower, "tasknv")) {
         shaderModuleType = ShaderModuleType::TASK_NV;
-    } else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "meshnv")) {
+    } else if (sgl::endsWith(shaderIdLower, "meshnv")) {
         shaderModuleType = ShaderModuleType::MESH_NV;
     }
 #ifdef VK_EXT_mesh_shader
-    else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "taskext")) {
+    else if (sgl::endsWith(shaderIdLower, "taskext")) {
         shaderModuleType = ShaderModuleType::TASK_EXT;
     }
-    else if (boost::algorithm::ends_with(shaderIdLower.c_str(), "meshext")) {
+    else if (sgl::endsWith(shaderIdLower, "meshext")) {
         shaderModuleType = ShaderModuleType::MESH_EXT;
     }
 #endif
     else {
-        if (boost::algorithm::contains(shaderIdLower.c_str(), "vert")) {
+        if (sgl::stringContains(shaderIdLower, "vert")) {
             shaderModuleType = ShaderModuleType::VERTEX;
-        } else if (boost::algorithm::contains(shaderIdLower.c_str(), "frag")) {
+        } else if (sgl::stringContains(shaderIdLower, "frag")) {
             shaderModuleType = ShaderModuleType::FRAGMENT;
-        } else if (boost::algorithm::contains(shaderIdLower.c_str(), "geom")) {
+        } else if (sgl::stringContains(shaderIdLower, "geom")) {
             shaderModuleType = ShaderModuleType::GEOMETRY;
-        } else if (boost::algorithm::contains(shaderIdLower.c_str(), "tess")) {
-            if (boost::algorithm::contains(shaderIdLower.c_str(), "eval")) {
+        } else if (sgl::stringContains(shaderIdLower, "tess")) {
+            if (sgl::stringContains(shaderIdLower, "eval")) {
                 shaderModuleType = ShaderModuleType::TESSELATION_EVALUATION;
-            } else if (boost::algorithm::contains(shaderIdLower.c_str(), "control")) {
+            } else if (sgl::stringContains(shaderIdLower, "control")) {
                 shaderModuleType = ShaderModuleType::TESSELATION_CONTROL;
             }
-        } else if (boost::algorithm::contains(shaderIdLower.c_str(), "comp")) {
+        } else if (sgl::stringContains(shaderIdLower, "comp")) {
             shaderModuleType = ShaderModuleType::COMPUTE;
-        } else if (boost::algorithm::contains(shaderIdLower.c_str(), "raygen")) {
+        } else if (sgl::stringContains(shaderIdLower, "raygen")) {
             shaderModuleType = ShaderModuleType::RAYGEN;
-        } else if (boost::algorithm::contains(shaderIdLower.c_str(), "anyhit")) {
+        } else if (sgl::stringContains(shaderIdLower, "anyhit")) {
             shaderModuleType = ShaderModuleType::ANY_HIT;
-        } else if (boost::algorithm::contains(shaderIdLower.c_str(), "closesthit")) {
+        } else if (sgl::stringContains(shaderIdLower, "closesthit")) {
             shaderModuleType = ShaderModuleType::CLOSEST_HIT;
-        } else if (boost::algorithm::contains(shaderIdLower.c_str(), "miss")) {
+        } else if (sgl::stringContains(shaderIdLower, "miss")) {
             shaderModuleType = ShaderModuleType::MISS;
-        } else if (boost::algorithm::contains(shaderIdLower.c_str(), "intersection")) {
+        } else if (sgl::stringContains(shaderIdLower, "intersection")) {
             shaderModuleType = ShaderModuleType::INTERSECTION;
-        } else if (boost::algorithm::contains(shaderIdLower.c_str(), "callable")) {
+        } else if (sgl::stringContains(shaderIdLower, "callable")) {
             shaderModuleType = ShaderModuleType::CALLABLE;
-        } else if (boost::algorithm::contains(shaderIdLower.c_str(), "tasknv")) {
+        } else if (sgl::stringContains(shaderIdLower, "tasknv")) {
             shaderModuleType = ShaderModuleType::TASK_NV;
-        } else if (boost::algorithm::contains(shaderIdLower.c_str(), "meshnv")) {
+        } else if (sgl::stringContains(shaderIdLower, "meshnv")) {
             shaderModuleType = ShaderModuleType::MESH_NV;
         }
 #ifdef VK_EXT_mesh_shader
-        else if (boost::algorithm::contains(shaderIdLower.c_str(), "taskext")) {
+        else if (sgl::stringContains(shaderIdLower, "taskext")) {
             shaderModuleType = ShaderModuleType::TASK_EXT;
         }
-        else if (boost::algorithm::contains(shaderIdLower.c_str(), "meshext")) {
+        else if (sgl::stringContains(shaderIdLower, "meshext")) {
             shaderModuleType = ShaderModuleType::MESH_EXT;
         }
 #endif
@@ -722,7 +719,7 @@ std::string ShaderManagerVk::loadHeaderFileString(const std::string &shaderName,
 
         lineNum++;
 
-        if (boost::starts_with(linestr, "#include")) {
+        if (sgl::startsWith(linestr, "#include")) {
             std::string includedFileName = getShaderFileName(getHeaderName(linestr));
             std::string includedFileContent = loadHeaderFileString(includedFileName, prependContent);
             fileContent += includedFileContent + "\n";
@@ -733,7 +730,7 @@ std::string ShaderManagerVk::loadHeaderFileString(const std::string &shaderName,
             } else {
                 fileContent += std::string() + "#line " + toString(lineNum) + "\n";
             }
-        } else if (boost::starts_with(linestr, "#import")) {
+        } else if (sgl::startsWith(linestr, "#import")) {
             std::string importedShaderModuleContent = getImportedShaderString(
                     getHeaderName(linestr), "", prependContent);
             fileContent += importedShaderModuleContent + "\n";
@@ -744,7 +741,7 @@ std::string ShaderManagerVk::loadHeaderFileString(const std::string &shaderName,
             } else {
                 fileContent += std::string() + "#line " + toString(lineNum) + "\n";
             }
-        } else if (boost::starts_with(linestr, "#extension") || boost::starts_with(linestr, "#version")) {
+        } else if (sgl::startsWith(linestr, "#extension") || sgl::startsWith(linestr, "#version")) {
             prependContent += linestr + "\n";
             if (dumpTextDebugStatic) {
                 fileContent += "#line " + toString(lineNum) + " " + std::to_string(sourceStringNumber) + "\n";
@@ -770,8 +767,7 @@ std::string ShaderManagerVk::getHeaderName(const std::string &lineString) {
     } else {
         // Filename is user-specified #define directive?
         std::vector<std::string> line;
-        boost::algorithm::split(
-                line, lineString, boost::is_any_of("\t "), boost::token_compress_on);
+        sgl::splitStringWhitespace(lineString, line);
         if (line.size() < 2) {
             Logfile::get()->writeError("Error in ShaderManagerVk::getHeaderFilename: Too few tokens.");
             return "";
@@ -895,9 +891,7 @@ void ShaderManagerVk::addExtensions(std::string& prependContent, const std::map<
     auto extensionsIt = defines.find("__extensions");
     if (extensionsIt != defines.end()) {
         std::vector<std::string> extensions;
-        boost::algorithm::split(
-                extensions, extensionsIt->second, boost::is_any_of(";,"),
-                boost::token_compress_on);
+        sgl::splitString2(extensionsIt->second, extensions, ';', ',');
         for (const std::string& extension : extensions) {
             prependContent += "#extension " + extension + " : require\n";
         }
@@ -946,7 +940,7 @@ std::string ShaderManagerVk::getShaderString(const std::string &globalShaderName
 
         lineNum++;
 
-        if (boost::starts_with(linestr, "-- ")) {
+        if (sgl::startsWith(linestr, "-- ")) {
             if (!shaderContent.empty() && !shaderName.empty()) {
                 effectSourcesRaw.insert(make_pair(shaderName, shaderContent));
                 effectSourcesPrepend.insert(make_pair(shaderName, prependContent));
@@ -972,8 +966,8 @@ std::string ShaderManagerVk::getShaderString(const std::string &globalShaderName
             } else {
                 prependContent.clear();
             }
-        } else if (boost::starts_with(linestr, "#version") || boost::starts_with(linestr, "#extension")) {
-            if (boost::starts_with(linestr, "#version")) {
+        } else if (sgl::startsWith(linestr, "#version") || sgl::startsWith(linestr, "#extension")) {
+            if (sgl::startsWith(linestr, "#version")) {
                 prependContent = linestr + "\n" + prependContent;
             } else {
                 prependContent += linestr + "\n";
@@ -985,7 +979,7 @@ std::string ShaderManagerVk::getShaderString(const std::string &globalShaderName
             } else {
                 shaderContent += std::string() + "#line " + toString(lineNum) + "\n";
             }
-        } else if (boost::starts_with(linestr, "#include")) {
+        } else if (sgl::startsWith(linestr, "#include")) {
             std::string includedFileName = getShaderFileName(getHeaderName(linestr));
             std::string includedFileContent = loadHeaderFileString(includedFileName, prependContent);
             shaderContent += includedFileContent + "\n";
@@ -996,7 +990,7 @@ std::string ShaderManagerVk::getShaderString(const std::string &globalShaderName
             } else {
                 shaderContent += std::string() + "#line " + toString(lineNum) + "\n";
             }
-        } else if (boost::starts_with(linestr, "#import")) {
+        } else if (sgl::startsWith(linestr, "#import")) {
             std::string importedShaderModuleContent = getImportedShaderString(
                     getHeaderName(linestr), pureFilename, prependContent);
             shaderContent += importedShaderModuleContent + "\n";
@@ -1007,7 +1001,7 @@ std::string ShaderManagerVk::getShaderString(const std::string &globalShaderName
             } else {
                 shaderContent += std::string() + "#line " + toString(lineNum) + "\n";
             }
-        } else if (boost::starts_with(linestr, "#codefrag")) {
+        } else if (sgl::startsWith(linestr, "#codefrag")) {
             const std::string& codeFragmentName = getHeaderName(linestr);
             auto codeFragIt = tempPreprocessorDefines.find(codeFragmentName);
             if (codeFragIt != tempPreprocessorDefines.end()) {

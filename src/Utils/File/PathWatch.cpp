@@ -30,7 +30,6 @@
 #include <climits>
 #include <iostream>
 #include <atomic>
-#include <boost/algorithm/string.hpp>
 
 #include "Logfile.hpp"
 #include "PathWatch.hpp"
@@ -357,7 +356,7 @@ void PathWatch::update(std::function<void()> pathChangedCallback) {
                             notifyInfo->FileNameLength / sizeof(WCHAR),
                             &stringUtf8[0], stringSizeUtf8, nullptr, nullptr);
 
-                    if (boost::to_lower_copy(stringUtf8) == boost::to_lower_copy(watchedNodeName)) {
+                    if (sgl::toLowerCopy(stringUtf8) == sgl::toLowerCopy(watchedNodeName)) {
                         if (data->pathHandle != INVALID_HANDLE_VALUE) {
                             CloseHandle(data->pathHandle);
                             data->pathHandle = INVALID_HANDLE_VALUE;

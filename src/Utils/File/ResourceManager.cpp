@@ -31,7 +31,6 @@
 #include <Utils/File/FileUtils.hpp>
 #include <fstream>
 #include <memory>
-#include <boost/shared_ptr.hpp>
 
 namespace sgl {
 

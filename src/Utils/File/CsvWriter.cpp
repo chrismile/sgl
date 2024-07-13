@@ -26,7 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <boost/algorithm/string/replace.hpp>
+#include <Utils/StringUtils.hpp>
 #include <Utils/File/Logfile.hpp>
 
 #include "CsvWriter.hpp"
@@ -102,7 +102,7 @@ std::string CsvWriter::escapeString(const std::string& s) {
     }
 
     // Replace quotes by double-quotes and return string enclosed with single quotes
-    return std::string() + "\"" + boost::replace_all_copy(s, "\"", "\"\"") + "\"";
+    return std::string() + "\"" + sgl::stringReplaceAllCopy(s, "\"", "\"\"") + "\"";
 }
 
 }

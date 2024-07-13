@@ -26,10 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "InteropOpenCL.hpp"
-
 #include <map>
-#include <boost/algorithm/string/case_conv.hpp>
 #if defined(__linux__)
 #include <dlfcn.h>
 #include <unistd.h>
@@ -55,8 +52,9 @@
 #endif
 
 #include <Math/Math.hpp>
-#include <Utils/File/Logfile.hpp>
 #include <Utils/StringUtils.hpp>
+#include <Utils/File/Logfile.hpp>
+#include "InteropOpenCL.hpp"
 
 #ifndef CL_DEVICE_BOARD_NAME_AMD
 #define CL_DEVICE_BOARD_NAME_AMD 0x4038
@@ -417,8 +415,8 @@ cl_device_id getMatchingOpenCLDevice(sgl::vk::Device* device) {
              * device name. Example for the Steam Deck: "AMD RADV VANGOGH" has two matches ("amd", "vangogh") in
              * the OpenCL device name "AMD Custom GPU 0405 (vangogh, ...)".
              */
-            std::string deviceNameStringCl = boost::to_lower_copy(deviceNameString);
-            std::string deviceNameStringVk = boost::to_lower_copy(std::string(device->getDeviceName()));
+            std::string deviceNameStringCl = sgl::toLowerCopy(deviceNameString);
+            std::string deviceNameStringVk = sgl::toLowerCopy(std::string(device->getDeviceName()));
             std::vector<std::string> deviceNameStringVkParts;
             sgl::splitStringWhitespace(deviceNameStringVk, deviceNameStringVkParts);
             int numStringPartsFound = 0;
@@ -447,7 +445,7 @@ cl_device_id getMatchingOpenCLDevice(sgl::vk::Device* device) {
                     break;
                 }
 
-                std::string boardNameStringCl = boost::to_lower_copy(boardNameAmd);
+                std::string boardNameStringCl = sgl::toLowerCopy(boardNameAmd);
                 numStringPartsFound = 0;
                 for (const std::string& deviceNameStringVkPart : deviceNameStringVkParts) {
                     if (boardNameStringCl.find(deviceNameStringVkPart) != std::string::npos) {

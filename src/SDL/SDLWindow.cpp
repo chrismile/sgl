@@ -28,7 +28,6 @@
 
 #include <iostream>
 #include <cstdlib>
-#include <boost/algorithm/string/predicate.hpp>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
 
@@ -102,12 +101,12 @@ void SDLWindow::errorCheckSDL() {
         std::string errorString = SDL_GetError();
         bool openMessageBox = true;
         // "Unknown sensor type" can somehow can occur some Windows systems. Ignore it, as it is probably harmless.
-        if (boost::contains(errorString, "Unknown sensor type")
-                || boost::contains(errorString, "No window has focus")
+        if (sgl::stringContains(errorString, "Unknown sensor type")
+                || sgl::stringContains(errorString, "No window has focus")
                 // "Couldn't get DPI" happens on an Ubuntu 22.04 VM. We have good fallbacks, so don't open a message box.
-                || boost::contains(errorString, "Couldn't get DPI")
-                || boost::contains(errorString, "X server refused mouse capture")
-                || boost::contains(errorString, "Unknown touch device id -1, cannot reset")) {
+                || sgl::stringContains(errorString, "Couldn't get DPI")
+                || sgl::stringContains(errorString, "X server refused mouse capture")
+                || sgl::stringContains(errorString, "Unknown touch device id -1, cannot reset")) {
             openMessageBox = false;
         }
         Logfile::get()->writeError(std::string() + "SDL error: " + errorString, openMessageBox);
@@ -327,7 +326,7 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
             SDL_GL_SetSwapInterval(-1);
 
             const char* sdlError = SDL_GetError();
-            if (boost::contains(sdlError, "Negative swap interval unsupported")) {
+            if (sgl::stringContains(sdlError, "Negative swap interval unsupported")) {
                 Logfile::get()->writeInfo(std::string() + "VSYNC Info: " + sdlError);
                 SDL_ClearError();
                 SDL_GL_SetSwapInterval(1);

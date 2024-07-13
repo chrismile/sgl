@@ -30,8 +30,7 @@
 #include <set>
 #include <iostream>
 
-#include <boost/algorithm/string/predicate.hpp>
-
+#include <Utils/StringUtils.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/Events/EventManager.hpp>
 
@@ -74,7 +73,7 @@ void Swapchain::create(Window* window) {
             while (SDL_GetError()[0] != '\0') {
                 std::string errorString = SDL_GetError();
                 bool openMessageBox = true;
-                if (boost::contains(errorString, "That operation is not supported")) {
+                if (sgl::stringContains(errorString, "That operation is not supported")) {
                     openMessageBox = false;
                 }
                 Logfile::get()->writeError(std::string() + "SDL error: " + errorString, openMessageBox);

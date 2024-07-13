@@ -29,8 +29,6 @@
 #include <string>
 #include <cstring>
 
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/algorithm/string/case_conv.hpp>
 #include <archive.h>
 #include <archive_entry.h>
 
@@ -103,7 +101,7 @@ ArchiveFileLoadReturnType loadFileFromArchive(
     std::string filenameLocal;
     bool foundArchive = false;
 
-    std::string filenameLower = boost::to_lower_copy(filename);
+    std::string filenameLower = sgl::toLowerCopy(filename);
     std::string fileExtension;
     for (const char* const archiveExtension : archiveFileExtensions) {
         const size_t extensionPos = filenameLower.find(archiveExtension);
@@ -143,7 +141,7 @@ ArchiveFileLoadReturnType loadFileFromArchive(
     archive* a = archive_read_new();
     archive_read_support_filter_all(a);
     bool isRaw;
-    if (boost::starts_with(fileExtension, ".tar") || fileExtension == ".zip" || fileExtension == ".7z") {
+    if (sgl::startsWith(fileExtension, ".tar") || fileExtension == ".zip" || fileExtension == ".7z") {
         archive_read_support_format_all(a);
         isRaw = false;
     } else {
@@ -217,7 +215,7 @@ ArchiveFileLoadReturnType loadAllFilesFromArchive(
 ArchiveFileLoadReturnType loadAllFilesFromArchive(
         const std::string& filenameArchive,
         std::unordered_map<std::string, ArchiveEntry>& files, bool verbose) {
-    std::string filenameLower = boost::to_lower_copy(filenameArchive);
+    std::string filenameLower = sgl::toLowerCopy(filenameArchive);
     std::string fileExtension;
     bool foundArchive = false;
     for (const char* const archiveExtension : archiveFileExtensions) {
@@ -252,7 +250,7 @@ ArchiveFileLoadReturnType loadAllFilesFromArchive(
 
     archive* a = archive_read_new();
     archive_read_support_filter_all(a);
-    if (boost::starts_with(fileExtension, ".tar") || fileExtension == ".zip" || fileExtension == ".7z") {
+    if (sgl::startsWith(fileExtension, ".tar") || fileExtension == ".zip" || fileExtension == ".7z") {
         archive_read_support_format_all(a);
     } else {
         sgl::Logfile::get()->writeError("Error in loadAllFilesFromArchive: Raw format not supported.");

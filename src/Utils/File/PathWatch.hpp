@@ -32,8 +32,7 @@
 #include <string>
 #include <functional>
 
-#include <boost/algorithm/string/predicate.hpp>
-
+#include <Utils/StringUtils.hpp>
 #include <Utils/File/FileUtils.hpp>
 
 namespace sgl {
@@ -62,7 +61,7 @@ public:
     void setPath(const std::string& _path, bool _isFolder) {
         isFolder = _isFolder;
         path = _path;
-        if (isFolder && !boost::ends_with(path, "/") && !boost::ends_with(path, "\\")) {
+        if (isFolder && !sgl::endsWith(path, "/") && !sgl::endsWith(path, "\\")) {
             path = path + "/";
         }
         std::vector<std::string> pathList = sgl::FileUtils::get()->getPathAsList(path);

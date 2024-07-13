@@ -32,12 +32,10 @@
 #include <vector>
 #include <streambuf>
 
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/algorithm/string.hpp>
-
 #include <GL/glew.h>
 
 #include <Utils/Convert.hpp>
+#include <Utils/StringUtils.hpp>
 #include <Utils/AppSettings.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
@@ -155,34 +153,34 @@ ShaderProgramPtr ShaderManagerGL::createShaderProgram(const std::vector<std::str
 
     for (const std::string &shaderID : shaderIDs) {
         ShaderPtr shader;
-        std::string shaderID_lower = boost::algorithm::to_lower_copy(shaderID);
+        std::string shaderID_lower = sgl::toLowerCopy(shaderID);
         ShaderType shaderType = VERTEX_SHADER;
-        if (boost::algorithm::ends_with(shaderID_lower.c_str(), "vertex")) {
+        if (sgl::endsWith(shaderID_lower, "vertex")) {
             shaderType = VERTEX_SHADER;
-        } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "fragment")) {
+        } else if (sgl::endsWith(shaderID_lower, "fragment")) {
             shaderType = FRAGMENT_SHADER;
-        } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "geometry")) {
+        } else if (sgl::endsWith(shaderID_lower, "geometry")) {
             shaderType = GEOMETRY_SHADER;
-        } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "tesselationevaluation")) {
+        } else if (sgl::endsWith(shaderID_lower, "tesselationevaluation")) {
             shaderType = TESSELATION_EVALUATION_SHADER;
-        } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "tesselationcontrol")) {
+        } else if (sgl::endsWith(shaderID_lower, "tesselationcontrol")) {
             shaderType = TESSELATION_CONTROL_SHADER;
-        } else if (boost::algorithm::ends_with(shaderID_lower.c_str(), "compute")) {
+        } else if (sgl::endsWith(shaderID_lower, "compute")) {
             shaderType = COMPUTE_SHADER;
         } else {
-            if (boost::algorithm::contains(shaderID_lower.c_str(), "vert")) {
+            if (sgl::stringContains(shaderID_lower, "vert")) {
                 shaderType = VERTEX_SHADER;
-            } else if (boost::algorithm::contains(shaderID_lower.c_str(), "frag")) {
+            } else if (sgl::stringContains(shaderID_lower, "frag")) {
                 shaderType = FRAGMENT_SHADER;
-            } else if (boost::algorithm::contains(shaderID_lower.c_str(), "geom")) {
+            } else if (sgl::stringContains(shaderID_lower, "geom")) {
                 shaderType = GEOMETRY_SHADER;
-            } else if (boost::algorithm::contains(shaderID_lower.c_str(), "tess")) {
-                if (boost::algorithm::contains(shaderID_lower.c_str(), "eval")) {
+            } else if (sgl::stringContains(shaderID_lower, "tess")) {
+                if (sgl::stringContains(shaderID_lower, "eval")) {
                     shaderType = TESSELATION_EVALUATION_SHADER;
-                } else if (boost::algorithm::contains(shaderID_lower.c_str(), "control")) {
+                } else if (sgl::stringContains(shaderID_lower, "control")) {
                     shaderType = TESSELATION_CONTROL_SHADER;
                 }
-            } else if (boost::algorithm::contains(shaderID_lower.c_str(), "comp")) {
+            } else if (sgl::stringContains(shaderID_lower, "comp")) {
                 shaderType = COMPUTE_SHADER;
             } else {
                 Logfile::get()->writeError(
@@ -256,12 +254,12 @@ std::string ShaderManagerGL::loadHeaderFileString(const std::string &shaderName,
 
         lineNum++;
 
-        if (boost::starts_with(linestr, "#include")) {
+        if (sgl::startsWith(linestr, "#include")) {
             std::string includedFileName = getShaderFileName(getHeaderName(linestr));
             std::string includedFileContent = loadHeaderFileString(includedFileName, prependContent);
             fileContent += includedFileContent + "\n";
             fileContent += std::string() + "#line " + toString(lineNum) + "\n";
-        } else if (boost::starts_with(linestr, "#extension") || boost::starts_with(linestr, "#version")) {
+        } else if (sgl::startsWith(linestr, "#extension") || sgl::startsWith(linestr, "#version")) {
             prependContent += linestr + "\n";
             fileContent = std::string() + fileContent + "#line " + toString(lineNum) + "\n";
         } else {
@@ -285,8 +283,7 @@ std::string ShaderManagerGL::getHeaderName(const std::string &lineString) {
     } else {
         // Filename is user-specified #define directive?
         std::vector<std::string> line;
-        boost::algorithm::split(
-                line, lineString, boost::is_any_of("\t "), boost::token_compress_on);
+        sgl::splitStringWhitespace(lineString, line);
         if (line.size() < 2) {
             Logfile::get()->writeError("Error in ShaderManagerGL::getHeaderFilename: Too few tokens.");
             return "";
@@ -368,14 +365,14 @@ std::string ShaderManagerGL::getShaderString(const std::string &globalShaderName
     std::string linestr;
     while (getline(file, linestr)) {
         // Remove \r if line ending is \r\n
-        if (linestr.size() > 0 && linestr.at(linestr.size()-1) == '\r') {
+        if (!linestr.empty() && linestr.at(linestr.size()-1) == '\r') {
             linestr = linestr.substr(0, linestr.size()-1);
         }
 
         lineNum++;
 
-        if (boost::starts_with(linestr, "-- ")) {
-            if (shaderContent.size() > 0 && shaderName.size() > 0) {
+        if (sgl::startsWith(linestr, "-- ")) {
+            if (!shaderContent.empty() && !shaderName.empty()) {
                 shaderContent = prependContent + shaderContent;
                 effectSources.insert(make_pair(shaderName, shaderContent));
             }
@@ -383,10 +380,10 @@ std::string ShaderManagerGL::getShaderString(const std::string &globalShaderName
             shaderName = pureFilename + "." + linestr.substr(3);
             shaderContent = std::string() + getPreprocessorDefines() + "#line " + toString(lineNum) + "\n";
             prependContent = "";
-        } else if (boost::starts_with(linestr, "#version") || boost::starts_with(linestr, "#extension")) {
+        } else if (sgl::startsWith(linestr, "#version") || sgl::startsWith(linestr, "#extension")) {
             prependContent += linestr + "\n";
             shaderContent = std::string() + shaderContent + "#line " + toString(lineNum) + "\n";
-        } else if (boost::starts_with(linestr, "#include")) {
+        } else if (sgl::startsWith(linestr, "#include")) {
             std::string includedFileName = getShaderFileName(getHeaderName(linestr));
             std::string includedFileContent = loadHeaderFileString(includedFileName, prependContent);
             shaderContent += includedFileContent + "\n";
@@ -398,7 +395,7 @@ std::string ShaderManagerGL::getShaderString(const std::string &globalShaderName
     shaderContent = prependContent + shaderContent;
     file.close();
 
-    if (shaderName.size() > 0) {
+    if (!shaderName.empty()) {
         effectSources.insert(make_pair(shaderName, shaderContent));
     } else {
         effectSources.insert(make_pair(pureFilename + ".glsl", shaderContent));

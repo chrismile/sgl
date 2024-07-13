@@ -27,9 +27,9 @@
  */
 
 #include <fstream>
-#include <boost/algorithm/string/predicate.hpp>
 
 #include <Utils/AppSettings.hpp>
+#include <Utils/StringUtils.hpp>
 #include <Utils/Events/Stream/Stream.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
@@ -91,7 +91,7 @@ CheckpointWindow::~CheckpointWindow() {
 void CheckpointWindow::onLoadDataSet(const std::string& dataSetName) {
     std::string dataSetIdentifier;
     if (sgl::AppSettings::get()->getHasCustomDataDirectory()) {
-        if (boost::starts_with(dataSetName, sgl::AppSettings::get()->getDataDirectory())) {
+        if (sgl::startsWith(dataSetName, sgl::AppSettings::get()->getDataDirectory())) {
             dataSetIdentifier = "Data/" + dataSetName.substr(sgl::AppSettings::get()->getDataDirectory().size());
         } else {
             dataSetIdentifier = dataSetName;

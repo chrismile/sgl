@@ -27,6 +27,7 @@
  */
 
 #include "AppSettings.hpp"
+#include <Utils/StringUtils.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
 #include <Graphics/Renderer.hpp>
@@ -40,9 +41,7 @@
 #include <ImGui/ImGuiWrapper.hpp>
 #include <iostream>
 #include <fstream>
-#include <boost/algorithm/string/trim.hpp>
-#include <boost/algorithm/string/case_conv.hpp>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 #ifdef USE_BOOST_LOCALE
 #include <boost/locale.hpp>
@@ -169,7 +168,7 @@ void SettingsFile::loadFromFile(const char *filename) {
     std::string line;
 
     while (std::getline(file, line)) {
-        boost::trim(line);
+        sgl::stringTrim(line);
         if (line == "{" || line == "}") {
             continue;
         }
@@ -209,8 +208,8 @@ void AppSettings::setApplicationDescription(const std::string& description) {
 void AppSettings::loadApplicationIconFromFile(const std::string& _iconPath) {
     iconPath = _iconPath;
     if (sgl::AppSettings::get()->getOS() == sgl::OperatingSystem::LINUX) {
-        std::string iconPathAbsolute = boost::filesystem::canonical(iconPath).string();
-        std::string appNameLower = boost::to_lower_copy(sgl::FileUtils::get()->getAppName());
+        std::string iconPathAbsolute = std::filesystem::canonical(iconPath).string();
+        std::string appNameLower = sgl::toLowerCopy(sgl::FileUtils::get()->getAppName());
         std::ofstream desktopFile(
                 sgl::FileUtils::get()->getUserDirectory() + ".local/share/applications/" + appNameLower + ".desktop");
         desktopFile << "[Desktop Entry]\n";
