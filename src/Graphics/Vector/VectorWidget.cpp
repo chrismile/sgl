@@ -26,6 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <algorithm>
+
 #include <Math/Geometry/AABB2.hpp>
 #include <Math/Geometry/MatrixUtil.hpp>
 #include <Utils/AppSettings.hpp>
