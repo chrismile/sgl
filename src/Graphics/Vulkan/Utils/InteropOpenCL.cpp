@@ -26,6 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "InteropOpenCL.hpp"
+
 #include <map>
 #if defined(__linux__)
 #include <dlfcn.h>
@@ -54,7 +56,6 @@
 #include <Math/Math.hpp>
 #include <Utils/StringUtils.hpp>
 #include <Utils/File/Logfile.hpp>
-#include "InteropOpenCL.hpp"
 
 #ifndef CL_DEVICE_BOARD_NAME_AMD
 #define CL_DEVICE_BOARD_NAME_AMD 0x4038
