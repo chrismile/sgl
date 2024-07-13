@@ -686,7 +686,7 @@ if (WIN32 OR ${USE_BOOST})
     endif()
 endif()
 
-if (USE_ICU)
+if (${USE_ICU})
     find_package(ICU COMPONENTS uc io i18n)
     if (ICU_FOUND)
         target_compile_definitions(sgl PRIVATE USE_ICU)
