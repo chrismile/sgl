@@ -48,6 +48,7 @@ option(USE_SGL_VULKAN_HEADERS "Build with Vulkan headers provided by sgl even if
 option(USE_SHADERC "Build with shaderc shader compiler backend." ON)
 option(USE_BOOST "Build with Boost support." ON)
 option(USE_BOOST_LOCALE "Build with Boost::Locale support." OFF)
+option(USE_ICU "Build with ICU unicode support." OFF)
 option(USE_LIBARCHIVE "Build with libarchive support." ON)
 # SDL2_image is disabled by default, as it is only used in the legacy OpenGL texture manager, and no program developed
 # by me uses anything more than the PNG format sgl already supports anyways.
@@ -682,6 +683,15 @@ if (WIN32 OR ${USE_BOOST})
     target_include_directories(sgl PRIVATE ${Boost_INCLUDE_DIR} ${GLM_INCLUDE_DIR} ${GLM_INCLUDE_DIRS})
     if (Boost_FOUND)
         target_compile_definitions(sgl PRIVATE USE_BOOST_ALGORITHM)
+    endif()
+endif()
+
+if (USE_ICU)
+    find_package(ICU COMPONENTS uc io i18n)
+    if (ICU_FOUND)
+        target_compile_definitions(sgl PRIVATE USE_ICU)
+        target_link_libraries(sgl PRIVATE ${ICU_LIBRARIES})
+        target_include_directories(sgl PRIVATE ${ICU_INCLUDE_DIRS})
     endif()
 endif()
 

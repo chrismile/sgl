@@ -26,6 +26,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+// ICU can be used, but for legacy reasons strings will be converted to/from std::string.
+#ifdef USE_ICU
+#include <unicode/unistr.h>
+#include <unicode/ustream.h>
+#include <unicode/locid.h>
+#endif
+
 // Allow using boost::algorithm, as Boost may be built with ICU support for Unicode.
 #ifdef USE_BOOST_ALGORITHM
 #include <boost/algorithm/string.hpp>
@@ -42,11 +49,23 @@
 namespace sgl {
 
 bool startsWith(const std::string& str, const std::string& prefix) {
+#if defined(USE_ICU)
+    icu::UnicodeString unicodeStr(str.c_str(), "UTF-8");
+    icu::UnicodeString unicodePrefix(prefix.c_str(), "UTF-8");
+    return unicodeStr.startsWith(unicodePrefix);
+#else
     return prefix.length() <= str.length() && std::equal(prefix.begin(), prefix.end(), str.begin());
+#endif
 }
 
 bool endsWith(const std::string& str, const std::string& postfix) {
+#if defined(USE_ICU)
+    icu::UnicodeString unicodeStr(str.c_str(), "UTF-8");
+    icu::UnicodeString unicodePostfix(postfix.c_str(), "UTF-8");
+    return unicodeStr.endsWith(unicodePostfix);
+#else
     return postfix.length() <= str.length() && std::equal(postfix.rbegin(), postfix.rend(), str.rbegin());
+#endif
 }
 
 bool stringContains(const std::string& str, const std::string& substr) {
@@ -58,7 +77,11 @@ bool stringContains(const std::string& str, const std::string& substr) {
 }
 
 void toUpper(std::string& str) {
-#ifdef USE_BOOST_ALGORITHM
+#if defined(USE_ICU)
+    icu::UnicodeString unicodeStr(str.c_str(), "UTF-8");
+    str.clear();
+    unicodeStr.toUpper().toUTF8String(str);
+#elif defined(USE_BOOST_ALGORITHM)
     boost::to_upper(str);
 #else
     std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c){ return std::toupper(c); });
@@ -66,7 +89,12 @@ void toUpper(std::string& str) {
 }
 
 std::string toUpperCopy(const std::string& str) {
-#ifdef USE_BOOST_ALGORITHM
+#if defined(USE_ICU)
+    icu::UnicodeString unicodeStr(str.c_str(), "UTF-8");
+    std::string outString;
+    unicodeStr.toUpper().toUTF8String(outString);
+    return outString;
+#elif defined(USE_BOOST_ALGORITHM)
     return boost::to_upper_copy(str);
 #else
     std::string strCopy = str;
@@ -76,7 +104,11 @@ std::string toUpperCopy(const std::string& str) {
 }
 
 void toLower(std::string& str) {
-#ifdef USE_BOOST_ALGORITHM
+#if defined(USE_ICU)
+    icu::UnicodeString unicodeStr(str.c_str(), "UTF-8");
+    str.clear();
+    unicodeStr.toLower().toUTF8String(str);
+#elif defined(USE_BOOST_ALGORITHM)
     boost::to_lower(str);
 #else
     std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c){ return std::tolower(c); });
@@ -84,7 +116,12 @@ void toLower(std::string& str) {
 }
 
 std::string toLowerCopy(const std::string& str) {
-#ifdef USE_BOOST_ALGORITHM
+#if defined(USE_ICU)
+    icu::UnicodeString unicodeStr(str.c_str(), "UTF-8");
+    std::string outString;
+    unicodeStr.toLower().toUTF8String(outString);
+    return outString;
+#elif defined(USE_BOOST_ALGORITHM)
     return boost::to_lower_copy(str);
 #else
     std::string strCopy = str;
@@ -94,7 +131,11 @@ std::string toLowerCopy(const std::string& str) {
 }
 
 void stringTrim(std::string& str) {
-#ifdef USE_BOOST_ALGORITHM
+#if defined(USE_ICU)
+    icu::UnicodeString unicodeStr(str.c_str(), "UTF-8");
+    str.clear();
+    unicodeStr.trim().toUTF8String(str);
+#elif defined(USE_BOOST_ALGORITHM)
     return boost::trim(str);
 #else
     str = stringTrimCopy(str);
@@ -102,7 +143,12 @@ void stringTrim(std::string& str) {
 }
 
 std::string stringTrimCopy(const std::string& str) {
-#ifdef USE_BOOST_ALGORITHM
+#if defined(USE_ICU)
+    icu::UnicodeString unicodeStr(str.c_str(), "UTF-8");
+    std::string outString;
+    unicodeStr.trim().toUTF8String(outString);
+    return outString;
+#elif defined(USE_BOOST_ALGORITHM)
     return boost::trim_copy(str);
 #else
     int N = int(str.size());
@@ -129,7 +175,13 @@ std::string stringTrimCopy(const std::string& str) {
 }
 
 void stringReplaceAll(std::string& str, const std::string& searchPattern, const std::string& replStr) {
-#ifdef USE_BOOST_ALGORITHM
+#if defined(USE_ICU)
+    icu::UnicodeString unicodeStr(str.c_str(), "UTF-8");
+    icu::UnicodeString unicodeSearchPattern(searchPattern.c_str(), "UTF-8");
+    icu::UnicodeString unicodeReplStr(replStr.c_str(), "UTF-8");
+    str.clear();
+    unicodeStr.findAndReplace(unicodeSearchPattern, unicodeReplStr).toUTF8String(str);
+#elif defined(USE_BOOST_ALGORITHM)
     boost::replace_all(str, searchPattern, replStr);
 #else
     while (true) {
@@ -144,7 +196,14 @@ void stringReplaceAll(std::string& str, const std::string& searchPattern, const 
 
 std::string stringReplaceAllCopy(
         const std::string& str, const std::string& searchPattern, const std::string& replStr) {
-#ifdef USE_BOOST_ALGORITHM
+#if defined(USE_ICU)
+    icu::UnicodeString unicodeStr(str.c_str(), "UTF-8");
+    icu::UnicodeString unicodeSearchPattern(searchPattern.c_str(), "UTF-8");
+    icu::UnicodeString unicodeReplStr(replStr.c_str(), "UTF-8");
+    std::string outString;
+    unicodeStr.findAndReplace(unicodeSearchPattern, unicodeReplStr).toUTF8String(outString);
+    return outString;
+#elif defined(USE_BOOST_ALGORITHM)
     return boost::replace_all_copy(str, searchPattern, replStr);
 #else
     std::string processedStr;
