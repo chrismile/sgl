@@ -86,6 +86,9 @@ public:
     bool addSliderFloat3(
             const std::string& name, float* value, float minVal, float maxVal,
             const char* format = "%.3f", ImGuiSliderFlags flags = 0);
+    bool addSliderFloat4(
+            const std::string& name, float* value, float minVal, float maxVal,
+            const char* format = "%.3f", ImGuiSliderFlags flags = 0);
 
     ImGui::EditMode addSliderFloatEdit(
             const std::string& name, float* value, float minVal, float maxVal,
