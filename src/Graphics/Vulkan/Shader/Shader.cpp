@@ -30,6 +30,7 @@
 #include <limits>
 
 #include <Utils/File/Logfile.hpp>
+#include <utility>
 
 #include "../Utils/Device.hpp"
 #include "Shader.hpp"
@@ -37,39 +38,16 @@
 namespace sgl { namespace vk {
 
 ShaderModule::ShaderModule(
-        Device* device, const std::string& shaderModuleId, ShaderModuleType shaderModuleType,
+        Device* device, std::string shaderModuleId, ShaderModuleType shaderModuleType,
         const std::vector<uint32_t>& spirvCode)
-        : device(device), shaderModuleId(shaderModuleId), shaderModuleType(shaderModuleType) {
+        : device(device), shaderModuleId(std::move(shaderModuleId)), shaderModuleType(shaderModuleType) {
     VkShaderModuleCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     createInfo.codeSize = spirvCode.size() * sizeof(uint32_t);
     createInfo.pCode = spirvCode.data();
 
     if (vkCreateShaderModule(device->getVkDevice(), &createInfo, nullptr, &vkShaderModule) != VK_SUCCESS) {
-        sgl::Logfile::get()->writeError("Error in ShaderModule::ShaderModule: Failed to create the shader module.");
-        exit(1);
-    }
-
-    createReflectData(spirvCode);
-}
-
-ShaderModule::ShaderModule(
-        Device* device, const std::string& shaderModuleId, ShaderModuleType shaderModuleType,
-        uint32_t requiredSubgroupSize, const std::vector<uint32_t>& spirvCode)
-        : device(device), shaderModuleId(shaderModuleId), shaderModuleType(shaderModuleType) {
-    VkShaderModuleCreateInfo createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    createInfo.codeSize = spirvCode.size() * sizeof(uint32_t);
-    createInfo.pCode = spirvCode.data();
-
-    VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT requiredSubgroupSizeCreateInfo{};
-    requiredSubgroupSizeCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO_EXT;
-    requiredSubgroupSizeCreateInfo.requiredSubgroupSize = requiredSubgroupSize;
-    createInfo.pNext = &requiredSubgroupSizeCreateInfo;
-
-    if (vkCreateShaderModule(device->getVkDevice(), &createInfo, nullptr, &vkShaderModule) != VK_SUCCESS) {
-        sgl::Logfile::get()->writeError("Error in ShaderModule::ShaderModule: Failed to create the shader module.");
-        exit(1);
+        sgl::Logfile::get()->throwError("Error in ShaderModule::ShaderModule: Failed to create the shader module.");
     }
 
     createReflectData(spirvCode);
@@ -247,17 +225,32 @@ ShaderStages::ShaderStages(
 }
 
 ShaderStages::ShaderStages(
-        Device* device, std::vector<ShaderModulePtr>& shaderModules, const std::vector<std::string>& functionNames)
+        Device* device, std::vector<ShaderModulePtr>& shaderModules,
+        const std::vector<ShaderStageSettings>& shaderStagesSettings)
         : device(device), shaderModules(shaderModules) {
     vkShaderStages.reserve(shaderModules.size());
+#ifdef VK_VERSION_1_3
+    requiredSubgroupSizeCreateInfos.reserve(shaderModules.size());
+#endif
     for (size_t i = 0; i < shaderModules.size(); i++) {
         ShaderModulePtr& shaderModule = shaderModules.at(i);
+        const ShaderStageSettings& shaderStageSettings = shaderStagesSettings.at(i);
         VkPipelineShaderStageCreateInfo shaderStageCreateInfo = {};
         shaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         shaderStageCreateInfo.stage = VkShaderStageFlagBits(shaderModule->getVkShaderStageFlags());
         shaderStageCreateInfo.module = shaderModule->getVkShaderModule();
-        shaderStageCreateInfo.pName = functionNames.at(i).c_str();
+        shaderStageCreateInfo.pName = shaderStageSettings.functionName.c_str();
+        shaderStageCreateInfo.flags = shaderStageSettings.flags;
         shaderStageCreateInfo.pSpecializationInfo = nullptr;
+#ifdef VK_VERSION_1_3
+        if (shaderStageSettings.requiredSubgroupSize != 0) {
+            auto& requiredSubgroupSizeCreateInfo = requiredSubgroupSizeCreateInfos.at(i);
+            requiredSubgroupSizeCreateInfo.sType =
+                    VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO;
+            requiredSubgroupSizeCreateInfo.requiredSubgroupSize = shaderStageSettings.requiredSubgroupSize;
+            shaderStageCreateInfo.pNext = &requiredSubgroupSizeCreateInfo;
+        }
+#endif
         vkShaderStages.push_back(shaderStageCreateInfo);
 
         if (shaderModule->getShaderModuleType() == ShaderModuleType::VERTEX) {

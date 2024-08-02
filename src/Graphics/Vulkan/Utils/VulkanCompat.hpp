@@ -415,4 +415,10 @@ typedef struct VkPhysicalDeviceCooperativeMatrixPropertiesKHR_Compat {
     VkShaderStageFlags    cooperativeMatrixSupportedStages;
 } VkPhysicalDeviceCooperativeMatrixPropertiesKHR_Compat;
 
+typedef struct VkPipelineShaderStageRequiredSubgroupSizeCreateInfo_Compat {
+    VkStructureType    sType;
+    void*              pNext;
+    uint32_t           requiredSubgroupSize;
+} VkPipelineShaderStageRequiredSubgroupSizeCreateInfo_Compat;
+
 #endif //SGL_VULKANCOMPAT_HPP

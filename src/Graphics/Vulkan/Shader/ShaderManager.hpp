@@ -46,7 +46,6 @@ namespace sgl { namespace vk {
 struct DLL_OBJECT ShaderModuleInfo {
     std::string filename;
     ShaderModuleType shaderModuleType;
-    uint32_t requiredSubgroupSize = 0;
     bool operator <(const ShaderModuleInfo& rhs) const {
         return filename < rhs.filename;
     }
@@ -84,16 +83,14 @@ public:
             const std::vector<std::string>& shaderIds,
             const std::map<std::string, std::string>& customPreprocessorDefines,
             uint32_t subgroupSize, bool dumpTextDebug = false);
+    ShaderStagesPtr getShaderStagesWithSettings(
+            const std::vector<std::string>& shaderIds,
+            const std::map<std::string, std::string>& customPreprocessorDefines,
+            const std::vector<ShaderStageSettings>& settings, bool dumpTextDebug = false);
     ShaderModulePtr getShaderModule(const std::string& shaderId, ShaderModuleType shaderModuleType);
-    ShaderModulePtr getShaderModule(
-            const std::string& shaderId, ShaderModuleType shaderModuleType, uint32_t subgroupSize);
     ShaderModulePtr getShaderModule(
             const std::string& shaderId, ShaderModuleType shaderModuleType,
             const std::map<std::string, std::string>& customPreprocessorDefines);
-    ShaderModulePtr getShaderModule(
-            const std::string& shaderId, ShaderModuleType shaderModuleType,
-            const std::map<std::string, std::string>& customPreprocessorDefines,
-            uint32_t subgroupSize);
 
     //virtual ShaderAttributesPtr createShaderAttributes(ShaderStagesPtr& shader)=0;
 
@@ -160,7 +157,8 @@ protected:
 #endif
     ShaderStagesPtr createShaderStages(const std::vector<std::string>& shaderIds, bool dumpTextDebug);
     ShaderStagesPtr createShaderStages(
-            const std::vector<std::string>& shaderIds, uint32_t subgroupSize, bool dumpTextDebug);
+            const std::vector<std::string>& shaderIds, const std::vector<ShaderStageSettings>& shaderStageSettings,
+            bool dumpTextDebug);
 
     /// Internal loading
     std::string getHeaderName(const std::string& lineString);

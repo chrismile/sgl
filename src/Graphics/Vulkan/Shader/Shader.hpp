@@ -35,6 +35,7 @@
 
 #include "../libs/volk/volk.h"
 #include "../libs/SPIRV-Reflect/spirv_reflect.h"
+#include "../Utils/VulkanCompat.hpp"
 
 namespace sgl { namespace vk {
 
@@ -87,11 +88,8 @@ class DLL_OBJECT ShaderModule {
 public:
     // Called by ShaderManager.
     ShaderModule(
-            Device* device, const std::string& shaderModuleId, ShaderModuleType shaderModuleType,
+            Device* device, std::string shaderModuleId, ShaderModuleType shaderModuleType,
             const std::vector<uint32_t>& spirvCode);
-    ShaderModule(
-            Device* device, const std::string& shaderModuleId, ShaderModuleType shaderModuleType,
-            uint32_t requiredSubgroupSize, const std::vector<uint32_t>& spirvCode);
     ~ShaderModule();
 
     bool getIsRayTracingShader();
@@ -128,7 +126,7 @@ private:
     ShaderModuleType shaderModuleType;
 
     // Vulkan data.
-    VkShaderModule vkShaderModule;
+    VkShaderModule vkShaderModule = VK_NULL_HANDLE;
 
     // SPIR-V reflection data.
     std::vector<InterfaceVariableDescriptor> inputVariableDescriptors;
@@ -138,6 +136,16 @@ private:
 
 typedef std::shared_ptr<ShaderModule> ShaderModulePtr;
 
+struct DLL_OBJECT ShaderStageSettings {
+    std::string functionName = "main";
+    /**
+     * With default Vulkan 1.3, flags can be:
+     * - VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT
+     * - VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT
+     */
+    VkPipelineShaderStageCreateFlags flags = {};
+    uint32_t requiredSubgroupSize = 0; ///< 0 means no requirement.
+};
 
 /**
  * This class represents a selection of shader modules unified into a list of shader stages.
@@ -148,7 +156,8 @@ public:
     ShaderStages(
             Device* device, std::vector<ShaderModulePtr>& shaderModules);
     ShaderStages(
-            Device* device, std::vector<ShaderModulePtr>& shaderModules, const std::vector<std::string>& functionNames);
+            Device* device, std::vector<ShaderModulePtr>& shaderModules,
+            const std::vector<ShaderStageSettings>& shaderStagesSettings);
     ~ShaderStages();
 
     [[nodiscard]] inline bool getHasVertexShader() const { return vertexShaderModule.get() != nullptr; }
@@ -205,6 +214,12 @@ private:
     std::vector<VkPushConstantRange> pushConstantRanges;
     uint32_t numDescriptorSets = 0;
     std::vector<VkPipelineShaderStageCreateInfo> vkShaderStages;
+
+#ifdef VK_VERSION_1_3
+    std::vector<VkPipelineShaderStageRequiredSubgroupSizeCreateInfo> requiredSubgroupSizeCreateInfos{};
+#else
+    std::vector<VkPipelineShaderStageRequiredSubgroupSizeCreateInfo_Compat> requiredSubgroupSizeCreateInfos{};
+#endif
 
     // for getInputVariableDescriptors.
     std::vector<InterfaceVariableDescriptor> emptySet;
