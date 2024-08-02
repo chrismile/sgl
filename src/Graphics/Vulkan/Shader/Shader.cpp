@@ -227,14 +227,14 @@ ShaderStages::ShaderStages(
 ShaderStages::ShaderStages(
         Device* device, std::vector<ShaderModulePtr>& shaderModules,
         const std::vector<ShaderStageSettings>& shaderStagesSettings)
-        : device(device), shaderModules(shaderModules) {
+        : device(device), shaderModules(shaderModules), shaderStagesSettings(shaderStagesSettings) {
     vkShaderStages.reserve(shaderModules.size());
 #ifdef VK_VERSION_1_3
     requiredSubgroupSizeCreateInfos.reserve(shaderModules.size());
 #endif
     for (size_t i = 0; i < shaderModules.size(); i++) {
         ShaderModulePtr& shaderModule = shaderModules.at(i);
-        const ShaderStageSettings& shaderStageSettings = shaderStagesSettings.at(i);
+        const ShaderStageSettings& shaderStageSettings = this->shaderStagesSettings.at(i);
         VkPipelineShaderStageCreateInfo shaderStageCreateInfo = {};
         shaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         shaderStageCreateInfo.stage = VkShaderStageFlagBits(shaderModule->getVkShaderStageFlags());
@@ -268,9 +268,17 @@ ShaderStages::ShaderStages(
                 inputVariableNameLocationIndexMap.insert(std::make_pair(
                         inputLocationVariableNameMap[location], locationIndex));
             }
+        } else if (shaderModule->getShaderModuleType() == ShaderModuleType::MESH_NV) {
+            hasMeshShaderNV = true;
         }
+#ifdef VK_EXT_mesh_shader
+        else if (shaderModule->getShaderModuleType() == ShaderModuleType::MESH_EXT) {
+            hasMeshShaderEXT = true;
+        }
+#endif
 
         mergeDescriptorSetsInfo(shaderModule->getDescriptorSetsInfo());
+        mergePushConstantRanges(shaderModule->getVkPushConstantRanges());
     }
     createDescriptorSetLayouts();
 }

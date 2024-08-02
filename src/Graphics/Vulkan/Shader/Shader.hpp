@@ -214,6 +214,7 @@ private:
     std::vector<VkPushConstantRange> pushConstantRanges;
     uint32_t numDescriptorSets = 0;
     std::vector<VkPipelineShaderStageCreateInfo> vkShaderStages;
+    std::vector<ShaderStageSettings> shaderStagesSettings;
 
 #ifdef VK_VERSION_1_3
     std::vector<VkPipelineShaderStageRequiredSubgroupSizeCreateInfo> requiredSubgroupSizeCreateInfos{};
