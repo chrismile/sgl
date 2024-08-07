@@ -144,6 +144,8 @@ public:
     std::string getShaderFileName(const std::string& pureFilename);
 
     std::string loadHeaderFileString(const std::string& shaderName, std::string& prependContent);
+    std::string loadHeaderFileString(
+            const std::string& shaderName, const std::string& headerName, std::string& prependContent);
 
 protected:
     ShaderModulePtr loadAsset(ShaderModuleInfo& shaderModuleInfo) override;
@@ -187,6 +189,9 @@ protected:
     std::map<std::string, std::string> shaderFileMap;
     int sourceStringNumber = 0;
     int recursionDepth = 0;
+    /// Whether to include a file name in "#line" directives (for more details see:
+    /// https://github.com/google/shaderc/tree/main/glslc#51-source-filename-based-line-and-__file__).
+    bool useCppLineStyle = true;
 
     // If a file named "GlobalDefinesVulkan.glsl" is found: Appended to all shaders.
     std::string globalDefines;

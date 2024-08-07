@@ -691,7 +691,13 @@ ShaderModulePtr ShaderManagerVk::loadAssetGlslang(
 #endif
 
 
-std::string ShaderManagerVk::loadHeaderFileString(const std::string &shaderName, std::string &prependContent) {
+std::string ShaderManagerVk::loadHeaderFileString(const std::string& shaderName, std::string& prependContent) {
+    return loadHeaderFileString(
+        shaderName, sgl::FileUtils::get()->getPureFilename(shaderName), prependContent);
+}
+
+std::string ShaderManagerVk::loadHeaderFileString(
+        const std::string& shaderName, const std::string& headerName, std::string &prependContent) {
     std::ifstream file(shaderName.c_str());
     if (!file.is_open()) {
         Logfile::get()->throwError(
@@ -701,7 +707,9 @@ std::string ShaderManagerVk::loadHeaderFileString(const std::string &shaderName,
     //std::string fileContent((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     sourceStringNumber++;
     std::string fileContent;
-    if (dumpTextDebugStatic) {
+    if (useCppLineStyle) {
+        fileContent = "#line 1 \"" + headerName + "\"\n";
+    } else if (dumpTextDebugStatic) {
         fileContent = "#line 1 " + std::to_string(sourceStringNumber) + "\n";
     } else {
         fileContent = "#line 1\n";
@@ -712,20 +720,23 @@ std::string ShaderManagerVk::loadHeaderFileString(const std::string &shaderName,
     int lineNum = 1;
     while (getline(file, linestr)) {
         // Remove \r if line ending is \r\n
-        if (linestr.size() > 0 && linestr.at(linestr.size()-1) == '\r') {
-            linestr = linestr.substr(0, linestr.size()-1);
+        if (!linestr.empty() && linestr.at(linestr.size() - 1) == '\r') {
+            linestr = linestr.substr(0, linestr.size() - 1);
         }
 
         lineNum++;
 
         if (sgl::startsWith(linestr, "#include")) {
-            std::string includedFileName = getShaderFileName(getHeaderName(linestr));
-            std::string includedFileContent = loadHeaderFileString(includedFileName, prependContent);
+            std::string headerNameSub = getHeaderName(linestr);
+            std::string includedFileName = getShaderFileName(headerNameSub);
+            std::string includedFileContent = loadHeaderFileString(includedFileName, headerNameSub, prependContent);
             fileContent += includedFileContent + "\n";
-            if (dumpTextDebugStatic) {
+            if (useCppLineStyle) {
                 fileContent +=
-                        std::string() + "#line " + toString(lineNum) + " "
-                        + std::to_string(sourceStringNumber) + "\n";
+                        std::string() + "#line " + toString(lineNum) + " \"" + headerName + "\"\n";
+            } else if (dumpTextDebugStatic) {
+                fileContent +=
+                        std::string() + "#line " + toString(lineNum) + " " + std::to_string(sourceStringNumber) + "\n";
             } else {
                 fileContent += std::string() + "#line " + toString(lineNum) + "\n";
             }
@@ -733,7 +744,10 @@ std::string ShaderManagerVk::loadHeaderFileString(const std::string &shaderName,
             std::string importedShaderModuleContent = getImportedShaderString(
                     getHeaderName(linestr), "", prependContent);
             fileContent += importedShaderModuleContent + "\n";
-            if (dumpTextDebugStatic) {
+            if (useCppLineStyle) {
+                fileContent +=
+                        std::string() + "#line " + toString(lineNum) + " \"" + headerName + "\"\n";
+            } else if (dumpTextDebugStatic) {
                 fileContent +=
                         std::string() + "#line " + toString(lineNum) + " "
                         + std::to_string(sourceStringNumber) + "\n";
@@ -742,7 +756,9 @@ std::string ShaderManagerVk::loadHeaderFileString(const std::string &shaderName,
             }
         } else if (sgl::startsWith(linestr, "#extension") || sgl::startsWith(linestr, "#version")) {
             prependContent += linestr + "\n";
-            if (dumpTextDebugStatic) {
+            if (useCppLineStyle) {
+                fileContent += std::string() + "#line " + toString(lineNum) + " \"" + headerName + "\"\n";
+            } else if (dumpTextDebugStatic) {
                 fileContent += "#line " + toString(lineNum) + " " + std::to_string(sourceStringNumber) + "\n";
             } else {
                 fileContent += "#line " + toString(lineNum) + "\n";
@@ -915,9 +931,12 @@ std::string ShaderManagerVk::getShaderString(const std::string &globalShaderName
     }
 
     int oldSourceStringNumber = sourceStringNumber;
+    bool hasUsedInclude = false;
 
     std::string shaderContent;
-    if (dumpTextDebugStatic) {
+    if (useCppLineStyle) {
+        shaderContent = "#line 1 \"" + globalShaderName + "\"\n";
+    } else if (dumpTextDebugStatic) {
         shaderContent = "#line 1 " + std::to_string(sourceStringNumber) + "\n";
     } else {
         shaderContent = "#line 1\n";
@@ -928,6 +947,9 @@ std::string ShaderManagerVk::getShaderString(const std::string &globalShaderName
     addExtensions(extensionsString, tempPreprocessorDefines);
     std::string shaderName;
     std::string prependContent;
+    if (useCppLineStyle) {
+        prependContent += "#extension GL_GOOGLE_cpp_style_line_directive : enable\n";
+    }
 
     int lineNum = 1;
     std::string linestr;
@@ -950,7 +972,11 @@ std::string ShaderManagerVk::getShaderString(const std::string &globalShaderName
             sourceStringNumber = oldSourceStringNumber;
             shaderName = pureFilename + "." + linestr.substr(3);
             ShaderModuleType shaderModuleType = getShaderModuleTypeFromString(shaderName);
-            if (dumpTextDebugStatic) {
+            if (useCppLineStyle) {
+                shaderContent =
+                        std::string() + getPreprocessorDefines(shaderModuleType) + "#line " + toString(lineNum)
+                        + " \"" + shaderName + "\"\n";
+            } else if (dumpTextDebugStatic) {
                 shaderContent =
                         std::string() + getPreprocessorDefines(shaderModuleType) + "#line " + toString(lineNum)
                         + " " + std::to_string(sourceStringNumber) + "\n";
@@ -965,49 +991,91 @@ std::string ShaderManagerVk::getShaderString(const std::string &globalShaderName
             } else {
                 prependContent.clear();
             }
+            if (useCppLineStyle) {
+                prependContent += "#extension GL_GOOGLE_cpp_style_line_directive : enable\n";
+            }
         } else if (sgl::startsWith(linestr, "#version") || sgl::startsWith(linestr, "#extension")) {
             if (sgl::startsWith(linestr, "#version")) {
                 prependContent = linestr + "\n" + prependContent;
             } else {
                 prependContent += linestr + "\n";
             }
-            if (dumpTextDebugStatic) {
+            if (useCppLineStyle) {
                 shaderContent +=
-                        std::string() + "#line " + toString(lineNum) + " "
-                        + std::to_string(sourceStringNumber) + "\n";
+                        std::string() + "#line " + toString(lineNum) + " \"" + shaderName + "\"\n";
+            } else if (dumpTextDebugStatic) {
+                shaderContent +=
+                        std::string() + "#line " + toString(lineNum) + " " + std::to_string(sourceStringNumber) + "\n";
             } else {
                 shaderContent += std::string() + "#line " + toString(lineNum) + "\n";
             }
         } else if (sgl::startsWith(linestr, "#include")) {
-            std::string includedFileName = getShaderFileName(getHeaderName(linestr));
-            std::string includedFileContent = loadHeaderFileString(includedFileName, prependContent);
+            std::string headerName = getHeaderName(linestr);
+            std::string includedFileName = getShaderFileName(headerName);
+            std::string includedFileContent = loadHeaderFileString(includedFileName, headerName, prependContent);
             shaderContent += includedFileContent + "\n";
-            if (dumpTextDebugStatic) {
+            if (useCppLineStyle) {
                 shaderContent +=
-                        std::string() + "#line " + toString(lineNum) + " "
-                        + std::to_string(sourceStringNumber) + "\n";
+                        std::string() + "#line " + toString(lineNum) + " \"" + shaderName + "\"\n";
+            } else if (dumpTextDebugStatic) {
+                shaderContent +=
+                        std::string() + "#line " + toString(lineNum) + " " + std::to_string(sourceStringNumber) + "\n";
             } else {
                 shaderContent += std::string() + "#line " + toString(lineNum) + "\n";
             }
+            hasUsedInclude = true;
         } else if (sgl::startsWith(linestr, "#import")) {
             std::string importedShaderModuleContent = getImportedShaderString(
                     getHeaderName(linestr), pureFilename, prependContent);
             shaderContent += importedShaderModuleContent + "\n";
-            if (dumpTextDebugStatic) {
+            if (useCppLineStyle) {
                 shaderContent +=
-                        std::string() + "#line " + toString(lineNum) + " "
-                        + std::to_string(sourceStringNumber) + "\n";
+                        std::string() + "#line " + toString(lineNum) + " \"" + shaderName + "\"\n";
+            } else if (dumpTextDebugStatic) {
+                shaderContent +=
+                        std::string() + "#line " + toString(lineNum) + " " + std::to_string(sourceStringNumber) + "\n";
             } else {
                 shaderContent += std::string() + "#line " + toString(lineNum) + "\n";
             }
+            hasUsedInclude = true;
         } else if (sgl::startsWith(linestr, "#codefrag")) {
             const std::string& codeFragmentName = getHeaderName(linestr);
             auto codeFragIt = tempPreprocessorDefines.find(codeFragmentName);
             if (codeFragIt != tempPreprocessorDefines.end()) {
-                shaderContent += "#line 1\n";
+                if (useCppLineStyle) {
+                    shaderContent +=
+                            std::string() + "#line 1 \"" + codeFragmentName + "\"\n";
+                } else {
+                    shaderContent += "#line 1\n";
+                }
                 shaderContent += codeFragIt->second + "\n";
-                shaderContent += std::string() + "#line " + toString(lineNum) + "\n";
+                if (useCppLineStyle) {
+                    shaderContent +=
+                            std::string() + "#line " + toString(lineNum) + " \"" + shaderName + "\"\n";
+                } else {
+                    shaderContent += std::string() + "#line " + toString(lineNum) + "\n";
+                }
                 tempPreprocessorDefines.erase(codeFragmentName);
+            }
+            hasUsedInclude = true;
+        } else if (sgl::stringContains(linestr, "#endif")) {
+            shaderContent += std::string() + linestr + "\n";
+            /*
+             * Tests seem to indicate that #line statements are affected by #ifdef.
+             * Consequentially, to be conservative, a #line statement will be inserted after every #endif after an
+             * include statement.
+             * TODO: Improve this by tracking #if and #endif.
+             */
+            if (hasUsedInclude) {
+                if (useCppLineStyle) {
+                    shaderContent +=
+                            std::string() + "#line " + toString(lineNum) + " \"" + shaderName + "\"\n";
+                } else if (dumpTextDebugStatic) {
+                    shaderContent +=
+                            std::string() + "#line " + toString(lineNum) + " " + std::to_string(sourceStringNumber) + "\n";
+                } else {
+                    shaderContent += std::string() + "#line " + toString(lineNum) + "\n";
+                }
             }
         } else {
             shaderContent += std::string() + linestr + "\n";
