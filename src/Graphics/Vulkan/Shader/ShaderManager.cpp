@@ -951,14 +951,16 @@ std::string ShaderManagerVk::getShaderString(const std::string &globalShaderName
         prependContent += "#extension GL_GOOGLE_cpp_style_line_directive : enable\n";
     }
 
+    int preprocessorConditionalsDepth = 0;
     int lineNum = 1;
-    std::string linestr;
+    std::string linestr, trimmedLinestr;
     while (getline(file, linestr)) {
         // Remove \r if line ending is \r\n
         if (!linestr.empty() && linestr.at(linestr.size()-1) == '\r') {
             linestr = linestr.substr(0, linestr.size()-1);
         }
 
+        trimmedLinestr = sgl::stringTrimCopy(linestr);
         lineNum++;
 
         if (sgl::startsWith(linestr, "-- ")) {
@@ -994,7 +996,7 @@ std::string ShaderManagerVk::getShaderString(const std::string &globalShaderName
             if (useCppLineStyle) {
                 prependContent += "#extension GL_GOOGLE_cpp_style_line_directive : enable\n";
             }
-        } else if (sgl::startsWith(linestr, "#version") || sgl::startsWith(linestr, "#extension")) {
+        } else if (sgl::startsWith(trimmedLinestr, "#version") || sgl::startsWith(trimmedLinestr, "#extension")) {
             if (sgl::startsWith(linestr, "#version")) {
                 prependContent = linestr + "\n" + prependContent;
             } else {
@@ -1009,7 +1011,7 @@ std::string ShaderManagerVk::getShaderString(const std::string &globalShaderName
             } else {
                 shaderContent += std::string() + "#line " + toString(lineNum) + "\n";
             }
-        } else if (sgl::startsWith(linestr, "#include")) {
+        } else if (sgl::startsWith(trimmedLinestr, "#include")) {
             std::string headerName = getHeaderName(linestr);
             std::string includedFileName = getShaderFileName(headerName);
             std::string includedFileContent = loadHeaderFileString(includedFileName, headerName, prependContent);
@@ -1023,8 +1025,10 @@ std::string ShaderManagerVk::getShaderString(const std::string &globalShaderName
             } else {
                 shaderContent += std::string() + "#line " + toString(lineNum) + "\n";
             }
-            hasUsedInclude = true;
-        } else if (sgl::startsWith(linestr, "#import")) {
+            if (preprocessorConditionalsDepth > 0) {
+                hasUsedInclude = true;
+            }
+        } else if (sgl::startsWith(trimmedLinestr, "#import")) {
             std::string importedShaderModuleContent = getImportedShaderString(
                     getHeaderName(linestr), pureFilename, prependContent);
             shaderContent += importedShaderModuleContent + "\n";
@@ -1037,8 +1041,10 @@ std::string ShaderManagerVk::getShaderString(const std::string &globalShaderName
             } else {
                 shaderContent += std::string() + "#line " + toString(lineNum) + "\n";
             }
-            hasUsedInclude = true;
-        } else if (sgl::startsWith(linestr, "#codefrag")) {
+            if (preprocessorConditionalsDepth > 0) {
+                hasUsedInclude = true;
+            }
+        } else if (sgl::startsWith(trimmedLinestr, "#codefrag")) {
             const std::string& codeFragmentName = getHeaderName(linestr);
             auto codeFragIt = tempPreprocessorDefines.find(codeFragmentName);
             if (codeFragIt != tempPreprocessorDefines.end()) {
@@ -1057,15 +1063,20 @@ std::string ShaderManagerVk::getShaderString(const std::string &globalShaderName
                 }
                 tempPreprocessorDefines.erase(codeFragmentName);
             }
-            hasUsedInclude = true;
-        } else if (sgl::stringContains(linestr, "#endif")) {
+            if (preprocessorConditionalsDepth > 0) {
+                hasUsedInclude = true;
+            }
+        } else if (sgl::startsWith(sgl::stringTrimCopy(trimmedLinestr), "#if")) {
             shaderContent += std::string() + linestr + "\n";
+            preprocessorConditionalsDepth++;
+        } else if (sgl::startsWith(sgl::stringTrimCopy(trimmedLinestr), "#endif")) {
+            shaderContent += std::string() + linestr + "\n";
+            preprocessorConditionalsDepth--;
             /*
-             * Tests seem to indicate that #line statements are affected by #ifdef.
-             * Consequentially, to be conservative, a #line statement will be inserted after every #endif after an
-             * include statement.
-             * TODO: Improve this by tracking #if and #endif.
-             */
+              * Tests seem to indicate that #line statements are affected by #if/#ifdef.
+              * Consequentially, to be conservative, a #line statement will be inserted after every #endif after an
+              * include statement.
+              */
             if (hasUsedInclude) {
                 if (useCppLineStyle) {
                     shaderContent +=
@@ -1076,6 +1087,9 @@ std::string ShaderManagerVk::getShaderString(const std::string &globalShaderName
                 } else {
                     shaderContent += std::string() + "#line " + toString(lineNum) + "\n";
                 }
+            }
+            if (preprocessorConditionalsDepth == 0 && hasUsedInclude) {
+                hasUsedInclude = false;
             }
         } else {
             shaderContent += std::string() + linestr + "\n";
