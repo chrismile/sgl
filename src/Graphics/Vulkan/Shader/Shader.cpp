@@ -230,7 +230,7 @@ ShaderStages::ShaderStages(
         : device(device), shaderModules(shaderModules), shaderStagesSettings(shaderStagesSettings) {
     vkShaderStages.reserve(shaderModules.size());
 #ifdef VK_VERSION_1_3
-    requiredSubgroupSizeCreateInfos.reserve(shaderModules.size());
+    requiredSubgroupSizeCreateInfos.resize(shaderModules.size());
 #endif
     for (size_t i = 0; i < shaderModules.size(); i++) {
         ShaderModulePtr& shaderModule = shaderModules.at(i);
