@@ -741,9 +741,14 @@ if (${SUPPORT_WEBGPU})
     endif()
     if (WEBGPU_INTERFACE_INCLUDE_DIRECTORIES)
         message(STATUS "WEBGPU_INTERFACE_INCLUDE_DIRECTORIES: ${WEBGPU_INTERFACE_INCLUDE_DIRECTORIES}")
-        target_include_directories(sgl PRIVATE ${WEBGPU_INTERFACE_INCLUDE_DIRECTORIES})
+        #target_include_directories(sgl PRIVATE ${WEBGPU_INTERFACE_INCLUDE_DIRECTORIES})
+        target_include_directories(sgl PUBLIC
+                $<BUILD_INTERFACE:${WEBGPU_INTERFACE_INCLUDE_DIRECTORIES}>
+                $<INSTALL_INTERFACE:include/sgl> # <prefix>/include/sgl
+        )
     endif()
 
+    # Find the .so or .dll file from WebGPU to install.
     if (WIN32)
         set(LIBRARY_INSTALL_DIR "bin")
     else()
@@ -757,11 +762,13 @@ if (${SUPPORT_WEBGPU})
             set(WEBGPU_LIBRARY_NAME "${LIBRARY_NAME}")
         endif()
     endforeach()
-    set_target_properties(sgl PROPERTIES INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${LIBRARY_INSTALL_DIR}")
-    #target_link_libraries(sgl INTERFACE $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${LIBRARY_INSTALL_DIR}/${WEBGPU_LIBRARY_NAME}>)
 
-    #set_property(TARGET sgl PROPERTY IMPORTED_LINK_INTERFACE_LIBRARIES "${CMAKE_INSTALL_PREFIX}/${LIBRARY_INSTALL_DIR}/${WEBGPU_LIBRARY_NAME}")
+    # Set the rpath, as otherwise apps not using any WebGPU symbols will not set the rpath, but sgl needs it.
+    if (NOT EMSCRIPTEN)
+        set_target_properties(sgl PROPERTIES INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${LIBRARY_INSTALL_DIR}")
+    endif()
 
+    # The code below was moved to sglConfig.cmake.
     #if (NOT EMSCRIPTEN)
     #    add_library(webgpusgl UNKNOWN IMPORTED)
     #    set_target_properties(webgpusgl PROPERTIES IMPORTED_LOCATION "${WEBGPU_LIBRARY_FILE}" INTERFACE_INCLUDE_DIRECTORIES "${WEBGPU_INTERFACE_INCLUDE_DIRECTORIES}")
@@ -1019,15 +1026,12 @@ file(WRITE "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "${CONTENTS}")
 if(${efsw_FOUND})
     file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "\nfind_package(efsw REQUIRED)\n")
 endif()
-if(${SUPPORT_WEBGPU})
-    file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "\nget_filename_component(_IMPORT_PREFIX "\${CMAKE_CURRENT_LIST_FILE}" PATH)\n")
-    file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "get_filename_component(_IMPORT_PREFIX "\${_IMPORT_PREFIX}" PATH)\n")
-    file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "get_filename_component(_IMPORT_PREFIX "\${_IMPORT_PREFIX}" PATH)\n")
-    file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "get_filename_component(_IMPORT_PREFIX "\${_IMPORT_PREFIX}" PATH)\n")
-    #    add_library(webgpusgl UNKNOWN IMPORTED)
-    #    set_target_properties(webgpusgl PROPERTIES IMPORTED_LOCATION "${WEBGPU_LIBRARY_FILE}" INTERFACE_INCLUDE_DIRECTORIES "${WEBGPU_INTERFACE_INCLUDE_DIRECTORIES}")
-    #    target_link_libraries(sgl INTERFACE webgpusgl)
-    #file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "set_property(TARGET sgl APPEND PROPERTY INTERFACE_LINK_LIBRARIES \${_IMPORT_PREFIX}/${LIBRARY_INSTALL_DIR}/${WEBGPU_LIBRARY_NAME})\n")
+if(${SUPPORT_WEBGPU} AND NOT EMSCRIPTEN)
+    # Add a target for the WebGPU libraries. Unfortunately, imported libraries cannot be directly exported otherwise...
+    file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "\nget_filename_component(_IMPORT_PREFIX \"\${CMAKE_CURRENT_LIST_FILE}\" PATH)\n")
+    file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "get_filename_component(_IMPORT_PREFIX \"\${_IMPORT_PREFIX}\" PATH)\n")
+    file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "get_filename_component(_IMPORT_PREFIX \"\${_IMPORT_PREFIX}\" PATH)\n")
+    file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "get_filename_component(_IMPORT_PREFIX \"\${_IMPORT_PREFIX}\" PATH)\n")
     if (WEBGPU_LIBRARY_NAME MATCHES ".so$")
         file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "add_library(webgpusgl SHARED IMPORTED)\n")
         file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "set_target_properties(webgpusgl PROPERTIES IMPORTED_LOCATION \"\${_IMPORT_PREFIX}/${LIBRARY_INSTALL_DIR}/${WEBGPU_LIBRARY_NAME}\" IMPORTED_NO_SONAME 1)\n")
@@ -1176,9 +1180,6 @@ export(
         EXPORT sglTargets
         FILE "${CMAKE_CURRENT_BINARY_DIR}/sgl/sglTargets.cmake"
 )
-#if(${SUPPORT_WEBGPU})
-#    file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/sgl/sglTargets.cmake" "\nset_property(TARGET sgl APPEND PROPERTY INTERFACE_LINK_LIBRARIES \${_IMPORT_PREFIX}/${LIBRARY_INSTALL_DIR}/${WEBGPU_LIBRARY_NAME})\n")
-#endif()
 configure_file(
         "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp"
         "${CMAKE_CURRENT_BINARY_DIR}/sgl/sglConfig.cmake"
@@ -1202,6 +1203,7 @@ if (WIN32 AND ((CMAKE_CXX_COMPILER_ID STREQUAL "MSVC") OR (CMAKE_CXX_COMPILER_ID
     )
 endif()
 
+# Install WebGPU binaries if Emscripten is not used (in this case, the browser provides the implementation).
 if (${SUPPORT_WEBGPU} AND NOT EMSCRIPTEN)
     if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.21.0")
         install(IMPORTED_RUNTIME_ARTIFACTS webgpu)
@@ -1211,4 +1213,12 @@ if (${SUPPORT_WEBGPU} AND NOT EMSCRIPTEN)
                 DESTINATION ${LIBRARY_INSTALL_DIR}
         )
     endif()
+endif()
+# Install the WebGPU includes if available.
+if (WEBGPU_INTERFACE_INCLUDE_DIRECTORIES)
+    install(
+            DIRECTORY "${WEBGPU_INTERFACE_INCLUDE_DIRECTORIES}/"
+            DESTINATION include/sgl
+            FILES_MATCHING PATTERN "*.h*" PATTERN "*.inl"
+    )
 endif()
