@@ -28,7 +28,6 @@
 
 #include "Mesh.hpp"
 #include <Utils/Convert.hpp>
-#include <Utils/XML.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
 #include <Utils/StringUtils.hpp>
@@ -41,6 +40,7 @@
 #ifdef SUPPORT_TINYXML2
 #include <tinyxml2.h>
 using namespace tinyxml2;
+#include <Utils/XML.hpp>
 #endif
 
 namespace sgl {

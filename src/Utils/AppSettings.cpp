@@ -556,9 +556,12 @@ void AppSettings::initializeOffscreenContextFunctionPointers() {
     }
     glewExperimental = GL_TRUE;
     GLenum glewError = glewInit();
+#ifndef __EMSCRIPTEN__
     if (glewError == GLEW_ERROR_NO_GLX_DISPLAY) {
         Logfile::get()->writeWarning("Warning: GLEW is not built with EGL support.");
-    } else if (glewError != GLEW_OK) {
+    } else
+#endif
+    if (glewError != GLEW_OK) {
         Logfile::get()->writeError(
                 std::string() + "Error in AppSettings::initializeOffscreenContextFunctionPointers: glewInit: "
                 + (char*)glewGetErrorString(glewError));
