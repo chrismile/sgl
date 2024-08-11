@@ -32,9 +32,11 @@
 #include <Utils/File/FileUtils.hpp>
 #include <Graphics/Texture/TextureManager.hpp>
 #include <cstring>
-#include <tinyxml2.h>
 
+#ifdef SUPPORT_TINYXML2
+#include <tinyxml2.h>
 using namespace tinyxml2;
+#endif
 
 namespace sgl {
 
@@ -99,6 +101,7 @@ MaterialPtr MaterialManagerInterface::getMaterial(const char *filename, const ch
     return FileManager<Material, MaterialInfo>::getAsset(info);
 }
 
+#ifdef SUPPORT_TINYXML2
 // Get the material this element describes
 MaterialPtr MaterialManagerInterface::getMaterial(tinyxml2::XMLElement *materialElement) {
     // If this is element contains a reference to an external XML file, load the material in this file.
@@ -109,8 +112,8 @@ MaterialPtr MaterialManagerInterface::getMaterial(tinyxml2::XMLElement *material
     // Otherwise, we have a node containing the material itself
     MaterialInfo info = loadMaterialInfo(materialElement);
     return createMaterial(info);
-
 }
+#endif
 
 MaterialPtr MaterialManagerInterface::loadAsset(MaterialInfo &info) {
     // Was the material data already parsed?
@@ -118,6 +121,7 @@ MaterialPtr MaterialManagerInterface::loadAsset(MaterialInfo &info) {
         return createMaterial(info);
     }
 
+#ifdef SUPPORT_TINYXML2
     // We load a material of this file for the first time!
     // First, open the document and get the main node of the material list
     XMLDocument doc;
@@ -147,8 +151,13 @@ MaterialPtr MaterialManagerInterface::loadAsset(MaterialInfo &info) {
             break;
     }
     return getMaterial(masterNode);
+#else
+    sgl::Logfile::get()->throwError("Error in MaterialManagerInterface::loadAsset: TinyXML2 support disabled.");
+    return {};
+#endif
 }
 
+#ifdef SUPPORT_TINYXML2
 MaterialInfo MaterialManagerInterface::loadMaterialInfo(tinyxml2::XMLElement *materialElement) {
     // Read the material data
     MaterialInfo materialInfo;
@@ -199,6 +208,7 @@ MaterialInfo MaterialManagerInterface::loadMaterialInfo(tinyxml2::XMLElement *ma
 
     return materialInfo;
 }
+#endif
 
 MaterialPtr MaterialManagerInterface::createMaterial(const MaterialInfo &info) {
     MaterialPtr material(new Material);

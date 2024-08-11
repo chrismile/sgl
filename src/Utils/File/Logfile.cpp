@@ -116,7 +116,7 @@ void Logfile::createLogfile(const std::string& filename, const std::string& appN
     write("Threading library: None<br>");
 #endif
 
-#ifdef __unix__
+#if defined(__unix__) && !defined(__EMSCRIPTEN__)
     std::string sysinfo = exec("uname -a");
     write(std::string() + "System info: " + sysinfo + "<br>");
 #endif

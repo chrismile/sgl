@@ -43,10 +43,12 @@
 #include <Graphics/Vulkan/Image/Image.hpp>
 #endif
 
+#ifdef SUPPORT_TINYXML2
 namespace tinyxml2 {
 class XMLDocument;
 class XMLPrinter;
 }
+#endif
 
 namespace sgl {
 
@@ -94,8 +96,10 @@ public:
     [[nodiscard]] inline const glm::vec2 &getSelectedRange() const { return selectedRange; }
 
 private:
+#ifdef SUPPORT_TINYXML2
     void writeToXml(tinyxml2::XMLPrinter& printer);
     bool readFromXml(tinyxml2::XMLDocument& doc);
+#endif
 
     void computeHistogram();
     void renderFileDialog();

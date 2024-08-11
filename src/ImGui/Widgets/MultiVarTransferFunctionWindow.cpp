@@ -37,7 +37,6 @@
 #include <glm/glm.hpp>
 
 #include <Utils/AppSettings.hpp>
-#include <Utils/XML.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
 #include <Utils/Parallel/Reduction.hpp>
@@ -61,7 +60,10 @@
 
 #include "MultiVarTransferFunctionWindow.hpp"
 
+#ifdef SUPPORT_TINYXML2
+#include <Utils/XML.hpp>
 using namespace tinyxml2;
+#endif
 
 namespace sgl {
 
@@ -80,9 +82,11 @@ GuiVarData::GuiVarData(
     if (tfFileName.empty() || !sgl::FileUtils::get()->exists(tfFileName) || sgl::FileUtils::get()->isDirectory(tfFileName)) {
         tfFileName = stdFileName;
     }
+#ifdef SUPPORT_TINYXML2
     if (sgl::FileUtils::get()->exists(tfFileName) && !sgl::FileUtils::get()->isDirectory(tfFileName)) {
         loadTfFromFile(tfFileName);
     } else {
+#endif
         colorPoints = {
                 sgl::ColorPoint_sRGB(sgl::Color(59, 76, 192), 0.0f),
                 sgl::ColorPoint_sRGB(sgl::Color(144, 178, 254), 0.25f),
@@ -91,9 +95,12 @@ GuiVarData::GuiVarData(
                 sgl::ColorPoint_sRGB(sgl::Color(180, 4, 38), 1.0f)
         };
         opacityPoints = { sgl::OpacityPoint(1.0f, 0.0f), sgl::OpacityPoint(1.0f, 1.0f) };
+#ifdef SUPPORT_TINYXML2
     }
+#endif
 }
 
+#ifdef SUPPORT_TINYXML2
 void GuiVarData::writeToXml(XMLPrinter& printer) {
     printer.OpenElement("TransferFunction");
     printer.PushAttribute("colorspace", "sRGB"); // Currently only sRGB supported for points
@@ -124,8 +131,11 @@ void GuiVarData::writeToXml(XMLPrinter& printer) {
 
     printer.CloseElement();
 }
+#endif
 
 bool GuiVarData::saveTfToFile(const std::string& filename) {
+#ifdef SUPPORT_TINYXML2
+
 #ifdef _MSC_VER
     FILE* file = nullptr;
     errno_t errorCode = fopen_s(&file, filename.c_str(), "w");
@@ -148,14 +158,27 @@ bool GuiVarData::saveTfToFile(const std::string& filename) {
 
     fclose(file);
     return true;
+
+#else
+    sgl::Logfile::get()->writeError(
+            std::string() + "Error in GuiVarData::saveTfToFile: TinyXML2 support is disabled.");
+    return false;
+#endif
 }
 
 std::string GuiVarData::serializeXmlString() {
+#ifdef SUPPORT_TINYXML2
     XMLPrinter printer;
     writeToXml(printer);
     return std::string(printer.CStr(), printer.CStrSize());
+#else
+    sgl::Logfile::get()->writeError(
+            std::string() + "Error in GuiVarData::serializeXmlString: TinyXML2 support is disabled.");
+    return "";
+#endif
 }
 
+#ifdef SUPPORT_TINYXML2
 bool GuiVarData::readFromXml(XMLDocument& doc) {
     XMLElement* tfNode = doc.FirstChildElement("TransferFunction");
     if (tfNode == nullptr) {
@@ -228,8 +251,10 @@ bool GuiVarData::readFromXml(XMLDocument& doc) {
     rebuildTransferFunctionMap();
     return true;
 }
+#endif
 
 bool GuiVarData::loadTfFromFile(const std::string& filename) {
+#ifdef SUPPORT_TINYXML2
     XMLDocument doc;
     if (doc.LoadFile(filename.c_str()) != 0) {
         sgl::Logfile::get()->writeError(
@@ -238,9 +263,15 @@ bool GuiVarData::loadTfFromFile(const std::string& filename) {
         return false;
     }
     return readFromXml(doc);
+#else
+    sgl::Logfile::get()->writeError(
+            std::string() + "Error in GuiVarData::loadTfFromFile: TinyXML2 support is disabled.");
+    return false;
+#endif
 }
 
 bool GuiVarData::loadTfFromXmlString(const std::string &xmlString) {
+#ifdef SUPPORT_TINYXML2
     XMLDocument doc;
     if (doc.Parse(xmlString.c_str(), xmlString.size()) != 0) {
         sgl::Logfile::get()->writeError(
@@ -248,9 +279,15 @@ bool GuiVarData::loadTfFromXmlString(const std::string &xmlString) {
         return false;
     }
     return readFromXml(doc);
+#else
+    sgl::Logfile::get()->writeError(
+            std::string() + "Error in GuiVarData::loadTfFromXmlString: TinyXML2 support is disabled.");
+    return false;
+#endif
 }
 
 bool GuiVarData::deserializeXmlString(const std::string& xmlString) {
+#ifdef SUPPORT_TINYXML2
     XMLDocument doc;
     if (doc.Parse(xmlString.c_str(), xmlString.size()) != 0) {
         sgl::Logfile::get()->writeError(
@@ -258,6 +295,11 @@ bool GuiVarData::deserializeXmlString(const std::string& xmlString) {
         return false;
     }
     return readFromXml(doc);
+#else
+    sgl::Logfile::get()->writeError(
+            std::string() + "Error in GuiVarData::deserializeXmlString: TinyXML2 support is disabled.");
+    return false;
+#endif
 }
 
 void GuiVarData::setAttributeName(int _varIdx, const std::string& name) {

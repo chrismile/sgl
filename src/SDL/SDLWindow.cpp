@@ -604,11 +604,13 @@ void SDLWindow::serializeSettings(SettingsFile &settings) {
     settings.addKeyValue("window-depthSize", windowSettings.depthSize);
     settings.addKeyValue("window-stencilSize", windowSettings.stencilSize);
     settings.addKeyValue("window-vSync", windowSettings.vSync);
+#ifndef __EMSCRIPTEN__
     settings.addKeyValue("window-savePosition", windowSettings.savePosition);
     if (windowSettings.savePosition) {
         windowSettings.windowPosition = getWindowPosition();
         settings.addKeyValue("window-windowPosition", windowSettings.windowPosition);
     }
+#endif
     settings.addKeyValue("window-useDownloadSwapchain", windowSettings.useDownloadSwapchain);
 }
 
@@ -636,8 +638,10 @@ WindowSettings SDLWindow::deserializeSettings(const SettingsFile &settings) {
     settings.getValueOpt("window-stencilSize", windowSettings.stencilSize);
     settings.getValueOpt("window-vSync", windowSettings.vSync);
     settings.getValueOpt("window-debugContext", windowSettings.debugContext);
+#ifndef __EMSCRIPTEN__
     settings.getValueOpt("window-savePosition", windowSettings.savePosition);
     settings.getValueOpt("window-windowPosition", windowSettings.windowPosition);
+#endif
     settings.getValueOpt("window-useDownloadSwapchain", windowSettings.useDownloadSwapchain);
     return windowSettings;
 }

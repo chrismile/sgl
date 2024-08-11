@@ -36,7 +36,9 @@
 #undef NOGDI
 #endif
 
+#ifndef __EMSCRIPTEN__
 #include "libs/portable-file-dialogs.h"
+#endif
 
 // Avoid windows.h defining "ERROR".
 #if defined(_WIN32) && defined(ERROR)
@@ -46,14 +48,21 @@
 namespace sgl { namespace dialog {
 
 bool getIsAvailable() {
+#ifndef __EMSCRIPTEN__
     return pfd::settings::available();
+#else
+    return false;
+#endif
 }
 
 void forceDialogRescan() {
+#ifndef __EMSCRIPTEN__
     pfd::settings::rescan();
+#endif
 }
 
 
+#ifndef __EMSCRIPTEN__
 class MsgBoxHandlePfd : public MsgBoxHandle {
 public:
     explicit MsgBoxHandlePfd(pfd::message message) : message(std::move(message)) {}
@@ -65,14 +74,29 @@ public:
 private:
     pfd::message message;
 };
+#else
+class MsgBoxHandleEmscripten : public MsgBoxHandle {
+public:
+    Button result() override { return Button::OK; }
+    bool ready() override { return true; }
+    bool ready(int timeout) override { return true; }
+    bool kill() override { return true; }
+};
+#endif
 
 MsgBoxHandlePtr openMessageBox(
         std::string const& title,
         std::string const& text,
         Choice _choice,
         Icon icon) {
+#ifndef __EMSCRIPTEN__
     auto messageBox = pfd::message(title, text, pfd::choice(_choice), pfd::icon(icon));
     return std::make_shared<MsgBoxHandlePfd>(messageBox);
+#else
+    // TODO: Specify window handle using AppSettings?
+    openMessageBoxModal(title, text, nullptr, icon);
+    return std::make_shared<MsgBoxHandleEmscripten>();
+#endif
 }
 
 void openMessageBoxModal(
@@ -101,6 +125,7 @@ void openMessageBoxModal(
 }
 
 
+#ifndef __EMSCRIPTEN__
 class FolderDialogHandlePfd : public FolderDialogHandle {
 public:
     explicit FolderDialogHandlePfd(pfd::select_folder dialog) : dialog(std::move(dialog)) {}
@@ -112,16 +137,30 @@ public:
 private:
     pfd::select_folder dialog;
 };
+#else
+class FolderDialogHandleEmscripten : public FolderDialogHandle {
+public:
+    std::string result() override { return ""; }
+    bool ready() override { return true; }
+    bool ready(int timeout) override { return true; }
+    bool kill() override { return true; }
+};
+#endif
 
 FolderDialogHandlePtr selectFolder(
         std::string const& title,
         std::string const& defaultPath,
         Opt options) {
+#ifndef __EMSCRIPTEN__
     auto dialog = pfd::select_folder("Select any directory", defaultPath, pfd::opt(options));
     return std::make_shared<FolderDialogHandlePfd>(dialog);
+#else
+    return std::make_shared<FolderDialogHandleEmscripten>();
+#endif
 }
 
 
+#ifndef __EMSCRIPTEN__
 class FileDialogHandlePfd : public FileDialogHandle {
 public:
     explicit FileDialogHandlePfd(pfd::open_file dialog) : dialog(std::move(dialog)) {}
@@ -133,17 +172,31 @@ public:
 private:
     pfd::open_file dialog;
 };
+#else
+class FileDialogHandleEmscripten : public FileDialogHandle {
+public:
+    std::vector<std::string> result() override { return {}; }
+    bool ready() override { return true; }
+    bool ready(int timeout) override { return true; }
+    bool kill() override { return true; }
+};
+#endif
 
 FileDialogHandlePtr openFile(
         std::string const& title,
         std::string const& defaultPath,
         std::vector<std::string> const& filters,
         Opt options) {
+#ifndef __EMSCRIPTEN__
     auto dialog = pfd::open_file(title, defaultPath, filters, pfd::opt(options));
     return std::make_shared<FileDialogHandlePfd>(dialog);
+#else
+    return std::make_shared<FileDialogHandleEmscripten>();
+#endif
 }
 
 
+#ifndef __EMSCRIPTEN__
 class NotifyHandlePfd : public NotifyHandle {
 public:
     explicit NotifyHandlePfd(pfd::notify notifyData) : notifyData(std::move(notifyData)) {}
@@ -154,13 +207,25 @@ public:
 private:
     pfd::notify notifyData;
 };
+#else
+class NotifyHandleEmscripten : public NotifyHandle {
+public:
+    bool ready() override { return true; }
+    bool ready(int timeout) override { return true; }
+    bool kill() override { return true; }
+};
+#endif
 
 NotifyHandlePtr notify(
         std::string const& title,
         std::string const& message,
         Icon icon) {
+#ifndef __EMSCRIPTEN__
     auto notifyData = pfd::notify(title, message, pfd::icon(icon));
     return std::make_shared<NotifyHandlePfd>(notifyData);
+#else
+    return std::make_shared<NotifyHandleEmscripten>();
+#endif
 }
 
 }}

@@ -35,9 +35,11 @@
 #include <Graphics/Texture/Texture.hpp>
 #include <Utils/File/FileManager.hpp>
 
+#ifdef SUPPORT_TINYXML2
 namespace tinyxml2 {
 class XMLElement;
 }
+#endif
 
 namespace sgl {
 
@@ -88,8 +90,10 @@ public:
      */
     MaterialPtr getMaterial(const char *filename, const char *materialName);
 
+#ifdef SUPPORT_TINYXML2
     /// Get the material this element describes
     MaterialPtr getMaterial(tinyxml2::XMLElement *materialElement);
+#endif
 
 protected:
     /**
@@ -98,8 +102,10 @@ protected:
      */
     virtual MaterialPtr loadAsset(MaterialInfo &info);
 
+#ifdef SUPPORT_TINYXML2
     /// Parse the XML element and create the material info from it
     MaterialInfo loadMaterialInfo(tinyxml2::XMLElement *materialElement);
+#endif
 
     /// Create a material from the info
     MaterialPtr createMaterial(const MaterialInfo &info);

@@ -37,9 +37,11 @@
 #include <Graphics/Renderer.hpp>
 #include <vector>
 #include <string>
-#include <tinyxml2.h>
 
+#ifdef SUPPORT_TINYXML2
+#include <tinyxml2.h>
 using namespace tinyxml2;
+#endif
 
 namespace sgl {
 
@@ -57,6 +59,7 @@ void Mesh::computeAABB() {
 }
 
 bool Mesh::loadFromXML(const char* filename) {
+#ifdef SUPPORT_TINYXML2
     XMLDocument doc;
     if (doc.LoadFile(filename) != 0) {
         Logfile::get()->writeError(std::string() + "Mesh::loadFromXML: Couldn't open file \"" + filename + "\"!");
@@ -215,6 +218,10 @@ bool Mesh::loadFromXML(const char* filename) {
     computeAABB();
 
     return true;
+#else
+    sgl::Logfile::get()->throwError("Error in Mesh::loadFromXML: TinyXML2 support disabled.");
+    return false;
+#endif
 }
 
 

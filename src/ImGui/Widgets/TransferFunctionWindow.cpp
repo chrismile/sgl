@@ -36,7 +36,6 @@
 #include <ImGui/imgui_stdlib.h>
 
 #include <Utils/AppSettings.hpp>
-#include <Utils/XML.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
 #include <Utils/Parallel/Reduction.hpp>
@@ -53,7 +52,10 @@
 #endif
 #include "TransferFunctionWindow.hpp"
 
+#ifdef SUPPORT_TINYXML2
+#include <Utils/XML.hpp>
 using namespace tinyxml2;
+#endif
 
 namespace sgl {
 
@@ -111,12 +113,15 @@ TransferFunctionWindow::TransferFunctionWindow() {
     rebuildTransferFunctionMap();
     rebuildRangeUbo();
 
+#ifdef SUPPORT_TINYXML2
     if (sgl::FileUtils::get()->exists(saveDirectory + "Standard.xml")) {
         loadFunctionFromFile(saveDirectory + "Standard.xml");
     }
+#endif
 }
 
 bool TransferFunctionWindow::saveFunctionToFile(const std::string& filename) {
+#ifdef SUPPORT_TINYXML2
     FILE* file = fopen(filename.c_str(), "w");
     if (file == nullptr) {
         sgl::Logfile::get()->writeError(std::string()
@@ -156,9 +161,15 @@ bool TransferFunctionWindow::saveFunctionToFile(const std::string& filename) {
 
     fclose(file);
     return true;
+#else
+    sgl::Logfile::get()->writeError(
+            std::string() + "Error in TransferFunctionWindow::saveFunctionToFile: TinyXML2 support is disabled.");
+    return false;
+#endif
 }
 
 bool TransferFunctionWindow::loadFunctionFromFile(const std::string& filename) {
+#ifdef SUPPORT_TINYXML2
     XMLDocument doc;
     if (doc.LoadFile(filename.c_str()) != 0) {
         sgl::Logfile::get()->writeError(std::string()
@@ -235,6 +246,11 @@ bool TransferFunctionWindow::loadFunctionFromFile(const std::string& filename) {
     selectedPointType = SELECTED_POINT_TYPE_NONE;
     rebuildTransferFunctionMap();
     return true;
+#else
+    sgl::Logfile::get()->writeError(
+            std::string() + "Error in TransferFunctionWindow::loadFunctionFromFile: TinyXML2 support is disabled.");
+    return false;
+#endif
 }
 
 void TransferFunctionWindow::updateAvailableFiles() {
