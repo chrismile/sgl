@@ -38,6 +38,10 @@
 #include <SDL2/SDL_vulkan.h>
 #endif
 
+#ifdef SUPPORT_WEBGPU
+typedef struct WGPUSurfaceImpl* WGPUSurface;
+#endif
+
 namespace sgl {
 
 class DLL_OBJECT SDLWindow : public Window {
@@ -149,6 +153,10 @@ private:
 
 #ifdef SUPPORT_VULKAN
     VkSurfaceKHR windowSurface{};
+#endif
+
+#ifdef SUPPORT_WEBGPU
+    WGPUSurface webgpuSurface{};
 #endif
 };
 

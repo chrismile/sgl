@@ -50,7 +50,7 @@ namespace vk { class Instance; class Device; class Swapchain; }
 
 // At the moment, only OpenGL and Vulkan are supported.
 enum class RenderSystem {
-    OPENGL, OPENGLES, VULKAN, DIRECT3D_11, DIRECT3D_12, METAL
+    OPENGL, OPENGLES, VULKAN, WEBGPU, DIRECT3D_11, DIRECT3D_12, METAL
 };
 
 enum class OperatingSystem {

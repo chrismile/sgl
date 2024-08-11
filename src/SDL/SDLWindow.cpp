@@ -62,6 +62,29 @@
 #include <Graphics/Vulkan/Utils/Swapchain.hpp>
 #endif
 
+#ifdef SUPPORT_WEBGPU
+#include <sdl2webgpu.h>
+
+// Xlib.h defines "Bool" on Linux, which conflicts with webgpu.hpp.
+#ifdef Bool
+#undef Bool
+#endif
+
+// X.h defines "Success", "Always", and "None" on Linux, which conflicts with webgpu.hpp.
+#ifdef Success
+#undef Success
+#endif
+#ifdef Always
+#undef Always
+#endif
+#ifdef None
+#undef None
+#endif
+
+#define WEBGPU_CPP_IMPLEMENTATION
+#include <webgpu/webgpu.hpp>
+#endif
+
 #ifdef __APPLE__
 #include <CoreFoundation/CoreFoundation.h>
 #include <CoreServices/CoreServices.h>
@@ -303,15 +326,33 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
         instance->createInstance(instanceExtensionNames, windowSettings.debugContext);
 
         if (!SDL_Vulkan_CreateSurface(sdlWindow, instance->getVkInstance(), &windowSurface)) {
-            sgl::Logfile::get()->writeError(
+            sgl::Logfile::get()->throwError(
                     std::string() + "Error in SDLWindow::initialize: Failed to create a Vulkan surface.");
-            exit(-1);
         }
     }
     if (renderSystem == RenderSystem::VULKAN && windowSettings.useDownloadSwapchain) {
         sgl::Logfile::get()->write("Using Vulkan download swapchain (i.e., manual copy to window).", sgl::BLUE);
         sgl::vk::Instance* instance = sgl::AppSettings::get()->getVulkanInstance();
         instance->createInstance({}, windowSettings.debugContext);
+    }
+#endif
+#ifdef SUPPORT_WEBGPU
+    if (renderSystem == RenderSystem::WEBGPU) {
+        //WGPUInstanceDescriptor desc;
+        //desc.nextInChain = NULL;
+        //WGPUInstance instance = wgpuCreateInstance(&desc);
+
+        wgpu::Instance instance = createInstance(wgpu::InstanceDescriptor{});
+        if (!instance) {
+            sgl::Logfile::get()->throwError(
+                    std::string() + "Error in SDLWindow::initialize: Failed to create a WebGPU instance.");
+        }
+        webgpuSurface = SDL_GetWGPUSurface(instance, sdlWindow);
+        if (!webgpuSurface) {
+            sgl::Logfile::get()->throwError(
+                    std::string() + "Error in SDLWindow::initialize: Failed to create a WebGPU surface.");
+        }
+        instance.release(); // TODO: Move to AppSettings.
     }
 #endif
     errorCheckSDLCritical();

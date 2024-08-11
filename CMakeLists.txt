@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.7)
-cmake_policy(VERSION 3.7...3.20)
+cmake_policy(VERSION 3.7...3.30)
 project(sgl)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/CMake)
 #MESSAGE(STATUS "CMAKE_MODULE_PATH: " ${CMAKE_MODULE_PATH})
@@ -41,6 +41,7 @@ option(USE_GLIBCXX_DEBUG "Use the -D_GLIBCXX_DEBUG flag when compiling with GCC.
 option(USE_PRE_CXX11_ABI "Use the -D_GLIBCXX_USE_CXX11_ABI=0 flag when compiling with GCC." OFF)
 option(SUPPORT_OPENGL "Build with OpenGL support." ON)
 option(SUPPORT_VULKAN "Build with Vulkan support." ON)
+option(SUPPORT_WEBGPU "Build with WebGPU support." OFF)
 option(SUPPORT_CUDA "Build with Vulkan-CUDA interoperability support." ON)
 option(SUPPORT_OPENCL "Build with Vulkan-OpenCL interoperability support." ON)
 option(SUPPORT_HIP "Build with Vulkan-HIP interoperability support." ON)
@@ -64,7 +65,9 @@ if (EMSCRIPTEN)
     # When using emscripten and targeting the web, turn off all meaningless/incompatible components.
     # In the future, Boost could be supported.
     set(BUILD_STATIC_LIBRARY ON)
+    set(SUPPORT_OPENGL ON)
     set(SUPPORT_VULKAN OFF)
+    set(SUPPORT_WEBGPU ON)
     set(SUPPORT_CUDA OFF)
     set(SUPPORT_OPENCL OFF)
     set(SUPPORT_HIP OFF)
@@ -211,6 +214,19 @@ if (${SUPPORT_OPENGL} AND OpenGL_FOUND AND GLEW_FOUND)
         list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Vulkan/Utils/Interop.hpp)
         list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Vulkan/Utils/Interop.cpp)
     endif()
+endif()
+
+if (${SUPPORT_WEBGPU})
+    if (NOT WEBGPU_DIST_DIR)
+        message(FATAL_ERROR "WEBGPU_DIST_DIR needs to be specified.")
+    endif()
+else()
+    file(GLOB_RECURSE WEBGPU_SOURCES src/Graphics/WebGPU/*.cpp src/Graphics/WebGPU/*.c src/Graphics/WebGPU/*.h src/Graphics/WebGPU/*.hpp)
+    foreach(source ${WEBGPU_SOURCES})
+        list(REMOVE_ITEM SOURCES ${source})
+    endforeach()
+    list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/ImGui/imgui_impl_wgpu.h)
+    list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/ImGui/imgui_impl_wgpu.cpp)
 endif()
 
 if (${SUPPORT_CUDA})
@@ -374,6 +390,12 @@ if (${SUPPORT_OPENGL} AND OpenGL_FOUND AND GLEW_FOUND)
             target_link_libraries(sgl PRIVATE glfw)
             target_compile_definitions(sgl PUBLIC SUPPORT_GLFW)
         endif()
+    endif()
+
+    if (ANDROID OR IOS OR EMSCRIPTEN)
+        # TODO: Let the user choose whether to use IMGUI_IMPL_OPENGL_ES2 or IMGUI_IMPL_OPENGL_ES3?
+        # ImGui by default uses IMGUI_IMPL_OPENGL_ES2 for Emscripten. Check if IMGUI_IMPL_OPENGL_ES3 is valid.
+        target_compile_definitions(sgl PUBLIC IMGUI_IMPL_OPENGL_ES3)
     endif()
 
     if (${GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT})
@@ -674,6 +696,66 @@ if (${SUPPORT_VULKAN} AND (${shaderc_FOUND} OR ${glslang_FOUND}))
     endif()
 endif()
 
+if (${SUPPORT_WEBGPU})
+    target_compile_definitions(sgl PUBLIC SUPPORT_WEBGPU)
+
+    # https://github.com/eliemichel/WebGPU-distribution/archive/refs/heads/main.zip
+    # Or from: https://eliemichel.github.io/LearnWebGPU/getting-started/hello-webgpu.html:
+    # https://github.com/eliemichel/WebGPU-distribution/archive/refs/tags/main-v0.2.0-beta1.zip
+    #include(FetchContent)
+    #FetchContent_Declare(
+    #        webgpu
+    #        GIT_REPOSITORY https://github.com/eliemichel/WebGPU-distribution
+    #        GIT_TAG        main
+    #)
+    #FetchContent_MakeAvailable(webgpu)
+    add_subdirectory(${WEBGPU_DIST_DIR} WebGPU)
+    target_copy_webgpu_binaries(sgl)
+
+    #target_include_directories(sgl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/WebGPU/libs)
+    target_include_directories(sgl PUBLIC
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/WebGPU/libs>
+            $<INSTALL_INTERFACE:include/sgl/Graphics/WebGPU/libs> # <prefix>/include/sgl
+    )
+
+    # Using the target leads to problems with installing sgl, i.e.:
+    # - "export called with target "sgl" which requires target "webgpu" that is not in any export set."
+    # - "Target "webgpu" INTERFACE_INCLUDE_DIRECTORIES property contains path: [...]
+    #    which is prefixed in the build directory."
+    #target_link_libraries(sgl PRIVATE webgpu)
+    get_target_property(WEBGPU_INTERFACE_COMPILE_DEFINITIONS webgpu INTERFACE_COMPILE_DEFINITIONS)
+    get_target_property(WEBGPU_IMPORTED_LOCATION webgpu IMPORTED_LOCATION)
+    get_target_property(WEBGPU_INTERFACE_LINK_OPTIONS webgpu INTERFACE_LINK_OPTIONS)
+    get_target_property(WEBGPU_INTERFACE_INCLUDE_DIRECTORIES webgpu INTERFACE_INCLUDE_DIRECTORIES)
+    if (WEBGPU_INTERFACE_COMPILE_DEFINITIONS)
+        message(STATUS "WEBGPU_INTERFACE_COMPILE_DEFINITIONS: ${WEBGPU_INTERFACE_COMPILE_DEFINITIONS}")
+        target_compile_definitions(sgl PRIVATE ${WEBGPU_INTERFACE_COMPILE_DEFINITIONS})
+    endif()
+    if (WEBGPU_IMPORTED_LOCATION)
+        message(STATUS "WEBGPU_INTERFACE_LINK_LIBRARIES: ${WEBGPU_INTERFACE_LINK_LIBRARIES}")
+        target_link_libraries(sgl PRIVATE ${WEBGPU_IMPORTED_LOCATION})
+    endif()
+    if (WEBGPU_INTERFACE_LINK_OPTIONS)
+        message(STATUS "WEBGPU_INTERFACE_LINK_OPTIONS: ${WEBGPU_INTERFACE_LINK_OPTIONS}")
+        target_link_options(sgl PRIVATE ${WEBGPU_INTERFACE_LINK_OPTIONS})
+    endif()
+    if (WEBGPU_INTERFACE_INCLUDE_DIRECTORIES)
+        message(STATUS "WEBGPU_INTERFACE_INCLUDE_DIRECTORIES: ${WEBGPU_INTERFACE_INCLUDE_DIRECTORIES}")
+        target_include_directories(sgl PRIVATE ${WEBGPU_INTERFACE_INCLUDE_DIRECTORIES})
+    endif()
+
+    # See: https://github.com/eliemichel/sdl2webgpu/blob/main/CMakeLists.txt
+    if (APPLE)
+        target_compile_options(sgl PRIVATE -x objective-c)
+        target_link_libraries(sgl PRIVATE "-framework CoreVideo" "-framework IOKit" "-framework QuartzCore")
+        if (IOS)
+            target_link_libraries(sgl PRIVATE "-framework UIKit")
+        else()
+            target_link_libraries(sgl PRIVATE "-framework Cocoa")
+        endif()
+    endif()
+endif()
+
 if (${USE_CUDA})
     target_compile_definitions(sgl PUBLIC SUPPORT_CUDA_INTEROP)
     get_target_property(SGL_INTERFACE_COMPILE_DEFINITIONS sgl INTERFACE_COMPILE_DEFINITIONS)
@@ -912,6 +994,9 @@ file(READ "${CMAKE_CURRENT_SOURCE_DIR}/sglConfig.cmake.in" CONTENTS)
 file(WRITE "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "${CONTENTS}")
 if(${efsw_FOUND})
     file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "\nfind_package(efsw REQUIRED)\n")
+endif()
+if(${SUPPORT_WEBGPU})
+    file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "\nadd_subdirectory(\"${WEBGPU_DIST_DIR}\" WebGPU)\n")
 endif()
 if (${BUILD_STATIC_LIBRARY})
     file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "\nfind_package(PNG REQUIRED)")
