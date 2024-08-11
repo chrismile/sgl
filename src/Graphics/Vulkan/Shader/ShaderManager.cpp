@@ -716,17 +716,20 @@ std::string ShaderManagerVk::loadHeaderFileString(
     }
 
     // Support preprocessor for embedded headers
-    std::string linestr;
+    bool hasUsedInclude = false;
+    int preprocessorConditionalsDepth = 0;
     int lineNum = 1;
+    std::string linestr, trimmedLinestr;
     while (getline(file, linestr)) {
         // Remove \r if line ending is \r\n
         if (!linestr.empty() && linestr.at(linestr.size() - 1) == '\r') {
             linestr = linestr.substr(0, linestr.size() - 1);
         }
 
+        trimmedLinestr = sgl::stringTrimCopy(linestr);
         lineNum++;
 
-        if (sgl::startsWith(linestr, "#include")) {
+        if (sgl::startsWith(trimmedLinestr, "#include")) {
             std::string headerNameSub = getHeaderName(linestr);
             std::string includedFileName = getShaderFileName(headerNameSub);
             std::string includedFileContent = loadHeaderFileString(includedFileName, headerNameSub, prependContent);
@@ -740,7 +743,10 @@ std::string ShaderManagerVk::loadHeaderFileString(
             } else {
                 fileContent += std::string() + "#line " + toString(lineNum) + "\n";
             }
-        } else if (sgl::startsWith(linestr, "#import")) {
+            if (preprocessorConditionalsDepth > 0) {
+                hasUsedInclude = true;
+            }
+        } else if (sgl::startsWith(trimmedLinestr, "#import")) {
             std::string importedShaderModuleContent = getImportedShaderString(
                     getHeaderName(linestr), "", prependContent);
             fileContent += importedShaderModuleContent + "\n";
@@ -754,7 +760,10 @@ std::string ShaderManagerVk::loadHeaderFileString(
             } else {
                 fileContent += std::string() + "#line " + toString(lineNum) + "\n";
             }
-        } else if (sgl::startsWith(linestr, "#extension") || sgl::startsWith(linestr, "#version")) {
+            if (preprocessorConditionalsDepth > 0) {
+                hasUsedInclude = true;
+            }
+        } else if (sgl::startsWith(trimmedLinestr, "#extension") || sgl::startsWith(trimmedLinestr, "#version")) {
             prependContent += linestr + "\n";
             if (useCppLineStyle) {
                 fileContent += std::string() + "#line " + toString(lineNum) + " \"" + headerName + "\"\n";
@@ -762,6 +771,31 @@ std::string ShaderManagerVk::loadHeaderFileString(
                 fileContent += "#line " + toString(lineNum) + " " + std::to_string(sourceStringNumber) + "\n";
             } else {
                 fileContent += "#line " + toString(lineNum) + "\n";
+            }
+        } else if (sgl::startsWith(sgl::stringTrimCopy(trimmedLinestr), "#if")) {
+            fileContent += std::string() + linestr + "\n";
+            preprocessorConditionalsDepth++;
+        } else if (sgl::startsWith(sgl::stringTrimCopy(trimmedLinestr), "#endif")) {
+            fileContent += std::string() + linestr + "\n";
+            preprocessorConditionalsDepth--;
+            /*
+              * Tests seem to indicate that #line statements are affected by #if/#ifdef.
+              * Consequentially, to be conservative, a #line statement will be inserted after every #endif after an
+              * include statement.
+              */
+            if (hasUsedInclude) {
+                if (useCppLineStyle) {
+                    fileContent +=
+                            std::string() + "#line " + toString(lineNum) + " \"" + headerName + "\"\n";
+                } else if (dumpTextDebugStatic) {
+                    fileContent +=
+                            std::string() + "#line " + toString(lineNum) + " " + std::to_string(sourceStringNumber) + "\n";
+                } else {
+                    fileContent += std::string() + "#line " + toString(lineNum) + "\n";
+                }
+            }
+            if (preprocessorConditionalsDepth == 0 && hasUsedInclude) {
+                hasUsedInclude = false;
             }
         } else {
             fileContent += std::string() + linestr + "\n";
