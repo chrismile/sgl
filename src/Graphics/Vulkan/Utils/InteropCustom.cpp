@@ -30,6 +30,14 @@
 #include "../Utils/Device.hpp"
 #include "InteropCustom.hpp"
 
+#if defined(_WIN32)
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#include <vulkan/vulkan_win32.h>
+#endif
+
 namespace sgl { namespace vk {
 
 BufferCustomInteropVk::BufferCustomInteropVk(vk::BufferPtr& vulkanBuffer)

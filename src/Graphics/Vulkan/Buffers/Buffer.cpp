@@ -32,6 +32,7 @@
 
 #ifdef __APPLE__
 // Needs to be included before volk.h such that the functions are defined.
+#include <vulkan/vulkan.h>
 #include <vulkan/vulkan_metal.h>
 #endif
 
