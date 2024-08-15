@@ -1,5 +1,8 @@
-// Change by Christoph Neuhauser (date: 2023-08-28).
+// Change by Christoph Neuhauser (date: 2023-08-28, 2024-08-15).
 #define VK_ENABLE_BETA_EXTENSIONS
+#ifdef __APPLE__
+#include <vulkan/vulkan_metal.h>
+#endif
 
 /* This file is part of volk library; see volk.h for version/license details */
 /* clang-format off */

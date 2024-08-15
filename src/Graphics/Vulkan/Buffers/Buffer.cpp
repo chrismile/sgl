@@ -30,6 +30,11 @@
 #include <stdexcept>
 #include <cstring>
 
+#ifdef __APPLE__
+// Needs to be included before volk.h such that the functions are defined.
+#include <vulkan/vulkan_metal.h>
+#endif
+
 #include <Utils/File/Logfile.hpp>
 #include "../Utils/Device.hpp"
 #include "../Utils/Interop.hpp"
@@ -302,6 +307,19 @@ void Buffer::createFromD3D12SharedResourceHandle(
     }
 
     vkBindBufferMemory(device->getVkDevice(), buffer, deviceMemory, 0);
+}
+#endif
+
+#ifdef __APPLE__
+MTLBuffer_id Buffer::getMetalBufferId() {
+    VkExportMetalBufferInfoEXT metalBufferInfo{};
+    metalBufferInfo.sType = VK_STRUCTURE_TYPE_EXPORT_METAL_BUFFER_INFO_EXT;
+    metalBufferInfo.memory = deviceMemory;
+    VkExportMetalObjectsInfoEXT metalObjectsInfo{};
+    metalObjectsInfo.sType = VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECTS_INFO_EXT;
+    metalObjectsInfo.pNext = &metalBufferInfo;
+    vkExportMetalObjectsEXT(device->getVkDevice(), &metalObjectsInfo);
+    return metalBufferInfo.mtlBuffer;
 }
 #endif
 

@@ -81,6 +81,7 @@ if (EMSCRIPTEN)
     set(glslang_FOUND FALSE)
     # Mainly to specify ports: https://github.com/orgs/emscripten-ports/repositories
     set(EMSCRIPTEN_SGL_FLAGS "")
+    set(EMSCRIPTEN_SGL_LINKER_FLAGS "")
 endif()
 
 if (NOT EMSCRIPTEN)
@@ -737,7 +738,7 @@ if (${SUPPORT_WEBGPU})
     endif()
     if (WEBGPU_INTERFACE_LINK_OPTIONS)
         message(STATUS "WEBGPU_INTERFACE_LINK_OPTIONS: ${WEBGPU_INTERFACE_LINK_OPTIONS}")
-        target_link_options(sgl PRIVATE ${WEBGPU_INTERFACE_LINK_OPTIONS})
+        target_link_options(sgl PUBLIC ${WEBGPU_INTERFACE_LINK_OPTIONS})
     endif()
     if (WEBGPU_INTERFACE_INCLUDE_DIRECTORIES)
         message(STATUS "WEBGPU_INTERFACE_INCLUDE_DIRECTORIES: ${WEBGPU_INTERFACE_INCLUDE_DIRECTORIES}")
@@ -912,6 +913,11 @@ if (NOT EMSCRIPTEN)
 else() # EMSCRIPTEN
     set(EMSCRIPTEN_SGL_FLAGS "${EMSCRIPTEN_SGL_FLAGS}" "--use-port=sdl2" "--use-port=sdl2_image:formats=png")
     set(EMSCRIPTEN_SGL_FLAGS "${EMSCRIPTEN_SGL_FLAGS}" "--use-port=libpng")
+    # Already set by WEBGPU_INTERFACE_LINK_OPTIONS.
+    #if (${SUPPORT_WEBGPU})
+    #    set(EMSCRIPTEN_SGL_LINKER_FLAGS "${EMSCRIPTEN_SGL_LINKER_FLAGS}" "-sUSE_WEBGPU")
+    #endif()
+    set(EMSCRIPTEN_SGL_LINKER_FLAGS "${EMSCRIPTEN_SGL_LINKER_FLAGS}" "-sASYNCIFY")
 endif()
 
 if (${USE_TINYXML2})
@@ -1017,6 +1023,7 @@ endif()
 if (EMSCRIPTEN)
     target_compile_options(sgl PRIVATE ${EMSCRIPTEN_SGL_FLAGS})
     target_link_options(sgl PRIVATE ${EMSCRIPTEN_SGL_FLAGS})
+    target_link_options(sgl PRIVATE ${EMSCRIPTEN_SGL_LINKER_FLAGS})
 endif()
 
 

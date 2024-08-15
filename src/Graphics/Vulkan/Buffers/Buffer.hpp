@@ -40,6 +40,15 @@
 typedef void* HANDLE;
 #endif
 
+#ifdef __APPLE__
+#ifdef __OBJC__
+@protocol MTLBuffer;
+typedef id<MTLBuffer> MTLBuffer_id;
+#else
+typedef void* MTLBuffer_id;
+#endif
+#endif
+
 #if defined(SUPPORT_OPENGL) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
 typedef unsigned int GLuint;
 namespace sgl {
@@ -290,6 +299,11 @@ public:
      * If the passed handle name already exists, the function will fail with DXGI_ERROR_NAME_ALREADY_EXISTS.
      */
     void createFromD3D12SharedResourceHandle(HANDLE resourceHandle, size_t sizeInBytesData, VkBufferUsageFlags usage);
+#endif
+
+#ifdef __APPLE__
+    // Needs VK_EXT_metal_objects extension.
+    MTLBuffer_id getMetalBufferId();
 #endif
 
 private:
