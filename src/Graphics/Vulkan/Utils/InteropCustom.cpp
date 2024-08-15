@@ -88,12 +88,11 @@ BufferCustomInteropVk::BufferCustomInteropVk(vk::BufferPtr& vulkanBuffer)
                 "Could not retrieve the file descriptor from the Vulkan device memory!");
         return;
     }
-
 #else
     Logfile::get()->throwError(
             "Error in BufferCustomInteropVk::BufferCustomInteropVk: "
             "External memory is only supported on Linux, Android and Windows systems!");
-    return false;
+    return;
 #endif
 }
 

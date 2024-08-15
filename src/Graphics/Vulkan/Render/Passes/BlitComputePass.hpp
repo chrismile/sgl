@@ -60,7 +60,7 @@ public:
 
 protected:
     void loadShader() override;
-    void setComputePipelineInfo(sgl::vk::ComputePipelineInfo& pipelineInfo) {}
+    void setComputePipelineInfo(sgl::vk::ComputePipelineInfo& pipelineInfo) override {}
     void createComputeData(sgl::vk::Renderer* renderer, sgl::vk::ComputePipelinePtr& computePipeline) override;
     void _render() override;
 
