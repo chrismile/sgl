@@ -46,6 +46,10 @@
 #		ifdef VK_ENABLE_BETA_EXTENSIONS
 #			include <vulkan/vulkan_beta.h>
 #		endif
+#   elif defined(__APPLE__)
+        // Change by Christoph Neuhauser (date: 2024-08-15).
+#		include <vulkan/vulkan.h>
+#       include <vulkan/vulkan_metal.h>
 #	else
 #		include <vulkan/vulkan.h>
 #	endif
