@@ -46,6 +46,7 @@
 #include <Utils/File/Execute.hpp>
 #endif
 
+#include "../StringUtils.hpp"
 #include "Logfile.hpp"
 
 namespace sgl {
@@ -175,6 +176,15 @@ void Logfile::writeWarning(const std::string &text, bool openMessageBox) {
 void Logfile::writeError(const std::string &text, bool openMessageBox) {
     std::cerr << text << std::endl;
     write(text, RED);
+    if (openMessageBox) {
+        dialog::openMessageBoxBlocking("Error occurred", text, dialog::Icon::ERROR);
+    }
+}
+
+void Logfile::writeErrorMultiline(const std::string &text, bool openMessageBox) {
+    std::cerr << text << std::endl;
+    std::string textHtml = sgl::stringReplaceAllCopy(text, "\n", "<br>\n");
+    write(textHtml, RED);
     if (openMessageBox) {
         dialog::openMessageBoxBlocking("Error occurred", text, dialog::Icon::ERROR);
     }

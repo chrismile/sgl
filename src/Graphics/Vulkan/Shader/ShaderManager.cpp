@@ -34,6 +34,7 @@
 #include <Utils/Convert.hpp>
 #include <Utils/StringUtils.hpp>
 #include <Utils/AppSettings.hpp>
+#include <Utils/Dialog.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
 
@@ -468,8 +469,7 @@ ShaderModulePtr ShaderManagerVk::loadAsset(ShaderModuleInfo& shaderInfo) {
 
 #ifdef SUPPORT_SHADERC_BACKEND
 ShaderModulePtr ShaderManagerVk::loadAssetShaderc(
-        const ShaderModuleInfo& shaderInfo, const std::string& id,
-        const std::string& shaderString) {
+        ShaderModuleInfo& shaderInfo, const std::string& id, const std::string& shaderString) {
     shaderc::CompileOptions compileOptions;
     for (auto& it : preprocessorDefines) {
         compileOptions.AddMacroDefinition(it.first, it.second);
@@ -553,7 +553,16 @@ ShaderModulePtr ShaderManagerVk::loadAssetShaderc(
             id.c_str(), compileOptions);
 
     if (compilationResult.GetNumErrors() != 0 || compilationResult.GetNumWarnings() != 0) {
-        sgl::Logfile::get()->writeError(compilationResult.GetErrorMessage());
+        std::string errorMessage = compilationResult.GetErrorMessage();
+        sgl::Logfile::get()->writeErrorMultiline(errorMessage, false);
+        auto choice = dialog::openMessageBoxBlocking(
+                "Error occurred", errorMessage, dialog::Choice::ABORT_RETRY_IGNORE, dialog::Icon::ERROR);
+        if (choice == dialog::Button::RETRY) {
+            sgl::vk::ShaderManager->invalidateShaderCache();
+            return loadAsset(shaderInfo);
+        } else if (choice == dialog::Button::ABORT) {
+            exit(1);
+        }
         if (compilationResult.GetNumErrors() != 0) {
             return {};
         }
@@ -569,8 +578,7 @@ ShaderModulePtr ShaderManagerVk::loadAssetShaderc(
 
 #ifdef SUPPORT_GLSLANG_BACKEND
 ShaderModulePtr ShaderManagerVk::loadAssetGlslang(
-        const ShaderModuleInfo& shaderInfo, const std::string& id,
-        const std::string& shaderString) {
+        ShaderModuleInfo& shaderInfo, const std::string& id, const std::string& shaderString) {
     std::string preprocessorDefinesString = "";
     for (auto& it : preprocessorDefines) {
         preprocessorDefinesString += "#define " + it.first + " " + it.second + "\n";
@@ -665,7 +673,16 @@ ShaderModulePtr ShaderManagerVk::loadAssetGlslang(
         std::string errorString = "Error in ShaderManagerVk::loadAssetGlslang: Shader parsing failed. \n";
         errorString += shader->getInfoLog();
         errorString += shader->getInfoDebugLog();
-        sgl::Logfile::get()->writeError(errorString);
+
+        sgl::Logfile::get()->writeErrorMultiline(errorString, false);
+        auto choice = dialog::openMessageBoxBlocking(
+                "Error occurred", errorString, dialog::Choice::ABORT_RETRY_IGNORE, dialog::Icon::ERROR);
+        if (choice == dialog::Button::RETRY) {
+            sgl::vk::ShaderManager->invalidateShaderCache();
+            return loadAsset(shaderInfo);
+        } else if (choice == dialog::Button::ABORT) {
+            exit(1);
+        }
         return {};
     }
 
@@ -674,7 +691,16 @@ ShaderModulePtr ShaderManagerVk::loadAssetGlslang(
         std::string errorString = "Error in ShaderManagerVk::loadAssetGlslang: Program linking failed. \n";
         errorString += program->getInfoLog();
         errorString += program->getInfoDebugLog();
-        sgl::Logfile::get()->writeError(errorString);
+
+        sgl::Logfile::get()->writeErrorMultiline(errorString, false);
+        auto choice = dialog::openMessageBoxBlocking(
+                "Error occurred", errorString, dialog::Choice::ABORT_RETRY_IGNORE, dialog::Icon::ERROR);
+        if (choice == dialog::Button::RETRY) {
+            sgl::vk::ShaderManager->invalidateShaderCache();
+            return loadAsset(shaderInfo);
+        } else if (choice == dialog::Button::ABORT) {
+            exit(1);
+        }
         return {};
     }
 

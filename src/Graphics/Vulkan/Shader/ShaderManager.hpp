@@ -151,11 +151,11 @@ protected:
     ShaderModulePtr loadAsset(ShaderModuleInfo& shaderModuleInfo) override;
 #ifdef SUPPORT_SHADERC_BACKEND
     ShaderModulePtr loadAssetShaderc(
-            const ShaderModuleInfo& shaderInfo, const std::string& id, const std::string& shaderString);
+            ShaderModuleInfo& shaderInfo, const std::string& id, const std::string& shaderString);
 #endif
 #ifdef SUPPORT_GLSLANG_BACKEND
     ShaderModulePtr loadAssetGlslang(
-            const ShaderModuleInfo& shaderInfo, const std::string& id, const std::string& shaderString);
+            ShaderModuleInfo& shaderInfo, const std::string& id, const std::string& shaderString);
 #endif
     ShaderStagesPtr createShaderStages(const std::vector<std::string>& shaderIds, bool dumpTextDebug);
     ShaderStagesPtr createShaderStages(
