@@ -142,7 +142,7 @@ uint64_t SystemGL::getFreeMemoryBytes() {
     } else if (sgl::SystemGL::get()->isGLExtensionAvailable("GL_ATI_meminfo")) {
         GLint param[4];
         glGetIntegerv(GL_VBO_FREE_MEMORY_ATI, param);
-        return param[0];
+        return uint64_t(param[0]) * 1000ull;
         /*glGetIntegerv(GL_VBO_FREE_MEMORY_ATI, param);
         std::cout << "Total free pool:   " << sgl::getNiceMemoryString(uint64_t(param[0]) * 1000ull, 2) << std::endl;
         std::cout << "Largest free pool: " << sgl::getNiceMemoryString(uint64_t(param[1]) * 1000ull, 2) << std::endl;
