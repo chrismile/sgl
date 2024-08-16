@@ -73,6 +73,26 @@ std::vector<const char*> Device::getCudaInteropDeviceExtensions() {
     return deviceExtensions;
 }
 
+std::vector<const char*> Device::getVulkanInteropDeviceExtensions() {
+    std::vector<const char*> deviceExtensions;
+    deviceExtensions.push_back(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+    deviceExtensions.push_back(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
+    deviceExtensions.push_back(VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME);
+    deviceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+
+#ifdef _WIN32
+    deviceExtensions.push_back(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
+    deviceExtensions.push_back(VK_KHR_EXTERNAL_FENCE_WIN32_EXTENSION_NAME);
+    deviceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
+#else
+    deviceExtensions.push_back(VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME);
+    deviceExtensions.push_back(VK_KHR_EXTERNAL_FENCE_FD_EXTENSION_NAME);
+    deviceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
+#endif
+
+    return deviceExtensions;
+}
+
 #ifdef _WIN32
 std::vector<const char*> Device::getD3D12InteropDeviceExtensions() {
     std::vector<const char*> deviceExtensions;

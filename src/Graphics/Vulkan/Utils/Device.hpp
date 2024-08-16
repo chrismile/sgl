@@ -507,6 +507,7 @@ public:
 #endif
 
     static std::vector<const char*> getCudaInteropDeviceExtensions();
+    static std::vector<const char*> getVulkanInteropDeviceExtensions();
 #ifdef _WIN32
     static std::vector<const char*> getD3D12InteropDeviceExtensions();
 #endif
