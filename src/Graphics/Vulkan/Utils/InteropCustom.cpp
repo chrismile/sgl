@@ -175,11 +175,6 @@ ImageCustomInteropVk::ImageCustomInteropVk(vk::ImagePtr& vulkanImage) : vulkanIm
     VkDevice device = vulkanImage->getDevice()->getVkDevice();
     VkDeviceMemory deviceMemory = vulkanImage->getVkDeviceMemory();
 
-    /*VkMemoryRequirements memoryRequirements{};
-    vkGetImageMemoryRequirements(device, vulkanImage->getVkImage(), &memoryRequirements);
-    CUDA_EXTERNAL_MEMORY_HANDLE_DESC externalMemoryHandleDesc{};
-    externalMemoryHandleDesc.size = memoryRequirements.size;*/
-
 #if defined(_WIN32)
     auto _vkGetMemoryWin32HandleKHR = (PFN_vkGetMemoryWin32HandleKHR)vkGetDeviceProcAddr(
             device, "vkGetMemoryWin32HandleKHR");
@@ -194,17 +189,12 @@ ImageCustomInteropVk::ImageCustomInteropVk(vk::ImagePtr& vulkanImage) : vulkanIm
     memoryGetWin32HandleInfo.memory = deviceMemory;
     memoryGetWin32HandleInfo.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
 
-    HANDLE handle = nullptr;
     if (_vkGetMemoryWin32HandleKHR(device, &memoryGetWin32HandleInfo, &handle) != VK_SUCCESS) {
         Logfile::get()->throwError(
                 "Error in BufferCudaDriverApiExternalMemoryVk::BufferCudaDriverApiExternalMemoryVk: "
                 "Could not retrieve the file descriptor from the Vulkan device memory!");
         return;
     }
-
-    externalMemoryHandleDesc.type = CU_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32;
-    externalMemoryHandleDesc.handle.win32.handle = (void*)handle;
-    this->handle = handle;
 #elif defined(__linux__)
     auto _vkGetMemoryFdKHR = (PFN_vkGetMemoryFdKHR)vkGetDeviceProcAddr(device, "vkGetMemoryFdKHR");
     if (!_vkGetMemoryFdKHR) {
@@ -229,7 +219,7 @@ ImageCustomInteropVk::ImageCustomInteropVk(vk::ImagePtr& vulkanImage) : vulkanIm
     Logfile::get()->throwError(
             "Error in BufferCudaDriverApiExternalMemoryVk::BufferCudaDriverApiExternalMemoryVk: "
             "External memory is only supported on Linux, Android and Windows systems!");
-    return false;
+    return;
 #endif
 }
 
