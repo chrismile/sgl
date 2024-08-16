@@ -53,6 +53,8 @@ public:
     /// Outputs text on stderr, too.
     void writeWarning(const std::string &text, bool openMessageBox = false);
     /// Outputs text on stderr, too.
+    void writeWarningMultiline(const std::string &text, bool openMessageBox = false);
+    /// Outputs text on stderr, too.
     void writeError(const std::string &text, bool openMessageBox = true);
     /// Outputs text on stderr, too, and replaces '\n' with '<br>\n' in Logfile output.
     void writeErrorMultiline(const std::string &text, bool openMessageBox = true);

@@ -173,6 +173,15 @@ void Logfile::writeWarning(const std::string &text, bool openMessageBox) {
     }
 }
 
+void Logfile::writeWarningMultiline(const std::string &text, bool openMessageBox) {
+    std::cerr << text << std::endl;
+    std::string textHtml = sgl::stringReplaceAllCopy(text, "\n", "<br>\n");
+    write(textHtml, ORANGE);
+    if (openMessageBox) {
+        dialog::openMessageBoxBlocking("Warning", text, dialog::Icon::WARNING);
+    }
+}
+
 void Logfile::writeError(const std::string &text, bool openMessageBox) {
     std::cerr << text << std::endl;
     write(text, RED);
