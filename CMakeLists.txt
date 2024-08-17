@@ -44,6 +44,7 @@ option(USE_PRE_CXX11_ABI "Use the -D_GLIBCXX_USE_CXX11_ABI=0 flag when compiling
 option(SUPPORT_OPENGL "Build with OpenGL support." ON)
 option(SUPPORT_VULKAN "Build with Vulkan support." ON)
 option(SUPPORT_WEBGPU "Build with WebGPU support." OFF)
+option(SUPPORT_D3D12 "Build with Direct3D 12 support." OFF)
 option(SUPPORT_CUDA "Build with Vulkan-CUDA interoperability support." ON)
 option(SUPPORT_OPENCL "Build with Vulkan-OpenCL interoperability support." ON)
 option(SUPPORT_HIP "Build with Vulkan-HIP interoperability support." ON)
@@ -230,6 +231,34 @@ else()
     endforeach()
     list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/ImGui/imgui_impl_wgpu.h)
     list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/ImGui/imgui_impl_wgpu.cpp)
+endif()
+
+if (${SUPPORT_D3D12})
+    # https://github.com/microsoft/DirectX-Headers
+    # https://github.com/microsoft/vcpkg/tree/master/ports/directx-headers
+    find_package(directx-headers CONFIG QUIET)
+    if(NOT directx-headers_FOUND)
+        message(WARNING "DirectX-Headers not found. Disabling D3D12 support.")
+        set(SUPPORT_D3D12 OFF)
+    endif()
+    # https://github.com/Microsoft/DirectXShaderCompiler
+    # https://github.com/microsoft/vcpkg/tree/master/ports/directx-dxc
+    # https://packages.msys2.org/package/mingw-w64-x86_64-directx-headers?repo=mingw64
+    find_package(directx-dxc CONFIG QUIET)
+    if(NOT directx-dxc_FOUND)
+        message(WARNING "DirectX Shader Compiler not found. Disabling D3D12 support.")
+        set(SUPPORT_D3D12 OFF)
+    endif()
+    # TODO: Support DirectX 12 Agility SDK?
+    # https://devblogs.microsoft.com/directx/directx12agility/
+    #find_package(directx12-agility CONFIG QUIET)
+    #target_link_libraries(sgl PRIVATE Microsoft::DirectX12-Agility)
+    # https://github.com/walbourn/directx-vs-templates/blob/main/d3d12game_win32/CMakeLists.txt#L216
+endif()
+
+if (NOT ${SUPPORT_D3D12})
+    # Remove source files as soon as they exist.
+    # TODO: Refer to https://github.com/walbourn/directx-vs-templates/tree/main/d3d12game_win32.
 endif()
 
 if (${SUPPORT_CUDA})
@@ -788,6 +817,18 @@ if (${SUPPORT_WEBGPU})
             target_link_libraries(sgl PRIVATE "-framework Cocoa")
         endif()
     endif()
+endif()
+
+if (${SUPPORT_D3D12})
+    target_link_libraries(sgl PRIVATE
+            d3d12.lib dxgi.lib dxguid.lib uuid.lib
+            kernel32.lib user32.lib
+            comdlg32.lib advapi32.lib shell32.lib
+            ole32.lib oleaut32.lib
+            runtimeobject.lib
+    )
+    target_link_libraries(sgl PRIVATE Microsoft::DirectX-Headers Microsoft::DirectX-Guids)
+    target_link_libraries(sgl PRIVATE Microsoft::DirectXShaderCompiler)
 endif()
 
 if (${USE_CUDA})
