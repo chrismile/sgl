@@ -204,7 +204,7 @@ if (${SUPPORT_OPENGL} AND OpenGL_FOUND AND GLEW_FOUND)
     endif()
 
     # vcpkg and MSYS2 GLEW does not set GLEW_VERSION, probably as config mode is used instead of module mode.
-    if (VCPKG_TOOLCHAIN OR MSYS OR MINGW)
+    if (NOT EMSCRIPTEN AND (VCPKG_TOOLCHAIN OR MSYS OR MINGW))
         set(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT ON)
     endif()
 
@@ -355,15 +355,15 @@ if (MSVC)
 	target_compile_options(sgl PRIVATE "/MP")
 endif()
 
-if((MSYS OR MINGW OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")) AND ${USE_STATIC_STD_LIBRARIES})
+if(NOT EMSCRIPTEN AND (MSYS OR MINGW OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")) AND ${USE_STATIC_STD_LIBRARIES})
     target_link_options(sgl PRIVATE -static-libgcc -static-libstdc++)
 endif()
 
-if((MSYS OR MINGW OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")) AND ${USE_GLIBCXX_DEBUG})
+if(NOT EMSCRIPTEN AND (MSYS OR MINGW OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")) AND ${USE_GLIBCXX_DEBUG})
     target_compile_definitions(sgl PRIVATE _GLIBCXX_DEBUG)
 endif()
 
-if((MSYS OR MINGW OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")) AND ${USE_PRE_CXX11_ABI})
+if(NOT EMSCRIPTEN AND (MSYS OR MINGW OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")) AND ${USE_PRE_CXX11_ABI})
     target_compile_definitions(sgl PUBLIC _GLIBCXX_USE_CXX11_ABI=0)
 endif()
 
@@ -882,7 +882,8 @@ else()
     find_package(glm CONFIG REQUIRED)
 endif()
 
-if(MSYS OR MINGW OR (${CMAKE_GENERATOR} STREQUAL "MinGW Makefiles") OR (${CMAKE_GENERATOR} STREQUAL "MSYS Makefiles"))
+if((MSYS OR MINGW OR (${CMAKE_GENERATOR} STREQUAL "MinGW Makefiles") OR (${CMAKE_GENERATOR} STREQUAL "MSYS Makefiles"))
+        AND NOT EMSCRIPTEN)
     target_link_libraries(sgl PUBLIC mingw32)
 endif()
 
