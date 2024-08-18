@@ -31,6 +31,9 @@
 #include <unicode/unistr.h>
 #include <unicode/ustream.h>
 #include <unicode/locid.h>
+#else
+#include <locale>
+#include <sstream>
 #endif
 
 // Allow using boost::algorithm, as Boost may be built with ICU support for Unicode.
@@ -219,6 +222,21 @@ std::string stringReplaceAllCopy(
         startLast = start + searchPattern.length();
     }
     return processedStr;
+#endif
+}
+
+std::string wideStringArrayToStdString(const wchar_t* wcharStr) {
+#if defined(USE_ICU)
+    icu::UnicodeString unicodeStr(wcharStr);
+    std::string outString;
+    unicodeStr.toUpper().toUTF8String(outString);
+    return outString;
+#else
+    std::ostringstream stm;
+    while(*wcharStr != L'\0') {
+        stm << std::use_facet< std::ctype<wchar_t> >(std::locale()).narrow(*wcharStr++, '?');
+    }
+    return stm.str();
 #endif
 }
 

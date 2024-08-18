@@ -240,6 +240,8 @@ if (${SUPPORT_D3D12})
     if(NOT directx-headers_FOUND)
         message(WARNING "DirectX-Headers not found. Disabling D3D12 support.")
         set(SUPPORT_D3D12 OFF)
+    else()
+        message(STATUS "Found DirectX-Headers version ${directx-headers_VERSION} at ${directx-headers_DIR}.")
     endif()
     # https://github.com/Microsoft/DirectXShaderCompiler
     # https://github.com/microsoft/vcpkg/tree/master/ports/directx-dxc
@@ -248,6 +250,8 @@ if (${SUPPORT_D3D12})
     if(NOT directx-dxc_FOUND)
         message(WARNING "DirectX Shader Compiler not found. Disabling D3D12 support.")
         set(SUPPORT_D3D12 OFF)
+    else()
+        message(STATUS "Found DirectX Shader Compiler version at ${directx-dxc_DIR}.")
     endif()
     # TODO: Support DirectX 12 Agility SDK?
     # https://devblogs.microsoft.com/directx/directx12agility/
@@ -258,7 +262,14 @@ endif()
 
 if (NOT ${SUPPORT_D3D12})
     # Remove source files as soon as they exist.
-    # TODO: Refer to https://github.com/walbourn/directx-vs-templates/tree/main/d3d12game_win32.
+    file(GLOB_RECURSE WEBGPU_SOURCES src/Graphics/D3D12/*.cpp src/Graphics/D3D12/*.c src/Graphics/D3D12/*.h src/Graphics/D3D12/*.hpp)
+    foreach(source ${WEBGPU_SOURCES})
+        list(REMOVE_ITEM SOURCES ${source})
+    endforeach()
+    # ImGui D3D12 backend is not yet included, as so far sgl only uses Vulkan <-> D3D12 interop
+    # and Vulkan is used for drawing the UI.
+    #list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/ImGui/imgui_impl_dx12.h)
+    #list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/ImGui/imgui_impl_dx12.cpp)
 endif()
 
 if (${SUPPORT_CUDA})
@@ -829,6 +840,7 @@ if (${SUPPORT_D3D12})
     )
     target_link_libraries(sgl PRIVATE Microsoft::DirectX-Headers Microsoft::DirectX-Guids)
     target_link_libraries(sgl PRIVATE Microsoft::DirectXShaderCompiler)
+    target_compile_definitions(sgl PUBLIC SUPPORT_D3D12)
 endif()
 
 if (${USE_CUDA})
