@@ -53,6 +53,12 @@
             "dependencies": [
                 "tbb"
             ]
+        },
+        "d3d12": {
+            "description": "Build with Direct3D 12 support",
+            "dependencies": [
+                "directx-headers", "directx-dxc"
+            ]
         }
     }
 }
