@@ -227,7 +227,14 @@ std::string stringReplaceAllCopy(
 
 std::string wideStringArrayToStdString(const wchar_t* wcharStr) {
 #if defined(USE_ICU)
+#if U_SIZEOF_WCHAR_T == 2
     icu::UnicodeString unicodeStr(wcharStr);
+#elif U_SIZEOF_WCHAR_T == 4
+    auto unicodeStr = icu::UnicodeString::fromUTF32(
+            reinterpret_cast<const UChar32*>(wcharStr), int32_t(std::wcslen(wcharStr)));
+#else
+#error "Error in wideStringArrayToStdString: Unsupported wchar_t format detected."
+#endif
     std::string outString;
     unicodeStr.toUpper().toUTF8String(outString);
     return outString;
