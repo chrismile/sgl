@@ -63,6 +63,7 @@ option(USE_TINYXML2 "Build with TinyXML2 support." ON)
 option(USE_SDL2_IMAGE "Build with SDL2_image support." OFF)
 option(USE_TBB "Build with TBB threading support instead of using OpenMP." ${DEFAULT_USE_TBB})
 option(TRACY_ENABLE "Build with Tracy Profiler support." OFF)
+option(EMSCRIPTEN_DEBUG "Build with Emscripten debug symbols." OFF)
 
 if (EMSCRIPTEN)
     # When using emscripten and targeting the web, turn off all meaningless/incompatible components.
@@ -987,11 +988,6 @@ if (NOT EMSCRIPTEN)
     endif()
     target_link_libraries(sgl PRIVATE PNG::PNG)
 else() # EMSCRIPTEN
-    # "-fwasm-exceptions" clashes with "-sASYNCIFY".
-    #set(EMSCRIPTEN_SGL_FLAGS "${EMSCRIPTEN_SGL_FLAGS}" "-fwasm-exceptions")
-    # According to https://emscripten.org/docs/porting/exceptions.html, this has a high overhead. Disable when not needed.
-    #set(EMSCRIPTEN_SGL_FLAGS "${EMSCRIPTEN_SGL_FLAGS}" "-fexceptions")
-    #set(EMSCRIPTEN_SGL_LINKER_FLAGS "${EMSCRIPTEN_SGL_LINKER_FLAGS}" "-sASSERTIONS" "--profiling-funcs")
     set(EMSCRIPTEN_SGL_FLAGS "${EMSCRIPTEN_SGL_FLAGS}" "--use-port=sdl2" "--use-port=sdl2_image:formats=png")
     set(EMSCRIPTEN_SGL_FLAGS "${EMSCRIPTEN_SGL_FLAGS}" "--use-port=libpng")
     # Already set by WEBGPU_INTERFACE_LINK_OPTIONS.
@@ -999,6 +995,13 @@ else() # EMSCRIPTEN
     #    set(EMSCRIPTEN_SGL_LINKER_FLAGS "${EMSCRIPTEN_SGL_LINKER_FLAGS}" "-sUSE_WEBGPU")
     #endif()
     set(EMSCRIPTEN_SGL_LINKER_FLAGS "${EMSCRIPTEN_SGL_LINKER_FLAGS}" "-sASYNCIFY")
+    if (${EMSCRIPTEN_DEBUG})
+        # "-fwasm-exceptions" clashes with "-sASYNCIFY".
+        #set(EMSCRIPTEN_SGL_FLAGS "${EMSCRIPTEN_SGL_FLAGS}" "-fwasm-exceptions")
+        # According to https://emscripten.org/docs/porting/exceptions.html, this has a high overhead. Disable when not needed.
+        set(EMSCRIPTEN_SGL_FLAGS "${EMSCRIPTEN_SGL_FLAGS}" "-fexceptions")
+        set(EMSCRIPTEN_SGL_LINKER_FLAGS "${EMSCRIPTEN_SGL_LINKER_FLAGS}" "-sASSERTIONS" "--profiling-funcs")
+    endif()
 endif()
 
 if (${USE_TINYXML2})
@@ -1130,6 +1133,25 @@ if(${SUPPORT_WEBGPU} AND NOT EMSCRIPTEN)
     #file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "set_target_properties(webgpusgl PROPERTIES IMPORTED_LOCATION \"\${_IMPORT_PREFIX}/${LIBRARY_INSTALL_DIR}/${WEBGPU_LIBRARY_NAME}\" IMPORTED_SONAME \"${WEBGPU_LIBRARY_NAME}\")\n")
     file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "target_link_libraries(sgl INTERFACE webgpusgl)\n")
     file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "set(_IMPORT_PREFIX)\n")
+endif()
+if (EMSCRIPTEN)
+    file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "\nset(EMSCRIPTEN_APP_FLAGS \"--use-port=sdl2\" \"--use-port=sdl2_image:formats=png\")\n")
+    file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "set(EMSCRIPTEN_APP_FLAGS \"\${EMSCRIPTEN_APP_FLAGS}\" \"--use-port=libpng\")\n")
+    file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "set(EMSCRIPTEN_LINKER_FLAGS \"-sALLOW_MEMORY_GROWTH\")\n")
+    file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "set(EMSCRIPTEN_LINKER_FLAGS \"\${EMSCRIPTEN_LINKER_FLAGS}\" \"-sASYNCIFY\")\n")
+    if (${SUPPORT_WEBGPU})
+        file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "set(EMSCRIPTEN_LINKER_FLAGS \"\${EMSCRIPTEN_LINKER_FLAGS}\" \"-sUSE_WEBGPU\")\n")
+    endif()
+    if (${SUPPORT_OPENGL})
+        file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "set(EMSCRIPTEN_LINKER_FLAGS \"\${EMSCRIPTEN_LINKER_FLAGS}\" \"-sMAX_WEBGL_VERSION=2\")\n")
+    endif()
+    if (${EMSCRIPTEN_DEBUG})
+        # "-fwasm-exceptions" clashes with "-sASYNCIFY".
+        #file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "set(EMSCRIPTEN_APP_FLAGS \"\${EMSCRIPTEN_APP_FLAGS}\" \"-fwasm-exceptions\")\n")
+        # According to https://emscripten.org/docs/porting/exceptions.html, this has a high overhead. Disable when not needed.
+        file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "set(EMSCRIPTEN_APP_FLAGS \"\${EMSCRIPTEN_APP_FLAGS}\" \"-fexceptions\")\n")
+        file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "set(EMSCRIPTEN_LINKER_FLAGS \"\${EMSCRIPTEN_LINKER_FLAGS}\" \"-sASSERTIONS\" \"--profiling-funcs\")\n")
+    endif()
 endif()
 if (${BUILD_STATIC_LIBRARY} AND NOT EMSCRIPTEN)
     file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "\nfind_package(PNG REQUIRED)")
