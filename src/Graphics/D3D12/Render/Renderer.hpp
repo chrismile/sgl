@@ -26,28 +26,28 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_D3D12_DEVICE_HPP
-#define SGL_D3D12_DEVICE_HPP
+#ifndef SGL_D3D12_RENDERER_HPP
+#define SGL_D3D12_RENDERER_HPP
 
-#include "d3d12.hpp"
+#include <array>
+#include "../d3d12.hpp"
 
 namespace sgl { namespace d3d12 {
 
-class DLL_OBJECT Device {
+class Device;
+
+class DLL_OBJECT Renderer {
 public:
-    Device(const ComPtr<IDXGIAdapter1> &dxgiAdapter1, D3D_FEATURE_LEVEL featureLevel);
-    D3D_FEATURE_LEVEL getFeatureLevel();
-    bool getSupportsROVs();
-    inline ID3D12Device2* getD3D12Device2Ptr() { return d3d12Device2.Get(); }
-    inline ComPtr<ID3D12Device2>& getD3D12Device2ComPtr() { return d3d12Device2; }
+    Renderer(Device* device, uint32_t numDescriptors = 1000);
+    ~Renderer();
 
 private:
-    ComPtr<IDXGIAdapter1> dxgiAdapter1;
-    ComPtr<IDXGIAdapter4> dxgiAdapter4;
-    D3D_FEATURE_LEVEL featureLevel;
-    ComPtr<ID3D12Device2> d3d12Device2;
+    Device* device;
+
+    // Global descriptor heaps.
+    std::array<ComPtr<ID3D12DescriptorHeap>, size_t(D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES)> descriptorHeaps;
 };
 
 }}
 
-#endif //SGL_D3D12_DEVICE_HPP
+#endif //SGL_D3D12_RENDERER_HPP

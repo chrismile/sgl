@@ -26,28 +26,40 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_D3D12_DEVICE_HPP
-#define SGL_D3D12_DEVICE_HPP
-
-#include "d3d12.hpp"
+#include "../Device.hpp"
+#include "Renderer.hpp"
 
 namespace sgl { namespace d3d12 {
 
-class DLL_OBJECT Device {
-public:
-    Device(const ComPtr<IDXGIAdapter1> &dxgiAdapter1, D3D_FEATURE_LEVEL featureLevel);
-    D3D_FEATURE_LEVEL getFeatureLevel();
-    bool getSupportsROVs();
-    inline ID3D12Device2* getD3D12Device2Ptr() { return d3d12Device2.Get(); }
-    inline ComPtr<ID3D12Device2>& getD3D12Device2ComPtr() { return d3d12Device2; }
+Renderer::Renderer(Device* device, uint32_t numDescriptors) : device(device) {
+    auto* d3d12Device = device->getD3D12Device2Ptr();
 
-private:
-    ComPtr<IDXGIAdapter1> dxgiAdapter1;
-    ComPtr<IDXGIAdapter4> dxgiAdapter4;
-    D3D_FEATURE_LEVEL featureLevel;
-    ComPtr<ID3D12Device2> d3d12Device2;
-};
+    D3D12_DESCRIPTOR_HEAP_DESC desc{};
+    desc.NumDescriptors = numDescriptors;
+    for (int heapType = 0; heapType < int(D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES); heapType++) {
+        desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE(heapType);
+        ThrowIfFailed(d3d12Device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&descriptorHeaps[heapType])));
+    }
+
+    /*ComPtr<ID3D12CommandQueue> d3d12CommandQueue;
+
+    D3D12_COMMAND_QUEUE_DESC desc{};
+    desc.Type = type;
+    desc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
+    desc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+    desc.NodeMask = 0;
+
+    ThrowIfFailed(device->CreateCommandQueue(&desc, IID_PPV_ARGS(&d3d12CommandQueue)));
+
+    ComPtr<ID3D12CommandAllocator> commandAllocator;
+    ThrowIfFailed(d3d12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator)));
+
+    ComPtr<ID3D12CommandAllocator> commandAllocator;
+    ThrowIfFailed(d3d12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY, IID_PPV_ARGS(&commandAllocator)));*/
+
+}
+
+Renderer::~Renderer() {
+}
 
 }}
-
-#endif //SGL_D3D12_DEVICE_HPP
