@@ -55,6 +55,7 @@ public:
     void beginFrame();
     void renderFrame(const std::vector<WGPUCommandBuffer>& commandBuffers);
 
+    inline WGPUTextureFormat getSurfaceTextureFormat() { return surfaceFormat; }
     inline WGPUTextureView getFrameTextureView() { return currentTextureView; }
 
 private:
@@ -66,6 +67,7 @@ private:
     Device* device = nullptr;
     Window* window = nullptr;
     WGPUSurface surface{};
+    WGPUTextureFormat surfaceFormat{};
     WGPUTextureView currentTextureView{};
 };
 

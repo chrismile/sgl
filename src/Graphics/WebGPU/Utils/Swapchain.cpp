@@ -71,9 +71,9 @@ void Swapchain::create(Window* window) {
     if (!success) {
         sgl::Logfile::get()->throwError("Error in Swapchain::create: wgpuSurfaceGetCapabilities failed.");
     }
-    WGPUTextureFormat surfaceFormat = capabilities.formats[0];*/
+    surfaceFormat = capabilities.formats[0];*/
 //#else
-    WGPUTextureFormat surfaceFormat = wgpuSurfaceGetPreferredFormat(surface, device->getWGPUAdapter());
+    surfaceFormat = wgpuSurfaceGetPreferredFormat(surface, device->getWGPUAdapter());
 //#endif
     config.format = surfaceFormat;
     config.viewFormatCount = 0;

@@ -49,6 +49,12 @@ class Renderer;
 }}
 #endif
 
+#ifdef SUPPORT_WEBGPU
+namespace sgl { namespace webgpu {
+class Renderer;
+}}
+#endif
+
 union SDL_Event;
 
 namespace sgl {
@@ -147,6 +153,10 @@ public:
     void freeDescriptorSet(VkDescriptorSet descriptorSet);
 #endif
 
+#ifdef SUPPORT_WEBGPU
+    void setRendererWgpu(webgpu::Renderer* renderer) { rendererWgpu = renderer; }
+#endif
+
 private:
     float uiScaleFactor;
     float defaultUiScaleFactor = 1.875f;
@@ -174,6 +184,10 @@ private:
     vk::FramebufferPtr framebuffer;
     vk::ImageViewPtr renderTargetImageView;
     ImGui_ImplVulkanH_Window mainWindowData;
+#endif
+
+#ifdef SUPPORT_WEBGPU
+    webgpu::Renderer* rendererWgpu = nullptr;
 #endif
 };
 

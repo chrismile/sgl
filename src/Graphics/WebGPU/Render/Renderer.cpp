@@ -85,14 +85,14 @@ void Renderer::addTestRenderPass(WGPUTextureView targetView) {
     renderPassDescriptor.depthStencilAttachment = nullptr;
     renderPassDescriptor.timestampWrites = nullptr;
 
-    WGPURenderPassEncoder renderPass = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDescriptor);
+    WGPURenderPassEncoder renderPassEncoder = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDescriptor);
 
     // TODO
-    //wgpuRenderPassEncoderSetPipeline(renderPass, pipeline);
-    //wgpuRenderPassEncoderDraw(renderPass, 3, 1, 0, 0);
+    //wgpuRenderPassEncoderSetPipeline(renderPassEncoder, pipeline);
+    //wgpuRenderPassEncoderDraw(renderPassEncoder, 3, 1, 0, 0);
 
-    wgpuRenderPassEncoderEnd(renderPass);
-    wgpuRenderPassEncoderRelease(renderPass);
+    wgpuRenderPassEncoderEnd(renderPassEncoder);
+    wgpuRenderPassEncoderRelease(renderPassEncoder);
 }
 
 }}

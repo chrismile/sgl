@@ -44,6 +44,13 @@
 #include <Graphics/Vulkan/Utils/Swapchain.hpp>
 #include <Graphics/Vulkan/Render/Renderer.hpp>
 #endif
+#ifdef SUPPORT_WEBGPU
+#include "imgui_impl_wgpu.h"
+#include <Graphics/WebGPU/Utils/Instance.hpp>
+#include <Graphics/WebGPU/Utils/Device.hpp>
+#include <Graphics/WebGPU/Utils/Swapchain.hpp>
+#include <Graphics/WebGPU/Render/Renderer.hpp>
+#endif
 
 #include <tracy/Tracy.hpp>
 
@@ -85,12 +92,12 @@ void ImGuiWrapper::initialize(
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
     //io.FontGlobalScale = fontScaleFactor*2.0f;
 
-#if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN)
+#if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN) || defined(SUPPORT_WEBGPU)
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
 #endif
 #ifdef SUPPORT_OPENGL
     if (renderSystem == RenderSystem::OPENGL) {
-        SDLWindow* window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
+        auto* window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
         SDL_GLContext context = window->getGLContext();
         ImGui_ImplSDL2_InitForOpenGL(window->getSDLWindow(), context);
         const char* glslVersion = "#version 430";
@@ -102,7 +109,7 @@ void ImGuiWrapper::initialize(
 #endif
 #ifdef SUPPORT_VULKAN
     if (renderSystem == RenderSystem::VULKAN) {
-        SDLWindow* window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
+        auto* window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
         vk::Device* device = AppSettings::get()->getPrimaryDevice();
 
         VkDescriptorPoolSize poolSizes[] = {
@@ -131,6 +138,21 @@ void ImGuiWrapper::initialize(
         }
 
         ImGui_ImplSDL2_InitForVulkan(window->getSDLWindow());
+    }
+#endif
+#ifdef SUPPORT_WEBGPU
+    if (renderSystem == RenderSystem::WEBGPU) {
+        auto* window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
+        ImGui_ImplSDL2_InitForOther(window->getSDLWindow());
+
+        auto* device = sgl::AppSettings::get()->getWebGPUPrimaryDevice();
+        auto* swapchain = sgl::AppSettings::get()->getWebGPUSwapchain();
+        ImGui_ImplWGPU_InitInfo initInfo{};
+        initInfo.Device = device->getWGPUDevice();
+        initInfo.NumFramesInFlight = 3;
+        initInfo.RenderTargetFormat = swapchain->getSurfaceTextureFormat();
+        initInfo.DepthStencilFormat = WGPUTextureFormat_Undefined;
+        ImGui_ImplWGPU_Init(&initInfo);
     }
 #endif
 
@@ -194,7 +216,7 @@ void ImGuiWrapper::initialize(
 }
 
 void ImGuiWrapper::shutdown() {
-#if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN)
+#if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN) || defined(SUPPORT_WEBGPU)
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
 #endif
 #ifdef SUPPORT_OPENGL
@@ -214,6 +236,11 @@ void ImGuiWrapper::shutdown() {
         framebuffer = vk::FramebufferPtr();
         renderTargetImageView = vk::ImageViewPtr();
         vkDestroyDescriptorPool(device->getVkDevice(), imguiDescriptorPool, nullptr);
+    }
+#endif
+#ifdef SUPPORT_WEBGPU
+    if (renderSystem == RenderSystem::WEBGPU) {
+        ImGui_ImplWGPU_Shutdown();
     }
 #endif
     ImGui_ImplSDL2_Shutdown();
@@ -278,7 +305,7 @@ void ImGuiWrapper::renderStart() {
     ZoneScopedN("ImGuiWrapper::renderStart");
 
     SDLWindow* window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
-#if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN)
+#if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN) || defined(SUPPORT_WEBGPU)
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
 #endif
 #ifdef SUPPORT_VULKAN
@@ -332,6 +359,11 @@ void ImGuiWrapper::renderStart() {
         ImGui_ImplVulkan_NewFrame();
     }
 #endif
+#ifdef SUPPORT_WEBGPU
+    if (renderSystem == RenderSystem::WEBGPU) {
+        ImGui_ImplWGPU_NewFrame();
+    }
+#endif
     ImGui_ImplSDL2_NewFrame(window->getSDLWindow());
     ImGui::NewFrame();
 }
@@ -341,7 +373,7 @@ void ImGuiWrapper::renderEnd() {
 
     ImGui::Render();
 
-#if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN)
+#if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN) || defined(SUPPORT_WEBGPU)
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
 #endif
 #ifdef SUPPORT_OPENGL
@@ -384,6 +416,35 @@ void ImGuiWrapper::renderEnd() {
         vkCmdEndRenderPass(commandBuffer);
         //vkEndCommandBuffer(commandBuffer);
         rendererVk->clearGraphicsPipeline();
+    }
+#endif
+#ifdef SUPPORT_WEBGPU
+    if (renderSystem == RenderSystem::WEBGPU) {
+        auto* swapchain = AppSettings::get()->getWebGPUSwapchain();
+        auto encoder = rendererWgpu->getWebGPUCommandEncoder();
+
+        WGPURenderPassDescriptor renderPassDescriptor{};
+        WGPURenderPassColorAttachment renderPassColorAttachment = {};
+        renderPassColorAttachment.view = swapchain->getFrameTextureView();
+        renderPassColorAttachment.resolveTarget = nullptr;
+        renderPassColorAttachment.loadOp = WGPULoadOp_Clear;
+        renderPassColorAttachment.storeOp = WGPUStoreOp_Store;
+        renderPassColorAttachment.clearValue = WGPUColor{ 0.0, 0.0, 0.0, 1.0 };
+#ifndef WEBGPU_BACKEND_WGPU
+        renderPassColorAttachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
+#endif
+
+        renderPassDescriptor.colorAttachmentCount = 1;
+        renderPassDescriptor.colorAttachments = &renderPassColorAttachment;
+        renderPassDescriptor.depthStencilAttachment = nullptr;
+        renderPassDescriptor.timestampWrites = nullptr;
+
+        WGPURenderPassEncoder renderPassEncoder = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDescriptor);
+
+        ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), renderPassEncoder);
+
+        wgpuRenderPassEncoderEnd(renderPassEncoder);
+        wgpuRenderPassEncoderRelease(renderPassEncoder);
     }
 #endif
 

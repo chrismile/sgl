@@ -48,6 +48,7 @@ public:
     std::vector<WGPUCommandBuffer> getFrameCommandBuffers();
     void freeFrameCommandBuffers();
     inline WGPUCommandBuffer getWebGPUCommandBuffer() { return commandBuffer; }
+    inline WGPUCommandEncoder getWebGPUCommandEncoder() { return encoder; }
 
     // TODO: For testing purposes; will be removed in the future.
     void addTestRenderPass(WGPUTextureView targetView);
