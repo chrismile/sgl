@@ -61,7 +61,10 @@
 #include <Graphics/Vulkan/Utils/Swapchain.hpp>
 #include <Graphics/Vulkan/Utils/Device.hpp>
 #include <Graphics/Vulkan/Shader/ShaderManager.hpp>
+#endif
 
+#ifdef SUPPORT_WEBGPU
+#include <Graphics/WebGPU/Utils/Instance.hpp>
 #endif
 
 #ifdef _WIN32
@@ -246,7 +249,11 @@ Window *AppSettings::createWindow() {
     }
 
     // Initialize SDL - the only window system for now (support for Qt is planned).
+#ifndef __EMSCRIPTEN__
     if (SDL_Init(SDL_INIT_EVERYTHING) == -1) {
+#else
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) == -1) {
+#endif
         Logfile::get()->writeError("ERROR: AppSettings::createWindow: Couldn't initialize SDL!");
         Logfile::get()->writeError(std::string() + "SDL Error: " + SDL_GetError());
     }
@@ -292,6 +299,12 @@ Window *AppSettings::createWindow() {
             }
         }
 #endif
+    }
+#endif
+
+#ifdef SUPPORT_WEBGPU
+    if (renderSystem == RenderSystem::WEBGPU) {
+        webgpuInstance = new webgpu::Instance;
     }
 #endif
 
@@ -689,6 +702,13 @@ void AppSettings::release() {
     }
 #endif
 
+#ifdef SUPPORT_WEBGPU
+    if (webgpuInstance) {
+        delete webgpuInstance;
+        webgpuInstance = nullptr;
+    }
+#endif
+
     //Mix_CloseAudio();
     //TTF_Quit();
     SDL_Quit();
@@ -709,6 +729,10 @@ Window *AppSettings::getMainWindow() {
 
 Window *AppSettings::setMainWindow(Window *window) {
     return mainWindow;
+}
+
+int AppSettings::getNumDisplays() {
+    return SDL_GetNumVideoDisplays();
 }
 
 void AppSettings::getCurrentDisplayMode(int& width, int& height, int& refreshRate, int displayIndex) {

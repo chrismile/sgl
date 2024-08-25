@@ -517,7 +517,9 @@ void VectorBackendNanoVG::renderEnd() {
 #endif
 }
 
+#if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
 static const char* const RENDER_BACKEND_NAMES[] = { "OpenGL", "Vulkan" };
+#endif
 static const char* const NANOVG_AA_MODE[] = { "Off", "Internal AA", "MSAA" };
 
 bool VectorBackendNanoVG::renderGuiPropertyEditor(sgl::PropertyEditor& propertyEditor) {

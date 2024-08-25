@@ -133,7 +133,29 @@ else()
     endif()
 endif()
 
-find_package(Vulkan QUIET)
+set(USE_WEBGPU_IMPL_DAWN FALSE)
+if (${SUPPORT_WEBGPU})
+    if (NOT WEBGPU_DIST_DIR)
+        message(FATAL_ERROR "WEBGPU_DIST_DIR needs to be specified.")
+    endif()
+    if (WEBGPU_BACKEND)
+        if ("${WEBGPU_BACKEND}" STREQUAL "DAWN")
+            set(USE_WEBGPU_IMPL_DAWN TRUE)
+        endif()
+    endif()
+else()
+    file(GLOB_RECURSE WEBGPU_SOURCES src/Graphics/WebGPU/*.cpp src/Graphics/WebGPU/*.c src/Graphics/WebGPU/*.h src/Graphics/WebGPU/*.hpp)
+    foreach(source ${WEBGPU_SOURCES})
+        list(REMOVE_ITEM SOURCES ${source})
+    endforeach()
+    list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/ImGui/imgui_impl_wgpu.h)
+    list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/ImGui/imgui_impl_wgpu.cpp)
+endif()
+
+if (NOT (${SUPPORT_WEBGPU} AND ${USE_WEBGPU_IMPL_DAWN}))
+    # Dawn ships custom headers and conflicts with Vulkan::Headers.
+    find_package(Vulkan QUIET)
+endif()
 if (${SUPPORT_VULKAN})
     if(VCPKG_TOOLCHAIN)
         # Finding shaderc is complicated on vcpkg without pkg-config. Assume shaderc is available if glslang was found.
@@ -176,8 +198,10 @@ if (${SUPPORT_VULKAN})
 
     if (NOT ${shaderc_FOUND} AND NOT ${glslang_FOUND})
         MESSAGE(WARNING "Warning: Vulkan support was enabled, but shaderc or glslang were not found. Disabling Vulkan support.")
-    elseif (NOT ${Vulkan_FOUND})
+    elseif (NOT Vulkan_FOUND AND NOT (${SUPPORT_WEBGPU} AND ${USE_WEBGPU_IMPL_DAWN}))
         MESSAGE(STATUS "Vulkan support was enabled, but the Vulkan SDK was not found. Falling back to the Vulkan headers shipped with sgl.")
+    elseif (NOT Vulkan_FOUND AND ${SUPPORT_WEBGPU} AND ${USE_WEBGPU_IMPL_DAWN})
+        MESSAGE(STATUS "Vulkan support was enabled, but Dawn is used as the WebGPU implementation, which ships custom headers.")
     else()
         MESSAGE(STATUS "Found Vulkan dependencies. Enabling Vulkan support.")
     endif()
@@ -218,19 +242,6 @@ if (${SUPPORT_OPENGL} AND OpenGL_FOUND AND GLEW_FOUND)
         list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Vulkan/Utils/Interop.hpp)
         list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Vulkan/Utils/Interop.cpp)
     endif()
-endif()
-
-if (${SUPPORT_WEBGPU})
-    if (NOT WEBGPU_DIST_DIR)
-        message(FATAL_ERROR "WEBGPU_DIST_DIR needs to be specified.")
-    endif()
-else()
-    file(GLOB_RECURSE WEBGPU_SOURCES src/Graphics/WebGPU/*.cpp src/Graphics/WebGPU/*.c src/Graphics/WebGPU/*.h src/Graphics/WebGPU/*.hpp)
-    foreach(source ${WEBGPU_SOURCES})
-        list(REMOVE_ITEM SOURCES ${source})
-    endforeach()
-    list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/ImGui/imgui_impl_wgpu.h)
-    list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/ImGui/imgui_impl_wgpu.cpp)
 endif()
 
 if (${SUPPORT_D3D12})
@@ -435,6 +446,10 @@ if (${SUPPORT_OPENGL} AND OpenGL_FOUND AND GLEW_FOUND)
         endif()
     endif()
 
+    if (EMSCRIPTEN)
+        set(EMSCRIPTEN_SGL_LINKER_FLAGS "${EMSCRIPTEN_SGL_LINKER_FLAGS}" "-sMAX_WEBGL_VERSION=2")
+    endif()
+
     if (ANDROID OR IOS OR EMSCRIPTEN)
         # TODO: Let the user choose whether to use IMGUI_IMPL_OPENGL_ES2 or IMGUI_IMPL_OPENGL_ES3?
         # ImGui by default uses IMGUI_IMPL_OPENGL_ES2 for Emscripten. Check if IMGUI_IMPL_OPENGL_ES3 is valid.
@@ -461,10 +476,106 @@ if (${SUPPORT_OPENGL} AND OpenGL_FOUND AND GLEW_FOUND)
     endif()
 endif()
 
+if (${SUPPORT_WEBGPU})
+    target_compile_definitions(sgl PUBLIC SUPPORT_WEBGPU)
+
+    # https://github.com/eliemichel/WebGPU-distribution/archive/refs/heads/main.zip
+    # Or from: https://eliemichel.github.io/LearnWebGPU/getting-started/hello-webgpu.html:
+    # https://github.com/eliemichel/WebGPU-distribution/archive/refs/tags/main-v0.2.0-beta1.zip
+    #include(FetchContent)
+    #FetchContent_Declare(
+    #        webgpu
+    #        GIT_REPOSITORY https://github.com/eliemichel/WebGPU-distribution
+    #        GIT_TAG        main
+    #)
+    #FetchContent_MakeAvailable(webgpu)
+    add_subdirectory(${WEBGPU_DIST_DIR} WebGPU)
+    target_copy_webgpu_binaries(sgl)
+
+    #target_include_directories(sgl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/WebGPU/libs)
+    target_include_directories(sgl PUBLIC
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/WebGPU/libs>
+            $<INSTALL_INTERFACE:include/sgl/Graphics/WebGPU/libs> # <prefix>/include/sgl
+    )
+
+    # Using the target leads to problems with installing sgl, i.e.:
+    # - "export called with target "sgl" which requires target "webgpu" that is not in any export set."
+    # - "Target "webgpu" INTERFACE_INCLUDE_DIRECTORIES property contains path: [...]
+    #    which is prefixed in the build directory."
+    #target_link_libraries(sgl PRIVATE webgpu)
+    get_target_property(WEBGPU_INTERFACE_COMPILE_DEFINITIONS webgpu INTERFACE_COMPILE_DEFINITIONS)
+    get_target_property(WEBGPU_INTERFACE_LINK_LIBRARIES webgpu INTERFACE_LINK_LIBRARIES)
+    get_target_property(WEBGPU_IMPORTED_LOCATION webgpu IMPORTED_LOCATION)
+    get_target_property(WEBGPU_INTERFACE_LINK_OPTIONS webgpu INTERFACE_LINK_OPTIONS)
+    get_target_property(WEBGPU_INTERFACE_INCLUDE_DIRECTORIES webgpu INTERFACE_INCLUDE_DIRECTORIES)
+    if (WEBGPU_INTERFACE_COMPILE_DEFINITIONS)
+        message(STATUS "WEBGPU_INTERFACE_COMPILE_DEFINITIONS: ${WEBGPU_INTERFACE_COMPILE_DEFINITIONS}")
+        target_compile_definitions(sgl PUBLIC ${WEBGPU_INTERFACE_COMPILE_DEFINITIONS})
+    endif()
+    if (WEBGPU_INTERFACE_LINK_LIBRARIES)
+        message(STATUS "WEBGPU_INTERFACE_LINK_LIBRARIES: ${WEBGPU_INTERFACE_LINK_LIBRARIES}")
+        target_link_libraries(sgl PRIVATE ${WEBGPU_INTERFACE_LINK_LIBRARIES})
+    endif()
+    if (WEBGPU_IMPORTED_LOCATION)
+        message(STATUS "WEBGPU_IMPORTED_LOCATION: ${WEBGPU_IMPORTED_LOCATION}")
+        target_link_libraries(sgl PRIVATE ${WEBGPU_IMPORTED_LOCATION})
+    endif()
+    if (WEBGPU_INTERFACE_LINK_OPTIONS)
+        message(STATUS "WEBGPU_INTERFACE_LINK_OPTIONS: ${WEBGPU_INTERFACE_LINK_OPTIONS}")
+        target_link_options(sgl PUBLIC ${WEBGPU_INTERFACE_LINK_OPTIONS})
+    endif()
+    if (WEBGPU_INTERFACE_INCLUDE_DIRECTORIES)
+        message(STATUS "WEBGPU_INTERFACE_INCLUDE_DIRECTORIES: ${WEBGPU_INTERFACE_INCLUDE_DIRECTORIES}")
+        #target_include_directories(sgl PRIVATE ${WEBGPU_INTERFACE_INCLUDE_DIRECTORIES})
+        target_include_directories(sgl PUBLIC
+                $<BUILD_INTERFACE:${WEBGPU_INTERFACE_INCLUDE_DIRECTORIES}>
+                $<INSTALL_INTERFACE:include/sgl> # <prefix>/include/sgl
+        )
+    endif()
+
+    # Find the .so or .dll file from WebGPU to install.
+    if (WIN32)
+        set(LIBRARY_INSTALL_DIR "bin")
+    else()
+        set(LIBRARY_INSTALL_DIR "lib")
+    endif()
+    file(GLOB ALL_LIBRARY_FILES "${CMAKE_CURRENT_BINARY_DIR}/*.so" "${CMAKE_CURRENT_BINARY_DIR}/*.dll")
+    foreach(LIBRARY_FILE ${ALL_LIBRARY_FILES})
+        get_filename_component(LIBRARY_NAME ${LIBRARY_FILE} NAME)
+        if (LIBRARY_NAME MATCHES "wgpu" OR LIBRARY_NAME MATCHES "dawn")
+            set(WEBGPU_LIBRARY_FILE "${LIBRARY_FILE}")
+            set(WEBGPU_LIBRARY_NAME "${LIBRARY_NAME}")
+        endif()
+    endforeach()
+
+    # Set the rpath, as otherwise apps not using any WebGPU symbols will not set the rpath, but sgl needs it.
+    if (NOT EMSCRIPTEN)
+        set_target_properties(sgl PROPERTIES INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${LIBRARY_INSTALL_DIR}")
+    endif()
+
+    # The code below was moved to sglConfig.cmake.
+    #if (NOT EMSCRIPTEN)
+    #    add_library(webgpusgl UNKNOWN IMPORTED)
+    #    set_target_properties(webgpusgl PROPERTIES IMPORTED_LOCATION "${WEBGPU_LIBRARY_FILE}" INTERFACE_INCLUDE_DIRECTORIES "${WEBGPU_INTERFACE_INCLUDE_DIRECTORIES}")
+    #    target_link_libraries(sgl INTERFACE webgpusgl)
+    #endif()
+
+    # See: https://github.com/eliemichel/sdl2webgpu/blob/main/CMakeLists.txt
+    if (APPLE)
+        target_compile_options(sgl PRIVATE -x objective-c)
+        target_link_libraries(sgl PRIVATE "-framework CoreVideo" "-framework IOKit" "-framework QuartzCore")
+        if (IOS)
+            target_link_libraries(sgl PRIVATE "-framework UIKit")
+        else()
+            target_link_libraries(sgl PRIVATE "-framework Cocoa")
+        endif()
+    endif()
+endif()
+
 if (${SUPPORT_VULKAN} AND (${shaderc_FOUND} OR ${glslang_FOUND}))
     target_compile_definitions(sgl PUBLIC SUPPORT_VULKAN)
     target_compile_definitions(sgl PUBLIC VK_NO_PROTOTYPES)
-    if (${Vulkan_FOUND} AND NOT ${USE_SGL_VULKAN_HEADERS} AND ${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.21.0")
+    if ((Vulkan_FOUND OR TARGET Vulkan::Headers) AND NOT ${USE_SGL_VULKAN_HEADERS} AND ${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.21.0")
         target_link_libraries(sgl PRIVATE Vulkan::Headers)
         #target_include_directories(sgl INTERFACE
         #        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Vulkan/libs/Vulkan-Headers>
@@ -739,97 +850,6 @@ if (${SUPPORT_VULKAN} AND (${shaderc_FOUND} OR ${glslang_FOUND}))
     endif()
 endif()
 
-if (${SUPPORT_WEBGPU})
-    target_compile_definitions(sgl PUBLIC SUPPORT_WEBGPU)
-
-    # https://github.com/eliemichel/WebGPU-distribution/archive/refs/heads/main.zip
-    # Or from: https://eliemichel.github.io/LearnWebGPU/getting-started/hello-webgpu.html:
-    # https://github.com/eliemichel/WebGPU-distribution/archive/refs/tags/main-v0.2.0-beta1.zip
-    #include(FetchContent)
-    #FetchContent_Declare(
-    #        webgpu
-    #        GIT_REPOSITORY https://github.com/eliemichel/WebGPU-distribution
-    #        GIT_TAG        main
-    #)
-    #FetchContent_MakeAvailable(webgpu)
-    add_subdirectory(${WEBGPU_DIST_DIR} WebGPU)
-    target_copy_webgpu_binaries(sgl)
-
-    #target_include_directories(sgl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/WebGPU/libs)
-    target_include_directories(sgl PUBLIC
-            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/WebGPU/libs>
-            $<INSTALL_INTERFACE:include/sgl/Graphics/WebGPU/libs> # <prefix>/include/sgl
-    )
-
-    # Using the target leads to problems with installing sgl, i.e.:
-    # - "export called with target "sgl" which requires target "webgpu" that is not in any export set."
-    # - "Target "webgpu" INTERFACE_INCLUDE_DIRECTORIES property contains path: [...]
-    #    which is prefixed in the build directory."
-    #target_link_libraries(sgl PRIVATE webgpu)
-    get_target_property(WEBGPU_INTERFACE_COMPILE_DEFINITIONS webgpu INTERFACE_COMPILE_DEFINITIONS)
-    get_target_property(WEBGPU_IMPORTED_LOCATION webgpu IMPORTED_LOCATION)
-    get_target_property(WEBGPU_INTERFACE_LINK_OPTIONS webgpu INTERFACE_LINK_OPTIONS)
-    get_target_property(WEBGPU_INTERFACE_INCLUDE_DIRECTORIES webgpu INTERFACE_INCLUDE_DIRECTORIES)
-    if (WEBGPU_INTERFACE_COMPILE_DEFINITIONS)
-        message(STATUS "WEBGPU_INTERFACE_COMPILE_DEFINITIONS: ${WEBGPU_INTERFACE_COMPILE_DEFINITIONS}")
-        target_compile_definitions(sgl PUBLIC ${WEBGPU_INTERFACE_COMPILE_DEFINITIONS})
-    endif()
-    if (WEBGPU_IMPORTED_LOCATION)
-        message(STATUS "WEBGPU_INTERFACE_LINK_LIBRARIES: ${WEBGPU_INTERFACE_LINK_LIBRARIES}")
-        target_link_libraries(sgl PRIVATE ${WEBGPU_IMPORTED_LOCATION})
-    endif()
-    if (WEBGPU_INTERFACE_LINK_OPTIONS)
-        message(STATUS "WEBGPU_INTERFACE_LINK_OPTIONS: ${WEBGPU_INTERFACE_LINK_OPTIONS}")
-        target_link_options(sgl PUBLIC ${WEBGPU_INTERFACE_LINK_OPTIONS})
-    endif()
-    if (WEBGPU_INTERFACE_INCLUDE_DIRECTORIES)
-        message(STATUS "WEBGPU_INTERFACE_INCLUDE_DIRECTORIES: ${WEBGPU_INTERFACE_INCLUDE_DIRECTORIES}")
-        #target_include_directories(sgl PRIVATE ${WEBGPU_INTERFACE_INCLUDE_DIRECTORIES})
-        target_include_directories(sgl PUBLIC
-                $<BUILD_INTERFACE:${WEBGPU_INTERFACE_INCLUDE_DIRECTORIES}>
-                $<INSTALL_INTERFACE:include/sgl> # <prefix>/include/sgl
-        )
-    endif()
-
-    # Find the .so or .dll file from WebGPU to install.
-    if (WIN32)
-        set(LIBRARY_INSTALL_DIR "bin")
-    else()
-        set(LIBRARY_INSTALL_DIR "lib")
-    endif()
-    file(GLOB ALL_LIBRARY_FILES "${CMAKE_CURRENT_BINARY_DIR}/*.so" "${CMAKE_CURRENT_BINARY_DIR}/*.dll")
-    foreach(LIBRARY_FILE ${ALL_LIBRARY_FILES})
-        get_filename_component(LIBRARY_NAME ${LIBRARY_FILE} NAME)
-        if (LIBRARY_NAME MATCHES "wgpu" OR LIBRARY_NAME MATCHES "dawn")
-            set(WEBGPU_LIBRARY_FILE "${LIBRARY_FILE}")
-            set(WEBGPU_LIBRARY_NAME "${LIBRARY_NAME}")
-        endif()
-    endforeach()
-
-    # Set the rpath, as otherwise apps not using any WebGPU symbols will not set the rpath, but sgl needs it.
-    if (NOT EMSCRIPTEN)
-        set_target_properties(sgl PROPERTIES INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${LIBRARY_INSTALL_DIR}")
-    endif()
-
-    # The code below was moved to sglConfig.cmake.
-    #if (NOT EMSCRIPTEN)
-    #    add_library(webgpusgl UNKNOWN IMPORTED)
-    #    set_target_properties(webgpusgl PROPERTIES IMPORTED_LOCATION "${WEBGPU_LIBRARY_FILE}" INTERFACE_INCLUDE_DIRECTORIES "${WEBGPU_INTERFACE_INCLUDE_DIRECTORIES}")
-    #    target_link_libraries(sgl INTERFACE webgpusgl)
-    #endif()
-
-    # See: https://github.com/eliemichel/sdl2webgpu/blob/main/CMakeLists.txt
-    if (APPLE)
-        target_compile_options(sgl PRIVATE -x objective-c)
-        target_link_libraries(sgl PRIVATE "-framework CoreVideo" "-framework IOKit" "-framework QuartzCore")
-        if (IOS)
-            target_link_libraries(sgl PRIVATE "-framework UIKit")
-        else()
-            target_link_libraries(sgl PRIVATE "-framework Cocoa")
-        endif()
-    endif()
-endif()
-
 if (${SUPPORT_D3D12})
     target_link_libraries(sgl PRIVATE
             d3d12.lib dxgi.lib dxguid.lib uuid.lib
@@ -967,6 +987,11 @@ if (NOT EMSCRIPTEN)
     endif()
     target_link_libraries(sgl PRIVATE PNG::PNG)
 else() # EMSCRIPTEN
+    # "-fwasm-exceptions" clashes with "-sASYNCIFY".
+    #set(EMSCRIPTEN_SGL_FLAGS "${EMSCRIPTEN_SGL_FLAGS}" "-fwasm-exceptions")
+    # According to https://emscripten.org/docs/porting/exceptions.html, this has a high overhead. Disable when not needed.
+    #set(EMSCRIPTEN_SGL_FLAGS "${EMSCRIPTEN_SGL_FLAGS}" "-fexceptions")
+    #set(EMSCRIPTEN_SGL_LINKER_FLAGS "${EMSCRIPTEN_SGL_LINKER_FLAGS}" "-sASSERTIONS" "--profiling-funcs")
     set(EMSCRIPTEN_SGL_FLAGS "${EMSCRIPTEN_SGL_FLAGS}" "--use-port=sdl2" "--use-port=sdl2_image:formats=png")
     set(EMSCRIPTEN_SGL_FLAGS "${EMSCRIPTEN_SGL_FLAGS}" "--use-port=libpng")
     # Already set by WEBGPU_INTERFACE_LINK_OPTIONS.
@@ -1079,7 +1104,7 @@ endif()
 if (EMSCRIPTEN)
     target_compile_options(sgl PRIVATE ${EMSCRIPTEN_SGL_FLAGS})
     target_link_options(sgl PRIVATE ${EMSCRIPTEN_SGL_FLAGS})
-    target_link_options(sgl PRIVATE ${EMSCRIPTEN_SGL_LINKER_FLAGS})
+    target_link_options(sgl PUBLIC ${EMSCRIPTEN_SGL_LINKER_FLAGS})
 endif()
 
 
@@ -1268,7 +1293,7 @@ endif()
 
 # Install WebGPU binaries if Emscripten is not used (in this case, the browser provides the implementation).
 if (${SUPPORT_WEBGPU} AND NOT EMSCRIPTEN)
-    if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.21.0")
+    if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.21.0" AND NOT ${USE_WEBGPU_IMPL_DAWN})
         install(IMPORTED_RUNTIME_ARTIFACTS webgpu)
     else()
         install(
@@ -1279,9 +1304,33 @@ if (${SUPPORT_WEBGPU} AND NOT EMSCRIPTEN)
 endif()
 # Install the WebGPU includes if available.
 if (WEBGPU_INTERFACE_INCLUDE_DIRECTORIES)
-    install(
-            DIRECTORY "${WEBGPU_INTERFACE_INCLUDE_DIRECTORIES}/"
-            DESTINATION include/sgl
-            FILES_MATCHING PATTERN "*.h*" PATTERN "*.inl"
-    )
+    if (${USE_WEBGPU_IMPL_DAWN})
+        #get_target_property(WEBGPU_INTERFACE_INCLUDE_DIRECTORIES_2 webgpu_dawn INTERFACE_INCLUDE_DIRECTORIES)
+        #message(FATAL_ERROR "WEBGPU_INTERFACE_INCLUDE_DIRECTORIES_2: ${WEBGPU_INTERFACE_INCLUDE_DIRECTORIES_2}")
+        foreach(WEBGPU_INTERFACE_INCLUDE_DIRECTORY IN LISTS WEBGPU_INTERFACE_INCLUDE_DIRECTORIES)
+            set(DAWN_INCLUDE_DIR "${WEBGPU_INTERFACE_INCLUDE_DIRECTORY}")
+        endforeach()
+        # [...]/_deps/dawn-src/include
+        # -> [...]/_deps/dawn-build/gen/include/dawn/webgpu.h
+        get_filename_component(DAWN_INCLUDE_DIR "${DAWN_INCLUDE_DIR}" PATH) # _deps/dawn-src
+        get_filename_component(DAWN_INCLUDE_DIR "${DAWN_INCLUDE_DIR}" PATH) # _deps
+        set(DAWN_INCLUDE_DIR "${DAWN_INCLUDE_DIR}/dawn-build/gen/include/dawn") # _deps/dawn-build/gen/include/dawn
+        #list(APPEND WEBGPU_INTERFACE_INCLUDE_DIRECTORIES "${DAWN_INCLUDE_DIR}")
+        set(WEBGPU_INTERFACE_INCLUDE_DIRECTORY_DAWN "${DAWN_INCLUDE_DIR}")
+        foreach(WEBGPU_INTERFACE_INCLUDE_DIRECTORY IN LISTS WEBGPU_INTERFACE_INCLUDE_DIRECTORY_DAWN)
+            install(
+                    DIRECTORY "${WEBGPU_INTERFACE_INCLUDE_DIRECTORY}"
+                    DESTINATION include/sgl/webgpu
+                    FILES_MATCHING PATTERN "*.h*" PATTERN "*.inl"
+            )
+        endforeach()
+    endif()
+
+    foreach(WEBGPU_INTERFACE_INCLUDE_DIRECTORY IN LISTS WEBGPU_INTERFACE_INCLUDE_DIRECTORIES)
+        install(
+                DIRECTORY "${WEBGPU_INTERFACE_INCLUDE_DIRECTORY}/"
+                DESTINATION include/sgl
+                FILES_MATCHING PATTERN "*.h*" PATTERN "*.inl"
+        )
+    endforeach()
 endif()

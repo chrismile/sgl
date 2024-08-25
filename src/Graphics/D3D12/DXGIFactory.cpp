@@ -72,16 +72,16 @@ void DXGIFactory::enumerateDevices() {
          * AMD: 0x1002
          * Intel: 0x8086
          */
-        sgl::Logfile::get()->writeInfo("D3D12 Adapter #" + sgl::toHexString(adapterIdx) + ":");
+        sgl::Logfile::get()->writeInfo("D3D12 Adapter #" + sgl::toString(adapterIdx) + ":");
         sgl::Logfile::get()->writeInfo("- Description: " + sgl::wideStringArrayToStdString(dxgiAdapterDesc1.Description));
-        sgl::Logfile::get()->writeInfo("- VendorId: " + sgl::toHexString(dxgiAdapterDesc1.VendorId));
-        sgl::Logfile::get()->writeInfo("- DeviceId: " + sgl::toHexString(dxgiAdapterDesc1.DeviceId));
-        sgl::Logfile::get()->writeInfo("- SubSysId: " + sgl::toHexString(dxgiAdapterDesc1.SubSysId));
-        sgl::Logfile::get()->writeInfo("- Revision: " + sgl::toHexString(dxgiAdapterDesc1.Revision));
+        sgl::Logfile::get()->writeInfo("- VendorId: 0x" + sgl::toHexString(dxgiAdapterDesc1.VendorId));
+        sgl::Logfile::get()->writeInfo("- DeviceId: 0x" + sgl::toHexString(dxgiAdapterDesc1.DeviceId));
+        sgl::Logfile::get()->writeInfo("- SubSysId: 0x" + sgl::toHexString(dxgiAdapterDesc1.SubSysId));
+        sgl::Logfile::get()->writeInfo("- Revision: 0x" + sgl::toHexString(dxgiAdapterDesc1.Revision));
         sgl::Logfile::get()->writeInfo("- DedicatedVideoMemory: " + std::to_string(dxgiAdapterDesc1.DedicatedVideoMemory));
         sgl::Logfile::get()->writeInfo("- DedicatedSystemMemory: " + std::to_string(dxgiAdapterDesc1.DedicatedSystemMemory));
         sgl::Logfile::get()->writeInfo("- SharedSystemMemory: " + std::to_string(dxgiAdapterDesc1.SharedSystemMemory));
-        sgl::Logfile::get()->writeInfo("- AdapterLuid: " + sgl::toHexString(dxgiAdapterDesc1.AdapterLuid.LowPart) + "-" + sgl::toHexString(dxgiAdapterDesc1.AdapterLuid.HighPart));
+        sgl::Logfile::get()->writeInfo("- AdapterLuid: 0x" + sgl::toHexString(dxgiAdapterDesc1.AdapterLuid.LowPart) + "-" + sgl::toHexString(dxgiAdapterDesc1.AdapterLuid.HighPart));
         sgl::Logfile::get()->writeInfo("- Is software renderer: " + std::to_string(isSoftwareRenderer));
         sgl::Logfile::get()->writeInfo("- IDXGIAdapter4 compatible: " + std::to_string(dxgiAdapter4Compatible));
         sgl::Logfile::get()->writeInfo("- D3D_FEATURE_LEVEL_11_0: " + std::to_string(feature11_0));

@@ -64,10 +64,14 @@ TextureGL::~TextureGL() {
 }
 
 void TextureGL::uploadPixelData(int width, const void* pixelData, PixelFormat pixelFormat) {
+#ifndef __EMSCRIPTEN__
     TexturePtr texturePtr = shared_from_this();
     Renderer->bindTexture(texturePtr);
     glTexSubImage1D(
             settings.type, 0, 0, width, pixelFormat.pixelFormat, pixelFormat.pixelType, pixelData);
+#else
+    sgl::Logfile::get()->throwError("Error in TextureGL::uploadPixelData: Emscripten does not support glTexSubImage1D.");
+#endif
 }
 
 void TextureGL::uploadPixelData(int width, int height, const void* pixelData, PixelFormat pixelFormat) {
@@ -85,10 +89,15 @@ void TextureGL::uploadPixelData(int width, int height, int depth, const void* pi
 }
 
 TexturePtr TextureGL::createTextureView() {
+#ifndef __EMSCRIPTEN__
     GLuint textureViewGL;
     glGenTextures(1, &textureViewGL);
     glTextureView(textureViewGL, GL_TEXTURE_2D, this->texture, settings.internalFormat, 0, 1, 0, 1);
     return TexturePtr(new TextureGL(textureViewGL, w, h, d, settings, samples));
+#else
+    sgl::Logfile::get()->throwError("Error in TextureGL::createTextureView: Emscripten does not support glTextureView.");
+    return {};
+#endif
 }
 
 #if defined(SUPPORT_VULKAN) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)

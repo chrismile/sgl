@@ -148,6 +148,7 @@ RendererGL::RendererGL() {
     solidShader = ShaderManager->getShaderProgram({"Mesh.Vertex.Plain", "Mesh.Fragment.Plain"});
     whiteShader = ShaderManager->getShaderProgram({"WhiteSolid.Vertex", "WhiteSolid.Fragment"});
 
+#ifndef __EMSCRIPTEN__
     // https://www.khronos.org/opengl/wiki/Debug_Output
     if ((SystemGL::get()->isGLExtensionAvailable("ARB_debug_output")
             || SystemGL::get()->isGLExtensionAvailable("KHR_debug")
@@ -159,6 +160,7 @@ RendererGL::RendererGL() {
         glDebugMessageCallback((GLDEBUGPROC)openglErrorCallback, nullptr);
         debugOutputExtEnabled = true;
     }
+#endif
 }
 
 void RendererGL::setErrorCallback(std::function<void()> callback) {
@@ -172,6 +174,7 @@ void RendererGL::callApplicationErrorCallback() {
 }
 
 void RendererGL::setDebugVerbosity(DebugVerbosity verbosity) {
+#ifndef __EMSCRIPTEN__
     GLboolean activeHigh = GL_TRUE, activeMedium = GL_FALSE, activeLow = GL_FALSE, activeNotification = GL_FALSE;
     if ((int)verbosity > 0) {
         activeMedium = GL_TRUE;
@@ -186,8 +189,10 @@ void RendererGL::setDebugVerbosity(DebugVerbosity verbosity) {
     glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_MEDIUM, 0, nullptr, activeMedium);
     glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_LOW, 0, nullptr, activeLow);
     glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, nullptr, activeNotification);
+#endif
 }
 
+#ifndef __EMSCRIPTEN__
 std::vector<std::string> getErrorMessages() {
     int numMessages = 10;
 
@@ -222,6 +227,7 @@ std::vector<std::string> getErrorMessages() {
 
     return messages;
 }
+#endif
 
 void RendererGL::errorCheck() {
     // Check for errors
@@ -229,18 +235,23 @@ void RendererGL::errorCheck() {
     if (oglError != GL_NO_ERROR) {
         Logfile::get()->writeError(std::string() + "OpenGL error: " + toString(oglError));
 
+#ifndef __EMSCRIPTEN__
         auto messages = getErrorMessages();
         for (const std::string &msg : messages) {
             Logfile::get()->writeError(std::string() + "Error message: " + msg);
         }
+#endif
     }
 }
 
 // Creation functions
 FramebufferObjectPtr RendererGL::createFBO() {
+#ifndef __EMSCRIPTEN__
     if (SystemGL::get()->openglVersionMinimum(4, 5)) {
         return FramebufferObjectPtr(new FramebufferObjectGLNamed);
-    } else if (SystemGL::get()->openglVersionMinimum(3, 2)) {
+    } else
+#endif
+    if (SystemGL::get()->openglVersionMinimum(3, 2)) {
         return FramebufferObjectPtr(new FramebufferObjectGL);
     } else {
         return FramebufferObjectPtr(new FramebufferObjectGL2);
@@ -278,11 +289,15 @@ void RendererGL::unbindFBO(bool force /* = false */) {
     if (boundFBO.get() != 0 || force) {
         boundFBO = FramebufferObjectPtr();
         boundFBOID = 0;
+#ifndef __EMSCRIPTEN__
         if (SystemGL::get()->openglVersionMinimum(3,2)) {
             glBindFramebuffer(GL_FRAMEBUFFER, boundFBOID);
         } else {
             glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, boundFBOID);
         }
+#else
+        glBindFramebuffer(GL_FRAMEBUFFER, boundFBOID);
+#endif
     }
 }
 
@@ -462,7 +477,12 @@ void RendererGL::setLineWidth(float width) {
 void RendererGL::setPointSize(float size) {
     if (size != pointSize) {
         pointSize = size;
+#ifndef __EMSCRIPTEN__
         glPointSize(size);
+#else
+        sgl::Logfile::get()->writeWarning(
+                "Warning in RendererGL::setPointSize: Emscripten does not support glPointSize.");
+#endif
     }
 }
 
@@ -593,9 +613,13 @@ void RendererGL::updateMatrixBlock() {
 
 
 
-void RendererGL::setPolygonMode(unsigned int polygonMode) // For debugging purposes
-{
+void RendererGL::setPolygonMode(unsigned int polygonMode) { // For debugging purposes
+#ifndef __EMSCRIPTEN__
     glPolygonMode(GL_FRONT_AND_BACK, polygonMode);
+#else
+    sgl::Logfile::get()->writeWarning(
+                "Warning in RendererGL::setPolygonMode: Emscripten does not support glPolygonMode.");
+#endif
 }
 
 void RendererGL::enableWireframeMode(const Color &_wireframeColor) {

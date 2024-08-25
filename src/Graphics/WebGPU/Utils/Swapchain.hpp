@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2023, Christoph Neuhauser
+ * Copyright (c) 2024, Christoph Neuhauser
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,21 +26,49 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_DEBUGWRITER_HPP
-#define SGL_DEBUGWRITER_HPP
+#ifndef SGL_WEBGPU_SWAPCHAIN_HPP
+#define SGL_WEBGPU_SWAPCHAIN_HPP
 
-#include <string>
-#include <cstdlib>
-#include <Utils/Singleton.hpp>
+#include <vector>
 
-class DebugWriter : public sgl::Singleton<DebugWriter> {
+#include <webgpu/webgpu.h>
+
+#include <Graphics/Window.hpp>
+
+namespace sgl { namespace webgpu {
+
+class Swapchain {
 public:
-    DebugWriter();
-    ~DebugWriter();
-    void write(const std::string& message);
+    /**
+     * @param device The device object.
+     */
+    explicit Swapchain(Device* device);
+    ~Swapchain();
+    void create(Window* window);
+
+    /// Interface for window class.
+    void recreateSwapchain();
+
+    /**
+     * Updates of buffers etc. can be performed between beginFrame and renderFrame.
+     */
+    void beginFrame();
+    void renderFrame(const std::vector<WGPUCommandBuffer>& commandBuffers);
+
+    inline WGPUTextureView getFrameTextureView() { return currentTextureView; }
 
 private:
-    FILE* file = nullptr;
+    /// Only cleans up resources that are reallocated by @see recreate.
+    void cleanupRecreate();
+    /// Cleans up all resources.
+    void cleanup();
+
+    Device* device = nullptr;
+    Window* window = nullptr;
+    WGPUSurface surface{};
+    WGPUTextureView currentTextureView{};
 };
 
-#endif //SGL_DEBUGWRITER_HPP
+}}
+
+#endif //SGL_WEBGPU_SWAPCHAIN_HPP

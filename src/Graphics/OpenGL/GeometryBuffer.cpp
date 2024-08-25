@@ -98,11 +98,19 @@ void GeometryBufferGL::subData(int offset, size_t size, void *data) {
 }
 
 void *GeometryBufferGL::mapBuffer(BufferMapping accessType) {
+#ifndef __EMSCRIPTEN__
     glBindBuffer(oglBufferType, buffer);
     return glMapBuffer(oglBufferType, accessType);
+#else
+    sgl::Logfile::get()->throwError(
+            "Error in GeometryBufferGL::mapBuffer: Emscripten does not support glMapBuffer. "
+            "Please switch to glBufferSubData and glGetBufferSubData instead.");
+    return nullptr;
+#endif
 }
 
 void *GeometryBufferGL::mapBufferRange(int offset, size_t size, BufferMapping accessType) {
+#ifndef __EMSCRIPTEN__
     if (offset + size > bufferSize) {
         Logfile::get()->writeError("GeometryBufferGL::subData: offset + size > bufferSize.");
     }
@@ -117,14 +125,26 @@ void *GeometryBufferGL::mapBufferRange(int offset, size_t size, BufferMapping ac
 
     glBindBuffer(oglBufferType, buffer);
     return glMapBufferRange(oglBufferType, offset, size, access);
+#else
+    sgl::Logfile::get()->throwError(
+            "Error in GeometryBufferGL::mapBufferRange: Emscripten does not support glMapBufferRange. "
+            "Please switch to glBufferSubData and glGetBufferSubData instead.");
+    return nullptr;
+#endif
 }
 
 void GeometryBufferGL::unmapBuffer() {
+#ifndef __EMSCRIPTEN__
     glBindBuffer(oglBufferType, buffer);
     bool success = glUnmapBuffer(oglBufferType);
     if (!success) {
         Logfile::get()->writeError("GeometryBufferGL::unmapBuffer: glUnmapBuffer returned GL_FALSE.");
     }
+#else
+    sgl::Logfile::get()->throwError(
+            "Error in GeometryBufferGL::unmapBuffer: Emscripten does not support glUnmapBuffer. "
+            "Please switch to glBufferSubData and glGetBufferSubData instead.");
+#endif
 }
 
 void GeometryBufferGL::bind() {

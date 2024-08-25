@@ -114,6 +114,7 @@ void ShaderManagerGL::bindUniformBuffer(int binding, const GeometryBufferPtr &ge
 }
 
 void ShaderManagerGL::bindAtomicCounterBuffer(int binding, const GeometryBufferPtr &geometryBuffer) {
+#ifndef __EMSCRIPTEN__
     GLuint bufferID = static_cast<GeometryBufferGL*>(geometryBuffer.get())->getBuffer();
 
     auto it = atomicCounterBuffers.find(binding);
@@ -126,9 +127,14 @@ void ShaderManagerGL::bindAtomicCounterBuffer(int binding, const GeometryBufferP
 
     glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, binding, bufferID);
     atomicCounterBuffers[binding] = geometryBuffer;
+#else
+    sgl::Logfile::get()->throwError(
+            "Error in ShaderManagerGL::bindAtomicCounterBuffer: Emscripten does not support atomic counter buffers.");
+#endif
 }
 
 void ShaderManagerGL::bindShaderStorageBuffer(int binding, const GeometryBufferPtr &geometryBuffer) {
+#ifndef __EMSCRIPTEN__
     GLuint bufferID = static_cast<GeometryBufferGL*>(geometryBuffer.get())->getBuffer();
 
     auto it = shaderStorageBuffers.find(binding);
@@ -141,6 +147,10 @@ void ShaderManagerGL::bindShaderStorageBuffer(int binding, const GeometryBufferP
 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, bufferID);
     shaderStorageBuffers[binding] = geometryBuffer;
+#else
+    sgl::Logfile::get()->throwError(
+            "Error in ShaderManagerGL::bindShaderStorageBuffer: Emscripten does not support shader storage buffers.");
+#endif
 }
 
 
@@ -188,6 +198,13 @@ ShaderProgramPtr ShaderManagerGL::createShaderProgram(const std::vector<std::str
                         + "Unknown shader type (id: \"" + shaderID + "\")");
             }
         }
+#ifdef __EMSCRIPTEN__
+        if (shaderType == COMPUTE_SHADER) {
+            Logfile::get()->throwError(
+                    std::string() + "ERROR: ShaderManagerGL::createShaderProgram: "
+                    + "Emscripten does not support compute shaders.");
+        }
+#endif
         shader = getShader(shaderID.c_str(), shaderType);
         shaderProgram->attachShader(shader);
     }
@@ -267,9 +284,7 @@ std::string ShaderManagerGL::loadHeaderFileString(const std::string &shaderName,
         }
     }
 
-
     file.close();
-    fileContent = fileContent;
     return fileContent;
 }
 

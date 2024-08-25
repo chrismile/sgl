@@ -53,6 +53,7 @@ public:
     void errorCheck() override;
     static void errorCheckSDL();
     void errorCheckSDLCritical();
+    void errorCheckIgnoreUnsupportedOperation();
 
     /// Returns whether this window uses
     bool isDebugContext() override { return windowSettings.debugContext; }
@@ -125,6 +126,9 @@ public:
 #ifdef SUPPORT_VULKAN
     VkSurfaceKHR getVkSurface() override { return windowSurface; }
 #endif
+#ifdef SUPPORT_WEBGPU
+    inline WGPUSurface getWebGPUSurface() { return webgpuSurface; }
+#endif
 
 private:
     RenderSystem renderSystem = RenderSystem::VULKAN;
@@ -137,7 +141,7 @@ private:
     std::function<void(const SDL_Event&)> eventHandler;
 
     /// For toggle fullscreen: Resolution before going fullscreen
-    SDL_DisplayMode oldDisplayMode{};
+    //SDL_DisplayMode oldDisplayMode{};
     bool isFirstFrame = true;
 
     /// Application cursor type.

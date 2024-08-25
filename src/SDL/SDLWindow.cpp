@@ -81,8 +81,8 @@
 #undef None
 #endif
 
-#define WEBGPU_CPP_IMPLEMENTATION
-#include <webgpu/webgpu.hpp>
+#include <Graphics/WebGPU/Utils/Instance.hpp>
+#include <Graphics/WebGPU/Utils/Swapchain.hpp>
 #endif
 
 #ifdef __APPLE__
@@ -109,6 +109,12 @@ SDLWindow::~SDLWindow() {
     if (renderSystem == RenderSystem::VULKAN && !windowSettings.useDownloadSwapchain) {
         sgl::vk::Instance* instance = sgl::AppSettings::get()->getVulkanInstance();
         vkDestroySurfaceKHR(instance->getVkInstance(), windowSurface, nullptr);
+    }
+#endif
+#ifdef SUPPORT_WEBGPU
+    if (renderSystem == RenderSystem::WEBGPU && webgpuSurface) {
+        wgpuSurfaceRelease(webgpuSurface);
+        webgpuSurface = nullptr;
     }
 #endif
     SDL_DestroyWindow(sdlWindow);
@@ -140,6 +146,21 @@ void SDLWindow::errorCheckSDL() {
 void SDLWindow::errorCheckSDLCritical() {
     while (SDL_GetError()[0] != '\0') {
         Logfile::get()->throwError(std::string() + "SDL error: " + SDL_GetError());
+    }
+}
+
+void SDLWindow::errorCheckIgnoreUnsupportedOperation() {
+    const char* sdlError = "";
+    while (true) {
+        sdlError = SDL_GetError();
+        if (sdlError[0] == '\0') {
+            break;
+        }
+        if (sgl::stringContains(sdlError, "That operation is not supported")) {
+            SDL_ClearError();
+        } else {
+            Logfile::get()->throwError(std::string() + "SDL error HERE: " + sdlError);
+        }
     }
 }
 
@@ -338,21 +359,22 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
 #endif
 #ifdef SUPPORT_WEBGPU
     if (renderSystem == RenderSystem::WEBGPU) {
-        //WGPUInstanceDescriptor desc;
-        //desc.nextInChain = NULL;
-        //WGPUInstance instance = wgpuCreateInstance(&desc);
-
-        wgpu::Instance instance = createInstance(wgpu::InstanceDescriptor{});
+        sgl::webgpu::Instance* instance = sgl::AppSettings::get()->getWebGPUInstance();
+        instance->createInstance();
         if (!instance) {
             sgl::Logfile::get()->throwError(
                     std::string() + "Error in SDLWindow::initialize: Failed to create a WebGPU instance.");
         }
-        webgpuSurface = SDL_GetWGPUSurface(instance, sdlWindow);
+        errorCheckSDLCritical();
+        webgpuSurface = SDL_GetWGPUSurface(instance->getWGPUInstance(), sdlWindow);
         if (!webgpuSurface) {
             sgl::Logfile::get()->throwError(
                     std::string() + "Error in SDLWindow::initialize: Failed to create a WebGPU surface.");
         }
-        instance.release(); // TODO: Move to AppSettings.
+#ifdef __EMSCRIPTEN__
+        // For whatever reason, we get "SDL error: That operation is not supported" after SDL_GetWindowWMInfo.
+        errorCheckIgnoreUnsupportedOperation();
+#endif
     }
 #endif
     errorCheckSDLCritical();
@@ -394,6 +416,10 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
         }
 #endif
     }
+#ifdef __EMSCRIPTEN__
+    // For whatever reason, we get "SDL error: That operation is not supported" after SDL_GetWindowWMInfo.
+    errorCheckIgnoreUnsupportedOperation();
+#endif
 
     windowSettings.pixelWidth = windowSettings.width;
     windowSettings.pixelHeight = windowSettings.height;
@@ -583,6 +609,14 @@ bool SDLWindow::processEvents() {
                             SDL_Vulkan_GetDrawableSize(sdlWindow, &windowSettings.pixelWidth, &windowSettings.pixelHeight);
                         }
 #endif
+#endif
+#ifdef SUPPORT_WEBGPU
+                        if (renderSystem == RenderSystem::WEBGPU) {
+                            webgpu::Swapchain* swapchain = AppSettings::get()->getWebGPUSwapchain();
+                            if (swapchain) {
+                                swapchain->recreateSwapchain();
+                            }
+                        }
 #endif
                         if (renderSystem != RenderSystem::VULKAN) {
                             EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));

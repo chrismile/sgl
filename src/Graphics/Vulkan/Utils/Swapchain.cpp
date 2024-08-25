@@ -312,7 +312,7 @@ void Swapchain::beginFrame() {
         recreateSwapchain();
         return;
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-        sgl::Logfile::get()->writeError("Error in Swapchain::renderFrame: Failed to acquire swapchain image!");
+        sgl::Logfile::get()->writeError("Error in Swapchain::beginFrame: Failed to acquire swapchain image!");
     }
 
     // Image already in use?

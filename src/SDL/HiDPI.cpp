@@ -123,10 +123,16 @@ float getHighDPIScaleFactor() {
 
     bool scaleFactorSetManually = false;
     auto* window = static_cast<sgl::SDLWindow*>(sgl::AppSettings::get()->getMainWindow());
+    window->errorCheck();
     SDL_Window* sdlWindow = window->getSDLWindow();
     SDL_SysWMinfo wminfo;
     SDL_VERSION(&wminfo.version);
-    if (SDL_GetWindowWMInfo(sdlWindow, &wminfo)) {
+    auto succeeded = SDL_GetWindowWMInfo(sdlWindow, &wminfo);
+#ifdef __EMSCRIPTEN__
+    // For whatever reason, we get "SDL error: That operation is not supported" after SDL_GetWindowWMInfo.
+    window->errorCheckIgnoreUnsupportedOperation();
+#endif
+    if (succeeded) {
         switch (wminfo.subsystem) {
             case SDL_SYSWM_X11:
 #if defined(SDL_VIDEO_DRIVER_X11)

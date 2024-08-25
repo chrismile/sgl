@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2023, Christoph Neuhauser
+ * Copyright (c) 2024, Christoph Neuhauser
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,21 +26,39 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_DEBUGWRITER_HPP
-#define SGL_DEBUGWRITER_HPP
+#ifndef SGL_WEBGPU_RENDERER_HPP
+#define SGL_WEBGPU_RENDERER_HPP
 
-#include <string>
-#include <cstdlib>
-#include <Utils/Singleton.hpp>
+#include <vector>
 
-class DebugWriter : public sgl::Singleton<DebugWriter> {
+#include <webgpu/webgpu.h>
+
+namespace sgl { namespace webgpu {
+
+class Device;
+
+class DLL_OBJECT Renderer {
 public:
-    DebugWriter();
-    ~DebugWriter();
-    void write(const std::string& message);
+    explicit Renderer(Device* device);
+    ~Renderer();
+
+    // @see beginCommandBuffer and @see endCommandBuffer need to be called before calling any other command.
+    void beginCommandBuffer();
+    WGPUCommandBuffer endCommandBuffer();
+    std::vector<WGPUCommandBuffer> getFrameCommandBuffers();
+    void freeFrameCommandBuffers();
+    inline WGPUCommandBuffer getWebGPUCommandBuffer() { return commandBuffer; }
+
+    // TODO: For testing purposes; will be removed in the future.
+    void addTestRenderPass(WGPUTextureView targetView);
 
 private:
-    FILE* file = nullptr;
+    Device* device;
+    WGPUCommandEncoder encoder{};
+    std::vector<WGPUCommandBuffer> commandBuffersWgpu;
+    WGPUCommandBuffer commandBuffer{};
 };
 
-#endif //SGL_DEBUGWRITER_HPP
+}}
+
+#endif //SGL_WEBGPU_RENDERER_HPP

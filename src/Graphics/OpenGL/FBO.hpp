@@ -67,6 +67,9 @@ protected:
     bool hasColorAttachment;
 };
 
+
+#ifndef __EMSCRIPTEN__
+
 /**
  * This implementation uses OpenGL 4.5 features. This is necessary for offscreen rendering.
  * On Mesa Zink, when no pbuffer is bound, unbinding the currently bound framebuffer results in the error
@@ -84,6 +87,9 @@ public:
 protected:
     bool checkStatus() override;
 };
+
+#endif
+
 
 class DLL_OBJECT FramebufferObjectGL2 : public FramebufferObjectGL
 {

@@ -190,8 +190,13 @@ void ShaderProgramGL::bind() {
 
 
 void ShaderProgramGL::dispatchCompute(int numGroupsX, int numGroupsY, int numGroupsZ) {
+#ifndef __EMSCRIPTEN__
     this->bind();
     glDispatchCompute(numGroupsX, numGroupsY, numGroupsZ);
+#else
+    sgl::Logfile::get()->throwError(
+            "Error in ShaderProgramGL::dispatchCompute: Emscripten does not support glDispatchCompute.");
+#endif
 }
 
 
@@ -516,9 +521,14 @@ void ShaderProgramGL::setUniformImageTexture(
         unsigned int unit, const TexturePtr& texture, unsigned int format /*= GL_RGBA8 */,
         unsigned int access /* = GL_READ_WRITE */, unsigned int level /* = 0 */,
         bool layered /* = false */, unsigned int layer /* = 0 */) {
+#ifndef __EMSCRIPTEN__
     glBindImageTexture(
             unit, ((TextureGL*)texture.get())->getTexture(),
             GLint(level), layered, GLint(layer), access, format);
+#else
+    sgl::Logfile::get()->throwError(
+            "Error in ShaderProgramGL::setUniformImageTexture: Emscripten does not support glBindImageTexture.");
+#endif
 }
 
 
@@ -546,12 +556,17 @@ bool ShaderProgramGL::setUniformBuffer(int binding, const char *name, const Geom
 
 
 bool ShaderProgramGL::setAtomicCounterBuffer(int binding, const GeometryBufferPtr &geometryBuffer) {
+#ifndef __EMSCRIPTEN__
     // Binding point is unique for _all_ shaders
     ShaderManager->bindAtomicCounterBuffer(binding, geometryBuffer);
-
     // Set location to resource index per shader
     //glShaderStorageBlockBinding(shaderProgramID, location, binding);
     return true;
+#else
+    sgl::Logfile::get()->throwError(
+            "Error in ShaderProgramGL::setAtomicCounterBuffer: Emscripten does not support atomic counter buffers.");
+    return false;
+#endif
 }
 
 /*bool ShaderProgramGL::setAtomicCounterBuffer(int binding, const char *name, const GeometryBufferPtr &geometryBuffer) {
@@ -562,16 +577,21 @@ bool ShaderProgramGL::setAtomicCounterBuffer(int binding, const GeometryBufferPt
 
 
 bool ShaderProgramGL::setShaderStorageBuffer(int binding, int location, const GeometryBufferPtr &geometryBuffer) {
+#ifndef __EMSCRIPTEN__
     // Binding point is unique for _all_ shaders
     ShaderManager->bindShaderStorageBuffer(binding, geometryBuffer);
-
     // Set location to resource index per shader
     glShaderStorageBlockBinding(shaderProgramID, location, binding);
-
     return true;
+#else
+    sgl::Logfile::get()->throwError(
+            "Error in ShaderProgramGL::setShaderStorageBuffer: Emscripten does not support glShaderStorageBlockBinding.");
+    return false;
+#endif
 }
 
 bool ShaderProgramGL::setShaderStorageBuffer(int binding, const char *name, const GeometryBufferPtr &geometryBuffer) {
+#ifndef __EMSCRIPTEN__
     // Resource index (aka location in the shader) can be queried by name in the shader
     unsigned int resourceIndex = glGetProgramResourceIndex(shaderProgramID, GL_SHADER_STORAGE_BLOCK, name);
     if (resourceIndex == GL_INVALID_INDEX) {
@@ -579,6 +599,11 @@ bool ShaderProgramGL::setShaderStorageBuffer(int binding, const char *name, cons
                                    + "No shader storage buffer called \"" + name + "\" in this shader program.");
     }
     return setShaderStorageBuffer(binding, resourceIndex, geometryBuffer);
+#else
+    sgl::Logfile::get()->throwError(
+            "Error in ShaderProgramGL::setShaderStorageBuffer: Emscripten does not support shader storage buffers.");
+    return false;
+#endif
 }
 
 }

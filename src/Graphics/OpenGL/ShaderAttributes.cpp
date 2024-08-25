@@ -210,8 +210,14 @@ bool ShaderAttributesGL3::addGeometryBufferOptional(GeometryBufferPtr &geometryB
                 glVertexAttribIPointer(shaderLoc+column, components, dataType,
                                       stride, (void*)(intptr_t)(offset+columnSize*column));
             } else if (attrConversion == ATTRIB_CONVERSION_DOUBLE) {
+#ifndef __EMSCRIPTEN__
                 glVertexAttribLPointer(shaderLoc+column, components, dataType,
                                       stride, (void*)(intptr_t)(offset+columnSize*column));
+#else
+                sgl::Logfile::get()->throwError(
+                        "Error in ShaderAttributesGL3::addGeometryBufferOptional: "
+                        "Emscripten does not support glVertexAttribLPointer.");
+#endif
             }
 
             if (instancing > 0) {
@@ -265,8 +271,14 @@ void ShaderAttributesGL3::addGeometryBuffer(GeometryBufferPtr &geometryBuffer,
             glVertexAttribIPointer(attributeLocation+column, components, dataType,
                                    stride, (void*)(intptr_t)(offset+columnSize*column));
         } else if (attrConversion == ATTRIB_CONVERSION_DOUBLE) {
+#ifndef __EMSCRIPTEN__
             glVertexAttribLPointer(attributeLocation+column, components, dataType,
                                    stride, (void*)(intptr_t)(offset+columnSize*column));
+#else
+            sgl::Logfile::get()->throwError(
+                        "Error in ShaderAttributesGL3::addGeometryBuffer: "
+                        "Emscripten does not support glVertexAttribLPointer.");
+#endif
         }
 
         if (instancing > 0) {

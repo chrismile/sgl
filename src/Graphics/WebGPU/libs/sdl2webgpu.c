@@ -30,6 +30,8 @@
  * SOFTWARE.
  */
 
+#include <stdio.h>
+
 #include "sdl2webgpu.h"
 
 #include <webgpu/webgpu.h>
@@ -161,6 +163,7 @@ WGPUSurface SDL_GetWGPUSurface(WGPUInstance instance, SDL_Window* window) {
     }
 #elif defined(SDL_VIDEO_DRIVER_EMSCRIPTEN)
     {
+        printf("HERE\n");
         WGPUSurfaceDescriptorFromCanvasHTMLSelector fromCanvasHTMLSelector = {
             .chain = {
                 .next = NULL,

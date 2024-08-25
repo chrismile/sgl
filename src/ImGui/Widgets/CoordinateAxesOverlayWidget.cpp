@@ -81,7 +81,6 @@ void CoordinateAxesOverlayWidget::renderGui(const sgl::CameraPtr& cam) {
     radiusOverlay = ImGuiWrapper::get()->getScaleDependentSize(60.0f);
     radiusBalls = std::max(minRadius, ImGuiWrapper::get()->getScaleDependentSize(10.0f));
     radiusInnerRing = ImGuiWrapper::get()->getScaleDependentSize(2.0f);
-    radiusBallsInner = radiusBalls - radiusInnerRing;
     lineThickness = ImGuiWrapper::get()->getScaleDependentSize(4.0f);
     ImVec2 center = ImVec2(
             windowPos.x + offset.x + radiusOverlay,

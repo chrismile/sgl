@@ -182,6 +182,7 @@ static const std::unordered_map<int, int> pixelTypeMap = {
 };
 
 TexturePtr TextureManagerGL::createEmptyTexture(int width, const TextureSettings& settings) {
+#ifndef __EMSCRIPTEN__
     GLuint TEXTURE_TYPE = GL_TEXTURE_1D;
 
     GLuint oglTexture;
@@ -196,9 +197,9 @@ TexturePtr TextureManagerGL::createEmptyTexture(int width, const TextureSettings
     glTexParameteri(TEXTURE_TYPE, GL_TEXTURE_MAG_FILTER, settings.textureMagFilter);
     glTexParameteri(TEXTURE_TYPE, GL_TEXTURE_MIN_FILTER, settings.textureMinFilter);
     if (settings.textureMinFilter == GL_LINEAR_MIPMAP_LINEAR
-        || settings.textureMinFilter == GL_NEAREST_MIPMAP_NEAREST
-        || settings.textureMinFilter == GL_NEAREST_MIPMAP_LINEAR
-        || settings.textureMinFilter == GL_LINEAR_MIPMAP_NEAREST) {
+            || settings.textureMinFilter == GL_NEAREST_MIPMAP_NEAREST
+            || settings.textureMinFilter == GL_NEAREST_MIPMAP_LINEAR
+            || settings.textureMinFilter == GL_LINEAR_MIPMAP_NEAREST) {
         glTexParameteri(TEXTURE_TYPE, GL_GENERATE_MIPMAP, GL_TRUE);
     } else if (settings.anisotropicFilter) {
         float maxAnisotropy = SystemGL::get()->getMaximumAnisotropy();
@@ -213,10 +214,15 @@ TexturePtr TextureManagerGL::createEmptyTexture(int width, const TextureSettings
             pixelTypeMap.find(settings.internalFormat)->second, nullptr);
 
     return TexturePtr(new TextureGL(oglTexture, width, settings, 0));
+#else
+    sgl::Logfile::get()->throwError("Error in TextureManagerGL::createEmptyTexture: Emscripten does not support glTexImage1D.");
+    return {};
+#endif
 }
 
 TexturePtr TextureManagerGL::createTexture(
         void* data, int width, const PixelFormat& pixelFormat, const TextureSettings& settings) {
+#ifndef __EMSCRIPTEN__
     GLuint TEXTURE_TYPE = GL_TEXTURE_1D;
 
     GLuint oglTexture;
@@ -247,6 +253,10 @@ TexturePtr TextureManagerGL::createTexture(
             pixelFormat.pixelFormat, pixelFormat.pixelType, data);
 
     return TexturePtr(new TextureGL(oglTexture, width, settings, 0));
+#else
+    sgl::Logfile::get()->throwError("Error in TextureManagerGL::createTexture: Emscripten does not support glTexImage1D.");
+    return {};
+#endif
 }
 
 
@@ -516,6 +526,7 @@ TexturePtr TextureManagerGL::createTexture(
 
 TexturePtr TextureManagerGL::createMultisampledTexture(
         int width, int height, int numSamples, int internalFormat, bool fixedSampleLocations) {
+#ifndef __EMSCRIPTEN__
     // https://www.opengl.org/sdk/docs/man3/xhtml/glTexImage2DMultisample.xml
     //   -> "glTexImage2DMultisample is available only if the GL version is 3.2 or greater."
     if (!SystemGL::get()->openglVersionMinimum(3, 2) || SystemGL::get()->getMaximumTextureSamples() <= 0) {
@@ -547,6 +558,13 @@ TexturePtr TextureManagerGL::createMultisampledTexture(
     TextureSettings settings(TEXTURE_2D_MULTISAMPLE, GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
     settings.internalFormat = internalFormat;
     return TexturePtr(new TextureGL(oglTexture, width, height, settings, numSamples));
+#else
+    sgl::Logfile::get()->writeWarning(
+            "Warning in TextureManagerGL::createMultisampledTexture: Emscripten does not support glTexImage2DMultisample."
+            " Please switch to glRenderbufferStorageMultisample instead.");
+    // Create a normal texture as a fallback
+    return createEmptyTexture(width, height);
+#endif
 }
 
 TexturePtr TextureManagerGL::createDepthTexture(
@@ -586,6 +604,7 @@ TexturePtr TextureManagerGL::createDepthStencilTexture(
 
 
 TexturePtr TextureManagerGL::createTextureStorage(int width, const TextureSettings& settings) {
+#ifndef __EMSCRIPTEN__
     GLuint TEXTURE_TYPE = GL_TEXTURE_1D;
 
     GLuint oglTexture;
@@ -600,9 +619,9 @@ TexturePtr TextureManagerGL::createTextureStorage(int width, const TextureSettin
     glTexParameteri(TEXTURE_TYPE, GL_TEXTURE_MAG_FILTER, settings.textureMagFilter);
     glTexParameteri(TEXTURE_TYPE, GL_TEXTURE_MIN_FILTER, settings.textureMinFilter);
     if (settings.textureMinFilter == GL_LINEAR_MIPMAP_LINEAR
-        || settings.textureMinFilter == GL_NEAREST_MIPMAP_NEAREST
-        || settings.textureMinFilter == GL_NEAREST_MIPMAP_LINEAR
-        || settings.textureMinFilter == GL_LINEAR_MIPMAP_NEAREST) {
+            || settings.textureMinFilter == GL_NEAREST_MIPMAP_NEAREST
+            || settings.textureMinFilter == GL_NEAREST_MIPMAP_LINEAR
+            || settings.textureMinFilter == GL_LINEAR_MIPMAP_NEAREST) {
         glTexParameteri(TEXTURE_TYPE, GL_GENERATE_MIPMAP, GL_TRUE);
     } else if (settings.anisotropicFilter) {
         float maxAnisotropy = SystemGL::get()->getMaximumAnisotropy();
@@ -614,7 +633,11 @@ TexturePtr TextureManagerGL::createTextureStorage(int width, const TextureSettin
     glTexStorage1D(TEXTURE_TYPE, 1, settings.internalFormat, width);
 
     return TexturePtr(new TextureGL(oglTexture, width, settings, 0));
-
+#else
+    sgl::Logfile::get()->throwError(
+            "Error in TextureManagerGL::createTextureStorage: Emscripten does not support glTexStorage1D.");
+    return {};
+#endif
 }
 
 TexturePtr TextureManagerGL::createTextureStorage(int width, int height, const TextureSettings& settings) {

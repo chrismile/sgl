@@ -40,12 +40,19 @@ class Renderer;
 }}
 #endif
 
+#ifdef SUPPORT_WEBGPU
+namespace sgl { namespace webgpu {
+class Renderer;
+}}
+#endif
+
 #include "Utils/FramerateSmoother.hpp"
 
 namespace sgl {
 
 class Event;
 typedef std::shared_ptr<Event> EventPtr;
+class Window;
 
 class DLL_OBJECT AppLogic {
 public:
@@ -66,6 +73,13 @@ public:
     inline void quit() { running = false; }
 
 protected:
+    // Main loop logic.
+    virtual void runStep();
+    uint64_t accumulatedTimeFixed = 0;
+    uint64_t fpsTimer = 0;
+    int64_t fixedFPSInMicroSeconds = 0;
+    Window *window = nullptr;
+
     virtual void makeScreenshot();
     virtual void saveScreenshot(const std::string &filename);
     bool screenshot;
@@ -74,6 +88,10 @@ protected:
 
 #ifdef SUPPORT_VULKAN
     sgl::vk::Renderer* rendererVk = nullptr;
+#endif
+
+#ifdef SUPPORT_WEBGPU
+    sgl::webgpu::Renderer* rendererWgpu = nullptr;
 #endif
 
     // For debuggers.

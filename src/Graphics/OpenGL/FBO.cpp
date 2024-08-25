@@ -57,7 +57,7 @@ bool FramebufferObjectGL::bindTexture(TexturePtr texture, FramebufferAttachment 
     }
 
     textures[attachment] = texture;
-    TextureGL* textureGL = (TextureGL*)texture.get();
+    auto* textureGL = (TextureGL*)texture.get();
 
     int oglTexture = textureGL->getTexture();
     width = textureGL->getW();
@@ -65,7 +65,11 @@ bool FramebufferObjectGL::bindTexture(TexturePtr texture, FramebufferAttachment 
     //int samples = texture->getNumSamples();
     glBindFramebuffer(GL_FRAMEBUFFER, id);
     //glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, samples == 0 ? GL_TEXTURE_2D : GL_TEXTURE_2D_MULTISAMPLE, oglTexture, 0);
+#ifndef __EMSCRIPTEN__
     glFramebufferTexture(GL_FRAMEBUFFER, attachment, oglTexture, 0);
+#else
+    glFramebufferTextureLayer(GL_FRAMEBUFFER, attachment, oglTexture, 0, 0);
+#endif
     Renderer->bindFBO(Renderer->getFBO(), true);
     bool status = checkStatus();
     return status;
@@ -99,8 +103,15 @@ unsigned int FramebufferObjectGL::_bindInternal() {
     glBindFramebuffer(GL_FRAMEBUFFER, id);
 
     if (!hasColorAttachment) {
-        glNamedFramebufferDrawBuffer(id, GL_NONE);
-        glNamedFramebufferReadBuffer(id, GL_NONE);
+#ifndef __EMSCRIPTEN__
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
+#else
+        GLenum noneBuffer = GL_NONE;
+        glDrawBuffers(1, &noneBuffer);
+        sgl::Logfile::get()->writeWarning(
+                "Warning in FramebufferObjectGL::_bindInternal: !hasColorAttachment is not supported with Emscripten.");
+#endif
         hasColorAttachment = true; // Only call once
     }
 
@@ -115,13 +126,15 @@ unsigned int FramebufferObjectGL::_bindInternal() {
             }
         }
         if (colorAttachments.size() > 1) {
-            glNamedFramebufferDrawBuffers(id, GLsizei(colorAttachments.size()), &colorAttachments.front());
+            glDrawBuffers(GLsizei(colorAttachments.size()), &colorAttachments.front());
         }
     }
 
     return id;
 }
 
+
+#ifndef __EMSCRIPTEN__
 
 // OpenGL 4.5
 
@@ -174,8 +187,8 @@ unsigned int FramebufferObjectGLNamed::_bindInternal() {
     glBindFramebuffer(GL_FRAMEBUFFER, id);
 
     if (!hasColorAttachment) {
-        glDrawBuffer(GL_NONE);
-        glReadBuffer(GL_NONE);
+        glNamedFramebufferDrawBuffer(id, GL_NONE);
+        glNamedFramebufferReadBuffer(id, GL_NONE);
         hasColorAttachment = true; // Only call once
     }
 
@@ -190,18 +203,24 @@ unsigned int FramebufferObjectGLNamed::_bindInternal() {
             }
         }
         if (colorAttachments.size() > 1) {
-            glDrawBuffers(GLsizei(colorAttachments.size()), &colorAttachments.front());
+            glNamedFramebufferDrawBuffers(id, GLsizei(colorAttachments.size()), &colorAttachments.front());
         }
     }
 
     return id;
 }
 
+#endif
+
 
 // OpenGL 2
 
 FramebufferObjectGL2::FramebufferObjectGL2() {
+#ifndef __EMSCRIPTEN__
     glGenFramebuffersEXT(1, &id);
+#else
+    glGenFramebuffers(1, &id);
+#endif
     hasColorAttachment = false;
 }
 
@@ -212,11 +231,14 @@ FramebufferObjectGL2::~FramebufferObjectGL2() {
 
     textures.clear();
     rbos.clear();
+#ifndef __EMSCRIPTEN__
     glDeleteFramebuffersEXT(1, &id);
+#else
+    glDeleteFramebuffers(1, &id);
+#endif
 }
 
-bool FramebufferObjectGL2::bindTexture(TexturePtr texture, FramebufferAttachment attachment)
-{
+bool FramebufferObjectGL2::bindTexture(TexturePtr texture, FramebufferAttachment attachment) {
     if (attachment >= COLOR_ATTACHMENT0 && attachment <= COLOR_ATTACHMENT15) {
         hasColorAttachment = true;
     }
@@ -227,15 +249,19 @@ bool FramebufferObjectGL2::bindTexture(TexturePtr texture, FramebufferAttachment
     int oglTexture = textureGL->getTexture();
     width = textureGL->getW();
     height = textureGL->getH();
+#ifndef __EMSCRIPTEN__
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, id);
     glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, attachment, GL_TEXTURE_2D, oglTexture, 0);
+#else
+    glBindFramebuffer(GL_FRAMEBUFFER, id);
+    glFramebufferTexture2D(GL_FRAMEBUFFER_EXT, attachment, GL_TEXTURE_2D, oglTexture, 0);
+#endif
     Renderer->bindFBO(Renderer->getFBO(), true);
     bool status = checkStatus();
     return status;
 }
 
-bool FramebufferObjectGL2::bindRenderbuffer(RenderbufferObjectPtr renderbuffer, FramebufferAttachment attachment)
-{
+bool FramebufferObjectGL2::bindRenderbuffer(RenderbufferObjectPtr renderbuffer, FramebufferAttachment attachment) {
     rbos[attachment] = renderbuffer;
     RenderbufferObjectGL* rbo = (RenderbufferObjectGL*)renderbuffer.get();
     glBindFramebuffer(GL_FRAMEBUFFER, id);
@@ -246,7 +272,11 @@ bool FramebufferObjectGL2::bindRenderbuffer(RenderbufferObjectPtr renderbuffer, 
 }
 
 bool FramebufferObjectGL2::checkStatus() {
+#ifndef __EMSCRIPTEN__
     GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+#else
+    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+#endif
     switch(status) {
         case GL_FRAMEBUFFER_COMPLETE_EXT:
             break;
@@ -261,12 +291,23 @@ bool FramebufferObjectGL2::checkStatus() {
 
 unsigned int FramebufferObjectGL2::_bindInternal() {
     if (!hasColorAttachment) {
+#ifndef __EMSCRIPTEN__
         glDrawBuffer(GL_NONE);
         glReadBuffer(GL_NONE);
+#else
+        GLenum noneBuffer = GL_NONE;
+        glDrawBuffers(1, &noneBuffer);
+        sgl::Logfile::get()->writeWarning(
+                "Warning in FramebufferObjectGL::_bindInternal: !hasColorAttachment is not supported with Emscripten.");
+#endif
         hasColorAttachment = true; // Only call once
     }
 
+#ifndef __EMSCRIPTEN__
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, id);
+#else
+    glBindFramebuffer(GL_FRAMEBUFFER, id);
+#endif
     return id;
 }
 

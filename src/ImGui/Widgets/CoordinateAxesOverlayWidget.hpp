@@ -54,11 +54,6 @@ private:
             sgl::Color(98, 138, 28).getFloatColorRGB(),
             sgl::Color(48, 100, 156).getFloatColorRGB()
     };
-    glm::vec3 colorInner[3] = {
-            sgl::Color(110, 61, 68).getFloatColorRGB(),
-            sgl::Color(82, 101, 50).getFloatColorRGB(),
-            sgl::Color(59, 83, 110).getFloatColorRGB()
-    };
     ImU32 textColor[3] = {
             sgl::Color(89, 19, 28).getColorRGBA(),
             sgl::Color(48, 76, 0).getColorRGBA(),
@@ -71,8 +66,6 @@ private:
     float radiusOverlay = 0.0f;
     float radiusBalls = 0.0f;
     float radiusInnerRing = 0.0f;
-    float radiusBallsInner = 0.0f;
-    float radiusInner = 0.0f;
     float lineThickness = 0.0f;
 };
 

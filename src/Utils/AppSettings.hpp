@@ -48,6 +48,10 @@ class OffscreenContext;
 namespace vk { class Instance; class Device; class Swapchain; }
 #endif
 
+#ifdef SUPPORT_WEBGPU
+namespace webgpu { class Instance; class Device; class Swapchain; }
+#endif
+
 // At the moment, only OpenGL and Vulkan are supported.
 enum class RenderSystem {
     OPENGL, OPENGLES, VULKAN, WEBGPU, DIRECT3D_11, DIRECT3D_12, METAL
@@ -211,6 +215,16 @@ public:
 //    inline VulkanInteropCapabilities getVulkanInteropCapabilities() { return vulkanInteropCapabilities; }
 //#endif
 #endif
+#ifdef SUPPORT_WEBGPU
+    /// Returns the Vulkan instance.
+    inline webgpu::Instance* getWebGPUInstance() { return webgpuInstance; }
+    /// Set the primary device (used for, e.g., GUI rendering for ImGui).
+    inline void setWebGPUPrimaryDevice(webgpu::Device* device) { webgpuPrimaryDevice = device; }
+    inline webgpu::Device* getWebGPUPrimaryDevice() { return webgpuPrimaryDevice; }
+    /// Set the used swapchain.
+    inline void setWebGPUSwapchain(webgpu::Swapchain* _webgpuSwapchain) { this->webgpuSwapchain = _webgpuSwapchain; }
+    inline webgpu::Swapchain* getWebGPUSwapchain() { return webgpuSwapchain; }
+#endif
     void release();
 
     /// Called in main if GUI should be loaded.
@@ -224,6 +238,7 @@ public:
     Window* getMainWindow();
     Window* setMainWindow(Window* window);
 
+    int getNumDisplays();
     void getCurrentDisplayMode(int& width, int& height, int& refreshRate, int displayIndex = 0);
     void getDesktopDisplayMode(int& width, int& height, int& refreshRate, int displayIndex = 0);
     glm::ivec2 getCurrentDisplayModeResolution(int displayIndex = 0);
@@ -245,8 +260,6 @@ private:
 
 #ifdef SUPPORT_OPENGL
     sgl::OffscreenContext* offscreenContext = nullptr;
-    bool shallEnableVulkanOffscreenOpenGLContextInteropSupport = false;
-    bool instanceSupportsVulkanOpenGLInterop = false;
     bool offscreenContextFunctionPointersInitialized = false;
 #endif
 
@@ -258,6 +271,17 @@ private:
     VulkanInteropCapabilities vulkanInteropCapabilities = VulkanInteropCapabilities::NOT_LOADED;
     bool sdlVulkanLibraryLoaded = false;
     bool isDebugPrintfEnabled = false;
+#endif
+
+#if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
+    bool shallEnableVulkanOffscreenOpenGLContextInteropSupport = false;
+    bool instanceSupportsVulkanOpenGLInterop = false;
+#endif
+
+#ifdef SUPPORT_WEBGPU
+    webgpu::Instance* webgpuInstance = nullptr;
+    webgpu::Device* webgpuPrimaryDevice = nullptr;
+    webgpu::Swapchain* webgpuSwapchain = nullptr;
 #endif
 
     // Where the application data is stored.

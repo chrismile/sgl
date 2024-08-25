@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2023, Christoph Neuhauser
+ * Copyright (c) 2024, Christoph Neuhauser
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,21 +26,27 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_DEBUGWRITER_HPP
-#define SGL_DEBUGWRITER_HPP
+#ifndef SGL_WEBGPU_INSTANCE_HPP
+#define SGL_WEBGPU_INSTANCE_HPP
 
-#include <string>
-#include <cstdlib>
-#include <Utils/Singleton.hpp>
+#include <webgpu/webgpu.h>
 
-class DebugWriter : public sgl::Singleton<DebugWriter> {
+namespace sgl { namespace webgpu {
+
+class DLL_OBJECT Instance {
 public:
-    DebugWriter();
-    ~DebugWriter();
-    void write(const std::string& message);
+public:
+    Instance();
+    ~Instance();
+    void createInstance();
+
+    // Access to internal data.
+    inline WGPUInstance getWGPUInstance() { return instance; }
 
 private:
-    FILE* file = nullptr;
+    WGPUInstance instance{};
 };
 
-#endif //SGL_DEBUGWRITER_HPP
+}}
+
+#endif //SGL_WEBGPU_INSTANCE_HPP

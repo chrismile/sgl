@@ -27,6 +27,11 @@
  */
 
 #include <string>
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten/emscripten.h>
+#endif
+
 #include <Utils/File/Logfile.hpp>
 #include <Utils/Timer.hpp>
 #include <Graphics/Window.hpp>
@@ -42,10 +47,14 @@
 #include <tracy/Tracy.hpp>
 
 #ifdef SUPPORT_VULKAN
-#include "Graphics/Vulkan/Utils/Swapchain.hpp"
-#include "Graphics/Vulkan/Render/Renderer.hpp"
+#include <Graphics/Vulkan/Utils/Swapchain.hpp>
+#include <Graphics/Vulkan/Render/Renderer.hpp>
 #endif
 
+#ifdef SUPPORT_WEBGPU
+#include <Graphics/WebGPU/Utils/Swapchain.hpp>
+#include <Graphics/WebGPU/Render/Renderer.hpp>
+#endif
 
 #include "AppLogic.hpp"
 
@@ -68,6 +77,12 @@ AppLogic::AppLogic() : framerateSmoother(16) {
         rendererVk = new sgl::vk::Renderer(sgl::AppSettings::get()->getPrimaryDevice());
     }
 #endif
+
+#ifdef SUPPORT_WEBGPU
+    if (sgl::AppSettings::get()->getWebGPUPrimaryDevice()) {
+        rendererWgpu = new sgl::webgpu::Renderer(sgl::AppSettings::get()->getWebGPUPrimaryDevice());
+    }
+#endif
 }
 
 AppLogic::~AppLogic() {
@@ -75,6 +90,13 @@ AppLogic::~AppLogic() {
     if (sgl::AppSettings::get()->getPrimaryDevice()) {
         delete rendererVk;
         rendererVk = nullptr;
+    }
+#endif
+
+#ifdef SUPPORT_WEBGPU
+    if (sgl::AppSettings::get()->getWebGPUPrimaryDevice()) {
+        delete rendererWgpu;
+        rendererWgpu = nullptr;
     }
 #endif
 }
@@ -100,100 +122,140 @@ void AppLogic::makeScreenshot() {
 }
 
 void AppLogic::run() {
-    Window *window = AppSettings::get()->getMainWindow();
+    window = AppSettings::get()->getMainWindow();
     // Used for only calling "updateFixed(...)" at fixed update rate
-    uint64_t accumulatedTimeFixed = 0;
-    int64_t fixedFPSInMicroSeconds = int64_t(1000000) / Timer->getFixedPhysicsFPS();
-    uint64_t fpsTimer = 0;
+    accumulatedTimeFixed = 0;
+    fixedFPSInMicroSeconds = int64_t(1000000) / Timer->getFixedPhysicsFPS();
+    fpsTimer = 0;
 
+#ifdef __EMSCRIPTEN__
+    auto mainLoopCallback = [](void *arg) {
+        auto* appLogic = reinterpret_cast<AppLogic*>(arg);
+        appLogic->runStep();
+        if (!appLogic->running) {
+            emscripten_cancel_main_loop();
+            delete appLogic;
+            sgl::AppSettings::get()->release();
+        }
+    };
+    emscripten_set_main_loop_arg(mainLoopCallback, (void*)this, 0, true);
+#else
     while (running) {
-        Timer->update();
-        accumulatedTimeFixed += Timer->getElapsedMicroseconds();
-
-        do {
-            updateFixed(float(Timer->getFixedPhysicsFPS()));
-            accumulatedTimeFixed -= fixedFPSInMicroSeconds;
-        } while(Timer->getFixedPhysicsFPSEnabled() && int64_t(accumulatedTimeFixed) >= fixedFPSInMicroSeconds);
-
-        bool windowRunning = window->processEvents();
-        running = running && windowRunning;
-
-        //float dt = Timer->getElapsedSeconds();
-        framerateSmoother.addSample(1.0f/Timer->getElapsedSeconds());
-        float dt = 1.0f / framerateSmoother.computeAverage();
-        Mouse->update(dt);
-        Keyboard->update(dt);
-        Gamepad->update(dt);
-        updateBase(dt);
-        update(dt);
-
-        // Decided to quit during update?
-        if (!running) {
-            break;
-        }
-
-        beginFrameMarker();
-
-        if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
-            window->clear(Color(0, 0, 0));
-        }
-#ifdef SUPPORT_VULKAN
-        if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
-            sgl::vk::Swapchain* swapchain = sgl::AppSettings::get()->getSwapchain();
-            if (swapchain) {
-                sgl::AppSettings::get()->getSwapchain()->beginFrame();
-            }
-        }
-        if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
-            rendererVk->beginCommandBuffer();
-        }
-#endif
-
-        render();
-
-#ifdef SUPPORT_VULKAN
-        if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
-            rendererVk->endCommandBuffer();
-            sgl::vk::Swapchain* swapchain = sgl::AppSettings::get()->getSwapchain();
-            if (swapchain) {
-                sgl::AppSettings::get()->getSwapchain()->renderFrame(rendererVk->getFrameCommandBuffers());
-            }
-        }
-#endif
-
-        if (uint64_t(abs((int64_t)fpsTimer - (int64_t)Timer->getTicksMicroseconds())) > fpsCounterUpdateFrequency) {
-            fps = 1.0f/dt;//Timer->getElapsedSeconds();
-            fpsTimer = Timer->getTicksMicroseconds();
-            if (printFPS) {
-                std::cout << fps << std::endl;
-            }
-        }
-
-        // Check for errors
-#ifdef SUPPORT_OPENGL
-        if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
-            Renderer->errorCheck();
-        }
-#endif
-        window->errorCheck();
-
-        if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
-            // Save a screenshot before flipping the backbuffer surfaces if necessary
-            if (screenshot) {
-                makeScreenshot();
-            }
-            Timer->waitForFPSLimit();
-            window->flip();
-        }
-
-        endFrameMarker();
-
-#ifdef TRACY_ENABLE
-        FrameMark;
-#endif
+        runStep();
     }
+#endif
 
     Logfile::get()->write("INFO: End of main loop.", BLUE);
+}
+
+void AppLogic::runStep() {
+    Timer->update();
+    accumulatedTimeFixed += Timer->getElapsedMicroseconds();
+
+    do {
+        updateFixed(float(Timer->getFixedPhysicsFPS()));
+        accumulatedTimeFixed -= fixedFPSInMicroSeconds;
+    } while(Timer->getFixedPhysicsFPSEnabled() && int64_t(accumulatedTimeFixed) >= fixedFPSInMicroSeconds);
+
+    bool windowRunning = window->processEvents();
+    running = running && windowRunning;
+
+    //float dt = Timer->getElapsedSeconds();
+    framerateSmoother.addSample(1.0f/Timer->getElapsedSeconds());
+    float dt = 1.0f / framerateSmoother.computeAverage();
+    Mouse->update(dt);
+    Keyboard->update(dt);
+    Gamepad->update(dt);
+    updateBase(dt);
+    update(dt);
+
+    // Decided to quit during update?
+    if (!running) {
+        return;
+    }
+
+    beginFrameMarker();
+
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
+        window->clear(Color(0, 0, 0));
+    }
+#ifdef SUPPORT_VULKAN
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+        auto* swapchain = sgl::AppSettings::get()->getSwapchain();
+        if (swapchain) {
+            swapchain->beginFrame();
+        }
+    }
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+        rendererVk->beginCommandBuffer();
+    }
+#endif
+
+#ifdef SUPPORT_WEBGPU
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::WEBGPU) {
+        auto* swapchain = sgl::AppSettings::get()->getWebGPUSwapchain();
+        if (swapchain) {
+            swapchain->beginFrame();
+        }
+    }
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::WEBGPU) {
+        rendererWgpu->beginCommandBuffer();
+    }
+#endif
+
+    render();
+
+#ifdef SUPPORT_VULKAN
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+        rendererVk->endCommandBuffer();
+        auto* swapchain = sgl::AppSettings::get()->getSwapchain();
+        if (swapchain) {
+            swapchain->renderFrame(rendererVk->getFrameCommandBuffers());
+        }
+    }
+#endif
+
+#ifdef SUPPORT_WEBGPU
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::WEBGPU) {
+        rendererWgpu->endCommandBuffer();
+        auto* swapchain = sgl::AppSettings::get()->getWebGPUSwapchain();
+        if (swapchain) {
+            swapchain->renderFrame(rendererWgpu->getFrameCommandBuffers());
+        }
+        rendererWgpu->freeFrameCommandBuffers();
+    }
+#endif
+
+    if (uint64_t(abs((int64_t)fpsTimer - (int64_t)Timer->getTicksMicroseconds())) > fpsCounterUpdateFrequency) {
+        fps = 1.0f/dt;//Timer->getElapsedSeconds();
+        fpsTimer = Timer->getTicksMicroseconds();
+        if (printFPS) {
+            std::cout << fps << std::endl;
+        }
+    }
+
+    // Check for errors
+#ifdef SUPPORT_OPENGL
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
+        Renderer->errorCheck();
+    }
+#endif
+    window->errorCheck();
+
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
+        // Save a screenshot before flipping the backbuffer surfaces if necessary
+        if (screenshot) {
+            makeScreenshot();
+        }
+        Timer->waitForFPSLimit();
+        window->flip();
+    }
+
+    endFrameMarker();
+
+#ifdef TRACY_ENABLE
+    FrameMark;
+#endif
 }
 
 void AppLogic::updateBase(float dt) {

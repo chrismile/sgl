@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2023, Christoph Neuhauser
+ * Copyright (c) 2024, Christoph Neuhauser
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,21 +26,37 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_DEBUGWRITER_HPP
-#define SGL_DEBUGWRITER_HPP
+#include "Instance.hpp"
 
-#include <string>
-#include <cstdlib>
-#include <Utils/Singleton.hpp>
+namespace sgl { namespace webgpu {
 
-class DebugWriter : public sgl::Singleton<DebugWriter> {
-public:
-    DebugWriter();
-    ~DebugWriter();
-    void write(const std::string& message);
+Instance::Instance() {
+}
 
-private:
-    FILE* file = nullptr;
-};
+Instance::~Instance() {
+    wgpuInstanceRelease(instance);
+}
 
-#endif //SGL_DEBUGWRITER_HPP
+void Instance::createInstance() {
+#ifdef WEBGPU_BACKEND_EMSCRIPTEN
+
+    instance = wgpuCreateInstance(nullptr);
+
+#else
+
+    WGPUInstanceDescriptor instanceDescriptor{};
+#ifdef WEBGPU_BACKEND_DAWN
+    // To simplify debugging, this makes sure error callbacks are called as soon as an error occurs.
+    WGPUDawnTogglesDescriptor dawnTogglesDescriptor{};
+    dawnTogglesDescriptor.chain.sType = WGPUSType_DawnTogglesDescriptor;
+    dawnTogglesDescriptor.enabledToggleCount = 1;
+    const char* toggleName = "enable_immediate_error_handling";
+    dawnTogglesDescriptor.enabledToggles = &toggleName;
+    instanceDescriptor.nextInChain = &dawnTogglesDescriptor.chain;
+#endif
+    instance = wgpuCreateInstance(&instanceDescriptor);
+
+#endif
+}
+
+}}
