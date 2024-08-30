@@ -3,7 +3,14 @@ cmake_policy(VERSION 3.7...3.30)
 project(sgl)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/CMake)
 #MESSAGE(STATUS "CMAKE_MODULE_PATH: " ${CMAKE_MODULE_PATH})
+
+# Eventuall, we will want to switch to C++20 for Emscripten to be able to use co_await and co_yield as a replacement for
+# emscripten_sleep with "-sASYNCIFY".
+#if (EMSCRIPTEN)
+#    set(CMAKE_CXX_STANDARD 20)
+#else()
 set(CMAKE_CXX_STANDARD 17)
+#endif()
 set(CMAKE_DEBUG_POSTFIX d)
 
 file(GLOB_RECURSE SOURCES src/*.cpp src/*.c src/*.hpp src/*.h)

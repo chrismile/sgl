@@ -968,13 +968,18 @@ void IGFD::SearchManager::Clear() {
 
 void IGFD::SearchManager::DrawSearchBar(FileDialogInternal& vFileDialogInternal) {
     // search field
+#if defined(__cpp_char8_t)
+    std::string resetButtonStringWithId = std::string(resetButtonString) + "##BtnImGuiFileDialogSearchField";
+    if (IMGUI_BUTTON(resetButtonStringWithId.c_str())) {
+#else
     if (IMGUI_BUTTON(resetButtonString "##BtnImGuiFileDialogSearchField")) {
+#endif
         Clear();
         vFileDialogInternal.fileManager.ApplyFilteringOnFileList(vFileDialogInternal);
     }
     if (ImGui::IsItemHovered()) ImGui::SetTooltip(buttonResetSearchString);
     ImGui::SameLine();
-    ImGui::Text(searchString);
+    ImGui::TextUnformatted(searchString);
     ImGui::SameLine();
     ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
     bool edited = ImGui::InputText("##InputImGuiFileDialogSearchField", searchBuffer, MAX_FILE_DIALOG_NAME_BUFFER);
@@ -2988,7 +2993,12 @@ bool IGFD::BookMarkFeature::m_DrawBookmarkPane(FileDialogInternal& vFileDialogIn
 
     static int selectedBookmarkForEdition = -1;
 
+#if defined(__cpp_char8_t)
+    std::string addBookmarkButtonStringWithId = std::string(addBookmarkButtonString) + "##ImGuiFileDialogAddBookmark";
+    if (IMGUI_BUTTON(addBookmarkButtonStringWithId.c_str())) {
+#else
     if (IMGUI_BUTTON(addBookmarkButtonString "##ImGuiFileDialogAddBookmark")) {
+#endif
         if (!vFileDialogInternal.fileManager.IsComposerEmpty()) {
             BookmarkStruct bookmark;
             bookmark.name = vFileDialogInternal.fileManager.GetBack();
@@ -2998,7 +3008,12 @@ bool IGFD::BookMarkFeature::m_DrawBookmarkPane(FileDialogInternal& vFileDialogIn
     }
     if (selectedBookmarkForEdition >= 0 && selectedBookmarkForEdition < (int)m_Bookmarks.size()) {
         ImGui::SameLine();
+#if defined(__cpp_char8_t)
+        std::string removeBookmarkButtonStringWithId = std::string(removeBookmarkButtonString) + "##ImGuiFileDialogAddBookmark";
+        if (IMGUI_BUTTON(removeBookmarkButtonStringWithId.c_str())) {
+#else
         if (IMGUI_BUTTON(removeBookmarkButtonString "##ImGuiFileDialogAddBookmark")) {
+#endif
             m_Bookmarks.erase(m_Bookmarks.begin() + selectedBookmarkForEdition);
             if (selectedBookmarkForEdition == (int)m_Bookmarks.size()) selectedBookmarkForEdition--;
         }
@@ -3785,7 +3800,12 @@ void IGFD::FileDialog::m_DisplayPathPopup(ImVec2 vSize) {
 bool IGFD::FileDialog::m_DrawOkButton() {
     auto& fdFile = m_FileDialogInternal.fileManager;
     if (m_FileDialogInternal.canWeContinue && strlen(fdFile.fileNameBuffer)) {
+#if defined(__cpp_char8_t)
+        std::string okButtonStringWithId = std::string(resetButtonString) + "##validationdialog";
+        if (IMGUI_BUTTON(okButtonStringWithId.c_str(), ImVec2(okButtonWidth, 0.0f)) || m_FileDialogInternal.isOk) {
+#else
         if (IMGUI_BUTTON(okButtonString "##validationdialog", ImVec2(okButtonWidth, 0.0f)) || m_FileDialogInternal.isOk) {
+#endif
             m_FileDialogInternal.isOk = true;
             return true;
         }
@@ -3799,7 +3819,12 @@ bool IGFD::FileDialog::m_DrawOkButton() {
 }
 
 bool IGFD::FileDialog::m_DrawCancelButton() {
+#if defined(__cpp_char8_t)
+    std::string cancelButtonStringWithId = std::string(cancelButtonString) + "##validationdialog";
+    if (IMGUI_BUTTON(cancelButtonStringWithId.c_str(), ImVec2(cancelButtonWidth, 0.0f)) || m_FileDialogInternal.needToExitDialog)  // dialog exit asked
+#else
     if (IMGUI_BUTTON(cancelButtonString "##validationdialog", ImVec2(cancelButtonWidth, 0.0f)) || m_FileDialogInternal.needToExitDialog)  // dialog exit asked
+#endif
     {
         m_FileDialogInternal.isOk = false;
         return true;

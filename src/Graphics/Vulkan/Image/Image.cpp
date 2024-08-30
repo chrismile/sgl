@@ -657,7 +657,7 @@ void Image::uploadData(
     memcpy(stagingBufferData, data, sizeInBytes);
     stagingBuffer->unmapMemory();
 
-    if (generateMipmaps && (imageSettings.memoryUsage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) == 0) {
+    if (generateMipmaps && (imageSettings.usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) == 0) {
         Logfile::get()->throwError(
                 "Error in Image::uploadData: Generating mipmaps is requested, but "
                 "VK_IMAGE_USAGE_TRANSFER_SRC_BIT is not set.");
@@ -687,7 +687,7 @@ void Image::generateMipmaps(VkCommandBuffer commandBuffer) {
         commandBuffer = device->beginSingleTimeCommands();
     }
 
-    if ((imageSettings.memoryUsage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) == 0) {
+    if ((imageSettings.usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) == 0) {
         Logfile::get()->throwError(
                 "Error in Image::generateMipmaps: Generating mipmaps is requested, but "
                 "VK_IMAGE_USAGE_TRANSFER_SRC_BIT is not set.");

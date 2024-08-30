@@ -65,7 +65,6 @@ class BufferView;
 typedef std::shared_ptr<BufferView> BufferViewPtr;
 
 struct DLL_OBJECT BufferSettings {
-    BufferSettings() = default;
     size_t sizeInBytes = 0;
     VkBufferUsageFlags usage = VkBufferUsageFlagBits(0);
     VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
