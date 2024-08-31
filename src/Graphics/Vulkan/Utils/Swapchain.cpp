@@ -35,7 +35,16 @@
 #include <Utils/Events/EventManager.hpp>
 
 #include <Graphics/Window.hpp>
+
+#ifdef SUPPORT_SDL2
 #include <SDL/SDLWindow.hpp>
+#include <SDL2/SDL_vulkan.h>
+#endif
+
+#ifdef SUPPORT_GLFW
+#include <GLFW/GlfwWindow.hpp>
+#include <GLFW/glfw3.h>
+#endif
 
 #include "../Render/CommandBuffer.hpp"
 #include "Device.hpp"
@@ -58,29 +67,43 @@ void Swapchain::create(Window* window) {
     }
     WindowSettings windowSettings = window->getWindowSettings();
 
-    auto* sdlWindow = static_cast<SDLWindow*>(window);
-    useDownloadSwapchain = sdlWindow->getUseDownloadSwapchain();
+    useDownloadSwapchain = window->getUseDownloadSwapchain();
     if (useDownloadSwapchain) {
-        SDL_Window* sdlWindowData = sdlWindow->getSDLWindow();
-        window->errorCheck();
-        cpuSurface = (void*)SDL_GetWindowSurface(sdlWindowData);
-        if (createFirstTime) {
-            /*
-             * For some reason, this triggers SDL_Unsupported when called for the first time on a system using xrdp.
-             * I tried not calling SDL_GetWindowSurface after initial window creation, but then no resize events are triggered.
-             * SDL_HasWindowSurface in case of SDL_VERSION_ATLEAST(2, 28, 0) should thus also not help in this use-case.
-             */
-            while (SDL_GetError()[0] != '\0') {
-                std::string errorString = SDL_GetError();
-                bool openMessageBox = true;
-                if (sgl::stringContains(errorString, "That operation is not supported")) {
-                    openMessageBox = false;
+#ifdef SUPPORT_SDL2
+        if (window->getBackend() == WindowBackend::SDL2_IMPL) {
+            auto* sdlWindow = static_cast<SDLWindow*>(window);
+            SDL_Window* sdlWindowData = sdlWindow->getSDLWindow();
+            window->errorCheck();
+            cpuSurface = (void*)SDL_GetWindowSurface(sdlWindowData);
+            if (createFirstTime) {
+                /*
+                 * For some reason, this triggers SDL_Unsupported when called for the first time on a system using xrdp.
+                 * I tried not calling SDL_GetWindowSurface after initial window creation, but then no resize events are triggered.
+                 * SDL_HasWindowSurface in case of SDL_VERSION_ATLEAST(2, 28, 0) should thus also not help in this use-case.
+                 */
+                while (SDL_GetError()[0] != '\0') {
+                    std::string errorString = SDL_GetError();
+                    bool openMessageBox = true;
+                    if (sgl::stringContains(errorString, "That operation is not supported")) {
+                        openMessageBox = false;
+                    }
+                    Logfile::get()->writeError(std::string() + "SDL error: " + errorString, openMessageBox);
+                    SDL_ClearError();
                 }
-                Logfile::get()->writeError(std::string() + "SDL error: " + errorString, openMessageBox);
-                SDL_ClearError();
             }
         }
-        swapchainExtent = { uint32_t(sdlWindow->getWidth()), uint32_t(sdlWindow->getHeight()) };
+#endif
+#ifdef SUPPORT_GLFW
+        if (window->getBackend() == WindowBackend::GLFW_IMPL) {
+            // GLFW seems to have no functionality like SDL_GetWindowSurface. While it might be possible to use the
+            // native API (https://www.glfw.org/docs/latest/group__native.html), this is currently not supported.
+            //cpuSurface = ...;
+            sgl::Logfile::get()->throwError(
+                    "Error in Swapchain::create: GLFW currently does not support the download swapchain.");
+        }
+#endif
+
+        swapchainExtent = { uint32_t(window->getWidth()), uint32_t(window->getHeight()) };
         swapchainImageFormat = VK_FORMAT_R8G8B8A8_UNORM;
         minImageCount = 1;
 
@@ -270,13 +293,21 @@ void Swapchain::createSwapchainImageViews() {
 void Swapchain::recreateSwapchain() {
     int windowWidth = 0;
     int windowHeight = 0;
-    auto* sdlWindow = static_cast<SDLWindow*>(window);
-    SDL_Window* sdlWindowData = sdlWindow->getSDLWindow();
     isWaitingForResizeEnd = true;
-    useDownloadSwapchain = sdlWindow->getUseDownloadSwapchain();
+    useDownloadSwapchain = window->getUseDownloadSwapchain();
     if (!useDownloadSwapchain) {
         while (windowWidth == 0 || windowHeight == 0) {
-            SDL_Vulkan_GetDrawableSize(sdlWindowData, &windowWidth, &windowHeight);
+#ifdef SUPPORT_SDL2
+            if (window->getBackend() == WindowBackend::SDL2_IMPL) {
+                SDL_Window* sdlWindowData = static_cast<SDLWindow*>(window)->getSDLWindow();
+                SDL_Vulkan_GetDrawableSize(sdlWindowData, &windowWidth, &windowHeight);
+            }
+#endif
+#ifdef SUPPORT_GLFW
+            if (window->getBackend() == WindowBackend::GLFW_IMPL) {
+                glfwGetFramebufferSize(static_cast<GlfwWindow*>(window)->getGlfwWindow(), &windowWidth, &windowHeight);
+            }
+#endif
             window->processEvents();
         }
     } else {
@@ -297,8 +328,7 @@ void Swapchain::recreateSwapchain() {
 }
 
 void Swapchain::beginFrame() {
-    auto* sdlWindow = static_cast<SDLWindow*>(window);
-    bool useDownloadSwapchain = sdlWindow->getUseDownloadSwapchain();
+    bool useDownloadSwapchain = window->getUseDownloadSwapchain();
     if (useDownloadSwapchain) {
         return;
     }
@@ -517,36 +547,46 @@ void Swapchain::renderFrame(const std::vector<sgl::vk::CommandBufferPtr>& comman
 }
 
 void Swapchain::downloadSwapchainRender() {
-    auto* sdlWindow = static_cast<SDLWindow*>(window);
-    auto* cpuSurfaceSdl = reinterpret_cast<SDL_Surface*>(cpuSurface);
-    //auto* cpuSurfaceWriteableSdl = reinterpret_cast<SDL_Surface*>(cpuSurfaceWriteable);
-
     int width = int(swapchainImageCpu->getImageSettings().width);
     int height = int(swapchainImageCpu->getImageSettings().height);
     VkSubresourceLayout subresourceLayout =
             swapchainImageCpu->getSubresourceLayout(VK_IMAGE_ASPECT_COLOR_BIT);
-
     auto* mappedData = reinterpret_cast<uint8_t*>(swapchainImageCpu->mapMemory());
-    auto* cpuSurfaceWriteableSdl = SDL_CreateRGBSurfaceFrom(
-            mappedData, width, height, 32, int(subresourceLayout.rowPitch),
-            0x000000FFu, 0x0000FF00u, 0x00FF0000u, 0xFF000000u);
-            //0x000000FFu, 0x0000FF00u, 0x00F0000u, 0xFF000000u);
-    /*SDL_LockSurface(cpuSurfaceWriteableSdl);
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            int writeLocation = (x + y * width) * 4;
-            int readLocation = int(subresourceLayout.offset) + x * 4 + int(subresourceLayout.rowPitch) * y;
-            for (int c = 0; c < 3; c++) {
-                bitmapPixels[writeLocation + c] = mappedData[readLocation + c];
+
+#ifdef SUPPORT_SDL2
+    if (window->getBackend() == WindowBackend::SDL2_IMPL) {
+        auto* sdlWindow = static_cast<SDLWindow*>(window);
+        auto* cpuSurfaceSdl = reinterpret_cast<SDL_Surface*>(cpuSurface);
+        //auto* cpuSurfaceWriteableSdl = reinterpret_cast<SDL_Surface*>(cpuSurfaceWriteable);
+        auto* cpuSurfaceWriteableSdl = SDL_CreateRGBSurfaceFrom(
+                mappedData, width, height, 32, int(subresourceLayout.rowPitch),
+                0x000000FFu, 0x0000FF00u, 0x00FF0000u, 0xFF000000u);
+        //0x000000FFu, 0x0000FF00u, 0x00F0000u, 0xFF000000u);
+        /*SDL_LockSurface(cpuSurfaceWriteableSdl);
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int writeLocation = (x + y * width) * 4;
+                int readLocation = int(subresourceLayout.offset) + x * 4 + int(subresourceLayout.rowPitch) * y;
+                for (int c = 0; c < 3; c++) {
+                    bitmapPixels[writeLocation + c] = mappedData[readLocation + c];
+                }
+                bitmapPixels[writeLocation + 3] = 255;
             }
-            bitmapPixels[writeLocation + 3] = 255;
         }
+        SDL_UnlockSurface(cpuSurfaceWriteableSdl);*/
+        SDL_BlitSurface(cpuSurfaceWriteableSdl, nullptr, cpuSurfaceSdl, nullptr);
+        SDL_FreeSurface(cpuSurfaceWriteableSdl);
+        SDL_UpdateWindowSurface(sdlWindow->getSDLWindow());
     }
-    SDL_UnlockSurface(cpuSurfaceWriteableSdl);*/
-    SDL_BlitSurface(cpuSurfaceWriteableSdl, NULL, cpuSurfaceSdl, NULL);
-    SDL_FreeSurface(cpuSurfaceWriteableSdl);
+#endif
+#ifdef SUPPORT_GLFW
+    if (window->getBackend() == WindowBackend::GLFW_IMPL) {
+        sgl::Logfile::get()->throwError(
+                "Error in Swapchain::downloadSwapchainRender: GLFW currently does not support the download swapchain.");
+    }
+#endif
+
     swapchainImageCpu->unmapMemory();
-    SDL_UpdateWindowSurface(sdlWindow->getSDLWindow());
 }
 
 void Swapchain::cleanupRecreate() {

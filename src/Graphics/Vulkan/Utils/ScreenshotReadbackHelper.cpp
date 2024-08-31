@@ -26,6 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <Utils/AppSettings.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Graphics/Texture/Bitmap.hpp>
 #include <Graphics/Vulkan/Utils/Device.hpp>

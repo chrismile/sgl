@@ -30,7 +30,11 @@
 #define INPUT_KEYBOARD_HPP_
 
 #include <Defs.hpp>
+#include <ImGui/imgui.h>
+
+#ifdef SUPPORT_SDL2
 #include <SDL2/SDL_keycode.h>
+#endif
 
 namespace sgl {
 
@@ -40,18 +44,27 @@ public:
     virtual void update(float dt)=0;
 
     /// Keyboard keys
-    /// SDLK - logical keys
+    /**
+     * Logical keys (SDLK).
+     * This function can take either SDLK or ImGuiKey values.
+     * The former is only supported for the SDL backend!
+     */
     virtual bool isKeyDown(int button)=0;
     virtual bool isKeyUp(int button)=0;
     virtual bool keyPressed(int button)=0;
     virtual bool keyReleased(int button)=0;
-    /// SDL_SCANCODE - physical keys
+    /**
+     * Physical keys (SDL_SCANCODE).
+     */
     virtual bool isScancodeDown(int button)=0;
     virtual bool isScancodeUp(int button)=0;
     virtual bool scancodePressed(int button)=0;
     virtual bool scancodeReleased(int button)=0;
     virtual int getNumKeys()=0;
+    virtual bool getModifier(ImGuiKey modifier)=0;
+#ifdef SUPPORT_SDL2
     virtual SDL_Keymod getModifier()=0;
+#endif
 
     /**
      * To support non-standard input methods a key buffer is needed.

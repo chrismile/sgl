@@ -28,8 +28,16 @@
 
 #include <utility>
 
-#include "SDL/SDLWindow.hpp"
+#include <Utils/AppSettings.hpp>
 #include "Dialog.hpp"
+
+#ifdef SUPPORT_SDL2
+#include <SDL/SDLWindow.hpp>
+#endif
+
+#ifdef SUPPORT_GLFW
+#include <GLFW/GlfwWindow.hpp>
+#endif
 
 // Avoid commdlg.h needs GDI, but GDI defined ERROR.
 #if defined(_WIN32) && defined(NOGDI)
@@ -104,17 +112,27 @@ void openMessageBoxModal(
         std::string const& text,
         sgl::Window* window,
         Icon icon) {
-    SDL_Window* sdlWindow = static_cast<SDLWindow*>(window)->getSDLWindow();
-    SDL_MessageBoxFlags flags = SDL_MESSAGEBOX_ERROR;
-    if (icon == Icon::ERROR) {
-        flags = SDL_MESSAGEBOX_ERROR;
-    } else if (icon == Icon::WARNING) {
-        flags = SDL_MESSAGEBOX_WARNING;
-    } else if (icon == Icon::INFO) {
-        flags = SDL_MESSAGEBOX_INFORMATION;
+#ifdef SUPPORT_SDL2
+    if (window->getBackend() == WindowBackend::SDL2_IMPL) {
+        SDL_Window* sdlWindow = static_cast<SDLWindow*>(window)->getSDLWindow();
+        SDL_MessageBoxFlags flags = SDL_MESSAGEBOX_ERROR;
+        if (icon == Icon::ERROR) {
+            flags = SDL_MESSAGEBOX_ERROR;
+        } else if (icon == Icon::WARNING) {
+            flags = SDL_MESSAGEBOX_WARNING;
+        } else if (icon == Icon::INFO) {
+            flags = SDL_MESSAGEBOX_INFORMATION;
+        }
+        SDL_ShowSimpleMessageBox(
+                flags, title.c_str(), text.c_str(), sdlWindow);
     }
-    SDL_ShowSimpleMessageBox(
-            flags, title.c_str(), text.c_str(), sdlWindow);
+#endif
+#ifdef SUPPORT_GLFW
+    if (window->getBackend() == WindowBackend::GLFW_IMPL) {
+        // TODO
+        openMessageBox(title, text, icon);
+    }
+#endif
 }
 
 void openMessageBoxModal(

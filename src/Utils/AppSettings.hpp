@@ -35,6 +35,8 @@
 #include <Defs.hpp>
 #include <Utils/Singleton.hpp>
 #include <Utils/Convert.hpp>
+#include <Graphics/Utils/RenderSystem.hpp>
+
 #ifdef SUPPORT_VULKAN
 #include <Graphics/Vulkan/Utils/Device.hpp>
 #endif
@@ -51,15 +53,6 @@ namespace vk { class Instance; class Device; class Swapchain; }
 #ifdef SUPPORT_WEBGPU
 namespace webgpu { class Instance; class Device; class Swapchain; }
 #endif
-
-// At the moment, only OpenGL and Vulkan are supported.
-enum class RenderSystem {
-    OPENGL, OPENGLES, VULKAN, WEBGPU, DIRECT3D_11, DIRECT3D_12, METAL
-};
-
-enum class OperatingSystem {
-    WINDOWS, LINUX, ANDROID, MACOS, IOS, UNKNOWN
-};
 
 class DLL_OBJECT SettingsFile {
 public:
@@ -131,6 +124,7 @@ class DLL_OBJECT AppSettings : public Singleton<AppSettings>
 {
 public:
     AppSettings();
+    void setWindowBackend(WindowBackend _windowBackend);
     void loadSettings(const char *filename);
     inline void setSaveSettings(bool _saveSettings) { saveSettings = _saveSettings; }
     inline SettingsFile &getSettings() { return settings; }
@@ -243,6 +237,7 @@ public:
     void getDesktopDisplayMode(int& width, int& height, int& refreshRate, int displayIndex = 0);
     glm::ivec2 getCurrentDisplayModeResolution(int displayIndex = 0);
     glm::ivec2 getDesktopResolution(int displayIndex = 0);
+    void captureMouse(bool _capture);
 
     // Get the directory where the application data is stored.
     [[nodiscard]] inline const std::string& getDataDirectory() const { return dataDirectory; }
@@ -255,6 +250,11 @@ private:
     bool saveSettings = true; ///< Whether to save the settings to a filename.
     RenderSystem renderSystem = RenderSystem::OPENGL;
     OperatingSystem operatingSystem;
+#ifdef SUPPORT_SDL2
+    WindowBackend windowBackend = WindowBackend::SDL2_IMPL;
+#else
+    WindowType windowBackend = WindowType::GLFW_IMPL;
+#endif
     Window* mainWindow = nullptr;
     std::string applicationDescription;
 
@@ -269,7 +269,9 @@ private:
     vk::Swapchain* swapchain = nullptr;
     std::vector<const char*> requiredInstanceExtensionNames;
     VulkanInteropCapabilities vulkanInteropCapabilities = VulkanInteropCapabilities::NOT_LOADED;
+#ifdef SUPPORT_SDL2
     bool sdlVulkanLibraryLoaded = false;
+#endif
     bool isDebugPrintfEnabled = false;
 #endif
 

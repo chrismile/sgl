@@ -55,6 +55,11 @@
 #include <Graphics/Vulkan/Render/Passes/BlitRenderPass.hpp>
 #endif
 
+#ifdef SUPPORT_GLFW
+#include <GLFW/GlfwWindow.hpp>
+#include <GLFW/glfw3.h>
+#endif
+
 #include <ImGui/ImGuiWrapper.hpp>
 #include <ImGui/imgui_internal.h>
 #include <ImGui/imgui_stdlib.h>
@@ -93,7 +98,12 @@ SciVisApp::SciVisApp(float fovy)
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
         device = sgl::AppSettings::get()->getPrimaryDevice();
         ImGuiWrapper::get()->setRendererVk(rendererVk);
-  }
+    }
+#endif
+#ifdef SUPPORT_WEBGPU
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::WEBGPU) {
+        ImGuiWrapper::get()->setRendererWgpu(rendererWgpu);
+    }
 #endif
 
     sgl::FileUtils::get()->ensureDirectoryExists(saveDirectoryScreenshots);
@@ -157,6 +167,26 @@ SciVisApp::SciVisApp(float fovy)
 
     fpsArray.resize(16, float(refreshRate));
     framerateSmoother = FramerateSmoother(1);
+
+#ifdef SUPPORT_GLFW
+    if (window->getBackend() == WindowBackend::GLFW_IMPL) {
+        static_cast<GlfwWindow*>(window)->setRefreshRateCallback([](int refreshRate) {
+            sgl::Logfile::get()->writeInfo("Desktop refresh rate: " + std::to_string(refreshRate) + " FPS");
+            bool useVsync = sgl::AppSettings::get()->getSettings().getBoolValue("window-vSync");
+            if (useVsync) {
+                sgl::Timer->setFPSLimit(true, refreshRate);
+            } else {
+                sgl::Timer->setFPSLimit(false, refreshRate);
+            }
+        });
+        static_cast<GlfwWindow*>(window)->setOnKeyCallback([this](int key, int scancode, int action, int mods) {
+            this->onKeyGlfw(key, scancode, action, mods);
+        });
+        static_cast<GlfwWindow*>(window)->setOnDropCallback([this](const std::vector<std::string>& droppedFiles) {
+            this->onDropGlfw(droppedFiles);
+        });
+    }
+#endif
 
 #ifdef SUPPORT_VULKAN
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
@@ -367,10 +397,11 @@ void SciVisApp::updateColorSpaceMode() {
 #endif
 }
 
+#ifdef SUPPORT_SDL2
 void SciVisApp::processSDLEvent(const SDL_Event &event) {
     if (event.type == SDL_KEYDOWN) {
         if ((useDockSpaceMode && event.key.keysym.sym == SDLK_q && (event.key.keysym.mod & KMOD_CTRL) != 0)
-                || (!useDockSpaceMode && event.key.keysym.sym == SDLK_ESCAPE)) {
+            || (!useDockSpaceMode && event.key.keysym.sym == SDLK_ESCAPE)) {
             quit();
         }
     }
@@ -383,6 +414,22 @@ void SciVisApp::processSDLEvent(const SDL_Event &event) {
 
     sgl::ImGuiWrapper::get()->processSDLEvent(event);
 }
+#endif
+
+#ifdef SUPPORT_GLFW
+void SciVisApp::onKeyGlfw(int key, int scancode, int action, int mods) {
+    if ((useDockSpaceMode && key == GLFW_KEY_Q && action == GLFW_PRESS && (mods & GLFW_MOD_CONTROL) != 0)
+            || (!useDockSpaceMode && key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)) {
+        glfwSetWindowShouldClose(static_cast<GlfwWindow*>(window)->getGlfwWindow(), GLFW_TRUE);
+        quit();
+    }
+}
+void SciVisApp::onDropGlfw(const std::vector<std::string>& droppedFiles) {
+    if (!droppedFiles.empty()) {
+        onFileDropped(droppedFiles[0]);
+    }
+}
+#endif
 
 /// Call pre-render in derived classes before the rendering logic, and post-render afterwards.
 void SciVisApp::preRender() {

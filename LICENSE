@@ -781,7 +781,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ----------------------------------------------------------------------------
 
-The following license applies to src/Graphics/WebGPU/libs/sdl2webgpu.{h,c}.
+The following license applies to src/Graphics/WebGPU/libs/{sdl2,glfw3}webgpu.{h,c}.
 
 MIT License
 Copyright (c) 2022-2024 Elie Michel

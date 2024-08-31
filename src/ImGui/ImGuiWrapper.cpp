@@ -29,14 +29,15 @@
 #include <iostream>
 #include <Utils/AppSettings.hpp>
 #include <Utils/File/Logfile.hpp>
-#include <SDL/SDLWindow.hpp>
-#include <SDL/HiDPI.hpp>
-#include <Graphics/OpenGL/SystemGL.hpp>
+#include <Graphics/Utils/HiDPI.hpp>
 
 #include "imgui.h"
+
 #ifdef SUPPORT_OPENGL
+#include <Graphics/OpenGL/SystemGL.hpp>
 #include "imgui_impl_opengl3.h"
 #endif
+
 #ifdef SUPPORT_VULKAN
 #include "imgui_impl_vulkan.h"
 #include <Graphics/Vulkan/Utils/Instance.hpp>
@@ -44,6 +45,7 @@
 #include <Graphics/Vulkan/Utils/Swapchain.hpp>
 #include <Graphics/Vulkan/Render/Renderer.hpp>
 #endif
+
 #ifdef SUPPORT_WEBGPU
 #include "imgui_impl_wgpu.h"
 #include <Graphics/WebGPU/Utils/Instance.hpp>
@@ -52,9 +54,20 @@
 #include <Graphics/WebGPU/Render/Renderer.hpp>
 #endif
 
+#ifdef SUPPORT_SDL2
+#include <SDL/SDLWindow.hpp>
+#include "imgui_impl_sdl2.h"
+#endif
+
+#ifdef SUPPORT_GLFW
+#include <GLFW/GlfwWindow.hpp>
+#include <GLFW/glfw3.h>
+#include "imgui_impl_glfw.h"
+#endif
+
+#include <memory>
 #include <tracy/Tracy.hpp>
 
-#include "imgui_impl_sdl2.h"
 #include "ImGuiFileDialog/CustomFont.cpp"
 #include "ImGuiWrapper.hpp"
 
@@ -94,12 +107,31 @@ void ImGuiWrapper::initialize(
 
 #if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN) || defined(SUPPORT_WEBGPU)
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
+    auto* window = AppSettings::get()->getMainWindow();
 #endif
 #ifdef SUPPORT_OPENGL
     if (renderSystem == RenderSystem::OPENGL) {
-        auto* window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
-        SDL_GLContext context = window->getGLContext();
-        ImGui_ImplSDL2_InitForOpenGL(window->getSDLWindow(), context);
+#ifdef SUPPORT_SDL2
+        if (window->getBackend() == WindowBackend::SDL2_IMPL) {
+            auto* sdlWindow = static_cast<SDLWindow*>(window);
+            SDL_GLContext context = sdlWindow->getGLContext();
+            if (!ImGui_ImplSDL2_InitForOpenGL(sdlWindow->getSDLWindow(), context)) {
+                sgl::Logfile::get()->writeError(
+                        "Error in ImGuiWrapper::initialize: ImGui_ImplSDL2_InitForOpenGL failed.");
+                return;
+            }
+        }
+#endif
+#ifdef SUPPORT_GLFW
+        if (window->getBackend() == WindowBackend::GLFW_IMPL) {
+            auto* glfwWindow = static_cast<GlfwWindow*>(window);
+            if (!ImGui_ImplGlfw_InitForOpenGL(glfwWindow->getGlfwWindow(), true)) {
+                sgl::Logfile::get()->writeError(
+                        "Error in ImGuiWrapper::initialize: ImGui_ImplGlfw_InitForOpenGL failed.");
+                return;
+            }
+        }
+#endif
         const char* glslVersion = "#version 430";
         if (!SystemGL::get()->openglVersionMinimum(4,3)) {
             glslVersion = nullptr; // Use standard
@@ -109,7 +141,6 @@ void ImGuiWrapper::initialize(
 #endif
 #ifdef SUPPORT_VULKAN
     if (renderSystem == RenderSystem::VULKAN) {
-        auto* window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
         vk::Device* device = AppSettings::get()->getPrimaryDevice();
 
         VkDescriptorPoolSize poolSizes[] = {
@@ -137,13 +168,50 @@ void ImGuiWrapper::initialize(
             sgl::Logfile::get()->throwError("Error in ImGuiWrapper::initialize: vkCreateDescriptorPool failed.");
         }
 
-        ImGui_ImplSDL2_InitForVulkan(window->getSDLWindow());
+#ifdef SUPPORT_SDL2
+        if (window->getBackend() == WindowBackend::SDL2_IMPL) {
+            auto* sdlWindow = static_cast<SDLWindow*>(window);
+            if (!ImGui_ImplSDL2_InitForVulkan(sdlWindow->getSDLWindow())) {
+                sgl::Logfile::get()->writeError(
+                        "Error in ImGuiWrapper::initialize: ImGui_ImplSDL2_InitForVulkan failed.");
+                return;
+            }
+        }
+#endif
+#ifdef SUPPORT_GLFW
+        if (window->getBackend() == WindowBackend::GLFW_IMPL) {
+            auto* glfwWindow = static_cast<GlfwWindow*>(window);
+            if (!ImGui_ImplGlfw_InitForVulkan(glfwWindow->getGlfwWindow(), true)) {
+                sgl::Logfile::get()->writeError(
+                        "Error in ImGuiWrapper::initialize: ImGui_ImplGlfw_InitForVulkan failed.");
+                return;
+            }
+        }
+#endif
     }
 #endif
 #ifdef SUPPORT_WEBGPU
     if (renderSystem == RenderSystem::WEBGPU) {
-        auto* window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
-        ImGui_ImplSDL2_InitForOther(window->getSDLWindow());
+#ifdef SUPPORT_SDL2
+        if (window->getBackend() == WindowBackend::SDL2_IMPL) {
+            auto* sdlWindow = static_cast<SDLWindow*>(window);
+            if (!ImGui_ImplSDL2_InitForOther(sdlWindow->getSDLWindow())) {
+                sgl::Logfile::get()->writeError(
+                        "Error in ImGuiWrapper::initialize: ImGui_ImplSDL2_InitForOther failed.");
+                return;
+            }
+        }
+#endif
+#ifdef SUPPORT_GLFW
+        if (window->getBackend() == WindowBackend::GLFW_IMPL) {
+            auto* glfwWindow = static_cast<GlfwWindow*>(window);
+            if (!ImGui_ImplGlfw_InitForOther(glfwWindow->getGlfwWindow(), true)) {
+                sgl::Logfile::get()->writeError(
+                        "Error in ImGuiWrapper::initialize: ImGui_ImplGlfw_InitForOther failed.");
+                return;
+            }
+        }
+#endif
 
         auto* device = sgl::AppSettings::get()->getWebGPUPrimaryDevice();
         auto* swapchain = sgl::AppSettings::get()->getWebGPUSwapchain();
@@ -243,13 +311,31 @@ void ImGuiWrapper::shutdown() {
         ImGui_ImplWGPU_Shutdown();
     }
 #endif
-    ImGui_ImplSDL2_Shutdown();
+
+    auto* window = AppSettings::get()->getMainWindow();
+#ifdef SUPPORT_SDL2
+    if (window->getBackend() == WindowBackend::SDL2_IMPL) {
+        ImGui_ImplSDL2_Shutdown();
+    }
+#endif
+#ifdef SUPPORT_GLFW
+    if (window->getBackend() == WindowBackend::GLFW_IMPL) {
+        ImGui_ImplGlfw_Shutdown();
+    }
+#endif
+
     ImGui::DestroyContext();
 }
 
+#ifdef SUPPORT_SDL2
 void ImGuiWrapper::processSDLEvent(const SDL_Event &event) {
     ImGui_ImplSDL2_ProcessEvent(&event);
 }
+#endif
+
+#ifdef SUPPORT_GLFW
+// Not necessary at the moment, as we install the callbacks with ImGui.
+#endif
 
 #ifdef SUPPORT_VULKAN
 void ImGuiWrapper::setVkRenderTarget(vk::ImageViewPtr &imageView) {
@@ -263,8 +349,7 @@ void ImGuiWrapper::setVkRenderTarget(vk::ImageViewPtr &imageView) {
     attachmentState.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     attachmentState.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    framebuffer = vk::FramebufferPtr(new vk::Framebuffer(
-            device, window->getWidth(), window->getHeight()));
+    framebuffer = std::make_shared<vk::Framebuffer>(device, window->getWidth(), window->getHeight());
     framebuffer->setColorAttachment(imageView, 0, attachmentState);
 }
 
@@ -281,7 +366,7 @@ void ImGuiWrapper::onResolutionChanged() {
 
         /// 2024-06-22: ImGui_ImplVulkan_SetMinImageCount in imgui_impl_vulkan.cpp does not support variable minimum
         /// image counts in the docking branch, but Wayland seems to use them.
-        auto* window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
+        auto* window = AppSettings::get()->getMainWindow();
         if (window->getUsesAnyWaylandBackend()) {
             ImGui_ImplVulkan_SetMinImageCount(swapchain->getNumImages());
         } else {
@@ -304,7 +389,7 @@ void ImGuiWrapper::onResolutionChanged() {
 void ImGuiWrapper::renderStart() {
     ZoneScopedN("ImGuiWrapper::renderStart");
 
-    SDLWindow* window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
+    auto* window = AppSettings::get()->getMainWindow();
 #if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN) || defined(SUPPORT_WEBGPU)
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
 #endif
@@ -325,7 +410,6 @@ void ImGuiWrapper::renderStart() {
         initInfo.DescriptorPool = imguiDescriptorPool;
         /// 2024-06-22: ImGui_ImplVulkan_SetMinImageCount in imgui_impl_vulkan.cpp does not support variable minimum
         /// image counts in the docking branch, but Wayland seems to use them.
-        auto* window = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
         if (window->getUsesAnyWaylandBackend()) {
             initInfo.MinImageCount = swapchain->getNumImages();
         } else {
@@ -364,7 +448,19 @@ void ImGuiWrapper::renderStart() {
         ImGui_ImplWGPU_NewFrame();
     }
 #endif
-    ImGui_ImplSDL2_NewFrame(window->getSDLWindow());
+
+#ifdef SUPPORT_SDL2
+    if (window->getBackend() == WindowBackend::SDL2_IMPL) {
+        auto* sdlWindow = static_cast<SDLWindow*>(window);
+        ImGui_ImplSDL2_NewFrame(sdlWindow->getSDLWindow());
+    }
+#endif
+#ifdef SUPPORT_GLFW
+    if (window->getBackend() == WindowBackend::GLFW_IMPL) {
+        ImGui_ImplGlfw_NewFrame();
+    }
+#endif
+
     ImGui::NewFrame();
 }
 
@@ -461,8 +557,19 @@ void ImGuiWrapper::renderEnd() {
 #ifdef SUPPORT_OPENGL
         if (renderSystem == RenderSystem::OPENGL) {
             ZoneScopedN("SDL_GL_MakeCurrent");
-            SDLWindow* sdlWindow = (SDLWindow*)AppSettings::get()->getMainWindow();
-            SDL_GL_MakeCurrent(sdlWindow->getSDLWindow(), sdlWindow->getGLContext());
+            auto* window = AppSettings::get()->getMainWindow();
+#ifdef SUPPORT_SDL2
+            if (window->getBackend() == WindowBackend::SDL2_IMPL) {
+                auto* sdlWindow = static_cast<SDLWindow*>(window);
+                SDL_GL_MakeCurrent(sdlWindow->getSDLWindow(), sdlWindow->getGLContext());
+            }
+#endif
+#ifdef SUPPORT_GLFW
+            if (window->getBackend() == WindowBackend::GLFW_IMPL) {
+                auto* glfwWindow = static_cast<GlfwWindow*>(window);
+                glfwMakeContextCurrent(glfwWindow->getGlfwWindow());
+            }
+#endif
         }
 #endif
     }

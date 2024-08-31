@@ -39,51 +39,51 @@ bool FirstPersonNavigator::moveCameraKeyboard(sgl::CameraPtr &camera, float dt) 
     bool reRender = false;
 
     // Rotate scene around camera origin
-    if (sgl::Keyboard->isKeyDown(SDLK_q)) {
+    if (sgl::Keyboard->isKeyDown(ImGuiKey_Q)) {
         camera->rotateYaw(-1.9f*dt * MOVE_SPEED);
         reRender = true;
     }
-    if (sgl::Keyboard->isKeyDown(SDLK_e)) {
+    if (sgl::Keyboard->isKeyDown(ImGuiKey_E)) {
         camera->rotateYaw(1.9f*dt * MOVE_SPEED);
         reRender = true;
     }
-    if (sgl::Keyboard->isKeyDown(SDLK_r)) {
+    if (sgl::Keyboard->isKeyDown(ImGuiKey_R)) {
         camera->rotatePitch(1.9f*dt * MOVE_SPEED);
         reRender = true;
     }
-    if (sgl::Keyboard->isKeyDown(SDLK_f)) {
+    if (sgl::Keyboard->isKeyDown(ImGuiKey_F)) {
         camera->rotatePitch(-1.9f*dt * MOVE_SPEED);
         reRender = true;
     }
 
     glm::mat4 rotationMatrix = camera->getRotationMatrix();
     glm::mat4 invRotationMatrix = glm::inverse(rotationMatrix);
-    if (sgl::Keyboard->isKeyDown(SDLK_PAGEDOWN)) {
+    if (sgl::Keyboard->isKeyDown(ImGuiKey_PageDown)) {
         camera->translate(sgl::transformPoint(
                 invRotationMatrix, glm::vec3(0.0f, -dt * MOVE_SPEED, 0.0f)));
         reRender = true;
     }
-    if (sgl::Keyboard->isKeyDown(SDLK_PAGEUP)) {
+    if (sgl::Keyboard->isKeyDown(ImGuiKey_PageUp)) {
         camera->translate(sgl::transformPoint(
                 invRotationMatrix, glm::vec3(0.0f, dt * MOVE_SPEED, 0.0f)));
         reRender = true;
     }
-    if (sgl::Keyboard->isKeyDown(SDLK_DOWN) || sgl::Keyboard->isKeyDown(SDLK_s)) {
+    if (sgl::Keyboard->isKeyDown(ImGuiKey_DownArrow) || sgl::Keyboard->isKeyDown(ImGuiKey_S)) {
         camera->translate(sgl::transformPoint(
                 invRotationMatrix, glm::vec3(0.0f, 0.0f, dt * MOVE_SPEED)));
         reRender = true;
     }
-    if (sgl::Keyboard->isKeyDown(SDLK_UP) || sgl::Keyboard->isKeyDown(SDLK_w)) {
+    if (sgl::Keyboard->isKeyDown(ImGuiKey_UpArrow) || sgl::Keyboard->isKeyDown(ImGuiKey_W)) {
         camera->translate(sgl::transformPoint(
                 invRotationMatrix, glm::vec3(0.0f, 0.0f, -dt * MOVE_SPEED)));
         reRender = true;
     }
-    if (sgl::Keyboard->isKeyDown(SDLK_LEFT) || sgl::Keyboard->isKeyDown(SDLK_a)) {
+    if (sgl::Keyboard->isKeyDown(ImGuiKey_LeftArrow) || sgl::Keyboard->isKeyDown(ImGuiKey_A)) {
         camera->translate(sgl::transformPoint(
                 invRotationMatrix, glm::vec3(-dt * MOVE_SPEED, 0.0f, 0.0f)));
         reRender = true;
     }
-    if (sgl::Keyboard->isKeyDown(SDLK_RIGHT) || sgl::Keyboard->isKeyDown(SDLK_d)) {
+    if (sgl::Keyboard->isKeyDown(ImGuiKey_RightArrow) || sgl::Keyboard->isKeyDown(ImGuiKey_D)) {
         camera->translate(sgl::transformPoint(
                 invRotationMatrix, glm::vec3(dt * MOVE_SPEED, 0.0f, 0.0f)));
         reRender = true;
@@ -95,7 +95,7 @@ bool FirstPersonNavigator::moveCameraKeyboard(sgl::CameraPtr &camera, float dt) 
 bool FirstPersonNavigator::moveCameraMouse(sgl::CameraPtr &camera, float dt) {
     bool reRender = false;
 
-    if (!(sgl::Keyboard->getModifier() & (KMOD_CTRL | KMOD_SHIFT))) {
+    if (!sgl::Keyboard->getModifier(ImGuiKey_ModCtrl) && !sgl::Keyboard->getModifier(ImGuiKey_ModShift)) {
         // Zoom in/out
         if (sgl::Mouse->getScrollWheel() > 0.1 || sgl::Mouse->getScrollWheel() < -0.1) {
             glm::mat4 rotationMatrix = camera->getRotationMatrix();

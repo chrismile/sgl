@@ -31,7 +31,10 @@
 
 #include <iostream>
 #include <memory>
+
+#ifdef SUPPORT_SDL2
 #include <SDL2/SDL.h>
+#endif
 
 #ifdef SUPPORT_VULKAN
 #include <Graphics/Vulkan/libs/volk/volk.h>
@@ -64,7 +67,9 @@ public:
     /// Override these functions in the derived classes
     virtual void update(float dt) {} // Called once per rendered frame
     virtual void updateFixed(float dt) {} // Called at a fixed rate (e.g. for physics simulation)
+#ifdef SUPPORT_SDL2
     virtual void processSDLEvent(const SDL_Event &event) {}
+#endif
     virtual void resolutionChanged(EventPtr event) {}
     virtual void render() {}
 

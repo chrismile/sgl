@@ -49,7 +49,7 @@ bool TurntableNavigator::moveCameraMouse(sgl::CameraPtr &camera, float dt) {
                 glm::dot(camera->getCameraUp(), camera->getCameraGlobalUp()) > 0.0f ? 1 : -1;
     }
 
-    if (!(sgl::Keyboard->getModifier() & (KMOD_CTRL | KMOD_SHIFT))) {
+    if (!sgl::Keyboard->getModifier(ImGuiKey_ModCtrl) && !sgl::Keyboard->getModifier(ImGuiKey_ModShift)) {
         // Zoom in/out.
         if (sgl::Mouse->getScrollWheel() > 0.1 || sgl::Mouse->getScrollWheel() < -0.1) {
             // The scrolling distance depends on the distance between camera and look-at position.
@@ -101,7 +101,7 @@ bool TurntableNavigator::moveCameraMouse(sgl::CameraPtr &camera, float dt) {
 
     // Move look-at position.
     if (sgl::Mouse->isButtonDown(turntableMouseButtonIndex) && sgl::Mouse->mouseMoved()
-        && (sgl::Keyboard->getModifier() & KMOD_SHIFT) != 0) {
+            && sgl::Keyboard->getModifier(ImGuiKey_ModShift)) {
         sgl::Point2 mouseDiff = sgl::Mouse->mouseMovement();
         glm::vec3 lookAt = camera->getLookAtLocation();
         glm::vec3 lookOffset = camera->getPosition() - camera->getLookAtLocation();

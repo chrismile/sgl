@@ -29,16 +29,35 @@
 #include <chrono>
 #include <thread>
 
+#ifdef SUPPORT_SDL2
 #include <SDL2/SDL.h>
+#endif
 
+#ifdef SUPPORT_GLFW
+#include <GLFW/glfw3.h>
+#endif
+
+#include <Utils/AppSettings.hpp>
+#include <Graphics/Window.hpp>
 #include "Timer.hpp"
 
 namespace sgl {
 
 TimerInterface::TimerInterface() : currentTime(0), lastTime(0), elapsedMicroSeconds(0),
         fpsLimitEnabled(true), fpsLimit(60), fixedPhysicsFPSEnabled(true), physicsFPS(60) {
-    perfFreq = SDL_GetPerformanceFrequency();
-    startFrameTime = SDL_GetPerformanceCounter();
+    auto* window = AppSettings::get()->getMainWindow();
+#ifdef SUPPORT_SDL2
+    if (window->getBackend() == WindowBackend::SDL2_IMPL) {
+        perfFreq = SDL_GetPerformanceFrequency();
+        startFrameTime = SDL_GetPerformanceCounter();
+    }
+#endif
+#ifdef SUPPORT_GLFW
+    if (window->getBackend() == WindowBackend::GLFW_IMPL) {
+        perfFreq = glfwGetTimerFrequency();
+        startFrameTime = glfwGetTimerValue();
+    }
+#endif
 }
 
 void TimerInterface::sleepMilliseconds(unsigned int milliseconds) {
@@ -82,15 +101,28 @@ void TimerInterface::update() {
     }
 }
 
-uint64_t TimerInterface::getTicksMicroseconds() const
-{
-    /*auto now = std::chrono::high_resolution_clock::now();
+uint64_t TimerInterface::getTicksMicroseconds() const {
+    auto* window = AppSettings::get()->getMainWindow();
+#ifdef SUPPORT_SDL2
+    if (window->getBackend() == WindowBackend::SDL2_IMPL) {
+        auto _currentTime =
+                uint64_t(static_cast<double>(SDL_GetPerformanceCounter() - startFrameTime) / double(perfFreq) * 1e6);
+        return _currentTime;
+    }
+#endif
+
+#ifdef SUPPORT_GLFW
+    if (window->getBackend() == WindowBackend::GLFW_IMPL) {
+        auto _currentTime =
+                uint64_t(static_cast<double>(glfwGetTimerValue() - startFrameTime) / double(perfFreq) * 1e6);
+        return _currentTime;
+    }
+#endif
+
+    auto now = std::chrono::high_resolution_clock::now();
     auto duration = now.time_since_epoch();
     auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
-    return microseconds;*/
-    uint64_t _currentTime =
-            uint64_t(static_cast<double>(SDL_GetPerformanceCounter() - startFrameTime) / double(perfFreq) * 1e6);
-    return _currentTime;
+    return microseconds;
 }
 
 }

@@ -85,7 +85,13 @@ public:
     //void render();
     void update(float dt) override;
     void resolutionChanged(sgl::EventPtr event) override;
+#ifdef SUPPORT_SDL2
     void processSDLEvent(const SDL_Event &event) override;
+#endif
+#ifdef SUPPORT_GLFW
+    void onKeyGlfw(int key, int scancode, int action, int mods);
+    void onDropGlfw(const std::vector<std::string>& droppedFiles);
+#endif
 
     /// Override screenshot function to exclude GUI (if wanted by the user)
     void saveScreenshot(const std::string &filename) override;

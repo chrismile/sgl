@@ -34,7 +34,6 @@
 
 #include <Utils/File/Logfile.hpp>
 #include <Utils/Events/EventManager.hpp>
-#include <SDL/SDLWindow.hpp>
 
 #include "Device.hpp"
 #include "Swapchain.hpp"
@@ -50,14 +49,19 @@ Swapchain::~Swapchain() {
 
 void Swapchain::create(Window* window) {
     this->window = window;
-    auto* sdlWindow = static_cast<SDLWindow*>(window);
-    if (sdlWindow) {
-        surface = sdlWindow->getWebGPUSurface();
+    if (window) {
+        surface = window->getWebGPUSurface();
     }
     if (!surface) {
         sgl::Logfile::get()->throwError("Error in Swapchain::create: Surface is nullptr.");
     }
     WindowSettings windowSettings = window->getWindowSettings();
+
+    if (windowSettings.pixelWidth == 0 || windowSettings.pixelHeight == 0) {
+        validPixelSize = false;
+        return;
+    }
+    validPixelSize = true;
 
     WGPUSurfaceConfiguration config{};
     config.width = uint32_t(windowSettings.pixelWidth);
@@ -91,11 +95,13 @@ void Swapchain::recreateSwapchain() {
 
     // Recreate framebuffer, pipeline, ...
     // For the moment, a resolution changed event is additionally triggered to be compatible with OpenGL.
-    EventManager::get()->triggerEvent(std::make_shared<Event>(RESOLUTION_CHANGED_EVENT));
+    if (validPixelSize) {
+        EventManager::get()->triggerEvent(std::make_shared<Event>(RESOLUTION_CHANGED_EVENT));
+    }
 }
 
 void Swapchain::cleanupRecreate() {
-    if (surface) {
+    if (surface && validPixelSize) {
         wgpuSurfaceUnconfigure(surface);
         surface = {};
     }
@@ -117,12 +123,19 @@ static std::map<WGPUSurfaceGetCurrentTextureStatus, std::string> surfaceTextureS
 #endif
 };
 
-void Swapchain::beginFrame() {
+bool Swapchain::beginFrame() {
+    if (!validPixelSize) {
+        return false;
+    }
+
     WGPUSurfaceTexture surfaceTexture;
     wgpuSurfaceGetCurrentTexture(surface, &surfaceTexture);
     if (surfaceTexture.status == WGPUSurfaceGetCurrentTextureStatus_Outdated) {
+        if (surfaceTexture.texture != nullptr) {
+            wgpuTextureRelease(surfaceTexture.texture);
+        }
         recreateSwapchain();
-        return;
+        return false;
     } else if (surfaceTexture.status != WGPUSurfaceGetCurrentTextureStatus_Success) {
         auto it = surfaceTextureStatusNameMap.find(surfaceTexture.status);
         if (it != surfaceTextureStatusNameMap.end()) {
@@ -131,6 +144,10 @@ void Swapchain::beginFrame() {
         } else {
             sgl::Logfile::get()->throwError("Error in Swapchain::beginFrame: Failed to acquire surface texture!");
         }
+        if (surfaceTexture.texture != nullptr) {
+            wgpuTextureRelease(surfaceTexture.texture);
+        }
+        return false;
     }
 
     WGPUTextureViewDescriptor viewDescriptor{};
@@ -146,6 +163,9 @@ void Swapchain::beginFrame() {
     if (!currentTextureView) {
         sgl::Logfile::get()->throwError("Error in Swapchain::beginFrame: wgpuTextureCreateView failed!");
     }
+    currentTexture = surfaceTexture.texture;
+
+    return true;
 }
 
 static std::map<WGPUQueueWorkDoneStatus, std::string> queueWorkDoneStatusNameMap = {
@@ -174,10 +194,14 @@ void Swapchain::renderFrame(const std::vector<WGPUCommandBuffer>& commandBuffers
     };
     wgpuQueueOnSubmittedWorkDone(device->getWGPUQueue(), onQueueWorkDone, nullptr);
 
-    wgpuTextureViewRelease(currentTextureView);
 #ifndef __EMSCRIPTEN__
     wgpuSurfacePresent(surface);
 #endif
+
+    wgpuTextureViewRelease(currentTextureView);
+    wgpuTextureRelease(currentTexture);
+    currentTextureView = {};
+    currentTexture = {};
 
 #if defined(WEBGPU_BACKEND_DAWN)
     wgpuDeviceTick(device->getWGPUDevice());

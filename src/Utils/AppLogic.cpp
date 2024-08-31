@@ -56,6 +56,10 @@
 #include <Graphics/WebGPU/Render/Renderer.hpp>
 #endif
 
+#ifdef SUPPORT_SDL2
+#include <SDL/SDLWindow.hpp>
+#endif
+
 #include "AppLogic.hpp"
 
 namespace sgl {
@@ -69,8 +73,14 @@ AppLogic::AppLogic() : framerateSmoother(16) {
     printFPS = true;
     fps = 60.0f;
 
-    Window *window = AppSettings::get()->getMainWindow();
-    window->setEventHandler([this](const SDL_Event &event) { this->processSDLEvent(event); });
+#ifdef SUPPORT_SDL2
+    window = AppSettings::get()->getMainWindow();
+    if (window->getBackend() == WindowBackend::SDL2_IMPL) {
+        static_cast<SDLWindow*>(window)->setEventHandler([this](const SDL_Event &event) {
+            this->processSDLEvent(event);
+        });
+    }
+#endif
 
 #ifdef SUPPORT_VULKAN
     if (sgl::AppSettings::get()->getPrimaryDevice()) {
@@ -168,6 +178,7 @@ void AppLogic::runStep() {
     Gamepad->update(dt);
     updateBase(dt);
     update(dt);
+    Keyboard->clearKeyBuffer(); //< getKeyBuffer can be used in child class update.
 
     // Decided to quit during update?
     if (!running) {
@@ -192,18 +203,25 @@ void AppLogic::runStep() {
 #endif
 
 #ifdef SUPPORT_WEBGPU
+    bool swapchainValid = true;
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::WEBGPU) {
         auto* swapchain = sgl::AppSettings::get()->getWebGPUSwapchain();
         if (swapchain) {
-            swapchain->beginFrame();
+            swapchainValid = swapchain->beginFrame();
         }
     }
-    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::WEBGPU) {
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::WEBGPU && swapchainValid) {
         rendererWgpu->beginCommandBuffer();
     }
 #endif
 
+#ifdef SUPPORT_WEBGPU
+    if (swapchainValid) {
+        render();
+    }
+#else
     render();
+#endif
 
 #ifdef SUPPORT_VULKAN
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
@@ -216,7 +234,7 @@ void AppLogic::runStep() {
 #endif
 
 #ifdef SUPPORT_WEBGPU
-    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::WEBGPU) {
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::WEBGPU && swapchainValid) {
         rendererWgpu->endCommandBuffer();
         auto* swapchain = sgl::AppSettings::get()->getWebGPUSwapchain();
         if (swapchain) {
@@ -260,11 +278,11 @@ void AppLogic::runStep() {
 
 void AppLogic::updateBase(float dt) {
     EventManager::get()->update();
-    if (Keyboard->keyPressed(SDLK_PRINTSCREEN)
-            || ((Keyboard->getModifier()&KMOD_CTRL) && Keyboard->keyPressed(SDLK_p))) {
+    if (Keyboard->keyPressed(ImGuiKey_PrintScreen)
+            || (Keyboard->getModifier(ImGuiKey_ModCtrl) && Keyboard->keyPressed(ImGuiKey_P))) {
         screenshot = true;
     }
-    if (Keyboard->keyPressed(SDLK_RETURN) && (Keyboard->getModifier()&KMOD_ALT)) {
+    if (Keyboard->keyPressed(ImGuiKey_Enter) && Keyboard->getModifier(ImGuiKey_ModAlt)) {
         Logfile::get()->writeInfo("Switching to fullscreen (ALT-TAB)");
         AppSettings::get()->getMainWindow()->toggleFullscreen();
     }

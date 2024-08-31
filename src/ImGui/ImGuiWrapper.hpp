@@ -55,7 +55,9 @@ class Renderer;
 }}
 #endif
 
+#ifdef SUPPORT_SDL2
 union SDL_Event;
+#endif
 
 namespace sgl {
 
@@ -68,7 +70,7 @@ const int LOCATION_BOTTOM = 0x8;
 class DLL_OBJECT ImGuiWrapper : public Singleton<ImGuiWrapper> {
 public:
     /**
-     * Initializes ImGui for use with SDL and OpenGL.
+     * Initializes ImGui for use with SDL or GLFW as window manager, and OpenGL, Vulkan or WebGPU as graphics backend.
      * @param fontRangesData The range of the font to be loaded in the texture atlas.
      * For more details @see ImFontGlyphRangesBuilder.
      * @param useDocking Whether to enable docking windows.
@@ -108,7 +110,9 @@ public:
     // Insert your ImGui code between "renderStart" and "renderEnd".
     void renderStart();
     void renderEnd();
+#ifdef SUPPORT_SDL2
     void processSDLEvent(const SDL_Event &event);
+#endif
     void onResolutionChanged();
 
     // Utility functions for dock space mode.

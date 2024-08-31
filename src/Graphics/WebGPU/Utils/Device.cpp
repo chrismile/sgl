@@ -26,6 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <map>
+
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #endif
@@ -35,7 +37,7 @@
 
 #include <Utils/StringUtils.hpp>
 #include <Utils/File/Logfile.hpp>
-#include <SDL/SDLWindow.hpp>
+#include <Graphics/Window.hpp>
 #include "Instance.hpp"
 #include "Device.hpp"
 
@@ -154,7 +156,7 @@ void Device::createInternal(
         std::optional<WGPULimits> optionalLimits) {
     WGPURequestAdapterOptions requestAdapterOptions{};
     if (window) {
-        requestAdapterOptions.compatibleSurface = static_cast<SDLWindow*>(window)->getWebGPUSurface();
+        requestAdapterOptions.compatibleSurface = window->getWebGPUSurface();
     }
     requestAdapterOptions.powerPreference = powerPreference;
     //requestAdapterOptions.backendType = xxx; //< Could be used for Vulkan interop possibility...

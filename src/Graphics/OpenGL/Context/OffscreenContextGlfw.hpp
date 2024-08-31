@@ -68,6 +68,7 @@ public:
 private:
     bool isInitialized = false;
     bool glfwInitCalled = false;
+    bool isGlfwInitializedExternally = false;
 #ifdef _WIN32
     HMODULE glfwHandle = nullptr;
 #else

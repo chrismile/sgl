@@ -31,7 +31,29 @@
 
 #include <Utils/AppSettings.hpp>
 #include <Utils/File/Logfile.hpp>
-#include "SDLWindow.hpp"
+
+#ifdef SUPPORT_SDL2
+#include <SDL/SDLWindow.hpp>
+#endif
+
+#ifdef SUPPORT_GLFW
+#include <GLFW/glfw3.h>
+
+// Fallback for older versions of GLFW
+#if !(GLFW_VERSION_MAJOR >= 3 && GLFW_VERSION_MINOR >= 4)
+#if defined(__linux__)
+// We will assume a system with an old GLFW version will most likely not use Wayland, but X11.
+#define GLFW_EXPOSE_NATIVE_X11
+#endif
+#endif
+
+#ifndef __EMSCRIPTEN__
+#ifdef _GLFW_X11
+#define GLFW_EXPOSE_NATIVE_X11
+#endif
+#endif // __EMSCRIPTEN__
+#include <GLFW/glfw3native.h>
+#endif // SUPPORT_GLFW
 
 #include "HiDPI.hpp"
 
@@ -122,38 +144,90 @@ float getHighDPIScaleFactor() {
     scaleFactorRetrieved = true;
 
     bool scaleFactorSetManually = false;
-    auto* window = static_cast<sgl::SDLWindow*>(sgl::AppSettings::get()->getMainWindow());
-    window->errorCheck();
-    SDL_Window* sdlWindow = window->getSDLWindow();
-    SDL_SysWMinfo wminfo;
-    SDL_VERSION(&wminfo.version);
-    auto succeeded = SDL_GetWindowWMInfo(sdlWindow, &wminfo);
+
+    bool allowHighDPI = false;
+    bool isWayland = false;
+    bool isCocoa = false;
+    auto* window = sgl::AppSettings::get()->getMainWindow();
+#ifdef SUPPORT_SDL2
+    if (window->getBackend() == WindowBackend::SDL2_IMPL) {
+        window->errorCheck();
+        SDL_Window* sdlWindow = static_cast<sgl::SDLWindow*>(window)->getSDLWindow();
+        SDL_SysWMinfo wminfo;
+        SDL_VERSION(&wminfo.version);
+        auto succeeded = SDL_GetWindowWMInfo(sdlWindow, &wminfo);
 #ifdef __EMSCRIPTEN__
-    // For whatever reason, we get "SDL error: That operation is not supported" after SDL_GetWindowWMInfo.
+        // For whatever reason, we get "SDL error: That operation is not supported" after SDL_GetWindowWMInfo.
     window->errorCheckIgnoreUnsupportedOperation();
 #endif
-    if (succeeded) {
-        switch (wminfo.subsystem) {
-            case SDL_SYSWM_X11:
+        if (succeeded) {
+            switch (wminfo.subsystem) {
+                case SDL_SYSWM_X11:
 #if defined(SDL_VIDEO_DRIVER_X11)
-                scaleFactorSetManually = getScreenScalingX11(wminfo.info.x11.display, scaleFactorHiDPI);
+                    scaleFactorSetManually = getScreenScalingX11(wminfo.info.x11.display, scaleFactorHiDPI);
 #endif
-                break;
-            case SDL_SYSWM_WINDOWS:
+                    break;
+                case SDL_SYSWM_WINDOWS:
 #if defined(SDL_VIDEO_DRIVER_WINDOWS)
-                scaleFactorSetManually = getScreenScalingWindows(scaleFactorHiDPI);
+                    scaleFactorSetManually = getScreenScalingWindows(scaleFactorHiDPI);
 #endif
-                break;
-            case SDL_SYSWM_WAYLAND:
-            case SDL_SYSWM_COCOA:
-            case SDL_SYSWM_ANDROID:
-            default:
-                // No special functions so far; use fallback of screen DPI below.
-                break;
+                    break;
+                case SDL_SYSWM_WAYLAND:
+                case SDL_SYSWM_COCOA:
+                case SDL_SYSWM_ANDROID:
+                default:
+                    // No special functions so far; use fallback of screen DPI below.
+                    break;
+            }
+        } else {
+            Logfile::get()->writeError(std::string() + "Couldn't get window information: " + SDL_GetError());
         }
-    } else {
-        Logfile::get()->writeError(std::string() + "Couldn't get window information: " + SDL_GetError());
+
+        isWayland = wminfo.subsystem == SDL_SYSWM_WAYLAND;
+        isCocoa = wminfo.subsystem == SDL_SYSWM_COCOA;
+        allowHighDPI = (SDL_GetWindowFlags(sdlWindow) & SDL_WINDOW_ALLOW_HIGHDPI) != 0;
     }
+#endif
+
+#ifdef SUPPORT_GLFW
+    if (window->getBackend() == WindowBackend::GLFW_IMPL) {
+#if GLFW_VERSION_MAJOR >= 3 && GLFW_VERSION_MINOR >= 4
+
+        auto glfwPlatform = glfwGetPlatform();
+#ifdef GLFW_EXPOSE_NATIVE_X11
+        if (glfwPlatform == GLFW_PLATFORM_X11) {
+            Display* x11_display = glfwGetX11Display();
+            scaleFactorSetManually = getScreenScalingX11(x11_display, scaleFactorHiDPI);
+        }
+#endif
+#ifdef GLFW_EXPOSE_NATIVE_WIN32
+        if (glfwPlatform == GLFW_PLATFORM_WIN32) {
+            scaleFactorSetManually = getScreenScalingWindows(scaleFactorHiDPI);
+        }
+#endif
+#ifdef GLFW_EXPOSE_NATIVE_WAYLAND
+        isWayland = glfwPlatform == GLFW_PLATFORM_WAYLAND;
+#endif
+#ifdef GLFW_EXPOSE_NATIVE_COCOA
+        isCocoa = glfwPlatform == GLFW_PLATFORM_COCOA;
+        allowHighDPI = true;
+#endif
+
+#else // GLFW_VERSION_MAJOR >= 3 && GLFW_VERSION_MINOR >= 4
+
+#if defined(__linux__)
+        Display* x11_display = glfwGetX11Display();
+        scaleFactorSetManually = getScreenScalingX11(x11_display, scaleFactorHiDPI);
+#elif defined(_WIN32)
+        scaleFactorSetManually = getScreenScalingWindows(scaleFactorHiDPI);
+#elif defined(__APPLE__)
+        isCocoa = true;
+        allowHighDPI = true;
+#endif
+
+#endif // GLFW_VERSION_MAJOR >= 3 && GLFW_VERSION_MINOR >= 4
+    }
+#endif // SUPPORT_GLFW
 
 #ifdef __linux__
     if (!scaleFactorSetManually) {
@@ -174,7 +248,7 @@ float getHighDPIScaleFactor() {
             } catch(std::invalid_argument& e) {}
         }
     }
-    if (!scaleFactorSetManually && (wminfo.subsystem == SDL_SYSWM_WAYLAND || wminfo.subsystem == SDL_SYSWM_COCOA)) {
+    if (!scaleFactorSetManually && (isWayland || isCocoa)) {
         if (window->getVirtualWidth() != window->getPixelWidth()) {
             scaleFactorHiDPI = float(window->getPixelWidth()) / float(window->getVirtualWidth());
             scaleFactorSetManually = true;
@@ -182,11 +256,12 @@ float getHighDPIScaleFactor() {
     }
 #endif
 
-    if (!scaleFactorSetManually) {
+#ifdef SUPPORT_SDL2
+    if (window->getBackend() == WindowBackend::SDL2_IMPL && !scaleFactorSetManually) {
         // If querying the DPI scaling factor from the OS is not supported, approximate a good screen
         // scaling factor by dividing the vertical dpi (vdpi) of screen #0 by 96.
         // Standard DPI is supposedly 72 on macOS, but fonts seem to be too big in this case.
-        if ((SDL_GetWindowFlags(sdlWindow) & SDL_WINDOW_ALLOW_HIGHDPI) != 0) {
+        if (allowHighDPI) {
             float ddpi = 96, hdpi = 96, vdpi = 96;
             if (SDL_GetDisplayDPI(0, &ddpi, &hdpi, &vdpi) == 0) {
                 Logfile::get()->writeInfo(
@@ -196,6 +271,15 @@ float getHighDPIScaleFactor() {
             }
         }
     }
+#endif
+
+#ifdef SUPPORT_GLFW
+    if (window->getBackend() == WindowBackend::GLFW_IMPL && !scaleFactorSetManually) {
+        float xScale = 1.0f, yScale = 1.0f;
+        glfwGetMonitorContentScale(glfwGetPrimaryMonitor(), &xScale, &yScale);
+        scaleFactorHiDPI = std::min(xScale, yScale);
+    }
+#endif
 
     return scaleFactorHiDPI;
 }

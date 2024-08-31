@@ -43,7 +43,7 @@ class Window;
 }
 
 /**
- * A wrapper for portable-file-dialogs and SDL2 dialog functionality.
+ * A wrapper for portable-file-dialogs and SDL2 or GLFW dialog functionality.
  */
 
 namespace sgl { namespace dialog {
@@ -144,7 +144,7 @@ inline Button openMessageBoxBlocking(
 }
 
 /**
- * Opens a modal message box. For this, the message box functionality of SDL2 is used.
+ * Opens a modal message box. For this, the message box functionality of SDL2 or GLFW is used.
  * @param title The title of the message box window.
  * @param text The text displayed in the message window.
  * @param window The application window, which should be blocked during execution.

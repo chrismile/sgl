@@ -33,15 +33,17 @@
 #include <glm/vec2.hpp>
 
 #ifdef SUPPORT_VULKAN
-#include <SDL2/SDL_vulkan.h>
+#include <Graphics/Vulkan/libs/volk/volk.h>
 namespace sgl { namespace vk { class Swapchain; } }
+#endif
+
+#ifdef SUPPORT_WEBGPU
+typedef struct WGPUSurfaceImpl* WGPUSurface;
 #endif
 
 #include <Defs.hpp>
 #include <Graphics/Color.hpp>
-#include <Utils/AppSettings.hpp>
-
-union SDL_Event;
+#include <Graphics/Utils/RenderSystem.hpp>
 
 namespace sgl {
 
@@ -114,13 +116,15 @@ class SettingsFile;
 class DLL_OBJECT Window {
 public:
     virtual ~Window() = default;
-    /// Outputs e.g. "SDL_GetError"
+    [[nodiscard]] virtual WindowBackend getBackend() const=0;
+
+    /// Outputs, e.g., "SDL_GetError".
     virtual void errorCheck() {}
 
-    /// Returns whether this window uses
+    /// Returns whether this window uses a debug context.
     virtual bool isDebugContext()=0;
 
-    /// Initialize the window
+    /// Initialize the window.
     virtual void initialize(const WindowSettings& windowSettings, RenderSystem renderSystem)=0;
 
     /// Change the window attributes
@@ -131,7 +135,6 @@ public:
 
     /// Update the window.
     virtual void update()=0;
-    virtual void setEventHandler(std::function<void(const SDL_Event&)> eventHandler)=0;
     /// Returns false if the game should quit.
     virtual bool processEvents()=0;
     virtual void clear(const Color &color = Color(0, 0, 0))=0;
@@ -178,11 +181,18 @@ public:
 #ifdef SUPPORT_OPENGL
     virtual void* getOpenGLFunctionPointer(const char* functionName)=0;
 #endif
-
 #ifdef SUPPORT_VULKAN
     virtual VkSurfaceKHR getVkSurface()=0;
 #endif
+#ifdef SUPPORT_WEBGPU
+    virtual WGPUSurface getWebGPUSurface()=0;
+#endif
 };
+
+#ifdef SUPPORT_OPENGL
+// Query the numbers of multisample samples possible (given a maximum number of desired samples).
+DLL_OBJECT int getMaxSamplesGLImpl(int desiredSamples);
+#endif
 
 }
 

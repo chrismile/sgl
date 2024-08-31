@@ -63,7 +63,7 @@ public:
     /// -1: Scroll down; 0: No scrolling; 1: Scroll up
     float getScrollWheel() override;
 
-    /// Function for event processing (SDL only suppots querying scroll wheel state within the event queue)
+    /// Function for event processing (SDL only supports querying scroll wheel state within the event queue)
     void setScrollWheelValue(int val);
 
 protected:

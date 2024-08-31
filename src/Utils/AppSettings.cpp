@@ -33,11 +33,6 @@
 #include <Graphics/Renderer.hpp>
 #include <Graphics/Mesh/Material.hpp>
 #include <Utils/Timer.hpp>
-#include <SDL/SDLWindow.hpp>
-#include <SDL/Input/SDLMouse.hpp>
-#include <SDL/Input/SDLKeyboard.hpp>
-#include <SDL/Input/SDLGamepad.hpp>
-//#include <SDL2/SDL_ttf.h>
 #include <ImGui/ImGuiWrapper.hpp>
 #include <iostream>
 #include <fstream>
@@ -65,6 +60,25 @@
 
 #ifdef SUPPORT_WEBGPU
 #include <Graphics/WebGPU/Utils/Instance.hpp>
+#endif
+
+#ifdef SUPPORT_SDL2
+#include <SDL/SDLWindow.hpp>
+#include <SDL/Input/SDLMouse.hpp>
+#include <SDL/Input/SDLKeyboard.hpp>
+#include <SDL/Input/SDLGamepad.hpp>
+#endif
+
+#ifdef SUPPORT_GLFW
+#include <GLFW/GlfwWindow.hpp>
+#include <GLFW/Input/GlfwMouse.hpp>
+#include <GLFW/Input/GlfwKeyboard.hpp>
+#include <GLFW/Input/GlfwGamepad.hpp>
+#include <GLFW/glfw3.h>
+#endif
+
+#if defined(SUPPORT_SDL2) && defined(SUPPORT_VULKAN)
+#include <SDL2/SDL_vulkan.h>
 #endif
 
 #ifdef _WIN32
@@ -142,6 +156,13 @@ AppSettings::AppSettings() {
 #endif
 
     applicationDescription = "An application using the library sgl";
+}
+
+void AppSettings::setWindowBackend(WindowBackend _windowBackend) {
+    if (mainWindow) {
+        sgl::Logfile::get()->throwError("Error in AppSettings::setWindowBackend: Window is already created.");
+    }
+    windowBackend = _windowBackend;
 }
 
 // Load the settings from the configuration file
@@ -248,17 +269,47 @@ Window *AppSettings::createWindow() {
         return nullptr;
     }
 
-    // Initialize SDL - the only window system for now (support for Qt is planned).
+#ifdef SUPPORT_SDL2
+    if (windowBackend == WindowBackend::SDL2_IMPL) {
 #ifndef __EMSCRIPTEN__
-    if (SDL_Init(SDL_INIT_EVERYTHING) == -1) {
+        if (SDL_Init(SDL_INIT_EVERYTHING) == -1) {
 #else
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) == -1) {
+        if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) == -1) {
 #endif
-        Logfile::get()->writeError("ERROR: AppSettings::createWindow: Couldn't initialize SDL!");
-        Logfile::get()->writeError(std::string() + "SDL Error: " + SDL_GetError());
+            Logfile::get()->writeError("ERROR: AppSettings::createWindow: Couldn't initialize SDL!");
+            Logfile::get()->writeError(std::string() + "SDL Error: " + SDL_GetError());
+        }
+        SDLWindow::errorCheckSDL();
     }
+#endif
 
-    SDLWindow::errorCheckSDL();
+#ifdef SUPPORT_GLFW
+    if (windowBackend == WindowBackend::GLFW_IMPL) {
+        if (!glfwInit()) {
+            const char* description = nullptr;
+            int errorCode = glfwGetError(&description);
+            if (errorCode != GLFW_NO_ERROR && description) {
+                sgl::Logfile::get()->writeError(
+                        "Error in AppSettings::createWindow: glfwInit failed (code 0x"
+                        + sgl::toHexString(errorCode) + "): " + description);
+            } else if (errorCode != GLFW_NO_ERROR) {
+                sgl::Logfile::get()->writeError(
+                        "Error in AppSettings::createWindow: glfwInit failed (code 0x"
+                        + sgl::toHexString(errorCode) + ")");
+            } else {
+                sgl::Logfile::get()->writeError("Error in AppSettings::createWindow: glfwInit failed.");
+            }
+        }
+        glfwSetErrorCallback([](int errorCode, const char* description) {
+            sgl::Logfile::get()->writeError(
+                    "GLFW errror callback (code 0x" + sgl::toHexString(errorCode) + "): " + description);
+        });
+        const char* glfwVersionString = glfwGetVersionString();
+        if (glfwVersionString) {
+            sgl::Logfile::get()->write("GLFW version: " + std::string(glfwVersionString), sgl::BLUE);
+        }
+    }
+#endif
 
 #ifdef SUPPORT_VULKAN
     if (renderSystem == RenderSystem::VULKAN) {
@@ -286,16 +337,18 @@ Window *AppSettings::createWindow() {
         }
 #endif
 
-#if defined(__APPLE__)
-        sdlVulkanLibraryLoaded = false;
-        const char* const moduleNames[] = { "libvulkan.dylib", "libvulkan.1.dylib", "libMoltenVK.dylib" };
-        for (int i = 0; i < IM_ARRAYSIZE(moduleNames); i++) {
-            void* module = dlopen(moduleNames[i], RTLD_NOW | RTLD_LOCAL);
-            if (module) {
-                SDL_Vulkan_LoadLibrary(moduleNames[i]);
-                sdlVulkanLibraryLoaded = true;
-                dlclose(module);
-                break;
+#if defined(__APPLE__) && defined(SUPPORT_SDL2)
+        if (windowBackend == WindowType::SDL2_IMPL && sdlVulkanLibraryLoaded) {
+            sdlVulkanLibraryLoaded = false;
+            const char* const moduleNames[] = { "libvulkan.dylib", "libvulkan.1.dylib", "libMoltenVK.dylib" };
+            for (int i = 0; i < IM_ARRAYSIZE(moduleNames); i++) {
+                void* module = dlopen(moduleNames[i], RTLD_NOW | RTLD_LOCAL);
+                if (module) {
+                    SDL_Vulkan_LoadLibrary(moduleNames[i]);
+                    sdlVulkanLibraryLoaded = true;
+                    dlclose(module);
+                    break;
+                }
             }
         }
 #endif
@@ -308,15 +361,24 @@ Window *AppSettings::createWindow() {
     }
 #endif
 
-    SDLWindow* window = new SDLWindow;
-    WindowSettings windowSettings = window->deserializeSettings(settings);
-    window->initialize(windowSettings, renderSystem);
+#ifdef SUPPORT_SDL2
+    if (windowBackend == WindowBackend::SDL2_IMPL) {
+        mainWindow = new SDLWindow;
+    }
+#endif
+#ifdef SUPPORT_GLFW
+    if (windowBackend == WindowBackend::GLFW_IMPL) {
+        mainWindow = new GlfwWindow;
+    }
+#endif
+
+    WindowSettings windowSettings = mainWindow->deserializeSettings(settings);
+    mainWindow->initialize(windowSettings, renderSystem);
     if (!iconPath.empty()) {
-        window->setWindowIconFromFile(iconPath);
+        mainWindow->setWindowIconFromFile(iconPath);
     }
 
-    mainWindow = window;
-    return window;
+    return mainWindow;
 }
 
 HeadlessData AppSettings::createHeadless() {
@@ -616,9 +678,20 @@ void AppSettings::initializeSubsystems() {
     }
 #endif
 
-    Mouse = new SDLMouse;
-    Keyboard = new SDLKeyboard;
-    Gamepad = new SDLGamepad;
+#ifdef SUPPORT_SDL2
+    if (mainWindow->getBackend() == WindowBackend::SDL2_IMPL) {
+        Mouse = new SDLMouse;
+        Keyboard = new SDLKeyboard;
+        Gamepad = new SDLGamepad;
+    }
+#endif
+#ifdef SUPPORT_GLFW
+    if (mainWindow->getBackend() == WindowBackend::GLFW_IMPL) {
+        Mouse = new GlfwMouse;
+        Keyboard = new GlfwKeyboard;
+        Gamepad = new GlfwGamepad;
+    }
+#endif
 
     if (useGUI) {
         ImGuiWrapper::get()->initialize(fontRangesData, useDocking, useMultiViewport, uiScaleFactor);
@@ -694,9 +767,11 @@ void AppSettings::release() {
         primaryDevice = nullptr;
     }
     if (instance) {
-        if (sdlVulkanLibraryLoaded) {
+#ifdef SUPPORT_SDL2
+        if (windowBackend == WindowBackend::SDL2_IMPL && sdlVulkanLibraryLoaded) {
             SDL_Vulkan_UnloadLibrary();
         }
+#endif
         delete instance;
         instance = nullptr;
     }
@@ -709,9 +784,13 @@ void AppSettings::release() {
     }
 #endif
 
-    //Mix_CloseAudio();
-    //TTF_Quit();
-    SDL_Quit();
+#ifdef SUPPORT_SDL2
+    if (windowBackend == WindowBackend::SDL2_IMPL) {
+        //Mix_CloseAudio();
+        //TTF_Quit();
+        SDL_Quit();
+    }
+#endif
 }
 
 void AppSettings::setLoadGUI(
@@ -732,35 +811,138 @@ Window *AppSettings::setMainWindow(Window *window) {
 }
 
 int AppSettings::getNumDisplays() {
-    return SDL_GetNumVideoDisplays();
+#ifdef SUPPORT_SDL2
+    if (mainWindow->getBackend() == WindowBackend::SDL2_IMPL) {
+        return SDL_GetNumVideoDisplays();
+    }
+#endif
+#ifdef SUPPORT_GLFW
+    if (mainWindow->getBackend() == WindowBackend::GLFW_IMPL) {
+        int numMonitors = 0;
+        glfwGetMonitors(&numMonitors);
+        return numMonitors;
+    }
+#endif
+    return 1;
 }
 
 void AppSettings::getCurrentDisplayMode(int& width, int& height, int& refreshRate, int displayIndex) {
-    SDL_DisplayMode displayMode;
-    SDL_GetCurrentDisplayMode(displayIndex, &displayMode);
-    width = displayMode.w;
-    height = displayMode.h;
-    refreshRate = displayMode.refresh_rate;
+#ifdef SUPPORT_SDL2
+    if (mainWindow->getBackend() == WindowBackend::SDL2_IMPL) {
+        SDL_DisplayMode displayMode;
+        SDL_GetCurrentDisplayMode(displayIndex, &displayMode);
+        width = displayMode.w;
+        height = displayMode.h;
+        refreshRate = displayMode.refresh_rate;
+        return;
+    }
+#endif
+#ifdef SUPPORT_GLFW
+    if (mainWindow->getBackend() == WindowBackend::GLFW_IMPL) {
+        int numMonitors = 0;
+        GLFWmonitor** monitors = glfwGetMonitors(&numMonitors);
+        if (displayIndex >= numMonitors) {
+            sgl::Logfile::get()->writeError("Error in AppSettings::getCurrentDisplayMode: Invalid display index.");
+            return;
+        }
+        GLFWmonitor* monitor = monitors[displayIndex];
+        const GLFWvidmode* videoMode = glfwGetVideoMode(monitor);
+        width = videoMode->width;
+        height = videoMode->height;
+        return;
+    }
+#endif
+    width = 800;
+    height = 600;
+    refreshRate = 600;
+    displayIndex = 0;
 }
 
 void AppSettings::getDesktopDisplayMode(int& width, int& height, int& refreshRate, int displayIndex) {
-    SDL_DisplayMode displayMode;
-    SDL_GetDesktopDisplayMode(displayIndex, &displayMode);
-    width = displayMode.w;
-    height = displayMode.h;
-    refreshRate = displayMode.refresh_rate;
+#ifdef SUPPORT_SDL2
+    if (mainWindow->getBackend() == WindowBackend::SDL2_IMPL) {
+        SDL_DisplayMode displayMode;
+        SDL_GetDesktopDisplayMode(displayIndex, &displayMode);
+        width = displayMode.w;
+        height = displayMode.h;
+        refreshRate = displayMode.refresh_rate;
+        return;
+    }
+#endif
+#ifdef SUPPORT_GLFW
+    if (mainWindow->getBackend() == WindowBackend::GLFW_IMPL) {
+        int numMonitors = 0;
+        GLFWmonitor** monitors = glfwGetMonitors(&numMonitors);
+        if (displayIndex >= numMonitors) {
+            sgl::Logfile::get()->writeError("Error in AppSettings::getCurrentDisplayMode: Invalid display index.");
+            return;
+        }
+        GLFWmonitor* monitor = monitors[displayIndex];
+        const GLFWvidmode* videoMode = glfwGetVideoMode(monitor);
+        width = videoMode->width;
+        height = videoMode->height;
+        refreshRate = videoMode->refreshRate;
+        return;
+    }
+#endif
+    width = 800;
+    height = 600;
+    refreshRate = 600;
+    displayIndex = 0;
 }
 
 glm::ivec2 AppSettings::getCurrentDisplayModeResolution(int displayIndex) {
-    SDL_DisplayMode displayMode;
-    SDL_GetCurrentDisplayMode(displayIndex, &displayMode);
-    return glm::ivec2(displayMode.w, displayMode.h);
+#ifdef SUPPORT_SDL2
+    if (mainWindow->getBackend() == WindowBackend::SDL2_IMPL) {
+        SDL_DisplayMode displayMode;
+        SDL_GetCurrentDisplayMode(displayIndex, &displayMode);
+        return { displayMode.w, displayMode.h };
+    }
+#endif
+#ifdef SUPPORT_GLFW
+    if (mainWindow->getBackend() == WindowBackend::GLFW_IMPL) {
+        int numMonitors = 0;
+        GLFWmonitor** monitors = glfwGetMonitors(&numMonitors);
+        if (displayIndex >= numMonitors) {
+            sgl::Logfile::get()->writeError("Error in AppSettings::getCurrentDisplayMode: Invalid display index.");
+            return { 0, 0 };
+        }
+        GLFWmonitor* monitor = monitors[displayIndex];
+        const GLFWvidmode* videoMode = glfwGetVideoMode(monitor);
+        return { videoMode->width, videoMode->height };
+    }
+#endif
+    return { 800, 600 };
 }
 
 glm::ivec2 AppSettings::getDesktopResolution(int displayIndex) {
-    SDL_DisplayMode displayMode;
-    SDL_GetDesktopDisplayMode(displayIndex, &displayMode);
-    return glm::ivec2(displayMode.w, displayMode.h);
+#ifdef SUPPORT_SDL2
+    if (mainWindow->getBackend() == WindowBackend::SDL2_IMPL) {
+        SDL_DisplayMode displayMode;
+        SDL_GetDesktopDisplayMode(displayIndex, &displayMode);
+        return { displayMode.w, displayMode.h };
+    }
+#endif
+#ifdef SUPPORT_GLFW
+    if (mainWindow->getBackend() == WindowBackend::GLFW_IMPL) {
+        // Technically, there would be glfwGetVideoModes, but it is hard to say which mode is the desktop mode...
+        return getCurrentDisplayModeResolution(displayIndex);
+    }
+#endif
+    return { 800, 600 };
+}
+
+void AppSettings::captureMouse(bool _capture) {
+#ifdef SUPPORT_SDL2
+    if (mainWindow->getBackend() == WindowBackend::SDL2_IMPL) {
+        SDL_CaptureMouse(_capture ? SDL_TRUE : SDL_FALSE);
+    }
+#endif
+#ifdef SUPPORT_GLFW
+    if (mainWindow->getBackend() == WindowBackend::GLFW_IMPL) {
+        static_cast<GlfwWindow*>(mainWindow)->setCaptureMouse(_capture);
+    }
+#endif
 }
 
 }

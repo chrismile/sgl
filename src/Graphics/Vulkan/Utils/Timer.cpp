@@ -27,6 +27,8 @@
  */
 
 #include <iostream>
+
+#include <Utils/AppSettings.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/Events/EventManager.hpp>
 #include "../Utils/Device.hpp"

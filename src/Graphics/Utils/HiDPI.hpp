@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2015, Christoph Neuhauser
+ * Copyright (c) 2018, Christoph Neuhauser
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,47 +26,27 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef INPUT_MOUSE_HPP_
-#define INPUT_MOUSE_HPP_
-
-#include <utility>
-#include <cstdint>
-#include <Math/Geometry/Point2.hpp>
-#include <Defs.hpp>
+#ifndef SGL_HIDPI_HPP
+#define SGL_HIDPI_HPP
 
 namespace sgl {
 
-const uint32_t MOUSE_MOVED_EVENT = 1409365187U;
+/**
+ * @return The scale factor used for scaling fonts/the UI on the system.
+ * The following heuristics are used in the order below to determine the scale factor.
+ * - X11 and XWayland: Use the content of "Xft.dpi" queried by XResourceManagerString.
+ * - Windows: Use GetDeviceCaps with LOGPIXELSX.
+ * - Any Linux system: Query GDK_SCALE and QT_SCALE_FACTOR (optional).
+ * - Linux and macOS: If the virtual and pixel size of the window don't match, the scale factor is their ratio.
+ * - Use the physical DPI reported by the display the window is on.
+ */
+DLL_OBJECT float getHighDPIScaleFactor();
 
-class DLL_OBJECT MouseInterface {
-public:
-    virtual ~MouseInterface() = default;
-    virtual void update(float dt)=0;
-
-    /// Mouse position
-    virtual Point2 getAxis()=0;
-    virtual int getX()=0;
-    virtual int getY()=0;
-    virtual Point2 mouseMovement()=0;
-    virtual std::pair<double, double> getAxisFractional() { auto pt = getAxis(); return { double(pt.x), double(pt.y) }; }
-    virtual double getXFractional() { return double(getX()); }
-    virtual double getYFractional() { return double(getY()); }
-    virtual std::pair<double, double> mouseMovementFractional() { auto pt = mouseMovement(); return { double(pt.x), double(pt.y) }; }
-    virtual bool mouseMoved()=0;
-    virtual void warp(const Point2 &windowPosition)=0;
-
-    /// Mouse buttons
-    virtual bool isButtonDown(int button)=0;
-    virtual bool isButtonUp(int button)=0;
-    virtual bool buttonPressed(int button)=0;
-    virtual bool buttonReleased(int button)=0;
-    /// -1: Scroll down; 0: No scrolling; 1: Scroll up
-    virtual float getScrollWheel()=0;
-};
-
-DLL_OBJECT extern MouseInterface *Mouse;
+/**
+ * Overwrites the scaling factor with a manually chosen value.
+ */
+DLL_OBJECT void overwriteHighDPIScaleFactor(float scaleFactor);
 
 }
 
-/*! INPUT_MOUSE_HPP_ */
-#endif
+#endif //SGL_HIDPI_HPP

@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2017, Christoph Neuhauser
+ * Copyright (c) 2024, Christoph Neuhauser
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,52 +26,54 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SRC_SDL_SDLWINDOW_HPP_
-#define SRC_SDL_SDLWINDOW_HPP_
+#ifndef SGL_GLFWWINDOW_HPP
+#define SGL_GLFWWINDOW_HPP
 
-#include <unordered_map>
-
-#include <SDL2/SDL.h>
 #include <Graphics/Window.hpp>
 
 #ifdef SUPPORT_WEBGPU
 typedef struct WGPUSurfaceImpl* WGPUSurface;
 #endif
 
+typedef struct GLFWwindow GLFWwindow;
+typedef struct GLFWcursor GLFWcursor;
+
 namespace sgl {
 
-class DLL_OBJECT SDLWindow : public Window {
+class DLL_OBJECT GlfwWindow : public Window {
 public:
-    SDLWindow();
-    ~SDLWindow() override;
-    [[nodiscard]] WindowBackend getBackend() const override { return WindowBackend::SDL2_IMPL; }
+    GlfwWindow();
+    ~GlfwWindow() override;
+    [[nodiscard]] WindowBackend getBackend() const override { return WindowBackend::GLFW_IMPL; }
 
-    /// Outputs e.g. "SDL_GetError"
+    /// Outputs, e.g., "glfwGetError".
     void errorCheck() override;
-    static void errorCheckSDL();
-    void errorCheckSDLCritical();
-    void errorCheckIgnoreUnsupportedOperation();
+    static void errorCheckGlfw();
 
-    /// Returns whether this window uses
+    /// Returns whether this window uses.
     bool isDebugContext() override { return windowSettings.debugContext; }
 
-    /// Initialize the window
+    /// Initialize the window.
     void initialize(const WindowSettings &settings, RenderSystem renderSystem) override;
 
-    /// Change the window attributes
-    /// Try to keep resolution
+    /// Change the window attributes.
+    /// Try to keep resolution.
     void toggleFullscreen(bool nativeFullscreen = true) override;
     void setWindowPosition(int x, int y) override;
     void serializeSettings(SettingsFile &settings) override;
     WindowSettings deserializeSettings(const SettingsFile &settings) override;
 
-    /// Update the window
+    /// Update the window.
     void update() override;
-    void setEventHandler(std::function<void(const SDL_Event&)> eventHandler);
-    /// Returns false if the game should quit
+    /// Returns false if the game should quit.
     bool processEvents() override;
     void clear(const Color &color = Color(0, 0, 0)) override;
     void flip() override;
+
+    // Event Callbacks.
+    void setRefreshRateCallback(std::function<void(int)> callback);
+    void setOnKeyCallback(std::function<void(int, int, int, int)> callback);
+    void setOnDropCallback(std::function<void(const std::vector<std::string>&)> callback);
 
     /// Utility functions and getters & setters for the main window attributes.
     // Virtual and pixel size is equivalent on Linux and Windows, but not on macOS.
@@ -81,8 +83,8 @@ public:
     int getVirtualHeight() override { return windowSettings.height; }
     int getPixelWidth() override { return windowSettings.pixelWidth; }
     int getPixelHeight() override { return windowSettings.pixelHeight; }
-    glm::ivec2 getWindowVirtualResolution() override { return glm::ivec2(windowSettings.width, windowSettings.height); }
-    glm::ivec2 getWindowPixelResolution() override { return glm::ivec2(windowSettings.pixelWidth, windowSettings.pixelHeight); }
+    glm::ivec2 getWindowVirtualResolution() override { return {windowSettings.width, windowSettings.height}; }
+    glm::ivec2 getWindowPixelResolution() override { return {windowSettings.pixelWidth, windowSettings.pixelHeight}; }
     glm::ivec2 getWindowPosition() override;
     [[nodiscard]] const WindowSettings& getWindowSettings() const override { return windowSettings; }
     void setWindowVirtualSize(int width, int height) override;
@@ -91,7 +93,7 @@ public:
     // Legacy, may make problems on macOS.
     int getWidth() override { return windowSettings.pixelWidth; }
     int getHeight() override { return windowSettings.pixelHeight; }
-    glm::ivec2 getWindowResolution() override { return glm::ivec2(windowSettings.pixelWidth, windowSettings.pixelHeight); }
+    glm::ivec2 getWindowResolution() override { return {windowSettings.pixelWidth, windowSettings.pixelHeight}; }
     void setWindowSize(int width, int height) override { setWindowPixelSize(width, height); }
 
     /// Sets the window icon.
@@ -100,6 +102,7 @@ public:
     /// Sets the window cursor.
     void setCursorType(CursorType _cursorType) override;
     void setShowCursor(bool _show) override;
+    void setCaptureMouse(bool _capture);
 
 #ifdef SUPPORT_OPENGL
     void* getOpenGLFunctionPointer(const char* functionName) override;
@@ -115,11 +118,8 @@ public:
     [[nodiscard]] bool getUsesX11OrWaylandBackend() const override { return usesX11Backend || usesWaylandBackend; }
     [[nodiscard]] bool getUsesAnyWaylandBackend() const override { return usesWaylandBackend || usesXWaylandBackend; }
 
-    /// Getting SDL specific data
-    inline SDL_Window *getSDLWindow() { return sdlWindow; }
-#ifdef SUPPORT_OPENGL
-    inline SDL_GLContext getGLContext() { return glContext; }
-#endif
+    /// Getting GLFW specific data
+    inline GLFWwindow *getGlfwWindow() { return glfwWindow; }
 #ifdef SUPPORT_VULKAN
     VkSurfaceKHR getVkSurface() override { return windowSurface; }
 #endif
@@ -134,23 +134,34 @@ private:
     bool usesWaylandBackend = false;
     bool usesXWaylandBackend = false;
 
-    bool eventHandlerSet = false;
-    std::function<void(const SDL_Event&)> eventHandler;
+    // Callbacks.
+    void onKey(int key, int scancode, int action, int mods);
+    void onChar(unsigned int codepoint);
+    void onCharMods(unsigned int codepoint, int mods);
+    void onCursorPos(double xpos, double ypos);
+    void onCursorEnter(int entered);
+    void onMouseButton(int button, int action, int mods);
+    void onScroll(double xoffset, double yoffset);
+    void onDrop(int count, const char** paths);
+    void onFramebufferSize(int width, int height);
+    void onWindowContentScale(float xscale, float yscale);
+    std::function<void(int)> refreshRateCallback;
+    std::function<void(int, int, int, int)> onKeyCallback;
+    std::function<void(const std::vector<std::string>&)> onDropCallback;
 
-    /// For toggle fullscreen: Resolution before going fullscreen
-    //SDL_DisplayMode oldDisplayMode{};
     bool isFirstFrame = true;
+    bool isRunning = true;
+
+    // For fullscreen.
+    int widthOld = 0, heightOld = 0;
 
     /// Application cursor type.
-    std::unordered_map<CursorType, SDL_Cursor*> cursors;
+    std::unordered_map<CursorType, GLFWcursor*> cursors;
     CursorType currentCursorType = CursorType::DEFAULT;
     bool showCursor = true;
+    bool captureMouse = false;
 
-    SDL_Window* sdlWindow = nullptr;
-
-#ifdef SUPPORT_OPENGL
-    SDL_GLContext glContext = nullptr;
-#endif
+    GLFWwindow* glfwWindow = nullptr;
 
 #ifdef SUPPORT_VULKAN
     VkSurfaceKHR windowSurface{};
@@ -163,5 +174,4 @@ private:
 
 }
 
-/*! SRC_SDL_SDLWINDOW_HPP_ */
-#endif
+#endif //SGL_GLFWWINDOW_HPP

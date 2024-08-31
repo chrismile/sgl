@@ -75,7 +75,9 @@
 #define GLFW_VISIBLE 0x00020004
 #endif
 
+#include <Utils/AppSettings.hpp>
 #include <Utils/File/Logfile.hpp>
+#include <Graphics/Window.hpp>
 
 #include "OffscreenContextGlfw.hpp"
 
@@ -189,9 +191,13 @@ bool OffscreenContextGlfw::initialize() {
         return false;
     }
 
-    if(!f->glfwInit()){
-        sgl::Logfile::get()->writeError("Error in OffscreenContextGlfw::initialize: glfwInit failed.", false);
-        return false;
+    auto* window = sgl::AppSettings::get()->getMainWindow();
+    isGlfwInitializedExternally = window && window->getBackend() == WindowBackend::GLFW_IMPL;
+    if (!isGlfwInitializedExternally) {
+        if(!f->glfwInit()){
+            sgl::Logfile::get()->writeError("Error in OffscreenContextGlfw::initialize: glfwInit failed.", false);
+            return false;
+        }
     }
     glfwInitCalled = true;
 
@@ -221,8 +227,10 @@ OffscreenContextGlfw::~OffscreenContextGlfw() {
         f->glfwDestroyWindow(glfwWindow);
         glfwWindow = nullptr;
     }
-    if(glfwInitCalled){
-        f->glfwTerminate();
+    if (!isGlfwInitializedExternally) {
+        if(glfwInitCalled){
+            f->glfwTerminate();
+        }
     }
     if (f) {
         delete f;

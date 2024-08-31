@@ -51,8 +51,9 @@ public:
 
     /**
      * Updates of buffers etc. can be performed between beginFrame and renderFrame.
+     * beginFrame returns false when wgpuSurfaceGetCurrentTexture failed.
      */
-    void beginFrame();
+    bool beginFrame();
     void renderFrame(const std::vector<WGPUCommandBuffer>& commandBuffers);
 
     inline WGPUTextureFormat getSurfaceTextureFormat() { return surfaceFormat; }
@@ -68,7 +69,9 @@ private:
     Window* window = nullptr;
     WGPUSurface surface{};
     WGPUTextureFormat surfaceFormat{};
+    WGPUTexture currentTexture{};
     WGPUTextureView currentTextureView{};
+    bool validPixelSize = false;
 };
 
 }}

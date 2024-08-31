@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2015, Christoph Neuhauser
+ * Copyright (c) 2024, Christoph Neuhauser
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,8 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SDL_SDLKEYBOARD_HPP_
-#define SDL_SDLKEYBOARD_HPP_
+#ifndef SGL_GLFWKEYBOARD_HPP
+#define SGL_GLFWKEYBOARD_HPP
 
 #include <string>
 #include <map>
@@ -38,11 +38,16 @@
 
 namespace sgl {
 
-class DLL_OBJECT SDLKeyboard : public KeyboardInterface {
+class DLL_OBJECT GlfwKeyboard : public KeyboardInterface {
 public:
-    SDLKeyboard();
-    ~SDLKeyboard() override;
+    GlfwKeyboard();
+    ~GlfwKeyboard() override;
     void update(float dt) override;
+
+    // GLFW callbacks.
+    void onKey(int key, int scancode, int action, int mods);
+    void onChar(unsigned int codepoint);
+    void onCharMods(unsigned int codepoint, int mods);
 
     /// Keyboard keys
     /**
@@ -56,7 +61,6 @@ public:
     bool keyReleased(int button) override;
     /**
      * Physical keys (SDL_SCANCODE).
-     * Not supported on backends other than SDL (thus deprecated).
      */
     bool isScancodeDown(int button) override;
     bool isScancodeUp(int button) override;
@@ -64,7 +68,9 @@ public:
     bool scancodeReleased(int button) override;
     int getNumKeys() override;
     bool getModifier(ImGuiKey modifier) override;
+#ifdef SUPPORT_SDL2
     SDL_Keymod getModifier() override;
+#endif
 
     /**
      * To support non-standard input methods a key buffer is needed.
@@ -77,15 +83,14 @@ public:
 public:
     int numKeys;
     /// State of the keyboard in the current and the last frame
-    Uint8 *keystate, *oldKeystate;
+    uint8_t *keystate, *oldKeystate;
     /// CTRL, SHIFT, etc.
-    SDL_Keymod modifier;
+    int modifier;
     std::string utf8KeyBuffer;
-    //std::unordered_map<ImGuiKey, SDL_KeyCode> imGuiToSDLKMap;
-    std::unordered_map<int, int> imGuiToSDLKMap;
+    //std::unordered_map<ImGuiKey, int> imGuiToGlfwKeyMap;
+    std::unordered_map<int, int> imGuiToGlfwKeyMap;
 };
 
 }
 
-/*! SDL_SDLKEYBOARD_HPP_ */
-#endif
+#endif //SGL_GLFWKEYBOARD_HPP

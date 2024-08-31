@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2018, Christoph Neuhauser
+ * Copyright (c) 2024, Christoph Neuhauser
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,27 +26,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_HIDPI_HPP
-#define SGL_HIDPI_HPP
+#ifndef SGL_SDL_HIDPI_HPP
+#define SGL_SDL_HIDPI_HPP
 
-namespace sgl {
+// This file moved to another location.
+#include <Graphics/Utils/HiDPI.hpp>
 
-/**
- * @return The scale factor used for scaling fonts/the UI on the system.
- * The following heuristics are used in the order below to determine the scale factor.
- * - X11 and XWayland: Use the content of "Xft.dpi" queried by XResourceManagerString.
- * - Windows: Use GetDeviceCaps with LOGPIXELSX.
- * - Any Linux system: Query GDK_SCALE and QT_SCALE_FACTOR (optional).
- * - Linux and macOS: If the virtual and pixel size of the window don't match, the scale factor is their ratio.
- * - Use the physical DPI reported by the display the window is on.
- */
-DLL_OBJECT float getHighDPIScaleFactor();
-
-/**
- * Overwrites the scaling factor with a manually chosen value.
- */
-DLL_OBJECT void overwriteHighDPIScaleFactor(float scaleFactor);
-
-}
-
-#endif //SGL_HIDPI_HPP
+#endif //SGL_SDL_HIDPI_HPP
