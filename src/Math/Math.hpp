@@ -49,10 +49,10 @@ inline bool floatEquals(float a, float b, float dt) { return sgl::abs(a - b) < d
 inline bool floatLess(float a, float b) { return a < b + 0.0001f; }
 inline bool floatLess(float a, float b, float dt) { return a < b + dt; }
 template <typename T> inline T clamp(T val, T min, T max) { return val < min ? min : (val > max ? max : val); }
-inline float ceil(float val) { return std::ceil(val); }
-inline float exp(float val) { return std::exp(val); }
-inline float sqrt(float val) { return std::sqrt(val); }
-inline float sqr(float val) { return val*val; }
+template <typename T> inline float ceil(T val) { return std::ceil(val); }
+template <typename T> inline float exp(T val) { return std::exp(val); }
+template <typename T> inline float sqrt(T val) { return std::sqrt(val); }
+template <typename T> inline float sqr(T val) { return val * val; }
 inline float pow(float val, int n) { float p = val; for (int i = 1; i < n; ++i) { p *= val; } return p; }
 inline float min(float v1, float v2) { return v1 < v2 ? v1 : v2; }
 inline float max(float v1, float v2) { return v1 > v2 ? v1 : v2; }
