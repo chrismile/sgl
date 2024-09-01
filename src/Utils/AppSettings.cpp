@@ -338,7 +338,7 @@ Window *AppSettings::createWindow() {
 #endif
 
 #if defined(__APPLE__) && defined(SUPPORT_SDL2)
-        if (windowBackend == WindowType::SDL2_IMPL && sdlVulkanLibraryLoaded) {
+        if (windowBackend == WindowBackend::SDL2_IMPL && sdlVulkanLibraryLoaded) {
             sdlVulkanLibraryLoaded = false;
             const char* const moduleNames[] = { "libvulkan.dylib", "libvulkan.1.dylib", "libMoltenVK.dylib" };
             for (int i = 0; i < IM_ARRAYSIZE(moduleNames); i++) {
