@@ -45,15 +45,15 @@ namespace sgl {
 
 TimerInterface::TimerInterface() : currentTime(0), lastTime(0), elapsedMicroSeconds(0),
         fpsLimitEnabled(true), fpsLimit(60), fixedPhysicsFPSEnabled(true), physicsFPS(60) {
-    auto* window = AppSettings::get()->getMainWindow();
+    WindowBackend windowBackend = AppSettings::get()->getWindowBackend();
 #ifdef SUPPORT_SDL2
-    if (window->getBackend() == WindowBackend::SDL2_IMPL) {
+    if (windowBackend == WindowBackend::SDL2_IMPL) {
         perfFreq = SDL_GetPerformanceFrequency();
         startFrameTime = SDL_GetPerformanceCounter();
     }
 #endif
 #ifdef SUPPORT_GLFW
-    if (window->getBackend() == WindowBackend::GLFW_IMPL) {
+    if (windowBackend == WindowBackend::GLFW_IMPL) {
         perfFreq = glfwGetTimerFrequency();
         startFrameTime = glfwGetTimerValue();
     }

@@ -679,14 +679,14 @@ void AppSettings::initializeSubsystems() {
 #endif
 
 #ifdef SUPPORT_SDL2
-    if (mainWindow->getBackend() == WindowBackend::SDL2_IMPL) {
+    if (windowBackend == WindowBackend::SDL2_IMPL) {
         Mouse = new SDLMouse;
         Keyboard = new SDLKeyboard;
         Gamepad = new SDLGamepad;
     }
 #endif
 #ifdef SUPPORT_GLFW
-    if (mainWindow->getBackend() == WindowBackend::GLFW_IMPL) {
+    if (windowBackend == WindowBackend::GLFW_IMPL) {
         Mouse = new GlfwMouse;
         Keyboard = new GlfwKeyboard;
         Gamepad = new GlfwGamepad;

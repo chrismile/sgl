@@ -125,6 +125,7 @@ class DLL_OBJECT AppSettings : public Singleton<AppSettings>
 public:
     AppSettings();
     void setWindowBackend(WindowBackend _windowBackend);
+    [[nodiscard]] WindowBackend getWindowBackend() const { return windowBackend; }
     void loadSettings(const char *filename);
     inline void setSaveSettings(bool _saveSettings) { saveSettings = _saveSettings; }
     inline SettingsFile &getSettings() { return settings; }
