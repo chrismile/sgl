@@ -48,6 +48,7 @@
 #include <Graphics/Vulkan/Utils/Swapchain.hpp>
 #endif
 
+#include <GLFW/glfw3.h>
 #ifdef SUPPORT_WEBGPU
 #include <glfw3webgpu.h>
 
