@@ -51,6 +51,15 @@
 #ifdef _GLFW_X11
 #define GLFW_EXPOSE_NATIVE_X11
 #endif
+#ifdef _GLFW_WAYLAND
+#define GLFW_EXPOSE_NATIVE_WAYLAND
+#endif
+#ifdef _GLFW_COCOA
+#define GLFW_EXPOSE_NATIVE_COCOA
+#endif
+#ifdef _GLFW_WIN32
+#define GLFW_EXPOSE_NATIVE_WIN32
+#endif
 #endif // __EMSCRIPTEN__
 #include <GLFW/glfw3native.h>
 #endif // SUPPORT_GLFW
