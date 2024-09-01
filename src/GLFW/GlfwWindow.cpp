@@ -310,8 +310,8 @@ void GlfwWindow::initialize(const WindowSettings &settings, RenderSystem renderS
 #if GLFW_VERSION_MAJOR >= 3 && GLFW_VERSION_MINOR >= 4
 
     auto glfwPlatform = glfwGetPlatform();
-    usesX11Backend = (wminfo.subsystem == SDL_SYSWM_X11);
-    usesWaylandBackend = (wminfo.subsystem == SDL_SYSWM_WAYLAND);
+    usesX11Backend = (glfwPlatform == GLFW_PLATFORM_X11);
+    usesWaylandBackend = (glfwPlatform == GLFW_PLATFORM_WAYLAND);
 
 #else // GLFW_VERSION_MAJOR >= 3 && GLFW_VERSION_MINOR >= 4
 
