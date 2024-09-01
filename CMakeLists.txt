@@ -65,7 +65,7 @@ option(USE_TINYXML2 "Build with TinyXML2 support." ON)
 
 # Window manager backends
 option(USE_SDL2 "Build with SDL2 support." ON)
-option(USE_GLFW "Build with GLFW support." ON)
+option(USE_GLFW "Build with GLFW support." OFF)
 # SDL2_image is disabled by default, as it is only used in the legacy OpenGL texture manager, and no program developed
 # by me uses anything more than the PNG format sgl already supports anyways.
 # SDL2_image pulls in a lot of dependencies, one being JPEG XL, which uses the vectorization library 'highway' that
@@ -460,7 +460,7 @@ target_include_directories(sgl PUBLIC
         $<INSTALL_INTERFACE:include/sgl> # <prefix>/include/sgl
 )
 
-if (${USE_GLFW})
+if (${USE_GLFW} AND (EMSCRIPTEN OR glfw3_FOUND))
     target_compile_definitions(sgl PUBLIC SUPPORT_GLFW)
     if (NOT EMSCRIPTEN AND glfw3_FOUND)
         target_link_libraries(sgl PRIVATE glfw)

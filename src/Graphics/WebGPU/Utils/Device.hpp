@@ -31,6 +31,7 @@
 
 #include <vector>
 #include <set>
+#include <functional>
 #include <optional>
 #include <webgpu/webgpu.h>
 
@@ -63,6 +64,15 @@ public:
             std::optional<WGPULimits> optionalLimits = {},
             WGPUPowerPreference _powerPreference = WGPUPowerPreference_Undefined);
     ~Device();
+
+    /**
+     * Polls the device events such that asynchronous callbacks are processed.
+     * @param yieldExecution Whether to yield execution to the browser if Emscripten is used.
+     */
+    void pollEvents(bool yieldExecution);
+
+    /// Encodes and executes commands.
+    void executeCommands(const std::function<void(WGPUCommandEncoder encoder)>& encodeCommandsCallback);
 
     [[nodiscard]] inline Instance* getInstance() { return instance; }
     [[nodiscard]] inline WGPUAdapter getWGPUAdapter() { return adapter; }
