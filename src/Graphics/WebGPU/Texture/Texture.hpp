@@ -67,6 +67,13 @@ struct DLL_OBJECT TextureWriteInfo {
 DLL_OBJECT size_t getTextureFormatEntryByteSize(WGPUTextureFormat format);
 DLL_OBJECT size_t getTextureFormatNumChannels(WGPUTextureFormat format);
 
+class Texture;
+typedef std::shared_ptr<Texture> TexturePtr;
+class TextureView;
+typedef std::shared_ptr<TextureView> TextureViewPtr;
+class Sampler;
+typedef std::shared_ptr<Sampler> SamplerPtr;
+
 class DLL_OBJECT Texture {
 public:
     Texture(Device* device, TextureSettings _textureSettings);
@@ -89,8 +96,6 @@ public:
     WGPUTexture texture{};
     bool hasOwnership = false; // Don't call destroy if we don't have ownership.
 };
-
-typedef std::shared_ptr<Texture> TexturePtr;
 
 struct DLL_OBJECT TextureViewSettings {
     // Uses TextureSettings::format when set to WGPUTextureFormat_Undefined.
@@ -121,6 +126,35 @@ private:
     TexturePtr texture;
     TextureViewSettings textureViewSettings;
     WGPUTextureView textureView{};
+};
+
+struct SamplerSettings {
+    WGPUAddressMode addressModeU = WGPUAddressMode_ClampToEdge;
+    WGPUAddressMode addressModeV = WGPUAddressMode_ClampToEdge;
+    WGPUAddressMode addressModeW = WGPUAddressMode_ClampToEdge;
+    WGPUFilterMode magFilter = WGPUFilterMode_Linear;
+    WGPUFilterMode minFilter = WGPUFilterMode_Linear;
+    WGPUMipmapFilterMode mipmapFilter = WGPUMipmapFilterMode_Linear;
+    float lodMinClamp = 0.0f;
+    float lodMaxClamp = 1.0f;
+    WGPUCompareFunction compare = WGPUCompareFunction_Undefined;
+    uint16_t maxAnisotropy = 1;
+    std::string label;
+};
+
+class DLL_OBJECT Sampler {
+public:
+    Sampler(Device* device, SamplerSettings _samplerSettings);
+    ~Sampler();
+
+    [[nodiscard]] const Device* getDevice() const { return device; }
+    [[nodiscard]] const SamplerSettings& getSamplerSettings() const { return samplerSettings; }
+    [[nodiscard]] const WGPUSampler& getWGPUSampler() const { return sampler; }
+
+private:
+    Device* device = nullptr;
+    SamplerSettings samplerSettings;
+    WGPUSampler sampler{};
 };
 
 }}

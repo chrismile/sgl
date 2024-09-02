@@ -38,6 +38,7 @@
 #include <Utils/StringUtils.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Graphics/Window.hpp>
+#include "../Shader/ShaderManager.hpp"
 #include "Instance.hpp"
 #include "Device.hpp"
 
@@ -240,7 +241,9 @@ void Device::createInternal(
     queryDeviceCapabilities();
 
     auto uncapturedErrorCallback = [](WGPUErrorType type, char const* message, void* userdata) {
-        if (message) {
+        if (message && sgl::stringContains(message, "wgpuDeviceCreateShaderModule")) {
+            ShaderManager->onCompilationFailed(message);
+        } else if (message) {
             sgl::Logfile::get()->writeInfo("Uncaptured device error: " + std::string(message));
         } else {
             sgl::Logfile::get()->writeInfo("Uncaptured device error");

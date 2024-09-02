@@ -60,6 +60,7 @@
 
 #ifdef SUPPORT_WEBGPU
 #include <Graphics/WebGPU/Utils/Instance.hpp>
+#include <Graphics/WebGPU/Shader/ShaderManager.hpp>
 #endif
 
 #ifdef SUPPORT_SDL2
@@ -95,24 +96,30 @@
 
 namespace sgl {
 
-DLL_OBJECT TimerInterface *Timer = NULL;
+DLL_OBJECT TimerInterface *Timer = nullptr;
 
 #ifdef SUPPORT_OPENGL
-DLL_OBJECT RendererInterface *Renderer = NULL;
-DLL_OBJECT ShaderManagerInterface *ShaderManager = NULL;
-DLL_OBJECT TextureManagerInterface *TextureManager = NULL;
-DLL_OBJECT MaterialManagerInterface *MaterialManager = NULL;
+DLL_OBJECT RendererInterface *Renderer = nullptr;
+DLL_OBJECT ShaderManagerInterface *ShaderManager = nullptr;
+DLL_OBJECT TextureManagerInterface *TextureManager = nullptr;
+DLL_OBJECT MaterialManagerInterface *MaterialManager = nullptr;
 #endif
 
 #ifdef SUPPORT_VULKAN
 namespace vk {
-DLL_OBJECT ShaderManagerVk *ShaderManager = NULL;
+DLL_OBJECT ShaderManagerVk *ShaderManager = nullptr;
 }
 #endif
 
-DLL_OBJECT MouseInterface *Mouse = NULL;
-DLL_OBJECT KeyboardInterface *Keyboard = NULL;
-DLL_OBJECT GamepadInterface *Gamepad = NULL;
+#ifdef SUPPORT_WEBGPU
+namespace webgpu {
+DLL_OBJECT ShaderManagerWgpu *ShaderManager = nullptr;
+}
+#endif
+
+DLL_OBJECT MouseInterface *Mouse = nullptr;
+DLL_OBJECT KeyboardInterface *Keyboard = nullptr;
+DLL_OBJECT GamepadInterface *Gamepad = nullptr;
 
 #ifdef WIN32
 // Don't upscale window content on Windows with High-DPI settings
@@ -675,6 +682,16 @@ void AppSettings::initializeSubsystems() {
     }
     if (primaryDevice) {
         vk::ShaderManager = new vk::ShaderManagerVk(primaryDevice);
+    }
+#endif
+
+#ifdef SUPPORT_WEBGPU
+    if (renderSystem == RenderSystem::WEBGPU) {
+        Camera::depthRange = Camera::DepthRange::ZERO_ONE;
+        Camera::coordinateOrigin = Camera::CoordinateOrigin::TOP_LEFT;
+    }
+    if (webgpuPrimaryDevice) {
+        webgpu::ShaderManager = new webgpu::ShaderManagerWgpu(webgpuPrimaryDevice);
     }
 #endif
 

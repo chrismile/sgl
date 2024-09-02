@@ -1171,8 +1171,8 @@ std::string ShaderManagerVk::getShaderString(const std::string &globalShaderName
         return it->second;
     }
 
-    Logfile::get()->writeError(std::string() + "Error in getShader: Couldn't find the shader \""
-                               + globalShaderName + "\".");
+    Logfile::get()->writeError(
+            std::string() + "Error in getShader: Couldn't find the shader \"" + globalShaderName + "\".");
     return "";
 }
 

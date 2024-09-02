@@ -192,7 +192,7 @@ void stringReplaceAll(std::string& str, const std::string& searchPattern, const 
         if (start == std::string::npos) {
             break;
         }
-        str.replace(start, searchPattern.length(), replStr);
+        str = str.replace(start, searchPattern.length(), replStr);
     }
 #endif
 }

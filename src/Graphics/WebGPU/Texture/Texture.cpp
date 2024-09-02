@@ -336,4 +336,28 @@ TextureView::~TextureView() {
     }
 }
 
+
+Sampler::Sampler(Device* device, SamplerSettings _samplerSettings)
+        : device(device), samplerSettings(std::move(_samplerSettings)) {
+    WGPUSamplerDescriptor samplerDescriptor;
+    samplerDescriptor.addressModeU = samplerSettings.addressModeU;
+    samplerDescriptor.addressModeV = samplerSettings.addressModeV;
+    samplerDescriptor.addressModeW = samplerSettings.addressModeW;
+    samplerDescriptor.magFilter = samplerSettings.magFilter;
+    samplerDescriptor.minFilter = samplerSettings.minFilter;
+    samplerDescriptor.mipmapFilter = samplerSettings.mipmapFilter;
+    samplerDescriptor.lodMinClamp = samplerSettings.lodMinClamp;
+    samplerDescriptor.lodMaxClamp = samplerSettings.lodMaxClamp;
+    samplerDescriptor.compare = samplerSettings.compare;
+    samplerDescriptor.maxAnisotropy = samplerSettings.maxAnisotropy;
+    sampler = wgpuDeviceCreateSampler(device->getWGPUDevice(), &samplerDescriptor);
+}
+
+Sampler::~Sampler() {
+    if (sampler) {
+        wgpuSamplerRelease(sampler);
+        sampler = {};
+    }
+}
+
 }}
