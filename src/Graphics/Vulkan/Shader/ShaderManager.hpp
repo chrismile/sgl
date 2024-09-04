@@ -32,6 +32,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <unordered_map>
 
 #include <Utils/File/FileManager.hpp>
 #include "../libs/volk/volk.h"
@@ -91,6 +92,9 @@ public:
     ShaderModulePtr getShaderModule(
             const std::string& shaderId, ShaderModuleType shaderModuleType,
             const std::map<std::string, std::string>& customPreprocessorDefines);
+
+    /// Cached compilation of compute shaders.
+    ShaderStagesPtr compileComputeShaderFromStringCached(const std::string& shaderId, const std::string& shaderString);
 
     //virtual ShaderAttributesPtr createShaderAttributes(ShaderStagesPtr& shader)=0;
 
@@ -219,6 +223,9 @@ protected:
 #ifdef SUPPORT_SHADERC_BACKEND
     shaderc::Compiler* shaderCompiler = nullptr;
 #endif
+
+    /// @see compileComputeShaderFromStringCached
+    std::unordered_map<std::string, ShaderStagesPtr> cachedShadersLoadedFromDirectString;
 };
 
 DLL_OBJECT extern ShaderManagerVk* ShaderManager;

@@ -302,6 +302,38 @@ ShaderModulePtr ShaderManagerVk::getShaderModule(
     return shaderModule;
 }
 
+ShaderStagesPtr ShaderManagerVk::compileComputeShaderFromStringCached(
+        const std::string& shaderId, const std::string& shaderString) {
+    auto it = cachedShadersLoadedFromDirectString.find(shaderId);
+    if (it != cachedShadersLoadedFromDirectString.end()) {
+        return it->second;
+    }
+
+    ShaderModulePtr shaderModule;
+    ShaderModuleInfo shaderInfo{};
+    shaderInfo.shaderModuleType = ShaderModuleType::COMPUTE;
+    shaderInfo.filename = shaderId;
+#ifdef SUPPORT_SHADERC_BACKEND
+    if (shaderCompilerBackend == ShaderCompilerBackend::SHADERC) {
+        shaderModule = loadAssetShaderc(shaderInfo, shaderId, shaderString);
+    }
+#endif
+#ifdef SUPPORT_GLSLANG_BACKEND
+    if (shaderCompilerBackend == ShaderCompilerBackend::GLSLANG) {
+        shaderModule = loadAssetGlslang(shaderInfo, shaderId, shaderString);
+    }
+#endif
+    if (!shaderModule) {
+        return ShaderStagesPtr();
+    }
+
+    std::vector<ShaderModulePtr> shaderModules;
+    shaderModules.push_back(shaderModule);
+    ShaderStagesPtr shaderProgram(new ShaderStages(device, shaderModules));
+    cachedShadersLoadedFromDirectString.insert(std::make_pair(shaderId, shaderProgram));
+    return shaderProgram;
+}
+
 
 ShaderModuleType getShaderModuleTypeFromString(const std::string& shaderId) {
     std::string shaderIdLower = sgl::toLowerCopy(shaderId);
