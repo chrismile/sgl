@@ -510,7 +510,7 @@ void Device::pollEvents(bool yieldExecution) {
 #elif defined(WEBGPU_BACKEND_WGPU)
     wgpuDevicePoll(device, false, nullptr);
 #elif defined(WEBGPU_BACKEND_EMSCRIPTEN)
-    if (yieldToWebBrowser) {
+    if (yieldExecution) {
         emscripten_sleep(100);
     }
 #endif
