@@ -167,7 +167,7 @@ float getHighDPIScaleFactor() {
         auto succeeded = SDL_GetWindowWMInfo(sdlWindow, &wminfo);
 #ifdef __EMSCRIPTEN__
         // For whatever reason, we get "SDL error: That operation is not supported" after SDL_GetWindowWMInfo.
-    window->errorCheckIgnoreUnsupportedOperation();
+        static_cast<sgl::SDLWindow*>(window)->errorCheckIgnoreUnsupportedOperation();
 #endif
         if (succeeded) {
             switch (wminfo.subsystem) {
