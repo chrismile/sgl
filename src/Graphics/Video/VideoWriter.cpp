@@ -434,10 +434,14 @@ void VideoWriter::readBackFinishedFrames() {
             readBackBuffer.fence = nullptr;
 
             glBindBuffer(GL_COPY_READ_BUFFER, readBackBuffer.pbo);
+#ifndef __EMSCRIPTEN__
             char *pboData = reinterpret_cast<char*>(glMapBufferRange(
                     GL_COPY_READ_BUFFER, 0, frameW * frameH * 3, GL_MAP_READ_BIT));
             memcpy(framebuffer, pboData, frameW * frameH * 3);
             glUnmapBuffer(GL_COPY_READ_BUFFER);
+#else
+            glGetBufferSubData(GL_COPY_READ_BUFFER, 0, frameW * frameH * 3, framebuffer);
+#endif
             pushFrame(framebuffer);
 
             // Pop operation.
@@ -494,10 +498,14 @@ void VideoWriter::readBackOldestFrame() {
 
     if (renderingFinished) {
         glBindBuffer(GL_COPY_READ_BUFFER, readBackBuffer.pbo);
+#ifndef __EMSCRIPTEN__
         char *pboData = reinterpret_cast<char*>(glMapBufferRange(
                 GL_COPY_READ_BUFFER, 0, frameW * frameH * 3, GL_MAP_READ_BIT));
         memcpy(framebuffer, pboData, frameW * frameH * 3);
         glUnmapBuffer(GL_COPY_READ_BUFFER);
+#else
+        glGetBufferSubData(GL_COPY_READ_BUFFER, 0, frameW * frameH * 3, framebuffer);
+#endif
         pushFrame(framebuffer);
     }
 
