@@ -50,8 +50,11 @@
 #include <Graphics/OpenGL/SystemGL.hpp>
 #endif
 
-#ifdef SUPPORT_VULKAN
+#if defined(SUPPORT_VULKAN) || defined(SUPPORT_WEBGPU)
 #include <Graphics/Scene/Camera.hpp>
+#endif
+
+#ifdef SUPPORT_VULKAN
 #include <Graphics/Vulkan/Utils/Instance.hpp>
 #include <Graphics/Vulkan/Utils/Swapchain.hpp>
 #include <Graphics/Vulkan/Utils/Device.hpp>
