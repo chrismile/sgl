@@ -151,6 +151,7 @@ public:
     void pushConstants(
             const PipelinePtr& pipeline, VkShaderStageFlagBits shaderStageFlagBits,
             uint32_t offset, const T& data) {
+        static_assert(!std::is_pointer_v<T>, "pushConstants<T> requires T to be a non-pointer type.");
         pushConstants(pipeline, shaderStageFlagBits, offset, sizeof(T), &data);
     }
 

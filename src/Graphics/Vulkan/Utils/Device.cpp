@@ -1754,6 +1754,22 @@ std::vector<VkFormat> Device::getSupportedDepthStencilFormats(VkImageTiling imag
     return supportedFormats;
 }
 
+bool Device::getSupportsFormat(VkFormat format, VkImageTiling imageTiling) {
+    auto it = formatPropertiesMap.find(format);
+    if (it == formatPropertiesMap.end()) {
+        VkFormatProperties props;
+        vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
+        formatPropertiesMap.insert(std::make_pair(format, props));
+        it = formatPropertiesMap.find(format);
+    }
+    const VkFormatProperties& props = it->second;
+    if (imageTiling == VK_IMAGE_TILING_LINEAR) {
+        return props.linearTilingFeatures != 0;
+    } else {
+        return props.optimalTilingFeatures != 0;
+    }
+}
+
 uint32_t Device::findMemoryTypeIndex(uint32_t memoryTypeBits, VkMemoryPropertyFlags memoryPropertyFlags) {
     for (uint32_t memoryTypeIndex = 0; memoryTypeIndex < physicalDeviceMemoryProperties.memoryTypeCount; memoryTypeIndex++) {
         if (((physicalDeviceMemoryProperties.memoryTypes[memoryTypeIndex].propertyFlags & memoryPropertyFlags) == memoryPropertyFlags

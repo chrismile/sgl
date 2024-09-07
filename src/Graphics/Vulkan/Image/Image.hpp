@@ -82,6 +82,7 @@ struct DLL_OBJECT ImageSettings {
     VkSharingMode sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     uint32_t queueFamilyIndexCount = 0; // Only for sharingMode == VK_SHARING_MODE_CONCURRENT.
     const uint32_t* pQueueFamilyIndices = nullptr;
+    VkImageCreateFlags flags = 0;
     bool exportMemory = false; // Whether to export the memory for external use, e.g., in OpenGL.
     /**
      * Whether to use a dedicated allocation instead of using VMA. At the moment, this is only supported for exported
@@ -90,6 +91,9 @@ struct DLL_OBJECT ImageSettings {
      * sub-buffers.
      */
     bool useDedicatedAllocationForExportedMemory = true;
+    // Can be used for specifying compatible image view formats (VK_KHR_image_format_list).
+    uint32_t viewFormatCount = 0;
+    const VkFormat* pViewFormats = nullptr;
 };
 
 inline bool hasStencilComponent(VkFormat format) {
@@ -383,8 +387,28 @@ private:
 #endif
 };
 
+struct ImageViewSettings {
+    ImageViewSettings() {
+        imageSubresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        imageSubresourceRange.baseMipLevel = 0;
+        imageSubresourceRange.levelCount = std::numeric_limits<uint32_t>::max(); // by default set to maximum image level count.
+        imageSubresourceRange.baseArrayLayer = 0;
+        imageSubresourceRange.layerCount = std::numeric_limits<uint32_t>::max(); // by default set to maximum image layer count.
+        componentMapping.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        componentMapping.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        componentMapping.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        componentMapping.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+    }
+    VkImageViewType imageViewType = VK_IMAGE_VIEW_TYPE_MAX_ENUM; // by default inferred from image type.
+    VkFormat format = VK_FORMAT_UNDEFINED; // by default mapped to image format.
+    VkImageSubresourceRange imageSubresourceRange;
+    VkComponentMapping componentMapping;
+    VkImageUsageFlags usage = 0; // by default inferred from image.
+};
+
 class DLL_OBJECT ImageView {
 public:
+    ImageView(const ImagePtr& image, const ImageViewSettings& imageViewSettings);
     ImageView(
             const ImagePtr& image, VkImageViewType imageViewType,
             uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount,

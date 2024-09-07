@@ -372,7 +372,15 @@ Image::Image(Device* device, const ImageSettings& imageSettings) : device(device
         imageCreateInfo.pQueueFamilyIndices = imageSettings.pQueueFamilyIndices;
     }
     imageCreateInfo.samples = imageSettings.numSamples;
-    imageCreateInfo.flags = 0;
+    imageCreateInfo.flags = imageSettings.flags;
+
+    VkImageFormatListCreateInfoKHR formatList{};
+    if (imageSettings.viewFormatCount > 0 && imageSettings.pViewFormats && !imageSettings.exportMemory) {
+        formatList.sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO_KHR;
+        formatList.pViewFormats = imageSettings.pViewFormats;
+        formatList.viewFormatCount = imageSettings.viewFormatCount;
+        imageCreateInfo.pNext = &formatList;
+    }
 
     VmaAllocationCreateInfo allocCreateInfo = {};
     allocCreateInfo.usage = imageSettings.memoryUsage;
@@ -539,7 +547,7 @@ void Image::createFromD3D12SharedResourceHandle(HANDLE resourceHandle, const Ima
     imageCreateInfo.sharingMode = imageSettings.sharingMode;
     imageCreateInfo.queueFamilyIndexCount = imageSettings.queueFamilyIndexCount;
     imageCreateInfo.samples = imageSettings.numSamples;
-    imageCreateInfo.flags = 0;
+    imageCreateInfo.flags = imageSettings.flags;
 
     VkExternalMemoryImageCreateInfo externalMemoryImageCreateInfo = {};
     externalMemoryImageCreateInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;
@@ -870,6 +878,12 @@ void Image::copyToImage(ImagePtr& destImage, VkImageAspectFlags aspectFlags, VkC
     imageCopy.srcOffset = { 0, 0, 0 };
     imageCopy.dstSubresource = subresource;
     imageCopy.dstOffset = { 0, 0, 0 };
+    /*
+     * https://registry.khronos.org/vulkan/specs/1.3-extensions/html/vkspec.html#formats-size-compatibility
+     * "Copy operations are able to copy between size-compatible formats in different resources to enable manipulation
+     * of data in different formats. The extent used in these copy operations always matches the source image, and is
+     * resized to the expectations of the block extents noted above for the destination image."
+     */
     imageCopy.extent = { imageSettings.width, imageSettings.height, imageSettings.depth };
     vkCmdCopyImage(
             commandBuffer, this->image, this->imageLayout, destImage->image, destImage->imageLayout,
@@ -1361,6 +1375,39 @@ bool Image::createGlMemoryObject(GLuint& memoryObjectGl, InteropMemoryHandle& in
 #endif
 
 
+
+ImageView::ImageView(const ImagePtr& image, const ImageViewSettings& imageViewSettings)
+        : device(image->getDevice()), image(image), imageViewType(imageViewSettings.imageViewType),
+          subresourceRange(imageViewSettings.imageSubresourceRange) {
+    if (imageViewType == VK_IMAGE_VIEW_TYPE_MAX_ENUM) {
+        imageViewType = VkImageViewType(image->getImageSettings().imageType);
+    }
+    if (subresourceRange.levelCount == std::numeric_limits<uint32_t>::max()) {
+        subresourceRange.levelCount = image->getImageSettings().mipLevels;
+    }
+    if (subresourceRange.layerCount == std::numeric_limits<uint32_t>::max()) {
+        subresourceRange.layerCount = image->getImageSettings().arrayLayers;
+    }
+
+    VkImageViewCreateInfo viewInfo{};
+    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewInfo.image = image->getVkImage();
+    viewInfo.viewType = imageViewType;
+    viewInfo.format = imageViewSettings.format;
+    viewInfo.components = imageViewSettings.componentMapping;
+    viewInfo.subresourceRange = subresourceRange;
+
+    VkImageViewUsageCreateInfo imageViewUsageCreateInfo{};
+    if (imageViewSettings.usage != 0) {
+        imageViewUsageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO;
+        imageViewUsageCreateInfo.usage = imageViewSettings.usage;
+        viewInfo.pNext = &imageViewUsageCreateInfo;
+    }
+
+    if (vkCreateImageView(device->getVkDevice(), &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
+        sgl::Logfile::get()->throwError("Error in ImageView::ImageView: vkCreateImageView failed!");
+    }
+}
 
 ImageView::ImageView(
         const ImagePtr& image, VkImageViewType imageViewType,

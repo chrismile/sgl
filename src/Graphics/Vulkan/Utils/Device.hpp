@@ -374,6 +374,7 @@ public:
     VkFormat getSupportedDepthStencilFormat(
             VkFormat hint = VK_FORMAT_D24_UNORM_S8_UINT, VkImageTiling imageTiling = VK_IMAGE_TILING_OPTIMAL);
     std::vector<VkFormat> getSupportedDepthStencilFormats(VkImageTiling imageTiling = VK_IMAGE_TILING_OPTIMAL);
+    bool getSupportsFormat(VkFormat format, VkImageTiling imageTiling = VK_IMAGE_TILING_OPTIMAL);
 
     /**
      * Returns the index of the memory type with the corresponding bits and property flags.
@@ -527,6 +528,9 @@ private:
     typedef std::tuple<VkBufferUsageFlags, VkBufferCreateFlags,
             VkExternalMemoryHandleTypeFlagBits> ExternalMemoryBufferConfigTuple;
     std::map<ExternalMemoryBufferConfigTuple, bool> needsDedicatedAllocationForExternalMemoryBufferMap;
+
+    // Information on supported image formats.
+    std::unordered_map<VkFormat, VkFormatProperties> formatPropertiesMap;
 
     // Device properties.
     VkPhysicalDeviceProperties physicalDeviceProperties{};
