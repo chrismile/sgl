@@ -536,7 +536,7 @@ void EncodeP1( inout uint4 block, inout float blockMSLE, float3 texels[ 16 ] )
 	block.w |= indices[ 14 ] << 24u;
 	block.w |= indices[ 15 ] << 28u;
 }
-
+)" R"(
 void EncodeP2Pattern( inout uint4 block, inout float blockMSLE, uint pattern, float3 texels[ 16 ] )
 {
 	float3 p0BlockMin = float3( HALF_MAX, HALF_MAX, HALF_MAX );
