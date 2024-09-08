@@ -28,6 +28,10 @@
 
 #include <iostream>
 
+#ifdef SUPPORT_NAGA_CROSS
+#include <naga_cross.h>
+#endif
+
 #include <Utils/StringUtils.hpp>
 #include <Utils/AppSettings.hpp>
 #include <Utils/Dialog.hpp>
@@ -54,10 +58,13 @@ void ShaderManagerWgpu::indexFiles(const std::string &file) {
         for (std::string &childFile : elements) {
             indexFiles(childFile);
         }
-    } else if (FileUtils::get()->hasExtension(file.c_str(), ".wgsl")) {
-        // File to index. "fileName" is name without path.
-        std::string fileName = FileUtils::get()->getPureFilename(file);
-        shaderFileMap.insert(make_pair(fileName, file));
+    } else {
+        auto fileExtension = FileUtils::get()->getFileExtensionLower(file);
+        if (fileExtension == "glsl" || fileExtension == "wgsl") {
+            // File to index. "fileName" is name without path.
+            std::string fileName = FileUtils::get()->getPureFilename(file);
+            shaderFileMap.insert(make_pair(fileName, file));
+        }
     }
 }
 
@@ -107,6 +114,54 @@ ShaderModulePtr ShaderManagerWgpu::loadAsset(ShaderModuleInfo& shaderInfo) {
         std::cout << "Shader dump (" << id << "):" << std::endl;
         std::cout << "--------------------------------------------" << std::endl;
         std::cout << shaderString << std::endl << std::endl;
+    }
+
+    // Use naga_cross for GLSL -> WGSL cross-compilation.
+    if (sgl::endsWith(shaderInfo.filename, ".glsl")) {
+#ifdef SUPPORT_NAGA_CROSS
+        std::vector<NagaCrossShaderDefine> shaderDefines;
+        shaderDefines.resize(preprocessorDefines.size());
+        int defineIdx = 0;
+        for (const auto& preprocessorDefine : preprocessorDefines) {
+            NagaCrossShaderDefine& shaderDefine = shaderDefines.at(defineIdx);
+            shaderDefine.name = preprocessorDefine.first.c_str();
+            shaderDefine.value = preprocessorDefine.second.c_str();
+            defineIdx++;
+        }
+
+        NagaCrossParams params;
+        // TODO
+        params.shader_stage = NAGA_CROSS_SHADER_STAGE_VERTEX;
+        params.num_defines = int(shaderDefines.size());
+        params.shader_defines = shaderDefines.data();
+
+        NagaCrossResult result;
+        naga_cross_glsl_to_wgsl(shaderString.c_str(), &params, &result);
+        if (result.succeeded) {
+            shaderString = result.wgsl_code;
+            naga_cross_release_result(&result);
+        } else {
+            std::string errorMessage = result.error_string;
+            naga_cross_release_result(&result);
+#ifdef __EMSCRIPTEN__
+            auto choice = dialog::openMessageBoxBlocking(
+                "Error occurred", errorMessage, dialog::Choice::OK, dialog::Icon::ERROR);
+#else
+            auto choice = dialog::openMessageBoxBlocking(
+                    "Error occurred", errorMessage, dialog::Choice::ABORT_RETRY_IGNORE, dialog::Icon::ERROR);
+            if (choice == dialog::Button::RETRY) {
+                naga_cross_release_result(&result);
+                sgl::webgpu::ShaderManager->invalidateShaderCache();
+                return loadAsset(shaderInfo);
+            } else if (choice == dialog::Button::ABORT) {
+                exit(1);
+            }
+#endif
+        }
+#else
+        sgl::Logfile::get()->throwError(
+                "Error in ShaderManagerWgpu::loadAsset: Attempting to load GLSL shader, but naga_cross support is not enabled.");
+#endif
     }
 
     WGPUShaderModuleDescriptor shaderModuleDescriptor{};
@@ -190,7 +245,7 @@ std::string ShaderManagerWgpu::getShaderString(const std::string &globalShaderNa
 
     std::string::size_type filenameEnd = globalShaderName.find('.');
     std::string pureFilename = globalShaderName.substr(0, filenameEnd);
-    std::string shaderFilename = getShaderFileName(pureFilename + ".wgsl");
+    std::string shaderFilename = getShaderFileName(globalShaderName);
     std::string shaderInternalId = globalShaderName.substr(filenameEnd + 1);
 
     std::ifstream file(shaderFilename.c_str());
@@ -221,7 +276,7 @@ std::string ShaderManagerWgpu::getShaderString(const std::string &globalShaderNa
     if (!shaderName.empty()) {
         effectSources.insert(make_pair(shaderName, shaderContent));
     } else {
-        effectSources.insert(make_pair(pureFilename + ".wgsl", shaderContent));
+        effectSources.insert(make_pair(globalShaderName, shaderContent));
     }
 
     it = effectSources.find(globalShaderName);

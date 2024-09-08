@@ -164,7 +164,7 @@ auto const function_def =
         >> lit("fn")
         >> identifier
         >> '('
-        >> struct_entry % ','
+        >> -(struct_entry % ',')
         >> -lit(',')
         >> ')'
         >> -(lit("->") >> *attribute >> type)

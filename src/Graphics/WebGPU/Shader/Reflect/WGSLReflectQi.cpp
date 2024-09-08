@@ -225,7 +225,7 @@ struct wgsl_shaders_grammar
                 >> lit("fn")
                 >> identifier[at_c<1>(_val) = _1]
                 >> '('
-                >> struct_entry[push_back(at_c<2>(_val), _1)] % ','
+                >> -(struct_entry[push_back(at_c<2>(_val), _1)] % ',')
                 >> -lit(',')
                 >> ')'
                 >> -(lit("->") >> *attribute[push_back(at_c<3>(_val), _1)] >> type[at_c<4>(_val) = _1])
