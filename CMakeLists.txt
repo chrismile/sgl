@@ -680,10 +680,6 @@ if (${SUPPORT_VULKAN} AND (${shaderc_FOUND} OR ${glslang_FOUND}))
         endif()
     endif()
 
-    if(VCPKG_TOOLCHAIN)
-        set(GLSLANG_SHADERLANG_H_PATH "${VCPKG_INCLUDE_DIR}/glslang/Public/ShaderLang.h")
-    endif()
-
     if(VCPKG_TOOLCHAIN AND NOT ${USE_WEBGPU_IMPL_DAWN})
         # Fix for CMake generators with debug/release configuration available at the same time (e.g., Visual Studio).
         # For more details see: https://github.com/Microsoft/vcpkg/issues/2979
@@ -900,6 +896,10 @@ if (${SUPPORT_VULKAN} AND (${shaderc_FOUND} OR ${glslang_FOUND}))
         else()
             target_link_libraries(sgl PRIVATE glslang::glslang glslang::glslang-default-resource-limits glslang::SPIRV glslang::SPVRemapper)
         endif()
+    endif()
+
+    if(VCPKG_TOOLCHAIN)
+        set(GLSLANG_SHADERLANG_H_PATH "${VCPKG_INCLUDE_DIR}/glslang/Public/ShaderLang.h")
     endif()
 
     if (${glslang_FOUND})
