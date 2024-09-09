@@ -37,7 +37,7 @@
 
 namespace sgl { namespace webgpu {
 
-class Swapchain {
+class DLL_OBJECT Swapchain {
 public:
     /**
      * @param device The device object.
