@@ -368,7 +368,7 @@ void ImGuiWrapper::onResolutionChanged() {
         /// image counts in the docking branch, but Wayland seems to use them.
         auto* window = AppSettings::get()->getMainWindow();
         if (window->getUsesAnyWaylandBackend()) {
-            ImGui_ImplVulkan_SetMinImageCount(swapchain->getNumImages());
+            ImGui_ImplVulkan_SetMinImageCount(uint32_t(swapchain->getNumImages()));
         } else {
             ImGui_ImplVulkan_SetMinImageCount(swapchain->getMinImageCount());
         }
@@ -411,7 +411,7 @@ void ImGuiWrapper::renderStart() {
         /// 2024-06-22: ImGui_ImplVulkan_SetMinImageCount in imgui_impl_vulkan.cpp does not support variable minimum
         /// image counts in the docking branch, but Wayland seems to use them.
         if (window->getUsesAnyWaylandBackend()) {
-            initInfo.MinImageCount = swapchain->getNumImages();
+            initInfo.MinImageCount = uint32_t(swapchain->getNumImages());
         } else {
             initInfo.MinImageCount = swapchain->getMinImageCount();
         }
