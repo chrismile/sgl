@@ -47,40 +47,39 @@ namespace sgl { namespace webgpu {
 
 // See: https://www.w3.org/TR/webgpu/
 WGPULimits getDefaultWGPULimits() {
-    WGPULimits limits = {
-            .maxTextureDimension1D = 8192,
-            .maxTextureDimension2D = 8192,
-            .maxTextureDimension3D = 2048,
-            .maxTextureArrayLayers = 256,
-            .maxBindGroups = 4,
-            .maxBindGroupsPlusVertexBuffers = 24,
-            .maxBindingsPerBindGroup = 1000,
-            .maxDynamicUniformBuffersPerPipelineLayout = 8,
-            .maxDynamicStorageBuffersPerPipelineLayout = 4,
-            .maxSampledTexturesPerShaderStage = 16,
-            .maxSamplersPerShaderStage = 16,
-            .maxStorageBuffersPerShaderStage = 8,
-            .maxStorageTexturesPerShaderStage = 4,
-            .maxUniformBuffersPerShaderStage = 12,
-            .maxUniformBufferBindingSize = 65536, // bytes
-            .maxStorageBufferBindingSize = 134217728, // bytes, 128 MiB
-            .minUniformBufferOffsetAlignment = 256, // bytes
-            .minStorageBufferOffsetAlignment = 256, // bytes
-            .maxVertexBuffers = 8,
-            .maxBufferSize = 268435456, // bytes, 256 MiB
-            .maxVertexAttributes = 16,
-            .maxVertexBufferArrayStride = 2048, // bytes
-            .maxInterStageShaderComponents = 64,
-            .maxInterStageShaderVariables = 16,
-            .maxColorAttachments = 8,
-            .maxColorAttachmentBytesPerSample = 32,
-            .maxComputeWorkgroupStorageSize = 16384, // bytes
-            .maxComputeInvocationsPerWorkgroup = 256,
-            .maxComputeWorkgroupSizeX = 256,
-            .maxComputeWorkgroupSizeY = 256,
-            .maxComputeWorkgroupSizeZ = 64,
-            .maxComputeWorkgroupsPerDimension = 65535,
-    };
+    WGPULimits limits{};
+    limits.maxTextureDimension1D = 8192;
+    limits.maxTextureDimension2D = 8192;
+    limits.maxTextureDimension3D = 2048;
+    limits.maxTextureArrayLayers = 256;
+    limits.maxBindGroups = 4;
+    limits.maxBindGroupsPlusVertexBuffers = 24;
+    limits.maxBindingsPerBindGroup = 1000;
+    limits.maxDynamicUniformBuffersPerPipelineLayout = 8;
+    limits.maxDynamicStorageBuffersPerPipelineLayout = 4;
+    limits.maxSampledTexturesPerShaderStage = 16;
+    limits.maxSamplersPerShaderStage = 16;
+    limits.maxStorageBuffersPerShaderStage = 8;
+    limits.maxStorageTexturesPerShaderStage = 4;
+    limits.maxUniformBuffersPerShaderStage = 12;
+    limits.maxUniformBufferBindingSize = 65536; // bytes
+    limits.maxStorageBufferBindingSize = 134217728; // bytes; 128 MiB
+    limits.minUniformBufferOffsetAlignment = 256; // bytes
+    limits.minStorageBufferOffsetAlignment = 256; // bytes
+    limits.maxVertexBuffers = 8;
+    limits.maxBufferSize = 268435456; // bytes; 256 MiB
+    limits.maxVertexAttributes = 16;
+    limits.maxVertexBufferArrayStride = 2048; // bytes
+    limits.maxInterStageShaderComponents = 64;
+    limits.maxInterStageShaderVariables = 16;
+    limits.maxColorAttachments = 8;
+    limits.maxColorAttachmentBytesPerSample = 32;
+    limits.maxComputeWorkgroupStorageSize = 16384; // bytes
+    limits.maxComputeInvocationsPerWorkgroup = 256;
+    limits.maxComputeWorkgroupSizeX = 256;
+    limits.maxComputeWorkgroupSizeY = 256;
+    limits.maxComputeWorkgroupSizeZ = 64;
+    limits.maxComputeWorkgroupsPerDimension = 65535;
     return limits;
 }
 
