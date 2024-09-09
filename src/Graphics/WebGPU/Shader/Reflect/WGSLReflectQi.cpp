@@ -124,40 +124,25 @@ struct wgsl_shaders_grammar
         using phoenix::at_c;
         using phoenix::push_back;
 
-        expression %=
-                *char_("a-zA-Z_0-9\\-\\*\\+/\\.");
+        expression = *char_("a-zA-Z_0-9\\-\\*\\+/\\.");
         expression.name("expression");
         //BOOST_SPIRIT_DEBUG_NODE(expression);
 
-        identifier =
-                char_("a-zA-Z_")[_val = _1]
-                >> *char_("a-zA-Z_0-9\\-")[_val += _1];
+        identifier %= char_("a-zA-Z_") >> *char_("a-zA-Z_0-9\\-");
         identifier.name("identifier");
         //BOOST_SPIRIT_DEBUG_NODE(identifier);
 
-        identifier_noskip =
-                lexeme[char_("a-zA-Z_")[_val = _1]
-                 >> *char_("a-zA-Z_0-9\\-")[_val += _1]];
+        identifier_noskip %= lexeme[char_("a-zA-Z_") >> *char_("a-zA-Z_0-9\\-")];
         identifier_noskip.name("identifier_noskip");
         //BOOST_SPIRIT_DEBUG_NODE(identifier_noskip);
 
-        //type =
-        //        char_("a-zA-Z_")[_val = _1]
-        //                >> *char_("a-zA-Z_0-9\\-<>")[_val += _1];
-        //type.name("type");
-        //BOOST_SPIRIT_DEBUG_NODE(type);
         // For sake of simplicity and recursion support, allow starting with number.
-        type %=
-                +char_("a-zA-Z_0-9")//[at_c<0>(_val) += _1]
-                >> -(lit('<') >> type % ',' >> lit('>'));
+        type %= +char_("a-zA-Z_0-9") >> -(lit('<') >> type % ',' >> lit('>'));
         type.name("type");
         //BOOST_SPIRIT_DEBUG_NODE(type);
 
         // E.g.: @builtin(position)
-        attribute =
-                lit("@")
-                >> identifier_noskip[at_c<0>(_val) = _1]
-                >> -('(' >> expression[at_c<1>(_val) = _1] >> ')');
+        attribute %= lit("@") >> identifier_noskip >> -('(' >> expression >> ')');
         //BOOST_SPIRIT_DEBUG_NODE(attribute);
 
         // E.g.: @builtin(position) position: vec4f
@@ -176,11 +161,11 @@ struct wgsl_shaders_grammar
          * 	   @location(0) color: vec3f,
          * };
          */
-        _struct =
+        _struct %=
                 lit("struct")
-                >> identifier[at_c<0>(_val) = _1]
+                >> identifier
                 >> '{'
-                >> struct_entry[push_back(at_c<1>(_val), _1)] % ','
+                >> struct_entry % ','
                 >> -lit(',')
                 >> '}'
                 >> *lit(';');
@@ -188,13 +173,13 @@ struct wgsl_shaders_grammar
         //BOOST_SPIRIT_DEBUG_NODE(_struct);
 
         // E.g.: @group(0) @binding(0) var<storage,read> inputBuffer: array<f32,64>;
-        variable =
-                *attribute[push_back(at_c<0>(_val), _1)]
+        variable %=
+                *attribute
                 >> lit("var")
-                >> -('<' >> (identifier % ',') >> '>')[at_c<1>(_val) = _1]
-                >> identifier[at_c<2>(_val) = _1]
+                >> -('<' >> (identifier % ',') >> '>')
+                >> identifier
                 >> ':'
-                >> type[at_c<3>(_val) = _1]
+                >> type
                 >> +lit(';');
         variable.name("variable");
         //BOOST_SPIRIT_DEBUG_NODE(variable);

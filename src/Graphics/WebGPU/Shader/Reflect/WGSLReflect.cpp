@@ -27,6 +27,7 @@
  */
 
 #include <set>
+#include <algorithm>
 
 #include <Utils/Convert.hpp>
 #include <Utils/StringUtils.hpp>

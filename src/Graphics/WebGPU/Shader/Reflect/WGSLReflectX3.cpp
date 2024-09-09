@@ -159,23 +159,32 @@ auto const function_content_def =
         >> *(char_ - char_("{}"))
         >> '}';
 // E.g.: @fragment fn fs_main(vertex_in: VertexOut) -> FragmentOut { ... }
+auto unpack_function_attr = [](auto& ctx){ _val(ctx).attributes.push_back(_attr(ctx)); };
+auto unpack_function_name = [](auto& ctx){ _val(ctx).name = _attr(ctx); };
+auto unpack_function_params = [](auto& ctx){ _val(ctx).parameters.push_back(_attr(ctx)); };
+auto unpack_function_retatts = [](auto& ctx){ _val(ctx).return_type_attributes.push_back(_attr(ctx)); };
+auto unpack_function_rettype = [](auto& ctx){ _val(ctx).return_type = _attr(ctx); };
+auto unpack_function_content = [](auto& ctx){ _val(ctx).function_content = _attr(ctx); };
 auto const function_def =
-        *attribute
+        *attribute[unpack_function_attr]
         >> lit("fn")
-        >> identifier
+        >> identifier[unpack_function_name]
         >> '('
-        >> -(struct_entry % ',')
+        >> -(struct_entry[unpack_function_params] % ',')
         >> -lit(',')
         >> ')'
-        >> -(lit("->") >> *attribute >> type)
-        >> function_content
+        >> -(lit("->") >> *attribute[unpack_function_retatts] >> type[unpack_function_rettype])
+        >> function_content[unpack_function_content]
         >> *lit(';');
-auto set_string = [](auto& ctx){ return "enable"; };
+auto set_string_enable = [](auto& ctx){ _val(ctx).directive_type = "enable"; };
+auto set_string_requires = [](auto& ctx){ _val(ctx).directive_type = "requires"; };
+auto set_string_diagnostic = [](auto& ctx){ _val(ctx).directive_type = "diagnostic"; };
+auto unpack_directive_values = [](auto& ctx){ return _val(ctx).values.push_back(_attr(ctx)); };
 auto const directive_def =
-        (lit("enable")[set_string]
-            | lit("requires")[set_string]
-            | lit("diagnostic")[set_string])
-        >> identifier % ','
+        (lit("enable")[set_string_enable]
+            | lit("requires")[set_string_requires]
+            | lit("diagnostic")[set_string_diagnostic])
+        >> identifier[unpack_directive_values] % ','
         >> +lit(';');
 auto const content_def = *(x3::rule<struct _, wgsl_entry> {} = _struct | variable | constant | function | directive);
 
