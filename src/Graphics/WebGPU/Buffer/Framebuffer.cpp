@@ -26,19 +26,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ShaderModule.hpp"
+#include "Framebuffer.hpp"
 
 namespace sgl { namespace webgpu {
 
-ShaderModule::ShaderModule(WGPUShaderModule shaderModule) : shaderModule(shaderModule) {
-    ;
+Framebuffer::Framebuffer(Device* device, uint32_t width, uint32_t height)
+        : device(device), width(width), height(height) {
 }
 
-ShaderModule::~ShaderModule() {
-    if (shaderModule) {
-        wgpuShaderModuleRelease(shaderModule);
-        shaderModule = {};
-    }
+Framebuffer::~Framebuffer() {
 }
 
 }}

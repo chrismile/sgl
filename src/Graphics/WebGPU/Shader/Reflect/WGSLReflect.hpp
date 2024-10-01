@@ -32,22 +32,32 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <webgpu/webgpu.h>
 
 namespace sgl { namespace webgpu {
 
 enum class BindingEntryType : uint32_t {
     UNKNOWN = 0, UNIFORM_BUFFER, TEXTURE, SAMPLER, STORAGE_BUFFER, STORAGE_TEXTURE
 };
+// Only for BindingEntryType::STORAGE_BUFFER and BindingEntryType::STORAGE_TEXTURE.
+enum class StorageModifier : uint32_t {
+    UNKNOWN = 0, READ = 1, WRITE = 2, READ_WRITE = 3
+};
 
 struct DLL_OBJECT BindingEntry {
     uint32_t bindingIndex;
     std::string variableName;
+    std::string typeName;
+    std::vector<std::string> modifiers;
     BindingEntryType bindingEntryType;
+    // Only for BindingEntryType::STORAGE_BUFFER and BindingEntryType::STORAGE_TEXTURE.
+    StorageModifier storageModifier;
 };
 
 struct DLL_OBJECT InOutEntry {
     uint32_t locationIndex;
     std::string variableName;
+    WGPUVertexFormat vertexFormat;
 };
 
 enum class ShaderType : uint32_t {

@@ -193,21 +193,21 @@ void GraphicsPipelineInfo::setBlendMode(BlendMode blendMode, uint32_t colorAttac
         colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
     }
         // Alpha blending
-    else if (blendMode == BlendMode::BACK_TO_FRONT_STRAIGHT_ALPHA){
+    else if (blendMode == BlendMode::BACK_TO_FRONT_STRAIGHT_ALPHA) {
         colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
         colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
         colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
         colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
         colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
         colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
-    } else if (blendMode == BlendMode::BACK_TO_FRONT_PREMUL_ALPHA){
+    } else if (blendMode == BlendMode::BACK_TO_FRONT_PREMUL_ALPHA) {
         colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
         colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
         colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
         colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
         colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
         colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
-    } else if (blendMode == BlendMode::FRONT_TO_BACK_PREMUL_ALPHA){
+    } else if (blendMode == BlendMode::FRONT_TO_BACK_PREMUL_ALPHA) {
         colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
         colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE;
         colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
@@ -216,7 +216,7 @@ void GraphicsPipelineInfo::setBlendMode(BlendMode blendMode, uint32_t colorAttac
         colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
     }
         // Additive blending modes & multiplicative blending
-    else if (blendMode == BlendMode::BACK_ADDITIVE){
+    else if (blendMode == BlendMode::BACK_ADDITIVE) {
         colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
         colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE;
         colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
@@ -224,7 +224,7 @@ void GraphicsPipelineInfo::setBlendMode(BlendMode blendMode, uint32_t colorAttac
         colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
         colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
     }
-    else if (blendMode == BlendMode::ONE){
+    else if (blendMode == BlendMode::ONE) {
         colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
         colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE;
         colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
@@ -232,7 +232,7 @@ void GraphicsPipelineInfo::setBlendMode(BlendMode blendMode, uint32_t colorAttac
         colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
         colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
     }
-    else if (blendMode == BlendMode::BACK_SUBTRACTIVE){
+    else if (blendMode == BlendMode::BACK_SUBTRACTIVE) {
         colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
         colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE;
         colorBlendAttachment.colorBlendOp = VK_BLEND_OP_REVERSE_SUBTRACT;
@@ -240,7 +240,7 @@ void GraphicsPipelineInfo::setBlendMode(BlendMode blendMode, uint32_t colorAttac
         colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
         colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_REVERSE_SUBTRACT;
     }
-    else if (blendMode == BlendMode::BACK_MULTIPLICATIVE){
+    else if (blendMode == BlendMode::BACK_MULTIPLICATIVE) {
         colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_DST_COLOR;
         colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
         colorBlendAttachment.colorBlendOp = VK_BLEND_OP_REVERSE_SUBTRACT;

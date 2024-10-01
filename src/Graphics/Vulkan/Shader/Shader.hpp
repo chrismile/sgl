@@ -168,6 +168,7 @@ public:
     [[nodiscard]] uint32_t getInputVariableLocationIndex(const std::string& varName) const;
     const InterfaceVariableDescriptor& getInputVariableDescriptorFromLocation(uint32_t location);
     const InterfaceVariableDescriptor& getInputVariableDescriptorFromName(const std::string& name);
+
     [[nodiscard]] const std::map<uint32_t, std::vector<DescriptorInfo>>& getDescriptorSetsInfo() const;
     [[nodiscard]] bool hasDescriptorBinding(uint32_t setIdx, const std::string& descName) const;
     [[nodiscard]] const DescriptorInfo& getDescriptorInfoByName(uint32_t setIdx, const std::string& descName) const;

@@ -29,6 +29,7 @@
 #ifndef SGL_WEBGPU_TEXTURE_HPP
 #define SGL_WEBGPU_TEXTURE_HPP
 
+#include <string>
 #include <memory>
 #include <functional>
 

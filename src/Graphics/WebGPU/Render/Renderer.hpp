@@ -30,17 +30,28 @@
 #define SGL_WEBGPU_RENDERER_HPP
 
 #include <vector>
+#include <memory>
 
 #include <webgpu/webgpu.h>
 
 namespace sgl { namespace webgpu {
 
 class Device;
+class Buffer;
+typedef std::shared_ptr<Buffer> BufferPtr;
+class RenderData;
+typedef std::shared_ptr<RenderData> RenderDataPtr;
+class ComputeData;
+typedef std::shared_ptr<ComputeData> ComputeDataPtr;
+class Framebuffer;
+typedef std::shared_ptr<Framebuffer> FramebufferPtr;
 
 class DLL_OBJECT Renderer {
 public:
     explicit Renderer(Device* device);
     ~Renderer();
+
+    [[nodiscard]] inline Device* getDevice() { return device; }
 
     // @see beginCommandBuffer and @see endCommandBuffer need to be called before calling any other command.
     void beginCommandBuffer();
@@ -49,6 +60,18 @@ public:
     void freeFrameCommandBuffers();
     inline WGPUCommandBuffer getWebGPUCommandBuffer() { return commandBuffer; }
     inline WGPUCommandEncoder getWebGPUCommandEncoder() { return encoder; }
+
+    // Render pipeline.
+    void render(const RenderDataPtr& renderData);
+    void render(const RenderDataPtr& renderData, const FramebufferPtr& framebuffer);
+
+    // Compute pipeline.
+    void dispatch(const ComputeDataPtr& computeData, uint32_t groupCountX);
+    void dispatch(const ComputeDataPtr& computeData, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
+    void dispatchIndirect(
+            const ComputeDataPtr& computeData, const sgl::webgpu::BufferPtr& dispatchIndirectBuffer, uint64_t offset);
+    void dispatchIndirect(
+            const ComputeDataPtr& computeData, const sgl::webgpu::BufferPtr& dispatchIndirectBuffer);
 
     // TODO: For testing purposes; will be removed in the future.
     void addTestRenderPass(WGPUTextureView targetView);

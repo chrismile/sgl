@@ -99,6 +99,7 @@ public:
     void setProjectionMatrix(const glm::mat4 &matrix);
 
     // Compute pipeline.
+    void dispatch(const ComputeDataPtr& computeData, uint32_t groupCountX);
     void dispatch(const ComputeDataPtr& computeData, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
     // dispatchIndirectBuffer is a buffer containing a struct of the type VkDispatchIndirectCommand.
     void dispatchIndirect(

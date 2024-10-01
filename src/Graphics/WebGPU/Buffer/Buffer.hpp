@@ -60,7 +60,7 @@ public:
             const BufferPtr& dstBuffer, uint64_t srcOffset, size_t dstOffset, size_t copySize, WGPUCommandEncoder encoder);
 
     [[nodiscard]] inline Device* getDevice() { return device; }
-    [[nodiscard]] inline WGPUBuffer getVkBuffer() { return buffer; }
+    [[nodiscard]] inline WGPUBuffer getWGPUBuffer() { return buffer; }
     [[nodiscard]] inline size_t getSizeInBytes() const { return bufferSettings.sizeInBytes; }
     [[nodiscard]] inline WGPUBufferUsageFlags getVkBufferUsageFlags() const { return bufferSettings.usage; }
 

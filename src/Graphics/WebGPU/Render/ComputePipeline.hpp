@@ -26,25 +26,51 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_SHADERMODULE_HPP
-#define SGL_SHADERMODULE_HPP
+#ifndef SGL_WEBGPU_COMPUTEPIPELINE_HPP
+#define SGL_WEBGPU_COMPUTEPIPELINE_HPP
 
-#include <string>
+#include <memory>
 #include <webgpu/webgpu.h>
 
 namespace sgl { namespace webgpu {
 
-class ShaderModule {
+class ShaderStages;
+typedef std::shared_ptr<ShaderStages> ShaderStagesPtr;
+
+class DLL_OBJECT ComputePipelineInfo {
+    friend class ComputePipeline;
+
 public:
-    ShaderModule(WGPUShaderModule shaderModule);
-    ~ShaderModule();
+    explicit ComputePipelineInfo(ShaderStagesPtr shaderStages);
+    void addConstantEntry(const std::string& key, double value);
+    void removeConstantEntry(const std::string& key);
 
-    [[nodiscard]] const WGPUShaderModule& getWGPUShaderModule() const { return shaderModule; }
-
-private:
-    WGPUShaderModule shaderModule{};
+protected:
+    ShaderStagesPtr shaderStages;
+    std::map<std::string, double> constantEntriesMap;
 };
+
+class DLL_OBJECT ComputePipeline {
+public:
+    ComputePipeline(Device* device, const ComputePipelineInfo& pipelineInfo);
+    ~ComputePipeline();
+
+    [[nodiscard]] inline Device* getDevice() { return device; }
+    [[nodiscard]] inline ShaderStagesPtr& getShaderStages() { return shaderStages; }
+    [[nodiscard]] inline const ShaderStagesPtr& getShaderStages() const { return shaderStages; }
+
+    [[nodiscard]] inline WGPUPipelineLayout getWGPUPipelineLayout() const { return pipelineLayout; }
+    [[nodiscard]] inline WGPUComputePipeline getWGPUPipeline() { return pipeline; }
+
+protected:
+    Device* device;
+    ShaderStagesPtr shaderStages;
+    WGPUPipelineLayout pipelineLayout{};
+    WGPUComputePipeline pipeline{};
+};
+
+typedef std::shared_ptr<ComputePipeline> ComputePipelinePtr;
 
 }}
 
-#endif //SGL_SHADERMODULE_HPP
+#endif //SGL_WEBGPU_COMPUTEPIPELINE_HPP

@@ -37,7 +37,7 @@
 
 namespace sgl { namespace webgpu {
 
-static std::set<std::string> builtinTypes = {
+static const std::set<std::string> builtinTypes = {
         "bool", "f16", "f32", "f64", "i8", "i16", "i32", "i64", "u8", "u16", "u32", "u64",
         "vec2", "vec3", "vec4", // < with templates.
         "vec2i", "vec3i", "vec4i", "vec2u", "vec3u", "vec4u",
@@ -225,6 +225,58 @@ void getLineInfo(
     lineIdx = size_t(std::count(fileContent.begin(), fileContent.begin() + charIdx, '\n')) + 1;
 }
 
+static const std::unordered_map<std::string, WGPUVertexFormat> typeNameVertexFormatMap = {
+        { "f32", WGPUVertexFormat_Float32 },
+        { "vec2f", WGPUVertexFormat_Float32x2 },
+        { "vec3f", WGPUVertexFormat_Float32x3 },
+        { "vec4f", WGPUVertexFormat_Float32x4 },
+        { "i32", WGPUVertexFormat_Sint32 },
+        { "vec2i", WGPUVertexFormat_Sint32x2 },
+        { "vec3i", WGPUVertexFormat_Sint32x3 },
+        { "vec4i", WGPUVertexFormat_Sint32x4 },
+        { "u32", WGPUVertexFormat_Uint32 },
+        { "vec2u", WGPUVertexFormat_Uint32x2 },
+        { "vec3u", WGPUVertexFormat_Uint32x3 },
+        { "vec4u", WGPUVertexFormat_Uint32x4 },
+        { "vec2h", WGPUVertexFormat_Float16x2 },
+        { "vec4h", WGPUVertexFormat_Float16x4 },
+};
+WGPUVertexFormat WGSLTypeToWGPUVertexFormat(const wgsl_type& type, std::string& errorString) {
+    std::unordered_map<std::string, WGPUVertexFormat>::const_iterator it;
+    if (type.name == "vec2" || type.name == "vec3" || type.name == "vec4") {
+        std::string vecTypeName = type.name;
+        if (!type.template_parameters.has_value()) {
+            errorString = "Vector vertex format without type template parameter.";
+            return WGPUVertexFormat_Undefined;
+        }
+        const std::vector<wgsl_type>& templateParameters = type.template_parameters.get();
+        if (templateParameters.size() != 1) {
+            errorString = "Vector vertex format with incorrect number of template parameters.";
+            return WGPUVertexFormat_Undefined;
+        }
+        const std::string& templateTypeName = templateParameters.front().name;
+        if (templateTypeName == "f32") {
+            vecTypeName += "f";
+        } else if (templateTypeName == "i32") {
+            vecTypeName += "i";
+        } else if (templateTypeName == "u32") {
+            vecTypeName += "u";
+        } else {
+            errorString = "Vector vertex format with unsupported template parameter \"" + templateTypeName + "\".";
+            return WGPUVertexFormat_Undefined;
+        }
+        it = typeNameVertexFormatMap.find(vecTypeName);
+    } else {
+        it = typeNameVertexFormatMap.find(type.name);
+    }
+    type.template_parameters->size();
+    if (it == typeNameVertexFormatMap.end()) {
+        errorString = "Could not match type \"" + type.name + "\" to a vertex format.";
+        return WGPUVertexFormat_Undefined;
+    }
+    return it->second;
+}
+
 /// Processes vertex shader inputs (via function parameters) or fragment shader outputs (via return type).
 bool processInOut(
         const std::map<std::string, wgsl_struct>& structs, std::string& errorString,
@@ -237,6 +289,10 @@ bool processInOut(
             InOutEntry inOutEntry{};
             inOutEntry.variableName = inOutName;
             inOutEntry.locationIndex = sgl::fromString<uint32_t>(locationAttribute->expression);
+            inOutEntry.vertexFormat = WGSLTypeToWGPUVertexFormat(type, errorString);
+            if (inOutEntry.vertexFormat == WGPUVertexFormat_Undefined) {
+                return false;
+            }
             inOutEntries.push_back(inOutEntry);
         }
         return true;
@@ -259,6 +315,10 @@ bool processInOut(
                 InOutEntry inOutEntry{};
                 inOutEntry.variableName = entry.name;
                 inOutEntry.locationIndex = sgl::fromString<uint32_t>(locationAttribute->expression);
+                inOutEntry.vertexFormat = WGSLTypeToWGPUVertexFormat(entry.type, errorString);
+                if (inOutEntry.vertexFormat == WGPUVertexFormat_Undefined) {
+                    return false;
+                }
                 inOutEntries.push_back(inOutEntry);
             }
             continue;
@@ -406,6 +466,35 @@ bool wgslCodeReflect(const std::string& fileContent, ReflectInfo& reflectInfo, s
             bindingEntry.bindingIndex = sgl::fromString<uint32_t>(bindingAttribute->expression);
             bindingEntry.variableName = variable.name;
             bindingEntry.bindingEntryType = getBindingEntryType(variable.type, variable.modifiers);
+            bindingEntry.typeName = variable.type.name;
+            if (variable.modifiers.has_value()) {
+                bindingEntry.modifiers = variable.modifiers.get();
+            }
+            if (bindingEntry.bindingEntryType == BindingEntryType::STORAGE_BUFFER
+                    || bindingEntry.bindingEntryType == BindingEntryType::STORAGE_TEXTURE) {
+                bool hasReadModifier = false;
+                bool hasWriteModifier = false;
+                if (variable.modifiers.has_value()) {
+                    const auto& modifiers = variable.modifiers.get();
+                    if (std::find(modifiers.begin(), modifiers.end(), "read") != modifiers.end()) {
+                        hasReadModifier = true;
+                    }
+                    if (std::find(modifiers.begin(), modifiers.end(), "write") != modifiers.end()) {
+                        hasWriteModifier = true;
+                    }
+                    if (std::find(modifiers.begin(), modifiers.end(), "read_write") != modifiers.end()) {
+                        hasReadModifier = true;
+                        hasWriteModifier = true;
+                    }
+                }
+                if (hasReadModifier && hasWriteModifier) {
+                    bindingEntry.storageModifier = StorageModifier::READ_WRITE;
+                } else if (hasReadModifier) {
+                    bindingEntry.storageModifier = StorageModifier::READ;
+                } else if (hasWriteModifier) {
+                    bindingEntry.storageModifier = StorageModifier::WRITE;
+                }
+            }
             if (bindingEntry.bindingEntryType == BindingEntryType::UNKNOWN) {
                 errorString =
                         "Could not resolve binding entry type for \"var " + variable.name + "\".";

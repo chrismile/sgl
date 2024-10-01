@@ -374,7 +374,7 @@ void Renderer::render(const RasterDataPtr& rasterData, const FramebufferPtr& fra
         vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, rasterData->getIndexType());
     }
 
-    std::vector<VkBuffer> vertexBuffers = rasterData->getVkVertexBuffers();
+    const std::vector<VkBuffer>& vertexBuffers = rasterData->getVkVertexBuffers();
     if (!vertexBuffers.empty()) {
         std::vector<VkDeviceSize> offsets;
         offsets.resize(vertexBuffers.size(), 0);
@@ -591,6 +591,10 @@ bool Renderer::updateMatrixBlock() {
         return true;
     }
     return false;
+}
+
+void Renderer::dispatch(const ComputeDataPtr& computeData, uint32_t groupCountX) {
+    dispatch(computeData, groupCountX, 1, 1);
 }
 
 void Renderer::dispatch(

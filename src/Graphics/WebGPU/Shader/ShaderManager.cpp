@@ -39,7 +39,7 @@
 #include <Utils/File/FileUtils.hpp>
 
 #include "Reflect/WGSLReflect.hpp"
-#include "ShaderModule.hpp"
+#include "Shader.hpp"
 #include "ShaderManager.hpp"
 
 #include <webgpu/webgpu.h>
@@ -227,14 +227,13 @@ ShaderModulePtr ShaderManagerWgpu::loadAsset(ShaderModuleInfo& shaderInfo) {
         return {};
     }
 
-    // TODO: Pass this information to the shader.
     ReflectInfo reflectInfo{};
     std::string reflectErrorString;
     if (!wgslCodeReflect(shaderString, reflectInfo, reflectErrorString)) {
         sgl::Logfile::get()->writeErrorMultiline("Error in wgslCodeReflect: " + reflectErrorString);
     }
 
-    return std::make_shared<ShaderModule>(shaderModuleWgpu);
+    return std::make_shared<ShaderModule>(shaderModuleWgpu, reflectInfo);
 }
 
 std::string ShaderManagerWgpu::getShaderString(const std::string &globalShaderName) {

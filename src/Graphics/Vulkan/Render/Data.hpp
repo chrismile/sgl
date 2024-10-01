@@ -38,6 +38,10 @@
 
 #include "ShaderGroupSettings.hpp"
 
+namespace sgl {
+typedef uint32_t ListenerToken;
+}
+
 namespace sgl { namespace vk {
 
 class Buffer;
@@ -67,7 +71,6 @@ class Renderer;
 
 class RenderData;
 typedef std::shared_ptr<RenderData> RenderDataPtr;
-typedef uint32_t ListenerToken;
 
 enum class RenderDataType {
     COMPUTE, RASTER, RAYTRACING
