@@ -253,4 +253,64 @@ const std::string& ShaderStages::getEntryPoint(ShaderType shaderType) const {
     return entryPoints.front();
 }
 
+
+
+const std::vector<InOutEntry>& ShaderStages::getInputVariableDescriptors() const {
+    ;
+}
+
+bool ShaderStages::getHasInputVariable(const std::string& varName) const {
+    return false;
+}
+
+uint32_t ShaderStages::getInputVariableLocation(const std::string& varName) const {
+    ;
+}
+
+uint32_t ShaderStages::getInputVariableLocationIndex(const std::string& varName) const {
+    ;
+}
+
+const InOutEntry& ShaderStages::getInputVariableDescriptorFromLocation(uint32_t location) {
+    ;
+}
+
+const InOutEntry& ShaderStages::getInputVariableDescriptorFromName(const std::string& name) {
+    ;
+}
+
+
+const std::map<uint32_t, std::vector<BindingEntry>>& ShaderStages::getBindGroupsInfo() const {
+    ;
+}
+
+bool ShaderStages::hasBindingEntry(uint32_t groupIdx, const std::string& descName) const {
+    ;
+}
+
+const BindingEntry& ShaderStages::getBindingEntryByName(uint32_t groupIdx, const std::string& descName) const {
+    ;
+}
+
+const BindingEntry& ShaderStages::getBindingEntryByIndex(uint32_t groupIdx, uint32_t binding) const {
+    ;
+}
+
+uint32_t ShaderStages::getBindingIndexByName(uint32_t groupIdx, const std::string& descName) const {
+    return 0;
+}
+
+bool ShaderStages::getBindingEntryByNameOptional(uint32_t groupIdx, const std::string& descName, uint32_t& bindingIndex) const {
+    ;
+}
+
+
+void ShaderStages::mergeBindGroupsInfo(const std::map<uint32_t, std::vector<BindingEntry>>& newBindGroupsInfo) {
+    ;
+}
+
+void ShaderStages::createBindGroupLayouts() {
+    ;
+}
+
 }}
