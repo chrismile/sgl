@@ -438,7 +438,7 @@ const std::vector<InterfaceVariableDescriptor>& ShaderStages::getInputVariableDe
 bool ShaderStages::getHasInputVariable(const std::string& varName) const {
     if (!vertexShaderModule) {
         sgl::Logfile::get()->writeError(
-                "Error in ShaderStages::getInputVariableLocation: No vertex shader exists!");
+                "Error in ShaderStages::getHasInputVariable: No vertex shader exists!");
         return false;
     }
 

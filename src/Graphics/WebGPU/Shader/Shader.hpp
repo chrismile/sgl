@@ -79,7 +79,7 @@ public:
     [[nodiscard]] const std::map<uint32_t, std::vector<BindingEntry>>& getBindGroupsInfo() const;
     [[nodiscard]] bool hasBindingEntry(uint32_t groupIdx, const std::string& descName) const;
     [[nodiscard]] const BindingEntry& getBindingEntryByName(uint32_t groupIdx, const std::string& descName) const;
-    [[nodiscard]] const BindingEntry& getBindingEntryByIndex(uint32_t groupIdx, uint32_t binding) const;
+    [[nodiscard]] const BindingEntry& getBindingEntryByIndex(uint32_t groupIdx, uint32_t bindingIndex) const;
     [[nodiscard]] uint32_t getBindingIndexByName(uint32_t groupIdx, const std::string& descName) const;
     bool getBindingEntryByNameOptional(uint32_t groupIdx, const std::string& descName, uint32_t& bindingIndex) const;
 
@@ -92,14 +92,19 @@ private:
     std::vector<ShaderModulePtr> shaderModules;
     std::vector<std::string> entryPoints;
     std::vector<ShaderType> shaderModuleTypes;
+    bool hasVertexShader = false;
+    const std::vector<InOutEntry>* vertexShaderInputEntries = nullptr;
 
     std::map<std::string, uint32_t> inputVariableNameLocationMap; ///< input interface variable name -> location
     std::map<uint32_t, std::string> inputLocationVariableNameMap; ///< input interface variable location -> name
     std::map<std::string, uint32_t> inputVariableNameLocationIndexMap; ///< input interface variable name -> loc. index
 
-    std::map<uint32_t, std::vector<BindingEntry>> bindGroupsInfo; ///< group index -> descriptor set info
-    std::map<std::string, std::vector<BindingEntry>> bindGroupsNameMap; ///< name -> binding
+    std::map<uint32_t, std::vector<BindingEntry>> bindGroupsInfo; ///< group index -> binding group info
+    std::unordered_map<uint32_t, std::unordered_map<uint32_t, WGPUShaderStageFlags>> bindingEntryStageFlags;
     std::vector<WGPUBindGroupLayout> bindGroupLayouts;
+
+    // for getInputVariableDescriptors.
+    std::vector<InOutEntry> emptySet;
 };
 
 }}

@@ -88,7 +88,6 @@ static const std::unordered_map<std::string, WGPUTextureFormat> typeNameToTextur
 ShaderStages::ShaderStages(
         Device* device, const std::vector<ShaderModulePtr>& shaderModules, const std::vector<std::string>& entryPoints)
         : device(device), shaderModules(shaderModules), entryPoints(entryPoints) {
-    std::unordered_map<uint32_t, std::unordered_map<uint32_t, WGPUShaderStageFlags>> bindingEntryStageFlags;
     shaderModuleTypes.resize(shaderModules.size());
     for (size_t i = 0; i < shaderModules.size(); i++) {
         const auto& entryPoint = entryPoints.at(i);
@@ -100,16 +99,24 @@ ShaderStages::ShaderStages(
         }
         const auto& shaderInfo = it->second;
         if (shaderInfo.shaderType == ShaderType::VERTEX) {
+            hasVertexShader = true;
+            vertexShaderInputEntries = &shaderInfo.inputs;
+            std::vector<uint32_t> locationIndices;
             for (const InOutEntry& vertexInput : shaderInfo.inputs) {
                 inputVariableNameLocationMap.insert(std::make_pair(vertexInput.variableName, vertexInput.locationIndex));
                 inputLocationVariableNameMap.insert(std::make_pair(vertexInput.locationIndex, vertexInput.variableName));
-                inputVariableNameLocationIndexMap.insert(std::make_pair(vertexInput.variableName, vertexInput.locationIndex));
+                locationIndices.push_back(vertexInput.locationIndex);
+            }
+            std::sort(locationIndices.begin(), locationIndices.end());
+            for (uint32_t locationIndex = 0; locationIndex < uint32_t(locationIndices.size()); locationIndex++) {
+                uint32_t location = locationIndices.at(locationIndex);
+                inputVariableNameLocationIndexMap.insert(std::make_pair(
+                        inputLocationVariableNameMap[location], locationIndex));
             }
         }
         shaderModuleTypes.at(i) = shaderInfo.shaderType;
 
         for (const auto& bindGroupInfo : reflectInfo.bindingGroups) {
-            bindGroupInfo.first;
             for (const auto& bindingEntryInfo : bindGroupInfo.second) {
                 WGPUShaderStageFlags newFlags = WGPUShaderStage_None;
                 if (shaderInfo.shaderType == ShaderType::VERTEX) {
@@ -125,8 +132,48 @@ ShaderStages::ShaderStages(
                 bindingEntryStageFlags[bindGroupInfo.first][bindingEntryInfo.bindingIndex] = currentFlags;
             }
         }
+
+        mergeBindGroupsInfo(reflectInfo.bindingGroups);
     }
 
+    createBindGroupLayouts();
+}
+
+void ShaderStages::mergeBindGroupsInfo(const std::map<uint32_t, std::vector<BindingEntry>>& newBindGroupsInfo) {
+    for (const auto& itNew : newBindGroupsInfo) {
+        const std::vector<BindingEntry>& bindGroupInfoNew = itNew.second;
+        std::vector<BindingEntry>& bindGroupInfo = bindGroupsInfo[itNew.first];
+
+        // Merge the descriptors in a map object.
+        std::map<uint32_t, BindingEntry> bindGroupInfoMap;
+        for (BindingEntry& bindingEntry : bindGroupInfo) {
+            bindGroupInfoMap.insert(std::make_pair(bindingEntry.bindingIndex, bindingEntry));
+        }
+        for (const BindingEntry& bindingEntry : bindGroupInfoNew) {
+            auto it = bindGroupInfoMap.find(bindingEntry.bindingIndex);
+            if (it == bindGroupInfoMap.end()) {
+                bindGroupInfoMap.insert(std::make_pair(bindingEntry.bindingIndex, bindingEntry));
+                it = bindGroupInfoMap.find(bindingEntry.bindingIndex);
+            } else {
+                if (it->second.typeName != bindingEntry.typeName
+                        || it->second.bindingEntryType != bindingEntry.bindingEntryType) {
+                    throw std::runtime_error(
+                            std::string() + "Error in ShaderStages::mergeDescriptorSetsInfo: Attempted to merge "
+                            + "incompatible binding entries \"" + it->second.variableName + "\" and \""
+                            + bindingEntry.variableName + "\"!");
+                }
+            }
+        }
+
+        // Then, convert the merged descriptors back into a list.
+        bindGroupInfo.clear();
+        for (const auto& it : bindGroupInfoMap) {
+            bindGroupInfo.push_back(it.second);
+        }
+    }
+}
+
+void ShaderStages::createBindGroupLayouts() {
     bindGroupLayouts.resize(bindGroupsInfo.size());
     size_t i = 0;
     for (const auto& bindGroupInfo : bindGroupsInfo) {
@@ -256,61 +303,181 @@ const std::string& ShaderStages::getEntryPoint(ShaderType shaderType) const {
 
 
 const std::vector<InOutEntry>& ShaderStages::getInputVariableDescriptors() const {
-    ;
+    if (!hasVertexShader) {
+        sgl::Logfile::get()->writeError(
+                "Error in ShaderStages::getInputVariableDescriptors: No vertex shader exists!");
+        return emptySet;
+    }
+
+    return *vertexShaderInputEntries;
 }
 
 bool ShaderStages::getHasInputVariable(const std::string& varName) const {
-    return false;
+    if (!hasVertexShader) {
+        sgl::Logfile::get()->writeError(
+                "Error in ShaderStages::getHasInputVariable: No vertex shader exists!");
+        return false;
+    }
+
+    return inputVariableNameLocationMap.find(varName) != inputVariableNameLocationMap.end();
 }
 
 uint32_t ShaderStages::getInputVariableLocation(const std::string& varName) const {
-    ;
+    if (!hasVertexShader) {
+        sgl::Logfile::get()->writeError(
+                "Error in ShaderStages::getInputVariableLocation: No vertex shader exists!");
+        return -1;
+    }
+
+    auto it = inputVariableNameLocationMap.find(varName);
+    if (it == inputVariableNameLocationMap.end()) {
+        sgl::Logfile::get()->writeError(
+                "Error in ShaderStages::getInputVariableLocation: Unknown variable name \"" + varName + "\"!");
+        return -1;
+    }
+
+    return it->second;
 }
 
 uint32_t ShaderStages::getInputVariableLocationIndex(const std::string& varName) const {
-    ;
+    if (!hasVertexShader) {
+        sgl::Logfile::get()->writeError(
+                "Error in ShaderStages::getInputVariableLocationIndex: No vertex shader exists!");
+        return -1;
+    }
+
+    auto it = inputVariableNameLocationIndexMap.find(varName);
+    if (it == inputVariableNameLocationIndexMap.end()) {
+        sgl::Logfile::get()->writeError(
+                "Error in ShaderStages::getInputVariableLocationIndex: Unknown variable name \"" + varName + "\"!");
+        return -1;
+    }
+
+    return it->second;
 }
 
 const InOutEntry& ShaderStages::getInputVariableDescriptorFromLocation(uint32_t location) {
-    ;
+    if (!hasVertexShader) {
+        sgl::Logfile::get()->throwError(
+                "Error in ShaderStages::getInputVariableDescriptorFromLocation: No vertex shader exists!");
+    }
+
+    for (const auto& descriptor : *vertexShaderInputEntries) {
+        if (location == descriptor.locationIndex) {
+            return descriptor;
+        }
+    }
+    sgl::Logfile::get()->throwError(
+            "Error in ShaderStages::getInputVariableDescriptorFromLocation: Location not found!");
+    return vertexShaderInputEntries->front(); // To get rid of warning...
 }
 
 const InOutEntry& ShaderStages::getInputVariableDescriptorFromName(const std::string& name) {
-    ;
+    if (!hasVertexShader) {
+        sgl::Logfile::get()->throwError(
+                "Error in ShaderStages::getInputVariableDescriptorFromName: No vertex shader exists!");
+    }
+
+    for (const auto& descriptor : *vertexShaderInputEntries) {
+        if (name == descriptor.variableName) {
+            return descriptor;
+        }
+    }
+    sgl::Logfile::get()->throwError(
+            "Error in ShaderStages::getInputVariableDescriptorFromName: Location not found!");
+    return vertexShaderInputEntries->front(); // To get rid of warning...
 }
 
 
 const std::map<uint32_t, std::vector<BindingEntry>>& ShaderStages::getBindGroupsInfo() const {
-    ;
+    return bindGroupsInfo;
 }
 
+
 bool ShaderStages::hasBindingEntry(uint32_t groupIdx, const std::string& descName) const {
-    ;
+    auto it = bindGroupsInfo.find(groupIdx);
+    if (it == bindGroupsInfo.end()) {
+        return false;
+    }
+    const std::vector<BindingEntry>& descriptorSetInfo = it->second;
+    for (const BindingEntry& bindingEntry : descriptorSetInfo) {
+        if (bindingEntry.variableName == descName) {
+            return true;
+        }
+    }
+    return false;
 }
 
 const BindingEntry& ShaderStages::getBindingEntryByName(uint32_t groupIdx, const std::string& descName) const {
-    ;
+    auto it = bindGroupsInfo.find(groupIdx);
+    if (it == bindGroupsInfo.end()) {
+        Logfile::get()->throwError(
+                "Error in ShaderStages::getBindingEntryByName: No binding group #" + std::to_string(groupIdx)
+                + " is used in these shaders.");
+    }
+    const std::vector<BindingEntry>& descriptorSetInfo = it->second;
+    for (const BindingEntry& bindingEntry : descriptorSetInfo) {
+        if (bindingEntry.variableName == descName) {
+            return bindingEntry;
+        }
+    }
+    Logfile::get()->throwError(
+            "Error in ShaderStages::getBindingEntryByName: Couldn't find descriptor with name \"" + descName
+            + "\" for binding group index " + std::to_string(groupIdx) + ".");
+    return descriptorSetInfo.front(); // To get rid of warning...
 }
 
-const BindingEntry& ShaderStages::getBindingEntryByIndex(uint32_t groupIdx, uint32_t binding) const {
-    ;
+const BindingEntry& ShaderStages::getBindingEntryByIndex(uint32_t groupIdx, uint32_t bindingIndex) const {
+    auto it = bindGroupsInfo.find(groupIdx);
+    if (it == bindGroupsInfo.end()) {
+        Logfile::get()->throwError(
+                "Error in ShaderStages::getBindingEntryByIndex: No binding group #" + std::to_string(groupIdx)
+                + " is used in these shaders.");
+    }
+    const std::vector<BindingEntry>& descriptorSetInfo = it->second;
+    for (const BindingEntry& bindingEntry : descriptorSetInfo) {
+        if (bindingEntry.bindingIndex == bindingIndex) {
+            return bindingEntry;
+        }
+    }
+    Logfile::get()->throwError(
+            "Error in ShaderStages::getBindingEntryByIndex: Couldn't find descriptor with binding \""
+            + std::to_string(bindingIndex) + "\" for binding group index " + std::to_string(groupIdx) + ".");
+    return descriptorSetInfo.front(); // To get rid of warning...
 }
 
 uint32_t ShaderStages::getBindingIndexByName(uint32_t groupIdx, const std::string& descName) const {
-    return 0;
+    auto it = bindGroupsInfo.find(groupIdx);
+    if (it == bindGroupsInfo.end()) {
+        Logfile::get()->throwError(
+                "Error in ShaderStages::getDescriptorBindingByName: No binding group #" + std::to_string(groupIdx)
+                + " is used in these shaders.");
+    }
+    const std::vector<BindingEntry>& descriptorSetInfo = it->second;
+    for (const BindingEntry& bindingEntry : descriptorSetInfo) {
+        if (bindingEntry.variableName == descName) {
+            return bindingEntry.bindingIndex;
+        }
+    }
+    Logfile::get()->throwError(
+            "Error in ShaderStages::getDescriptorBindingByName: Couldn't find descriptor with name \"" + descName
+            + "\" for binding group index " + std::to_string(groupIdx) + ".");
+    return std::numeric_limits<uint32_t>::max(); // To get rid of warning...
 }
 
 bool ShaderStages::getBindingEntryByNameOptional(uint32_t groupIdx, const std::string& descName, uint32_t& bindingIndex) const {
-    ;
-}
-
-
-void ShaderStages::mergeBindGroupsInfo(const std::map<uint32_t, std::vector<BindingEntry>>& newBindGroupsInfo) {
-    ;
-}
-
-void ShaderStages::createBindGroupLayouts() {
-    ;
+    auto it = bindGroupsInfo.find(groupIdx);
+    if (it == bindGroupsInfo.end()) {
+        return false;
+    }
+    const std::vector<BindingEntry>& descriptorSetInfo = it->second;
+    for (const BindingEntry& bindingEntry : descriptorSetInfo) {
+        if (bindingEntry.variableName == descName) {
+            bindingIndex = bindingEntry.bindingIndex;
+            return true;
+        }
+    }
+    return false;
 }
 
 }}
