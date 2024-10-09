@@ -740,7 +740,7 @@ BufferOpenCLExternalMemoryVk::BufferOpenCLExternalMemoryVk(cl_context context, v
     Logfile::get()->throwError(
             "Error in BufferOpenCLExternalMemoryVk::BufferOpenCLExternalMemoryVk: "
             "External memory is only supported on Linux, Android and Windows systems!");
-    return false;
+    return;
 #endif
 
     cl_mem_properties memoryProperties[] = { memoryHandleType, memoryHandle, 0 };
@@ -760,7 +760,7 @@ BufferOpenCLExternalMemoryVk::BufferOpenCLExternalMemoryVk(cl_context context, v
 BufferOpenCLExternalMemoryVk::~BufferOpenCLExternalMemoryVk() {
 #ifdef _WIN32
     CloseHandle(handle);
-#else
+#elif defined(__linux__)
     if (fileDescriptor != -1) {
         close(fileDescriptor);
         fileDescriptor = -1;
@@ -987,7 +987,7 @@ ImageOpenCLExternalMemoryVk::ImageOpenCLExternalMemoryVk(cl_context context, vk:
     Logfile::get()->throwError(
             "Error in ImageOpenCLExternalMemoryVk::ImageOpenCLExternalMemoryVk: "
             "External memory is only supported on Linux, Android and Windows systems!");
-    return false;
+    return;
 #endif
 
     const sgl::vk::ImageSettings& imageSettings = vulkanImage->getImageSettings();
@@ -1060,7 +1060,7 @@ ImageOpenCLExternalMemoryVk::~ImageOpenCLExternalMemoryVk() {
         CloseHandle(handle);
         handle = nullptr;
     }
-#else
+#elif defined(__linux__)
     if (fileDescriptor != -1) {
         close(fileDescriptor);
         fileDescriptor = -1;
