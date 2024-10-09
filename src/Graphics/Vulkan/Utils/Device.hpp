@@ -213,6 +213,29 @@ struct DLL_OBJECT DeviceFeatures {
 #endif
 };
 
+DLL_OBJECT void mergePhysicalDeviceFeatures(
+        VkPhysicalDeviceFeatures& featuresDst, const VkPhysicalDeviceFeatures& featuresSrc);
+#ifdef VK_VERSION_1_1
+DLL_OBJECT void mergePhysicalDeviceFeatures11(
+        VkPhysicalDeviceVulkan11Features& featuresDst, const VkPhysicalDeviceVulkan11Features& featuresSrc);
+#else
+DLL_OBJECT void mergePhysicalDeviceFeatures11(
+        VkPhysicalDeviceVulkan11Features_Compat& featuresDst, const VkPhysicalDeviceVulkan11Features_Compat& featuresSrc);
+#endif
+#ifdef VK_VERSION_1_2
+DLL_OBJECT void mergePhysicalDeviceFeatures12(
+        VkPhysicalDeviceVulkan12Features& featuresDst, const VkPhysicalDeviceVulkan12Features& featuresSrc);
+#else
+DLL_OBJECT void mergePhysicalDeviceFeatures12(
+        VkPhysicalDeviceVulkan12Features_Compat& featuresDst, const VkPhysicalDeviceVulkan12Features_Compat& featuresSrc);
+#endif
+
+// Wrapper for use in PhysicalDeviceCheckCallback.
+DLL_OBJECT void getPhysicalDeviceProperties2(
+        VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties2& deviceProperties2);
+
+typedef std::function<bool(VkPhysicalDevice, VkPhysicalDeviceProperties, std::vector<const char*>&, std::vector<const char*>&, DeviceFeatures&)> PhysicalDeviceCheckCallback;
+
 /**
  * An encapsulation of VkDevice and VkPhysicalDevice.
  */
@@ -223,16 +246,33 @@ public:
             Instance* instance, Window* window,
             std::vector<const char*> requiredDeviceExtensions = {},
             std::vector<const char*> optionalDeviceExtensions = {},
-            const DeviceFeatures& requestedDeviceFeatures = DeviceFeatures(),
+            const DeviceFeatures& requestedDeviceFeaturesIn = DeviceFeatures(),
             bool computeOnly = false);
     /// For headless rendering without a window (or when coupled with an OpenGL context in interoperability mode).
     void createDeviceHeadless(
             Instance* instance,
             std::vector<const char*> requiredDeviceExtensions = {},
             std::vector<const char*> optionalDeviceExtensions = {},
-            const DeviceFeatures& requestedDeviceFeatures = DeviceFeatures(),
+            const DeviceFeatures& requestedDeviceFeaturesIn = DeviceFeatures(),
             bool computeOnly = false);
     ~Device();
+
+    /*
+     * Callback for adding required and optional physical device-dependent extensions and features.
+     * Example:
+     * auto physicalDeviceCheckCallback = [](
+     *         VkPhysicalDevice physicalDevice,
+     *         VkPhysicalDeviceProperties physicalDeviceProperties,
+     *         std::vector<const char*>& requiredDeviceExtensions,
+     *         std::vector<const char*>& optionalDeviceExtensions,
+     *         sgl::vk::DeviceFeatures& requestedDeviceFeatures) {
+     *     // ...
+     *     return true; // false if physical device is not suitable.
+     * }
+     */
+    inline void setPhysicalDeviceCheckCallback(PhysicalDeviceCheckCallback callback) {
+        physicalDeviceCheckCallback = std::move(callback);
+    }
 
     /// Waits for the device to become idle.
     void waitIdle();
@@ -483,16 +523,16 @@ private:
     uint32_t findQueueFamilies(VkPhysicalDevice physicalDevice, VkQueueFlagBits queueFlags);
     bool isDeviceSuitable(
             VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-            const std::vector<const char*>& requiredDeviceExtensions,
-            const std::vector<const char*>& optionalDeviceExtensions,
+            std::vector<const char*>& requiredDeviceExtensionsIn,
+            std::vector<const char*>& optionalDeviceExtensionsIn,
             std::set<std::string>& deviceExtensionsSet, std::vector<const char*>& deviceExtensions,
-            const DeviceFeatures& requestedDeviceFeatures, bool computeOnly);
+            DeviceFeatures& requestedDeviceFeaturesIn, bool computeOnly);
     VkPhysicalDevice createPhysicalDeviceBinding(
             VkSurfaceKHR surface,
-            const std::vector<const char*>& requiredDeviceExtensions,
-            const std::vector<const char*>& optionalDeviceExtensions,
+            std::vector<const char*>& requiredDeviceExtensions,
+            std::vector<const char*>& optionalDeviceExtensions,
             std::set<std::string>& deviceExtensionsSet, std::vector<const char*>& deviceExtensions,
-            const DeviceFeatures& requestedDeviceFeatures, bool computeOnly);
+            DeviceFeatures& requestedDeviceFeatures, bool computeOnly);
 
     void _getDeviceInformation();
 
@@ -513,6 +553,8 @@ private:
 
     // Theoretically available (but not necessarily enabled) device extensions.
     std::set<std::string> availableDeviceExtensionNames;
+
+    PhysicalDeviceCheckCallback physicalDeviceCheckCallback;
 
     VkDevice device = VK_NULL_HANDLE;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;

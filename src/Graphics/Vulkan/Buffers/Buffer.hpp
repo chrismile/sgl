@@ -71,6 +71,7 @@ struct DLL_OBJECT BufferSettings {
     VkSharingMode sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     uint32_t queueFamilyIndexCount = 0; // Only for sharingMode == VK_SHARING_MODE_CONCURRENT.
     const uint32_t* pQueueFamilyIndices = nullptr;
+    uint32_t alignment = 0;
     bool exportMemory = false; // Whether to export the memory for external use, e.g., in OpenGL.
     /**
      * Whether to use a dedicated allocation instead of using VMA. At the moment, this is only supported for exported

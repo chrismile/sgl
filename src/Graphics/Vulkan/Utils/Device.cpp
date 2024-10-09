@@ -182,10 +182,14 @@ uint32_t Device::findQueueFamilies(VkPhysicalDevice physicalDevice, VkQueueFlagB
 
 bool Device::isDeviceSuitable(
         VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-        const std::vector<const char*>& requiredDeviceExtensions,
-        const std::vector<const char*>& optionalDeviceExtensions,
+        std::vector<const char*>& requiredDeviceExtensionsIn,
+        std::vector<const char*>& optionalDeviceExtensionsIn,
         std::set<std::string>& deviceExtensionsSet, std::vector<const char*>& deviceExtensions,
-        const DeviceFeatures& requestedDeviceFeatures, bool computeOnly) {
+        DeviceFeatures& requestedDeviceFeaturesIn, bool computeOnly) {
+    std::vector<const char*> requiredDeviceExtensions = requiredDeviceExtensionsIn;
+    std::vector<const char*> optionalDeviceExtensions = optionalDeviceExtensionsIn;
+    DeviceFeatures requestedDeviceFeatures = requestedDeviceFeaturesIn;
+
     int graphicsQueueIndex = findQueueFamilies(
             physicalDevice, static_cast<VkQueueFlagBits>(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT));
     int computeQueueIndex = findQueueFamilies(
@@ -207,6 +211,16 @@ bool Device::isDeviceSuitable(
         return false;
     }
 #endif
+
+    VkPhysicalDeviceProperties physicalDeviceProperties{};
+    vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
+    if (physicalDeviceCheckCallback) {
+        if (!physicalDeviceCheckCallback(
+                physicalDevice, physicalDeviceProperties,
+                requiredDeviceExtensions, optionalDeviceExtensions, requestedDeviceFeatures)) {
+            return false;
+        }
+    }
 
     uint32_t numExtensions;
     vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &numExtensions, nullptr);
@@ -247,7 +261,7 @@ bool Device::isDeviceSuitable(
 #ifdef VK_VERSION_1_1
     VkPhysicalDeviceVulkan11Features physicalDeviceVulkan11Features{};
     physicalDeviceVulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
-    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 1, 0)
+    if (physicalDeviceProperties.apiVersion >= VK_MAKE_API_VERSION(0, 1, 1, 0)
             && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 1, 0)) {
         VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
         deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
@@ -272,7 +286,7 @@ bool Device::isDeviceSuitable(
 #ifdef VK_VERSION_1_2
     VkPhysicalDeviceVulkan12Features physicalDeviceVulkan12Features{};
     physicalDeviceVulkan12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 2, 0)
+    if (physicalDeviceProperties.apiVersion >= VK_MAKE_API_VERSION(0, 1, 2, 0)
             && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 2, 0)) {
         VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
         deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
@@ -297,7 +311,7 @@ bool Device::isDeviceSuitable(
 #ifdef VK_VERSION_1_3
     VkPhysicalDeviceVulkan13Features physicalDeviceVulkan13Features{};
     physicalDeviceVulkan13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
-    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 3, 0)
+    if (physicalDeviceProperties.apiVersion >= VK_MAKE_API_VERSION(0, 1, 3, 0)
             && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 3, 0)) {
         VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
         deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
@@ -330,15 +344,75 @@ bool Device::isDeviceSuitable(
         }
     }
 
+    if (isSuitable && physicalDeviceCheckCallback) {
+        requiredDeviceExtensionsIn = requiredDeviceExtensions;
+        optionalDeviceExtensionsIn = optionalDeviceExtensions;
+        requestedDeviceFeaturesIn = requestedDeviceFeatures;
+    }
+
     return isSuitable;
+}
+
+void mergePhysicalDeviceFeatures(VkPhysicalDeviceFeatures& featuresDst, const VkPhysicalDeviceFeatures& featuresSrc) {
+    constexpr size_t numFeatures = sizeof(VkPhysicalDeviceFeatures) / sizeof(VkBool32);
+    auto featuresDstArray = reinterpret_cast<VkBool32*>(&featuresDst);
+    auto featuresSrcArray = reinterpret_cast<const VkBool32*>(&featuresSrc);
+    for (size_t i = 0; i < numFeatures; i++) {
+        if (featuresSrcArray[i] && !featuresDstArray[i]) {
+            featuresDstArray[i] = true;
+        }
+    }
+}
+
+void mergePhysicalDeviceFeatures11(
+#ifdef VK_VERSION_1_1
+        VkPhysicalDeviceVulkan11Features& featuresDst, const VkPhysicalDeviceVulkan11Features& featuresSrc) {
+#else
+        VkPhysicalDeviceVulkan11Features_Compat& featuresDst, const VkPhysicalDeviceVulkan11Features_Compat& featuresSrc) {
+#endif
+#ifdef VK_VERSION_1_1
+    const size_t numVulkan11Features =
+            1 + (&featuresDst.shaderDrawParameters) - (&featuresDst.storageBuffer16BitAccess);
+    auto featuresDstArray = reinterpret_cast<VkBool32*>(&featuresDst.storageBuffer16BitAccess);
+    auto featuresSrcArray = reinterpret_cast<const VkBool32*>(&featuresSrc.storageBuffer16BitAccess);
+    for (size_t i = 0; i < numVulkan11Features; i++) {
+        if (featuresSrcArray[i] && !featuresDstArray[i]) {
+            featuresDstArray[i] = true;
+        }
+    }
+#endif
+}
+
+void mergePhysicalDeviceFeatures12(
+#ifdef VK_VERSION_1_2
+        VkPhysicalDeviceVulkan12Features& featuresDst, const VkPhysicalDeviceVulkan12Features& featuresSrc) {
+#else
+        VkPhysicalDeviceVulkan12Features_Compat& featuresDst, const VkPhysicalDeviceVulkan12Features_Compat& featuresSrc) {
+#endif
+#ifdef VK_VERSION_1_2
+    const size_t numVulkan12Features =
+            1 + (&featuresDst.subgroupBroadcastDynamicId)
+            - (&featuresDst.samplerMirrorClampToEdge);
+    auto featuresDstArray = reinterpret_cast<VkBool32*>(&featuresDst.samplerMirrorClampToEdge);
+    auto featuresSrcArray = reinterpret_cast<const VkBool32*>(&featuresSrc.samplerMirrorClampToEdge);
+    for (size_t i = 0; i < numVulkan12Features; i++) {
+        if (featuresSrcArray[i] && !featuresDstArray[i]) {
+            featuresDstArray[i] = true;
+        }
+    }
+#endif
+}
+
+void getPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties2& deviceProperties2) {
+    vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
 }
 
 VkPhysicalDevice Device::createPhysicalDeviceBinding(
         VkSurfaceKHR surface,
-        const std::vector<const char*>& requiredDeviceExtensions,
-        const std::vector<const char*>& optionalDeviceExtensions,
+        std::vector<const char*>& requiredDeviceExtensions,
+        std::vector<const char*>& optionalDeviceExtensions,
         std::set<std::string>& deviceExtensionsSet, std::vector<const char*>& deviceExtensions,
-        const DeviceFeatures& requestedDeviceFeatures, bool computeOnly) {
+        DeviceFeatures& requestedDeviceFeatures, bool computeOnly) {
     uint32_t numPhysicalDevices = 0;
     VkResult res = vkEnumeratePhysicalDevices(instance->getVkInstance(), &numPhysicalDevices, nullptr);
     if (res != VK_SUCCESS) {
@@ -1570,7 +1644,7 @@ void Device::createDeviceSwapchain(
         Instance* instance, Window* window,
         std::vector<const char*> requiredDeviceExtensions,
         std::vector<const char*> optionalDeviceExtensions,
-        const DeviceFeatures& requestedDeviceFeatures, bool computeOnly) {
+        const DeviceFeatures& requestedDeviceFeaturesIn, bool computeOnly) {
     this->instance = instance;
     this->window = window;
 
@@ -1586,6 +1660,7 @@ void Device::createDeviceSwapchain(
     optionalDeviceExtensions.push_back(VK_AMD_SHADER_CORE_PROPERTIES_2_EXTENSION_NAME);
 
     VkSurfaceKHR surface = window->getVkSurface();
+    DeviceFeatures requestedDeviceFeatures = requestedDeviceFeaturesIn;
     enabledDeviceExtensionNames = {};
     physicalDevice = createPhysicalDeviceBinding(
             surface, requiredDeviceExtensions, optionalDeviceExtensions,
@@ -1611,7 +1686,7 @@ void Device::createDeviceHeadless(
         Instance* instance,
         std::vector<const char*> requiredDeviceExtensions,
         std::vector<const char*> optionalDeviceExtensions,
-        const DeviceFeatures& requestedDeviceFeatures, bool computeOnly) {
+        const DeviceFeatures& requestedDeviceFeaturesIn, bool computeOnly) {
     this->instance = instance;
     this->window = nullptr;
 
@@ -1622,6 +1697,7 @@ void Device::createDeviceHeadless(
     optionalDeviceExtensions.push_back(VK_AMD_SHADER_CORE_PROPERTIES_EXTENSION_NAME);
     optionalDeviceExtensions.push_back(VK_AMD_SHADER_CORE_PROPERTIES_2_EXTENSION_NAME);
 
+    DeviceFeatures requestedDeviceFeatures = requestedDeviceFeaturesIn;
     enabledDeviceExtensionNames = {};
     physicalDevice = createPhysicalDeviceBinding(
             nullptr, requiredDeviceExtensions, optionalDeviceExtensions,

@@ -269,7 +269,6 @@ WGPUVertexFormat WGSLTypeToWGPUVertexFormat(const wgsl_type& type, std::string& 
     } else {
         it = typeNameVertexFormatMap.find(type.name);
     }
-    type.template_parameters->size();
     if (it == typeNameVertexFormatMap.end()) {
         errorString = "Could not match type \"" + type.name + "\" to a vertex format.";
         return WGPUVertexFormat_Undefined;

@@ -125,10 +125,18 @@ Buffer::Buffer(Device* device, const BufferSettings& bufferSettings)
     }
 
     if (!exportMemory || !useDedicatedAllocationForExportedMemory) {
-        if (vmaCreateBuffer(
-                device->getAllocator(), &bufferCreateInfo, &allocCreateInfo,
-                &buffer, &bufferAllocation, &bufferAllocationInfo) != VK_SUCCESS) {
-            Logfile::get()->throwError("Error in Buffer::Buffer: Failed to create a buffer of the specified size!");
+        if (bufferSettings.alignment != 0) {
+            if (vmaCreateBufferWithAlignment(
+                    device->getAllocator(), &bufferCreateInfo, &allocCreateInfo, VkDeviceSize(bufferSettings.alignment),
+                    &buffer, &bufferAllocation, &bufferAllocationInfo) != VK_SUCCESS) {
+                Logfile::get()->throwError("Error in Buffer::Buffer: Failed to create a buffer of the specified size!");
+            }
+        } else {
+            if (vmaCreateBuffer(
+                    device->getAllocator(), &bufferCreateInfo, &allocCreateInfo,
+                    &buffer, &bufferAllocation, &bufferAllocationInfo) != VK_SUCCESS) {
+                Logfile::get()->throwError("Error in Buffer::Buffer: Failed to create a buffer of the specified size!");
+            }
         }
 
         deviceMemory = bufferAllocationInfo.deviceMemory;
