@@ -253,8 +253,10 @@ private:
     OperatingSystem operatingSystem;
 #ifdef SUPPORT_SDL2
     WindowBackend windowBackend = WindowBackend::SDL2_IMPL;
+#elif defined(SUPPORT_GLFW)
+    WindowBackend windowBackend = WindowBackend::GLFW_IMPL;
 #else
-    WindowType windowBackend = WindowType::GLFW_IMPL;
+    WindowBackend windowBackend = WindowBackend::NONE;
 #endif
     Window* mainWindow = nullptr;
     std::string applicationDescription;

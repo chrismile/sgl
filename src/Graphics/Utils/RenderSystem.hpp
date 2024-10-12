@@ -41,7 +41,7 @@ enum class OperatingSystem {
 };
 
 enum class WindowBackend {
-    SDL2_IMPL, GLFW_IMPL
+    NONE, SDL2_IMPL, GLFW_IMPL
 };
 
 }

@@ -107,7 +107,9 @@ void ImGuiWrapper::initialize(
 
 #if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN) || defined(SUPPORT_WEBGPU)
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
+#if defined(SUPPORT_SDL2) || defined(SUPPORT_GLFW)
     auto* window = AppSettings::get()->getMainWindow();
+#endif
 #endif
 #ifdef SUPPORT_OPENGL
     if (renderSystem == RenderSystem::OPENGL) {
@@ -312,7 +314,9 @@ void ImGuiWrapper::shutdown() {
     }
 #endif
 
+#if defined(SUPPORT_SDL2) || defined(SUPPORT_GLFW)
     auto* window = AppSettings::get()->getMainWindow();
+#endif
 #ifdef SUPPORT_SDL2
     if (window->getBackend() == WindowBackend::SDL2_IMPL) {
         ImGui_ImplSDL2_Shutdown();
@@ -557,7 +561,9 @@ void ImGuiWrapper::renderEnd() {
 #ifdef SUPPORT_OPENGL
         if (renderSystem == RenderSystem::OPENGL) {
             ZoneScopedN("SDL_GL_MakeCurrent");
+#if defined(SUPPORT_SDL2) || defined(SUPPORT_GLFW)
             auto* window = AppSettings::get()->getMainWindow();
+#endif
 #ifdef SUPPORT_SDL2
             if (window->getBackend() == WindowBackend::SDL2_IMPL) {
                 auto* sdlWindow = static_cast<SDLWindow*>(window);

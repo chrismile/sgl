@@ -31,6 +31,7 @@
 
 #include <Utils/AppSettings.hpp>
 #include <Utils/File/Logfile.hpp>
+#include <Graphics/Window.hpp>
 
 #ifdef SUPPORT_SDL2
 #include <SDL/SDLWindow.hpp>
@@ -154,7 +155,9 @@ float getHighDPIScaleFactor() {
 
     bool scaleFactorSetManually = false;
 
+#if defined(SUPPORT_SDL2) || defined(SUPPORT_GLFW)
     bool allowHighDPI = false;
+#endif
     bool isWayland = false;
     bool isCocoa = false;
     auto* window = sgl::AppSettings::get()->getMainWindow();

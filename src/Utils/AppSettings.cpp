@@ -30,6 +30,9 @@
 #include <Utils/StringUtils.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
+#include <Input/Mouse.hpp>
+#include <Input/Keyboard.hpp>
+#include <Input/Gamepad.hpp>
 #include <Graphics/Renderer.hpp>
 #include <Graphics/Mesh/Material.hpp>
 #include <Utils/Timer.hpp>

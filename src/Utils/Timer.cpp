@@ -45,7 +45,9 @@ namespace sgl {
 
 TimerInterface::TimerInterface() : currentTime(0), lastTime(0), elapsedMicroSeconds(0),
         fpsLimitEnabled(true), fpsLimit(60), fixedPhysicsFPSEnabled(true), physicsFPS(60) {
+#if defined(SUPPORT_SDL2) || defined(SUPPORT_GLFW)
     WindowBackend windowBackend = AppSettings::get()->getWindowBackend();
+#endif
 #ifdef SUPPORT_SDL2
     if (windowBackend == WindowBackend::SDL2_IMPL) {
         perfFreq = SDL_GetPerformanceFrequency();
@@ -102,7 +104,9 @@ void TimerInterface::update() {
 }
 
 uint64_t TimerInterface::getTicksMicroseconds() const {
+#if defined(SUPPORT_SDL2) || defined(SUPPORT_GLFW)
     auto* window = AppSettings::get()->getMainWindow();
+#endif
 #ifdef SUPPORT_SDL2
     if (window->getBackend() == WindowBackend::SDL2_IMPL) {
         auto _currentTime =

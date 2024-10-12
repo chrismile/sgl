@@ -547,14 +547,14 @@ void Swapchain::renderFrame(const std::vector<sgl::vk::CommandBufferPtr>& comman
 }
 
 void Swapchain::downloadSwapchainRender() {
-    int width = int(swapchainImageCpu->getImageSettings().width);
-    int height = int(swapchainImageCpu->getImageSettings().height);
-    VkSubresourceLayout subresourceLayout =
-            swapchainImageCpu->getSubresourceLayout(VK_IMAGE_ASPECT_COLOR_BIT);
-    auto* mappedData = reinterpret_cast<uint8_t*>(swapchainImageCpu->mapMemory());
-
 #ifdef SUPPORT_SDL2
     if (window->getBackend() == WindowBackend::SDL2_IMPL) {
+        int width = int(swapchainImageCpu->getImageSettings().width);
+        int height = int(swapchainImageCpu->getImageSettings().height);
+        VkSubresourceLayout subresourceLayout =
+                swapchainImageCpu->getSubresourceLayout(VK_IMAGE_ASPECT_COLOR_BIT);
+        auto* mappedData = reinterpret_cast<uint8_t*>(swapchainImageCpu->mapMemory());
+
         auto* sdlWindow = static_cast<SDLWindow*>(window);
         auto* cpuSurfaceSdl = reinterpret_cast<SDL_Surface*>(cpuSurface);
         //auto* cpuSurfaceWriteableSdl = reinterpret_cast<SDL_Surface*>(cpuSurfaceWriteable);
@@ -577,6 +577,8 @@ void Swapchain::downloadSwapchainRender() {
         SDL_BlitSurface(cpuSurfaceWriteableSdl, nullptr, cpuSurfaceSdl, nullptr);
         SDL_FreeSurface(cpuSurfaceWriteableSdl);
         SDL_UpdateWindowSurface(sdlWindow->getSDLWindow());
+
+        swapchainImageCpu->unmapMemory();
     }
 #endif
 #ifdef SUPPORT_GLFW
@@ -585,8 +587,6 @@ void Swapchain::downloadSwapchainRender() {
                 "Error in Swapchain::downloadSwapchainRender: GLFW currently does not support the download swapchain.");
     }
 #endif
-
-    swapchainImageCpu->unmapMemory();
 }
 
 void Swapchain::cleanupRecreate() {
