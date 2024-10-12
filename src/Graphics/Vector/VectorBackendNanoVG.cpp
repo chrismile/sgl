@@ -338,7 +338,7 @@ void VectorBackendNanoVG::renderStart() {
         initialize();
     }
 
-#ifdef SUPPORT_VULKAN
+#if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
 #endif
 

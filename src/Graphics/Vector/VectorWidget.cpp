@@ -113,7 +113,7 @@ void VectorWidget::_initialize() {
         createDefaultBackend();
     }
 
-#if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN)
+#if defined(SUPPORT_OPENGL)
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
 #endif
 
