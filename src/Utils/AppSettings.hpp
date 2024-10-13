@@ -174,6 +174,8 @@ public:
      * must be used.
      */
     void setVulkanDebugPrintfEnabled();
+    // Sets Vulkan instance extensions used by @see createWindow and @see createHeadless.
+    void setRequiredVulkanInstanceExtensions(const std::vector<const char*>& extensions);
     [[nodiscard]] inline const std::vector<const char*>& getRequiredVulkanInstanceExtensions() const {
         return requiredInstanceExtensionNames;
     }
@@ -271,6 +273,7 @@ private:
     vk::Device* primaryDevice = nullptr;
     vk::Swapchain* swapchain = nullptr;
     std::vector<const char*> requiredInstanceExtensionNames;
+    std::vector<const char*> defaultInstanceExtensionNames;
     VulkanInteropCapabilities vulkanInteropCapabilities = VulkanInteropCapabilities::NOT_LOADED;
 #ifdef SUPPORT_SDL2
     bool sdlVulkanLibraryLoaded = false;

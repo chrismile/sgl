@@ -334,18 +334,15 @@ Window *AppSettings::createWindow() {
 #ifdef SUPPORT_OPENGL
         if (shallEnableVulkanOffscreenOpenGLContextInteropSupport) {
             instanceSupportsVulkanOpenGLInterop = true;
-
-            requiredInstanceExtensionNames = {
-                    VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME,
-                    VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME
-            };
+            requiredInstanceExtensionNames.push_back(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
+            requiredInstanceExtensionNames.push_back(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
             if (!instance->getInstanceExtensionsAvailable(requiredInstanceExtensionNames)) {
                 sgl::Logfile::get()->writeWarning(
                         "Warning in AppSettings::createWindow: The Vulkan instance extensions "
                         "VK_KHR_external_memory_capabilities or VK_KHR_external_semaphore_capabilities are not supported "
                         "on this system. Disabling OpenGL interoperability support.", false);
                 instanceSupportsVulkanOpenGLInterop = false;
-                requiredInstanceExtensionNames = {};
+                requiredInstanceExtensionNames = defaultInstanceExtensionNames;
             }
         }
 #endif
@@ -406,7 +403,7 @@ HeadlessData AppSettings::createHeadless() {
         if (isDebugPrintfEnabled) {
             instance->setIsDebugPrintfEnabled(isDebugPrintfEnabled);
         }
-        instance->createInstance({}, debugContext);
+        instance->createInstance(requiredInstanceExtensionNames, debugContext);
         headlessData.instance = instance;
     } else {
 #endif
@@ -420,6 +417,11 @@ HeadlessData AppSettings::createHeadless() {
 #ifdef SUPPORT_VULKAN
 void AppSettings::setVulkanDebugPrintfEnabled() {
     isDebugPrintfEnabled = true;
+}
+
+void AppSettings::setRequiredVulkanInstanceExtensions(const std::vector<const char*>& extensions) {
+    defaultInstanceExtensionNames = extensions;
+    requiredInstanceExtensionNames = extensions;
 }
 #endif
 
@@ -484,12 +486,10 @@ void AppSettings::initializeVulkanInteropSupport(
         checkGlExtension(extensionName, vulkanInteropCapabilities);
     }
 
-    std::vector<const char*> instanceExtensionNames;
+    std::vector<const char*> instanceExtensionNames = requiredInstanceExtensionNames;
     if (vulkanInteropCapabilities == VulkanInteropCapabilities::EXTERNAL_MEMORY) {
-        instanceExtensionNames = {
-                VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME,
-                VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME
-        };
+        instanceExtensionNames.push_back(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
+        instanceExtensionNames.push_back(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
         if (!instance->getInstanceExtensionsAvailable(instanceExtensionNames)) {
             sgl::Logfile::get()->writeWarning(
                     "Warning in AppSettings::initializeVulkanInteropSupport: The Vulkan instance extensions "
