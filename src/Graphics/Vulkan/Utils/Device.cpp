@@ -342,6 +342,13 @@ bool Device::isDeviceSuitable(
                 deviceExtensions.push_back(extensionName);
             }
         }
+        // physicalDeviceCheckCallback may have changed requiredDeviceExtensions.
+        for (const char* extensionName : requiredDeviceExtensions) {
+            if (deviceExtensionsSet.find(extensionName) == deviceExtensionsSet.end()) {
+                deviceExtensionsSet.insert(extensionName);
+                deviceExtensions.push_back(extensionName);
+            }
+        }
     }
 
     if (isSuitable && physicalDeviceCheckCallback) {
