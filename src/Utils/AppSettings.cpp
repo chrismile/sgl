@@ -36,7 +36,9 @@
 #include <Graphics/Renderer.hpp>
 #include <Graphics/Mesh/Material.hpp>
 #include <Utils/Timer.hpp>
+#ifndef DISABLE_IMGUI
 #include <ImGui/ImGuiWrapper.hpp>
+#endif
 #include <iostream>
 #include <fstream>
 #include <filesystem>
@@ -716,9 +718,11 @@ void AppSettings::initializeSubsystems() {
     }
 #endif
 
+#ifndef DISABLE_IMGUI
     if (useGUI) {
         ImGuiWrapper::get()->initialize(fontRangesData, useDocking, useMultiViewport, uiScaleFactor);
     }
+#endif
 }
 
 void AppSettings::release() {
@@ -735,9 +739,11 @@ void AppSettings::release() {
         settings.saveToFile(settingsFilename.c_str());
     }
 
+#ifndef DISABLE_IMGUI
     if (useGUI) {
         ImGuiWrapper::get()->shutdown();
     }
+#endif
 
 #ifdef SUPPORT_OPENGL
     if (renderSystem == RenderSystem::OPENGL || offscreenContext) {
