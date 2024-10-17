@@ -680,7 +680,7 @@ void Image::uploadData(
     copyFromBuffer(stagingBuffer, commandBuffer);
     if (generateMipmaps) {
         _generateMipmaps(commandBuffer);
-    } else {
+    } else if ((imageSettings.usage & VK_IMAGE_USAGE_SAMPLED_BIT) != 0) {
         transitionImageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, commandBuffer);
     }
 
