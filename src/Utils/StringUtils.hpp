@@ -135,6 +135,13 @@ DLL_OBJECT std::string stringReplaceAllCopy(
 DLL_OBJECT std::string wideStringArrayToStdString(const wchar_t* wcharStr);
 
 /**
+ * Converts a std::string object to a std::wstring object.
+ * @param wcharStr The std::string string array. It is assumed ASCII or UTF-8 encoding is used.
+ * @return The converted wide string.
+ */
+DLL_OBJECT std::wstring stdStringToWideString(const std::string& stdString);
+
+/**
  * Converts strings like "This is a test!" with separator ' ' to { "This", "is", "a", "test!" }.
  * @tparam InputIterator The list class to use.
  * @param stringObject The string to split.

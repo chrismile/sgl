@@ -31,9 +31,11 @@
 #include <unicode/unistr.h>
 #include <unicode/ustream.h>
 #include <unicode/locid.h>
+#include <unicode/ustring.h>
 #else
 #include <locale>
 #include <sstream>
+#include <codecvt>
 #endif
 
 // Allow using boost::algorithm, as Boost may be built with ICU support for Unicode.
@@ -244,6 +246,28 @@ std::string wideStringArrayToStdString(const wchar_t* wcharStr) {
         stm << std::use_facet< std::ctype<wchar_t> >(std::locale()).narrow(*wcharStr++, '?');
     }
     return stm.str();
+    // Better solution below? Will be deprecated, though... (https://stackoverflow.com/questions/2573834/c-convert-string-or-char-to-wstring-or-wchar-t)
+    //std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    //return converter.to_bytes(wcharStr);
+#endif
+}
+
+std::wstring stdStringToWideString(const std::string& stdString) {
+#if defined(USE_ICU)
+    // See: https://stackoverflow.com/questions/61866124/convert-icu-unicode-string-to-stdwstring-or-wchar-t
+    icu::UnicodeString unicodeStr(stdString.c_str(), "UTF-8");
+    std::wstring wideString;
+    int32_t wstringSize = 0;
+    UErrorCode error = U_ZERO_ERROR;
+    u_strToWCS(nullptr, 0, &wstringSize, unicodeStr.getBuffer(), unicodeStr.length(), &error);
+    // For some reason, we get error == U_BUFFER_OVERFLOW_ERROR here, but the size looks fine...
+    wideString.resize(wstringSize);
+    error = U_ZERO_ERROR;
+    u_strToWCS(wideString.data(), wstringSize, nullptr, unicodeStr.getBuffer(), unicodeStr.length(), &error);
+    return wideString;
+#else
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    return converter.from_bytes(stdString);
 #endif
 }
 
