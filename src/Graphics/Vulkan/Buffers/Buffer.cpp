@@ -57,7 +57,7 @@ Buffer::Buffer(
         Device* device, size_t sizeInBytes, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, bool queueExclusive,
         bool exportMemory, bool useDedicatedAllocationForExportedMemory) : Buffer(device, BufferSettings{
             sizeInBytes, usage, memoryUsage,
-            queueExclusive ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT, 0, nullptr,
+            queueExclusive ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT, 0, nullptr, 0,
             exportMemory, useDedicatedAllocationForExportedMemory}) {}
 
 Buffer::Buffer(Device* device, const BufferSettings& bufferSettings)
