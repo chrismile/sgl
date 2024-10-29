@@ -1648,7 +1648,7 @@ const std::vector<VkCooperativeMatrixPropertiesKHR>& Device::getSupportedCoopera
 #endif
 
 #ifdef VK_NV_cooperative_matrix2
-const std::vector<VkCooperativeMatrixPropertiesNV>& Device::getSupportedCooperativeMatrixFlexibleDimensionsPropertiesNV() {
+const std::vector<VkCooperativeMatrixFlexibleDimensionsPropertiesNV>& Device::getSupportedCooperativeMatrixFlexibleDimensionsPropertiesNV() {
     if (!isInitializedSupportedCooperativeMatrixFlexibleDimensionsPropertiesNV) {
         uint32_t propertyCount = 0;
         vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(physicalDevice, &propertyCount, nullptr);
