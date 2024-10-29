@@ -1065,6 +1065,19 @@ void Device::createLogicalDeviceAndQueues(
         }
     }
 #endif
+#ifdef VK_NV_cooperative_matrix2
+    if (deviceExtensionsSet.find(VK_NV_COOPERATIVE_MATRIX_2_EXTENSION_NAME) != deviceExtensionsSet.end()) {
+        cooperativeMatrix2FeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_2_FEATURES_NV;
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &cooperativeMatrix2FeaturesNV;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        if (requestedDeviceFeatures.cooperativeMatrix2FeaturesNV.cooperativeMatrixWorkgroupScope == VK_FALSE) {
+            requestedDeviceFeatures.cooperativeMatrix2FeaturesNV = cooperativeMatrix2FeaturesNV;
+        }
+    }
+#endif
 
 
     VkDeviceCreateInfo deviceInfo{};
@@ -1180,6 +1193,12 @@ void Device::createLogicalDeviceAndQueues(
     if (requestedDeviceFeatures.cooperativeMatrixFeaturesKHR.cooperativeMatrix) {
         *pNextPtr = &requestedDeviceFeatures.cooperativeMatrixFeaturesKHR;
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.cooperativeMatrixFeaturesKHR.pNext);
+    }
+#endif
+#ifdef VK_NV_cooperative_matrix2
+    if (requestedDeviceFeatures.cooperativeMatrix2FeaturesNV.cooperativeMatrixWorkgroupScope) {
+        *pNextPtr = &requestedDeviceFeatures.cooperativeMatrix2FeaturesNV;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.cooperativeMatrix2FeaturesNV.pNext);
     }
 #endif
 #ifdef VK_VERSION_1_1
@@ -1559,6 +1578,39 @@ void Device::_getDeviceInformation() {
         vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
     }
 #endif
+
+#ifdef VK_NV_cooperative_matrix
+    if (isDeviceExtensionSupported(VK_NV_COOPERATIVE_MATRIX_EXTENSION_NAME)) {
+        cooperativeMatrixPropertiesNV = {};
+        cooperativeMatrixPropertiesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_PROPERTIES_NV;
+        VkPhysicalDeviceProperties2 deviceProperties2 = {};
+        deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        deviceProperties2.pNext = &cooperativeMatrixPropertiesNV;
+        vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
+    }
+#endif
+
+#ifdef VK_KHR_cooperative_matrix
+    if (isDeviceExtensionSupported(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME)) {
+        cooperativeMatrixPropertiesKHR = {};
+        cooperativeMatrixPropertiesKHR.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_PROPERTIES_KHR;
+        VkPhysicalDeviceProperties2 deviceProperties2 = {};
+        deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        deviceProperties2.pNext = &cooperativeMatrixPropertiesKHR;
+        vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
+    }
+#endif
+
+#ifdef VK_NV_cooperative_matrix2
+    if (isDeviceExtensionSupported(VK_NV_COOPERATIVE_MATRIX_2_EXTENSION_NAME)) {
+        cooperativeMatrix2PropertiesNV = {};
+        cooperativeMatrix2PropertiesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_2_PROPERTIES_NV;
+        VkPhysicalDeviceProperties2 deviceProperties2 = {};
+        deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        deviceProperties2.pNext = &cooperativeMatrix2PropertiesNV;
+        vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
+    }
+#endif
 }
 
 #ifdef VK_NV_cooperative_matrix
@@ -1592,6 +1644,24 @@ const std::vector<VkCooperativeMatrixPropertiesKHR>& Device::getSupportedCoopera
         isInitializedSupportedCooperativeMatrixPropertiesKHR = true;
     }
     return supportedCooperativeMatrixPropertiesKHR;
+}
+#endif
+
+#ifdef VK_NV_cooperative_matrix2
+const std::vector<VkCooperativeMatrixPropertiesNV>& Device::getSupportedCooperativeMatrix2PropertiesNV() {
+    if (!isInitializedSupportedCooperativeMatrixFlexibleDimensionsPropertiesNV) {
+        uint32_t propertyCount = 0;
+        vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(physicalDevice, &propertyCount, nullptr);
+        supportedCooperativeMatrixFlexibleDimensionsPropertiesNV.resize(propertyCount);
+        for (size_t i = 0; i < supportedCooperativeMatrixFlexibleDimensionsPropertiesNV.size(); i++) {
+            supportedCooperativeMatrixFlexibleDimensionsPropertiesNV.at(i).sType =
+                    VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_FLEXIBLE_DIMENSIONS_PROPERTIES_NV;
+        }
+        vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
+                physicalDevice, &propertyCount, supportedCooperativeMatrixFlexibleDimensionsPropertiesNV.data());
+        isInitializedSupportedCooperativeMatrixFlexibleDimensionsPropertiesNV = true;
+    }
+    return supportedCooperativeMatrixFlexibleDimensionsPropertiesNV;
 }
 #endif
 

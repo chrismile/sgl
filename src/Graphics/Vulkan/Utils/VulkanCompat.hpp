@@ -33,7 +33,7 @@
 #include "../libs/volk/volk.h"
 
 /*
-** Copyright 2015-2022 The Khronos Group Inc.
+** Copyright 2015-2024 The Khronos Group Inc.
 **
 ** SPDX-License-Identifier: Apache-2.0
 */
@@ -345,5 +345,25 @@ typedef struct VkPipelineShaderStageRequiredSubgroupSizeCreateInfo_Compat {
     void*              pNext;
     uint32_t           requiredSubgroupSize;
 } VkPipelineShaderStageRequiredSubgroupSizeCreateInfo_Compat;
+
+typedef struct VkPhysicalDeviceCooperativeMatrix2FeaturesNV_Compat {
+    VkStructureType    sType;
+    void*              pNext;
+    VkBool32           cooperativeMatrixWorkgroupScope;
+    VkBool32           cooperativeMatrixFlexibleDimensions;
+    VkBool32           cooperativeMatrixReductions;
+    VkBool32           cooperativeMatrixConversions;
+    VkBool32           cooperativeMatrixPerElementOperations;
+    VkBool32           cooperativeMatrixTensorAddressing;
+    VkBool32           cooperativeMatrixBlockLoads;
+} VkPhysicalDeviceCooperativeMatrix2FeaturesNV_Compat;
+
+typedef struct VkPhysicalDeviceCooperativeMatrix2PropertiesNV_Compat {
+    VkStructureType    sType;
+    void*              pNext;
+    uint32_t           cooperativeMatrixWorkgroupScopeMaxWorkgroupSize;
+    uint32_t           cooperativeMatrixFlexibleDimensionsMaxDimension;
+    uint32_t           cooperativeMatrixWorkgroupScopeReservedSharedMemory;
+} VkPhysicalDeviceCooperativeMatrix2PropertiesNV_Compat;
 
 #endif //SGL_VULKANCOMPAT_HPP

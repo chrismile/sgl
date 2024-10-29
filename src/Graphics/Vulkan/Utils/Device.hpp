@@ -187,6 +187,11 @@ struct DLL_OBJECT DeviceFeatures {
 #else
     VkPhysicalDeviceCooperativeMatrixFeaturesKHR_Compat cooperativeMatrixFeaturesKHR{};
 #endif
+#ifdef VK_NV_cooperative_matrix2
+    VkPhysicalDeviceCooperativeMatrix2FeaturesNV cooperativeMatrix2FeaturesNV{};
+#else
+    VkPhysicalDeviceCooperativeMatrix2FeaturesNV_Compat cooperativeMatrix2FeaturesNV{};
+#endif
     // The following features have no extensions, thus use
     bool optionalEnableShaderDrawParametersFeatures = false;
     // Vulkan 1.x features are only enabled when at least one value in the struct is set to true.
@@ -395,13 +400,28 @@ public:
     inline const VkPhysicalDeviceCooperativeMatrixFeaturesNV& getCooperativeMatrixFeaturesNV() const {
         return cooperativeMatrixFeaturesNV;
     }
+    inline const VkPhysicalDeviceCooperativeMatrixPropertiesNV& getCooperativeMatrixPropertiesNV() const {
+        return cooperativeMatrixPropertiesNV;
+    }
     const std::vector<VkCooperativeMatrixPropertiesNV>& getSupportedCooperativeMatrixPropertiesNV();
 #endif
 #ifdef VK_KHR_cooperative_matrix
     inline const VkPhysicalDeviceCooperativeMatrixFeaturesKHR& getCooperativeMatrixFeaturesKHR() const {
         return cooperativeMatrixFeaturesKHR;
     }
+    inline const VkPhysicalDeviceCooperativeMatrixPropertiesKHR& getCooperativeMatrixPropertiesKHR() const {
+        return cooperativeMatrixPropertiesKHR;
+    }
     const std::vector<VkCooperativeMatrixPropertiesKHR>& getSupportedCooperativeMatrixPropertiesKHR();
+#endif
+#ifdef VK_NV_cooperative_matrix2
+    inline const VkPhysicalDeviceCooperativeMatrix2FeaturesNV& getCooperativeMatrix2FeaturesNV() const {
+        return cooperativeMatrix2FeaturesNV;
+    }
+    inline const VkPhysicalDeviceCooperativeMatrix2PropertiesNV& getCooperativeMatrix2PropertiesNV() const {
+        return cooperativeMatrix2PropertiesNV;
+    }
+    const std::vector<VkCooperativeMatrixFlexibleDimensionsPropertiesNV>& getSupportedCooperativeMatrixFlexibleDimensionsPropertiesNV();
 #endif
     const VkPhysicalDeviceShaderCorePropertiesAMD& getDeviceShaderCorePropertiesAMD();
     const VkPhysicalDeviceShaderCoreProperties2AMD& getDeviceShaderCoreProperties2AMD();
@@ -638,20 +658,34 @@ private:
 #endif
 #ifdef VK_NV_cooperative_matrix
     VkPhysicalDeviceCooperativeMatrixFeaturesNV cooperativeMatrixFeaturesNV{};
+    VkPhysicalDeviceCooperativeMatrixPropertiesNV cooperativeMatrixPropertiesNV{};
     std::vector<VkCooperativeMatrixPropertiesNV> supportedCooperativeMatrixPropertiesNV;
 #else
     VkPhysicalDeviceCooperativeMatrixFeaturesNV_Compat cooperativeMatrixFeaturesNV{};
+    VkPhysicalDeviceCooperativeMatrixPropertiesNV_Compat cooperativeMatrixPropertiesNV{};
     std::vector<VkPhysicalDeviceCooperativeMatrixFeaturesNV_Compat> supportedCooperativeMatrixPropertiesNV;
 #endif
 #ifdef VK_KHR_cooperative_matrix
     VkPhysicalDeviceCooperativeMatrixFeaturesKHR cooperativeMatrixFeaturesKHR{};
+    VkPhysicalDeviceCooperativeMatrixPropertiesKHR cooperativeMatrixPropertiesKHR{};
     std::vector<VkCooperativeMatrixPropertiesKHR> supportedCooperativeMatrixPropertiesKHR;
 #else
     VkPhysicalDeviceCooperativeMatrixFeaturesKHR_Compat cooperativeMatrixFeaturesKHR{};
+    VkPhysicalDeviceCooperativeMatrixPropertiesKHR_Compat cooperativeMatrixPropertiesKHR{};
     std::vector<VkPhysicalDeviceCooperativeMatrixFeaturesKHR_Compat> supportedCooperativeMatrixPropertiesKHR;
+#endif
+#ifdef VK_NV_cooperative_matrix2
+    VkPhysicalDeviceCooperativeMatrix2FeaturesNV cooperativeMatrix2FeaturesNV{};
+    VkPhysicalDeviceCooperativeMatrix2PropertiesNV cooperativeMatrix2PropertiesNV{};
+    std::vector<VkCooperativeMatrixFlexibleDimensionsPropertiesNV> supportedCooperativeMatrixFlexibleDimensionsPropertiesNV;
+#else
+    VkPhysicalDeviceCooperativeMatrix2FeaturesNV_Compat cooperativeMatrix2FeaturesNV{};
+    VkPhysicalDeviceCooperativeMatrix2PropertiesNV_Compat cooperativeMatrix2PropertiesNV{};
+    std::vector<VkPhysicalDeviceCooperativeMatrix2PropertiesNV_Compat> supportedCooperativeMatrixFlexibleDimensionsPropertiesNV;
 #endif
     bool isInitializedSupportedCooperativeMatrixPropertiesNV = false;
     bool isInitializedSupportedCooperativeMatrixPropertiesKHR = false;
+    bool isInitializedSupportedCooperativeMatrixFlexibleDimensionsPropertiesNV = false;
 
     // AMD-specific properties.
     VkPhysicalDeviceShaderCorePropertiesAMD deviceShaderCorePropertiesAMD{};
