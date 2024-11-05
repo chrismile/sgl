@@ -697,6 +697,17 @@ ShaderModulePtr ShaderManagerVk::loadAssetGlslang(
     shader->setEnvInput(source, shaderKind, client, 100);
     shader->setEnvClient(client, targetClientVersion);
     shader->setEnvTarget(targetLanguage, targetLanguageVersion);
+
+    glslang::SpvOptions* spvOptions = nullptr;
+    if (generateDebugInfo) {
+        shader->setDebugInfo(true);
+        spvOptions = new glslang::SpvOptions;
+        spvOptions->disableOptimizer = false;
+        spvOptions->generateDebugInfo = true;
+        spvOptions->emitNonSemanticShaderDebugInfo = true;
+        spvOptions->emitNonSemanticShaderDebugSource = true;
+    }
+
     //shader->setEntryPoint(entryPointName);
     //shader->setOverrideVersion(glslVersion); // e.g., 450.
     TBuiltInResource builtInResource = {};
@@ -737,11 +748,15 @@ ShaderModulePtr ShaderManagerVk::loadAssetGlslang(
     }
 
     std::vector<uint32_t> compilationResultWords;
-    glslang::GlslangToSpv(*program->getIntermediate(shaderKind), compilationResultWords);
+    glslang::GlslangToSpv(*program->getIntermediate(shaderKind), compilationResultWords, spvOptions);
     ShaderModulePtr shaderModule(new ShaderModule(
             device, shaderInfo.filename, shaderInfo.shaderModuleType,
             compilationResultWords));
 
+    if (spvOptions) {
+        delete spvOptions;
+        spvOptions = nullptr;
+    }
     delete shader;
     delete program;
     return shaderModule;
