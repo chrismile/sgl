@@ -466,11 +466,7 @@ bool wgslCodeReflect(const std::string& fileContent, ReflectInfo& reflectInfo, s
             bindingEntry.variableName = variable.name;
             bindingEntry.bindingEntryType = getBindingEntryType(variable.type, variable.modifiers);
             bindingEntry.typeName = variable.type.name;
-            if (variable.modifiers.has_value()) {
-                bindingEntry.modifiers = variable.modifiers.get();
-            }
-            if (bindingEntry.bindingEntryType == BindingEntryType::STORAGE_BUFFER
-                    || bindingEntry.bindingEntryType == BindingEntryType::STORAGE_TEXTURE) {
+            if (bindingEntry.bindingEntryType == BindingEntryType::STORAGE_BUFFER) {
                 bool hasReadModifier = false;
                 bool hasWriteModifier = false;
                 if (variable.modifiers.has_value()) {
@@ -492,6 +488,41 @@ bool wgslCodeReflect(const std::string& fileContent, ReflectInfo& reflectInfo, s
                     bindingEntry.storageModifier = StorageModifier::READ;
                 } else if (hasWriteModifier) {
                     bindingEntry.storageModifier = StorageModifier::WRITE;
+                }
+            }
+            if (bindingEntry.bindingEntryType == BindingEntryType::TEXTURE) {
+                if (!variable.type.template_parameters.has_value()) {
+                    errorString = "No texture format provided for \"var " + variable.name + "\".";
+                    return false;
+                }
+                const auto& template_parameters = variable.type.template_parameters.get();
+                if (template_parameters.size() != 1) {
+                    errorString = "Invalid number of type template parameters for \"var " + variable.name + "\".";
+                    return false;
+                }
+                bindingEntry.textureFormat = template_parameters.at(0).name;
+            }
+            if (bindingEntry.bindingEntryType == BindingEntryType::STORAGE_TEXTURE) {
+                if (!variable.type.template_parameters.has_value()) {
+                    errorString = "No storage texture format provided for \"var " + variable.name + "\".";
+                    return false;
+                }
+                const auto& template_parameters = variable.type.template_parameters.get();
+                if (template_parameters.size() != 2) {
+                    errorString = "Invalid number of type template parameters for \"var " + variable.name + "\".";
+                    return false;
+                }
+                bindingEntry.textureFormat = template_parameters.at(0).name;
+                const std::string& access = template_parameters.at(1).name;
+                if (access == "read_write") {
+                    bindingEntry.storageModifier = StorageModifier::READ_WRITE;
+                } else if (access == "read") {
+                    bindingEntry.storageModifier = StorageModifier::READ;
+                } else if (access == "write") {
+                    bindingEntry.storageModifier = StorageModifier::WRITE;
+                } else {
+                    errorString = "Invalid access parameter for \"var " + variable.name + "\".";
+                    return false;
                 }
             }
             if (bindingEntry.bindingEntryType == BindingEntryType::UNKNOWN) {

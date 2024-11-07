@@ -48,7 +48,7 @@ struct DLL_OBJECT BindingEntry {
     uint32_t bindingIndex;
     std::string variableName;
     std::string typeName;
-    std::vector<std::string> modifiers;
+    std::string textureFormat;
     BindingEntryType bindingEntryType;
     // Only for BindingEntryType::STORAGE_BUFFER and BindingEntryType::STORAGE_TEXTURE.
     StorageModifier storageModifier;

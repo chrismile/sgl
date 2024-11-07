@@ -42,6 +42,8 @@
 namespace shaderc { class Compiler; }
 #endif
 
+namespace sgl { class PreprocessorGlsl; }
+
 namespace sgl { namespace vk {
 
 struct DLL_OBJECT ShaderModuleInfo {
@@ -105,22 +107,13 @@ public:
      */
     template<typename T>
     void addPreprocessorDefine(const std::string& token, const T& value) {
-        preprocessorDefines[token] = toString(value);
+        addPreprocessorDefine(token, toString(value));
     }
-    void addPreprocessorDefine(const std::string& token) {
-        preprocessorDefines[token] = "";
-    }
-    std::string getPreprocessorDefine(const std::string& token) {
-        return preprocessorDefines[token];
-    }
-
+    void addPreprocessorDefine(const std::string& token, const std::string& value);
+    void addPreprocessorDefine(const std::string& token);
+    std::string getPreprocessorDefine(const std::string& token);
     /// Removes a preprocessor #define token set by "addPreprocessorDefine".
-    void removePreprocessorDefine(const std::string& token) {
-        auto it = preprocessorDefines.find(token);
-        if (it != preprocessorDefines.end()) {
-            preprocessorDefines.erase(it);
-        }
-    }
+    void removePreprocessorDefine(const std::string& token);
 
     /// Setting generateDebugInfo to true corresponds to the glslc flag '-g'.
     inline void setGenerateDebugInfo(bool _generateDebugInfo = true) { generateDebugInfo = _generateDebugInfo; }
@@ -139,7 +132,7 @@ public:
     virtual void invalidateShaderCache();
 
     // For use by IncluderInterface.
-    [[nodiscard]] const std::map<std::string, std::string>& getShaderFileMap() const { return shaderFileMap; }
+    [[nodiscard]] const std::map<std::string, std::string>& getShaderFileMap() const;
     [[nodiscard]] const std::string& getShaderPathPrefix() const { return pathPrefix; }
 
     /**
@@ -166,48 +159,27 @@ protected:
             const std::vector<std::string>& shaderIds, const std::vector<ShaderStageSettings>& shaderStageSettings,
             bool dumpTextDebug);
 
-    /// Internal loading
-    std::string getHeaderName(const std::string& lineString);
-    std::string getImportedShaderString(
-            const std::string& moduleName, const std::string& parentModuleName, std::string& prependContent);
-    std::string getShaderString(const std::string& globalShaderName);
-    std::string getPreprocessorDefines(ShaderModuleType shaderModuleType);
-    static void addExtensions(std::string& prependContent, const std::map<std::string, std::string>& defines);
-
     /**
      * Indexes all ".glsl" files in the directory pathPrefix (and its sub-directories recursively) to create
      * "shaderFileMap". Therefore, the application can easily include files with relative paths.
      */
-    void indexFiles(const std::string& file);
-
-    /// Directory in which to search for shaders (standard: Data/Shaders).
-    std::string pathPrefix;
-
-    /// Maps shader name -> shader source, e.g. "Blur.Fragment" -> "void main() { ... }".
-    std::map<std::string, std::string> effectSources;
-    std::map<std::string, std::string> effectSourcesRaw; ///< without prepended header.
-    std::map<std::string, std::string> effectSourcesPrepend; ///< only prepended header.
-
-    /// Maps file names without path to full file paths for "*.glsl" shader files,
-    /// e.g. "Blur.glsl" -> "Data/Shaders/PostProcessing/Blur.glsl".
-    std::map<std::string, std::string> shaderFileMap;
-    int sourceStringNumber = 0;
-    int recursionDepth = 0;
-    /// Whether to include a file name in "#line" directives (for more details see:
-    /// https://github.com/google/shaderc/tree/main/glslc#51-source-filename-based-line-and-__file__).
-    bool useCppLineStyle = true;
+    void indexFiles(std::map<std::string, std::string>& shaderFileMap, const std::string& file);
 
     // If a file named "GlobalDefinesVulkan.glsl" is found: Appended to all shaders.
-    std::string globalDefines;
+    //std::string globalDefines;
     // Global defines for vertex and geometry shaders.
-    std::string globalDefinesMvpMatrices;
+    //std::string globalDefinesMvpMatrices;
 
     /// A token-value map for user-provided preprocessor #define's
-    std::map<std::string, std::string> preprocessorDefines;
-    std::map<std::string, std::string> tempPreprocessorDefines; // Temporarily set when loading a shader.
+    //std::map<std::string, std::string> preprocessorDefines;
+    //std::map<std::string, std::string> tempPreprocessorDefines; // Temporarily set when loading a shader.
 
     // Vulkan device.
     Device* device = nullptr;
+
+    /// Directory in which to search for shaders (standard: Data/Shaders).
+    std::string pathPrefix;
+    PreprocessorGlsl* preprocessor = nullptr;
 
     // Shader module compiler.
 #ifdef SUPPORT_SHADERC_BACKEND

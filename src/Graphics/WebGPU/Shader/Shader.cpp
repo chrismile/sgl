@@ -177,7 +177,7 @@ void ShaderStages::createBindGroupLayouts() {
     bindGroupLayouts.resize(bindGroupsInfo.size());
     size_t i = 0;
     for (const auto& bindGroupInfo : bindGroupsInfo) {
-        std::vector<WGPUBindGroupLayoutEntry> bindGroupLayoutEntries(bindGroupsInfo.size());
+        std::vector<WGPUBindGroupLayoutEntry> bindGroupLayoutEntries(bindGroupInfo.second.size());
         size_t entryIdx = 0;
         for (const auto& bindGroupEntry : bindGroupInfo.second) {
             auto& bindGroupLayoutEntry = bindGroupLayoutEntries.at(entryIdx);
@@ -199,20 +199,16 @@ void ShaderStages::createBindGroupLayouts() {
                 bindGroupLayoutEntry.texture.multisampled =
                         bindGroupEntry.typeName == "texture_multisampled_2d"
                         || bindGroupEntry.typeName == "texture_depth_multisampled_2d";
-                if (bindGroupEntry.modifiers.size() != 1) {
-                    sgl::Logfile::get()->throwError(
-                            "Error in ShaderStages::ShaderStages: Invalid number of texture modifiers.");
-                }
-                std::string modifier = bindGroupEntry.modifiers.front();
+                std::string formatName = bindGroupEntry.textureFormat;
                 if (sgl::startsWith(bindGroupEntry.typeName, "texture_depth")) {
                     bindGroupLayoutEntry.texture.sampleType = WGPUTextureSampleType_Depth;
-                } else if (modifier == "f32") {
+                } else if (formatName == "f32") {
                     // No way to detect WGPUTextureSampleType_UnfilterableFloat?
                     // Might need to check for "float32-filterable" (https://www.w3.org/TR/webgpu/#float32-filterable).
                     bindGroupLayoutEntry.texture.sampleType = WGPUTextureSampleType_Float;
-                } else if (modifier == "i32") {
+                } else if (formatName == "i32") {
                     bindGroupLayoutEntry.texture.sampleType = WGPUTextureSampleType_Sint;
-                } else if (modifier == "u32") {
+                } else if (formatName == "u32") {
                     bindGroupLayoutEntry.texture.sampleType = WGPUTextureSampleType_Uint;
                 } else {
                     sgl::Logfile::get()->throwError(
@@ -248,11 +244,7 @@ void ShaderStages::createBindGroupLayouts() {
                             "Error in ShaderStages::ShaderStages: Invalid type \"" + bindGroupEntry.typeName + "\".");
                 }
                 bindGroupLayoutEntry.storageTexture.viewDimension = it->second;
-                if (bindGroupEntry.modifiers.size() != 2) {
-                    sgl::Logfile::get()->throwError(
-                            "Error in ShaderStages::ShaderStages: Invalid number of storage texture modifiers.");
-                }
-                std::string formatName = bindGroupEntry.modifiers.front();
+                std::string formatName = bindGroupEntry.textureFormat;
                 auto itFormat = typeNameToTextureFormatMap.find(formatName);
                 if (itFormat == typeNameToTextureFormatMap.end()) {
                     sgl::Logfile::get()->throwError(

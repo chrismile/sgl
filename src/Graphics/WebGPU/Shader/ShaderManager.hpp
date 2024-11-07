@@ -34,10 +34,14 @@
 #include <Utils/File/FileManager.hpp>
 #include <Graphics/WebGPU/Utils/Device.hpp>
 
+namespace sgl { class PreprocessorGlsl; }
+
 namespace sgl { namespace webgpu {
 
 class ShaderModule;
 typedef std::shared_ptr<ShaderModule> ShaderModulePtr;
+class ShaderStages;
+typedef std::shared_ptr<ShaderStages> ShaderStagesPtr;
 
 struct DLL_OBJECT ShaderModuleInfo {
     std::string filename;
@@ -46,15 +50,43 @@ struct DLL_OBJECT ShaderModuleInfo {
     }
 };
 
+enum class ShaderSource {
+    WGSL, GLSL
+};
+
 class DLL_OBJECT ShaderManagerWgpu : public FileManager<ShaderModule, ShaderModuleInfo> {
 public:
     explicit ShaderManagerWgpu(Device* device);
-    ~ShaderManagerWgpu() override = default;
+    ~ShaderManagerWgpu() override;
 
     /// Reference-counted loading.
+    ShaderModulePtr getShaderModule(const std::string& shaderId);
     ShaderModulePtr getShaderModule(
-            const std::string& shaderId, const std::map<std::string, std::string>& customPreprocessorDefines = {},
-            bool dumpTextDebug = false);
+            const std::string& shaderId, const std::map<std::string, std::string>& customPreprocessorDefines);
+    ShaderModulePtr getShaderModule(
+            const std::string& shaderId, const std::map<std::string, std::string>& customPreprocessorDefines,
+            bool dumpTextDebug);
+    ShaderStagesPtr getShaderStagesSingleSource(
+            const std::string& shaderId, const std::vector<std::string>& entryPoints);
+    ShaderStagesPtr getShaderStagesSingleSource(
+            const std::string& shaderId, const std::vector<std::string>& entryPoints,
+            const std::map<std::string, std::string>& customPreprocessorDefines);
+    ShaderStagesPtr getShaderStagesSingleSource(
+            const std::string& shaderId, const std::vector<std::string>& entryPoints,
+            const std::map<std::string, std::string>& customPreprocessorDefines, bool dumpTextDebug);
+    ShaderStagesPtr getShaderStagesMultiSource(
+            const std::vector<std::string>& shaderIds);
+    ShaderStagesPtr getShaderStagesMultiSource(
+            const std::vector<std::string>& shaderIds, const std::vector<std::string>& entryPoints);
+    ShaderStagesPtr getShaderStagesMultiSource(
+            const std::vector<std::string>& shaderIds,
+            const std::map<std::string, std::string>& customPreprocessorDefines);
+    ShaderStagesPtr getShaderStagesMultiSource(
+            const std::vector<std::string>& shaderIds, const std::vector<std::string>& entryPoints,
+            const std::map<std::string, std::string>& customPreprocessorDefines);
+    ShaderStagesPtr getShaderStagesMultiSource(
+            const std::vector<std::string>& shaderIds, const std::vector<std::string>& entryPoints,
+            const std::map<std::string, std::string>& customPreprocessorDefines, bool dumpTextDebug);
 
     /**
      * @see After indexFiles was called by the constructor, this function can be used to resolve a shader file path.
@@ -69,7 +101,7 @@ public:
     virtual void invalidateShaderCache();
 
     // For use by IncluderInterface.
-    [[nodiscard]] const std::map<std::string, std::string>& getShaderFileMap() const { return shaderFileMap; }
+    [[nodiscard]] const std::map<std::string, std::string>& getShaderFileMap() const;
     [[nodiscard]] const std::string& getShaderPathPrefix() const { return pathPrefix; }
 
     // For use by device error callback.
@@ -77,6 +109,7 @@ public:
 
 private:
     Device* device = nullptr;
+    PreprocessorGlsl* preprocessor = nullptr;
 
     ShaderModulePtr loadAsset(ShaderModuleInfo& shaderModuleInfo) override;
 
@@ -84,26 +117,14 @@ private:
      * Indexes all ".wgsl" files in the directory pathPrefix (and its sub-directories recursively) to create
      * "shaderFileMap". Therefore, the application can easily include files with relative paths.
      */
-    void indexFiles(const std::string& file);
+    void indexFiles(std::map<std::string, std::string>& shaderFileMap, const std::string& file);
 
     /// Directory in which to search for shaders (standard: Data/Shaders).
     std::string pathPrefix;
 
-    /// Maps file names without path to full file paths for "*.wgsl" shader files,
-    /// e.g. "Blur.wgsl" -> "Data/Shaders/PostProcessing/Blur.wgsl".
-    std::map<std::string, std::string> shaderFileMap;
+    /// Internal loading for WGSL shaders.
+    std::string getShaderStringWgsl(const std::string& globalShaderName);
 
-    /// Internal loading
-    std::string getShaderString(const std::string& globalShaderName);
-    std::string getPreprocessorDefines();
-
-    /// Maps shader name -> shader source, e.g. "Blur.Fragment" -> "void main() { ... }".
-    std::map<std::string, std::string> effectSources;
-
-    /// A token-value map for user-provided preprocessor #define's
-    std::map<std::string, std::string> preprocessorDefines;
-
-    bool dumpTextDebugStatic = false;
     std::string errorMessageExternal;
 };
 

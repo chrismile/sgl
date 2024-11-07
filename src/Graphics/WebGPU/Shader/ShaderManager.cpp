@@ -37,6 +37,7 @@
 #include <Utils/Dialog.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
+#include <Graphics/GLSL/PreprocessorGlsl.hpp>
 
 #include "Reflect/WGSLReflect.hpp"
 #include "Shader.hpp"
@@ -47,16 +48,23 @@
 namespace sgl { namespace webgpu {
 
 ShaderManagerWgpu::ShaderManagerWgpu(Device *device) : device(device) {
+    preprocessor = new PreprocessorGlsl;
     pathPrefix = sgl::AppSettings::get()->getDataDirectory() + "Shaders/";
-    indexFiles(pathPrefix);
+    std::map<std::string, std::string>& shaderFileMap = preprocessor->getShaderFileMap();
+    indexFiles(shaderFileMap, pathPrefix);
+    preprocessor->setUseCppLineStyle(false); //< Not supported by naga_cross at the moment.
 }
 
-void ShaderManagerWgpu::indexFiles(const std::string &file) {
+ShaderManagerWgpu::~ShaderManagerWgpu() {
+    delete preprocessor;
+}
+
+void ShaderManagerWgpu::indexFiles(std::map<std::string, std::string>& shaderFileMap, const std::string &file) {
     if (FileUtils::get()->isDirectory(file)) {
         // Scan content of directory.
         std::vector<std::string> elements = FileUtils::get()->getFilesInDirectoryVector(file);
         for (std::string &childFile : elements) {
-            indexFiles(childFile);
+            indexFiles(shaderFileMap, childFile);
         }
     } else {
         auto fileExtension = FileUtils::get()->getFileExtensionLower(file);
@@ -68,70 +76,215 @@ void ShaderManagerWgpu::indexFiles(const std::string &file) {
     }
 }
 
-std::string ShaderManagerWgpu::getShaderFileName(const std::string &pureFilename) {
-    auto it = shaderFileMap.find(pureFilename);
-    if (it == shaderFileMap.end()) {
-        sgl::Logfile::get()->writeError(
-                "Error in ShaderManagerWgpu::getShaderFileName: Unknown file name \"" + pureFilename + "\".");
-        return "";
-    }
-    return it->second;
-}
-
-std::string ShaderManagerWgpu::getPreprocessorDefines() {
-    std::string preprocessorStatements;
-    for (auto it = preprocessorDefines.begin(); it != preprocessorDefines.end(); it++) {
-        preprocessorStatements += std::string() + "#define " + it->first + " " + it->second + "\n";
-    }
-    return preprocessorStatements;
+const std::map<std::string, std::string>& ShaderManagerWgpu::getShaderFileMap() const {
+    return preprocessor->getShaderFileMap();
 }
 
 void ShaderManagerWgpu::invalidateShaderCache() {
     assetMap.clear();
-    effectSources.clear();
+    preprocessor->invalidateShaderCache();
+}
+
+std::string ShaderManagerWgpu::getShaderFileName(const std::string &pureFilename) {
+    return preprocessor->getShaderFileName(pureFilename);
+}
+
+ShaderModulePtr ShaderManagerWgpu::getShaderModule(const std::string& shaderId) {
+    ShaderModuleInfo info;
+    info.filename = shaderId;
+    ShaderModulePtr shaderModule = FileManager<ShaderModule, ShaderModuleInfo>::getAsset(info);
+    return shaderModule;
 }
 
 ShaderModulePtr ShaderManagerWgpu::getShaderModule(
-        const std::string& shaderId, const std::map<std::string, std::string>& customPreprocessorDefines,
-        bool dumpTextDebug) {
-    preprocessorDefines = customPreprocessorDefines;
-    dumpTextDebugStatic = dumpTextDebug;
+        const std::string& shaderId, const std::map<std::string, std::string>& customPreprocessorDefines) {
+    preprocessor->setTempPreprocessorDefines(customPreprocessorDefines);
 
     ShaderModuleInfo info;
     info.filename = shaderId;
     ShaderModulePtr shaderModule = FileManager<ShaderModule, ShaderModuleInfo>::getAsset(info);
 
-    dumpTextDebugStatic = false;
-    preprocessorDefines.clear();
+    preprocessor->clearTempPreprocessorDefines();
     return shaderModule;
+}
+
+ShaderModulePtr ShaderManagerWgpu::getShaderModule(
+        const std::string& shaderId, const std::map<std::string, std::string>& customPreprocessorDefines,
+        bool dumpTextDebug) {
+    preprocessor->setTempPreprocessorDefines(customPreprocessorDefines);
+    preprocessor->setDumpTextDebugStatic(dumpTextDebug);
+
+    ShaderModuleInfo info;
+    info.filename = shaderId;
+    ShaderModulePtr shaderModule = FileManager<ShaderModule, ShaderModuleInfo>::getAsset(info);
+
+    preprocessor->setDumpTextDebugStatic(false);
+    preprocessor->clearTempPreprocessorDefines();
+    return shaderModule;
+}
+
+
+ShaderStagesPtr ShaderManagerWgpu::getShaderStagesSingleSource(
+        const std::string& shaderId, const std::vector<std::string>& entryPoints) {
+    std::vector<ShaderModulePtr> shaderModules;
+    shaderModules.reserve(entryPoints.size());
+    ShaderModulePtr shaderModule = getShaderModule(shaderId);
+    for (size_t i = 0; i < entryPoints.size(); i++) {
+        shaderModules.push_back(shaderModule);
+    }
+    if (!shaderModule) {
+        return {};
+    }
+    return std::make_shared<sgl::webgpu::ShaderStages>(device, shaderModules, entryPoints);
+}
+
+ShaderStagesPtr ShaderManagerWgpu::getShaderStagesSingleSource(
+        const std::string& shaderId, const std::vector<std::string>& entryPoints,
+        const std::map<std::string, std::string>& customPreprocessorDefines) {
+    preprocessor->setTempPreprocessorDefines(customPreprocessorDefines);
+    auto shaderStages = getShaderStagesSingleSource(shaderId, entryPoints);
+    preprocessor->clearTempPreprocessorDefines();
+    return shaderStages;
+}
+
+ShaderStagesPtr ShaderManagerWgpu::getShaderStagesSingleSource(
+        const std::string& shaderId, const std::vector<std::string>& entryPoints,
+        const std::map<std::string, std::string>& customPreprocessorDefines, bool dumpTextDebug) {
+    preprocessor->setTempPreprocessorDefines(customPreprocessorDefines);
+    preprocessor->setDumpTextDebugStatic(dumpTextDebug);
+    auto shaderStages = getShaderStagesSingleSource(shaderId, entryPoints);
+    preprocessor->setDumpTextDebugStatic(false);
+    preprocessor->clearTempPreprocessorDefines();
+    return shaderStages;
+}
+
+
+ShaderStagesPtr ShaderManagerWgpu::getShaderStagesMultiSource(
+        const std::vector<std::string>& shaderIds) {
+    std::vector<std::string> entryPoints;
+    entryPoints.reserve(shaderIds.size());
+    for (size_t i = 0; i < shaderIds.size(); i++) {
+        entryPoints.emplace_back("main");
+    }
+    return getShaderStagesMultiSource(shaderIds, entryPoints);
+}
+
+ShaderStagesPtr ShaderManagerWgpu::getShaderStagesMultiSource(
+        const std::vector<std::string>& shaderIds, const std::vector<std::string>& entryPoints) {
+    std::vector<ShaderModulePtr> shaderModules;
+    for (const std::string &shaderId : shaderIds) {
+        ShaderModulePtr shaderModule = getShaderModule(shaderId);
+        if (!shaderModule) {
+            return {};
+        }
+        shaderModules.push_back(shaderModule);
+    }
+    return std::make_shared<sgl::webgpu::ShaderStages>(device, shaderModules, entryPoints);
+}
+
+ShaderStagesPtr ShaderManagerWgpu::getShaderStagesMultiSource(
+        const std::vector<std::string>& shaderIds,
+        const std::map<std::string, std::string>& customPreprocessorDefines) {
+    preprocessor->setTempPreprocessorDefines(customPreprocessorDefines);
+    auto shaderStages = getShaderStagesMultiSource(shaderIds);
+    preprocessor->clearTempPreprocessorDefines();
+    return shaderStages;
+}
+
+ShaderStagesPtr ShaderManagerWgpu::getShaderStagesMultiSource(
+        const std::vector<std::string>& shaderIds, const std::vector<std::string>& entryPoints,
+        const std::map<std::string, std::string>& customPreprocessorDefines) {
+    preprocessor->setTempPreprocessorDefines(customPreprocessorDefines);
+    auto shaderStages = getShaderStagesMultiSource(shaderIds, entryPoints);
+    preprocessor->clearTempPreprocessorDefines();
+    return shaderStages;
+}
+
+ShaderStagesPtr ShaderManagerWgpu::getShaderStagesMultiSource(
+        const std::vector<std::string>& shaderIds, const std::vector<std::string>& entryPoints,
+        const std::map<std::string, std::string>& customPreprocessorDefines, bool dumpTextDebug) {
+    preprocessor->setTempPreprocessorDefines(customPreprocessorDefines);
+    preprocessor->setDumpTextDebugStatic(dumpTextDebug);
+    auto shaderStages = getShaderStagesMultiSource(shaderIds, entryPoints);
+    preprocessor->setDumpTextDebugStatic(false);
+    preprocessor->clearTempPreprocessorDefines();
+    return shaderStages;
+}
+
+
+ShaderType getShaderTypeFromStringWgsl(const std::string& shaderId) {
+    std::string shaderIdLower = sgl::toLowerCopy(shaderId);
+    ShaderType shaderModuleType = ShaderType::COMPUTE;
+    if (sgl::endsWith(shaderIdLower, "vertex")) {
+        shaderModuleType = ShaderType::VERTEX;
+    } else if (sgl::endsWith(shaderIdLower, "fragment")) {
+        shaderModuleType = ShaderType::FRAGMENT;
+    } else if (sgl::endsWith(shaderIdLower, "compute")) {
+        shaderModuleType = ShaderType::COMPUTE;
+    } else {
+        if (sgl::stringContains(shaderIdLower, "vert")) {
+            shaderModuleType = ShaderType::VERTEX;
+        } else if (sgl::stringContains(shaderIdLower, "frag")) {
+            shaderModuleType = ShaderType::FRAGMENT;
+        } else if (sgl::stringContains(shaderIdLower, "comp")) {
+            shaderModuleType = ShaderType::COMPUTE;
+        }
+    }
+    return shaderModuleType;
 }
 
 ShaderModulePtr ShaderManagerWgpu::loadAsset(ShaderModuleInfo& shaderInfo) {
     std::string id = shaderInfo.filename;
-    std::string shaderString = getShaderString(id);
+    ShaderSource shaderSource;
+    std::string shaderString;
+    if (sgl::endsWith(shaderInfo.filename, ".wgsl")) {
+        shaderSource = ShaderSource::WGSL;
+        shaderString = getShaderStringWgsl(id);
+    } else {
+        shaderSource = ShaderSource::GLSL;
+        shaderString = preprocessor->getShaderString(id);
+    }
 
-    if (dumpTextDebugStatic) {
+    if (preprocessor->getDumpTextDebugStatic()) {
         std::cout << "Shader dump (" << id << "):" << std::endl;
         std::cout << "--------------------------------------------" << std::endl;
         std::cout << shaderString << std::endl << std::endl;
     }
 
     // Use naga_cross for GLSL -> WGSL cross-compilation.
-    if (sgl::endsWith(shaderInfo.filename, ".glsl")) {
+    if (shaderSource == ShaderSource::GLSL) {
 #ifdef SUPPORT_NAGA_CROSS
         std::vector<NagaCrossShaderDefine> shaderDefines;
-        shaderDefines.resize(preprocessorDefines.size());
+        const size_t numDefines =
+                preprocessor->getPreprocessorDefines().size()
+                + preprocessor->getTempPreprocessorDefines().size();
+        shaderDefines.resize(numDefines);
         int defineIdx = 0;
-        for (const auto& preprocessorDefine : preprocessorDefines) {
+        for (const auto& preprocessorDefine : preprocessor->getPreprocessorDefines()) {
+            NagaCrossShaderDefine& shaderDefine = shaderDefines.at(defineIdx);
+            shaderDefine.name = preprocessorDefine.first.c_str();
+            shaderDefine.value = preprocessorDefine.second.c_str();
+            defineIdx++;
+        }
+        for (const auto& preprocessorDefine : preprocessor->getTempPreprocessorDefines()) {
             NagaCrossShaderDefine& shaderDefine = shaderDefines.at(defineIdx);
             shaderDefine.name = preprocessorDefine.first.c_str();
             shaderDefine.value = preprocessorDefine.second.c_str();
             defineIdx++;
         }
 
+        auto shaderType = getShaderTypeFromStringWgsl(id);
+        NagaCrossShaderStage nagaCrossShaderStage;
+        if (shaderType == ShaderType::VERTEX) {
+            nagaCrossShaderStage = NAGA_CROSS_SHADER_STAGE_VERTEX;
+        } else if (shaderType == ShaderType::FRAGMENT) {
+            nagaCrossShaderStage = NAGA_CROSS_SHADER_STAGE_FRAGMENT;
+        } else {
+            nagaCrossShaderStage = NAGA_CROSS_SHADER_STAGE_COMPUTE;
+        }
+
         NagaCrossParams params;
-        // TODO
-        params.shader_stage = NAGA_CROSS_SHADER_STAGE_VERTEX;
+        params.shader_stage = nagaCrossShaderStage;
         params.num_defines = int(shaderDefines.size());
         params.shader_defines = shaderDefines.data();
 
@@ -236,7 +389,8 @@ ShaderModulePtr ShaderManagerWgpu::loadAsset(ShaderModuleInfo& shaderInfo) {
     return std::make_shared<ShaderModule>(shaderModuleWgpu, reflectInfo);
 }
 
-std::string ShaderManagerWgpu::getShaderString(const std::string &globalShaderName) {
+std::string ShaderManagerWgpu::getShaderStringWgsl(const std::string &globalShaderName) {
+    auto& effectSources = preprocessor->getEffectSources();
     auto it = effectSources.find(globalShaderName);
     if (it != effectSources.end()) {
         return it->second;
