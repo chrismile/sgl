@@ -35,7 +35,11 @@
 
 namespace sgl { namespace webgpu {
 
-RenderPipelineInfo::RenderPipelineInfo(const ShaderStagesPtr& shaderStages) {
+RenderPipelineInfo::RenderPipelineInfo(const ShaderStagesPtr& shaderStages) : shaderStages(shaderStages) {
+    if (!shaderStages) {
+        Logfile::get()->throwError(
+                "Error in RenderPipelineInfo::RenderPipelineInfo: shaderStages is not valid.");
+    }
     reset();
 }
 
@@ -69,16 +73,18 @@ void RenderPipelineInfo::reset() {
     currentBlendModes.clear();
     blendStates.clear();
     colorTargetStates.clear();
-    _resizeColorTargets(framebuffer->getColorTargetCount());
+    if (framebuffer) {
+        _resizeColorTargets(framebuffer->getColorTargetCount());
 
-    auto colorTargetCount = framebuffer->getColorTargetCount();
-    const auto& colorTargetTextureViews = framebuffer->getColorTargetTextureViews();
-    colorTargetStates.resize(colorTargetCount);
-    for (size_t i = 0; i < colorTargetCount; i++) {
-        WGPUColorTargetState& colorTargetState = colorTargetStates.at(i);
-        colorTargetState.format = colorTargetTextureViews.at(i)->getTextureSettings().format;
-        colorTargetState.blend = &blendStates.at(i);
-        colorTargetState.writeMask = WGPUColorWriteMask_All; // TODO
+        auto colorTargetCount = framebuffer->getColorTargetCount();
+        const auto& colorTargetTextureViews = framebuffer->getColorTargetTextureViews();
+        colorTargetStates.resize(colorTargetCount);
+        for (size_t i = 0; i < colorTargetCount; i++) {
+            WGPUColorTargetState& colorTargetState = colorTargetStates.at(i);
+            colorTargetState.format = colorTargetTextureViews.at(i)->getTextureSettings().format;
+            colorTargetState.blend = &blendStates.at(i);
+            colorTargetState.writeMask = WGPUColorWriteMask_All; // TODO
+        }
     }
 
     constantEntriesMap.clear();
@@ -121,6 +127,12 @@ void RenderPipelineInfo::_resizeColorTargets(size_t newCount) {
 void RenderPipelineInfo::setFramebuffer(const FramebufferPtr& framebuffer) {
     this->framebuffer = framebuffer;
     _resizeColorTargets(framebuffer->getColorTargetCount());
+
+    const auto& colorTargetTextureViews = framebuffer->getColorTargetTextureViews();
+    for (size_t i = 0; i < colorTargetTextureViews.size(); i++) {
+        WGPUColorTargetState& colorTargetState = colorTargetStates.at(i);
+        colorTargetState.format = colorTargetTextureViews.at(i)->getTextureSettings().format;
+    }
 
     if (framebuffer->getHasDepthStencilTarget()) {
         depthStencilState.format = framebuffer->getDepthStencilTarget()->getTextureSettings().format;
@@ -245,7 +257,11 @@ void RenderPipelineInfo::setBlendModeCustom(
 void RenderPipelineInfo::setPrimitiveTopology(
         PrimitiveTopology primitiveTopology, WGPUIndexFormat stripIndexFormat) {
     primitiveState.topology = WGPUPrimitiveTopology(primitiveTopology);
-    primitiveState.stripIndexFormat = stripIndexFormat;
+    if (primitiveTopology == PrimitiveTopology::LINE_STRIP || primitiveTopology == PrimitiveTopology::TRIANGLE_STRIP) {
+        primitiveState.stripIndexFormat = stripIndexFormat;
+    } else {
+        primitiveState.stripIndexFormat = WGPUIndexFormat_Undefined;
+    }
 }
 
 void RenderPipelineInfo::setCullMode(CullMode cullMode) {
@@ -257,6 +273,10 @@ void RenderPipelineInfo::setIsFrontFaceCcw(bool isFrontFaceCcw) {
         isFrontFaceCcw = !isFrontFaceCcw;
     }
     primitiveState.frontFace = isFrontFaceCcw ? WGPUFrontFace_CCW : WGPUFrontFace_CW;
+}
+
+void RenderPipelineInfo::setDepthTestEnabled(bool enableDepthTest) {
+    // TODO
 }
 
 void RenderPipelineInfo::setDepthWriteEnabled(bool enableDepthWrite) {
@@ -347,7 +367,8 @@ void RenderPipelineInfo::setVertexBufferBindingByLocationIndexOptional(
 
 
 RenderPipeline::RenderPipeline(Device* device, const RenderPipelineInfo& pipelineInfo) {
-    const auto& shaderStages = pipelineInfo.shaderStages;
+    shaderStages = pipelineInfo.shaderStages;
+    framebuffer = pipelineInfo.framebuffer;
 
     WGPURenderPipelineDescriptor pipelineDesc{};
 

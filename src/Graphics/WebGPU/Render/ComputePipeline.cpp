@@ -48,6 +48,8 @@ void ComputePipelineInfo::removeConstantEntry(const std::string& key) {
 
 
 ComputePipeline::ComputePipeline(Device* device, const ComputePipelineInfo& pipelineInfo) : device(device) {
+    shaderStages = pipelineInfo.shaderStages;
+
     WGPUPipelineLayoutDescriptor pipelineLayoutDesc{};
     pipelineLayoutDesc.bindGroupLayoutCount = shaderStages->getWGPUBindGroupLayouts().size();
     pipelineLayoutDesc.bindGroupLayouts = shaderStages->getWGPUBindGroupLayouts().data();

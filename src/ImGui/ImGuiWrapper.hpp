@@ -52,6 +52,8 @@ class Renderer;
 #ifdef SUPPORT_WEBGPU
 namespace sgl { namespace webgpu {
 class Renderer;
+class TextureView;
+typedef std::shared_ptr<TextureView> TextureViewPtr;
 }}
 #endif
 
@@ -158,6 +160,7 @@ public:
 #endif
 
 #ifdef SUPPORT_WEBGPU
+    void setWebGPURenderTarget(webgpu::TextureViewPtr& textureView);
     void setRendererWgpu(webgpu::Renderer* renderer) { rendererWgpu = renderer; }
 #endif
 
@@ -192,6 +195,7 @@ private:
 
 #ifdef SUPPORT_WEBGPU
     webgpu::Renderer* rendererWgpu = nullptr;
+    webgpu::TextureViewPtr renderTargetTextureViewWgpu;
 #endif
 };
 

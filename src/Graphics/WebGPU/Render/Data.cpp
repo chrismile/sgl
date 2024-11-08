@@ -153,7 +153,7 @@ void Data::_updateBindingGroups() {
 
     const std::vector<WGPUBindGroupLayout>& bindGroupLayouts = shaderStages->getWGPUBindGroupLayouts();
 
-    if (bindGroupLayouts.size() > 2) {
+    /*if (bindGroupLayouts.size() > 2) {
         Logfile::get()->writeInfo(
                 "Warning in Data::Data: More than two descriptor sets used by the shaders."
                 "So far, sgl only supports one user-defined set (0) and one transformation matrix set (1).");
@@ -162,6 +162,11 @@ void Data::_updateBindingGroups() {
         Logfile::get()->throwError(
                 "Expected exactly two descriptor sets - one user-defined set (0) and one transformation matrix "
                 "set (1).");
+    }*/
+    if (bindGroupLayouts.size() > 1) {
+        Logfile::get()->writeInfo(
+                "Warning in Data::Data: More than one descriptor set used by the shaders."
+                "So far, sgl only supports one user-defined set (0).");
     }
 
     const WGPUBindGroupLayout& bindGroupLayout = bindGroupLayouts.at(0);
@@ -221,7 +226,7 @@ void Data::_updateBindingGroups() {
         }
     }
 
-    wgpuDeviceCreateBindGroup(device->getWGPUDevice(), &bindGroupDescriptor);
+    bindGroup = wgpuDeviceCreateBindGroup(device->getWGPUDevice(), &bindGroupDescriptor);
 }
 
 void Data::onSwapchainRecreated() {
@@ -351,10 +356,12 @@ void RenderData::setVertexBuffer(const BufferPtr& buffer, uint32_t bindingIndex)
     if (vertexBuffers.size() <= bindingIndex) {
         vertexBuffers.resize(bindingIndex + 1);
         wgpuVertexBuffers.resize(bindingIndex + 1);
+        vertexBufferSlots.resize(bindingIndex + 1);
     }
 
     vertexBuffers.at(bindingIndex) = buffer;
     wgpuVertexBuffers.at(bindingIndex) = buffer->getWGPUBuffer();
+    vertexBufferSlots.at(bindingIndex) = bindingIndex;
     numVertices = numVerticesNew;
 }
 

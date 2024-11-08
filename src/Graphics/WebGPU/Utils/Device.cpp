@@ -248,8 +248,10 @@ void Device::createInternal(
         } else {
             sgl::Logfile::get()->writeInfo("Uncaptured device error");
         }
+        auto* device = reinterpret_cast<Device*>(userdata);
+        device->onUncapturedError(type, message);
     };
-    wgpuDeviceSetUncapturedErrorCallback(device, uncapturedErrorCallback, nullptr);
+    wgpuDeviceSetUncapturedErrorCallback(device, uncapturedErrorCallback, this);
 
     queue = wgpuDeviceGetQueue(device);
 }
@@ -269,6 +271,12 @@ Device::~Device() {
     if (adapter) {
         wgpuAdapterRelease(adapter);
         adapter = {};
+    }
+}
+
+void Device::onUncapturedError(WGPUErrorType type, char const* message) {
+    if (uncapturedErrorCallback) {
+        uncapturedErrorCallback(type, message);
     }
 }
 

@@ -35,6 +35,7 @@
 #include <Utils/File/Logfile.hpp>
 #include <Utils/Events/EventManager.hpp>
 
+#include "Instance.hpp"
 #include "Device.hpp"
 #include "Swapchain.hpp"
 
@@ -45,6 +46,12 @@ Swapchain::Swapchain(Device* device) : device(device) {
 
 Swapchain::~Swapchain() {
     cleanup();
+
+#ifdef WEBGPU_BACKEND_DAWN
+    WGPUFutureWaitInfo futureWaitInfo{};
+    futureWaitInfo.future = submittedWorkFuture;
+    wgpuInstanceWaitAny(device->getInstance()->getWGPUInstance(), 1, &futureWaitInfo, 0xFFFFFFFFu);
+#endif
 }
 
 void Swapchain::create(Window* window) {
@@ -63,22 +70,23 @@ void Swapchain::create(Window* window) {
     }
     validPixelSize = true;
 
+    surfaceFormat = WGPUTextureFormat_Undefined;
+    WGPUSurfaceCapabilities capabilities{};
+    wgpuSurfaceGetCapabilities(surface, device->getWGPUAdapter(), &capabilities);
+    for (size_t i = 0; i < capabilities.formatCount; i++) {
+        if (capabilities.formats[i] == WGPUTextureFormat_BGRA8Unorm
+                || capabilities.formats[i] == WGPUTextureFormat_RGBA8Unorm) {
+            surfaceFormat = capabilities.formats[i];
+            break;
+        }
+    }
+    if (surfaceFormat == WGPUTextureFormat_Undefined) {
+        surfaceFormat = wgpuSurfaceGetPreferredFormat(surface, device->getWGPUAdapter());
+    }
+
     WGPUSurfaceConfiguration config{};
     config.width = uint32_t(windowSettings.pixelWidth);
     config.height = uint32_t(windowSettings.pixelHeight);
-//#ifdef WEBGPU_BACKEND_DAWN
-    // TODO: Check if compatible with Emscripten, wgpu
-    // TODO: Fails at the moment with Dawn.
-    /*WGPUSurfaceCapabilities capabilities{};
-    capabilities.usages = WGPUTextureUsage_RenderAttachment;
-    bool success = wgpuSurfaceGetCapabilities(surface, device->getWGPUAdapter(), &capabilities) == WGPUStatus_Success;
-    if (!success) {
-        sgl::Logfile::get()->throwError("Error in Swapchain::create: wgpuSurfaceGetCapabilities failed.");
-    }
-    surfaceFormat = capabilities.formats[0];*/
-//#else
-    surfaceFormat = wgpuSurfaceGetPreferredFormat(surface, device->getWGPUAdapter());
-//#endif
     config.format = surfaceFormat;
     config.viewFormatCount = 0;
     config.viewFormats = nullptr;
@@ -181,6 +189,7 @@ static std::map<WGPUQueueWorkDoneStatus, std::string> queueWorkDoneStatusNameMap
 void Swapchain::renderFrame(const std::vector<WGPUCommandBuffer>& commandBuffers) {
     wgpuQueueSubmit(device->getWGPUQueue(), commandBuffers.size(), commandBuffers.data());
 
+#ifndef WEBGPU_BACKEND_DAWN
     auto onQueueWorkDone = [](WGPUQueueWorkDoneStatus status, void* userdata) {
         if (status != WGPUQueueWorkDoneStatus_Success) {
             auto it = queueWorkDoneStatusNameMap.find(status);
@@ -193,6 +202,23 @@ void Swapchain::renderFrame(const std::vector<WGPUCommandBuffer>& commandBuffers
         }
     };
     wgpuQueueOnSubmittedWorkDone(device->getWGPUQueue(), onQueueWorkDone, nullptr);
+#else
+    auto onQueueWorkDone2 = [](WGPUQueueWorkDoneStatus status, void* userdata1, void* userdata2) {
+        if (status != WGPUQueueWorkDoneStatus_Success) {
+            auto it = queueWorkDoneStatusNameMap.find(status);
+            if (it != queueWorkDoneStatusNameMap.end()) {
+                sgl::Logfile::get()->throwError(
+                        "Error in wgpuQueueOnSubmittedWorkDone2: " + it->second);
+            } else {
+                sgl::Logfile::get()->throwError("Error in wgpuQueueOnSubmittedWorkDone2: Queue work failed!");
+            }
+        }
+    };
+    WGPUQueueWorkDoneCallbackInfo2 queueWorkDoneCallbackInfo2{};
+    queueWorkDoneCallbackInfo2.mode = WGPUCallbackMode_AllowSpontaneous;
+    queueWorkDoneCallbackInfo2.callback = onQueueWorkDone2;
+    submittedWorkFuture = wgpuQueueOnSubmittedWorkDone2(device->getWGPUQueue(), queueWorkDoneCallbackInfo2);
+#endif
 
 #ifndef __EMSCRIPTEN__
     wgpuSurfacePresent(surface);

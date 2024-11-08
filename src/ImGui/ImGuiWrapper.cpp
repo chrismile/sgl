@@ -51,6 +51,7 @@
 #include <Graphics/WebGPU/Utils/Instance.hpp>
 #include <Graphics/WebGPU/Utils/Device.hpp>
 #include <Graphics/WebGPU/Utils/Swapchain.hpp>
+#include <Graphics/WebGPU/Texture/Texture.hpp>
 #include <Graphics/WebGPU/Render/Renderer.hpp>
 #endif
 
@@ -216,11 +217,16 @@ void ImGuiWrapper::initialize(
 #endif
 
         auto* device = sgl::AppSettings::get()->getWebGPUPrimaryDevice();
-        auto* swapchain = sgl::AppSettings::get()->getWebGPUSwapchain();
         ImGui_ImplWGPU_InitInfo initInfo{};
         initInfo.Device = device->getWGPUDevice();
         initInfo.NumFramesInFlight = 3;
-        initInfo.RenderTargetFormat = swapchain->getSurfaceTextureFormat();
+        //if (false) {
+            // This code path should be chosen if renderTargetTextureViewWgpu is null, but we cannot know at this point.
+            //auto* swapchain = sgl::AppSettings::get()->getWebGPUSwapchain();
+            //initInfo.RenderTargetFormat = swapchain->getSurfaceTextureFormat();
+        //} else {
+            initInfo.RenderTargetFormat = WGPUTextureFormat_RGBA8Unorm;
+        //}
         initInfo.DepthStencilFormat = WGPUTextureFormat_Undefined;
         ImGui_ImplWGPU_Init(&initInfo);
     }
@@ -359,6 +365,12 @@ void ImGuiWrapper::setVkRenderTarget(vk::ImageViewPtr &imageView) {
 
 void ImGuiWrapper::freeDescriptorSet(VkDescriptorSet descriptorSet) {
     vkFreeDescriptorSets(rendererVk->getDevice()->getVkDevice(), imguiDescriptorPool, 1, &descriptorSet);
+}
+#endif
+
+#ifdef SUPPORT_WEBGPU
+void ImGuiWrapper::setWebGPURenderTarget(webgpu::TextureViewPtr& textureView) {
+    this->renderTargetTextureViewWgpu = textureView;
 }
 #endif
 
@@ -523,9 +535,15 @@ void ImGuiWrapper::renderEnd() {
         auto* swapchain = AppSettings::get()->getWebGPUSwapchain();
         auto encoder = rendererWgpu->getWebGPUCommandEncoder();
 
+        WGPUTextureView wgpuTextureView;
+        if (renderTargetTextureViewWgpu) {
+            wgpuTextureView = renderTargetTextureViewWgpu->getWGPUTextureView();
+        } else {
+            wgpuTextureView = swapchain->getFrameTextureView();
+        }
         WGPURenderPassDescriptor renderPassDescriptor{};
         WGPURenderPassColorAttachment renderPassColorAttachment = {};
-        renderPassColorAttachment.view = swapchain->getFrameTextureView();
+        renderPassColorAttachment.view = wgpuTextureView;
         renderPassColorAttachment.resolveTarget = nullptr;
         renderPassColorAttachment.loadOp = WGPULoadOp_Clear;
         renderPassColorAttachment.storeOp = WGPUStoreOp_Store;

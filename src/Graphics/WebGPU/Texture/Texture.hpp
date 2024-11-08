@@ -76,6 +76,7 @@ class Sampler;
 typedef std::shared_ptr<Sampler> SamplerPtr;
 
 class DLL_OBJECT Texture {
+    friend class TextureView;
 public:
     Texture(Device* device, TextureSettings _textureSettings);
     Texture(Device* device, TextureSettings _textureSettings, WGPUTexture texture);
@@ -95,7 +96,7 @@ public:
     Device* device = nullptr;
     TextureSettings textureSettings{};
     WGPUTexture texture{};
-    bool hasOwnership = false; // Don't call destroy if we don't have ownership.
+    bool hasOwnership; // Don't call destroy if we don't have ownership.
 };
 
 struct DLL_OBJECT TextureViewSettings {
@@ -116,17 +117,21 @@ class DLL_OBJECT TextureView {
 public:
     TextureView(TexturePtr _texture, TextureViewSettings _textureViewSettings);
     ~TextureView();
+    static TextureViewPtr fromSwapchainFrameTextureView();
 
     [[nodiscard]] const Device* getDevice() const { return texture->getDevice(); }
+    [[nodiscard]] const TexturePtr& getTexture() const { return texture; }
     [[nodiscard]] const TextureSettings& getTextureSettings() const { return texture->getTextureSettings(); }
     [[nodiscard]] const TextureViewSettings& getTextureViewSettings() const { return textureViewSettings; }
     [[nodiscard]] const WGPUTexture& getWGPUTexture() const { return texture->getWGPUTexture(); }
     [[nodiscard]] const WGPUTextureView& getWGPUTextureView() const { return textureView; }
 
 private:
+    explicit TextureView(TexturePtr _texture, WGPUTextureView textureViewBorrowed);
     TexturePtr texture;
     TextureViewSettings textureViewSettings;
     WGPUTextureView textureView{};
+    bool hasOwnership; // Don't call destroy if we don't have ownership.
 };
 
 struct SamplerSettings {

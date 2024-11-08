@@ -463,8 +463,18 @@ bool wgslCodeReflect(const std::string& fileContent, ReflectInfo& reflectInfo, s
                 groupIndex = sgl::fromString<uint32_t>(groupAttribute->expression);
             }
             bindingEntry.bindingIndex = sgl::fromString<uint32_t>(bindingAttribute->expression);
-            bindingEntry.variableName = variable.name;
             bindingEntry.bindingEntryType = getBindingEntryType(variable.type, variable.modifiers);
+            /*
+             * naga, which is used for cross-compiling GLSL to WGSL, names buffers in the global scope not by their
+             * real name, but "global" or "global_{i}". In this case, we should use the name of the struct.
+             */
+            if ((bindingEntry.bindingEntryType == BindingEntryType::UNIFORM_BUFFER
+                    || bindingEntry.bindingEntryType == BindingEntryType::STORAGE_BUFFER)
+                    && (variable.name == "global" || sgl::startsWith(variable.name, "global_"))) {
+                bindingEntry.variableName = variable.type.name;
+            } else {
+                bindingEntry.variableName = variable.name;
+            }
             bindingEntry.typeName = variable.type.name;
             if (bindingEntry.bindingEntryType == BindingEntryType::STORAGE_BUFFER) {
                 bool hasReadModifier = false;

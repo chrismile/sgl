@@ -29,6 +29,7 @@
 #ifndef SGL_WEBGPU_DEVICE_HPP
 #define SGL_WEBGPU_DEVICE_HPP
 
+#include <utility>
 #include <vector>
 #include <set>
 #include <functional>
@@ -86,6 +87,12 @@ public:
     void printAdapterInfo();
     void printDeviceInfo();
 
+    inline void setOnUncapturedErrorCallback(std::function<void(WGPUErrorType, char const*)> callback) {
+        uncapturedErrorCallback = std::move(callback);
+    }
+    // Called by WebGPU.
+    void onUncapturedError(WGPUErrorType type, char const* message);
+
 private:
     void createInternal(
             Window* window,
@@ -117,6 +124,7 @@ private:
     std::set<WGPUFeatureName> deviceFeaturesSet{};
     bool deviceSupportedLimitsValid = false;
     WGPULimits deviceLimits{};
+    std::function<void(WGPUErrorType, char const*)> uncapturedErrorCallback;
 
     // Device queue.
     WGPUQueue queue{};

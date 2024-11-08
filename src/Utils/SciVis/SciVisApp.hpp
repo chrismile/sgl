@@ -73,6 +73,23 @@ typedef std::shared_ptr<ScreenshotReadbackHelper> ScreenshotReadbackHelperPtr;
 }}
 #endif
 
+#ifdef SUPPORT_WEBGPU
+#include <webgpu/webgpu.h>
+namespace sgl { namespace webgpu {
+class Device;
+class Sampler;
+typedef std::shared_ptr<Sampler> SamplerPtr;
+class Texture;
+typedef std::shared_ptr<Texture> TexturePtr;
+class TextureView;
+typedef std::shared_ptr<TextureView> TextureViewPtr;
+class RenderData;
+typedef std::shared_ptr<RenderData> RenderDataPtr;
+class BlitRenderPass;
+typedef std::shared_ptr<BlitRenderPass> BlitRenderPassPtr;
+}}
+#endif
+
 namespace sgl {
 
 /**
@@ -171,6 +188,19 @@ protected:
     sgl::vk::ScreenshotReadbackHelperPtr readbackHelperVk; ///< For reading back screenshots from the GPU.
 
     sgl::vk::Device* device = nullptr;
+#endif
+#ifdef SUPPORT_WEBGPU
+    // Off-screen rendering
+    WGPUTextureFormat sceneDepthTextureWgpuFormat = WGPUTextureFormat_Depth32Float;
+    sgl::webgpu::SamplerPtr textureSamplerWgpu;
+    sgl::webgpu::TextureViewPtr sceneTextureWgpu; ///< Can be 8 or 16 bits per pixel.
+    sgl::webgpu::TextureViewPtr sceneDepthTextureWgpu;
+    sgl::webgpu::TextureViewPtr compositedTextureWgpu; ///< The final RGBA8 texture.
+    sgl::webgpu::BlitRenderPassPtr sceneTextureBlitPassWgpu;
+    sgl::webgpu::BlitRenderPassPtr sceneTextureGammaCorrectionPassWgpu;
+    sgl::webgpu::BlitRenderPassPtr compositedTextureBlitPassWgpu;
+
+    sgl::webgpu::Device* deviceWgpu = nullptr;
 #endif
 
     /// Scene data used in user interface.

@@ -187,12 +187,21 @@ void BlitRenderPass::setupGeometryBuffers() {
 }
 
 void BlitRenderPass::setNormalizedCoordinatesAabb(const sgl::AABB2& aabb) {
+#if DEFAULT_COORDINATE_ORIGIN_BOTTOM_LEFT
+    std::vector<float> vertexData = {
+            aabb.min.x, aabb.min.y, 0.0f, 0.0f, 1.0f,
+            aabb.max.x, aabb.min.y, 0.0f, 1.0f, 1.0f,
+            aabb.max.x, aabb.max.y, 0.0f, 1.0f, 0.0f,
+            aabb.min.x, aabb.max.y, 0.0f, 0.0f, 0.0f,
+    };
+#else
     std::vector<float> vertexData = {
             aabb.min.x, aabb.max.y, 0.0f, 0.0f, 1.0f,
             aabb.max.x, aabb.max.y, 0.0f, 1.0f, 1.0f,
             aabb.max.x, aabb.min.y, 0.0f, 1.0f, 0.0f,
             aabb.min.x, aabb.min.y, 0.0f, 0.0f, 0.0f,
     };
+#endif
     vertexBuffer->updateData(
             vertexData.size() * sizeof(float), vertexData.data(),
             renderer->getVkCommandBuffer());
@@ -207,12 +216,21 @@ void BlitRenderPass::setNormalizedCoordinatesAabb(const sgl::AABB2& aabb, bool f
         setNormalizedCoordinatesAabb(aabb);
         return;
     }
+#if DEFAULT_COORDINATE_ORIGIN_BOTTOM_LEFT
+    std::vector<float> vertexData = {
+            aabb.min.x, aabb.min.y, 0.0f, 0.0f, 0.0f,
+            aabb.max.x, aabb.min.y, 0.0f, 1.0f, 0.0f,
+            aabb.max.x, aabb.max.y, 0.0f, 1.0f, 1.0f,
+            aabb.min.x, aabb.max.y, 0.0f, 0.0f, 1.0f,
+    };
+#else
     std::vector<float> vertexData = {
             aabb.min.x, aabb.max.y, 0.0f, 0.0f, 0.0f,
             aabb.max.x, aabb.max.y, 0.0f, 1.0f, 0.0f,
             aabb.max.x, aabb.min.y, 0.0f, 1.0f, 1.0f,
             aabb.min.x, aabb.min.y, 0.0f, 0.0f, 1.0f,
     };
+#endif
     vertexBuffer->updateData(
             vertexData.size() * sizeof(float), vertexData.data(),
             renderer->getVkCommandBuffer());

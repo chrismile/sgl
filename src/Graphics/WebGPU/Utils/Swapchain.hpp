@@ -57,6 +57,7 @@ public:
     void renderFrame(const std::vector<WGPUCommandBuffer>& commandBuffers);
 
     inline WGPUTextureFormat getSurfaceTextureFormat() { return surfaceFormat; }
+    inline WGPUTexture getFrameTexture() { return currentTexture; }
     inline WGPUTextureView getFrameTextureView() { return currentTextureView; }
 
 private:
@@ -72,6 +73,9 @@ private:
     WGPUTexture currentTexture{};
     WGPUTextureView currentTextureView{};
     bool validPixelSize = false;
+#ifdef WEBGPU_BACKEND_DAWN
+    WGPUFuture submittedWorkFuture{};
+#endif
 };
 
 }}

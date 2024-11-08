@@ -54,6 +54,15 @@
 #include <Graphics/Vulkan/Render/GraphicsPipeline.hpp>
 #include <Graphics/Vulkan/Render/Passes/BlitRenderPass.hpp>
 #endif
+#ifdef SUPPORT_WEBGPU
+#include <Graphics/WebGPU/Utils/Swapchain.hpp>
+#include <Graphics/WebGPU/Utils/Device.hpp>
+#include <Graphics/WebGPU/Texture/Texture.hpp>
+#include <Graphics/WebGPU/Render/Renderer.hpp>
+#include <Graphics/WebGPU/Render/Data.hpp>
+#include <Graphics/WebGPU/Render/RenderPipeline.hpp>
+#include <Graphics/WebGPU/Render/Passes/BlitRenderPass.hpp>
+#endif
 
 #ifdef SUPPORT_GLFW
 #include <GLFW/GlfwWindow.hpp>
@@ -102,6 +111,8 @@ SciVisApp::SciVisApp(float fovy)
 #endif
 #ifdef SUPPORT_WEBGPU
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::WEBGPU) {
+        deviceWgpu = sgl::AppSettings::get()->getWebGPUPrimaryDevice();
+        textureSamplerWgpu = std::make_shared<sgl::webgpu::Sampler>(deviceWgpu, sgl::webgpu::SamplerSettings());
         ImGuiWrapper::get()->setRendererWgpu(rendererWgpu);
     }
 #endif
@@ -199,6 +210,14 @@ SciVisApp::SciVisApp(float fovy)
         readbackHelperVk->setScreenshotTransparentBackground(screenshotTransparentBackground);
     }
 #endif
+#ifdef SUPPORT_WEBGPU
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::WEBGPU) {
+        sceneTextureBlitPassWgpu = std::make_shared<webgpu::BlitRenderPass>(rendererWgpu);
+        sceneTextureGammaCorrectionPassWgpu = webgpu::BlitRenderPassPtr(new webgpu::BlitRenderPass(
+                rendererWgpu, {"GammaCorrection.Vertex", "GammaCorrection.Fragment"}));
+        compositedTextureBlitPassWgpu = std::make_shared<webgpu::BlitRenderPass>(rendererWgpu);
+    }
+#endif
 }
 
 SciVisApp::~SciVisApp() {
@@ -214,6 +233,13 @@ SciVisApp::~SciVisApp() {
         readbackHelperVk = {};
     }
 #endif
+#ifdef SUPPORT_WEBGPU
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::WEBGPU) {
+        sceneTextureBlitPassWgpu = {};
+        sceneTextureGammaCorrectionPassWgpu = {};
+        compositedTextureBlitPassWgpu = {};
+    }
+#endif
 
     if (videoWriter != nullptr) {
         delete videoWriter;
@@ -224,7 +250,7 @@ SciVisApp::~SciVisApp() {
 void SciVisApp::createSceneFramebuffer() {
     ZoneScoped;
 
-#if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN)
+#if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN) || defined(SUPPORT_WEBGPU)
     sgl::Window *window = sgl::AppSettings::get()->getMainWindow();
     int width = window->getPixelWidth();
     int height = window->getPixelHeight();
@@ -302,6 +328,55 @@ void SciVisApp::createSceneFramebuffer() {
         readbackHelperVk->onSwapchainRecreated();
     }
 #endif
+#ifdef SUPPORT_WEBGPU
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::WEBGPU) {
+        sgl::webgpu::TextureSettings textureSettings{};
+        sgl::webgpu::TextureViewSettings textureViewSettings{};
+        textureSettings.size = { uint32_t(width), uint32_t(height), 1 };
+
+        // Create scene texture.
+        textureSettings.usage =
+                WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding | WGPUTextureUsage_StorageBinding
+                | WGPUTextureUsage_CopyDst;
+        if (useLinearRGB) {
+            textureSettings.format = WGPUTextureFormat_RGBA16Float;
+        } else {
+            textureSettings.format = WGPUTextureFormat_RGBA8Unorm;
+        }
+        sceneTextureWgpu = std::make_shared<sgl::webgpu::TextureView>(std::make_shared<sgl::webgpu::Texture>(
+                deviceWgpu, textureSettings), textureViewSettings);
+
+        // Create composited (gamma-resolved, if VK_FORMAT_R16G16B16A16_UNORM for scene texture) scene texture.
+        textureSettings.usage =
+                WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding;
+        textureSettings.format = WGPUTextureFormat_RGBA8Unorm;
+        compositedTextureWgpu = std::make_shared<sgl::webgpu::TextureView>(std::make_shared<sgl::webgpu::Texture>(
+                deviceWgpu, textureSettings), textureViewSettings);
+
+        // Create scene depth texture.
+        textureSettings.usage = WGPUTextureUsage_RenderAttachment;
+        textureSettings.format = WGPUTextureFormat_Depth32Float;
+        textureViewSettings.aspect = WGPUTextureAspect_DepthOnly;
+        sceneDepthTextureWgpu = std::make_shared<sgl::webgpu::TextureView>(std::make_shared<sgl::webgpu::Texture>(
+                deviceWgpu, textureSettings), textureViewSettings);
+
+        // Pass the textures to the render passes.
+        sceneTextureBlitPassWgpu->setInputSampler(textureSamplerWgpu);
+        sceneTextureBlitPassWgpu->setInputTextureView(sceneTextureWgpu);
+        sceneTextureBlitPassWgpu->setOutputTextureView(compositedTextureWgpu);
+        sceneTextureBlitPassWgpu->recreateSwapchain(width, height);
+
+        sceneTextureGammaCorrectionPassWgpu->setInputSampler(textureSamplerWgpu);
+        sceneTextureGammaCorrectionPassWgpu->setInputTextureView(sceneTextureWgpu);
+        sceneTextureGammaCorrectionPassWgpu->setOutputTextureView(compositedTextureWgpu);
+        sceneTextureGammaCorrectionPassWgpu->recreateSwapchain(width, height);
+
+        compositedTextureBlitPassWgpu->setInputSampler(textureSamplerWgpu);
+        compositedTextureBlitPassWgpu->setInputTextureView(compositedTextureWgpu);
+        compositedTextureBlitPassWgpu->setOutputTextureView(webgpu::TextureView::fromSwapchainFrameTextureView());
+        compositedTextureBlitPassWgpu->recreateSwapchain(width, height);
+    }
+#endif
 }
 
 void SciVisApp::resolutionChanged(sgl::EventPtr event) {
@@ -335,6 +410,14 @@ void SciVisApp::resolutionChanged(sgl::EventPtr event) {
 #ifdef SUPPORT_VULKAN
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN && videoWriter) {
         videoWriter->onSwapchainRecreated();
+    }
+#endif
+
+#ifdef SUPPORT_WEBGPU
+    sgl::webgpu::Swapchain* swapchainWgpu = sgl::AppSettings::get()->getWebGPUSwapchain();
+    if (swapchainWgpu && AppSettings::get()->getUseGUI()) {
+        sgl::ImGuiWrapper::get()->setWebGPURenderTarget(compositedTextureWgpu);
+        sgl::ImGuiWrapper::get()->onResolutionChanged();
     }
 #endif
 
@@ -393,6 +476,12 @@ void SciVisApp::updateColorSpaceMode() {
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
         // Create buffers for off-screen rendering.
         createSceneFramebuffer();
+    }
+#endif
+
+#ifdef SUPPORT_WEBGPU
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {
+        recreateFramebuffersAtStartOfNextFrame = true;
     }
 #endif
 }
@@ -487,7 +576,18 @@ void SciVisApp::preRender() {
         vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
         uint32_t imageIndex = swapchain ? swapchain->getImageIndex() : 0;
         readbackHelperVk->saveDataIfAvailable(imageIndex);
-  }
+    }
+#endif
+
+#ifdef SUPPORT_WEBGPU
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::WEBGPU && reRender) {
+        auto clearColorBg = clearColor.getFloatColorRGBA();
+        if (useDockSpaceMode) {
+            clearColorBg = sgl::ImGuiWrapper::get()->getBackgroundClearColor();
+        }
+        // TODO
+        //sceneTextureWgpu->getImageView()->clearColor(clearColorBg, rendererVk->getVkCommandBuffer());
+    }
 #endif
 }
 
@@ -588,6 +688,16 @@ void SciVisApp::postRender() {
     }
 #endif
 
+#ifdef SUPPORT_WEBGPU
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::WEBGPU) {
+        if (useLinearRGB) {
+            sceneTextureGammaCorrectionPassWgpu->render();
+        } else {
+            sceneTextureBlitPassWgpu->render();
+        }
+    }
+#endif
+
 
     sgl::ImGuiWrapper::get()->renderStart();
     renderGui();
@@ -654,6 +764,13 @@ void SciVisApp::postRender() {
         rendererVk->transitionImageLayout(
                 compositedTextureVk->getImage(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         compositedTextureBlitPass->render();
+    }
+#endif
+
+#ifdef SUPPORT_WEBGPU
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::WEBGPU) {
+        compositedTextureBlitPassWgpu->setOutputTextureView(webgpu::TextureView::fromSwapchainFrameTextureView());
+        compositedTextureBlitPassWgpu->render();
     }
 #endif
 

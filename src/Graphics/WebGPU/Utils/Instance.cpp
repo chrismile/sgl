@@ -37,6 +37,10 @@ Instance::~Instance() {
     wgpuInstanceRelease(instance);
 }
 
+void Instance::onPreDeviceDestroy() {
+    wgpuInstanceProcessEvents(instance);
+}
+
 void Instance::createInstance() {
 #ifdef WEBGPU_BACKEND_EMSCRIPTEN
 

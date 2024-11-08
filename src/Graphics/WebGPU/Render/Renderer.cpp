@@ -119,7 +119,6 @@ void Renderer::render(const RenderDataPtr& renderData, const FramebufferPtr& fra
     renderPassDescriptor.timestampWrites = nullptr;
 
     WGPURenderPassEncoder renderPassEncoder = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDescriptor);
-    renderData->_updateBindingGroups();
 
     wgpuRenderPassEncoderSetPipeline(renderPassEncoder, renderData->getRenderPipeline()->getWGPURenderPipeline());
     wgpuRenderPassEncoderSetViewport(
@@ -139,6 +138,12 @@ void Renderer::render(const RenderDataPtr& renderData, const FramebufferPtr& fra
         uint32_t slot = vertexBufferSlots.at(i);
         wgpuRenderPassEncoderSetVertexBuffer(
                 renderPassEncoder, slot, vertexBuffer->getWGPUBuffer(), 0, vertexBuffer->getSizeInBytes());
+    }
+
+    renderData->_updateBindingGroups();
+    WGPUBindGroup bindGroup = renderData->getWGPUBindGroup();
+    if (bindGroup != nullptr) {
+        wgpuRenderPassEncoderSetBindGroup(renderPassEncoder, 0, bindGroup, 0, nullptr);
     }
 
     if (renderData->getUseIndirectDraw()) {

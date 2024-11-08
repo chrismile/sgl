@@ -26,11 +26,14 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <Math/Math.hpp>
-#include <Utils/File/Logfile.hpp>
 #include <utility>
 #include <cstring>
+
+#include <Math/Math.hpp>
+#include <Utils/AppSettings.hpp>
+#include <Utils/File/Logfile.hpp>
 #include "../Utils/Device.hpp"
+#include "../Utils/Swapchain.hpp"
 #include "Texture.hpp"
 
 namespace sgl { namespace webgpu {
@@ -200,7 +203,7 @@ size_t getTextureFormatNumChannels(WGPUTextureFormat format) {
 }
 
 Texture::Texture(Device* device, TextureSettings _textureSettings)
-        : device(device), textureSettings(std::move(_textureSettings)) {
+        : device(device), textureSettings(std::move(_textureSettings)), hasOwnership(true) {
     WGPUTextureDescriptor textureDescriptor{};
     textureDescriptor.dimension = textureSettings.dimension;
     textureDescriptor.format = textureSettings.format;
@@ -225,16 +228,15 @@ Texture::Texture(Device* device, TextureSettings _textureSettings)
 }
 
 Texture::Texture(Device* device, TextureSettings _textureSettings, WGPUTexture texture)
-        : device(device), textureSettings(std::move(_textureSettings)), texture(texture) {
-    hasOwnership = false;
+        : device(device), textureSettings(std::move(_textureSettings)), texture(texture), hasOwnership(false) {
 }
 
 Texture::~Texture() {
     if (texture) {
         if (hasOwnership) {
             wgpuTextureDestroy(texture);
+            wgpuTextureRelease(texture);
         }
-        wgpuTextureRelease(texture);
         texture = {};
     }
 }
@@ -296,7 +298,7 @@ void Texture::write(void const* data, uint64_t dataSize, WGPUQueue queue) {
 
 
 TextureView::TextureView(TexturePtr _texture, TextureViewSettings _textureViewSettings)
-        : texture(std::move(_texture)), textureViewSettings(std::move(_textureViewSettings)) {
+        : texture(std::move(_texture)), textureViewSettings(std::move(_textureViewSettings)), hasOwnership(true) {
     WGPUTextureViewDescriptor textureViewDescriptor{};
     if (textureViewSettings.dimension == WGPUTextureViewDimension_Undefined) {
         auto textureDimension = texture->getTextureSettings().dimension;
@@ -329,17 +331,35 @@ TextureView::TextureView(TexturePtr _texture, TextureViewSettings _textureViewSe
     }
 }
 
+TextureView::TextureView(TexturePtr _texture, WGPUTextureView textureViewBorrowed)
+        : texture(std::move(_texture)), textureView(textureViewBorrowed), hasOwnership(false) {
+}
+
 TextureView::~TextureView() {
-    if (textureView) {
+    if (textureView && hasOwnership) {
         wgpuTextureViewRelease(textureView);
         textureView = {};
     }
 }
 
+TextureViewPtr TextureView::fromSwapchainFrameTextureView() {
+    webgpu::Device* device = sgl::AppSettings::get()->getWebGPUPrimaryDevice();
+    webgpu::Swapchain* swapchain = sgl::AppSettings::get()->getWebGPUSwapchain();
+    auto* window = sgl::AppSettings::get()->getMainWindow();
+    webgpu::TextureSettings textureSettings{};
+    textureSettings.size = { uint32_t(window->getWidth()), uint32_t(window->getHeight()), 1 };
+    textureSettings.format = swapchain->getSurfaceTextureFormat();
+    textureSettings.usage = WGPUTextureUsage_RenderAttachment;
+    TexturePtr frameTexture(new Texture(device, textureSettings, swapchain->getFrameTexture()));
+    TextureViewPtr frameTextureView(new TextureView(frameTexture, swapchain->getFrameTextureView()));
+    frameTextureView->textureViewSettings.format = swapchain->getSurfaceTextureFormat();
+    return frameTextureView;
+}
+
 
 Sampler::Sampler(Device* device, SamplerSettings _samplerSettings)
         : device(device), samplerSettings(std::move(_samplerSettings)) {
-    WGPUSamplerDescriptor samplerDescriptor;
+    WGPUSamplerDescriptor samplerDescriptor{};
     samplerDescriptor.addressModeU = samplerSettings.addressModeU;
     samplerDescriptor.addressModeV = samplerSettings.addressModeV;
     samplerDescriptor.addressModeW = samplerSettings.addressModeW;

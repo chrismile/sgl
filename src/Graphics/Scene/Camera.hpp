@@ -165,7 +165,7 @@ protected:
     float yaw = -sgl::PI/2.0f; //< around y axis
     float pitch = 0.0f; //< around x axis
     glm::vec3 globalUp = glm::vec3(0.0f, 1.0f, 0.0f);
-    glm::vec3 cameraFront, cameraRight, cameraUp;
+    glm::vec3 cameraFront{}, cameraRight{}, cameraUp{};
 
     // If a navigation mode using look-at is used.
     glm::vec3 lookAtLocation{};

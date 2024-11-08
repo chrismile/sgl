@@ -29,6 +29,7 @@
 #ifndef SGL_WEBGPU_RENDERPIPELINE_HPP
 #define SGL_WEBGPU_RENDERPIPELINE_HPP
 
+#include <unordered_map>
 #include <memory>
 #include <webgpu/webgpu.h>
 

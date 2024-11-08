@@ -68,6 +68,8 @@
 
 #ifdef SUPPORT_WEBGPU
 #include <Graphics/WebGPU/Utils/Instance.hpp>
+#include <Graphics/WebGPU/Utils/Device.hpp>
+#include <Graphics/WebGPU/Utils/Swapchain.hpp>
 #include <Graphics/WebGPU/Shader/ShaderManager.hpp>
 #endif
 
@@ -772,6 +774,16 @@ void AppSettings::release() {
     }
 #endif
 
+#ifdef SUPPORT_WEBGPU
+    if (webgpuPrimaryDevice) {
+        webgpuInstance->onPreDeviceDestroy();
+        if (webgpu::ShaderManager) {
+            delete webgpu::ShaderManager;
+            webgpu::ShaderManager = nullptr;
+        }
+    }
+#endif
+
     //delete AudioManager;
     delete Timer;
 
@@ -780,6 +792,15 @@ void AppSettings::release() {
         if (swapchain) {
             delete swapchain;
             swapchain = nullptr;
+        }
+    }
+#endif
+
+#ifdef SUPPORT_WEBGPU
+    if (renderSystem == RenderSystem::WEBGPU) {
+        if (webgpuSwapchain) {
+            delete webgpuSwapchain;
+            webgpuSwapchain = nullptr;
         }
     }
 #endif
@@ -807,6 +828,10 @@ void AppSettings::release() {
 #endif
 
 #ifdef SUPPORT_WEBGPU
+    if (webgpuPrimaryDevice) {
+        delete webgpuPrimaryDevice;
+        webgpuPrimaryDevice = nullptr;
+    }
     if (webgpuInstance) {
         delete webgpuInstance;
         webgpuInstance = nullptr;

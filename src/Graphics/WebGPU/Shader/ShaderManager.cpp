@@ -292,6 +292,11 @@ ShaderModulePtr ShaderManagerWgpu::loadAsset(ShaderModuleInfo& shaderInfo) {
         naga_cross_glsl_to_wgsl(shaderString.c_str(), &params, &result);
         if (result.succeeded) {
             shaderString = result.wgsl_code;
+            if (preprocessor->getDumpTextDebugStatic()) {
+                std::cout << "Shader dump (" << id << ") cross-compiled:" << std::endl;
+                std::cout << "--------------------------------------------" << std::endl;
+                std::cout << shaderString << std::endl << std::endl;
+            }
             naga_cross_release_result(&result);
         } else {
             std::string errorMessage = result.error_string;

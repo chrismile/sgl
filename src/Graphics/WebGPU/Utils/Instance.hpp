@@ -39,6 +39,7 @@ public:
     Instance();
     ~Instance();
     void createInstance();
+    void onPreDeviceDestroy();
 
     // Access to internal data.
     inline WGPUInstance getWGPUInstance() { return instance; }

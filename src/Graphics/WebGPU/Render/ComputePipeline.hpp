@@ -29,6 +29,8 @@
 #ifndef SGL_WEBGPU_COMPUTEPIPELINE_HPP
 #define SGL_WEBGPU_COMPUTEPIPELINE_HPP
 
+#include <string>
+#include <map>
 #include <memory>
 #include <webgpu/webgpu.h>
 
