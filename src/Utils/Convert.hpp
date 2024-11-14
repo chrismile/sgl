@@ -32,6 +32,7 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <cstdint>
 
 #ifdef USE_GLM
 #include <glm/vec2.hpp>
