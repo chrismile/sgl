@@ -98,6 +98,7 @@ std::string numberToCommaString(int64_t number) {
 
 // --- Specializations of fromString ---
 
+#ifdef USE_GLM
 template<>
 glm::ivec2 fromString<glm::ivec2>(const std::string &stringObject) {
     std::stringstream strstr;
@@ -108,5 +109,6 @@ glm::ivec2 fromString<glm::ivec2>(const std::string &stringObject) {
     }
     return type;
 }
+#endif
 
 }
