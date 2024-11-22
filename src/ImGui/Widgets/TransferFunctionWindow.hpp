@@ -211,8 +211,10 @@ private:
     int standardHeight = 774;
     int standardPositionX = 0;
     int standardPositionY = 1334;
+#ifndef DISABLE_IMGUI
     float opacitySelection = 1.0f;
     ImVec4 colorSelection = static_cast<ImVec4>(ImColor(255, 255, 255, 255));
+#endif
     sgl::Color clearColor;
     ColorSpace interpolationColorSpace;
 

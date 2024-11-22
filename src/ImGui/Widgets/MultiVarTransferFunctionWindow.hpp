@@ -133,8 +133,10 @@ private:
     int currentSelectionIndex = 0;
     sgl::AABB2 opacityGraphBox, colorBarBox;
     glm::vec2 oldMousePosWidget;
+#ifndef DISABLE_IMGUI
     float opacitySelection = 1.0f;
     ImVec4 colorSelection = static_cast<ImVec4>(ImColor(255, 255, 255, 255));
+#endif
     bool reRender = false;
 
     std::string saveFileString = "Standard.xml";
