@@ -52,11 +52,13 @@
 #include <Graphics/Vulkan/Buffers/Buffer.hpp>
 #endif
 
+#ifndef DISABLE_IMGUI
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <ImGui/imgui.h>
 #include <ImGui/imgui_internal.h>
 #include <ImGui/imgui_custom.h>
 #include <ImGui/imgui_stdlib.h>
+#endif
 
 #include "MultiVarTransferFunctionWindow.hpp"
 
@@ -534,6 +536,7 @@ void GuiVarData::setIsSelectedRangeFixed(bool _isSelectedRangeFixed) {
 }
 
 bool GuiVarData::renderGui() {
+#ifndef DISABLE_IMGUI
     renderOpacityGraph();
     renderColorBar();
 
@@ -586,10 +589,13 @@ bool GuiVarData::renderGui() {
         reRender = false;
         return true;
     }
+#endif
+
     return false;
 }
 
 void GuiVarData::renderFileDialog() {
+#ifndef DISABLE_IMGUI
     // Load file data
     if (ImGui::ListBox("##availablefiles", &selectedFileIndex, [this](void* data, int idx, const char** out_text) -> bool {
         *out_text = window->availableFiles.at(idx).c_str();
@@ -611,9 +617,11 @@ void GuiVarData::renderFileDialog() {
         saveTfToFile(window->saveDirectory + saveFileString);
         window->updateAvailableFiles();
     }
+#endif
 }
 
 void GuiVarData::renderOpacityGraph() {
+#ifndef DISABLE_IMGUI
     ImDrawList* drawList = ImGui::GetWindowDrawList();
     float scaleFactor = sgl::ImGuiWrapper::get()->getScaleFactor();
     float regionWidth = ImGui::GetContentRegionAvail().x;
@@ -679,9 +687,11 @@ void GuiVarData::renderOpacityGraph() {
         drawList->AddCircleFilled(centerPt, radius, backgroundColor, 24);
         drawList->AddCircle(centerPt, radius, borderColor, 24, 1.5f);
     }
+#endif
 }
 
 void GuiVarData::renderColorBar() {
+#ifndef DISABLE_IMGUI
     ImDrawList* drawList = ImGui::GetWindowDrawList();
     float scaleFactor = sgl::ImGuiWrapper::get()->getScaleFactor();
     float regionWidth = ImGui::GetContentRegionAvail().x;
@@ -717,9 +727,11 @@ void GuiVarData::renderColorBar() {
     if (ImGui::ClickArea("##bararea", ImVec2(regionWidth + 2, barHeight), mouseReleased)) {
         onColorBarClick();
     }
+#endif
 }
 
 void GuiVarData::onOpacityGraphClick() {
+#ifndef DISABLE_IMGUI
     glm::vec2 mousePosWidget = glm::vec2(ImGui::GetMousePos().x, ImGui::GetMousePos().y) - opacityGraphBox.min;
 
     glm::vec2 normalizedPosition = mousePosWidget / opacityGraphBox.getDimensions();
@@ -766,9 +778,11 @@ void GuiVarData::onOpacityGraphClick() {
     }
 
     rebuildTransferFunctionMap();
+#endif
 }
 
 void GuiVarData::onColorBarClick() {
+#ifndef DISABLE_IMGUI
     glm::vec2 mousePosWidget = glm::vec2(ImGui::GetMousePos().x, ImGui::GetMousePos().y) - colorBarBox.min;
     float normalizedPosition = mousePosWidget.x / colorBarBox.getWidth();
     dragging = false;
@@ -841,9 +855,11 @@ void GuiVarData::onColorBarClick() {
     }
 
     rebuildTransferFunctionMap();
+#endif
 }
 
 void GuiVarData::dragPoint() {
+#ifndef DISABLE_IMGUI
     if (mouseReleased) {
         dragging = false;
     }
@@ -896,9 +912,11 @@ void GuiVarData::dragPoint() {
 
     rebuildTransferFunctionMap();
     reRender = true;
+#endif
 }
 
 bool GuiVarData::selectNearestOpacityPoint(int& currentSelectionIndex, const glm::vec2& mousePosWidget) {
+#ifndef DISABLE_IMGUI
     float scaleFactor = sgl::ImGuiWrapper::get()->getScaleFactor();
 
     int closestPointIdx = -1;
@@ -918,11 +936,13 @@ bool GuiVarData::selectNearestOpacityPoint(int& currentSelectionIndex, const glm
         currentSelectionIndex = closestPointIdx;
         return true;
     }
+#endif
 
     return false;
 }
 
 bool GuiVarData::selectNearestColorPoint(int& currentSelectionIndex, const glm::vec2& mousePosWidget) {
+#ifndef DISABLE_IMGUI
     float scaleFactor = sgl::ImGuiWrapper::get()->getScaleFactor();
 
     int closestPointIdx = -1;
@@ -942,6 +962,7 @@ bool GuiVarData::selectNearestColorPoint(int& currentSelectionIndex, const glm::
         currentSelectionIndex = closestPointIdx;
         return true;
     }
+#endif
 
     return false;
 }
@@ -1433,6 +1454,7 @@ void MultiVarTransferFunctionWindow::rebuildTransferFunctionMap() {
 }
 
 bool MultiVarTransferFunctionWindow::renderGui() {
+#ifndef DISABLE_IMGUI
     sgl::ImGuiWrapper::get()->setNextWindowStandardPosSize(2, 1278, 634, 818);
     if (showWindow && !varNames.empty()) {
         if (ImGui::Begin("Multi-Var Transfer Function", &showWindow)) {
@@ -1465,6 +1487,8 @@ bool MultiVarTransferFunctionWindow::renderGui() {
         reRender = false;
         return true;
     }
+#endif
+
     return false;
 }
 

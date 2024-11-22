@@ -43,7 +43,9 @@
 #ifdef SUPPORT_VULKAN
 #include <Graphics/Vulkan/Image/Image.hpp>
 #endif
+#ifndef DISABLE_IMGUI
 #include <ImGui/ImGuiWrapper.hpp>
+#endif
 
 namespace sgl {
 

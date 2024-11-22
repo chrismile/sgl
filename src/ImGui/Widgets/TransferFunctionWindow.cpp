@@ -358,6 +358,7 @@ float TransferFunctionWindow::getOpacityAtAttribute(float attribute) {
 
 
 bool TransferFunctionWindow::renderGui() {
+#ifndef DISABLE_IMGUI
     if (showTransferFunctionWindow) {
         sgl::ImGuiWrapper::get()->setNextWindowStandardPosSize(
                 standardPositionX, standardPositionY, standardWidth, standardHeight);
@@ -417,11 +418,13 @@ bool TransferFunctionWindow::renderGui() {
             return true;
         }
     }
+#endif
 
     return false;
 }
 
 void TransferFunctionWindow::renderFileDialog() {
+#ifndef DISABLE_IMGUI
     // Load file data
     if (ImGui::ListBox("##availablefiles",& selectedFileIndex, [this](void* data, int idx, const char** out_text) -> bool {
         *out_text = availableFiles.at(idx).c_str();
@@ -443,9 +446,11 @@ void TransferFunctionWindow::renderFileDialog() {
         saveFunctionToFile(saveDirectory + saveFileString);
         updateAvailableFiles();
     }
+#endif
 }
 
 void TransferFunctionWindow::renderOpacityGraph() {
+#ifndef DISABLE_IMGUI
     ImDrawList* drawList = ImGui::GetWindowDrawList();
     float scaleFactor = sgl::ImGuiWrapper::get()->getScaleFactor();
     float regionWidth = ImGui::GetContentRegionAvail().x;
@@ -509,9 +514,11 @@ void TransferFunctionWindow::renderOpacityGraph() {
         drawList->AddCircleFilled(centerPt, radius, backgroundColor, 24);
         drawList->AddCircle(centerPt, radius, borderColor, 24, 1.5f);
     }
+#endif
 }
 
 void TransferFunctionWindow::renderColorBar() {
+#ifndef DISABLE_IMGUI
     ImDrawList* drawList = ImGui::GetWindowDrawList();
     float scaleFactor = sgl::ImGuiWrapper::get()->getScaleFactor();
     float regionWidth = ImGui::GetContentRegionAvail().x - 2;
@@ -549,6 +556,7 @@ void TransferFunctionWindow::renderColorBar() {
     if (ImGui::ClickArea("##bararea", ImVec2(regionWidth + 2, barHeight), mouseReleased)) {
         onColorBarClick();
     }
+#endif
 }
 
 
@@ -799,6 +807,7 @@ void TransferFunctionWindow::setUseLinearRGB(bool useLinearRGB) {
 }
 
 void TransferFunctionWindow::onOpacityGraphClick() {
+#ifndef DISABLE_IMGUI
     glm::vec2 mousePosWidget = glm::vec2(ImGui::GetMousePos().x, ImGui::GetMousePos().y) - opacityGraphBox.min;
 
     glm::vec2 normalizedPosition = mousePosWidget / opacityGraphBox.getDimensions();
@@ -845,9 +854,11 @@ void TransferFunctionWindow::onOpacityGraphClick() {
     }
 
     rebuildTransferFunctionMap();
+#endif
 }
 
 void TransferFunctionWindow::onColorBarClick() {
+#ifndef DISABLE_IMGUI
     glm::vec2 mousePosWidget = glm::vec2(ImGui::GetMousePos().x, ImGui::GetMousePos().y) - colorBarBox.min;
     float normalizedPosition = mousePosWidget.x / colorBarBox.getWidth();
     dragging = false;
@@ -915,9 +926,11 @@ void TransferFunctionWindow::onColorBarClick() {
     }
 
     rebuildTransferFunctionMap();
+#endif
 }
 
 void TransferFunctionWindow::dragPoint() {
+#ifndef DISABLE_IMGUI
     if (mouseReleased) {
         dragging = false;
     }
@@ -970,9 +983,11 @@ void TransferFunctionWindow::dragPoint() {
 
     rebuildTransferFunctionMap();
     reRender = true;
+#endif
 }
 
 bool TransferFunctionWindow::selectNearestOpacityPoint(int& currentSelectionIndex, const glm::vec2& mousePosWidget) {
+#ifndef DISABLE_IMGUI
     float scaleFactor = sgl::ImGuiWrapper::get()->getScaleFactor();
 
     int closestPointIdx = -1;
@@ -991,11 +1006,13 @@ bool TransferFunctionWindow::selectNearestOpacityPoint(int& currentSelectionInde
         currentSelectionIndex = closestPointIdx;
         return true;
     }
+#endif
 
     return false;
 }
 
 bool TransferFunctionWindow::selectNearestColorPoint(int& currentSelectionIndex, const glm::vec2& mousePosWidget) {
+#ifndef DISABLE_IMGUI
     float scaleFactor = sgl::ImGuiWrapper::get()->getScaleFactor();
 
     int closestPointIdx = -1;
@@ -1014,6 +1031,7 @@ bool TransferFunctionWindow::selectNearestColorPoint(int& currentSelectionIndex,
         currentSelectionIndex = closestPointIdx;
         return true;
     }
+#endif
 
     return false;
 }
