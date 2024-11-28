@@ -179,6 +179,9 @@ public:
     [[nodiscard]] inline const std::vector<const char*>& getRequiredVulkanInstanceExtensions() const {
         return requiredInstanceExtensionNames;
     }
+    // Using the matrix block at descriptor set 1 should be disabled for headless raster passes.
+    [[nodiscard]] inline bool getUseMatrixBlock() { return useMatrixBlock; }
+    inline void setUseMatrixBlock(bool _useMatrixBlock) { useMatrixBlock = _useMatrixBlock; }
 #if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
     /// Initialize instance and device for OpenGL-Vulkan interoperability. Must be called before initializeSubsystems.
     void initializeVulkanInteropSupport(
@@ -275,6 +278,7 @@ private:
     std::vector<const char*> requiredInstanceExtensionNames;
     std::vector<const char*> defaultInstanceExtensionNames;
     VulkanInteropCapabilities vulkanInteropCapabilities = VulkanInteropCapabilities::NOT_LOADED;
+    bool useMatrixBlock = true; //< Use matrix block in descriptor set 1.
 #ifdef SUPPORT_SDL2
     bool sdlVulkanLibraryLoaded = false;
 #endif

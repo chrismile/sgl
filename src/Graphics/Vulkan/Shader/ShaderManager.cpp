@@ -189,16 +189,18 @@ ShaderManagerVk::ShaderManagerVk(Device *device) : device(device) {
 
     // Was a file called "GlobalDefinesVulkan.glsl" found? If yes, store its content in the variable globalDefines.
     preprocessor->loadGlobalDefinesFileIfExists("GlobalDefinesVulkan.glsl");
-    preprocessor->setGlobalDefinesMvpMatrices(
-            "#ifndef SGL_MATRIX_BLOCK\n"
-            "#define SGL_MATRIX_BLOCK\n"
-            "layout (set = 1, binding = 0) uniform MatrixBlock {\n"
-            "    mat4 mMatrix; // Model matrix\n"
-            "    mat4 vMatrix; // View matrix\n"
-            "    mat4 pMatrix; // Projection matrix\n"
-            "    mat4 mvpMatrix; // Model-view-projection matrix\n"
-            "};\n"
-            "#endif\n\n");
+    if (sgl::AppSettings::get()->getUseMatrixBlock()) {
+        preprocessor->setGlobalDefinesMvpMatrices(
+                "#ifndef SGL_MATRIX_BLOCK\n"
+                "#define SGL_MATRIX_BLOCK\n"
+                "layout (set = 1, binding = 0) uniform MatrixBlock {\n"
+                "    mat4 mMatrix; // Model matrix\n"
+                "    mat4 vMatrix; // View matrix\n"
+                "    mat4 pMatrix; // Projection matrix\n"
+                "    mat4 mvpMatrix; // Model-view-projection matrix\n"
+                "};\n"
+                "#endif\n\n");
+    }
 }
 
 void ShaderManagerVk::indexFiles(std::map<std::string, std::string>& shaderFileMap, const std::string &file) {
@@ -521,6 +523,7 @@ ShaderModulePtr ShaderManagerVk::loadAsset(ShaderModuleInfo& shaderInfo) {
         return loadAssetGlslang(shaderInfo, id, shaderString);
     }
 #endif
+    sgl::Logfile::get()->writeError("Error in ShaderManagerVk::loadAsset: No compiler backend is configured.");
     return {};
 }
 

@@ -119,6 +119,8 @@ Renderer::Renderer(Device* device, uint32_t numDescriptors) : device(device) {
             device->getVkDevice(), &poolInfo, nullptr, &matrixBufferDescriptorPool) != VK_SUCCESS) {
         Logfile::get()->throwError("Error in Renderer::Renderer: Failed to create matrix block descriptor pool!");
     }
+
+    useMatrixBlock = sgl::AppSettings::get()->getUseMatrixBlock();
 }
 
 Renderer::~Renderer() {
@@ -335,7 +337,7 @@ void Renderer::render(const RasterDataPtr& rasterData, const FramebufferPtr& fra
                 "Error in Renderer::render: subpassIndex >= numSubpasses!");
     }
 
-    if (updateMatrixBlock() || recordingCommandBufferStarted) {
+    if (useMatrixBlock && (updateMatrixBlock() || recordingCommandBufferStarted)) {
         vkCmdBindDescriptorSets(
                 commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline->getVkPipelineLayout(),
                 1, 1, &matrixBlockDescriptorSet, 0, nullptr);

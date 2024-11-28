@@ -256,6 +256,7 @@ private:
         glm::mat4 pMatrix = matrixIdentity(); // Projection matrix
         glm::mat4 mvpMatrix = matrixIdentity(); // Model-view-projection matrix
     };
+    bool useMatrixBlock = true;
     bool matrixBlockNeedsUpdate = true;
     MatrixBlock matrixBlock;
     BufferPtr currentMatrixBlockBuffer;
