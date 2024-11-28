@@ -359,11 +359,11 @@ void RenderData::_updateDescriptorSets() {
                 "Warning in RenderData::RenderData: More than two descriptor sets used by the shaders."
                 "So far, sgl only supports one user-defined set (0) and one transformation matrix set (1).");
     }
-    if (descriptorSetLayouts.size() < 2 && getRenderDataType() == RenderDataType::RASTER) {
-        Logfile::get()->throwError(
-                "Expected exactly two descriptor sets - one user-defined set (0) and one transformation matrix "
-                "set (1).");
-    }
+    //if (descriptorSetLayouts.size() < 2 && getRenderDataType() == RenderDataType::RASTER) {
+    //    Logfile::get()->throwError(
+    //            "Expected exactly two descriptor sets - one user-defined set (0) and one transformation matrix "
+    //            "set (1).");
+    //}
 
     const VkDescriptorSetLayout& descriptorSetLayout = descriptorSetLayouts.at(0);
     const std::vector<DescriptorInfo>& descriptorSetInfo = shaderStages->getDescriptorSetsInfo().find(0)->second;
