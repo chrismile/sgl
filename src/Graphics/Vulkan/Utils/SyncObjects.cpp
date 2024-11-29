@@ -171,7 +171,18 @@ bool Fence::wait(uint64_t timeoutNanoseconds) {
     } else if (result == VK_TIMEOUT) {
         return false;
     } else {
-        Logfile::get()->throwError("Error in Fence::wait: vkWaitForFences exited with an error code.");
+        std::string errorCodeString;
+        if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+            errorCodeString = "VK_ERROR_OUT_OF_HOST_MEMORY";
+        } else if (result == VK_ERROR_OUT_OF_DEVICE_MEMORY) {
+            errorCodeString = "VK_ERROR_OUT_OF_DEVICE_MEMORY";
+        } else if (result == VK_ERROR_DEVICE_LOST) {
+            errorCodeString = "VK_ERROR_DEVICE_LOST";
+        } else {
+            errorCodeString = std::to_string(int(result));
+        }
+        Logfile::get()->throwError(
+                "Error in Fence::wait: vkWaitForFences exited with an error (" + errorCodeString + ")");
         return false;
     }
 }
