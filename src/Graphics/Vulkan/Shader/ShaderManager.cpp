@@ -728,6 +728,7 @@ ShaderModulePtr ShaderManagerVk::loadAssetGlslang(
     shader->setEnvTarget(targetLanguage, targetLanguageVersion);
 
     glslang::SpvOptions* spvOptions = nullptr;
+#ifdef GLSLANG_DEBUG_INFO_SUPPORT
     if (generateDebugInfo) {
         shader->setDebugInfo(true);
         spvOptions = new glslang::SpvOptions;
@@ -736,6 +737,7 @@ ShaderModulePtr ShaderManagerVk::loadAssetGlslang(
         spvOptions->emitNonSemanticShaderDebugInfo = true;
         spvOptions->emitNonSemanticShaderDebugSource = true;
     }
+#endif
 
     //shader->setEntryPoint(entryPointName);
     //shader->setOverrideVersion(glslVersion); // e.g., 450.
