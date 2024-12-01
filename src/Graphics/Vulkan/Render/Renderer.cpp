@@ -289,6 +289,7 @@ void Renderer::syncWithCpu() {
     submitToQueue();
     if (fence) {
         fence->wait();
+        fence->reset();
         commandBufferPtr->setFence(fence);
     } else {
         if (useGraphicsQueue) {
