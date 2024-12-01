@@ -282,11 +282,20 @@ void Renderer::syncWithCpu() {
     if (!swapchain && frameIndex >= commandBuffers.size()) {
         commandBufferPtr = frameCommandBuffers.back();
     }
+    sgl::vk::FencePtr fence;
+    if (commandBufferPtr) {
+        fence = commandBufferPtr->getFence();
+    }
     submitToQueue();
-    if (useGraphicsQueue) {
-        device->waitGraphicsQueueIdle();
+    if (fence) {
+        fence->wait();
+        commandBufferPtr->setFence(fence);
     } else {
-        device->waitComputeQueueIdle();
+        if (useGraphicsQueue) {
+            device->waitGraphicsQueueIdle();
+        } else {
+            device->waitComputeQueueIdle();
+        }
     }
 
     if (swapchain || frameIndex < commandBuffers.size()) {
