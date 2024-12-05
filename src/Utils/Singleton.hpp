@@ -37,7 +37,7 @@
 
 namespace sgl {
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(DISABLE_SINGLETON_BOOST_INTERPROCESS)
 
 template <class T>
 class Singleton : public boost::interprocess::ipcdetail::intermodule_singleton<T>
