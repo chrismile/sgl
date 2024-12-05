@@ -31,7 +31,7 @@
 
 #include <memory>
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(DISABLE_SINGLETON_BOOST_INTERPROCESS)
 #include <boost/interprocess/detail/intermodule_singleton.hpp>
 #endif
 
