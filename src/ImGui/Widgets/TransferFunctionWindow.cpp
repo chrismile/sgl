@@ -238,6 +238,11 @@ bool TransferFunctionWindow::loadFunctionFromFile(const std::string& filename) {
                 float green = sgl::clamp(childElement->FloatAttribute("g"), 0.0f, 255.0f) / 255.0f;
                 float blue = sgl::clamp(childElement->FloatAttribute("b"), 0.0f, 255.0f) / 255.0f;
                 color = sgl::Color16(glm::vec3(red, green, blue));
+            } else if (colorDataMode == COLOR_DATA_MODE_FLOAT_255) {
+                float red = sgl::clamp(childElement->FloatAttribute("r"), 0.0f, 100.0f) / 100.0f;
+                float green = sgl::clamp(childElement->FloatAttribute("g"), 0.0f, 100.0f) / 100.0f;
+                float blue = sgl::clamp(childElement->FloatAttribute("b"), 0.0f, 100.0f) / 100.0f;
+                color = sgl::Color16(glm::vec3(red, green, blue));
             }
             colorPoints.emplace_back(color, position);
         }

@@ -89,11 +89,13 @@ enum ColorDataMode {
     // 0.0 - 1.0
     COLOR_DATA_MODE_FLOAT_NORMALIZED,
     // 0.0 - 255.0
-    COLOR_DATA_MODE_FLOAT_255
+    COLOR_DATA_MODE_FLOAT_255,
+    // 0.0 - 255.0
+    COLOR_DATA_MODE_FLOAT_100
 };
 
 const char* const COLOR_DATA_MODE_NAMES[] = {
-        "ubyte", "ushort", "float", "float_255"
+        "ubyte", "ushort", "float", "float_255", "float_100"
 };
 const int NUM_COLOR_DATA_MODES = ((int)(sizeof(COLOR_DATA_MODE_NAMES) / sizeof(*COLOR_DATA_MODE_NAMES)));
 
