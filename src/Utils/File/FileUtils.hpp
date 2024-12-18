@@ -29,11 +29,13 @@
 #ifndef SRC_UTILS_FILE_FILEUTILS_HPP_
 #define SRC_UTILS_FILE_FILEUTILS_HPP_
 
-#include <Defs.hpp>
-#include <Utils/Singleton.hpp>
 #include <string>
 #include <vector>
 #include <list>
+
+#include <Defs.hpp>
+#include <Utils/Singleton.hpp>
+#include <Utils/VariadicHelpers.hpp>
 
 #ifdef CreateDirectory
 #undef CreateDirectory
@@ -79,8 +81,11 @@ public:
     std::vector<std::string> getFilesInDirectoryVector(const std::string &dirPath);
     std::vector<std::string> getPathAsList(const std::string &dirPath);
     bool isDirectory(const std::string &dirPath);
+    bool isRegularFile(const std::string &dirPath);
+    bool isSymlink(const std::string &dirPath);
     bool exists(const std::string &filePath);
     bool directoryExists(const std::string &dirPath);
+    bool fileExists(const std::string &dirPath);
     void deleteFileEnding(std::string &path);
     void createDirectory (const std::string &path);
     void ensureDirectoryExists(const std::string &directory);
@@ -94,6 +99,7 @@ public:
     void splitPath(const std::string &path, std::list<std::string> &list);
     void splitPath(const std::string &path, std::vector<std::string> &list);
     void splitPathNoTrim(const std::string &path, std::vector<std::string> &list);
+    std::string getParentFolderPath(const std::string &path);
     bool getIsPathAbsolute(const std::string &path);
     std::string getPathAbsolute(const std::string &path);
     std::string getPathAbsoluteGeneric(const std::string &path);
@@ -105,6 +111,16 @@ public:
 
     // Sorts the array of path strings in a case insensitive way.
     void sortPathStrings(std::vector<std::string>& pathStrings);
+
+    /*
+     * Joins a list of paths, such as:
+     * "/home/user", "other", "file.png" => "/home/user/other/file.png".
+     */
+    std::string joinPath(std::initializer_list<std::string> pathList);
+    template<class... T> std::enable_if_t<all_true<std::is_convertible<T, std::string>{}...>{}, std::string>
+    joinPath(const std::string& path0, T... args) {
+        return joinPath({path0, args...});
+    }
 
 private:
     int argc;

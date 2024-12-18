@@ -31,6 +31,7 @@
 
 #include <fstream>
 #include <Utils/Singleton.hpp>
+#include <Utils/Convert.hpp>
 
 namespace sgl {
 
@@ -62,6 +63,28 @@ public:
     void throwError(const std::string &text, bool openMessageBox = true);
     /// Outputs text on stdout, too.
     void writeInfo(const std::string &text);
+
+    // Versions of the functions above with variadic templates and fold expressions.
+    template<typename... T>
+    void writeWarningVar(T... args) {
+        writeWarning((std::string() + ... + toString(args)));
+    }
+    template<typename... T>
+    void writeWarningVarMsgBox(T... args) {
+        writeWarning((std::string() + ... + toString(args)), true);
+    }
+    template<typename... T>
+    void writeErrorVar(T... args) {
+        writeError((std::string() + ... + toString(args)));
+    }
+    template<typename... T>
+    void writeErrorVarNoMsgBox(T... args) {
+        writeError((std::string() + ... + toString(args)), false);
+    }
+    template<typename... T>
+    void throwErrorVar(T... args) {
+        throwError((std::string() + ... + toString(args)));
+    }
 
 private:
     bool closedLogfile;

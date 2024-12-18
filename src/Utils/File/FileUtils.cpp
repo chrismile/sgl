@@ -285,6 +285,20 @@ bool FileUtils::isDirectory(const std::string &dirPath) {
     return false;
 }
 
+bool FileUtils::isRegularFile(const std::string &dirPath) {
+    std::filesystem::path dir(dirPath);
+    if (std::filesystem::is_regular_file(dir))
+        return true;
+    return false;
+}
+
+bool FileUtils::isSymlink(const std::string &dirPath) {
+    std::filesystem::path dir(dirPath);
+    if (std::filesystem::is_symlink(dir))
+        return true;
+    return false;
+}
+
 bool FileUtils::exists(const std::string &filePath) {
     std::filesystem::path dir(filePath);
     if (std::filesystem::exists(dir))
@@ -294,6 +308,10 @@ bool FileUtils::exists(const std::string &filePath) {
 
 bool FileUtils::directoryExists(const std::string &dirPath) {
     return isDirectory(dirPath) && exists(dirPath);
+}
+
+bool FileUtils::fileExists(const std::string &dirPath) {
+    return !isDirectory(dirPath) && exists(dirPath);
 }
 
 
@@ -434,6 +452,29 @@ void FileUtils::splitPathNoTrim(const std::string &path, std::vector<std::string
     }
 }
 
+std::string FileUtils::getParentFolderPath(const std::string &path) {
+    bool isAtEnd = true;
+    auto offsetBack = std::intptr_t(path.size());
+    while (offsetBack > 0) {
+        offsetBack--;
+        char c = path.at(offsetBack);
+        if (c == '/' || c == '\\') {
+            if (!isAtEnd) {
+#ifndef _WIN32
+                // We want to preserve the root slash if the parent directory is the root directory.
+                if (offsetBack == 0) {
+                    offsetBack = 1;
+                }
+#endif
+                break;
+            }
+        } else {
+            isAtEnd = false;
+        }
+    }
+    return path.substr(0, offsetBack);
+}
+
 bool FileUtils::getIsPathAbsolute(const std::string &path) {
 #ifdef _WIN32
     bool isAbsolutePath =
@@ -506,6 +547,17 @@ void FileUtils::sortPathStrings(std::vector<std::string>& pathStrings) {
 #else
     std::sort(pathStrings.begin(), pathStrings.end(), CaseInsensitiveComparator());
 #endif
+}
+
+std::string FileUtils::joinPath(std::initializer_list<std::string> pathList) {
+    std::string joinedPath;
+    for (const auto& pathElem : pathList) {
+        if (!joinedPath.empty() && (joinedPath.back() != '/' || joinedPath.back() != '\\')) {
+            joinedPath += '/';
+        }
+        joinedPath += pathElem;
+    }
+    return joinedPath;
 }
 
 }
