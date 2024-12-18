@@ -117,10 +117,12 @@ public:
      * "/home/user", "other", "file.png" => "/home/user/other/file.png".
      */
     std::string joinPath(std::initializer_list<std::string> pathList);
-    template<class... T> std::enable_if_t<all_true<std::is_convertible<T, std::string>{}...>{}, std::string>
-    joinPath(const std::string& path0, T... args) {
+#if __cplusplus >= 201703L
+    template<class... T, std::enable_if_t<all_true<std::is_convertible<T, std::string>{}...>::value, bool> = true>
+    std::string joinPath(const std::string& path0, T... args) {
         return joinPath({path0, args...});
     }
+#endif
 
 private:
     int argc;
