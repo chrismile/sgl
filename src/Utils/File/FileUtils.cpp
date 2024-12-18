@@ -552,7 +552,7 @@ void FileUtils::sortPathStrings(std::vector<std::string>& pathStrings) {
 std::string FileUtils::joinPath(std::initializer_list<std::string> pathList) {
     std::string joinedPath;
     for (const auto& pathElem : pathList) {
-        if (!joinedPath.empty() && (joinedPath.back() != '/' || joinedPath.back() != '\\')) {
+        if (!joinedPath.empty() && (joinedPath.back() != '/' && joinedPath.back() != '\\')) {
             joinedPath += '/';
         }
         joinedPath += pathElem;
