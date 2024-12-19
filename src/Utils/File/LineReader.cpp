@@ -47,12 +47,10 @@ LineReader::LineReader(const std::string& filename)
     }
 
     bufferData = reinterpret_cast<const char*>(fileBuffer);
-    fillLineBuffer();
 }
 
-LineReader::LineReader(const char* bufferData, const size_t bufferSize)
+LineReader::LineReader(const char* bufferData, size_t bufferSize)
         : userManagedBuffer(true), bufferData(bufferData), bufferSize(bufferSize) {
-    fillLineBuffer();
 }
 
 LineReader::~LineReader() {
@@ -79,12 +77,25 @@ void LineReader::fillLineBuffer() {
             bufferOffset++;
         }
 
-        if (lineBuffer.size() == 0) {
+        if (lineBuffer.empty()) {
             continue;
         } else {
             break;
         }
     }
+    hasLineData = true;
+}
+
+const std::string& LineReader::readLine() {
+    if (!hasLineData) {
+        fillLineBuffer();
+    }
+    if (!isLineLeft()) {
+        sgl::Logfile::get()->writeError("ERROR in LineReader::readVectorLine: No lines left.");
+    }
+    hasLineData = false;
+
+    return lineBuffer;
 }
 
 }

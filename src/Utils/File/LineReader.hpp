@@ -45,31 +45,44 @@ namespace sgl {
 class DLL_OBJECT LineReader {
 public:
     explicit LineReader(const std::string& filename);
-    LineReader(const char* bufferData, const size_t bufferSize);
+    LineReader(const char* bufferData, size_t bufferSize);
     ~LineReader();
 
     inline bool isLineLeft() {
+        if (!hasLineData) {
+            fillLineBuffer();
+        }
         return !lineBuffer.empty();
     }
 
     void fillLineBuffer();
+    const std::string& readLine();
 
     template<typename T>
     T readScalarLine() {
-        if (!isLineLeft()) {
-            sgl::Logfile::get()->writeError("ERROR in LineReader::readVectorLine: No lines left.");
+        if (!hasLineData) {
+            fillLineBuffer();
         }
+        if (!isLineLeft()) {
+            sgl::Logfile::get()->writeError("Error in LineReader::readVectorLine: No lines left.");
+            return {};
+        }
+        hasLineData = false;
 
         T value = sgl::fromString<T>(lineBuffer);
-        fillLineBuffer();
         return value;
     }
 
     template<typename T>
     std::vector<T> readVectorLine() {
-        if (!isLineLeft()) {
-            sgl::Logfile::get()->writeError("ERROR in LineReader::readVectorLine: No lines left.");
+        if (!hasLineData) {
+            fillLineBuffer();
         }
+        if (!isLineLeft()) {
+            sgl::Logfile::get()->writeError("Error in LineReader::readVectorLine: No lines left.");
+            return {};
+        }
+        hasLineData = false;
 
         std::string tokenString;
         std::vector<T> vec;
@@ -89,15 +102,19 @@ public:
             tokenString.clear();
         }
 
-        fillLineBuffer();
         return vec;
     }
 
     template<typename T>
     std::vector<T> readVectorLine(size_t knownVectorSize) {
-        if (!isLineLeft()) {
-            sgl::Logfile::get()->writeError("ERROR in LineReader::readVectorLine: No lines left.");
+        if (!hasLineData) {
+            fillLineBuffer();
         }
+        if (!isLineLeft()) {
+            sgl::Logfile::get()->writeError("Error in LineReader::readVectorLine: No lines left.");
+            return {};
+        }
+        hasLineData = false;
 
         std::string tokenString;
         std::vector<T> vec;
@@ -123,15 +140,19 @@ public:
                     "WARNING in LineReader::readVectorLine: Expected and real size don't match.");
         }
 
-        fillLineBuffer();
         return vec;
     }
 
     template<typename T>
     void readVectorLine(std::vector<T>& vec) {
-        if (!isLineLeft()) {
-            sgl::Logfile::get()->writeError("ERROR in LineReader::readVectorLine: No lines left.");
+        if (!hasLineData) {
+            fillLineBuffer();
         }
+        if (!isLineLeft()) {
+            sgl::Logfile::get()->writeError("Error in LineReader::readVectorLine: No lines left.");
+            return;
+        }
+        hasLineData = false;
 
         std::string tokenString;
         vec.clear();
@@ -150,10 +171,57 @@ public:
             vec.push_back(sgl::fromString<T>(tokenString.c_str()));
             tokenString.clear();
         }
-
-        fillLineBuffer();
     }
 
+    template<typename... T>
+    void readStructLine(T&... args) {
+        if (!hasLineData) {
+            fillLineBuffer();
+        }
+        if (!isLineLeft()) {
+            sgl::Logfile::get()->writeError("Error in LineReader::readVectorLine: No lines left.");
+            return;
+        }
+        hasLineData = false;
+
+        std::string tokenString;
+        size_t linePtr = 0;
+        _readStructLine(tokenString, linePtr, args...);
+    }
+
+    // For binary file reading interop.
+    template<typename T>
+    T readBinaryValue() {
+        if (hasLineData) {
+            sgl::Logfile::get()->throwError(
+                    "Error in LineReader::readBinaryValue: isLineLeft must not be called before readBinaryValue.");
+        }
+        if (bufferOffset + sizeof(T) > bufferSize) {
+            sgl::Logfile::get()->throwErrorVar(
+                    "Error in LineReader::readBinaryValue: Not enough space left for reading ", sizeof(T), " bytes.");
+            return {};
+        }
+        const auto* typedPtr = reinterpret_cast<const T*>(bufferData + bufferOffset);
+        bufferOffset += sizeof(T);
+        return *typedPtr;
+    }
+    template<typename T>
+    const T* getTypedPointerAndAdvance(size_t numEntries) {
+        if (hasLineData) {
+            sgl::Logfile::get()->throwError(
+                    "Error in LineReader::readBinaryValue: isLineLeft must not be called before "
+                    "getTypedPointerAndAdvance.");
+        }
+        const size_t numBytes = numEntries * sizeof(T);
+        if (bufferOffset + numBytes > bufferSize) {
+            sgl::Logfile::get()->throwErrorVar(
+                    "Error in LineReader::readBinaryValue: Not enough space left for reading ", sizeof(T), " bytes.");
+            return {};
+        }
+        const auto* typedPtr = reinterpret_cast<const T*>(bufferData + bufferOffset);
+        bufferOffset += numBytes;
+        return typedPtr;
+    }
 
 private:
     bool userManagedBuffer;
@@ -162,7 +230,37 @@ private:
     size_t bufferOffset = 0;
 
     // For buffering read lines.
+    bool hasLineData = false;
     std::string lineBuffer;
+
+    // Internal functions for @see readStructLine.
+    template<typename T>
+    void _tokenStringParse(std::string& tokenString, size_t& linePtr, T& t) {
+        for (; linePtr < lineBuffer.size(); linePtr++) {
+            char currentChar = lineBuffer.at(linePtr);
+            bool isWhitespace = currentChar == ' ' || currentChar == '\t';
+            if (isWhitespace && !tokenString.empty()) {
+                t = sgl::fromString<T>(tokenString.c_str());
+                tokenString.clear();
+                return;
+            } else if (!isWhitespace) {
+                tokenString.push_back(currentChar);
+            }
+        }
+        if (!tokenString.empty()) {
+            t = sgl::fromString<T>(tokenString.c_str());
+            tokenString.clear();
+        }
+    }
+    template<typename T>
+    void _readStructLine(std::string& tokenString, size_t& linePtr, T& t) {
+        _tokenStringParse(tokenString, linePtr, t);
+    }
+    template<typename T, typename... Args>
+    void _readStructLine(std::string& tokenString, size_t& linePtr, T& t, Args&... args) {
+        _tokenStringParse(tokenString, linePtr, t);
+        _readStructLine(tokenString, linePtr, args...);
+    }
 };
 
 }
