@@ -42,13 +42,13 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/types.h>
-#include <errno.h>
+#include <cerrno>
 #endif
 
 namespace sgl {
 
-char **convertStringListToArgv(std::list<std::string> &stringList) {
-    char **argv = new char*[stringList.size() + 1];
+char** convertStringListToArgv(const std::vector<std::string>& stringList) {
+    char** argv = new char*[stringList.size() + 1];
     int i = 0;
     for (auto& it : stringList) {
         argv[i] = new char[it.size() + 1];
@@ -63,7 +63,7 @@ char **convertStringListToArgv(std::list<std::string> &stringList) {
     return argv;
 }
 
-void deleteArgv(char **argv) {
+void deleteArgv(char** argv) {
     int i = 0;
     while (argv[i] != nullptr)
     {
@@ -73,7 +73,7 @@ void deleteArgv(char **argv) {
     delete[] argv;
 }
 
-std::string convertStringListToString(std::list<std::string> &stringList) {
+std::string convertStringListToString(const std::vector<std::string>& stringList) {
     std::string args;
     for (auto& it : stringList) {
         args += it + ' ';
@@ -82,8 +82,8 @@ std::string convertStringListToString(std::list<std::string> &stringList) {
 }
 
 
-int executeProgram(const char *appName, std::list<std::string> &args) {
-    char **argv = convertStringListToArgv(args);
+int executeProgram(const char* appName, const std::vector<std::string>& args) {
+    char** argv = convertStringListToArgv(args);
 #ifdef _WIN32
 #if defined(_MSC_VER) && _MSC_VER > 1910
     intptr_t success = _spawnv(P_WAIT, appName, argv);
@@ -124,9 +124,9 @@ int executeProgram(const char *appName, std::list<std::string> &args) {
 
 #ifndef _WIN32
 std::string exec(const char* command) {
-    char *buffer = new char[256];
+    char* buffer = new char[256];
     std::string output;
-    FILE *pipe = popen(command, "r");
+    FILE* pipe = popen(command, "r");
     if (!pipe)
         throw std::runtime_error("popen() failed");
     while (!feof(pipe)) {
