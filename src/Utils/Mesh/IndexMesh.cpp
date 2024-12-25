@@ -34,7 +34,9 @@
 #include <Utils/File/Logfile.hpp>
 #include <Utils/Parallel/Reduction.hpp>
 
+#ifdef TRACY_ENABLE
 #include <tracy/Tracy.hpp>
+#endif
 #include "Utils/SearchStructures/KdTree.hpp"
 #include "Utils/SearchStructures/HashedGrid.hpp"
 #include "IndexMesh.hpp"
@@ -46,7 +48,9 @@ void computeSharedIndexRepresentation(
         std::vector<uint32_t>& triangleIndices,
         std::vector<glm::vec3>& vertexPositionsShared, std::vector<glm::vec3>& vertexNormalsShared,
         float EPSILON) {
+#ifdef TRACY_ENABLE
     ZoneScoped;
+#endif
 
     sgl::AABB3 aabb = sgl::reduceVec3ArrayAabb(vertexPositions);
     size_t numEntries = std::max(vertexPositions.size() / 4, size_t(1));

@@ -31,7 +31,9 @@
 
 #include <vector>
 #include <optional>
+#ifdef TRACY_ENABLE
 #include <tracy/Tracy.hpp>
+#endif
 #include <glm/glm.hpp>
 
 #if __cplusplus >= 201703L

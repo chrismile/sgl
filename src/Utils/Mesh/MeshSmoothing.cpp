@@ -27,7 +27,9 @@
  */
 
 #include <glm/glm.hpp>
+#ifdef TRACY_ENABLE
 #include <tracy/Tracy.hpp>
+#endif
 #include "MeshSmoothing.hpp"
 
 namespace sgl {
@@ -35,7 +37,9 @@ namespace sgl {
 void createNeighborMap(
         const std::vector<uint32_t>& triangleIndices,
         std::unordered_map<uint32_t, std::unordered_set<uint32_t>>& neighborsMap) {
+#ifdef TRACY_ENABLE
     ZoneScoped;
+#endif
 
     for (size_t i = 0; i < triangleIndices.size(); i += 3) {
         uint32_t idx0 = triangleIndices.at(i+0);
@@ -53,7 +57,9 @@ void createNeighborMap(
 void laplacianSmoothing(
         const std::vector<glm::vec3>& pointsIn, std::vector<glm::vec3>& pointsOut,
         const std::unordered_map<uint32_t, std::unordered_set<uint32_t>>& neighborsMap, float lambda) {
+#ifdef TRACY_ENABLE
     ZoneScoped;
+#endif
 
     for (uint32_t i = 0; i < pointsIn.size(); i++) {
         float weightSum = 0.0f;
@@ -74,7 +80,9 @@ void laplacianSmoothing(
 void laplacianSmoothing(
         const std::vector<uint32_t>& triangleIndices, std::vector<glm::vec3>& vertexPositions,
         int numIterations, float lambda) {
+#ifdef TRACY_ENABLE
     ZoneScoped;
+#endif
 
     std::unordered_map<uint32_t, std::unordered_set<uint32_t>> neighborsMap;
     createNeighborMap(triangleIndices, neighborsMap);
