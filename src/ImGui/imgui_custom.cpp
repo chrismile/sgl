@@ -451,6 +451,13 @@ bool ImGui::SliderInt3PowerOfTwo(const char* label, int v[3], int v_min, int v_m
 
 
 
+bool ImGui::SliderDouble(const char* label, double* v, double v_min, double v_max, const char* format, ImGuiSliderFlags flags)
+{
+    return SliderScalar(label, ImGuiDataType_Double, v, &v_min, &v_max, format, flags);
+}
+
+
+
 bool ImGui::SliderScalarNoLiveEdit(const char* label, ImGuiDataType data_type, void* p_data, const void* p_min, const void* p_max, const char* format, ImGuiSliderFlags flags)
 {
     const ImGuiDataTypeInfo* data_type_info = DataTypeGetInfo(data_type);

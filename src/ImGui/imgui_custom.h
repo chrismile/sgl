@@ -90,6 +90,11 @@ IMGUI_API bool SliderInt2PowerOfTwo(const char* label, int v[2], int v_min, int 
 IMGUI_API bool SliderInt3PowerOfTwo(const char* label, int v[3], int v_min, int v_max, const char* format = NULL, ImGuiSliderFlags flags = 0);
 
 /*
+ * Slider for double precision floating point numbers.
+ */
+IMGUI_API bool SliderDouble(const char* label, double* v, double v_min, double v_max, const char* format = "%.3f", ImGuiSliderFlags flags = 0);
+
+/*
  * Only changes the returns true/changes the value v if the editing has finished.
  */
 IMGUI_API bool SliderFloatNoLiveEdit(const char* label, float* v, float v_min, float v_max, const char* format = "%.3f", ImGuiSliderFlags flags = 0);     // adjust format to decorate the value with a prefix or a suffix for in-slider labels or unit display.
