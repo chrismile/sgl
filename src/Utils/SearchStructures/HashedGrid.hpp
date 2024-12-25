@@ -32,7 +32,6 @@
 #include <algorithm>
 #include <vector>
 #include <cmath>
-#include <tracy/Tracy.hpp>
 #include "SearchStructure.hpp"
 
 namespace sgl {
