@@ -1467,9 +1467,6 @@ void Device::createVulkanMemoryAllocator() {
         vulkanFunctions.vkGetDeviceImageMemoryRequirements = vkGetDeviceImageMemoryRequirements;
     }
 #endif
-#if VK_KHR_external_memory_win32
-    vulkanFunctions.vkGetMemoryWin32HandleKHR = vkGetMemoryWin32HandleKHR;
-#endif
     allocatorInfo.pVulkanFunctions = &vulkanFunctions;
 #endif
     if (isDeviceExtensionSupported(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) {
