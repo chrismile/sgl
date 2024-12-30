@@ -333,6 +333,31 @@ bool Device::isDeviceSuitable(
         }
     }
 #endif
+#ifdef VK_VERSION_1_4
+    VkPhysicalDeviceVulkan14Features physicalDeviceVulkan14Features{};
+    physicalDeviceVulkan14Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_4_FEATURES;
+    if (physicalDeviceProperties.apiVersion >= VK_MAKE_API_VERSION(0, 1, 4, 0)
+            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 4, 0)) {
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &physicalDeviceVulkan14Features;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        const size_t numVulkan14Features =
+                1 + (&requestedDeviceFeatures.requestedVulkan14Features.pushDescriptor)
+                - (&requestedDeviceFeatures.requestedVulkan14Features.globalPriorityQuery);
+        auto requestedVulkan14FeaturesArray = reinterpret_cast<const VkBool32*>(
+                &requestedDeviceFeatures.requestedVulkan14Features.globalPriorityQuery);
+        auto physicalDeviceVulkan14FeaturesArray = reinterpret_cast<VkBool32*>(
+                &physicalDeviceVulkan14Features.globalPriorityQuery);
+        for (size_t i = 0; i < numVulkan14Features; i++) {
+            if (requestedVulkan14FeaturesArray[i] && !physicalDeviceVulkan14FeaturesArray[i]) {
+                requestedFeaturesAvailable = false;
+                break;
+            }
+        }
+    }
+#endif
 
     bool isSuitable = presentSupport && requiredExtensions.empty() && requestedFeaturesAvailable;
     if (isSuitable && !optionalDeviceExtensions.empty()) {
@@ -683,7 +708,37 @@ void Device::createLogicalDeviceAndQueues(
         vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
     }
 #endif
+#ifdef VK_VERSION_1_4
+    physicalDeviceVulkan14Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_4_FEATURES;
+    physicalDeviceVulkan14Properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_4_PROPERTIES;
+    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 4, 0)
+            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 4, 0)) {
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &physicalDeviceVulkan14Features;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
 
+        const size_t numVulkan14Features =
+                1 + (&requestedDeviceFeatures.requestedVulkan14Features.pushDescriptor)
+                - (&requestedDeviceFeatures.requestedVulkan14Features.globalPriorityQuery);
+        auto requestedVulkan14FeaturesArray = reinterpret_cast<VkBool32*>(
+                &requestedDeviceFeatures.requestedVulkan14Features.globalPriorityQuery);
+        auto optionalVulkan14FeaturesArray = reinterpret_cast<VkBool32*>(
+                &requestedDeviceFeatures.optionalVulkan14Features.globalPriorityQuery);
+        auto physicalDeviceVulkan14FeaturesArray = reinterpret_cast<VkBool32*>(
+                &physicalDeviceVulkan14Features.globalPriorityQuery);
+        for (size_t i = 0; i < numVulkan14Features; i++) {
+            if (optionalVulkan14FeaturesArray[i] && physicalDeviceVulkan14FeaturesArray[i]) {
+                requestedVulkan14FeaturesArray[i] = VK_TRUE;
+            }
+        }
+
+        VkPhysicalDeviceProperties2 deviceProperties2 = {};
+        deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        deviceProperties2.pNext = &physicalDeviceVulkan14Properties;
+        vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
+    }
+#endif
 
     // Check if Vulkan 1.x extensions are used.
 #ifdef VK_VERSION_1_1
@@ -736,6 +791,22 @@ void Device::createLogicalDeviceAndQueues(
         // SPIR-V 1.6 needs VkPhysicalDeviceVulkan13Features::maintenance4.
         requestedDeviceFeatures.requestedVulkan13Features.maintenance4 = VK_TRUE;
         hasRequestedVulkan13Features = true;
+    }
+#endif
+#ifdef VK_VERSION_1_4
+    bool hasRequestedVulkan14Features = false;
+    if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 4, 0)
+            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 4, 0)) {
+        const size_t numVulkan14Features =
+                1 + (&requestedDeviceFeatures.requestedVulkan14Features.pushDescriptor)
+                - (&requestedDeviceFeatures.requestedVulkan14Features.globalPriorityQuery);
+        auto requestedVulkan14FeaturesArray = reinterpret_cast<VkBool32*>(
+                &requestedDeviceFeatures.requestedVulkan14Features.globalPriorityQuery);
+        for (size_t i = 0; i < numVulkan14Features; i++) {
+            if (requestedVulkan14FeaturesArray[i]) {
+                hasRequestedVulkan14Features = true;
+            }
+        }
     }
 #endif
 
@@ -1222,6 +1293,13 @@ void Device::createLogicalDeviceAndQueues(
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.requestedVulkan13Features.pNext);
     }
 #endif
+#ifdef VK_VERSION_1_4
+    if (hasRequestedVulkan14Features && getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 4, 0)
+            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 4, 0)) {
+        *pNextPtr = &requestedDeviceFeatures.requestedVulkan14Features;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.requestedVulkan14Features.pNext);
+    }
+#endif
 
     VkResult res = vkCreateDevice(physicalDevice, &deviceInfo, nullptr, &device);
     if (res != VK_SUCCESS) {
@@ -1365,9 +1443,9 @@ bool Device::getNeedsDedicatedAllocationForExternalMemoryBuffer(
 void Device::createVulkanMemoryAllocator() {
     uint32_t vulkanApiVersion = std::min(instance->getInstanceVulkanVersion(), getApiVersion());
 
-    // The shipped version of VMA only supports up to Vulkan 1.3 at the moment.
-    if (vulkanApiVersion >= VK_MAKE_API_VERSION(0, 1, 4, 0)) {
-        vulkanApiVersion = VK_MAKE_API_VERSION(0, 1, 3, 204);
+    // The shipped version of VMA only supports up to Vulkan 1.4 at the moment.
+    if (vulkanApiVersion >= VK_MAKE_API_VERSION(0, 1, 5, 0)) {
+        vulkanApiVersion = VK_MAKE_API_VERSION(0, 1, 4, 304);
     }
 
     sgl::Logfile::get()->write(
@@ -1388,6 +1466,9 @@ void Device::createVulkanMemoryAllocator() {
         vulkanFunctions.vkGetDeviceBufferMemoryRequirements = vkGetDeviceBufferMemoryRequirements;
         vulkanFunctions.vkGetDeviceImageMemoryRequirements = vkGetDeviceImageMemoryRequirements;
     }
+#endif
+#if VK_KHR_external_memory_win32
+    vulkanFunctions.vkGetMemoryWin32HandleKHR = vkGetMemoryWin32HandleKHR;
 #endif
     allocatorInfo.pVulkanFunctions = &vulkanFunctions;
 #endif

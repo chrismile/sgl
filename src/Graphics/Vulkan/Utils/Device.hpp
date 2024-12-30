@@ -147,6 +147,10 @@ struct DLL_OBJECT DeviceFeatures {
         requestedVulkan13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
         optionalVulkan13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
 #endif
+#ifdef VK_VERSION_1_4
+        requestedVulkan14Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_4_FEATURES;
+        optionalVulkan14Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_4_FEATURES;
+#endif
     }
     VkPhysicalDeviceFeatures requestedPhysicalDeviceFeatures{};
     VkPhysicalDeviceFeatures optionalPhysicalDeviceFeatures{};
@@ -215,6 +219,13 @@ struct DLL_OBJECT DeviceFeatures {
 #else
     VkPhysicalDeviceVulkan13Features_Compat requestedVulkan13Features{};
     VkPhysicalDeviceVulkan13Features_Compat optionalVulkan13Features{};
+#endif
+#ifdef VK_VERSION_1_4
+    VkPhysicalDeviceVulkan14Features requestedVulkan14Features{};
+    VkPhysicalDeviceVulkan14Features optionalVulkan14Features{};
+#else
+    VkPhysicalDeviceVulkan14Features_Compat requestedVulkan14Features{};
+    VkPhysicalDeviceVulkan14Features_Compat optionalVulkan14Features{};
 #endif
 };
 
@@ -341,6 +352,13 @@ public:
 #else
     const VkPhysicalDeviceVulkan13Features_Compat& getPhysicalDeviceVulkan13Features() const { return physicalDeviceVulkan13Features; }
     const VkPhysicalDeviceVulkan13Properties_Compat& getPhysicalDeviceVulkan13Properties() const { return physicalDeviceVulkan13Properties; }
+#endif
+#ifdef VK_VERSION_1_4
+    const VkPhysicalDeviceVulkan14Features& getPhysicalDeviceVulkan14Features() const { return physicalDeviceVulkan14Features; }
+    const VkPhysicalDeviceVulkan14Properties& getPhysicalDeviceVulkan14Properties() const { return physicalDeviceVulkan14Properties; }
+#else
+    const VkPhysicalDeviceVulkan14Features_Compat& getPhysicalDeviceVulkan14Features() const { return physicalDeviceVulkan14Features; }
+    const VkPhysicalDeviceVulkan14Properties_Compat& getPhysicalDeviceVulkan14Properties() const { return physicalDeviceVulkan14Properties; }
 #endif
     inline const VkPhysicalDeviceShaderFloat16Int8Features& getPhysicalDeviceShaderFloat16Int8Features() const {
         return shaderFloat16Int8Features;
@@ -618,6 +636,13 @@ private:
 #else
     VkPhysicalDeviceVulkan13Features_Compat physicalDeviceVulkan13Features{};
     VkPhysicalDeviceVulkan13Properties_Compat physicalDeviceVulkan13Properties{};
+#endif
+#ifdef VK_VERSION_1_4
+    VkPhysicalDeviceVulkan14Features physicalDeviceVulkan14Features{};
+    VkPhysicalDeviceVulkan14Properties physicalDeviceVulkan14Properties{};
+#else
+    VkPhysicalDeviceVulkan14Features_Compat physicalDeviceVulkan14Features{};
+    VkPhysicalDeviceVulkan14Properties_Compat physicalDeviceVulkan14Properties{};
 #endif
     VkPhysicalDeviceSubgroupProperties subgroupProperties{};
     VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties{};

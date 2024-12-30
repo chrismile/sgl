@@ -622,6 +622,27 @@ static void volkGenLoadDevice(void* context, PFN_vkVoidFunction (*load)(void*, c
 	vkQueueSubmit2 = (PFN_vkQueueSubmit2)load(context, "vkQueueSubmit2");
 	vkSetPrivateData = (PFN_vkSetPrivateData)load(context, "vkSetPrivateData");
 #endif /* defined(VK_VERSION_1_3) */
+#if defined(VK_VERSION_1_4)
+	vkCmdBindDescriptorSets2 = (PFN_vkCmdBindDescriptorSets2)load(context, "vkCmdBindDescriptorSets2");
+	vkCmdBindIndexBuffer2 = (PFN_vkCmdBindIndexBuffer2)load(context, "vkCmdBindIndexBuffer2");
+	vkCmdPushConstants2 = (PFN_vkCmdPushConstants2)load(context, "vkCmdPushConstants2");
+	vkCmdPushDescriptorSet = (PFN_vkCmdPushDescriptorSet)load(context, "vkCmdPushDescriptorSet");
+	vkCmdPushDescriptorSet2 = (PFN_vkCmdPushDescriptorSet2)load(context, "vkCmdPushDescriptorSet2");
+	vkCmdPushDescriptorSetWithTemplate = (PFN_vkCmdPushDescriptorSetWithTemplate)load(context, "vkCmdPushDescriptorSetWithTemplate");
+	vkCmdPushDescriptorSetWithTemplate2 = (PFN_vkCmdPushDescriptorSetWithTemplate2)load(context, "vkCmdPushDescriptorSetWithTemplate2");
+	vkCmdSetLineStipple = (PFN_vkCmdSetLineStipple)load(context, "vkCmdSetLineStipple");
+	vkCmdSetRenderingAttachmentLocations = (PFN_vkCmdSetRenderingAttachmentLocations)load(context, "vkCmdSetRenderingAttachmentLocations");
+	vkCmdSetRenderingInputAttachmentIndices = (PFN_vkCmdSetRenderingInputAttachmentIndices)load(context, "vkCmdSetRenderingInputAttachmentIndices");
+	vkCopyImageToImage = (PFN_vkCopyImageToImage)load(context, "vkCopyImageToImage");
+	vkCopyImageToMemory = (PFN_vkCopyImageToMemory)load(context, "vkCopyImageToMemory");
+	vkCopyMemoryToImage = (PFN_vkCopyMemoryToImage)load(context, "vkCopyMemoryToImage");
+	vkGetDeviceImageSubresourceLayout = (PFN_vkGetDeviceImageSubresourceLayout)load(context, "vkGetDeviceImageSubresourceLayout");
+	vkGetImageSubresourceLayout2 = (PFN_vkGetImageSubresourceLayout2)load(context, "vkGetImageSubresourceLayout2");
+	vkGetRenderingAreaGranularity = (PFN_vkGetRenderingAreaGranularity)load(context, "vkGetRenderingAreaGranularity");
+	vkMapMemory2 = (PFN_vkMapMemory2)load(context, "vkMapMemory2");
+	vkTransitionImageLayout = (PFN_vkTransitionImageLayout)load(context, "vkTransitionImageLayout");
+	vkUnmapMemory2 = (PFN_vkUnmapMemory2)load(context, "vkUnmapMemory2");
+#endif /* defined(VK_VERSION_1_4) */
 #if defined(VK_AMDX_shader_enqueue)
 	vkCmdDispatchGraphAMDX = (PFN_vkCmdDispatchGraphAMDX)load(context, "vkCmdDispatchGraphAMDX");
 	vkCmdDispatchGraphIndirectAMDX = (PFN_vkCmdDispatchGraphIndirectAMDX)load(context, "vkCmdDispatchGraphIndirectAMDX");
@@ -752,9 +773,11 @@ static void volkGenLoadDevice(void* context, PFN_vkVoidFunction (*load)(void*, c
 #endif /* defined(VK_EXT_line_rasterization) */
 #if defined(VK_EXT_mesh_shader)
 	vkCmdDrawMeshTasksEXT = (PFN_vkCmdDrawMeshTasksEXT)load(context, "vkCmdDrawMeshTasksEXT");
-	vkCmdDrawMeshTasksIndirectCountEXT = (PFN_vkCmdDrawMeshTasksIndirectCountEXT)load(context, "vkCmdDrawMeshTasksIndirectCountEXT");
 	vkCmdDrawMeshTasksIndirectEXT = (PFN_vkCmdDrawMeshTasksIndirectEXT)load(context, "vkCmdDrawMeshTasksIndirectEXT");
 #endif /* defined(VK_EXT_mesh_shader) */
+#if defined(VK_EXT_mesh_shader) && (defined(VK_KHR_draw_indirect_count) || defined(VK_VERSION_1_2))
+	vkCmdDrawMeshTasksIndirectCountEXT = (PFN_vkCmdDrawMeshTasksIndirectCountEXT)load(context, "vkCmdDrawMeshTasksIndirectCountEXT");
+#endif /* defined(VK_EXT_mesh_shader) && (defined(VK_KHR_draw_indirect_count) || defined(VK_VERSION_1_2)) */
 #if defined(VK_EXT_metal_objects)
 	vkExportMetalObjectsEXT = (PFN_vkExportMetalObjectsEXT)load(context, "vkExportMetalObjectsEXT");
 #endif /* defined(VK_EXT_metal_objects) */
@@ -1097,6 +1120,9 @@ static void volkGenLoadDevice(void* context, PFN_vkVoidFunction (*load)(void*, c
 #if defined(VK_NVX_image_view_handle)
 	vkGetImageViewHandleNVX = (PFN_vkGetImageViewHandleNVX)load(context, "vkGetImageViewHandleNVX");
 #endif /* defined(VK_NVX_image_view_handle) */
+#if defined(VK_NVX_image_view_handle) && VK_NVX_IMAGE_VIEW_HANDLE_SPEC_VERSION >= 3
+	vkGetImageViewHandle64NVX = (PFN_vkGetImageViewHandle64NVX)load(context, "vkGetImageViewHandle64NVX");
+#endif /* defined(VK_NVX_image_view_handle) && VK_NVX_IMAGE_VIEW_HANDLE_SPEC_VERSION >= 3 */
 #if defined(VK_NVX_image_view_handle) && VK_NVX_IMAGE_VIEW_HANDLE_SPEC_VERSION >= 2
 	vkGetImageViewAddressNVX = (PFN_vkGetImageViewAddressNVX)load(context, "vkGetImageViewAddressNVX");
 #endif /* defined(VK_NVX_image_view_handle) && VK_NVX_IMAGE_VIEW_HANDLE_SPEC_VERSION >= 2 */
@@ -1156,10 +1182,12 @@ static void volkGenLoadDevice(void* context, PFN_vkVoidFunction (*load)(void*, c
 	vkCmdDecompressMemoryNV = (PFN_vkCmdDecompressMemoryNV)load(context, "vkCmdDecompressMemoryNV");
 #endif /* defined(VK_NV_memory_decompression) */
 #if defined(VK_NV_mesh_shader)
-	vkCmdDrawMeshTasksIndirectCountNV = (PFN_vkCmdDrawMeshTasksIndirectCountNV)load(context, "vkCmdDrawMeshTasksIndirectCountNV");
 	vkCmdDrawMeshTasksIndirectNV = (PFN_vkCmdDrawMeshTasksIndirectNV)load(context, "vkCmdDrawMeshTasksIndirectNV");
 	vkCmdDrawMeshTasksNV = (PFN_vkCmdDrawMeshTasksNV)load(context, "vkCmdDrawMeshTasksNV");
 #endif /* defined(VK_NV_mesh_shader) */
+#if defined(VK_NV_mesh_shader) && (defined(VK_KHR_draw_indirect_count) || defined(VK_VERSION_1_2))
+	vkCmdDrawMeshTasksIndirectCountNV = (PFN_vkCmdDrawMeshTasksIndirectCountNV)load(context, "vkCmdDrawMeshTasksIndirectCountNV");
+#endif /* defined(VK_NV_mesh_shader) && (defined(VK_KHR_draw_indirect_count) || defined(VK_VERSION_1_2)) */
 #if defined(VK_NV_optical_flow)
 	vkBindOpticalFlowSessionImageNV = (PFN_vkBindOpticalFlowSessionImageNV)load(context, "vkBindOpticalFlowSessionImageNV");
 	vkCmdOpticalFlowExecuteNV = (PFN_vkCmdOpticalFlowExecuteNV)load(context, "vkCmdOpticalFlowExecuteNV");
@@ -1506,6 +1534,27 @@ static void volkGenLoadDeviceTable(struct VolkDeviceTable* table, void* context,
 	table->vkQueueSubmit2 = (PFN_vkQueueSubmit2)load(context, "vkQueueSubmit2");
 	table->vkSetPrivateData = (PFN_vkSetPrivateData)load(context, "vkSetPrivateData");
 #endif /* defined(VK_VERSION_1_3) */
+#if defined(VK_VERSION_1_4)
+	table->vkCmdBindDescriptorSets2 = (PFN_vkCmdBindDescriptorSets2)load(context, "vkCmdBindDescriptorSets2");
+	table->vkCmdBindIndexBuffer2 = (PFN_vkCmdBindIndexBuffer2)load(context, "vkCmdBindIndexBuffer2");
+	table->vkCmdPushConstants2 = (PFN_vkCmdPushConstants2)load(context, "vkCmdPushConstants2");
+	table->vkCmdPushDescriptorSet = (PFN_vkCmdPushDescriptorSet)load(context, "vkCmdPushDescriptorSet");
+	table->vkCmdPushDescriptorSet2 = (PFN_vkCmdPushDescriptorSet2)load(context, "vkCmdPushDescriptorSet2");
+	table->vkCmdPushDescriptorSetWithTemplate = (PFN_vkCmdPushDescriptorSetWithTemplate)load(context, "vkCmdPushDescriptorSetWithTemplate");
+	table->vkCmdPushDescriptorSetWithTemplate2 = (PFN_vkCmdPushDescriptorSetWithTemplate2)load(context, "vkCmdPushDescriptorSetWithTemplate2");
+	table->vkCmdSetLineStipple = (PFN_vkCmdSetLineStipple)load(context, "vkCmdSetLineStipple");
+	table->vkCmdSetRenderingAttachmentLocations = (PFN_vkCmdSetRenderingAttachmentLocations)load(context, "vkCmdSetRenderingAttachmentLocations");
+	table->vkCmdSetRenderingInputAttachmentIndices = (PFN_vkCmdSetRenderingInputAttachmentIndices)load(context, "vkCmdSetRenderingInputAttachmentIndices");
+	table->vkCopyImageToImage = (PFN_vkCopyImageToImage)load(context, "vkCopyImageToImage");
+	table->vkCopyImageToMemory = (PFN_vkCopyImageToMemory)load(context, "vkCopyImageToMemory");
+	table->vkCopyMemoryToImage = (PFN_vkCopyMemoryToImage)load(context, "vkCopyMemoryToImage");
+	table->vkGetDeviceImageSubresourceLayout = (PFN_vkGetDeviceImageSubresourceLayout)load(context, "vkGetDeviceImageSubresourceLayout");
+	table->vkGetImageSubresourceLayout2 = (PFN_vkGetImageSubresourceLayout2)load(context, "vkGetImageSubresourceLayout2");
+	table->vkGetRenderingAreaGranularity = (PFN_vkGetRenderingAreaGranularity)load(context, "vkGetRenderingAreaGranularity");
+	table->vkMapMemory2 = (PFN_vkMapMemory2)load(context, "vkMapMemory2");
+	table->vkTransitionImageLayout = (PFN_vkTransitionImageLayout)load(context, "vkTransitionImageLayout");
+	table->vkUnmapMemory2 = (PFN_vkUnmapMemory2)load(context, "vkUnmapMemory2");
+#endif /* defined(VK_VERSION_1_4) */
 #if defined(VK_AMDX_shader_enqueue)
 	table->vkCmdDispatchGraphAMDX = (PFN_vkCmdDispatchGraphAMDX)load(context, "vkCmdDispatchGraphAMDX");
 	table->vkCmdDispatchGraphIndirectAMDX = (PFN_vkCmdDispatchGraphIndirectAMDX)load(context, "vkCmdDispatchGraphIndirectAMDX");
@@ -1636,9 +1685,11 @@ static void volkGenLoadDeviceTable(struct VolkDeviceTable* table, void* context,
 #endif /* defined(VK_EXT_line_rasterization) */
 #if defined(VK_EXT_mesh_shader)
 	table->vkCmdDrawMeshTasksEXT = (PFN_vkCmdDrawMeshTasksEXT)load(context, "vkCmdDrawMeshTasksEXT");
-	table->vkCmdDrawMeshTasksIndirectCountEXT = (PFN_vkCmdDrawMeshTasksIndirectCountEXT)load(context, "vkCmdDrawMeshTasksIndirectCountEXT");
 	table->vkCmdDrawMeshTasksIndirectEXT = (PFN_vkCmdDrawMeshTasksIndirectEXT)load(context, "vkCmdDrawMeshTasksIndirectEXT");
 #endif /* defined(VK_EXT_mesh_shader) */
+#if defined(VK_EXT_mesh_shader) && (defined(VK_KHR_draw_indirect_count) || defined(VK_VERSION_1_2))
+	table->vkCmdDrawMeshTasksIndirectCountEXT = (PFN_vkCmdDrawMeshTasksIndirectCountEXT)load(context, "vkCmdDrawMeshTasksIndirectCountEXT");
+#endif /* defined(VK_EXT_mesh_shader) && (defined(VK_KHR_draw_indirect_count) || defined(VK_VERSION_1_2)) */
 #if defined(VK_EXT_metal_objects)
 	table->vkExportMetalObjectsEXT = (PFN_vkExportMetalObjectsEXT)load(context, "vkExportMetalObjectsEXT");
 #endif /* defined(VK_EXT_metal_objects) */
@@ -1981,6 +2032,9 @@ static void volkGenLoadDeviceTable(struct VolkDeviceTable* table, void* context,
 #if defined(VK_NVX_image_view_handle)
 	table->vkGetImageViewHandleNVX = (PFN_vkGetImageViewHandleNVX)load(context, "vkGetImageViewHandleNVX");
 #endif /* defined(VK_NVX_image_view_handle) */
+#if defined(VK_NVX_image_view_handle) && VK_NVX_IMAGE_VIEW_HANDLE_SPEC_VERSION >= 3
+	table->vkGetImageViewHandle64NVX = (PFN_vkGetImageViewHandle64NVX)load(context, "vkGetImageViewHandle64NVX");
+#endif /* defined(VK_NVX_image_view_handle) && VK_NVX_IMAGE_VIEW_HANDLE_SPEC_VERSION >= 3 */
 #if defined(VK_NVX_image_view_handle) && VK_NVX_IMAGE_VIEW_HANDLE_SPEC_VERSION >= 2
 	table->vkGetImageViewAddressNVX = (PFN_vkGetImageViewAddressNVX)load(context, "vkGetImageViewAddressNVX");
 #endif /* defined(VK_NVX_image_view_handle) && VK_NVX_IMAGE_VIEW_HANDLE_SPEC_VERSION >= 2 */
@@ -2040,10 +2094,12 @@ static void volkGenLoadDeviceTable(struct VolkDeviceTable* table, void* context,
 	table->vkCmdDecompressMemoryNV = (PFN_vkCmdDecompressMemoryNV)load(context, "vkCmdDecompressMemoryNV");
 #endif /* defined(VK_NV_memory_decompression) */
 #if defined(VK_NV_mesh_shader)
-	table->vkCmdDrawMeshTasksIndirectCountNV = (PFN_vkCmdDrawMeshTasksIndirectCountNV)load(context, "vkCmdDrawMeshTasksIndirectCountNV");
 	table->vkCmdDrawMeshTasksIndirectNV = (PFN_vkCmdDrawMeshTasksIndirectNV)load(context, "vkCmdDrawMeshTasksIndirectNV");
 	table->vkCmdDrawMeshTasksNV = (PFN_vkCmdDrawMeshTasksNV)load(context, "vkCmdDrawMeshTasksNV");
 #endif /* defined(VK_NV_mesh_shader) */
+#if defined(VK_NV_mesh_shader) && (defined(VK_KHR_draw_indirect_count) || defined(VK_VERSION_1_2))
+	table->vkCmdDrawMeshTasksIndirectCountNV = (PFN_vkCmdDrawMeshTasksIndirectCountNV)load(context, "vkCmdDrawMeshTasksIndirectCountNV");
+#endif /* defined(VK_NV_mesh_shader) && (defined(VK_KHR_draw_indirect_count) || defined(VK_VERSION_1_2)) */
 #if defined(VK_NV_optical_flow)
 	table->vkBindOpticalFlowSessionImageNV = (PFN_vkBindOpticalFlowSessionImageNV)load(context, "vkBindOpticalFlowSessionImageNV");
 	table->vkCmdOpticalFlowExecuteNV = (PFN_vkCmdOpticalFlowExecuteNV)load(context, "vkCmdOpticalFlowExecuteNV");
@@ -2426,6 +2482,27 @@ PFN_vkGetPrivateData vkGetPrivateData;
 PFN_vkQueueSubmit2 vkQueueSubmit2;
 PFN_vkSetPrivateData vkSetPrivateData;
 #endif /* defined(VK_VERSION_1_3) */
+#if defined(VK_VERSION_1_4)
+PFN_vkCmdBindDescriptorSets2 vkCmdBindDescriptorSets2;
+PFN_vkCmdBindIndexBuffer2 vkCmdBindIndexBuffer2;
+PFN_vkCmdPushConstants2 vkCmdPushConstants2;
+PFN_vkCmdPushDescriptorSet vkCmdPushDescriptorSet;
+PFN_vkCmdPushDescriptorSet2 vkCmdPushDescriptorSet2;
+PFN_vkCmdPushDescriptorSetWithTemplate vkCmdPushDescriptorSetWithTemplate;
+PFN_vkCmdPushDescriptorSetWithTemplate2 vkCmdPushDescriptorSetWithTemplate2;
+PFN_vkCmdSetLineStipple vkCmdSetLineStipple;
+PFN_vkCmdSetRenderingAttachmentLocations vkCmdSetRenderingAttachmentLocations;
+PFN_vkCmdSetRenderingInputAttachmentIndices vkCmdSetRenderingInputAttachmentIndices;
+PFN_vkCopyImageToImage vkCopyImageToImage;
+PFN_vkCopyImageToMemory vkCopyImageToMemory;
+PFN_vkCopyMemoryToImage vkCopyMemoryToImage;
+PFN_vkGetDeviceImageSubresourceLayout vkGetDeviceImageSubresourceLayout;
+PFN_vkGetImageSubresourceLayout2 vkGetImageSubresourceLayout2;
+PFN_vkGetRenderingAreaGranularity vkGetRenderingAreaGranularity;
+PFN_vkMapMemory2 vkMapMemory2;
+PFN_vkTransitionImageLayout vkTransitionImageLayout;
+PFN_vkUnmapMemory2 vkUnmapMemory2;
+#endif /* defined(VK_VERSION_1_4) */
 #if defined(VK_AMDX_shader_enqueue)
 PFN_vkCmdDispatchGraphAMDX vkCmdDispatchGraphAMDX;
 PFN_vkCmdDispatchGraphIndirectAMDX vkCmdDispatchGraphIndirectAMDX;
@@ -2597,9 +2674,11 @@ PFN_vkCmdSetLineStippleEXT vkCmdSetLineStippleEXT;
 #endif /* defined(VK_EXT_line_rasterization) */
 #if defined(VK_EXT_mesh_shader)
 PFN_vkCmdDrawMeshTasksEXT vkCmdDrawMeshTasksEXT;
-PFN_vkCmdDrawMeshTasksIndirectCountEXT vkCmdDrawMeshTasksIndirectCountEXT;
 PFN_vkCmdDrawMeshTasksIndirectEXT vkCmdDrawMeshTasksIndirectEXT;
 #endif /* defined(VK_EXT_mesh_shader) */
+#if defined(VK_EXT_mesh_shader) && (defined(VK_KHR_draw_indirect_count) || defined(VK_VERSION_1_2))
+PFN_vkCmdDrawMeshTasksIndirectCountEXT vkCmdDrawMeshTasksIndirectCountEXT;
+#endif /* defined(VK_EXT_mesh_shader) && (defined(VK_KHR_draw_indirect_count) || defined(VK_VERSION_1_2)) */
 #if defined(VK_EXT_metal_objects)
 PFN_vkExportMetalObjectsEXT vkExportMetalObjectsEXT;
 #endif /* defined(VK_EXT_metal_objects) */
@@ -3040,6 +3119,9 @@ PFN_vkDestroyCuModuleNVX vkDestroyCuModuleNVX;
 #if defined(VK_NVX_image_view_handle)
 PFN_vkGetImageViewHandleNVX vkGetImageViewHandleNVX;
 #endif /* defined(VK_NVX_image_view_handle) */
+#if defined(VK_NVX_image_view_handle) && VK_NVX_IMAGE_VIEW_HANDLE_SPEC_VERSION >= 3
+PFN_vkGetImageViewHandle64NVX vkGetImageViewHandle64NVX;
+#endif /* defined(VK_NVX_image_view_handle) && VK_NVX_IMAGE_VIEW_HANDLE_SPEC_VERSION >= 3 */
 #if defined(VK_NVX_image_view_handle) && VK_NVX_IMAGE_VIEW_HANDLE_SPEC_VERSION >= 2
 PFN_vkGetImageViewAddressNVX vkGetImageViewAddressNVX;
 #endif /* defined(VK_NVX_image_view_handle) && VK_NVX_IMAGE_VIEW_HANDLE_SPEC_VERSION >= 2 */
@@ -3115,10 +3197,12 @@ PFN_vkCmdDecompressMemoryIndirectCountNV vkCmdDecompressMemoryIndirectCountNV;
 PFN_vkCmdDecompressMemoryNV vkCmdDecompressMemoryNV;
 #endif /* defined(VK_NV_memory_decompression) */
 #if defined(VK_NV_mesh_shader)
-PFN_vkCmdDrawMeshTasksIndirectCountNV vkCmdDrawMeshTasksIndirectCountNV;
 PFN_vkCmdDrawMeshTasksIndirectNV vkCmdDrawMeshTasksIndirectNV;
 PFN_vkCmdDrawMeshTasksNV vkCmdDrawMeshTasksNV;
 #endif /* defined(VK_NV_mesh_shader) */
+#if defined(VK_NV_mesh_shader) && (defined(VK_KHR_draw_indirect_count) || defined(VK_VERSION_1_2))
+PFN_vkCmdDrawMeshTasksIndirectCountNV vkCmdDrawMeshTasksIndirectCountNV;
+#endif /* defined(VK_NV_mesh_shader) && (defined(VK_KHR_draw_indirect_count) || defined(VK_VERSION_1_2)) */
 #if defined(VK_NV_optical_flow)
 PFN_vkBindOpticalFlowSessionImageNV vkBindOpticalFlowSessionImageNV;
 PFN_vkCmdOpticalFlowExecuteNV vkCmdOpticalFlowExecuteNV;

@@ -254,6 +254,86 @@ typedef struct VkPhysicalDeviceVulkan13Properties_Compat {
     VkDeviceSize          maxBufferSize;
 } VkPhysicalDeviceVulkan13Properties_Compat;
 
+typedef struct VkPhysicalDeviceVulkan14Features_Compat {
+    VkStructureType    sType;
+    void*              pNext;
+    VkBool32           globalPriorityQuery;
+    VkBool32           shaderSubgroupRotate;
+    VkBool32           shaderSubgroupRotateClustered;
+    VkBool32           shaderFloatControls2;
+    VkBool32           shaderExpectAssume;
+    VkBool32           rectangularLines;
+    VkBool32           bresenhamLines;
+    VkBool32           smoothLines;
+    VkBool32           stippledRectangularLines;
+    VkBool32           stippledBresenhamLines;
+    VkBool32           stippledSmoothLines;
+    VkBool32           vertexAttributeInstanceRateDivisor;
+    VkBool32           vertexAttributeInstanceRateZeroDivisor;
+    VkBool32           indexTypeUint8;
+    VkBool32           dynamicRenderingLocalRead;
+    VkBool32           maintenance5;
+    VkBool32           maintenance6;
+    VkBool32           pipelineProtectedAccess;
+    VkBool32           pipelineRobustness;
+    VkBool32           hostImageCopy;
+    VkBool32           pushDescriptor;
+} VkPhysicalDeviceVulkan14Features_Compat;
+
+typedef enum VkPipelineRobustnessBufferBehavior_Compat {
+    COMPAT_VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT = 0,
+    COMPAT_VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED = 1,
+    COMPAT_VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS = 2,
+    COMPAT_VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2 = 3,
+    COMPAT_VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT_EXT = COMPAT_VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT,
+    COMPAT_VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT = COMPAT_VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED,
+    COMPAT_VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_EXT = COMPAT_VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS,
+    COMPAT_VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT = COMPAT_VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2,
+    COMPAT_VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_MAX_ENUM = 0x7FFFFFFF
+} VkPipelineRobustnessBufferBehavior_Compat;
+
+typedef enum VkPipelineRobustnessImageBehavior_Compat {
+    COMPAT_VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_DEVICE_DEFAULT = 0,
+    COMPAT_VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_DISABLED = 1,
+    COMPAT_VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS = 2,
+    COMPAT_VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_2 = 3,
+    COMPAT_VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_DEVICE_DEFAULT_EXT = COMPAT_VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_DEVICE_DEFAULT,
+    COMPAT_VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_DISABLED_EXT = COMPAT_VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_DISABLED,
+    COMPAT_VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_EXT = COMPAT_VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS,
+    COMPAT_VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_2_EXT = COMPAT_VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_2,
+    COMPAT_VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_MAX_ENUM = 0x7FFFFFFF
+} VkPipelineRobustnessImageBehavior_Compat;
+
+typedef struct VkPhysicalDeviceVulkan14Properties_Compat {
+    VkStructureType                       sType;
+    void*                                 pNext;
+    uint32_t                              lineSubPixelPrecisionBits;
+    uint32_t                              maxVertexAttribDivisor;
+    VkBool32                              supportsNonZeroFirstInstance;
+    uint32_t                              maxPushDescriptors;
+    VkBool32                              dynamicRenderingLocalReadDepthStencilAttachments;
+    VkBool32                              dynamicRenderingLocalReadMultisampledAttachments;
+    VkBool32                              earlyFragmentMultisampleCoverageAfterSampleCounting;
+    VkBool32                              earlyFragmentSampleMaskTestBeforeSampleCounting;
+    VkBool32                              depthStencilSwizzleOneSupport;
+    VkBool32                              polygonModePointSize;
+    VkBool32                              nonStrictSinglePixelWideLinesUseParallelogram;
+    VkBool32                              nonStrictWideLinesUseParallelogram;
+    VkBool32                              blockTexelViewCompatibleMultipleLayers;
+    uint32_t                              maxCombinedImageSamplerDescriptorCount;
+    VkBool32                              fragmentShadingRateClampCombinerInputs;
+    VkPipelineRobustnessBufferBehavior_Compat    defaultRobustnessStorageBuffers;
+    VkPipelineRobustnessBufferBehavior_Compat    defaultRobustnessUniformBuffers;
+    VkPipelineRobustnessBufferBehavior_Compat    defaultRobustnessVertexInputs;
+    VkPipelineRobustnessImageBehavior_Compat     defaultRobustnessImages;
+    uint32_t                              copySrcLayoutCount;
+    VkImageLayout*                        pCopySrcLayouts;
+    uint32_t                              copyDstLayoutCount;
+    VkImageLayout*                        pCopyDstLayouts;
+    uint8_t                               optimalTilingLayoutUUID[VK_UUID_SIZE];
+    VkBool32                              identicalMemoryTypeRequirements;
+} VkPhysicalDeviceVulkan14Properties_Compat;
+
 typedef struct VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT_Compat {
     VkStructureType    sType;
     void*              pNext;
