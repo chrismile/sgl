@@ -55,9 +55,15 @@ docs/html/*
 docs/latex/*
 /Debug/
 
-build/*
-build*/*
-
 # CLion
 .idea/*
 cmake-build-*/
+
+build/*
+build*/*
+
+# Build script
+.build/*
+.build_*
+install/*
+vcpkg_installed/*
