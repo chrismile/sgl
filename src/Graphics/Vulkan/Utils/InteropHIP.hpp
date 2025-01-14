@@ -30,7 +30,8 @@
 #define SGL_INTEROPHIP_HPP
 
 #if __has_include(<hip/hip_runtime.h>)
-#define __HIP_PLATFORM_HCC__
+//#define __HIP_PLATFORM_HCC__
+#define __HIP_PLATFORM_AMD__
 #include <hip/hip_runtime.h>
 #include <hip/hip_runtime_api.h>
 #include <hip/hiprtc.h>

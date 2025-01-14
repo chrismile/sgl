@@ -1000,6 +1000,10 @@ if (USE_HIP)
     target_include_directories(sgl PUBLIC "${HIP_INCLUDE_DIR}")
 endif()
 
+if (USE_HIP OR ${USE_CUDA})
+    target_compile_definitions(sgl PUBLIC SUPPORT_COMPUTE_INTEROP)
+endif()
+
 # Windows needs Boost::Interprocess for the singleton class.
 if (WIN32 OR ${USE_BOOST})
     if (EMSCRIPTEN)
