@@ -479,7 +479,7 @@ BufferComputeApiExternalMemoryVk::BufferComputeApiExternalMemoryVk(vk::BufferPtr
 BufferComputeApiExternalMemoryVk::~BufferComputeApiExternalMemoryVk() {
 #ifdef _WIN32
     CloseHandle(handle);
-#else
+#elif defined(__linux__)
     if (fileDescriptor != -1) {
         close(fileDescriptor);
         fileDescriptor = -1;
