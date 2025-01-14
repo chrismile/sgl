@@ -957,7 +957,7 @@ if (${SUPPORT_D3D12})
     target_compile_definitions(sgl PUBLIC SUPPORT_D3D12)
 endif()
 
-if (${USE_CUDA})
+if (DEFINED USE_CUDA)
     target_compile_definitions(sgl PUBLIC SUPPORT_CUDA_INTEROP)
     get_target_property(SGL_INTERFACE_COMPILE_DEFINITIONS sgl INTERFACE_COMPILE_DEFINITIONS)
     if(${CUDAToolkit_FOUND})
@@ -1000,7 +1000,7 @@ if (USE_HIP)
     target_include_directories(sgl PUBLIC "${HIP_INCLUDE_DIR}")
 endif()
 
-if (USE_HIP OR ${USE_CUDA})
+if (DEFINED USE_HIP OR DEFINED USE_CUDA)
     target_compile_definitions(sgl PUBLIC SUPPORT_COMPUTE_INTEROP)
 endif()
 
