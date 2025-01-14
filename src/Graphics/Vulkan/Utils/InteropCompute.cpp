@@ -421,7 +421,6 @@ BufferComputeApiExternalMemoryVk::BufferComputeApiExternalMemoryVk(vk::BufferPtr
     Logfile::get()->throwError(
             "Error in BufferComputeApiExternalMemoryVk::BufferComputeApiExternalMemoryVk: "
             "External memory is only supported on Linux, Android and Windows systems!");
-    return false;
 
 #endif
 
