@@ -34,10 +34,9 @@
 
 #ifdef SUPPORT_HIP_INTEROP
 #include "InteropHIP.hpp"
-#endif
-
 #if HIP_VERSION_MAJOR < 6
 #error Please install HIP SDK >= 6.0 for timeline semaphore support.
+#endif
 #endif
 
 #if defined(__linux__)
