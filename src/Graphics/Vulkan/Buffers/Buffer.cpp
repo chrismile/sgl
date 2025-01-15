@@ -622,6 +622,7 @@ void Buffer::fill(VkDeviceSize offset, VkDeviceSize size, uint32_t data, VkComma
     vkCmdFillBuffer(commandBuffer, buffer, offset, size, data);
 }
 
+
 void* Buffer::mapMemory() {
     if (memoryUsage != VMA_MEMORY_USAGE_CPU_ONLY && memoryUsage != VMA_MEMORY_USAGE_CPU_TO_GPU
             && memoryUsage != VMA_MEMORY_USAGE_GPU_TO_CPU && memoryUsage != VMA_MEMORY_USAGE_CPU_COPY) {
@@ -651,6 +652,67 @@ void Buffer::unmapMemory() {
         vkUnmapMemory(device->getVkDevice(), deviceMemory);
     }
 }
+
+void Buffer::copyHostMemoryToAllocation(const void* hostSrcPointer) {
+    if (bufferAllocation) {
+        vmaCopyMemoryToAllocation(
+                device->getAllocator(), hostSrcPointer, bufferAllocation, 0, bufferAllocationInfo.size);
+    } else if (deviceMemory) {
+        void* mappedPtr = mapMemory();
+        memcpy(mappedPtr, hostSrcPointer, sizeInBytes);
+        VkMappedMemoryRange mappedMemoryRange{};
+        mappedMemoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+        mappedMemoryRange.memory = deviceMemory;
+        mappedMemoryRange.offset = deviceMemoryOffset;
+        mappedMemoryRange.size = sizeInBytes;
+        vkFlushMappedMemoryRanges(device->getVkDevice(), 1, &mappedMemoryRange);
+        unmapMemory();
+    }
+}
+
+void Buffer::copyAllocationToHostMemory(void* hostDstPointer) {
+    if (bufferAllocation) {
+        vmaCopyAllocationToMemory(
+                device->getAllocator(), bufferAllocation, 0, hostDstPointer, bufferAllocationInfo.size);
+    } else if (deviceMemory) {
+        VkMappedMemoryRange mappedMemoryRange{};
+        mappedMemoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+        mappedMemoryRange.memory = deviceMemory;
+        mappedMemoryRange.offset = deviceMemoryOffset;
+        mappedMemoryRange.size = sizeInBytes;
+        void* mappedPtr = mapMemory();
+        vkInvalidateMappedMemoryRanges(device->getVkDevice(), 1, &mappedMemoryRange);
+        memcpy(hostDstPointer, mappedPtr, sizeInBytes);
+        unmapMemory();
+    }
+}
+
+void Buffer::flushMappedMemoryRanges() {
+    if (bufferAllocation) {
+        vmaFlushAllocation(device->getAllocator(), bufferAllocation, 0, bufferAllocationInfo.size);
+    } else if (deviceMemory) {
+        VkMappedMemoryRange mappedMemoryRange{};
+        mappedMemoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+        mappedMemoryRange.memory = deviceMemory;
+        mappedMemoryRange.offset = deviceMemoryOffset;
+        mappedMemoryRange.size = sizeInBytes;
+        vkFlushMappedMemoryRanges(device->getVkDevice(), 1, &mappedMemoryRange);
+    }
+}
+
+void Buffer::invalidateMappedMemoryRanges() {
+    if (bufferAllocation) {
+        vmaInvalidateAllocation(device->getAllocator(), bufferAllocation, 0, bufferAllocationInfo.size);
+    } else if (deviceMemory) {
+        VkMappedMemoryRange mappedMemoryRange{};
+        mappedMemoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+        mappedMemoryRange.memory = deviceMemory;
+        mappedMemoryRange.offset = deviceMemoryOffset;
+        mappedMemoryRange.size = sizeInBytes;
+        vkInvalidateMappedMemoryRanges(device->getVkDevice(), 1, &mappedMemoryRange);
+    }
+}
+
 
 VkDeviceAddress Buffer::getVkDeviceAddress() {
     VkBufferDeviceAddressInfo bufferDeviceAddressInfo{};

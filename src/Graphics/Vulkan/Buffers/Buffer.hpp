@@ -263,6 +263,35 @@ public:
     void* mapMemory();
     void unmapMemory();
 
+    /**
+     * Internally uses vmaCopyMemoryToAllocation, which combines map, memcpy vkFlushMappedMemoryRanges (if the memory
+     * does not have the MEMORY_PROPERTY_HOST_COHERENT_BIT flag) and unmap.
+     * WARNING: May only be used with a MEMORY_PROPERTY_HOST_VISIBLE_BIT buffer object.
+     * @param hostSrcPointer The host source pointer.
+     */
+    void copyHostMemoryToAllocation(const void* hostSrcPointer);
+
+    /**
+     * Internally uses vmaCopyAllocationToMemory, which combines map, vkInvalidateMappedMemoryRanges (if the
+     * memory does not have the MEMORY_PROPERTY_HOST_COHERENT_BIT flag), memcpy and unmap.
+     * WARNING: May only be used with a MEMORY_PROPERTY_HOST_VISIBLE_BIT buffer object.
+     * @param hostDstPointer The host destination pointer.
+     */
+    void copyAllocationToHostMemory(void* hostDstPointer);
+
+    /**
+     * If the memory used for buffer allocation does not have the MEMORY_PROPERTY_HOST_COHERENT_BIT flag bit set,
+     * this function needs to be used before accessing data on the GPU that has been written to from the CPU.
+     * The flag VK_ACCESS_HOST_WRITE_BIT should be used for operations on the GPU afterwards.
+     */
+    void flushMappedMemoryRanges();
+
+    /**
+     * If the memory used for buffer allocation does not have the MEMORY_PROPERTY_HOST_COHERENT_BIT flag bit set,
+     * this function needs to be used before reading any data on the CPU that has been written to from the GPU.
+     */
+    void invalidateMappedMemoryRanges();
+
     VkDeviceAddress getVkDeviceAddress();
 
     [[nodiscard]] inline VkBuffer getVkBuffer() { return buffer; }

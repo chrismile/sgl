@@ -35,6 +35,7 @@
 #include <Utils/File/Logfile.hpp>
 #include <Math/Math.hpp>
 #include <Graphics/Window.hpp>
+#include <Graphics/Vulkan/Buffers/Buffer.hpp>
 #include "Status.hpp"
 #include "Instance.hpp"
 #include "Swapchain.hpp"
@@ -2222,6 +2223,41 @@ void Device::endSingleTimeMultipleCommands(
     commandPoolType.queueFamilyIndex = queueIndex;
     VkCommandPool commandPool = commandPools.find(commandPoolType)->second;
     vkFreeCommandBuffers(device, commandPool, uint32_t(commandBuffers.size()), commandBuffers.data());
+}
+
+void Device::insertMemoryBarrier(
+        VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+        VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+        VkCommandBuffer commandBuffer) {
+    VkMemoryBarrier memoryBarrier{};
+    memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+    memoryBarrier.srcAccessMask = srcAccessMask;
+    memoryBarrier.dstAccessMask = dstAccessMask;
+
+    vkCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, 0, 1, &memoryBarrier, 0, nullptr, 0, nullptr);
+}
+
+void Device::insertBufferMemoryBarrier(
+        VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+        VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+        uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex,
+        const BufferPtr& buffer, VkCommandBuffer commandBuffer) {
+    VkMemoryBarrier memoryBarrier{};
+    memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+    memoryBarrier.srcAccessMask = srcAccessMask;
+    memoryBarrier.dstAccessMask = dstAccessMask;
+
+    VkBufferMemoryBarrier bufferMemoryBarrier{};
+    bufferMemoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    bufferMemoryBarrier.srcAccessMask = srcAccessMask;
+    bufferMemoryBarrier.dstAccessMask = dstAccessMask;
+    bufferMemoryBarrier.srcQueueFamilyIndex = srcQueueFamilyIndex;
+    bufferMemoryBarrier.dstQueueFamilyIndex = dstQueueFamilyIndex;
+    bufferMemoryBarrier.buffer = buffer->getVkBuffer();
+    bufferMemoryBarrier.size = buffer->getSizeInBytes();
+
+    vkCmdPipelineBarrier(
+            commandBuffer, srcStageMask, dstStageMask, 0, 1, &memoryBarrier, 1, &bufferMemoryBarrier, 0, nullptr);
 }
 
 PFN_vkGetDeviceProcAddr Device::getVkDeviceProcAddrFunctionPointer() {

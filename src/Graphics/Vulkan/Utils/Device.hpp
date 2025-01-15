@@ -36,6 +36,7 @@
 #include <map>
 #include <unordered_map>
 #include <functional>
+#include <memory>
 #include <thread>
 
 #include <Defs.hpp>
@@ -104,6 +105,8 @@ template<> struct hash<sgl::vk::MemoryPoolType> {
 namespace sgl { namespace vk {
 
 class Instance;
+class Buffer;
+typedef std::shared_ptr<Buffer> BufferPtr;
 
 struct DLL_OBJECT DeviceFeatures {
     DeviceFeatures() {
@@ -519,6 +522,17 @@ public:
     void endSingleTimeMultipleCommands(
             const std::vector<VkCommandBuffer>& commandBuffers, uint32_t queueIndex = 0xFFFFFFFF,
             bool endCommandBuffer = true);
+
+    // Synchronization primitives.
+    void insertMemoryBarrier(
+            VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+            VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+            VkCommandBuffer commandBuffer);
+    void insertBufferMemoryBarrier(
+            VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+            VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+            uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex,
+            const BufferPtr& buffer, VkCommandBuffer commandBuffer);
 
     inline Instance* getInstance() { return instance; }
 
