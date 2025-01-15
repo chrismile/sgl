@@ -109,6 +109,7 @@ public:
 #endif
 
     void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream);
+    void copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream);
 
 protected:
     sgl::vk::BufferPtr vulkanBuffer;

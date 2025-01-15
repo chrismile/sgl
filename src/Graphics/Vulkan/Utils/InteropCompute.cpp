@@ -527,14 +527,40 @@ void BufferComputeApiExternalMemoryVk::copyFromDevicePtrAsync(void* devicePtrSrc
     if (useCuda) {
 #ifdef SUPPORT_CUDA_INTEROP
         CUresult cuResult = g_cudaDeviceApiFunctionTable.cuMemcpyAsync(
-                this->getCudaDevicePtr(), reinterpret_cast<CUdeviceptr>(devicePtr),
+                this->getCudaDevicePtr(), reinterpret_cast<CUdeviceptr>(devicePtrSrc),
                 vulkanBuffer->getSizeInBytes(), stream.cuStream);
         checkCUresult(cuResult, "Error in cuMemcpyAsync: ");
 #endif
     } else if (useHip) {
 #ifdef SUPPORT_HIP_INTEROP
         hipError_t hipResult = g_hipDeviceApiFunctionTable.hipMemcpyAsync(
-                this->getHipDevicePtr(), reinterpret_cast<hipDeviceptr_t>(devicePtr),
+                this->getHipDevicePtr(), reinterpret_cast<hipDeviceptr_t>(devicePtrSrc),
+                vulkanBuffer->getSizeInBytes(), stream.hipStream);
+        checkHipResult(hipResult, "Error in cuMemcpyAsync: ");
+#endif
+    }
+}
+
+void BufferComputeApiExternalMemoryVk::copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream) {
+    bool useCuda = false, useHip = false;
+#ifdef SUPPORT_CUDA_INTEROP
+    useCuda = getIsCudaDeviceApiFunctionTableInitialized();
+#endif
+#ifdef SUPPORT_HIP_INTEROP
+    useHip = getIsHipDeviceApiFunctionTableInitialized();
+#endif
+
+    if (useCuda) {
+#ifdef SUPPORT_CUDA_INTEROP
+        CUresult cuResult = g_cudaDeviceApiFunctionTable.cuMemcpyAsync(
+                reinterpret_cast<CUdeviceptr>(devicePtrDst), this->getCudaDevicePtr(),
+                vulkanBuffer->getSizeInBytes(), stream.cuStream);
+        checkCUresult(cuResult, "Error in cuMemcpyAsync: ");
+#endif
+    } else if (useHip) {
+#ifdef SUPPORT_HIP_INTEROP
+        hipError_t hipResult = g_hipDeviceApiFunctionTable.hipMemcpyAsync(
+                reinterpret_cast<hipDeviceptr_t>(devicePtrDst), this->getHipDevicePtr(),
                 vulkanBuffer->getSizeInBytes(), stream.hipStream);
         checkHipResult(hipResult, "Error in cuMemcpyAsync: ");
 #endif
