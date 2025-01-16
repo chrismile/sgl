@@ -104,7 +104,7 @@ public:
 #ifdef SUPPORT_CUDA_INTEROP
     [[nodiscard]] inline CUdeviceptr getCudaDevicePtr() const { return reinterpret_cast<CUdeviceptr>(devicePtr); }
 #endif
-#ifdef SUPPORT_CUDA_INTEROP
+#ifdef SUPPORT_HIP_INTEROP
     [[nodiscard]] inline hipDeviceptr_t getHipDevicePtr() const { return reinterpret_cast<hipDeviceptr_t>(devicePtr); }
 #endif
 
