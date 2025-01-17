@@ -2002,6 +2002,59 @@ bool Device::getSupportsFormat(VkFormat format, VkImageTiling imageTiling) {
     }
 }
 
+bool Device::checkPhysicalDeviceFeaturesSupported(const VkPhysicalDeviceFeatures& featuresRequired) {
+    constexpr size_t numFeatures = sizeof(VkPhysicalDeviceFeatures) / sizeof(VkBool32);
+    auto featuresSupportedArray = reinterpret_cast<VkBool32*>(&physicalDeviceFeatures);
+    auto featuresRequiredArray = reinterpret_cast<const VkBool32*>(&featuresRequired);
+    for (size_t i = 0; i < numFeatures; i++) {
+        if (featuresRequiredArray[i] && !featuresSupportedArray[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool Device::checkPhysicalDeviceFeatures11Supported(
+#ifdef VK_VERSION_1_1
+        const VkPhysicalDeviceVulkan11Features& featuresRequired) {
+#else
+        const VkPhysicalDeviceVulkan11Features_Compat& featuresRequired) {
+#endif
+#ifdef VK_VERSION_1_1
+    const size_t numVulkan11Features =
+            1 + (&physicalDeviceVulkan11Features.shaderDrawParameters) - (&physicalDeviceVulkan11Features.storageBuffer16BitAccess);
+    auto featuresSupportedArray = reinterpret_cast<VkBool32*>(&physicalDeviceVulkan11Features.storageBuffer16BitAccess);
+    auto featuresRequiredArray = reinterpret_cast<const VkBool32*>(&featuresRequired.storageBuffer16BitAccess);
+    for (size_t i = 0; i < numVulkan11Features; i++) {
+        if (featuresRequiredArray[i] && !featuresSupportedArray[i]) {
+            return false;
+        }
+    }
+    return true;
+#endif
+}
+
+bool Device::checkPhysicalDeviceFeatures12Supported(
+#ifdef VK_VERSION_1_2
+        const VkPhysicalDeviceVulkan12Features& featuresRequired) {
+#else
+        const VkPhysicalDeviceVulkan12Features_Compat& featuresRequired) {
+#endif
+#ifdef VK_VERSION_1_2
+    const size_t numVulkan12Features =
+            1 + (&physicalDeviceVulkan12Features.subgroupBroadcastDynamicId)
+            - (&physicalDeviceVulkan12Features.samplerMirrorClampToEdge);
+    auto featuresSupportedArray = reinterpret_cast<VkBool32*>(&physicalDeviceVulkan12Features.samplerMirrorClampToEdge);
+    auto featuresRequiredArray = reinterpret_cast<const VkBool32*>(&featuresRequired.samplerMirrorClampToEdge);
+    for (size_t i = 0; i < numVulkan12Features; i++) {
+        if (featuresRequiredArray[i] && !featuresSupportedArray[i]) {
+            return false;
+        }
+    }
+    return true;
+#endif
+}
+
 uint32_t Device::findMemoryTypeIndex(uint32_t memoryTypeBits, VkMemoryPropertyFlags memoryPropertyFlags) {
     for (uint32_t memoryTypeIndex = 0; memoryTypeIndex < physicalDeviceMemoryProperties.memoryTypeCount; memoryTypeIndex++) {
         if (((physicalDeviceMemoryProperties.memoryTypes[memoryTypeIndex].propertyFlags & memoryPropertyFlags) == memoryPropertyFlags

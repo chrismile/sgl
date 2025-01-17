@@ -457,6 +457,18 @@ public:
     std::vector<VkFormat> getSupportedDepthStencilFormats(VkImageTiling imageTiling = VK_IMAGE_TILING_OPTIMAL);
     bool getSupportsFormat(VkFormat format, VkImageTiling imageTiling = VK_IMAGE_TILING_OPTIMAL);
 
+    bool checkPhysicalDeviceFeaturesSupported(const VkPhysicalDeviceFeatures& featuresRequired);
+#ifdef VK_VERSION_1_1
+    bool checkPhysicalDeviceFeatures11Supported(const VkPhysicalDeviceVulkan11Features& featuresRequired);
+#else
+    bool checkPhysicalDeviceFeatures11Supported(const VkPhysicalDeviceVulkan11Features_Compat& featuresRequired);
+#endif
+#ifdef VK_VERSION_1_2
+    bool checkPhysicalDeviceFeatures12Supported(const VkPhysicalDeviceVulkan12Features& featuresRequired);
+#else
+    bool checkPhysicalDeviceFeatures12Supported(const VkPhysicalDeviceVulkan12Features_Compat& featuresRequired);
+#endif
+
     /**
      * Returns the index of the memory type with the corresponding bits and property flags.
      * @param memoryTypeBits The memory type bits as returned by, e.g., VkMemoryRequirements::memoryTypeBits.
