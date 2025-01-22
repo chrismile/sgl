@@ -39,6 +39,80 @@
 #endif
 #endif
 
+#ifdef SUPPORT_ONEAPI_INTEROP
+#include <sycl/sycl.hpp>
+#include <sycl/backend/level_zero.hpp>
+#endif
+#ifdef SUPPORT_SYCL_INTEROP
+#include <sycl/sycl.hpp>
+#include <sycl/backend/level_zero.hpp>
+#endif
+
+/*
+ * TODO
+ * It still needs to be investigated how interop should be done on Intel platforms.
+ * A PyTorch tutorial suggests the installation of the "Intel Deep Learning Essentials" package is necessary.
+ * It includes SYCL with a ur_adapter_level_zero.dll DLL, but no Level Zero headers or ze_loader.dll file.
+ * I assume (?) that we could dynamically load ur_adapter_level_zero.dll and find all symbols in there?
+ *
+ * Some handles on how to import Vulkan memory and semaphores:
+ * - https://oneapi-src.github.io/level-zero-spec/level-zero/latest/core/api.html
+ * -> ZE_STRUCTURE_TYPE_DEVICE_EXTERNAL_MEMORY_PROPERTIES
+ *   -> ze_device_external_memory_properties_t
+ * -> ZE_STRUCTURE_TYPE_EXTERNAL_MEMORY_EXPORT_DESC
+ *   -> ze_external_memory_export_desc_t
+ * -> ZE_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMPORT_FD
+ *   -> ze_external_memory_import_fd_t
+ * -> ZE_STRUCTURE_TYPE_EXTERNAL_MEMORY_EXPORT_FD
+ *   -> ze_external_memory_export_fd_t
+ * -> ZE_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMPORT_WIN32
+ *   -> ze_external_memory_import_win32_handle_t
+ * -> ZE_STRUCTURE_TYPE_EXTERNAL_MEMORY_EXPORT_WIN32
+ *   -> ze_external_memory_export_win32_handle_t
+ * -> ZE_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_EXT_DESC
+ *   -> ze_external_semaphore_ext_desc_t
+ * -> ZE_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_WIN32_EXT_DESC
+ *   -> ze_external_semaphore_win32_ext_desc_t
+ * -> ZE_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_FD_EXT_DESC
+ *   -> ze_external_semaphore_fd_ext_desc_t
+ * -> ZE_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_SIGNAL_PARAMS_EXT
+ *   -> ze_external_semaphore_signal_params_ext_t
+ * -> ZE_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_WAIT_PARAMS_EXT
+ *   -> ze_external_semaphore_wait_params_ext_t
+ * -> ze_external_memory_type_flags_t
+ * -> zeDeviceGetExternalMemoryProperties
+ * -> zeMemAllocDevice, zeImageCreate
+ * -> zeCommandQueueSynchronize
+ * -> zeDeviceImportExternalSemaphoreExt, zeDeviceReleaseExternalSemaphoreExt
+ * -> zeCommandListAppendSignalExternalSemaphoreExt
+ * -> zeCommandListAppendWaitExternalSemaphoreExt
+ * -> ZE_EXTERNAL_SEMAPHORE_EXT_FLAG_OPAQUE_FD
+ * -> ZE_EXTERNAL_SEMAPHORE_EXT_FLAG_VK_TIMELINE_SEMAPHORE_FD
+ * -> ZE_EXTERNAL_SEMAPHORE_EXT_FLAG_OPAQUE_WIN32
+ * -> ZE_EXTERNAL_SEMAPHORE_EXT_FLAG_VK_TIMELINE_SEMAPHORE_WIN32
+ *
+ * How to check what backends SYCL supports?
+ * "C:\Program Files (x86)\Intel\oneAPI\compiler\2025.0\env\vars.bat"
+ * "C:\Program Files (x86)\Intel\oneAPI\ocloc\2025.0\env\vars.bat"
+ * sycl-ls
+ *
+ * How to build Level Zero loader library?
+ * git clone https://github.com/oneapi-src/level-zero.git level-zero-src
+ * cmake -S . -B build
+ * cmake --build build --config Release
+ * cmake --install build --config Release --prefix /home/christoph/build/SDL-3.2.0
+ */
+
+#ifdef SUPPORT_SYCL_INTEROP
+void testSyclInterop(sycl::device* syclDevice, sycl::queue* syclQueue, void* devicePtr) {
+    auto levelZeroQueue = sycl::get_native<sycl::backend::ext_oneapi_level_zero>(*syclQueue);
+    ze_device_handle_t levelZeroDevice = sycl::get_native<sycl::backend::ext_oneapi_level_zero>(*syclDevice);
+
+    //ze_device_properties_t props = { ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES };
+    //zeDeviceGetProperties(ze_device, &props);
+}
+#endif
+
 #if defined(__linux__)
 #include <dlfcn.h>
 #include <unistd.h>
