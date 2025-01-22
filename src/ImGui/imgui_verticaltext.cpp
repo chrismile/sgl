@@ -57,7 +57,7 @@ ImVec2 CalcTextSizeVertical(
 }
 
 void AddTextVertical(
-        ImDrawList* draw_list, const ImFont* font, float font_size, const ImVec2& pos,
+        ImDrawList* draw_list, ImFont* font, float font_size, const ImVec2& pos,
         ImU32 col, const char* text_begin, const char* text_end, float wrap_height, const ImVec4* cpu_fine_clip_rect,
         bool orientation_ccw) {
     if ((col & IM_COL32_A_MASK) == 0)
@@ -98,7 +98,7 @@ void AddTextVertical(
 }
 
 void RenderTextVertical(
-        ImDrawList* draw_list, const ImFont* font, float size, ImVec2 pos, ImU32 col, const ImVec4& clip_rect,
+        ImDrawList* draw_list, ImFont* font, float size, ImVec2 pos, ImU32 col, const ImVec4& clip_rect,
         const char* text_begin, const char* text_end, float wrap_height, bool cpu_fine_clip, bool orientation_ccw) {
     if (!text_end)
         text_end = text_begin + strlen(text_begin); // ImGui:: functions generally already provides a valid text_end, so this is merely to handle direct calls.

@@ -160,7 +160,7 @@ bool ImGui::ClickArea(const char *str_id, const ImVec2 &size_arg, bool &mouseRel
     if (!ImGui::ItemAdd(bb, id))
         return false;
 
-    bool hovered = ImGui::ItemHoverable(bb, id, g.LastItemData.InFlags);
+    bool hovered = ImGui::ItemHoverable(bb, id, g.LastItemData.ItemFlags);
     bool clicked = ImGui::GetIO().MouseClicked[0] || ImGui::GetIO().MouseClicked[1] || ImGui::GetIO().MouseClicked[2];
     mouseReleased = ImGui::GetIO().MouseReleased[0];
 
@@ -231,12 +231,12 @@ bool ImGui::SliderScalarActive(const char* label, ImGuiDataType data_type, void*
     if (format == NULL)
         format = DataTypeGetInfo(data_type)->PrintFmt;
 
-    const bool hovered = is_active && ItemHoverable(frame_bb, id, g.LastItemData.InFlags);
+    const bool hovered = is_active && ItemHoverable(frame_bb, id, g.LastItemData.ItemFlags);
     bool temp_input_is_active = temp_input_allowed && TempInputIsActive(id);
     if (!temp_input_is_active)
     {
         // Tabbing or CTRL-clicking on Slider turns it into an input box
-        const bool clicked = hovered && IsMouseClicked(0, id);
+        const bool clicked = hovered && IsMouseClicked(0, ImGuiInputFlags_None, id);
         const bool make_active = (clicked || g.NavActivateId == id);
         if (make_active && clicked)
             SetKeyOwner(ImGuiKey_MouseLeft, id);
@@ -344,12 +344,12 @@ bool ImGui::SliderIntPowerOfTwo(const char* label, int* v, int v_min, int v_max,
         format = DataTypeGetInfo(ImGuiDataType_S32)->PrintFmt;
 
     // Tabbing or CTRL-clicking on Slider turns it into an input box
-    const bool hovered = ItemHoverable(frame_bb, id, g.LastItemData.InFlags);
+    const bool hovered = ItemHoverable(frame_bb, id, g.LastItemData.ItemFlags);
     bool temp_input_is_active = temp_input_allowed && TempInputIsActive(id);
     if (!temp_input_is_active)
     {
         // Tabbing or CTRL-clicking on Slider turns it into an input box
-        const bool clicked = hovered && IsMouseClicked(0, id);
+        const bool clicked = hovered && IsMouseClicked(0, ImGuiInputFlags_None, id);
         const bool make_active = (clicked || g.NavActivateId == id);
         if (make_active && clicked)
             SetKeyOwner(ImGuiKey_MouseLeft, id);

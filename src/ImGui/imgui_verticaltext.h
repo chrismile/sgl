@@ -68,12 +68,12 @@ IMGUI_API void AddTextVertical(
         bool orientation_ccw = false);
 
 IMGUI_API void AddTextVertical(
-        ImDrawList* draw_list, const ImFont* font, float font_size, const ImVec2& pos, ImU32 col,
+        ImDrawList* draw_list, ImFont* font, float font_size, const ImVec2& pos, ImU32 col,
         const char* text_begin, const char* text_end = NULL, float wrap_height = 0.0f,
         const ImVec4* cpu_fine_clip_rect = NULL, bool orientation_ccw = false);
 
 IMGUI_API void RenderTextVertical(
-        ImDrawList* draw_list, const ImFont* font, float size, ImVec2 pos, ImU32 col, const ImVec4& clip_rect,
+        ImDrawList* draw_list, ImFont* font, float size, ImVec2 pos, ImU32 col, const ImVec4& clip_rect,
         const char* text_begin, const char* text_end, float wrap_height = 0.0f, bool cpu_fine_clip = false,
         bool orientation_ccw = false);
 

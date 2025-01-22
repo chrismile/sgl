@@ -1,5 +1,5 @@
 /**
- * This is an extension of SDL2 for WebGPU, abstracting away the details of
+ * This is an extension of SDL3 for WebGPU, abstracting away the details of
  * OS-specific operations.
  * 
  * This file is part of the "Learn WebGPU for C++" book.
@@ -9,7 +9,7 @@
  *   https://github.com/gfx-rs/wgpu-native/blob/master/examples/triangle/main.c
  * 
  * MIT License
- * Copyright (c) 2022-2023 Elie Michel and the wgpu-native authors
+ * Copyright (c) 2022-2024 Elie Michel and the wgpu-native authors
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,33 +30,37 @@
  * SOFTWARE.
  */
 
-#include "sdl2webgpu.h"
+#include "sdl3webgpu.h"
 
 #include <webgpu/webgpu.h>
 
-#if defined(SDL_VIDEO_DRIVER_COCOA)
+#if defined(SDL_PLATFORM_MACOS)
 #  include <Cocoa/Cocoa.h>
 #  include <Foundation/Foundation.h>
 #  include <QuartzCore/CAMetalLayer.h>
-#elif defined(SDL_VIDEO_DRIVER_UIKIT)
+#elif defined(SDL_PLATFORM_IOS)
 #  include <UIKit/UIKit.h>
 #  include <Foundation/Foundation.h>
 #  include <QuartzCore/CAMetalLayer.h>
 #  include <Metal/Metal.h>
+#elif defined(SDL_PLATFORM_WIN32)
+#  include <windows.h>
+#elif defined(SDL_VIDEO_DRIVER_X11)
+#  include <X11/Xlib.h>
+#elif defined(SDL_VIDEO_DRIVER_WAYLAND)
+#  include <wayland-client-core.h>
 #endif
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_syswm.h>
+#include <SDL3/SDL.h>
 
-WGPUSurface SDL2_GetWGPUSurface(WGPUInstance instance, SDL_Window* window) {
-    SDL_SysWMinfo windowWMInfo;
-    SDL_VERSION(&windowWMInfo.version);
-    SDL_GetWindowWMInfo(window, &windowWMInfo);
+WGPUSurface SDL3_GetWGPUSurface(WGPUInstance instance, SDL_Window* window) {
+    SDL_PropertiesID props = SDL_GetWindowProperties(window);
 
-#if defined(SDL_VIDEO_DRIVER_COCOA)
+#if defined(SDL_PLATFORM_MACOS)
     {
         id metal_layer = NULL;
-        NSWindow* ns_window = windowWMInfo.info.cocoa.window;
+        NSWindow *ns_window = (__bridge NSWindow *)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_COCOA_WINDOW_POINTER, NULL);
+        if (!ns_window) return NULL;
         [ns_window.contentView setWantsLayer : YES];
         metal_layer = [CAMetalLayer layer];
         [ns_window.contentView setLayer : metal_layer];
@@ -77,9 +81,11 @@ WGPUSurface SDL2_GetWGPUSurface(WGPUInstance instance, SDL_Window* window) {
 
         return wgpuInstanceCreateSurface(instance, &surfaceDescriptor);
     }
-#elif defined(SDL_VIDEO_DRIVER_UIKIT)
+#elif defined(SDL_PLATFORM_IOS)
     {
-        UIWindow* ui_window = windowWMInfo.info.uikit.window;
+        UIWindow *ui_window = (__bridge UIWindow *)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_UIKIT_WINDOW_POINTER, NULL);
+        if (!uiwindow) return NULL;
+
         UIView* ui_view = ui_window.rootViewController.view;
         CAMetalLayer* metal_layer = [CAMetalLayer new];
         metal_layer.opaque = true;
@@ -104,18 +110,20 @@ WGPUSurface SDL2_GetWGPUSurface(WGPUInstance instance, SDL_Window* window) {
 
         return wgpuInstanceCreateSurface(instance, &surfaceDescriptor);
     }
-#elif defined(SDL_VIDEO_DRIVER_X11)
-    {
-        Display* x11_display = windowWMInfo.info.x11.display;
-        Window x11_window = windowWMInfo.info.x11.window;
+#elif defined(SDL_PLATFORM_LINUX)
+#  if defined(SDL_VIDEO_DRIVER_X11)
+    if (SDL_strcmp(SDL_GetCurrentVideoDriver(), "x11") == 0) {
+        Display *x11_display = (Display *)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, NULL);
+        Window x11_window = (Window)SDL_GetNumberProperty(props, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0);
+        if (!x11_display || !x11_window) return NULL;
 
-#  ifdef WEBGPU_BACKEND_DAWN
+#    ifdef WEBGPU_BACKEND_DAWN
         WGPUSurfaceSourceXlibWindow fromXlibWindow;
         fromXlibWindow.chain.sType = WGPUSType_SurfaceSourceXlibWindow;
-#  else
+#    else
         WGPUSurfaceDescriptorFromXlibWindow fromXlibWindow;
         fromXlibWindow.chain.sType = WGPUSType_SurfaceDescriptorFromXlibWindow;
-#  endif
+#    endif
         fromXlibWindow.chain.next = NULL;
         fromXlibWindow.display = x11_display;
         fromXlibWindow.window = x11_window;
@@ -126,18 +134,20 @@ WGPUSurface SDL2_GetWGPUSurface(WGPUInstance instance, SDL_Window* window) {
 
         return wgpuInstanceCreateSurface(instance, &surfaceDescriptor);
     }
-#elif defined(SDL_VIDEO_DRIVER_WAYLAND)
-    {
-        struct wl_display* wayland_display = windowWMInfo.info.wl.display;
-        struct wl_surface* wayland_surface = windowWMInfo.info.wl.surface;
+#  endif // defined(SDL_VIDEO_DRIVER_X11)
+#  if defined(SDL_VIDEO_DRIVER_WAYLAND)
+    else if (SDL_strcmp(SDL_GetCurrentVideoDriver(), "wayland") == 0) {
+        struct wl_display *wayland_display = (struct wl_display *)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WAYLAND_DISPLAY_POINTER, NULL);
+        struct wl_surface *wayland_surface = (struct wl_surface *)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WAYLAND_SURFACE_POINTER, NULL);
+        if (!wayland_display || !wayland_surface) return NULL;
 
-#  ifdef WEBGPU_BACKEND_DAWN
+#    ifdef WEBGPU_BACKEND_DAWN
         WGPUSurfaceSourceWaylandSurface fromWaylandSurface;
         fromWaylandSurface.chain.sType = WGPUSType_SurfaceSourceWaylandSurface;
-#  else
+#    else
         WGPUSurfaceDescriptorFromWaylandSurface fromWaylandSurface;
         fromWaylandSurface.chain.sType = WGPUSType_SurfaceDescriptorFromWaylandSurface;
-#  endif
+#    endif
         fromWaylandSurface.chain.next = NULL;
         fromWaylandSurface.display = wayland_display;
         fromWaylandSurface.surface = wayland_surface;
@@ -148,9 +158,11 @@ WGPUSurface SDL2_GetWGPUSurface(WGPUInstance instance, SDL_Window* window) {
 
         return wgpuInstanceCreateSurface(instance, &surfaceDescriptor);
     }
-#elif defined(SDL_VIDEO_DRIVER_WINDOWS)
+#  endif // defined(SDL_VIDEO_DRIVER_WAYLAND)
+#elif defined(SDL_PLATFORM_WIN32)
     {
-        HWND hwnd = windowWMInfo.info.win.window;
+        HWND hwnd = (HWND)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+        if (!hwnd) return NULL;
         HINSTANCE hinstance = GetModuleHandle(NULL);
 
 #  ifdef WEBGPU_BACKEND_DAWN
@@ -170,7 +182,7 @@ WGPUSurface SDL2_GetWGPUSurface(WGPUInstance instance, SDL_Window* window) {
 
         return wgpuInstanceCreateSurface(instance, &surfaceDescriptor);
     }
-#elif defined(SDL_VIDEO_DRIVER_EMSCRIPTEN)
+#elif defined(__EMSCRIPTEN__)
     {
 #  ifdef WEBGPU_BACKEND_DAWN
         WGPUSurfaceSourceCanvasHTMLSelector_Emscripten fromCanvasHTMLSelector;

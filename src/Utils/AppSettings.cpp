@@ -80,6 +80,13 @@
 #include <SDL/Input/SDLGamepad.hpp>
 #endif
 
+#ifdef SUPPORT_SDL2
+#include <SDL3/SDL3Window.hpp>
+#include <SDL3/Input/SDL3Mouse.hpp>
+#include <SDL3/Input/SDL3Keyboard.hpp>
+#include <SDL3/Input/SDL3Gamepad.hpp>
+#endif
+
 #ifdef SUPPORT_GLFW
 #include <GLFW/GlfwWindow.hpp>
 #include <GLFW/Input/GlfwMouse.hpp>

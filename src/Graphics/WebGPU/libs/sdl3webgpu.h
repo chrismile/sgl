@@ -1,12 +1,12 @@
 /**
- * This is an extension of SDL2 for WebGPU, abstracting away the details of
+ * This is an extension of SDL3 for WebGPU, abstracting away the details of
  * OS-specific operations.
  * 
  * This file is part of the "Learn WebGPU for C++" book.
  *   https://eliemichel.github.io/LearnWebGPU
  * 
  * MIT License
- * Copyright (c) 2022-2023 Elie Michel and the wgpu-native authors
+ * Copyright (c) 2022-2024 Elie Michel and the wgpu-native authors
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,23 +27,23 @@
  * SOFTWARE.
  */
 
-#ifndef _sdl2_webgpu_h_
-#define _sdl2_webgpu_h_
+#ifndef _sdl3_webgpu_h_
+#define _sdl3_webgpu_h_
 
 #include <webgpu/webgpu.h>
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * Get a WGPUSurface from a SDL2 window.
+ * Get a WGPUSurface from a SDL3 window.
  */
-WGPUSurface SDL2_GetWGPUSurface(WGPUInstance instance, SDL_Window* window);
+WGPUSurface SDL3_GetWGPUSurface(WGPUInstance instance, SDL_Window* window);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // _sdl2_webgpu_h_
+#endif // _sdl3_webgpu_h_

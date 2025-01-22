@@ -424,6 +424,7 @@ void ImGuiWrapper::renderStart() {
         initInfo.Queue = device->getGraphicsQueue();
         initInfo.PipelineCache = VK_NULL_HANDLE;
         initInfo.DescriptorPool = imguiDescriptorPool;
+        initInfo.RenderPass = framebuffer->getVkRenderPass();
         /// 2024-06-22: ImGui_ImplVulkan_SetMinImageCount in imgui_impl_vulkan.cpp does not support variable minimum
         /// image counts in the docking branch, but Wayland seems to use them.
         if (window->getUsesAnyWaylandBackend()) {
@@ -439,7 +440,7 @@ void ImGuiWrapper::renderStart() {
         ImGui_ImplVulkan_LoadFunctions([](const char* functionName, void* instance) {
             return vkGetInstanceProcAddr(static_cast<VkInstance>(instance), functionName);
         }, instance->getVkInstance());
-        ImGui_ImplVulkan_Init(&initInfo, framebuffer->getVkRenderPass());
+        ImGui_ImplVulkan_Init(&initInfo);
 
         //ImGui_ImplVulkan_CreateFontsTexture();
         //ImGui_ImplVulkan_DestroyFontUploadObjects();
@@ -467,8 +468,7 @@ void ImGuiWrapper::renderStart() {
 
 #ifdef SUPPORT_SDL2
     if (window->getBackend() == WindowBackend::SDL2_IMPL) {
-        auto* sdlWindow = static_cast<SDLWindow*>(window);
-        ImGui_ImplSDL2_NewFrame(sdlWindow->getSDLWindow());
+        ImGui_ImplSDL2_NewFrame();
     }
 #endif
 #ifdef SUPPORT_GLFW

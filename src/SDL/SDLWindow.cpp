@@ -280,7 +280,7 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
                     std::string() + "Error in SDLWindow::initialize: Failed to create a WebGPU instance.");
         }
         errorCheckSDLCritical();
-        webgpuSurface = SDL_GetWGPUSurface(instance->getWGPUInstance(), sdlWindow);
+        webgpuSurface = SDL2_GetWGPUSurface(instance->getWGPUInstance(), sdlWindow);
         if (!webgpuSurface) {
             sgl::Logfile::get()->throwError(
                     std::string() + "Error in SDLWindow::initialize: Failed to create a WebGPU surface.");

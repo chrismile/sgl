@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2024, Christoph Neuhauser
+ * Copyright (c) 2025, Christoph Neuhauser
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,24 +26,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_RENDERSYSTEM_HPP
-#define SGL_RENDERSYSTEM_HPP
+#ifndef SGL_SDL3WINDOW_HPP
+#define SGL_SDL3WINDOW_HPP
 
-namespace sgl {
 
-// At the moment, only OpenGL and Vulkan are supported.
-enum class RenderSystem {
-    OPENGL, OPENGLES, VULKAN, WEBGPU, DIRECT3D_11, DIRECT3D_12, METAL
+class SDL3Window {
+
 };
 
-enum class OperatingSystem {
-    WINDOWS, LINUX, ANDROID, MACOS, IOS, UNKNOWN
-};
 
-enum class WindowBackend {
-    NONE, SDL2_IMPL, GLFW_IMPL, SDL3_IMPL
-};
-
-}
-
-#endif //SGL_RENDERSYSTEM_HPP
+#endif //SGL_SDL3WINDOW_HPP
