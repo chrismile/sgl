@@ -243,7 +243,9 @@ SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop(
 #endif
     }
 
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
     ze_external_semaphore_fd_ext_desc_t externalSemaphoreFdExtDesc{};
+#endif
     if (useLevelZero) {
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
         externalSemaphoreFdExtDesc.stype = ZE_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_FD_EXT_DESC;
@@ -558,7 +560,9 @@ BufferComputeApiExternalMemoryVk::BufferComputeApiExternalMemoryVk(vk::BufferPtr
 #endif
     }
 
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
     ze_external_memory_import_fd_t externalMemoryImportFd{};
+#endif
     if (useLevelZero) {
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
         externalMemoryImportFd.stype = ZE_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMPORT_FD;

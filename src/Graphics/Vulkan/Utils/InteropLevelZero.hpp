@@ -41,8 +41,8 @@
  * A PyTorch tutorial (https://pytorch.org/docs/main/notes/get_start_xpu.html) suggests that the installation of the
  * "Intel Deep Learning Essentials" package is necessary. It includes SYCL with a ur_adapter_level_zero.dll file, but no
  * Level Zero headers or loader. We ship the headers with sgl, as they are released under the MIT license.
- * For Windows, it seems like the loader is automatically installed with the drivers.
- * On Linux, they can be obtained from here:
+ * For Windows, it seems like the loader is automatically installed with the drivers at C:/Windows/System32/ze_loader.dll.
+ * On Linux, the necessary components can be obtained from here:
  * - Level Zero driver (intel-level-zero-gpu): https://github.com/intel/compute-runtime/releases
  * - Level Zero loader (level-zero, level-zero-devel): https://github.com/oneapi-src/level-zero/releases
  * For more details see: https://github.com/intel/compute-runtime/blob/master/level_zero/doc/BUILD.md
