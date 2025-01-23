@@ -137,7 +137,7 @@ DLL_OBJECT extern HiprtcFunctionTable g_hiprtcFunctionTable;
 #endif
 
 DLL_OBJECT void _checkHipResult(hipError_t hipResult, const char* text, const char* locationText);
-#define checkHipResult(cuResult, text) _checkHipResult(cuResult, text, __FILE__ ":" TOSTRING(__LINE__))
+#define checkHipResult(hipResult, text) _checkHipResult(hipResult, text, __FILE__ ":" TOSTRING(__LINE__))
 
 DLL_OBJECT bool initializeHipDeviceApiFunctionTable();
 DLL_OBJECT bool getIsHipDeviceApiFunctionTableInitialized();

@@ -39,78 +39,8 @@
 #endif
 #endif
 
-#ifdef SUPPORT_ONEAPI_INTEROP
-#include <sycl/sycl.hpp>
-#include <sycl/backend/level_zero.hpp>
-#endif
-#ifdef SUPPORT_SYCL_INTEROP
-#include <sycl/sycl.hpp>
-#include <sycl/backend/level_zero.hpp>
-#endif
-
-/*
- * TODO
- * It still needs to be investigated how interop should be done on Intel platforms.
- * A PyTorch tutorial suggests the installation of the "Intel Deep Learning Essentials" package is necessary.
- * It includes SYCL with a ur_adapter_level_zero.dll DLL, but no Level Zero headers or ze_loader.dll file.
- * I assume (?) that we could dynamically load ur_adapter_level_zero.dll and find all symbols in there?
- *
- * Some handles on how to import Vulkan memory and semaphores:
- * - https://oneapi-src.github.io/level-zero-spec/level-zero/latest/core/api.html
- * -> ZE_STRUCTURE_TYPE_DEVICE_EXTERNAL_MEMORY_PROPERTIES
- *   -> ze_device_external_memory_properties_t
- * -> ZE_STRUCTURE_TYPE_EXTERNAL_MEMORY_EXPORT_DESC
- *   -> ze_external_memory_export_desc_t
- * -> ZE_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMPORT_FD
- *   -> ze_external_memory_import_fd_t
- * -> ZE_STRUCTURE_TYPE_EXTERNAL_MEMORY_EXPORT_FD
- *   -> ze_external_memory_export_fd_t
- * -> ZE_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMPORT_WIN32
- *   -> ze_external_memory_import_win32_handle_t
- * -> ZE_STRUCTURE_TYPE_EXTERNAL_MEMORY_EXPORT_WIN32
- *   -> ze_external_memory_export_win32_handle_t
- * -> ZE_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_EXT_DESC
- *   -> ze_external_semaphore_ext_desc_t
- * -> ZE_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_WIN32_EXT_DESC
- *   -> ze_external_semaphore_win32_ext_desc_t
- * -> ZE_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_FD_EXT_DESC
- *   -> ze_external_semaphore_fd_ext_desc_t
- * -> ZE_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_SIGNAL_PARAMS_EXT
- *   -> ze_external_semaphore_signal_params_ext_t
- * -> ZE_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_WAIT_PARAMS_EXT
- *   -> ze_external_semaphore_wait_params_ext_t
- * -> ze_external_memory_type_flags_t
- * -> zeDeviceGetExternalMemoryProperties
- * -> zeMemAllocDevice, zeImageCreate
- * -> zeCommandQueueSynchronize
- * -> zeDeviceImportExternalSemaphoreExt, zeDeviceReleaseExternalSemaphoreExt
- * -> zeCommandListAppendSignalExternalSemaphoreExt
- * -> zeCommandListAppendWaitExternalSemaphoreExt
- * -> ZE_EXTERNAL_SEMAPHORE_EXT_FLAG_OPAQUE_FD
- * -> ZE_EXTERNAL_SEMAPHORE_EXT_FLAG_VK_TIMELINE_SEMAPHORE_FD
- * -> ZE_EXTERNAL_SEMAPHORE_EXT_FLAG_OPAQUE_WIN32
- * -> ZE_EXTERNAL_SEMAPHORE_EXT_FLAG_VK_TIMELINE_SEMAPHORE_WIN32
- *
- * How to check what backends SYCL supports?
- * "C:\Program Files (x86)\Intel\oneAPI\compiler\2025.0\env\vars.bat"
- * "C:\Program Files (x86)\Intel\oneAPI\ocloc\2025.0\env\vars.bat"
- * sycl-ls
- *
- * How to build Level Zero loader library?
- * git clone https://github.com/oneapi-src/level-zero.git level-zero-src
- * cmake -S . -B build
- * cmake --build build --config Release
- * cmake --install build --config Release --prefix /home/christoph/build/SDL-3.2.0
- */
-
-#ifdef SUPPORT_SYCL_INTEROP
-void testSyclInterop(sycl::device* syclDevice, sycl::queue* syclQueue, void* devicePtr) {
-    auto levelZeroQueue = sycl::get_native<sycl::backend::ext_oneapi_level_zero>(*syclQueue);
-    ze_device_handle_t levelZeroDevice = sycl::get_native<sycl::backend::ext_oneapi_level_zero>(*syclDevice);
-
-    //ze_device_properties_t props = { ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES };
-    //zeDeviceGetProperties(ze_device, &props);
-}
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+#include "InteropLevelZero.hpp"
 #endif
 
 #if defined(__linux__)
@@ -124,7 +54,36 @@ void testSyclInterop(sycl::device* syclDevice, sycl::queue* syclQueue, void* dev
 #include <vulkan/vulkan_win32.h>
 #endif
 
+#ifdef SUPPORT_SYCL_INTEROP
+#include <sycl/sycl.hpp>
+#include <sycl/ext/oneapi/backend/level_zero.hpp>
+#endif
+
 namespace sgl { namespace vk {
+
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+static ze_device_handle_t g_zeDevice = {};
+static ze_context_handle_t g_zeContext = {};
+static ze_event_handle_t g_zeSignalEvent = {};
+static uint32_t g_numWaitEvents = 0;
+static ze_event_handle_t* g_zeWaitEvents = {};
+void setLevelZeroGlobalState(ze_device_handle_t zeDevice, ze_context_handle_t zeContext) {
+    g_zeDevice = zeDevice;
+    g_zeContext = zeContext;
+}
+void setLevelZeroNextCommandEvents(
+        ze_event_handle_t zeSignalEvent, uint32_t numWaitEvents, ze_event_handle_t* zeWaitEvents) {
+    g_zeSignalEvent = zeSignalEvent;
+    g_numWaitEvents = numWaitEvents;
+    g_zeWaitEvents = zeWaitEvents;
+}
+#ifdef SUPPORT_SYCL_INTEROP
+void setLevelZeroGlobalStateFromSyclQueue(sycl::queue& syclQueue) {
+    g_zeDevice = sycl::get_native<sycl::backend::ext_oneapi_level_zero>(syclQueue.get_device());
+    g_zeContext = sycl::get_native<sycl::backend::ext_oneapi_level_zero>(syclQueue.get_context());
+}
+#endif
+#endif
 
 SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop(
         sgl::vk::Device* device, VkSemaphoreCreateFlags semaphoreCreateFlags,
@@ -145,7 +104,7 @@ SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop(
             &exportSemaphoreCreateInfo);
 
 
-    bool useCuda = false, useHip = false;
+    bool useCuda = false, useHip = false, useLevelZero = false;
 #ifdef SUPPORT_CUDA_INTEROP
     CUDA_EXTERNAL_SEMAPHORE_HANDLE_DESC externalSemaphoreHandleDesc{};
     useCuda = getIsCudaDeviceApiFunctionTableInitialized();
@@ -154,10 +113,22 @@ SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop(
     hipExternalSemaphoreHandleDesc externalSemaphoreHandleDescHip{};
     useHip = getIsHipDeviceApiFunctionTableInitialized();
 #endif
-    if (useCuda && useHip) {
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+    ze_external_semaphore_ext_desc_t externalSemaphoreExtDesc{};
+    externalSemaphoreExtDesc.stype = ZE_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_EXT_DESC;
+    useLevelZero = getIsLevelZeroFunctionTableInitialized();
+    if (useLevelZero) {
+        if (!g_zeDevice) {
+            sgl::Logfile::get()->throwError(
+                    "Error in SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop: "
+                    "Level Zero is initialized, but the global device object is not set.");
+        }
+    }
+#endif
+    if (int(useCuda) + int(useHip) + int(useLevelZero) != 1) {
         sgl::Logfile::get()->throwError(
-                "Error in BufferComputeApiExternalMemoryVk::BufferComputeApiExternalMemoryVk: "
-                "Both CUDA and HIP have been initialized.");
+                "Error in SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop: "
+                "Only one out of CUDA, HIP and Level Zero interop can be initialized at a time.");
     }
 
 #if defined(_WIN32)
@@ -206,6 +177,20 @@ SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop(
             externalSemaphoreHandleDescHip.type = hipExternalSemaphoreHandleTypeOpaqueWin32;
         }
         externalSemaphoreHandleDescHip.handle.win32.handle = handle;
+#endif
+    }
+
+    ze_external_semaphore_win32_ext_desc_t externalSemaphoreWin32ExtDesc{};
+    if (useLevelZero) {
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+        externalSemaphoreWin32ExtDesc.stype = ZE_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_WIN32_EXT_DESC;
+        externalSemaphoreExtDesc.pNext = &externalSemaphoreWin32ExtDesc;
+        if (isTimelineSemaphore()) {
+            externalSemaphoreExtDesc.flags = ZE_EXTERNAL_SEMAPHORE_EXT_FLAG_VK_TIMELINE_SEMAPHORE_WIN32;
+        } else {
+            externalSemaphoreExtDesc.flags = ZE_EXTERNAL_SEMAPHORE_EXT_FLAG_OPAQUE_WIN32;
+        }
+        externalSemaphoreWin32ExtDesc.handle = handle;
 #endif
     }
 
@@ -258,6 +243,20 @@ SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop(
 #endif
     }
 
+    ze_external_semaphore_fd_ext_desc_t externalSemaphoreFdExtDesc{};
+    if (useLevelZero) {
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+        externalSemaphoreFdExtDesc.stype = ZE_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_FD_EXT_DESC;
+        externalSemaphoreExtDesc.pNext = &externalSemaphoreFdExtDesc;
+        if (isTimelineSemaphore()) {
+            externalSemaphoreExtDesc.flags = ZE_EXTERNAL_SEMAPHORE_EXT_FLAG_VK_TIMELINE_SEMAPHORE_FD;
+        } else {
+            externalSemaphoreExtDesc.flags = ZE_EXTERNAL_SEMAPHORE_EXT_FLAG_OPAQUE_FD;
+        }
+        externalSemaphoreFdExtDesc.fd = fileDescriptor;
+#endif
+    }
+
 #endif // defined(__linux__)
 
 
@@ -281,6 +280,17 @@ SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop(
 #endif
     }
 
+    if (useLevelZero) {
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+        ze_external_semaphore_ext_handle_t zeExternalSemaphore{};
+        ze_result_t zeResult = g_levelZeroFunctionTable.zeDeviceImportExternalSemaphoreExt(
+                g_zeDevice, &externalSemaphoreExtDesc, &zeExternalSemaphore);
+        checkZeResult(zeResult, "Error in zeDeviceImportExternalSemaphoreExt: ");
+        externalSemaphore = reinterpret_cast<void*>(zeExternalSemaphore);
+#endif
+    }
+
+
     /*
      * https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__EXTRES__INTEROP.html
      * - CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD and CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_TIMELINE_SEMAPHORE_FD:
@@ -295,12 +305,15 @@ SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop(
 }
 
 SemaphoreVkComputeApiInterop::~SemaphoreVkComputeApiInterop() {
-    bool useCuda = false, useHip = false;
+    bool useCuda = false, useHip = false, useLevelZero = false;
 #ifdef SUPPORT_CUDA_INTEROP
     useCuda = getIsCudaDeviceApiFunctionTableInitialized();
 #endif
 #ifdef SUPPORT_HIP_INTEROP
     useHip = getIsHipDeviceApiFunctionTableInitialized();
+#endif
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+    useLevelZero = getIsLevelZeroFunctionTableInitialized();
 #endif
 
     if (useCuda) {
@@ -315,16 +328,25 @@ SemaphoreVkComputeApiInterop::~SemaphoreVkComputeApiInterop() {
         hipError_t hipResult = g_hipDeviceApiFunctionTable.hipDestroyExternalSemaphore(hipExternalSemaphore);
         checkHipResult(hipResult, "Error in hipDestroyExternalSemaphore: ");
 #endif
+    } else if (useLevelZero) {
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+        auto zeExternalSemaphore = reinterpret_cast<ze_external_semaphore_ext_handle_t>(externalSemaphore);
+        ze_result_t zeResult = g_levelZeroFunctionTable.zeDeviceReleaseExternalSemaphoreExt(zeExternalSemaphore);
+        checkZeResult(zeResult, "Error in zeDeviceReleaseExternalSemaphoreExt: ");
+#endif
     }
 }
 
 void SemaphoreVkComputeApiInterop::signalSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue) {
-    bool useCuda = false, useHip = false;
+    bool useCuda = false, useHip = false, useLevelZero = false;
 #ifdef SUPPORT_CUDA_INTEROP
     useCuda = getIsCudaDeviceApiFunctionTableInitialized();
 #endif
 #ifdef SUPPORT_HIP_INTEROP
     useHip = getIsHipDeviceApiFunctionTableInitialized();
+#endif
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+    useLevelZero = getIsLevelZeroFunctionTableInitialized();
 #endif
 
     if (useCuda) {
@@ -349,16 +371,30 @@ void SemaphoreVkComputeApiInterop::signalSemaphoreComputeApi(StreamWrapper strea
                 &hipExternalSemaphore, &signalParams, 1, stream.hipStream);
         checkHipResult(hipResult, "Error in hipSignalExternalSemaphoresAsync: ");
 #endif
+    } else if (useLevelZero) {
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+        auto zeExternalSemaphore = reinterpret_cast<ze_external_semaphore_ext_handle_t>(externalSemaphore);
+        ze_external_semaphore_signal_params_ext_t externalSemaphoreSignalParamsExt{};
+        externalSemaphoreSignalParamsExt.stype = ZE_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_SIGNAL_PARAMS_EXT;
+        externalSemaphoreSignalParamsExt.value = uint64_t(timelineValue);
+        ze_result_t zeResult = g_levelZeroFunctionTable.zeCommandListAppendSignalExternalSemaphoreExt(
+                stream.zeCommandList, 1, &zeExternalSemaphore, &externalSemaphoreSignalParamsExt,
+                g_zeSignalEvent, g_numWaitEvents, g_zeWaitEvents);
+        checkZeResult(zeResult, "Error in zeCommandListAppendSignalExternalSemaphoreExt: ");
+#endif
     }
 }
 
 void SemaphoreVkComputeApiInterop::waitSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue) {
-    bool useCuda = false, useHip = false;
+    bool useCuda = false, useHip = false, useLevelZero = false;
 #ifdef SUPPORT_CUDA_INTEROP
     useCuda = getIsCudaDeviceApiFunctionTableInitialized();
 #endif
 #ifdef SUPPORT_HIP_INTEROP
     useHip = getIsHipDeviceApiFunctionTableInitialized();
+#endif
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+    useLevelZero = getIsLevelZeroFunctionTableInitialized();
 #endif
 
     if (useCuda) {
@@ -383,6 +419,17 @@ void SemaphoreVkComputeApiInterop::waitSemaphoreComputeApi(StreamWrapper stream,
                 &hipExternalSemaphore, &waitParams, 1, stream.hipStream);
         checkHipResult(hipResult, "Error in hipWaitExternalSemaphoresAsync: ");
 #endif
+    } else if (useLevelZero) {
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+        auto zeExternalSemaphore = reinterpret_cast<ze_external_semaphore_ext_handle_t>(externalSemaphore);
+        ze_external_semaphore_wait_params_ext_t externalSemaphoreWaitParamsExt{};
+        externalSemaphoreWaitParamsExt.stype = ZE_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_WAIT_PARAMS_EXT;
+        externalSemaphoreWaitParamsExt.value = uint64_t(timelineValue);
+        ze_result_t zeResult = g_levelZeroFunctionTable.zeCommandListAppendWaitExternalSemaphoreExt(
+                stream.zeCommandList, 1, &zeExternalSemaphore, &externalSemaphoreWaitParamsExt,
+                g_zeSignalEvent, g_numWaitEvents, g_zeWaitEvents);
+        checkZeResult(zeResult, "Error in zeCommandListAppendWaitExternalSemaphoreExt: ");
+#endif
     }
 }
 
@@ -395,7 +442,7 @@ BufferComputeApiExternalMemoryVk::BufferComputeApiExternalMemoryVk(vk::BufferPtr
     VkMemoryRequirements memoryRequirements{};
     vkGetBufferMemoryRequirements(device, vulkanBuffer->getVkBuffer(), &memoryRequirements);
 
-    bool useCuda = false, useHip = false;
+    bool useCuda = false, useHip = false, useLevelZero = false;
 #ifdef SUPPORT_CUDA_INTEROP
     CUDA_EXTERNAL_MEMORY_HANDLE_DESC externalMemoryHandleDesc{};
     externalMemoryHandleDesc.size = vulkanBuffer->getDeviceMemorySize(); // memoryRequirements.size
@@ -406,10 +453,23 @@ BufferComputeApiExternalMemoryVk::BufferComputeApiExternalMemoryVk(vk::BufferPtr
     externalMemoryHandleDescHip.size = vulkanBuffer->getDeviceMemorySize(); // memoryRequirements.size
     useHip = getIsHipDeviceApiFunctionTableInitialized();
 #endif
-    if (useCuda && useHip) {
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+    ze_device_mem_alloc_desc_t deviceMemAllocDesc{};
+    deviceMemAllocDesc.stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC;
+    //deviceMemAllocDesc.ordinal; // TODO: Necessary?
+    useLevelZero = getIsLevelZeroFunctionTableInitialized();
+    if (useLevelZero) {
+        if (!g_zeDevice || !g_zeContext) {
+            sgl::Logfile::get()->throwError(
+                    "Error in BufferComputeApiExternalMemoryVk::BufferComputeApiExternalMemoryVk: "
+                    "Level Zero is initialized, but the global device or context object are not set.");
+        }
+    }
+#endif
+    if (int(useCuda) + int(useHip) + int(useLevelZero) != 1) {
         sgl::Logfile::get()->throwError(
                 "Error in BufferComputeApiExternalMemoryVk::BufferComputeApiExternalMemoryVk: "
-                "Both CUDA and HIP have been initialized.");
+                "Only one out of CUDA, HIP and Level Zero interop can be initialized at a time.");
     }
 
 
@@ -449,6 +509,16 @@ BufferComputeApiExternalMemoryVk::BufferComputeApiExternalMemoryVk(vk::BufferPtr
 #endif
     }
 
+    ze_external_memory_import_win32_handle_t externalMemoryImportWin32Handle{};
+    if (useLevelZero) {
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+        externalMemoryImportWin32Handle.stype = ZE_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMPORT_WIN32;
+        deviceMemAllocDesc.pNext = &externalMemoryImportWin32Handle;
+        externalMemoryImportWin32Handle.flags = ZE_EXTERNAL_MEMORY_TYPE_FLAG_OPAQUE_WIN32;
+        externalMemoryImportWin32Handle.handle = (void*)handle;
+#endif
+    }
+
     this->handle = handle;
 
 #elif defined(__linux__)
@@ -485,6 +555,16 @@ BufferComputeApiExternalMemoryVk::BufferComputeApiExternalMemoryVk(vk::BufferPtr
 #ifdef SUPPORT_HIP_INTEROP
         externalMemoryHandleDescHip.type = hipExternalMemoryHandleTypeOpaqueFd;
         externalMemoryHandleDescHip.handle.fd = fileDescriptor;
+#endif
+    }
+
+    ze_external_memory_import_fd_t externalMemoryImportFd{};
+    if (useLevelZero) {
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+        externalMemoryImportFd.stype = ZE_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMPORT_FD;
+        deviceMemAllocDesc.pNext = &externalMemoryImportFd;
+        externalMemoryImportFd.flags = ZE_EXTERNAL_MEMORY_TYPE_FLAG_OPAQUE_FD;
+        externalMemoryImportFd.fd = fileDescriptor;
 #endif
     }
 
@@ -538,6 +618,14 @@ BufferComputeApiExternalMemoryVk::BufferComputeApiExternalMemoryVk(vk::BufferPtr
 #endif
     }
 
+    if (useLevelZero) {
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+        ze_result_t zeResult = g_levelZeroFunctionTable.zeMemAllocDevice(
+                g_zeContext, &deviceMemAllocDesc, memoryRequirements.size, 0, g_zeDevice, &devicePtr);
+        checkZeResult(zeResult, "Error in zeMemAllocDevice: ");
+#endif
+    }
+
     /*
      * https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__EXTRES__INTEROP.html
      * - CU_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD: "Ownership of the file descriptor is transferred to the CUDA driver
@@ -560,12 +648,15 @@ BufferComputeApiExternalMemoryVk::~BufferComputeApiExternalMemoryVk() {
     }
 #endif
 
-    bool useCuda = false, useHip = false;
+    bool useCuda = false, useHip = false, useLevelZero = false;
 #ifdef SUPPORT_CUDA_INTEROP
     useCuda = getIsCudaDeviceApiFunctionTableInitialized();
 #endif
 #ifdef SUPPORT_HIP_INTEROP
     useHip = getIsHipDeviceApiFunctionTableInitialized();
+#endif
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+    useLevelZero = getIsLevelZeroFunctionTableInitialized();
 #endif
 
     if (useCuda) {
@@ -586,16 +677,24 @@ BufferComputeApiExternalMemoryVk::~BufferComputeApiExternalMemoryVk() {
         hipResult = g_hipDeviceApiFunctionTable.hipDestroyExternalMemory(hipExternalMemory);
         checkHipResult(hipResult, "Error in hipDestroyExternalMemory: ");
 #endif
+    } else if (useLevelZero) {
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+        ze_result_t zeResult = g_levelZeroFunctionTable.zeMemFree(g_zeContext, devicePtr);
+        checkZeResult(zeResult, "Error in zeMemFree: ");
+#endif
     }
 }
 
 void BufferComputeApiExternalMemoryVk::copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream) {
-    bool useCuda = false, useHip = false;
+    bool useCuda = false, useHip = false, useLevelZero = false;
 #ifdef SUPPORT_CUDA_INTEROP
     useCuda = getIsCudaDeviceApiFunctionTableInitialized();
 #endif
 #ifdef SUPPORT_HIP_INTEROP
     useHip = getIsHipDeviceApiFunctionTableInitialized();
+#endif
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+    useLevelZero = getIsLevelZeroFunctionTableInitialized();
 #endif
 
     if (useCuda) {
@@ -612,16 +711,26 @@ void BufferComputeApiExternalMemoryVk::copyFromDevicePtrAsync(void* devicePtrSrc
                 vulkanBuffer->getSizeInBytes(), stream.hipStream);
         checkHipResult(hipResult, "Error in cuMemcpyAsync: ");
 #endif
+    } else if (useLevelZero) {
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+        ze_result_t zeResult = g_levelZeroFunctionTable.zeCommandListAppendMemoryCopy(
+                stream.zeCommandList, devicePtr, devicePtrSrc, vulkanBuffer->getSizeInBytes(),
+                g_zeSignalEvent, g_numWaitEvents, g_zeWaitEvents);
+        checkZeResult(zeResult, "Error in zeCommandListAppendMemoryCopy: ");
+#endif
     }
 }
 
 void BufferComputeApiExternalMemoryVk::copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream) {
-    bool useCuda = false, useHip = false;
+    bool useCuda = false, useHip = false, useLevelZero = false;
 #ifdef SUPPORT_CUDA_INTEROP
     useCuda = getIsCudaDeviceApiFunctionTableInitialized();
 #endif
 #ifdef SUPPORT_HIP_INTEROP
     useHip = getIsHipDeviceApiFunctionTableInitialized();
+#endif
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+    useLevelZero = getIsLevelZeroFunctionTableInitialized();
 #endif
 
     if (useCuda) {
@@ -637,6 +746,13 @@ void BufferComputeApiExternalMemoryVk::copyToDevicePtrAsync(void* devicePtrDst, 
                 reinterpret_cast<hipDeviceptr_t>(devicePtrDst), this->getHipDevicePtr(),
                 vulkanBuffer->getSizeInBytes(), stream.hipStream);
         checkHipResult(hipResult, "Error in cuMemcpyAsync: ");
+#endif
+    } else if (useLevelZero) {
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+        ze_result_t zeResult = g_levelZeroFunctionTable.zeCommandListAppendMemoryCopy(
+                stream.zeCommandList, devicePtrDst, devicePtr, vulkanBuffer->getSizeInBytes(),
+                g_zeSignalEvent, g_numWaitEvents, g_zeWaitEvents);
+        checkZeResult(zeResult, "Error in zeCommandListAppendMemoryCopy: ");
 #endif
     }
 }

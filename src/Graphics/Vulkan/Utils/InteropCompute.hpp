@@ -34,7 +34,7 @@
 #include "SyncObjects.hpp"
 #include "Device.hpp"
 
-// Forward declarations for CUDA and HIP objects.
+// Forward declarations for CUDA, HIP and Level Zero objects.
 extern "C" {
 #if defined(_WIN64) || defined(__LP64__)
 typedef unsigned long long CUdeviceptr_v2;
@@ -42,14 +42,31 @@ typedef unsigned long long CUdeviceptr_v2;
 typedef unsigned int CUdeviceptr_v2;
 #endif
 typedef CUdeviceptr_v2 CUdeviceptr;
+
+#ifdef SUPPORT_HIP_INTEROP
 typedef void* hipDeviceptr_t;
 typedef struct CUstream_st *CUstream;
 typedef struct ihipStream_t* hipStream_t;
+#endif
+
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+typedef struct _ze_device_handle_t* ze_device_handle_t;
+typedef struct _ze_context_handle_t* ze_context_handle_t;
+typedef struct _ze_command_list_handle_t* ze_command_list_handle_t;
+typedef struct _ze_event_handle_t *ze_event_handle_t;
+#endif
 }
 
+#ifdef SUPPORT_SYCL_INTEROP
+namespace sycl { inline namespace _V1 {
+class queue;
+}}
+#endif
+
 /*
- * This file provides wrappers over InteropCuda and InteropHIP.
- * Depending on what interop API has been initialized, CUDA or HIP objects, semaphores, memory, etc. are used internally.
+ * This file provides wrappers over InteropCuda, InteropHIP and InteropLevelZero.
+ * Depending on what interop API has been initialized, CUDA, HIP or Level Zero objects, semaphores, memory, etc. are
+ * used internally.
  */
 
 namespace sgl { namespace vk {
@@ -62,7 +79,23 @@ union DLL_OBJECT StreamWrapper {
 #ifdef SUPPORT_HIP_INTEROP
     hipStream_t hipStream;
 #endif
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+    ze_command_list_handle_t zeCommandList;
+#endif
 };
+
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+/*
+ * Internally, Level Zero interop needs more information (device, context, ...) than CUDA or HIP interop.
+ * The functions below can be used for setting the state globally.
+ */
+void setLevelZeroGlobalState(ze_device_handle_t zeDevice, ze_context_handle_t zeContext);
+void setLevelZeroNextCommandEvents(
+        ze_event_handle_t zeSignalEvent, uint32_t numWaitEvents, ze_event_handle_t* zeWaitEvents);
+#ifdef SUPPORT_SYCL_INTEROP
+void setLevelZeroGlobalStateFromSyclQueue(sycl::queue& syclQueue);
+#endif
+#endif
 
 /**
  * A CUDA driver API CUexternalSemaphore/HIP driver API hipExternalSemaphore_t object created from a Vulkan semaphore.
