@@ -42,10 +42,10 @@ typedef unsigned long long CUdeviceptr_v2;
 typedef unsigned int CUdeviceptr_v2;
 #endif
 typedef CUdeviceptr_v2 CUdeviceptr;
+typedef struct CUstream_st *CUstream;
 
 #ifdef SUPPORT_HIP_INTEROP
 typedef void* hipDeviceptr_t;
-typedef struct CUstream_st *CUstream;
 typedef struct ihipStream_t* hipStream_t;
 #endif
 
