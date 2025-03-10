@@ -28,7 +28,9 @@
 
 #include <utility>
 
+#if defined(SUPPORT_SDL2) || defined(SUPPORT_GLFW)
 #include <Utils/AppSettings.hpp>
+#endif
 #include "Dialog.hpp"
 
 #ifdef SUPPORT_SDL2
