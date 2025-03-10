@@ -34,11 +34,11 @@
 
 #include <Utils/File/Logfile.hpp>
 #include <Math/Math.hpp>
-#include <Graphics/Window.hpp>
 #include <Graphics/Vulkan/Buffers/Buffer.hpp>
 #include "Status.hpp"
 #include "Instance.hpp"
 #ifndef DISABLE_VULKAN_SWAPCHAIN_SUPPORT
+#include <Graphics/Window.hpp>
 #include "Swapchain.hpp"
 #endif
 #include "Device.hpp"
