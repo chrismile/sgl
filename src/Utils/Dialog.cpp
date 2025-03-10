@@ -139,7 +139,11 @@ void openMessageBoxModal(
         std::string const& title,
         std::string const& text,
         Icon icon) {
+#if defined(SUPPORT_SDL2) || defined(SUPPORT_GLFW)
     openMessageBoxModal(title, text, sgl::AppSettings::get()->getMainWindow(), icon);
+#else
+    openMessageBox(title, text, icon);
+#endif
 }
 
 

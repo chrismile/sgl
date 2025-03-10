@@ -65,9 +65,9 @@ Instance::Instance() {
     if (result != VK_SUCCESS) {
 #ifdef __linux__
         Logfile::get()->throwError(
-                std::string() + "Error in AppSettings::initializeVolk: volkInitialize failed: " + dlerror());
+                std::string() + "Error in Instance::Instance: volkInitialize failed: " + dlerror());
 #else
-        Logfile::get()->throwError("Error in AppSettings::initializeVolk: volkInitialize failed.");
+        Logfile::get()->throwError("Error in Instance::Instance: volkInitialize failed.");
 #endif
     }
     instanceVulkanVersion = volkGetInstanceVersion();

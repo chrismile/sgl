@@ -38,7 +38,9 @@
 #include <Graphics/Vulkan/Buffers/Buffer.hpp>
 #include "Status.hpp"
 #include "Instance.hpp"
+#ifndef DISABLE_VULKAN_SWAPCHAIN_SUPPORT
 #include "Swapchain.hpp"
+#endif
 #include "Device.hpp"
 
 #ifdef SUPPORT_OPENGL
@@ -199,6 +201,7 @@ bool Device::isDeviceSuitable(
         return false;
     }
 
+#ifndef DISABLE_VULKAN_SWAPCHAIN_SUPPORT
     if (surface) {
         SwapchainSupportInfo swapchainSupportInfo = querySwapchainSupportInfo(
                 physicalDevice, surface, nullptr);
@@ -206,6 +209,7 @@ bool Device::isDeviceSuitable(
             return false;
         }
     }
+#endif
 
 #if defined(SUPPORT_OPENGL) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
     if (openGlInteropEnabled && !isDeviceCompatibleWithOpenGl(physicalDevice)) {
@@ -1796,6 +1800,7 @@ void Device::writeDeviceInfoToLog(const std::vector<const char*>& deviceExtensio
             std::string() + "Used Vulkan device extensions: " + deviceExtensionString, BLUE);
 }
 
+#ifndef DISABLE_VULKAN_SWAPCHAIN_SUPPORT
 void Device::createDeviceSwapchain(
         Instance* instance, Window* window,
         std::vector<const char*> requiredDeviceExtensions,
@@ -1837,6 +1842,7 @@ void Device::createDeviceSwapchain(
 
     createVulkanMemoryAllocator();
 }
+#endif
 
 void Device::createDeviceHeadless(
         Instance* instance,

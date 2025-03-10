@@ -260,6 +260,7 @@ typedef std::function<bool(VkPhysicalDevice, VkPhysicalDeviceProperties, std::ve
  */
 class DLL_OBJECT Device {
 public:
+#ifndef DISABLE_VULKAN_SWAPCHAIN_SUPPORT
     /// For rendering using a window surface and a swapchain. VK_KHR_SWAPCHAIN_EXTENSION_NAME is added automatically.
     void createDeviceSwapchain(
             Instance* instance, Window* window,
@@ -267,6 +268,7 @@ public:
             std::vector<const char*> optionalDeviceExtensions = {},
             const DeviceFeatures& requestedDeviceFeaturesIn = DeviceFeatures(),
             bool computeOnly = false);
+#endif
     /// For headless rendering without a window (or when coupled with an OpenGL context in interoperability mode).
     void createDeviceHeadless(
             Instance* instance,
