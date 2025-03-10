@@ -30,7 +30,9 @@
 #define SRC_MATH_MATH_HPP_
 
 #include <cmath>
+#ifdef USE_GLM
 #include <glm/fwd.hpp>
+#endif
 
 #if _cplusplus >= 201907L
 #include <bit>
@@ -67,7 +69,7 @@ inline float tan(float val) { return std::tan(val); }
 inline float asin(float val) { return std::asin(val); }
 inline float acos(float val) { return std::acos(val); }
 inline float atan(float val) { return std::atan(val); }
-inline float atan2(float x, float y) { return std::atan2(x, y); }
+inline float atan2(float y, float x) { return std::atan2(y, x); }
 inline float degToRad(float val) { return val / 180.0f * PI; }
 inline float radToDeg(float val) { return val * 180.0f / PI; }
 
@@ -176,7 +178,9 @@ template <typename T> T interpolateBilinear(const T &a, const T &b, const T &c, 
     return p + factory * (q - p);
 }
 
+#ifdef USE_GLM
 DLL_OBJECT float vectorAngle(const glm::vec2 &u, const glm::vec2& v);
+#endif
 
 }
 
