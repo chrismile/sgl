@@ -153,8 +153,7 @@ bool Device::_isDeviceExtensionAvailable(const std::string &extensionName) {
     return availableDeviceExtensionNames.find(extensionName) != availableDeviceExtensionNames.end();
 }
 
-
-uint32_t Device::findQueueFamilies(VkPhysicalDevice physicalDevice, VkQueueFlagBits queueFlags) {
+uint32_t findQueueFamilies(VkPhysicalDevice physicalDevice, VkQueueFlagBits queueFlags) {
     uint32_t queueFamilyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
 
@@ -183,6 +182,132 @@ uint32_t Device::findQueueFamilies(VkPhysicalDevice physicalDevice, VkQueueFlagB
     return bestFittingQueueIdx;
 }
 
+uint32_t Device::findQueueFamilies(VkPhysicalDevice physicalDevice, VkQueueFlagBits queueFlags) {
+    return sgl::vk::findQueueFamilies(physicalDevice, queueFlags);
+}
+
+bool checkVulkanFeaturesAvailable(
+        sgl::vk::Instance* instance,
+        VkPhysicalDevice physicalDevice,
+        const VkPhysicalDeviceProperties& physicalDeviceProperties,
+        const VkPhysicalDeviceFeatures& physicalDeviceFeatures,
+        const DeviceFeatures& requestedDeviceFeatures) {
+    // Check if all requested features are available.
+    bool requestedFeaturesAvailable = true;
+    constexpr size_t numFeatures = sizeof(VkPhysicalDeviceFeatures) / sizeof(VkBool32);
+    auto requestedPhysicalDeviceFeaturesArray = reinterpret_cast<const VkBool32*>(
+            &requestedDeviceFeatures.requestedPhysicalDeviceFeatures);
+    auto physicalDeviceFeaturesArray = reinterpret_cast<const VkBool32*>(&physicalDeviceFeatures);
+    for (size_t i = 0; i < numFeatures; i++) {
+        if (requestedPhysicalDeviceFeaturesArray[i] && !physicalDeviceFeaturesArray[i]) {
+            requestedFeaturesAvailable = false;
+            break;
+        }
+    }
+
+#ifdef VK_VERSION_1_1
+    VkPhysicalDeviceVulkan11Features physicalDeviceVulkan11Features{};
+    physicalDeviceVulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+    if (physicalDeviceProperties.apiVersion >= VK_MAKE_API_VERSION(0, 1, 1, 0)
+            && instance->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 1, 0)) {
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &physicalDeviceVulkan11Features;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        const size_t numVulkan11Features =
+                1 + (&requestedDeviceFeatures.requestedVulkan11Features.shaderDrawParameters)
+                - (&requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess);
+        auto requestedVulkan11FeaturesArray = reinterpret_cast<const VkBool32*>(
+                &requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess);
+        auto physicalDeviceVulkan11FeaturesArray = reinterpret_cast<VkBool32*>(
+                &physicalDeviceVulkan11Features.storageBuffer16BitAccess);
+        for (size_t i = 0; i < numVulkan11Features; i++) {
+            if (requestedVulkan11FeaturesArray[i] && !physicalDeviceVulkan11FeaturesArray[i]) {
+                requestedFeaturesAvailable = false;
+                break;
+            }
+        }
+    }
+#endif
+#ifdef VK_VERSION_1_2
+    VkPhysicalDeviceVulkan12Features physicalDeviceVulkan12Features{};
+    physicalDeviceVulkan12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+    if (physicalDeviceProperties.apiVersion >= VK_MAKE_API_VERSION(0, 1, 2, 0)
+            && instance->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 2, 0)) {
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &physicalDeviceVulkan12Features;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        const size_t numVulkan12Features =
+                1 + (&requestedDeviceFeatures.requestedVulkan12Features.subgroupBroadcastDynamicId)
+                - (&requestedDeviceFeatures.requestedVulkan12Features.samplerMirrorClampToEdge);
+        auto requestedVulkan12FeaturesArray = reinterpret_cast<const VkBool32*>(
+                &requestedDeviceFeatures.requestedVulkan12Features.samplerMirrorClampToEdge);
+        auto physicalDeviceVulkan12FeaturesArray = reinterpret_cast<VkBool32*>(
+                &physicalDeviceVulkan12Features.samplerMirrorClampToEdge);
+        for (size_t i = 0; i < numVulkan12Features; i++) {
+            if (requestedVulkan12FeaturesArray[i] && !physicalDeviceVulkan12FeaturesArray[i]) {
+                requestedFeaturesAvailable = false;
+                break;
+            }
+        }
+    }
+#endif
+#ifdef VK_VERSION_1_3
+    VkPhysicalDeviceVulkan13Features physicalDeviceVulkan13Features{};
+    physicalDeviceVulkan13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+    if (physicalDeviceProperties.apiVersion >= VK_MAKE_API_VERSION(0, 1, 3, 0)
+            && instance->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 3, 0)) {
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &physicalDeviceVulkan13Features;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        const size_t numVulkan13Features =
+                1 + (&requestedDeviceFeatures.requestedVulkan13Features.maintenance4)
+                - (&requestedDeviceFeatures.requestedVulkan13Features.robustImageAccess);
+        auto requestedVulkan13FeaturesArray = reinterpret_cast<const VkBool32*>(
+                &requestedDeviceFeatures.requestedVulkan13Features.robustImageAccess);
+        auto physicalDeviceVulkan13FeaturesArray = reinterpret_cast<VkBool32*>(
+                &physicalDeviceVulkan13Features.robustImageAccess);
+        for (size_t i = 0; i < numVulkan13Features; i++) {
+            if (requestedVulkan13FeaturesArray[i] && !physicalDeviceVulkan13FeaturesArray[i]) {
+                requestedFeaturesAvailable = false;
+                break;
+            }
+        }
+    }
+#endif
+#ifdef VK_VERSION_1_4
+    VkPhysicalDeviceVulkan14Features physicalDeviceVulkan14Features{};
+    physicalDeviceVulkan14Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_4_FEATURES;
+    if (physicalDeviceProperties.apiVersion >= VK_MAKE_API_VERSION(0, 1, 4, 0)
+            && instance->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 4, 0)) {
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &physicalDeviceVulkan14Features;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        const size_t numVulkan14Features =
+                1 + (&requestedDeviceFeatures.requestedVulkan14Features.pushDescriptor)
+                - (&requestedDeviceFeatures.requestedVulkan14Features.globalPriorityQuery);
+        auto requestedVulkan14FeaturesArray = reinterpret_cast<const VkBool32*>(
+                &requestedDeviceFeatures.requestedVulkan14Features.globalPriorityQuery);
+        auto physicalDeviceVulkan14FeaturesArray = reinterpret_cast<VkBool32*>(
+                &physicalDeviceVulkan14Features.globalPriorityQuery);
+        for (size_t i = 0; i < numVulkan14Features; i++) {
+            if (requestedVulkan14FeaturesArray[i] && !physicalDeviceVulkan14FeaturesArray[i]) {
+                requestedFeaturesAvailable = false;
+                break;
+            }
+        }
+    }
+#endif
+    return requestedFeaturesAvailable;
+}
+
 bool Device::isDeviceSuitable(
         VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
         std::vector<const char*>& requiredDeviceExtensionsIn,
@@ -193,11 +318,12 @@ bool Device::isDeviceSuitable(
     std::vector<const char*> optionalDeviceExtensions = optionalDeviceExtensionsIn;
     DeviceFeatures requestedDeviceFeatures = requestedDeviceFeaturesIn;
 
-    int graphicsQueueIndex = findQueueFamilies(
+    auto graphicsQueueIndex = findQueueFamilies(
             physicalDevice, static_cast<VkQueueFlagBits>(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT));
-    int computeQueueIndex = findQueueFamilies(
+    auto computeQueueIndex = findQueueFamilies(
             physicalDevice, static_cast<VkQueueFlagBits>(VK_QUEUE_COMPUTE_BIT));
-    if ((graphicsQueueIndex < 0 && !computeOnly) || computeQueueIndex < 0) {
+    if ((graphicsQueueIndex == std::numeric_limits<uint32_t>::max() && !computeOnly)
+            || computeQueueIndex == std::numeric_limits<uint32_t>::max()) {
         return false;
     }
 
@@ -249,120 +375,8 @@ bool Device::isDeviceSuitable(
 
     VkPhysicalDeviceFeatures physicalDeviceFeatures{};
     vkGetPhysicalDeviceFeatures(physicalDevice, &physicalDeviceFeatures);
-
-    // Check if all requested features are available.
-    bool requestedFeaturesAvailable = true;
-    constexpr size_t numFeatures = sizeof(VkPhysicalDeviceFeatures) / sizeof(VkBool32);
-    auto requestedPhysicalDeviceFeaturesArray = reinterpret_cast<const VkBool32*>(
-            &requestedDeviceFeatures.requestedPhysicalDeviceFeatures);
-    auto physicalDeviceFeaturesArray = reinterpret_cast<VkBool32*>(&physicalDeviceFeatures);
-    for (size_t i = 0; i < numFeatures; i++) {
-        if (requestedPhysicalDeviceFeaturesArray[i] && !physicalDeviceFeaturesArray[i]) {
-            requestedFeaturesAvailable = false;
-            break;
-        }
-    }
-
-#ifdef VK_VERSION_1_1
-    VkPhysicalDeviceVulkan11Features physicalDeviceVulkan11Features{};
-    physicalDeviceVulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
-    if (physicalDeviceProperties.apiVersion >= VK_MAKE_API_VERSION(0, 1, 1, 0)
-            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 1, 0)) {
-        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
-        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-        deviceFeatures2.pNext = &physicalDeviceVulkan11Features;
-        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
-
-        const size_t numVulkan11Features =
-                1 + (&requestedDeviceFeatures.requestedVulkan11Features.shaderDrawParameters)
-                 - (&requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess);
-        auto requestedVulkan11FeaturesArray = reinterpret_cast<const VkBool32*>(
-                &requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess);
-        auto physicalDeviceVulkan11FeaturesArray = reinterpret_cast<VkBool32*>(
-                &physicalDeviceVulkan11Features.storageBuffer16BitAccess);
-        for (size_t i = 0; i < numVulkan11Features; i++) {
-            if (requestedVulkan11FeaturesArray[i] && !physicalDeviceVulkan11FeaturesArray[i]) {
-                requestedFeaturesAvailable = false;
-                break;
-            }
-        }
-    }
-#endif
-#ifdef VK_VERSION_1_2
-    VkPhysicalDeviceVulkan12Features physicalDeviceVulkan12Features{};
-    physicalDeviceVulkan12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-    if (physicalDeviceProperties.apiVersion >= VK_MAKE_API_VERSION(0, 1, 2, 0)
-            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 2, 0)) {
-        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
-        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-        deviceFeatures2.pNext = &physicalDeviceVulkan12Features;
-        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
-
-        const size_t numVulkan12Features =
-                1 + (&requestedDeviceFeatures.requestedVulkan12Features.subgroupBroadcastDynamicId)
-                 - (&requestedDeviceFeatures.requestedVulkan12Features.samplerMirrorClampToEdge);
-        auto requestedVulkan12FeaturesArray = reinterpret_cast<const VkBool32*>(
-                &requestedDeviceFeatures.requestedVulkan12Features.samplerMirrorClampToEdge);
-        auto physicalDeviceVulkan12FeaturesArray = reinterpret_cast<VkBool32*>(
-                &physicalDeviceVulkan12Features.samplerMirrorClampToEdge);
-        for (size_t i = 0; i < numVulkan12Features; i++) {
-            if (requestedVulkan12FeaturesArray[i] && !physicalDeviceVulkan12FeaturesArray[i]) {
-                requestedFeaturesAvailable = false;
-                break;
-            }
-        }
-    }
-#endif
-#ifdef VK_VERSION_1_3
-    VkPhysicalDeviceVulkan13Features physicalDeviceVulkan13Features{};
-    physicalDeviceVulkan13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
-    if (physicalDeviceProperties.apiVersion >= VK_MAKE_API_VERSION(0, 1, 3, 0)
-            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 3, 0)) {
-        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
-        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-        deviceFeatures2.pNext = &physicalDeviceVulkan13Features;
-        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
-
-        const size_t numVulkan13Features =
-                1 + (&requestedDeviceFeatures.requestedVulkan13Features.maintenance4)
-                 - (&requestedDeviceFeatures.requestedVulkan13Features.robustImageAccess);
-        auto requestedVulkan13FeaturesArray = reinterpret_cast<const VkBool32*>(
-                &requestedDeviceFeatures.requestedVulkan13Features.robustImageAccess);
-        auto physicalDeviceVulkan13FeaturesArray = reinterpret_cast<VkBool32*>(
-                &physicalDeviceVulkan13Features.robustImageAccess);
-        for (size_t i = 0; i < numVulkan13Features; i++) {
-            if (requestedVulkan13FeaturesArray[i] && !physicalDeviceVulkan13FeaturesArray[i]) {
-                requestedFeaturesAvailable = false;
-                break;
-            }
-        }
-    }
-#endif
-#ifdef VK_VERSION_1_4
-    VkPhysicalDeviceVulkan14Features physicalDeviceVulkan14Features{};
-    physicalDeviceVulkan14Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_4_FEATURES;
-    if (physicalDeviceProperties.apiVersion >= VK_MAKE_API_VERSION(0, 1, 4, 0)
-            && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 4, 0)) {
-        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
-        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-        deviceFeatures2.pNext = &physicalDeviceVulkan14Features;
-        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
-
-        const size_t numVulkan14Features =
-                1 + (&requestedDeviceFeatures.requestedVulkan14Features.pushDescriptor)
-                - (&requestedDeviceFeatures.requestedVulkan14Features.globalPriorityQuery);
-        auto requestedVulkan14FeaturesArray = reinterpret_cast<const VkBool32*>(
-                &requestedDeviceFeatures.requestedVulkan14Features.globalPriorityQuery);
-        auto physicalDeviceVulkan14FeaturesArray = reinterpret_cast<VkBool32*>(
-                &physicalDeviceVulkan14Features.globalPriorityQuery);
-        for (size_t i = 0; i < numVulkan14Features; i++) {
-            if (requestedVulkan14FeaturesArray[i] && !physicalDeviceVulkan14FeaturesArray[i]) {
-                requestedFeaturesAvailable = false;
-                break;
-            }
-        }
-    }
-#endif
+    bool requestedFeaturesAvailable = checkVulkanFeaturesAvailable(
+            instance, physicalDevice, physicalDeviceProperties, physicalDeviceFeatures, requestedDeviceFeatures);
 
     bool isSuitable = presentSupport && requiredExtensions.empty() && requestedFeaturesAvailable;
     if (isSuitable && !optionalDeviceExtensions.empty()) {
@@ -440,16 +454,7 @@ void mergePhysicalDeviceFeatures12(
 #endif
 }
 
-void getPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties2& deviceProperties2) {
-    vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
-}
-
-VkPhysicalDevice Device::createPhysicalDeviceBinding(
-        VkSurfaceKHR surface,
-        std::vector<const char*>& requiredDeviceExtensions,
-        std::vector<const char*>& optionalDeviceExtensions,
-        std::set<std::string>& deviceExtensionsSet, std::vector<const char*>& deviceExtensions,
-        DeviceFeatures& requestedDeviceFeatures, bool computeOnly) {
+std::vector<VkPhysicalDevice> enumeratePhysicalDevices(Instance* instance) {
     uint32_t numPhysicalDevices = 0;
     VkResult res = vkEnumeratePhysicalDevices(instance->getVkInstance(), &numPhysicalDevices, nullptr);
     if (res != VK_SUCCESS) {
@@ -469,7 +474,77 @@ VkPhysicalDevice Device::createPhysicalDeviceBinding(
                 "Error in Device::createPhysicalDeviceBinding: vkEnumeratePhysicalDevices failed ("
                 + vulkanResultToString(res) + ")!");
     }
+    return physicalDevices;
+}
 
+bool checkIsPhysicalDeviceSuitable(
+        Instance* instance, VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+        const std::vector<const char*>& requiredDeviceExtensions,
+        const DeviceFeatures& requestedDeviceFeatures, bool computeOnly) {
+    auto graphicsQueueIndex = findQueueFamilies(
+            physicalDevice, static_cast<VkQueueFlagBits>(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT));
+    auto computeQueueIndex = findQueueFamilies(
+            physicalDevice, static_cast<VkQueueFlagBits>(VK_QUEUE_COMPUTE_BIT));
+    if ((graphicsQueueIndex == std::numeric_limits<uint32_t>::max() && !computeOnly)
+            || computeQueueIndex == std::numeric_limits<uint32_t>::max()) {
+        return false;
+    }
+
+#ifndef DISABLE_VULKAN_SWAPCHAIN_SUPPORT
+    if (surface) {
+        SwapchainSupportInfo swapchainSupportInfo = querySwapchainSupportInfo(
+                physicalDevice, surface, nullptr);
+        if (swapchainSupportInfo.formats.empty() && !swapchainSupportInfo.presentModes.empty()) {
+            return false;
+        }
+    }
+#endif
+
+    VkPhysicalDeviceProperties physicalDeviceProperties{};
+    vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
+
+    uint32_t numExtensions;
+    vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &numExtensions, nullptr);
+    std::vector<VkExtensionProperties> availableExtensions(numExtensions);
+    vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &numExtensions, availableExtensions.data());
+    std::set<std::string> requiredExtensions(requiredDeviceExtensions.begin(), requiredDeviceExtensions.end());
+
+    // Remove extensions that are available. The device is suitable if it has no missing extensions.
+    std::set<std::string> availableDeviceExtensionNames;
+    for (const VkExtensionProperties& extension : availableExtensions) {
+        requiredExtensions.erase(extension.extensionName);
+        availableDeviceExtensionNames.insert(extension.extensionName);
+    }
+
+    VkBool32 presentSupport = false;
+    if (surface) {
+        vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, graphicsQueueIndex, surface, &presentSupport);
+    } else {
+        presentSupport = true;
+    }
+
+    VkPhysicalDeviceFeatures physicalDeviceFeatures{};
+    vkGetPhysicalDeviceFeatures(physicalDevice, &physicalDeviceFeatures);
+
+    // Check if all requested features are available.
+    bool requestedFeaturesAvailable = checkVulkanFeaturesAvailable(
+            instance, physicalDevice, physicalDeviceProperties, physicalDeviceFeatures, requestedDeviceFeatures);
+
+    bool isSuitable = presentSupport && requiredExtensions.empty() && requestedFeaturesAvailable;
+    return isSuitable;
+}
+
+void getPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties2& deviceProperties2) {
+    vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
+}
+
+VkPhysicalDevice Device::createPhysicalDeviceBinding(
+        VkSurfaceKHR surface,
+        std::vector<const char*>& requiredDeviceExtensions,
+        std::vector<const char*>& optionalDeviceExtensions,
+        std::set<std::string>& deviceExtensionsSet, std::vector<const char*>& deviceExtensions,
+        DeviceFeatures& requestedDeviceFeatures, bool computeOnly) {
+    std::vector<VkPhysicalDevice> physicalDevices = enumeratePhysicalDevices(instance);
     deviceExtensionsSet = {requiredDeviceExtensions.begin(), requiredDeviceExtensions.end()};
     deviceExtensions.insert(
             deviceExtensions.end(), requiredDeviceExtensions.begin(), requiredDeviceExtensions.end());
@@ -499,7 +574,7 @@ VkPhysicalDevice Device::createPhysicalDeviceBinding(
     }
 
     std::vector<VkPhysicalDevice> sortedPhysicalDevices;
-    sortedPhysicalDevices.reserve(numPhysicalDevices);
+    sortedPhysicalDevices.reserve(physicalDevices.size());
     for (VkPhysicalDeviceType deviceType : deviceTypePriorityList) {
         const std::vector<VkPhysicalDevice>& physicalDeviceList = physicalDeviceMap[deviceType];
         sortedPhysicalDevices.insert(
@@ -1867,6 +1942,53 @@ void Device::createDeviceHeadless(
     if (!physicalDevice) {
         return;
     }
+    initializeDeviceExtensionList(physicalDevice);
+
+    _getDeviceInformation();
+
+    createLogicalDeviceAndQueues(
+            physicalDevice, instance->getUseValidationLayer(),
+            instance->getInstanceLayerNames(), enabledDeviceExtensionNames,
+            deviceExtensionsSet, requestedDeviceFeatures, computeOnly);
+
+    writeDeviceInfoToLog(enabledDeviceExtensionNames);
+
+    createVulkanMemoryAllocator();
+}
+
+void Device::createDeviceHeadlessFromPhysicalDevice(
+        Instance* instance, VkPhysicalDevice usedPhysicalDevice,
+        std::vector<const char*> requiredDeviceExtensions,
+        std::vector<const char*> optionalDeviceExtensions,
+        const DeviceFeatures& requestedDeviceFeaturesIn, bool computeOnly) {
+    this->instance = instance;
+    this->window = nullptr;
+
+#ifdef __APPLE__
+    optionalDeviceExtensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+#endif
+    // For device thread info.
+    optionalDeviceExtensions.push_back(VK_AMD_SHADER_CORE_PROPERTIES_EXTENSION_NAME);
+    optionalDeviceExtensions.push_back(VK_AMD_SHADER_CORE_PROPERTIES_2_EXTENSION_NAME);
+
+    DeviceFeatures requestedDeviceFeatures = requestedDeviceFeaturesIn;
+    enabledDeviceExtensionNames = {};
+    deviceExtensionsSet = {requiredDeviceExtensions.begin(), requiredDeviceExtensions.end()};
+    enabledDeviceExtensionNames.insert(
+            enabledDeviceExtensionNames.end(), requiredDeviceExtensions.begin(), requiredDeviceExtensions.end());
+    if (isDeviceSuitable(
+            usedPhysicalDevice, nullptr, requiredDeviceExtensions, optionalDeviceExtensions,
+            deviceExtensionsSet, enabledDeviceExtensionNames, requestedDeviceFeatures, computeOnly)) {
+        physicalDevice = usedPhysicalDevice;
+    } else {
+        sgl::Logfile::get()->writeError(
+                "Error in Device::createDeviceHeadlessFromPhysicalDevice: Attempting to create device "
+                "from physical device that does not meet the user-specified requirements.");
+    }
+    if (!physicalDevice) {
+        return;
+    }
+
     initializeDeviceExtensionList(physicalDevice);
 
     _getDeviceInformation();

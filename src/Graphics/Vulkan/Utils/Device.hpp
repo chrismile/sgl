@@ -249,6 +249,13 @@ DLL_OBJECT void mergePhysicalDeviceFeatures12(
         VkPhysicalDeviceVulkan12Features_Compat& featuresDst, const VkPhysicalDeviceVulkan12Features_Compat& featuresSrc);
 #endif
 
+// Public interface for checking all available devices on the user side.
+DLL_OBJECT std::vector<VkPhysicalDevice> enumeratePhysicalDevices(Instance* instance);
+DLL_OBJECT bool checkIsPhysicalDeviceSuitable(
+        Instance* instance, VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+        const std::vector<const char*>& requiredDeviceExtensions,
+        const DeviceFeatures& requestedDeviceFeatures, bool computeOnly = false);
+
 // Wrapper for use in PhysicalDeviceCheckCallback.
 DLL_OBJECT void getPhysicalDeviceProperties2(
         VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties2& deviceProperties2);
@@ -272,6 +279,12 @@ public:
     /// For headless rendering without a window (or when coupled with an OpenGL context in interoperability mode).
     void createDeviceHeadless(
             Instance* instance,
+            std::vector<const char*> requiredDeviceExtensions = {},
+            std::vector<const char*> optionalDeviceExtensions = {},
+            const DeviceFeatures& requestedDeviceFeaturesIn = DeviceFeatures(),
+            bool computeOnly = false);
+    void createDeviceHeadlessFromPhysicalDevice(
+            Instance* instance, VkPhysicalDevice usedPhysicalDevice,
             std::vector<const char*> requiredDeviceExtensions = {},
             std::vector<const char*> optionalDeviceExtensions = {},
             const DeviceFeatures& requestedDeviceFeaturesIn = DeviceFeatures(),
