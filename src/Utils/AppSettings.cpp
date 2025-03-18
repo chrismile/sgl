@@ -296,7 +296,10 @@ Window *AppSettings::createWindow() {
 #ifdef SUPPORT_SDL2
     if (windowBackend == WindowBackend::SDL2_IMPL) {
 #ifndef __EMSCRIPTEN__
-        if (SDL_Init(SDL_INIT_EVERYTHING) == -1) {
+        // Don't initialize SDL_INIT_AUDIO, as we otherwise get "dsp: No such audio device" when building with vcpkg
+        // and without the prerequisites for audio installed on the Linux system used for compilation.
+        if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC \
+                | SDL_INIT_GAMECONTROLLER | SDL_INIT_SENSOR) == -1) {
 #else
         if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) == -1) {
 #endif
