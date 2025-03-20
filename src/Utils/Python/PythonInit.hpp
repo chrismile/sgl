@@ -45,8 +45,26 @@
 
 namespace sgl {
 
+// PySys_SetArgv, Py_SetPythonHome and Py_SetPath were deprecated in version 3.11.
+// Now we use the init config struct as outlined in: https://docs.python.org/3/c-api/init_config.html#init-config
+#if PY_MAJOR_VERSION > 3 || (PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION >= 11)
+#define USE_PY_INIT_CONFIG
+#endif
+
 /// Include before main function.
 static void pythonInit(int argc, char *argv[]) {
+#ifdef USE_PY_INIT_CONFIG
+    PyStatus status;
+    PyConfig config{};
+    PyConfig_InitPythonConfig(&config);
+
+    status = PyConfig_SetBytesArgv(&config, argc, argv);
+    if (PyStatus_Exception(status)) {
+        PyConfig_Clear(&config);
+        sgl::Logfile::get()->throwError("Fatal error: Py_InitializeFromConfig failed.");
+    }
+#endif
+
 #ifdef PYTHONHOME
 #ifdef _MSC_VER
     char* pythonhomeEnvVar = nullptr;
@@ -54,18 +72,27 @@ static void pythonInit(int argc, char *argv[]) {
     if (_dupenv_s(&pythonhomeEnvVar, &stringSize, "PYTHONHOME") != 0) {
         pythonhomeEnvVar = nullptr;
     }
-#else
+#else // !defined(_MSC_VER)
     const char* pythonhomeEnvVar = getenv("PYTHONHOME");
-#endif
+#endif // _MSC_VER
     if (!pythonhomeEnvVar || strlen(pythonhomeEnvVar) == 0) {
 #if !defined(__APPLE__) || !defined(PYTHONPATH)
+#ifdef USE_PY_INIT_CONFIG
+        config.isolated = 1;
+        PyConfig_SetString(&config, &config.home, PYTHONHOME);
+#else
         Py_SetPythonHome(PYTHONHOME);
 #endif
+#endif // !defined(__APPLE__) || !defined(PYTHONPATH)
         // As of 2022-01-25, "lib-dynload" is not automatically found when using MSYS2 together with MinGW.
 #if (defined(__MINGW32__) || defined(__APPLE__)) && defined(PYTHONPATH)
 #ifdef __MINGW32__
-        Py_SetPath(PYTHONPATH ";" PYTHONPATH "/site-packages;" PYTHONPATH "/lib-dynload");
+#ifdef USE_PY_INIT_CONFIG
+        PyWideStringList_Append(&config.module_search_paths, PYTHONPATH ";" PYTHONPATH "/site-packages;" PYTHONPATH "/lib-dynload");
 #else
+        Py_SetPath(PYTHONPATH ";" PYTHONPATH "/site-packages;" PYTHONPATH "/lib-dynload");
+#endif
+#else // !defined(__MINGW32__)
         std::wstring pythonhomeWide = PYTHONHOME;
         std::string pythonhomeNormal(pythonhomeWide.size(), ' ');
         pythonhomeNormal.resize(std::wcstombs(
@@ -95,24 +122,45 @@ static void pythonInit(int argc, char *argv[]) {
                         pythonPathLocal + L":"
                         + pythonPathLocal + L"/site-packages:"
                         + pythonPathLocal + L"/lib-dynload";
+#ifdef USE_PY_INIT_CONFIG
+                config.isolated = 1;
+                PyConfig_SetString(&config, &config.home, pythonHomeLocal.c_str());
+                //PyConfig_SetBytesString(&config, &config.home, pythonHomeLocal.c_str());
+                PyWideStringList_Append(&config.module_search_paths, inputPath.c_str());
+#else
                 Py_SetPythonHome(pythonHomeLocal.c_str());
                 Py_SetPath(inputPath.c_str());
+#endif
             } else {
                 sgl::Logfile::get()->throwError("Fatal error: Couldn't find Python home.");
             }
             delete[] pathBuffer;
         } else {
-            Py_SetPythonHome(PYTHONHOME);
+#ifdef USE_PY_INIT_CONFIG
+            config.isolated = 1;
+            PyConfig_SetString(&config, &config.home, PYTHONHOME);
             Py_SetPath(PYTHONPATH ":" PYTHONPATH "/site-packages:" PYTHONPATH "/lib-dynload");
+#else
+            Py_SetPythonHome(PYTHONHOME);
+            PyWideStringList_Append(&config.module_search_paths, PYTHONPATH ":" PYTHONPATH "/site-packages:" PYTHONPATH "/lib-dynload");
+#endif
         }
-#endif
-#endif
+#endif // __MINGW32__
+#endif // (defined(__MINGW32__) || defined(__APPLE__)) && defined(PYTHONPATH)
     }
 #ifdef _MSC_VER
     free(pythonhomeEnvVar);
     pythonhomeEnvVar = nullptr;
 #endif
-#endif
+#endif // PYTHONHOME
+
+#ifdef USE_PY_INIT_CONFIG
+    status = Py_InitializeFromConfig(&config);
+    PyConfig_Clear(&config);
+    if (PyStatus_Exception(status)) {
+        sgl::Logfile::get()->throwError("Fatal error: Py_InitializeFromConfig failed.");
+    }
+#else // !defined(USE_PY_INIT_CONFIG)
     // PyMem_Malloc causes segmentation fault on Fedora 39.
     //wchar_t** argvWidestr = (wchar_t**)PyMem_Malloc(sizeof(wchar_t*) * argc);
     wchar_t** argvWidestr = (wchar_t**)malloc(sizeof(wchar_t*) * argc);
@@ -122,6 +170,7 @@ static void pythonInit(int argc, char *argv[]) {
     }
     Py_Initialize();
     PySys_SetArgv(argc, argvWidestr);
+#endif
 }
 
 }
