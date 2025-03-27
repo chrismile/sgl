@@ -1525,7 +1525,7 @@ void Device::createVulkanMemoryAllocator() {
 
     // The shipped version of VMA only supports up to Vulkan 1.4 at the moment.
     if (vulkanApiVersion >= VK_MAKE_API_VERSION(0, 1, 5, 0)) {
-        vulkanApiVersion = VK_MAKE_API_VERSION(0, 1, 4, 304);
+        vulkanApiVersion = VK_MAKE_API_VERSION(0, 1, 4, 311);
     }
 
     sgl::Logfile::get()->write(

@@ -22,6 +22,7 @@ VERSION HISTORY
 
 */
 
+// clang-format off
 /*!
 
  @file spirv_reflect.h
@@ -153,9 +154,55 @@ typedef enum SpvReflectDecorationFlagBits {
   SPV_REFLECT_DECORATION_PATCH                  = 0x00000400,
   SPV_REFLECT_DECORATION_PER_VERTEX             = 0x00000800,
   SPV_REFLECT_DECORATION_PER_TASK               = 0x00001000,
+  SPV_REFLECT_DECORATION_WEIGHT_TEXTURE         = 0x00002000,
+  SPV_REFLECT_DECORATION_BLOCK_MATCH_TEXTURE    = 0x00004000,
 } SpvReflectDecorationFlagBits;
 
 typedef uint32_t SpvReflectDecorationFlags;
+
+// Based of SPV_GOOGLE_user_type
+typedef enum SpvReflectUserType {
+  SPV_REFLECT_USER_TYPE_INVALID = 0,
+  SPV_REFLECT_USER_TYPE_CBUFFER,
+  SPV_REFLECT_USER_TYPE_TBUFFER,
+  SPV_REFLECT_USER_TYPE_APPEND_STRUCTURED_BUFFER,
+  SPV_REFLECT_USER_TYPE_BUFFER,
+  SPV_REFLECT_USER_TYPE_BYTE_ADDRESS_BUFFER,
+  SPV_REFLECT_USER_TYPE_CONSTANT_BUFFER,
+  SPV_REFLECT_USER_TYPE_CONSUME_STRUCTURED_BUFFER,
+  SPV_REFLECT_USER_TYPE_INPUT_PATCH,
+  SPV_REFLECT_USER_TYPE_OUTPUT_PATCH,
+  SPV_REFLECT_USER_TYPE_RASTERIZER_ORDERED_BUFFER,
+  SPV_REFLECT_USER_TYPE_RASTERIZER_ORDERED_BYTE_ADDRESS_BUFFER,
+  SPV_REFLECT_USER_TYPE_RASTERIZER_ORDERED_STRUCTURED_BUFFER,
+  SPV_REFLECT_USER_TYPE_RASTERIZER_ORDERED_TEXTURE_1D,
+  SPV_REFLECT_USER_TYPE_RASTERIZER_ORDERED_TEXTURE_1D_ARRAY,
+  SPV_REFLECT_USER_TYPE_RASTERIZER_ORDERED_TEXTURE_2D,
+  SPV_REFLECT_USER_TYPE_RASTERIZER_ORDERED_TEXTURE_2D_ARRAY,
+  SPV_REFLECT_USER_TYPE_RASTERIZER_ORDERED_TEXTURE_3D,
+  SPV_REFLECT_USER_TYPE_RAYTRACING_ACCELERATION_STRUCTURE,
+  SPV_REFLECT_USER_TYPE_RW_BUFFER,
+  SPV_REFLECT_USER_TYPE_RW_BYTE_ADDRESS_BUFFER,
+  SPV_REFLECT_USER_TYPE_RW_STRUCTURED_BUFFER,
+  SPV_REFLECT_USER_TYPE_RW_TEXTURE_1D,
+  SPV_REFLECT_USER_TYPE_RW_TEXTURE_1D_ARRAY,
+  SPV_REFLECT_USER_TYPE_RW_TEXTURE_2D,
+  SPV_REFLECT_USER_TYPE_RW_TEXTURE_2D_ARRAY,
+  SPV_REFLECT_USER_TYPE_RW_TEXTURE_3D,
+  SPV_REFLECT_USER_TYPE_STRUCTURED_BUFFER,
+  SPV_REFLECT_USER_TYPE_SUBPASS_INPUT,
+  SPV_REFLECT_USER_TYPE_SUBPASS_INPUT_MS,
+  SPV_REFLECT_USER_TYPE_TEXTURE_1D,
+  SPV_REFLECT_USER_TYPE_TEXTURE_1D_ARRAY,
+  SPV_REFLECT_USER_TYPE_TEXTURE_2D,
+  SPV_REFLECT_USER_TYPE_TEXTURE_2D_ARRAY,
+  SPV_REFLECT_USER_TYPE_TEXTURE_2DMS,
+  SPV_REFLECT_USER_TYPE_TEXTURE_2DMS_ARRAY,
+  SPV_REFLECT_USER_TYPE_TEXTURE_3D,
+  SPV_REFLECT_USER_TYPE_TEXTURE_BUFFER,
+  SPV_REFLECT_USER_TYPE_TEXTURE_CUBE,
+  SPV_REFLECT_USER_TYPE_TEXTURE_CUBE_ARRAY,
+} SpvReflectUserType;
 
 /*! @enum SpvReflectResourceType
 
@@ -217,6 +264,8 @@ typedef enum SpvReflectFormat {
 enum SpvReflectVariableFlagBits{
   SPV_REFLECT_VARIABLE_FLAGS_NONE   = 0x00000000,
   SPV_REFLECT_VARIABLE_FLAGS_UNUSED = 0x00000001,
+  // If variable points to a copy of the PhysicalStorageBuffer struct
+  SPV_REFLECT_VARIABLE_FLAGS_PHYSICAL_POINTER_COPY = 0x00000002,
 };
 
 typedef uint32_t SpvReflectVariableFlags;
@@ -316,7 +365,6 @@ typedef struct SpvReflectImageTraits {
 
 typedef enum SpvReflectArrayDimType {
   SPV_REFLECT_ARRAY_DIM_RUNTIME       = 0,         // OpTypeRuntimeArray
-  SPV_REFLECT_ARRAY_DIM_SPEC_CONSTANT = 0xFFFFFFFF // specialization constant
 } SpvReflectArrayDimType;
 
 typedef struct SpvReflectArrayTraits {
@@ -345,7 +393,9 @@ typedef struct SpvReflectTypeDescription {
   const char*                       type_name;
   // Non-NULL if type is member of a struct
   const char*                       struct_member_name;
-  SpvStorageClass                   storage_class;
+
+  // The storage class (SpvStorageClass) if the type, and -1 if it does not have a storage class.
+  int                               storage_class;
   SpvReflectTypeFlags               type_flags;
   SpvReflectDecorationFlags         decoration_flags;
 
@@ -358,6 +408,10 @@ typedef struct SpvReflectTypeDescription {
   // If underlying type is a struct (ex. array of structs)
   // this gives access to the OpTypeStruct
   struct SpvReflectTypeDescription* struct_type_description;
+
+  // Some pointers to SpvReflectTypeDescription are really
+  // just copies of another reference to the same OpType
+  uint32_t                          copied;
 
   // @deprecated use struct_type_description instead
   uint32_t                          member_count;
@@ -377,7 +431,9 @@ typedef struct SpvReflectInterfaceVariable {
   SpvStorageClass                     storage_class;
   const char*                         semantic;
   SpvReflectDecorationFlags           decoration_flags;
-  SpvBuiltIn                          built_in;
+
+  // The builtin id (SpvBuiltIn) if the variable is a builtin, and -1 otherwise.
+  int                                 built_in;
   SpvReflectNumericTraits             numeric;
   SpvReflectArrayTraits               array;
 
@@ -442,6 +498,8 @@ typedef struct SpvReflectDescriptorBinding {
   uint32_t                            accessed;
   uint32_t                            uav_counter_id;
   struct SpvReflectDescriptorBinding* uav_counter_binding;
+  uint32_t                            byte_address_buffer_offset_count;
+  uint32_t*                           byte_address_buffer_offsets;
 
   SpvReflectTypeDescription*          type_description;
 
@@ -451,6 +509,8 @@ typedef struct SpvReflectDescriptorBinding {
   } word_offset;
 
   SpvReflectDecorationFlags           decoration_flags;
+  // Requires SPV_GOOGLE_user_type
+  SpvReflectUserType                  user_type;
 } SpvReflectDescriptorBinding;
 
 /*! @struct SpvReflectDescriptorSet
@@ -511,6 +571,16 @@ typedef struct SpvReflectCapability {
   uint32_t                          word_offset;
 } SpvReflectCapability;
 
+
+/*! @struct SpvReflectSpecId
+
+*/
+typedef struct SpvReflectSpecializationConstant {
+  uint32_t spirv_id;
+  uint32_t constant_id;
+  const char* name;
+} SpvReflectSpecializationConstant;
+
 /*! @struct SpvReflectShaderModule
 
 */
@@ -540,6 +610,8 @@ typedef struct SpvReflectShaderModule {
   SpvReflectInterfaceVariable*      interface_variables;                              // Uses value(s) from first entry point
   uint32_t                          push_constant_block_count;                        // Uses value(s) from first entry point
   SpvReflectBlockVariable*          push_constant_blocks;                             // Uses value(s) from first entry point
+  uint32_t                          spec_constant_count;                              // Uses value(s) from first entry point
+  SpvReflectSpecializationConstant* spec_constants;                                   // Uses value(s) from first entry point
 
   struct Internal {
     SpvReflectModuleFlags           module_flags;
@@ -950,6 +1022,25 @@ SpvReflectResult spvReflectEnumerateEntryPointPushConstantBlocks(
   SpvReflectBlockVariable**     pp_blocks
 );
 
+
+/*! @fn spvReflectEnumerateSpecializationConstants
+ @param  p_module      Pointer to an instance of SpvReflectShaderModule.
+ @param  p_count       If pp_blocks is NULL, the module's specialization constant
+                       count will be stored here. If pp_blocks is not NULL, *p_count
+                       must contain the module's specialization constant count.
+ @param  pp_constants  If NULL, the module's specialization constant count
+                       will be written to *p_count. If non-NULL, pp_blocks must
+                       point to an array with *p_count entries, where pointers to
+                       the module's specialization constant blocks will be written.
+                       The caller must not free the  variables written to this array.
+ @return               If successful, returns SPV_REFLECT_RESULT_SUCCESS.
+                       Otherwise, the error code indicates the cause of the failure.
+*/
+SpvReflectResult spvReflectEnumerateSpecializationConstants(
+  const SpvReflectShaderModule*      p_module,
+  uint32_t*                          p_count,
+  SpvReflectSpecializationConstant** pp_constants
+);
 
 /*! @fn spvReflectGetDescriptorBinding
 
@@ -1541,6 +1632,7 @@ public:
   SpvReflectResult  EnumeratePushConstants(uint32_t* p_count, SpvReflectBlockVariable** pp_blocks) const {
     return EnumeratePushConstantBlocks(p_count, pp_blocks);
   }
+  SpvReflectResult  EnumerateSpecializationConstants(uint32_t* p_count, SpvReflectSpecializationConstant** pp_constants) const;
 
   const SpvReflectDescriptorBinding*  GetDescriptorBinding(uint32_t binding_number, uint32_t set_number, SpvReflectResult* p_result = nullptr) const;
   const SpvReflectDescriptorBinding*  GetEntryPointDescriptorBinding(const char* entry_point, uint32_t binding_number, uint32_t set_number, SpvReflectResult* p_result = nullptr) const;
@@ -1713,9 +1805,9 @@ inline const char* ShaderModule::GetEntryPointName() const {
   return this->GetEntryPointName(0);
 }
 
-/*! @fn GetEntryPoint
+/*! @fn GetSourceFile
 
-  @return Returns entry point
+  @return Returns source file
 
 */
 inline const char* ShaderModule::GetSourceFile() const {
@@ -1985,6 +2077,24 @@ inline SpvReflectResult ShaderModule::EnumeratePushConstantBlocks(
     &m_module,
     p_count,
     pp_blocks);
+  return m_result;
+}
+
+/*! @fn EnumerateSpecializationConstants
+  @param  p_count
+  @param  pp_constants
+  @return
+*/
+inline SpvReflectResult ShaderModule::EnumerateSpecializationConstants(
+    uint32_t*                          p_count,
+    SpvReflectSpecializationConstant** pp_constants
+) const
+{
+  m_result = spvReflectEnumerateSpecializationConstants(
+    &m_module,
+    p_count,
+    pp_constants
+  );
   return m_result;
 }
 
@@ -2337,3 +2447,5 @@ inline SpvReflectResult ShaderModule::ChangeOutputVariableLocation(
 } // namespace spv_reflect
 #endif // defined(__cplusplus) && !defined(SPIRV_REFLECT_DISABLE_CPP_WRAPPER)
 #endif // SPIRV_REFLECT_H
+
+// clang-format on
