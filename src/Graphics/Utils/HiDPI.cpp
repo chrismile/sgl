@@ -40,12 +40,23 @@
 #ifdef SUPPORT_GLFW
 #include <GLFW/glfw3.h>
 
+// For some reason, I thought GLFW 3.4 would expose _GLFW_X11 etc., but that is not the case...
+/*
 // Fallback for older versions of GLFW
 #if !(GLFW_VERSION_MAJOR >= 3 && GLFW_VERSION_MINOR >= 4)
+#if defined(_WIN32)
+#define GLFW_EXPOSE_NATIVE_WIN32
+#endif
 #if defined(__linux__)
 // We will assume a system with an old GLFW version will most likely not use Wayland, but X11.
 #define GLFW_EXPOSE_NATIVE_X11
 #endif
+#endif
+*/
+
+// Fallback for GLFW not providing build configuration even in 3.4...
+#if defined(_WIN32) && !defined(_GLFW_WIN32)
+#define _GLFW_WIN32
 #endif
 
 #ifndef __EMSCRIPTEN__
@@ -158,8 +169,12 @@ float getHighDPIScaleFactor() {
 #if defined(SUPPORT_SDL2) || defined(SUPPORT_GLFW)
     bool allowHighDPI = false;
 #endif
+#ifdef __linux__
     bool isWayland = false;
+#endif
+#ifdef __APPLE__
     bool isCocoa = false;
+#endif
     auto* window = sgl::AppSettings::get()->getMainWindow();
 #ifdef SUPPORT_SDL2
     if (window->getBackend() == WindowBackend::SDL2_IMPL) {
@@ -195,8 +210,12 @@ float getHighDPIScaleFactor() {
             Logfile::get()->writeError(std::string() + "Couldn't get window information: " + SDL_GetError());
         }
 
+#ifdef __linux__
         isWayland = wminfo.subsystem == SDL_SYSWM_WAYLAND;
+#endif
+#ifdef __APPLE__
         isCocoa = wminfo.subsystem == SDL_SYSWM_COCOA;
+#endif
         allowHighDPI = (SDL_GetWindowFlags(sdlWindow) & SDL_WINDOW_ALLOW_HIGHDPI) != 0;
     }
 #endif
@@ -205,7 +224,9 @@ float getHighDPIScaleFactor() {
     if (window->getBackend() == WindowBackend::GLFW_IMPL) {
 #if GLFW_VERSION_MAJOR >= 3 && GLFW_VERSION_MINOR >= 4
 
+#if defined(GLFW_EXPOSE_NATIVE_X11) || defined(GLFW_EXPOSE_NATIVE_WIN32) || defined(GLFW_EXPOSE_NATIVE_WAYLAND) || defined(GLFW_EXPOSE_NATIVE_COCOA)
         auto glfwPlatform = glfwGetPlatform();
+#endif
 #ifdef GLFW_EXPOSE_NATIVE_X11
         if (glfwPlatform == GLFW_PLATFORM_X11) {
             Display* x11_display = glfwGetX11Display();
@@ -260,7 +281,13 @@ float getHighDPIScaleFactor() {
             } catch(std::invalid_argument& e) {}
         }
     }
-    if (!scaleFactorSetManually && (isWayland || isCocoa)) {
+    bool isWaylandOrCocoa = isWayland;
+#endif
+#ifdef __APPLE__
+    bool isWaylandOrCocoa = isCocoa;
+#endif
+#if defined(__linux__) || defined(__APPLE__)
+    if (!scaleFactorSetManually && isWaylandOrCocoa) {
         if (window->getVirtualWidth() != window->getPixelWidth()) {
             scaleFactorHiDPI = float(window->getPixelWidth()) / float(window->getVirtualWidth());
             scaleFactorSetManually = true;

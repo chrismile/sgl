@@ -29,6 +29,8 @@
 #		include <vulkan/vk_platform.h>
 #		include <vulkan/vulkan_core.h>
 #	endif
+// Change by Christoph Neuhauser (date: 2025-03-28) to fix check in VMA for VULKAN_H_.
+#   define VULKAN_H_
 #endif
 
 /* Disable several extensions on earlier SDKs because later SDKs introduce a backwards incompatible change to function signatures */
