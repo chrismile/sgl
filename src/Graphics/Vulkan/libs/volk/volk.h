@@ -29,8 +29,6 @@
 #		include <vulkan/vk_platform.h>
 #		include <vulkan/vulkan_core.h>
 #	endif
-// Change by Christoph Neuhauser (date: 2025-03-28) to fix check in VMA for VULKAN_H_.
-#   define VULKAN_H_
 #endif
 
 /* Disable several extensions on earlier SDKs because later SDKs introduce a backwards incompatible change to function signatures */
@@ -136,6 +134,9 @@ void volkLoadDeviceTable(struct VolkDeviceTable* table, VkDevice device);
  * or slow to compile (Windows), or introducing unprefixed macros which can cause conflicts (Windows, Xlib).
  */
 #if !defined(VULKAN_H_) && !defined(VOLK_VULKAN_H_PATH)
+
+// Change by Christoph Neuhauser (date: 2025-03-28) to fix check in VMA for VULKAN_H_.
+#define VULKAN_H_
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 #include <vulkan/vulkan_android.h>
