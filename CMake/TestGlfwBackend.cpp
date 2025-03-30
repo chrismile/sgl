@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
     if (!glfwInit()) {
         return 1;
     }
-    
+
 #ifdef TEST_X11
     Display* x11Display = glfwGetX11Display();
     std::cout << x11Display << std::endl;

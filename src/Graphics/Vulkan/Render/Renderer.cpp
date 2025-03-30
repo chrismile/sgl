@@ -841,6 +841,18 @@ void Renderer::resolveImage(const sgl::vk::ImageViewPtr& sourceImage, const sgl:
             1, &imageResolve);
 }
 
+#ifdef VK_NV_cooperative_vector
+// Cooperative vector functionality.
+void Renderer::convertCooperativeVectorMatrixNV(const VkConvertCooperativeVectorMatrixInfoNV& convertCoopVecMatInfo) {
+    vkCmdConvertCooperativeVectorMatrixNV(commandBuffer, 1, &convertCoopVecMatInfo);
+}
+void Renderer::convertCooperativeVectorMatrixNV(
+    const std::vector<VkConvertCooperativeVectorMatrixInfoNV>& convertCoopVecMatInfos) {
+    vkCmdConvertCooperativeVectorMatrixNV(
+        commandBuffer, uint32_t(convertCoopVecMatInfos.size()), convertCoopVecMatInfos.data());
+}
+#endif
+
 void Renderer::insertMemoryBarrier(
         VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
         VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask) {

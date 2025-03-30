@@ -1151,6 +1151,20 @@ void Device::createLogicalDeviceAndQueues(
         }
     }
 #endif
+#ifdef VK_KHR_shader_bfloat16
+    if (deviceExtensionsSet.find(VK_KHR_SHADER_BFLOAT16_EXTENSION_NAME) != deviceExtensionsSet.end()) {
+        shaderBfloat16Features.sType =
+                VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_BFLOAT16_FEATURES_KHR;
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &shaderBfloat16Features;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        if (requestedDeviceFeatures.shaderBfloat16Features.shaderBFloat16Type == VK_FALSE) {
+            requestedDeviceFeatures.shaderBfloat16Features = shaderBfloat16Features;
+        }
+    }
+#endif
     if (deviceExtensionsSet.find(VK_NV_MESH_SHADER_EXTENSION_NAME) != deviceExtensionsSet.end()) {
         meshShaderFeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
         VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
@@ -1226,6 +1240,19 @@ void Device::createLogicalDeviceAndQueues(
 
         if (requestedDeviceFeatures.cooperativeMatrix2FeaturesNV.cooperativeMatrixWorkgroupScope == VK_FALSE) {
             requestedDeviceFeatures.cooperativeMatrix2FeaturesNV = cooperativeMatrix2FeaturesNV;
+        }
+    }
+#endif
+#ifdef VK_NV_cooperative_vector
+    if (deviceExtensionsSet.find(VK_NV_COOPERATIVE_VECTOR_EXTENSION_NAME) != deviceExtensionsSet.end()) {
+        cooperativeVectorFeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_VECTOR_FEATURES_NV;
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &cooperativeVectorFeaturesNV;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        if (requestedDeviceFeatures.cooperativeVectorFeaturesNV.cooperativeVector == VK_FALSE) {
+            requestedDeviceFeatures.cooperativeVectorFeaturesNV = cooperativeVectorFeaturesNV;
         }
     }
 #endif
@@ -1320,6 +1347,12 @@ void Device::createLogicalDeviceAndQueues(
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.shaderAtomicFloat2Features.pNext);
     }
 #endif
+#ifdef VK_KHR_shader_bfloat16
+    if (requestedDeviceFeatures.shaderBfloat16Features.shaderBFloat16Type) {
+        *pNextPtr = &requestedDeviceFeatures.shaderBfloat16Features;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.shaderBfloat16Features.pNext);
+    }
+#endif
     if (requestedDeviceFeatures.meshShaderFeaturesNV.meshShader) {
         *pNextPtr = &requestedDeviceFeatures.meshShaderFeaturesNV;
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.meshShaderFeaturesNV.pNext);
@@ -1350,6 +1383,12 @@ void Device::createLogicalDeviceAndQueues(
     if (requestedDeviceFeatures.cooperativeMatrix2FeaturesNV.cooperativeMatrixWorkgroupScope) {
         *pNextPtr = &requestedDeviceFeatures.cooperativeMatrix2FeaturesNV;
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.cooperativeMatrix2FeaturesNV.pNext);
+    }
+#endif
+#ifdef VK_NV_cooperative_vector
+    if (requestedDeviceFeatures.cooperativeVectorFeaturesNV.cooperativeVector) {
+        *pNextPtr = &requestedDeviceFeatures.cooperativeVectorFeaturesNV;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.cooperativeVectorFeaturesNV.pNext);
     }
 #endif
 #ifdef VK_VERSION_1_1
@@ -1769,6 +1808,17 @@ void Device::_getDeviceInformation() {
         vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
     }
 #endif
+
+#ifdef VK_NV_cooperative_vector
+    if (isDeviceExtensionSupported(VK_NV_COOPERATIVE_VECTOR_EXTENSION_NAME)) {
+        cooperativeVectorPropertiesNV = {};
+        cooperativeVectorPropertiesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_VECTOR_PROPERTIES_NV;
+        VkPhysicalDeviceProperties2 deviceProperties2 = {};
+        deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        deviceProperties2.pNext = &cooperativeVectorPropertiesNV;
+        vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
+    }
+#endif
 }
 
 #ifdef VK_NV_cooperative_matrix
@@ -1820,6 +1870,28 @@ const std::vector<VkCooperativeMatrixFlexibleDimensionsPropertiesNV>& Device::ge
         isInitializedSupportedCooperativeMatrixFlexibleDimensionsPropertiesNV = true;
     }
     return supportedCooperativeMatrixFlexibleDimensionsPropertiesNV;
+}
+#endif
+
+#ifdef VK_NV_cooperative_vector
+const std::vector<VkCooperativeVectorPropertiesNV>& Device::getSupportedCooperativeVectorPropertiesNV() {
+    if (!isInitializedSupportedCooperativeVectorPropertiesNV) {
+        uint32_t propertyCount = 0;
+        vkGetPhysicalDeviceCooperativeVectorPropertiesNV(physicalDevice, &propertyCount, nullptr);
+        supportedCooperativeVectorPropertiesNV.resize(propertyCount);
+        for (size_t i = 0; i < supportedCooperativeVectorPropertiesNV.size(); i++) {
+            supportedCooperativeVectorPropertiesNV.at(i).sType =
+                    VK_STRUCTURE_TYPE_COOPERATIVE_VECTOR_PROPERTIES_NV;
+        }
+        vkGetPhysicalDeviceCooperativeVectorPropertiesNV(
+                physicalDevice, &propertyCount, supportedCooperativeVectorPropertiesNV.data());
+        isInitializedSupportedCooperativeVectorPropertiesNV = true;
+    }
+    return supportedCooperativeVectorPropertiesNV;
+}
+
+void Device::convertCooperativeVectorMatrixNV(const VkConvertCooperativeVectorMatrixInfoNV& convertCoopVecMatInfo) {
+    vkConvertCooperativeVectorMatrixNV(device, &convertCoopVecMatInfo);
 }
 #endif
 

@@ -134,6 +134,10 @@ struct DLL_OBJECT DeviceFeatures {
         shaderAtomicFloat2Features.sType =
                 VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_2_FEATURES_EXT;
 #endif
+#ifdef VK_KHR_shader_bfloat16
+        shaderBfloat16Features.sType =
+                VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_BFLOAT16_FEATURES_KHR;
+#endif
         meshShaderFeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
 #ifdef VK_EXT_mesh_shader
         meshShaderFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
@@ -177,6 +181,11 @@ struct DLL_OBJECT DeviceFeatures {
 #else
     VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT_Compat shaderAtomicFloat2Features{};
 #endif
+#ifdef VK_KHR_shader_bfloat16
+    VkPhysicalDeviceShaderBfloat16FeaturesKHR shaderBfloat16Features{};
+#else
+    VkPhysicalDeviceShaderBfloat16FeaturesKHR_Compat shaderBfloat16Features{};
+#endif
     VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragmentShaderBarycentricFeaturesNV{};
     VkPhysicalDeviceMeshShaderFeaturesNV meshShaderFeaturesNV{};
 #ifdef VK_EXT_mesh_shader
@@ -198,6 +207,11 @@ struct DLL_OBJECT DeviceFeatures {
     VkPhysicalDeviceCooperativeMatrix2FeaturesNV cooperativeMatrix2FeaturesNV{};
 #else
     VkPhysicalDeviceCooperativeMatrix2FeaturesNV_Compat cooperativeMatrix2FeaturesNV{};
+#endif
+#ifdef VK_NV_cooperative_vector
+    VkPhysicalDeviceCooperativeVectorFeaturesNV cooperativeVectorFeaturesNV{};
+#else
+    VkPhysicalDeviceCooperativeVectorFeaturesNV_Compat cooperativeVectorFeaturesNV{};
 #endif
     // The following features have no extensions, thus use
     bool optionalEnableShaderDrawParametersFeatures = false;
@@ -401,6 +415,11 @@ public:
         return shaderAtomicFloat2Features;
     }
 #endif
+#ifdef VK_KHR_shader_bfloat16
+    inline const VkPhysicalDeviceShaderBfloat16FeaturesKHR& getPhysicalDeviceShaderBfloat16Features() const {
+        return shaderBfloat16Features;
+    }
+#endif
     inline const VkPhysicalDeviceShaderDrawParametersFeatures& getPhysicalDeviceShaderDrawParametersFeatures() const {
         return shaderDrawParametersFeatures;
     }
@@ -458,6 +477,16 @@ public:
         return cooperativeMatrix2PropertiesNV;
     }
     const std::vector<VkCooperativeMatrixFlexibleDimensionsPropertiesNV>& getSupportedCooperativeMatrixFlexibleDimensionsPropertiesNV();
+#endif
+#ifdef VK_NV_cooperative_vector
+    inline const VkPhysicalDeviceCooperativeVectorFeaturesNV& getCooperativeVectorFeaturesNV() const {
+        return cooperativeVectorFeaturesNV;
+    }
+    inline const VkPhysicalDeviceCooperativeVectorPropertiesNV& getCooperativeVectorPropertiesNV() const {
+        return cooperativeVectorPropertiesNV;
+    }
+    const std::vector<VkCooperativeVectorPropertiesNV>& getSupportedCooperativeVectorPropertiesNV();
+    void convertCooperativeVectorMatrixNV(const VkConvertCooperativeVectorMatrixInfoNV& convertCoopVecMatInfo);
 #endif
     const VkPhysicalDeviceShaderCorePropertiesAMD& getDeviceShaderCorePropertiesAMD();
     const VkPhysicalDeviceShaderCoreProperties2AMD& getDeviceShaderCoreProperties2AMD();
@@ -715,6 +744,11 @@ private:
 #else
     VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT_Compat shaderAtomicFloat2Features{};
 #endif
+#ifdef VK_KHR_shader_bfloat16
+    VkPhysicalDeviceShaderBfloat16FeaturesKHR shaderBfloat16Features{};
+#else
+    VkPhysicalDeviceShaderBfloat16FeaturesKHR_Compat shaderBfloat16Features{};
+#endif
     VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragmentShaderBarycentricFeaturesNV{};
     VkPhysicalDeviceMeshShaderFeaturesNV meshShaderFeaturesNV{};
 #ifdef VK_EXT_mesh_shader
@@ -749,9 +783,19 @@ private:
     VkPhysicalDeviceCooperativeMatrix2PropertiesNV_Compat cooperativeMatrix2PropertiesNV{};
     std::vector<VkPhysicalDeviceCooperativeMatrix2PropertiesNV_Compat> supportedCooperativeMatrixFlexibleDimensionsPropertiesNV;
 #endif
+#ifdef VK_NV_cooperative_vector
+    VkPhysicalDeviceCooperativeVectorFeaturesNV cooperativeVectorFeaturesNV{};
+    VkPhysicalDeviceCooperativeVectorPropertiesNV cooperativeVectorPropertiesNV{};
+    std::vector<VkCooperativeVectorPropertiesNV> supportedCooperativeVectorPropertiesNV;
+#else
+    VkPhysicalDeviceCooperativeVectorFeaturesNV_Compat cooperativeVectorFeaturesNV{};
+    VkPhysicalDeviceCooperativeVectorPropertiesNV_Compat cooperativeVectorPropertiesNV{};
+    std::vector<VkPhysicalDeviceCooperativeVectorPropertiesNV_Compat> supportedCooperativeVectorPropertiesNV;
+#endif
     bool isInitializedSupportedCooperativeMatrixPropertiesNV = false;
     bool isInitializedSupportedCooperativeMatrixPropertiesKHR = false;
     bool isInitializedSupportedCooperativeMatrixFlexibleDimensionsPropertiesNV = false;
+    bool isInitializedSupportedCooperativeVectorPropertiesNV = false;
 
     // AMD-specific properties.
     VkPhysicalDeviceShaderCorePropertiesAMD deviceShaderCorePropertiesAMD{};

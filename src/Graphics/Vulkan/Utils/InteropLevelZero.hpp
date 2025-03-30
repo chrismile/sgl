@@ -301,6 +301,7 @@ DLL_OBJECT void freeLevelZeroFunctionTable();
 
 #ifdef SUPPORT_SYCL_INTEROP
 // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/sycl_ext_oneapi_backend_level_zero.md
+DLL_OBJECT bool syclGetQueueManagesCommandList(sycl::queue& syclQueue);
 DLL_OBJECT ze_command_list_handle_t syclStreamToZeCommandList(sycl::queue& syclQueue);
 DLL_OBJECT ze_device_properties_t retrieveZeDevicePropertiesFromSyclQueue(sycl::queue& syclQueue);
 #endif

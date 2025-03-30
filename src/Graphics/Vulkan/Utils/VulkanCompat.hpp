@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2022, Christoph Neuhauser
+ * Copyright (c) 2022-2025, Christoph Neuhauser
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -445,5 +445,29 @@ typedef struct VkPhysicalDeviceCooperativeMatrix2PropertiesNV_Compat {
     uint32_t           cooperativeMatrixFlexibleDimensionsMaxDimension;
     uint32_t           cooperativeMatrixWorkgroupScopeReservedSharedMemory;
 } VkPhysicalDeviceCooperativeMatrix2PropertiesNV_Compat;
+
+typedef struct VkPhysicalDeviceCooperativeVectorPropertiesNV_Compat {
+    VkStructureType       sType;
+    void*                 pNext;
+    VkShaderStageFlags    cooperativeVectorSupportedStages;
+    VkBool32              cooperativeVectorTrainingFloat16Accumulation;
+    VkBool32              cooperativeVectorTrainingFloat32Accumulation;
+    uint32_t              maxCooperativeVectorComponents;
+} VkPhysicalDeviceCooperativeVectorPropertiesNV_Compat;
+
+typedef struct VkPhysicalDeviceCooperativeVectorFeaturesNV_Compat {
+    VkStructureType    sType;
+    void*              pNext;
+    VkBool32           cooperativeVector;
+    VkBool32           cooperativeVectorTraining;
+} VkPhysicalDeviceCooperativeVectorFeaturesNV_Compat;
+
+typedef struct VkPhysicalDeviceShaderBfloat16FeaturesKHR_Compat {
+    VkStructureType    sType;
+    void*              pNext;
+    VkBool32           shaderBFloat16Type;
+    VkBool32           shaderBFloat16DotProduct;
+    VkBool32           shaderBFloat16CooperativeMatrix;
+} VkPhysicalDeviceShaderBfloat16FeaturesKHR_Compat;
 
 #endif //SGL_VULKANCOMPAT_HPP

@@ -163,6 +163,13 @@ public:
      */
     void resolveImage(const sgl::vk::ImageViewPtr& sourceImage, const sgl::vk::ImageViewPtr& destImage);
 
+#ifdef VK_NV_cooperative_vector
+    // Cooperative vector functionality.
+    void convertCooperativeVectorMatrixNV(const VkConvertCooperativeVectorMatrixInfoNV& convertCoopVecMatInfo);
+    void convertCooperativeVectorMatrixNV(
+            const std::vector<VkConvertCooperativeVectorMatrixInfoNV>& convertCoopVecMatInfos);
+#endif
+
     // Synchronization primitives.
     void insertMemoryBarrier(
             VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,

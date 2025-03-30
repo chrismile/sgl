@@ -659,14 +659,31 @@ void _checkZeResultDriver(ze_result_t zeResult, ze_driver_handle_t hDriver, cons
 
 #ifdef SUPPORT_SYCL_INTEROP
 // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/sycl_ext_oneapi_backend_level_zero.md
+bool syclGetQueueManagesCommandList(sycl::queue& syclQueue) {
+    std::variant<ze_command_queue_handle_t, ze_command_list_handle_t> nativeQueue =
+        sycl::get_native<sycl::backend::ext_oneapi_level_zero>(syclQueue);
+    ze_command_queue_handle_t* zeCommandQueuePtr = std::get_if<ze_command_queue_handle_t>(&nativeQueue);
+    ze_command_list_handle_t* zeCommandListPtr = std::get_if<ze_command_list_handle_t>(&nativeQueue);
+    if (!zeCommandQueuePtr && !zeCommandListPtr) {
+        Logfile::get()->throwError(
+                "Error in syclGetQueueManagesCommandList: "
+                "SYCL queue stores neither a command queue nor command list handle.");
+    }
+    return zeCommandListPtr != nullptr;
+
+}
 
 ze_command_list_handle_t syclStreamToZeCommandList(sycl::queue& syclQueue) {
-    syclQueue.get_context();
     std::variant<ze_command_queue_handle_t, ze_command_list_handle_t> nativeQueue =
             sycl::get_native<sycl::backend::ext_oneapi_level_zero>(syclQueue);
+    ze_command_queue_handle_t* zeCommandQueuePtr = std::get_if<ze_command_queue_handle_t>(&nativeQueue);
     ze_command_list_handle_t* zeCommandListPtr = std::get_if<ze_command_list_handle_t>(&nativeQueue);
+    if (!zeCommandQueuePtr && !zeCommandListPtr) {
+        Logfile::get()->throwError(
+                "Error in syclStreamToZeCommandList: "
+                "SYCL queue stores neither a command queue nor command list handle.");
+    }
     if (!zeCommandListPtr) {
-        // TODO: Could we somehow also use ze_command_queue_handle_t?
         Logfile::get()->throwError(
                 "Error in syclStreamToZeCommandList: "
                 "SYCL queue stores a command queue handle, not a command list handle.");
