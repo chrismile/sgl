@@ -40,36 +40,17 @@
 #ifdef SUPPORT_GLFW
 #include <GLFW/glfw3.h>
 
-// For some reason, I thought GLFW 3.4 would expose _GLFW_X11 etc., but that is not the case...
-/*
-// Fallback for older versions of GLFW
-#if !(GLFW_VERSION_MAJOR >= 3 && GLFW_VERSION_MINOR >= 4)
-#if defined(_WIN32)
-#define GLFW_EXPOSE_NATIVE_WIN32
-#endif
-#if defined(__linux__)
-// We will assume a system with an old GLFW version will most likely not use Wayland, but X11.
-#define GLFW_EXPOSE_NATIVE_X11
-#endif
-#endif
-*/
-
-// Fallback for GLFW not providing build configuration even in 3.4...
-#if defined(_WIN32) && !defined(_GLFW_WIN32)
-#define _GLFW_WIN32
-#endif
-
 #ifndef __EMSCRIPTEN__
-#ifdef _GLFW_X11
+#ifdef GLFW_SUPPORTS_X11
 #define GLFW_EXPOSE_NATIVE_X11
 #endif
-#ifdef _GLFW_WAYLAND
+#ifdef GLFW_SUPPORTS_WAYLAND
 #define GLFW_EXPOSE_NATIVE_WAYLAND
 #endif
-#ifdef _GLFW_COCOA
+#ifdef GLFW_SUPPORTS_COCOA
 #define GLFW_EXPOSE_NATIVE_COCOA
 #endif
-#ifdef _GLFW_WIN32
+#ifdef GLFW_SUPPORTS_WIN32
 #define GLFW_EXPOSE_NATIVE_WIN32
 #endif
 #endif // __EMSCRIPTEN__
@@ -246,9 +227,12 @@ float getHighDPIScaleFactor() {
         allowHighDPI = true;
 #endif
 
-#else // GLFW_VERSION_MAJOR >= 3 && GLFW_VERSION_MINOR >= 4
+#else // !(GLFW_VERSION_MAJOR >= 3 && GLFW_VERSION_MINOR >= 4)
 
 #if defined(__linux__)
+        /*
+         * For GLFW pre-3.4, we assume that X11 is used as the window management system and not Wayland.
+         */
         Display* x11_display = glfwGetX11Display();
         scaleFactorSetManually = getScreenScalingX11(x11_display, scaleFactorHiDPI);
 #elif defined(_WIN32)
