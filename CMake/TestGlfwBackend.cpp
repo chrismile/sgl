@@ -38,7 +38,6 @@
 #include <GLFW/glfw3native.h>
 
 int main(int argc, char *argv[]) {
-    GLFWwindow* window;
     if (!glfwInit()) {
         return 1;
     }

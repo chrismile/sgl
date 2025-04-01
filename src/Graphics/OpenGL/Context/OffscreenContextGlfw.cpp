@@ -228,7 +228,7 @@ OffscreenContextGlfw::~OffscreenContextGlfw() {
         glfwWindow = nullptr;
     }
     if (!isGlfwInitializedExternally) {
-        if(glfwInitCalled){
+        if(glfwInitCalled) {
             f->glfwTerminate();
         }
     }

@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-22.04, windows-2019, windows-2022, macos-latest ]
+        os: [ ubuntu-22.04, windows-2022, macos-latest ]
 
     runs-on: ${{ matrix.os }}
     name: "${{ github.workflow }}: ${{ matrix.os }}"
@@ -50,7 +50,7 @@ jobs:
 
     - uses: lukka/get-cmake@latest
       with:
-        cmakeVersion: 3.31.6
+        cmakeVersion: 4.0.0
 
     - name: Install Vulkan SDK
       shell: bash
@@ -123,8 +123,7 @@ jobs:
       uses: lukka/run-vcpkg@v11
       with:
         vcpkgGitURL: 'https://github.com/microsoft/vcpkg.git'
-        vcpkgGitCommitId: '782ccc18d8b819cdef6794a6c03eb3d9f7cd04aa'
-        doNotCacheOnWorkflowFailure: true
+        vcpkgGitCommitId: 'ea2a964f9303270322cf3f2d51c265ba146c422d'
 
     - name: Create custom vcpkg triplet
       run: |
