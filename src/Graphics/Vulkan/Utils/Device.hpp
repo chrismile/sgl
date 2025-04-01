@@ -692,27 +692,27 @@ private:
     VkPhysicalDeviceVulkan11Features physicalDeviceVulkan11Features{};
     VkPhysicalDeviceVulkan11Properties physicalDeviceVulkan11Properties{};
 #else
-    VkPhysicalDeviceVulkan11Features_Compat physicalDeviceVulkan11Features{};
-    VkPhysicalDeviceVulkan11Properties_Compat physicalDeviceVulkan11Properties{};
+    [[maybe_unused]] VkPhysicalDeviceVulkan11Features_Compat physicalDeviceVulkan11Features{};
+    [[maybe_unused]] VkPhysicalDeviceVulkan11Properties_Compat physicalDeviceVulkan11Properties{};
 #endif
 #ifdef VK_VERSION_1_2
     VkPhysicalDeviceVulkan12Features physicalDeviceVulkan12Features{};
 #else
-    VkPhysicalDeviceVulkan12Features_Compat physicalDeviceVulkan12Features{};
+    [[maybe_unused]] VkPhysicalDeviceVulkan12Features_Compat physicalDeviceVulkan12Features{};
 #endif
 #ifdef VK_VERSION_1_3
     VkPhysicalDeviceVulkan13Features physicalDeviceVulkan13Features{};
     VkPhysicalDeviceVulkan13Properties physicalDeviceVulkan13Properties{};
 #else
-    VkPhysicalDeviceVulkan13Features_Compat physicalDeviceVulkan13Features{};
-    VkPhysicalDeviceVulkan13Properties_Compat physicalDeviceVulkan13Properties{};
+    [[maybe_unused]] VkPhysicalDeviceVulkan13Features_Compat physicalDeviceVulkan13Features{};
+    [[maybe_unused]] VkPhysicalDeviceVulkan13Properties_Compat physicalDeviceVulkan13Properties{};
 #endif
 #ifdef VK_VERSION_1_4
     VkPhysicalDeviceVulkan14Features physicalDeviceVulkan14Features{};
     VkPhysicalDeviceVulkan14Properties physicalDeviceVulkan14Properties{};
 #else
-    VkPhysicalDeviceVulkan14Features_Compat physicalDeviceVulkan14Features{};
-    VkPhysicalDeviceVulkan14Properties_Compat physicalDeviceVulkan14Properties{};
+    [[maybe_unused]] VkPhysicalDeviceVulkan14Features_Compat physicalDeviceVulkan14Features{};
+    [[maybe_unused]] VkPhysicalDeviceVulkan14Properties_Compat physicalDeviceVulkan14Properties{};
 #endif
     VkPhysicalDeviceSubgroupProperties subgroupProperties{};
     VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties{};
@@ -721,7 +721,7 @@ private:
 #ifdef VK_EXT_mesh_shader
     VkPhysicalDeviceMeshShaderPropertiesEXT meshShaderPropertiesEXT{};
 #else
-    VkPhysicalDeviceMeshShaderPropertiesEXT_Compat meshShaderPropertiesEXT{};
+    [[maybe_unused]] VkPhysicalDeviceMeshShaderPropertiesEXT_Compat meshShaderPropertiesEXT{};
 #endif
 
     VkPhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeatures{};
@@ -742,55 +742,55 @@ private:
 #ifdef VK_EXT_shader_atomic_float2
     VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT shaderAtomicFloat2Features{};
 #else
-    VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT_Compat shaderAtomicFloat2Features{};
+    [[maybe_unused]] VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT_Compat shaderAtomicFloat2Features{};
 #endif
 #ifdef VK_KHR_shader_bfloat16
     VkPhysicalDeviceShaderBfloat16FeaturesKHR shaderBfloat16Features{};
 #else
-    VkPhysicalDeviceShaderBfloat16FeaturesKHR_Compat shaderBfloat16Features{};
+    [[maybe_unused]] VkPhysicalDeviceShaderBfloat16FeaturesKHR_Compat shaderBfloat16Features{};
 #endif
     VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragmentShaderBarycentricFeaturesNV{};
     VkPhysicalDeviceMeshShaderFeaturesNV meshShaderFeaturesNV{};
 #ifdef VK_EXT_mesh_shader
     VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeaturesEXT{};
 #else
-    VkPhysicalDeviceMeshShaderFeaturesEXT_Compat meshShaderFeaturesEXT{};
+    [[maybe_unused]] VkPhysicalDeviceMeshShaderFeaturesEXT_Compat meshShaderFeaturesEXT{};
 #endif
 #ifdef VK_NV_cooperative_matrix
     VkPhysicalDeviceCooperativeMatrixFeaturesNV cooperativeMatrixFeaturesNV{};
     VkPhysicalDeviceCooperativeMatrixPropertiesNV cooperativeMatrixPropertiesNV{};
     std::vector<VkCooperativeMatrixPropertiesNV> supportedCooperativeMatrixPropertiesNV;
 #else
-    VkPhysicalDeviceCooperativeMatrixFeaturesNV_Compat cooperativeMatrixFeaturesNV{};
-    VkPhysicalDeviceCooperativeMatrixPropertiesNV_Compat cooperativeMatrixPropertiesNV{};
-    std::vector<VkPhysicalDeviceCooperativeMatrixFeaturesNV_Compat> supportedCooperativeMatrixPropertiesNV;
+    [[maybe_unused]] VkPhysicalDeviceCooperativeMatrixFeaturesNV_Compat cooperativeMatrixFeaturesNV{};
+    [[maybe_unused]] VkPhysicalDeviceCooperativeMatrixPropertiesNV_Compat cooperativeMatrixPropertiesNV{};
+    [[maybe_unused]] std::vector<VkPhysicalDeviceCooperativeMatrixFeaturesNV_Compat> supportedCooperativeMatrixPropertiesNV;
 #endif
 #ifdef VK_KHR_cooperative_matrix
     VkPhysicalDeviceCooperativeMatrixFeaturesKHR cooperativeMatrixFeaturesKHR{};
     VkPhysicalDeviceCooperativeMatrixPropertiesKHR cooperativeMatrixPropertiesKHR{};
     std::vector<VkCooperativeMatrixPropertiesKHR> supportedCooperativeMatrixPropertiesKHR;
 #else
-    VkPhysicalDeviceCooperativeMatrixFeaturesKHR_Compat cooperativeMatrixFeaturesKHR{};
-    VkPhysicalDeviceCooperativeMatrixPropertiesKHR_Compat cooperativeMatrixPropertiesKHR{};
-    std::vector<VkPhysicalDeviceCooperativeMatrixFeaturesKHR_Compat> supportedCooperativeMatrixPropertiesKHR;
+    [[maybe_unused]] VkPhysicalDeviceCooperativeMatrixFeaturesKHR_Compat cooperativeMatrixFeaturesKHR{};
+    [[maybe_unused]] VkPhysicalDeviceCooperativeMatrixPropertiesKHR_Compat cooperativeMatrixPropertiesKHR{};
+    [[maybe_unused]] std::vector<VkPhysicalDeviceCooperativeMatrixFeaturesKHR_Compat> supportedCooperativeMatrixPropertiesKHR;
 #endif
 #ifdef VK_NV_cooperative_matrix2
     VkPhysicalDeviceCooperativeMatrix2FeaturesNV cooperativeMatrix2FeaturesNV{};
     VkPhysicalDeviceCooperativeMatrix2PropertiesNV cooperativeMatrix2PropertiesNV{};
     std::vector<VkCooperativeMatrixFlexibleDimensionsPropertiesNV> supportedCooperativeMatrixFlexibleDimensionsPropertiesNV;
 #else
-    VkPhysicalDeviceCooperativeMatrix2FeaturesNV_Compat cooperativeMatrix2FeaturesNV{};
-    VkPhysicalDeviceCooperativeMatrix2PropertiesNV_Compat cooperativeMatrix2PropertiesNV{};
-    std::vector<VkPhysicalDeviceCooperativeMatrix2PropertiesNV_Compat> supportedCooperativeMatrixFlexibleDimensionsPropertiesNV;
+    [[maybe_unused]] VkPhysicalDeviceCooperativeMatrix2FeaturesNV_Compat cooperativeMatrix2FeaturesNV{};
+    [[maybe_unused]] VkPhysicalDeviceCooperativeMatrix2PropertiesNV_Compat cooperativeMatrix2PropertiesNV{};
+    [[maybe_unused]] std::vector<VkPhysicalDeviceCooperativeMatrix2PropertiesNV_Compat> supportedCooperativeMatrixFlexibleDimensionsPropertiesNV;
 #endif
 #ifdef VK_NV_cooperative_vector
     VkPhysicalDeviceCooperativeVectorFeaturesNV cooperativeVectorFeaturesNV{};
     VkPhysicalDeviceCooperativeVectorPropertiesNV cooperativeVectorPropertiesNV{};
     std::vector<VkCooperativeVectorPropertiesNV> supportedCooperativeVectorPropertiesNV;
 #else
-    VkPhysicalDeviceCooperativeVectorFeaturesNV_Compat cooperativeVectorFeaturesNV{};
-    VkPhysicalDeviceCooperativeVectorPropertiesNV_Compat cooperativeVectorPropertiesNV{};
-    std::vector<VkPhysicalDeviceCooperativeVectorPropertiesNV_Compat> supportedCooperativeVectorPropertiesNV;
+    [[maybe_unused]] VkPhysicalDeviceCooperativeVectorFeaturesNV_Compat cooperativeVectorFeaturesNV{};
+    [[maybe_unused]] VkPhysicalDeviceCooperativeVectorPropertiesNV_Compat cooperativeVectorPropertiesNV{};
+    [[maybe_unused]] std::vector<VkPhysicalDeviceCooperativeVectorPropertiesNV_Compat> supportedCooperativeVectorPropertiesNV;
 #endif
     bool isInitializedSupportedCooperativeMatrixPropertiesNV = false;
     bool isInitializedSupportedCooperativeMatrixPropertiesKHR = false;
@@ -805,22 +805,22 @@ private:
 
     // Queues for the logical device.
     std::vector<VkQueueFamilyProperties> queueFamilyProperties;
-    uint32_t graphicsQueueIndex;
-    uint32_t computeQueueIndex;
-    uint32_t workerThreadGraphicsQueueIndex;
-    VkQueue graphicsQueue;
-    VkQueue computeQueue;
-    VkQueue workerThreadGraphicsQueue; ///< For use in another thread.
+    uint32_t graphicsQueueIndex = 0;
+    uint32_t computeQueueIndex = 0;
+    uint32_t workerThreadGraphicsQueueIndex = 0;
+    VkQueue graphicsQueue = VK_NULL_HANDLE;
+    VkQueue computeQueue = VK_NULL_HANDLE;
+    VkQueue workerThreadGraphicsQueue = VK_NULL_HANDLE; ///< For use in another thread.
     std::thread::id mainThreadId;
 
     // Set of used command pools.
     std::unordered_map<CommandPoolType, VkCommandPool> commandPools;
 
     // Default descriptor pool.
-    VkDescriptorPool descriptorPool;
+    VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
 
     // Vulkan-OpenGL interoperability enabled?
-    bool openGlInteropEnabled = false;
+    [[maybe_unused]] bool openGlInteropEnabled = false;
 };
 
 }}

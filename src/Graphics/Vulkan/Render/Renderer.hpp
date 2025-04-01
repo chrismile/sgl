@@ -245,8 +245,6 @@ private:
 
     // Rasterizer state.
     GraphicsPipelinePtr graphicsPipeline;
-    VkClearColorValue clearColor = { { 0.0f, 0.0f, 0.0f, 1.0f } };
-    VkClearDepthStencilValue clearDepthStencil = { 1.0f, 0 };
     FramebufferPtr lastFramebuffer;
 
     // Compute state.

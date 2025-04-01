@@ -42,7 +42,11 @@ namespace sgl {
 
 /// https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/packUnorm.xhtml
 void packUnorm16Array(const std::vector<float>& floatVector, std::vector<uint16_t>& unormVector) {
-    auto [minValue, maxValue] = reduceFloatArrayMinMax(floatVector);
+    // LLVM raises the error "capturing a structured binding is not yet supported in OpenMP" with the following line...
+    //auto [minValue, maxValue] = reduceFloatArrayMinMax(floatVector);
+    auto [minValueBinding, maxValueBinding] = reduceFloatArrayMinMax(floatVector);
+    const float minValue = minValueBinding;
+    const float maxValue = maxValueBinding;
     unormVector.resize(floatVector.size());
 #ifdef USE_TBB
     tbb::parallel_for(tbb::blocked_range<size_t>(0, unormVector.size()), [&](auto const& r) {
