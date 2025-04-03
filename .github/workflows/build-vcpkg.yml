@@ -113,7 +113,7 @@ jobs:
           #rm /usr/local/bin/pydoc3 || true
           #rm /usr/local/bin/python3 || true
           #rm /usr/local/bin/python3-config || true
-          brew install --force --overwrite llvm libomp pkg-config autoconf automake autoconf-archive
+          brew install --force --overwrite llvm libomp pkg-config make autoconf automake autoconf-archive
         else
           echo "$RUNNER_OS is not supported."
           exit 1
@@ -123,7 +123,7 @@ jobs:
       uses: lukka/run-vcpkg@v11
       with:
         vcpkgGitURL: 'https://github.com/microsoft/vcpkg.git'
-        vcpkgGitCommitId: 'ea2a964f9303270322cf3f2d51c265ba146c422d'
+        vcpkgGitCommitId: '9b75e789ece3f942159b8500584e35aafe3979ff'
 
     - name: Create custom vcpkg triplet
       run: |
