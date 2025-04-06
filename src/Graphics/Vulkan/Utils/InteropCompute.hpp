@@ -82,6 +82,9 @@ union DLL_OBJECT StreamWrapper {
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
     ze_command_list_handle_t zeCommandList;
 #endif
+#ifdef SUPPORT_SYCL_INTEROP
+    sycl::queue* syclQueuePtr;
+#endif
 };
 
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
@@ -95,6 +98,12 @@ void setLevelZeroNextCommandEvents(
 #ifdef SUPPORT_SYCL_INTEROP
 void setLevelZeroGlobalStateFromSyclQueue(sycl::queue& syclQueue);
 #endif
+#endif
+
+#ifdef SUPPORT_SYCL_INTEROP
+// For more information on SYCL interop:
+// https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
+void setGlobalSyclQueue(sycl::queue& syclQueue);
 #endif
 
 /**

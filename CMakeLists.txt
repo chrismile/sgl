@@ -1105,6 +1105,18 @@ if (USE_ONEAPI)
         set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Vulkan/Utils/InteropLevelZero.cpp PROPERTIES COMPILE_FLAGS -Wno-comment)
         set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Vulkan/Utils/InteropCompute.cpp PROPERTIES COMPILE_FLAGS -Wno-comment)
     endif()
+
+    # https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
+    # Support for SYCL external timeline semaphores was not added yet in Intel DPC++ 2025.1.
+    set(SYCL_BINDLESS_IMAGES_INTEROP_HEADER_PATH "${ONEAPI_INCLUDE_DIR}/sycl/ext/oneapi/bindless_images_interop.hpp")
+    if (EXISTS "${SYCL_BINDLESS_IMAGES_INTEROP_HEADER_PATH}")
+        file(READ "${SYCL_BINDLESS_IMAGES_INTEROP_HEADER_PATH}" SYCL_BINDLESS_IMAGES_INTEROP_HEADER_CONTENT)
+        string(FIND "${SYCL_BINDLESS_IMAGES_INTEROP_HEADER_CONTENT}" "timeline_fd" SYCL_TIMELINE_MATCH_RES)
+        if(${SYCL_TIMELINE_MATCH_RES} EQUAL -1)
+            message(WARNING "The installed SYCL version does not support external timeline semaphores.")
+            target_compile_definitions(sgl PUBLIC SYCL_NO_EXTERNAL_TIMELINE_SEMAPHORE_SUPPORT)
+        endif ()
+    endif()
 endif()
 
 if (DEFINED USE_CUDA OR DEFINED USE_HIP OR ${SUPPORT_LEVEL_ZERO_INTEROP})

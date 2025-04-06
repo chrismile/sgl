@@ -85,6 +85,20 @@ void setLevelZeroGlobalStateFromSyclQueue(sycl::queue& syclQueue) {
 #endif
 #endif
 
+#ifdef SUPPORT_SYCL_INTEROP
+static sycl::queue* g_syclQueue = nullptr;
+void setGlobalSyclQueue(sycl::queue& syclQueue) {
+    g_syclQueue = &syclQueue;
+}
+
+struct SyclExternalSemaphoreWrapper {
+    sycl::ext::oneapi::experimental::external_semaphore syclExternalSemaphore;
+};
+struct SyclExternalMemWrapper {
+    sycl::ext::oneapi::experimental::external_mem syclExternalMem;
+};
+#endif
+
 SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop(
         sgl::vk::Device* device, VkSemaphoreCreateFlags semaphoreCreateFlags,
         VkSemaphoreType semaphoreType, uint64_t timelineSemaphoreInitialValue) {
@@ -104,7 +118,7 @@ SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop(
             &exportSemaphoreCreateInfo);
 
 
-    bool useCuda = false, useHip = false, useLevelZero = false;
+    bool useCuda = false, useHip = false, useLevelZero = false, useSycl = false;
 #ifdef SUPPORT_CUDA_INTEROP
     CUDA_EXTERNAL_SEMAPHORE_HANDLE_DESC externalSemaphoreHandleDesc{};
     useCuda = getIsCudaDeviceApiFunctionTableInitialized();
@@ -125,10 +139,13 @@ SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop(
         }
     }
 #endif
-    if (int(useCuda) + int(useHip) + int(useLevelZero) != 1) {
+#ifdef SUPPORT_SYCL_INTEROP
+    useSycl = g_syclQueue != nullptr;
+#endif
+    if (int(useCuda) + int(useHip) + int(useLevelZero) + int(useSycl) != 1) {
         sgl::Logfile::get()->throwError(
                 "Error in SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop: "
-                "Only one out of CUDA, HIP and Level Zero interop can be initialized at a time.");
+                "Only one out of CUDA, HIP, Level Zero and SYCL interop can be initialized at a time.");
     }
 
 #if defined(_WIN32)
@@ -196,7 +213,31 @@ SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop(
 #endif
     }
 
-#elif defined(__linux__)
+    if (useSycl) {
+#ifdef SUPPORT_SYCL_INTEROP
+        // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
+        sycl::ext::oneapi::experimental::external_semaphore_handle_type semaphoreHandleType;
+        if (isTimelineSemaphore()) {
+#ifndef SYCL_NO_EXTERNAL_TIMELINE_SEMAPHORE_SUPPORT
+            semaphoreHandleType = sycl::ext::oneapi::experimental::external_semaphore_handle_type::timeline_win32_nt_handle;
+#else
+            sgl::Logfile::get()->throwError(
+                "Error in SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop: "
+                "The installed version of SYCL does not support external timeline semaphores.");
+#endif
+        } else {
+            semaphoreHandleType = sycl::ext::oneapi::experimental::external_semaphore_handle_type::win32_nt_handle;
+        }
+        sycl::ext::oneapi::experimental::external_semaphore_descriptor<sycl::ext::oneapi::experimental::resource_win32_handle>
+            syclExternalSemaphoreDescriptor{handle, semaphoreHandleType};
+        auto* wrapper = new SyclExternalSemaphoreWrapper;
+        wrapper->syclExternalSemaphore = sycl::ext::oneapi::experimental::import_external_semaphore(
+            syclExternalSemaphoreDescriptor, *g_syclQueue);
+        externalSemaphore = reinterpret_cast<void*>(wrapper);
+#endif
+    }
+
+    #elif defined(__linux__)
 
     auto _vkGetSemaphoreFdKHR = (PFN_vkGetSemaphoreFdKHR)vkGetDeviceProcAddr(
             device->getVkDevice(), "vkGetSemaphoreFdKHR");
@@ -261,6 +302,30 @@ SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop(
 #endif
     }
 
+    if (useSycl) {
+#ifdef SUPPORT_SYCL_INTEROP
+        // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
+        sycl::ext::oneapi::experimental::external_semaphore_handle_type semaphoreHandleType;
+        if (isTimelineSemaphore()) {
+#ifndef SYCL_NO_EXTERNAL_TIMELINE_SEMAPHORE_SUPPORT
+            semaphoreHandleType = sycl::ext::oneapi::experimental::external_semaphore_handle_type::timeline_fd;
+#else
+            sgl::Logfile::get()->throwError(
+                "Error in SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop: "
+                "The installed version of SYCL does not support external timeline semaphores.");
+#endif
+        } else {
+            semaphoreHandleType = sycl::ext::oneapi::experimental::external_semaphore_handle_type::opaque_fd;
+        }
+        sycl::ext::oneapi::experimental::external_semaphore_descriptor<sycl::ext::oneapi::experimental::resource_fd>
+            syclExternalSemaphoreDescriptor{fileDescriptor, semaphoreHandleType};
+        auto* wrapper = new SyclExternalSemaphoreWrapper;
+        wrapper->syclExternalSemaphore = sycl::ext::oneapi::experimental::import_external_semaphore(
+            syclExternalSemaphoreDescriptor, *g_syclQueue);
+        externalSemaphore = reinterpret_cast<void*>(wrapper);
+#endif
+    }
+
 #endif // defined(__linux__)
 
 
@@ -309,7 +374,7 @@ SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop(
 }
 
 SemaphoreVkComputeApiInterop::~SemaphoreVkComputeApiInterop() {
-    bool useCuda = false, useHip = false, useLevelZero = false;
+    bool useCuda = false, useHip = false, useLevelZero = false, useSycl = false;
 #ifdef SUPPORT_CUDA_INTEROP
     useCuda = getIsCudaDeviceApiFunctionTableInitialized();
 #endif
@@ -318,6 +383,9 @@ SemaphoreVkComputeApiInterop::~SemaphoreVkComputeApiInterop() {
 #endif
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
     useLevelZero = getIsLevelZeroFunctionTableInitialized();
+#endif
+#ifdef SUPPORT_SYCL_INTEROP
+    useSycl = g_syclQueue != nullptr;
 #endif
 
     if (useCuda) {
@@ -338,11 +406,17 @@ SemaphoreVkComputeApiInterop::~SemaphoreVkComputeApiInterop() {
         ze_result_t zeResult = g_levelZeroFunctionTable.zeDeviceReleaseExternalSemaphoreExt(zeExternalSemaphore);
         checkZeResult(zeResult, "Error in zeDeviceReleaseExternalSemaphoreExt: ");
 #endif
+    } else if (useSycl) {
+#ifdef SUPPORT_SYCL_INTEROP
+        auto* wrapper = reinterpret_cast<SyclExternalSemaphoreWrapper*>(externalSemaphore);
+        sycl::ext::oneapi::experimental::release_external_semaphore(wrapper->syclExternalSemaphore, *g_syclQueue);
+        delete wrapper;
+#endif
     }
 }
 
 void SemaphoreVkComputeApiInterop::signalSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue) {
-    bool useCuda = false, useHip = false, useLevelZero = false;
+    bool useCuda = false, useHip = false, useLevelZero = false, useSycl = false;
 #ifdef SUPPORT_CUDA_INTEROP
     useCuda = getIsCudaDeviceApiFunctionTableInitialized();
 #endif
@@ -351,6 +425,9 @@ void SemaphoreVkComputeApiInterop::signalSemaphoreComputeApi(StreamWrapper strea
 #endif
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
     useLevelZero = getIsLevelZeroFunctionTableInitialized();
+#endif
+#ifdef SUPPORT_SYCL_INTEROP
+    useSycl = g_syclQueue != nullptr;
 #endif
 
     if (useCuda) {
@@ -386,11 +463,17 @@ void SemaphoreVkComputeApiInterop::signalSemaphoreComputeApi(StreamWrapper strea
                 g_zeSignalEvent, g_numWaitEvents, g_zeWaitEvents);
         checkZeResult(zeResult, "Error in zeCommandListAppendSignalExternalSemaphoreExt: ");
 #endif
+    } else if (useSycl) {
+#ifdef SUPPORT_SYCL_INTEROP
+        auto* wrapper = reinterpret_cast<SyclExternalSemaphoreWrapper*>(externalSemaphore);
+        stream.syclQueuePtr->ext_oneapi_signal_external_semaphore(
+            wrapper->syclExternalSemaphore, uint64_t(timelineValue));
+#endif
     }
 }
 
 void SemaphoreVkComputeApiInterop::waitSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue) {
-    bool useCuda = false, useHip = false, useLevelZero = false;
+    bool useCuda = false, useHip = false, useLevelZero = false, useSycl = false;
 #ifdef SUPPORT_CUDA_INTEROP
     useCuda = getIsCudaDeviceApiFunctionTableInitialized();
 #endif
@@ -399,6 +482,9 @@ void SemaphoreVkComputeApiInterop::waitSemaphoreComputeApi(StreamWrapper stream,
 #endif
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
     useLevelZero = getIsLevelZeroFunctionTableInitialized();
+#endif
+#ifdef SUPPORT_SYCL_INTEROP
+    useSycl = g_syclQueue != nullptr;
 #endif
 
     if (useCuda) {
@@ -434,6 +520,12 @@ void SemaphoreVkComputeApiInterop::waitSemaphoreComputeApi(StreamWrapper stream,
                 g_zeSignalEvent, g_numWaitEvents, g_zeWaitEvents);
         checkZeResult(zeResult, "Error in zeCommandListAppendWaitExternalSemaphoreExt: ");
 #endif
+    } else if (useSycl) {
+#ifdef SUPPORT_SYCL_INTEROP
+        auto* wrapper = reinterpret_cast<SyclExternalSemaphoreWrapper*>(externalSemaphore);
+        stream.syclQueuePtr->ext_oneapi_wait_external_semaphore(
+            wrapper->syclExternalSemaphore, uint64_t(timelineValue));
+#endif
     }
 }
 
@@ -446,7 +538,7 @@ BufferComputeApiExternalMemoryVk::BufferComputeApiExternalMemoryVk(vk::BufferPtr
     VkMemoryRequirements memoryRequirements{};
     vkGetBufferMemoryRequirements(device, vulkanBuffer->getVkBuffer(), &memoryRequirements);
 
-    bool useCuda = false, useHip = false, useLevelZero = false;
+    bool useCuda = false, useHip = false, useLevelZero = false, useSycl = false;
 #ifdef SUPPORT_CUDA_INTEROP
     CUDA_EXTERNAL_MEMORY_HANDLE_DESC externalMemoryHandleDesc{};
     externalMemoryHandleDesc.size = vulkanBuffer->getDeviceMemorySize(); // memoryRequirements.size
@@ -470,10 +562,13 @@ BufferComputeApiExternalMemoryVk::BufferComputeApiExternalMemoryVk(vk::BufferPtr
         }
     }
 #endif
+#ifdef SUPPORT_SYCL_INTEROP
+    useSycl = g_syclQueue != nullptr;
+#endif
     if (int(useCuda) + int(useHip) + int(useLevelZero) != 1) {
         sgl::Logfile::get()->throwError(
                 "Error in BufferComputeApiExternalMemoryVk::BufferComputeApiExternalMemoryVk: "
-                "Only one out of CUDA, HIP and Level Zero interop can be initialized at a time.");
+                "Only one out of CUDA, HIP, Level Zero and SYCL interop can be initialized at a time.");
     }
 
 
@@ -525,6 +620,19 @@ BufferComputeApiExternalMemoryVk::BufferComputeApiExternalMemoryVk(vk::BufferPtr
 #endif
     }
 
+    if (useSycl) {
+#ifdef SUPPORT_SYCL_INTEROP
+        // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
+        auto memoryHandleType = sycl::ext::oneapi::experimental::external_mem_handle_type::win32_nt_handle;
+        sycl::ext::oneapi::experimental::external_mem_descriptor<sycl::ext::oneapi::experimental::resource_win32_handle>
+            syclExternalMemDescriptor{(void*)handle, memoryHandleType};
+        auto* wrapper = new SyclExternalMemWrapper;
+        wrapper->syclExternalMem = sycl::ext::oneapi::experimental::import_external_memory(
+            syclExternalMemDescriptor, *g_syclQueue);
+        externalMemoryBuffer = reinterpret_cast<void*>(wrapper);
+#endif
+    }
+
     this->handle = handle;
 
 #elif defined(__linux__)
@@ -573,6 +681,19 @@ BufferComputeApiExternalMemoryVk::BufferComputeApiExternalMemoryVk(vk::BufferPtr
         deviceMemAllocDesc.pNext = &externalMemoryImportFd;
         externalMemoryImportFd.flags = ZE_EXTERNAL_MEMORY_TYPE_FLAG_OPAQUE_FD;
         externalMemoryImportFd.fd = fileDescriptor;
+#endif
+    }
+
+    if (useSycl) {
+#ifdef SUPPORT_SYCL_INTEROP
+        // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
+        auto memoryHandleType = sycl::ext::oneapi::experimental::external_mem_handle_type::opaque_fd;
+        sycl::ext::oneapi::experimental::external_mem_descriptor<sycl::ext::oneapi::experimental::resource_fd>
+            syclExternalMemDescriptor{fileDescriptor, memoryHandleType};
+        auto* wrapper = new SyclExternalMemWrapper;
+        wrapper->syclExternalMem = sycl::ext::oneapi::experimental::import_external_memory(
+            syclExternalMemDescriptor, *g_syclQueue);
+        externalMemoryBuffer = reinterpret_cast<void*>(wrapper);
 #endif
     }
 
@@ -634,6 +755,14 @@ BufferComputeApiExternalMemoryVk::BufferComputeApiExternalMemoryVk(vk::BufferPtr
 #endif
     }
 
+    if (useSycl) {
+#ifdef SUPPORT_SYCL_INTEROP
+        auto* wrapper = reinterpret_cast<SyclExternalMemWrapper*>(externalMemoryBuffer);
+        devicePtr = sycl::ext::oneapi::experimental::map_external_linear_memory(
+            wrapper->syclExternalMem, vulkanBuffer->getDeviceMemorySize(), 0, *g_syclQueue);
+#endif
+    }
+
     /*
      * https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__EXTRES__INTEROP.html
      * - CU_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD: "Ownership of the file descriptor is transferred to the CUDA driver
@@ -656,7 +785,7 @@ BufferComputeApiExternalMemoryVk::~BufferComputeApiExternalMemoryVk() {
     }
 #endif
 
-    bool useCuda = false, useHip = false, useLevelZero = false;
+    bool useCuda = false, useHip = false, useLevelZero = false, useSycl = false;
 #ifdef SUPPORT_CUDA_INTEROP
     useCuda = getIsCudaDeviceApiFunctionTableInitialized();
 #endif
@@ -665,6 +794,9 @@ BufferComputeApiExternalMemoryVk::~BufferComputeApiExternalMemoryVk() {
 #endif
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
     useLevelZero = getIsLevelZeroFunctionTableInitialized();
+#endif
+#ifdef SUPPORT_SYCL_INTEROP
+    useSycl = g_syclQueue != nullptr;
 #endif
 
     if (useCuda) {
@@ -690,11 +822,17 @@ BufferComputeApiExternalMemoryVk::~BufferComputeApiExternalMemoryVk() {
         ze_result_t zeResult = g_levelZeroFunctionTable.zeMemFree(g_zeContext, devicePtr);
         checkZeResult(zeResult, "Error in zeMemFree: ");
 #endif
+    } else if (useSycl) {
+#ifdef SUPPORT_SYCL_INTEROP
+        auto* wrapper = reinterpret_cast<SyclExternalMemWrapper*>(externalMemoryBuffer);
+        sycl::ext::oneapi::experimental::release_external_memory(wrapper->syclExternalMem, *g_syclQueue);
+        delete wrapper;
+#endif
     }
 }
 
 void BufferComputeApiExternalMemoryVk::copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream) {
-    bool useCuda = false, useHip = false, useLevelZero = false;
+    bool useCuda = false, useHip = false, useLevelZero = false, useSycl = false;
 #ifdef SUPPORT_CUDA_INTEROP
     useCuda = getIsCudaDeviceApiFunctionTableInitialized();
 #endif
@@ -703,6 +841,9 @@ void BufferComputeApiExternalMemoryVk::copyFromDevicePtrAsync(void* devicePtrSrc
 #endif
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
     useLevelZero = getIsLevelZeroFunctionTableInitialized();
+#endif
+#ifdef SUPPORT_SYCL_INTEROP
+    useSycl = g_syclQueue != nullptr;
 #endif
 
     if (useCuda) {
@@ -726,11 +867,15 @@ void BufferComputeApiExternalMemoryVk::copyFromDevicePtrAsync(void* devicePtrSrc
                 g_zeSignalEvent, g_numWaitEvents, g_zeWaitEvents);
         checkZeResult(zeResult, "Error in zeCommandListAppendMemoryCopy: ");
 #endif
+    } else if (useSycl) {
+#ifdef SUPPORT_SYCL_INTEROP
+        stream.syclQueuePtr->memcpy(devicePtr, devicePtrSrc, vulkanBuffer->getSizeInBytes());
+#endif
     }
 }
 
 void BufferComputeApiExternalMemoryVk::copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream) {
-    bool useCuda = false, useHip = false, useLevelZero = false;
+    bool useCuda = false, useHip = false, useLevelZero = false, useSycl = false;
 #ifdef SUPPORT_CUDA_INTEROP
     useCuda = getIsCudaDeviceApiFunctionTableInitialized();
 #endif
@@ -739,6 +884,9 @@ void BufferComputeApiExternalMemoryVk::copyToDevicePtrAsync(void* devicePtrDst, 
 #endif
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
     useLevelZero = getIsLevelZeroFunctionTableInitialized();
+#endif
+#ifdef SUPPORT_SYCL_INTEROP
+    useSycl = g_syclQueue != nullptr;
 #endif
 
     if (useCuda) {
@@ -761,6 +909,10 @@ void BufferComputeApiExternalMemoryVk::copyToDevicePtrAsync(void* devicePtrDst, 
                 stream.zeCommandList, devicePtrDst, devicePtr, vulkanBuffer->getSizeInBytes(),
                 g_zeSignalEvent, g_numWaitEvents, g_zeWaitEvents);
         checkZeResult(zeResult, "Error in zeCommandListAppendMemoryCopy: ");
+#endif
+    } else if (useSycl) {
+#ifdef SUPPORT_SYCL_INTEROP
+        stream.syclQueuePtr->memcpy(devicePtrDst, devicePtr, vulkanBuffer->getSizeInBytes());
 #endif
     }
 }

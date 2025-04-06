@@ -35,27 +35,22 @@
  * For an API documentation, please refer to:
  * https://oneapi-src.github.io/level-zero-spec/level-zero/latest/core/api.html
  *
- * For Intel GPU platform, PyTorch offers an "xpu" device that uses SYCL under the hood. However, SYCL does not offer
- * Vulkan interop support. Thus, our solution is to retrieve the underlying Level Zero objects.
- *
- * A PyTorch tutorial (https://pytorch.org/docs/main/notes/get_start_xpu.html) suggests that the installation of the
- * "Intel Deep Learning Essentials" package is necessary. It includes SYCL with a ur_adapter_level_zero.dll file, but no
- * Level Zero headers or loader. We ship the headers with sgl, as they are released under the MIT license.
- * For Windows, it seems like the loader is automatically installed with the drivers at C:/Windows/System32/ze_loader.dll.
+ * We ship the Level Zero headers with sgl, as they are released under the MIT license.
+ * For Windows, it seems like the loader DLL is automatically installed with the drivers at C:/Windows/System32/ze_loader.dll.
  * On Linux, the necessary components can be obtained from here:
  * - Level Zero driver (intel-level-zero-gpu): https://github.com/intel/compute-runtime/releases
  * - Level Zero loader (level-zero, level-zero-devel): https://github.com/oneapi-src/level-zero/releases
  * For more details see: https://github.com/intel/compute-runtime/blob/master/level_zero/doc/BUILD.md
  *
  * How to check what backends SYCL supports?
- * "C:\Program Files (x86)\Intel\oneAPI\compiler\2025.0\env\vars.bat"
- * "C:\Program Files (x86)\Intel\oneAPI\ocloc\2025.0\env\vars.bat"
+ * "C:\Program Files (x86)\Intel\oneAPI\compiler\2025.1\env\vars.bat"
+ * "C:\Program Files (x86)\Intel\oneAPI\ocloc\2025.1\env\vars.bat"
  * sycl-ls
  *
  * On Linux:
- * source /opt/intel/oneapi/compiler/2025.0/env/vars.sh
- * source /opt/intel/oneapi/umf/0.9/env/vars.sh
- * source /opt/intel/oneapi/pti/0.10/env/vars.sh
+ * source /opt/intel/oneapi/compiler/latest/env/vars.sh
+ * source /opt/intel/oneapi/umf/latest/env/vars.sh
+ * source /opt/intel/oneapi/pti/latest/env/vars.sh
  *
  * How to build Level Zero loader library manually?
  * git clone https://github.com/oneapi-src/level-zero.git level-zero-src
