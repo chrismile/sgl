@@ -500,6 +500,7 @@ public:
             VkFormat hint = VK_FORMAT_D24_UNORM_S8_UINT, VkImageTiling imageTiling = VK_IMAGE_TILING_OPTIMAL);
     std::vector<VkFormat> getSupportedDepthStencilFormats(VkImageTiling imageTiling = VK_IMAGE_TILING_OPTIMAL);
     bool getSupportsFormat(VkFormat format, VkImageTiling imageTiling = VK_IMAGE_TILING_OPTIMAL);
+    void getPhysicalDeviceFormatProperties2(VkFormat format, VkFormatProperties2& formatProperties);
 
     bool checkPhysicalDeviceFeaturesSupported(const VkPhysicalDeviceFeatures& featuresRequired);
 #ifdef VK_VERSION_1_1

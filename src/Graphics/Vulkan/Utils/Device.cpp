@@ -2202,6 +2202,10 @@ bool Device::getSupportsFormat(VkFormat format, VkImageTiling imageTiling) {
     }
 }
 
+void Device::getPhysicalDeviceFormatProperties2(VkFormat format, VkFormatProperties2& formatProperties) {
+    vkGetPhysicalDeviceFormatProperties2KHR(physicalDevice, format, &formatProperties);
+}
+
 bool Device::checkPhysicalDeviceFeaturesSupported(const VkPhysicalDeviceFeatures& featuresRequired) {
     constexpr size_t numFeatures = sizeof(VkPhysicalDeviceFeatures) / sizeof(VkBool32);
     auto featuresSupportedArray = reinterpret_cast<VkBool32*>(&physicalDeviceFeatures);
