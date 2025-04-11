@@ -352,7 +352,8 @@ void VectorBackendNanoVG::renderStart() {
                         renderTargetImageViewVk,
                         VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                        VK_ACCESS_NONE_KHR, VK_ACCESS_TRANSFER_WRITE_BIT);
+                        VK_ACCESS_NONE_KHR, VK_ACCESS_TRANSFER_WRITE_BIT,
+                        rendererVk->getDevice()->getGraphicsQueueIndex(), VK_QUEUE_FAMILY_EXTERNAL);
                 srcLayout = GL_LAYOUT_TRANSFER_DST_EXT;
             } else {
                 if (renderTargetImageViewVk->getImage()->getVkImageLayout() == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
@@ -499,7 +500,8 @@ void VectorBackendNanoVG::renderEnd() {
                 renderTargetImageViewVk,
                 renderTargetImageViewVk->getImage()->getVkImageLayout(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                VK_ACCESS_NONE_KHR, VK_ACCESS_SHADER_READ_BIT);
+                VK_ACCESS_NONE_KHR, VK_ACCESS_SHADER_READ_BIT,
+                VK_QUEUE_FAMILY_EXTERNAL, rendererVk->getDevice()->getGraphicsQueueIndex());
         interopSyncVkGl->frameFinished();
     }
 #endif
