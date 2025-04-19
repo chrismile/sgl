@@ -256,7 +256,9 @@ private:
     bool saveSettings = true; ///< Whether to save the settings to a filename.
     RenderSystem renderSystem = RenderSystem::OPENGL;
     OperatingSystem operatingSystem;
-#ifdef SUPPORT_SDL2
+#if defined(SUPPORT_SDL3)
+    WindowBackend windowBackend = WindowBackend::SDL3_IMPL;
+#elif defined(SUPPORT_SDL2)
     WindowBackend windowBackend = WindowBackend::SDL2_IMPL;
 #elif defined(SUPPORT_GLFW)
     WindowBackend windowBackend = WindowBackend::GLFW_IMPL;
@@ -279,7 +281,7 @@ private:
     std::vector<const char*> defaultInstanceExtensionNames;
     VulkanInteropCapabilities vulkanInteropCapabilities = VulkanInteropCapabilities::NOT_LOADED;
     bool useMatrixBlock = true; //< Use matrix block in descriptor set 1.
-#ifdef SUPPORT_SDL2
+#ifdef SUPPORT_SDL
     bool sdlVulkanLibraryLoaded = false;
 #endif
     bool isDebugPrintfEnabled = false;

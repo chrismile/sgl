@@ -73,18 +73,11 @@
 #include <Graphics/WebGPU/Shader/ShaderManager.hpp>
 #endif
 
-#ifdef SUPPORT_SDL2
+#ifdef SUPPORT_SDL
 #include <SDL/SDLWindow.hpp>
 #include <SDL/Input/SDLMouse.hpp>
 #include <SDL/Input/SDLKeyboard.hpp>
 #include <SDL/Input/SDLGamepad.hpp>
-#endif
-
-#ifdef SUPPORT_SDL2
-#include <SDL3/SDL3Window.hpp>
-#include <SDL3/Input/SDL3Mouse.hpp>
-#include <SDL3/Input/SDL3Keyboard.hpp>
-#include <SDL3/Input/SDL3Gamepad.hpp>
 #endif
 
 #ifdef SUPPORT_GLFW
@@ -97,6 +90,9 @@
 
 #if defined(SUPPORT_SDL2) && defined(SUPPORT_VULKAN)
 #include <SDL2/SDL_vulkan.h>
+#endif
+#if defined(SUPPORT_SDL3) && defined(SUPPORT_VULKAN)
+#include <SDL3/SDL_vulkan.h>
 #endif
 
 #ifdef _WIN32
@@ -303,7 +299,22 @@ Window *AppSettings::createWindow() {
 #else
         if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) == -1) {
 #endif
-            Logfile::get()->writeError("ERROR: AppSettings::createWindow: Couldn't initialize SDL!");
+            Logfile::get()->writeError("ERROR: AppSettings::createWindow: Couldn't initialize SDL2!");
+            Logfile::get()->writeError(std::string() + "SDL Error: " + SDL_GetError());
+        }
+        SDLWindow::errorCheckSDL();
+    }
+#endif
+#ifdef SUPPORT_SDL3
+    if (windowBackend == WindowBackend::SDL3_IMPL) {
+#ifndef __EMSCRIPTEN__
+        // Don't initialize SDL_INIT_AUDIO, as we otherwise get "dsp: No such audio device" when building with vcpkg
+        // and without the prerequisites for audio installed on the Linux system used for compilation.
+        if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMEPAD | SDL_INIT_SENSOR)) {
+#else
+        if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
+#endif
+            Logfile::get()->writeError("ERROR: AppSettings::createWindow: Couldn't initialize SDL3!");
             Logfile::get()->writeError(std::string() + "SDL Error: " + SDL_GetError());
         }
         SDLWindow::errorCheckSDL();
@@ -361,8 +372,8 @@ Window *AppSettings::createWindow() {
         }
 #endif
 
-#if defined(__APPLE__) && defined(SUPPORT_SDL2)
-        if (windowBackend == WindowBackend::SDL2_IMPL && sdlVulkanLibraryLoaded) {
+#if defined(__APPLE__) && defined(SUPPORT_SDL)
+        if (getIsSdlWindowBackend(windowBackend) && sdlVulkanLibraryLoaded) {
             sdlVulkanLibraryLoaded = false;
             const char* const moduleNames[] = { "libvulkan.dylib", "libvulkan.1.dylib", "libMoltenVK.dylib" };
             for (int i = 0; i < IM_ARRAYSIZE(moduleNames); i++) {
@@ -385,8 +396,8 @@ Window *AppSettings::createWindow() {
     }
 #endif
 
-#ifdef SUPPORT_SDL2
-    if (windowBackend == WindowBackend::SDL2_IMPL) {
+#ifdef SUPPORT_SDL
+    if (getIsSdlWindowBackend(windowBackend)) {
         mainWindow = new SDLWindow;
     }
 #endif
@@ -715,8 +726,8 @@ void AppSettings::initializeSubsystems() {
     }
 #endif
 
-#ifdef SUPPORT_SDL2
-    if (windowBackend == WindowBackend::SDL2_IMPL) {
+#ifdef SUPPORT_SDL
+    if (getIsSdlWindowBackend(windowBackend)) {
         Mouse = new SDLMouse;
         Keyboard = new SDLKeyboard;
         Gamepad = new SDLGamepad;
@@ -827,8 +838,8 @@ void AppSettings::release() {
         primaryDevice = nullptr;
     }
     if (instance) {
-#ifdef SUPPORT_SDL2
-        if (windowBackend == WindowBackend::SDL2_IMPL && sdlVulkanLibraryLoaded) {
+#ifdef SUPPORT_SDL
+        if (getIsSdlWindowBackend(windowBackend) && sdlVulkanLibraryLoaded) {
             SDL_Vulkan_UnloadLibrary();
         }
 #endif
@@ -848,8 +859,8 @@ void AppSettings::release() {
     }
 #endif
 
-#ifdef SUPPORT_SDL2
-    if (windowBackend == WindowBackend::SDL2_IMPL) {
+#ifdef SUPPORT_SDL
+    if (getIsSdlWindowBackend(windowBackend)) {
         //Mix_CloseAudio();
         //TTF_Quit();
         SDL_Quit();
@@ -880,6 +891,18 @@ int AppSettings::getNumDisplays() {
         return SDL_GetNumVideoDisplays();
     }
 #endif
+#ifdef SUPPORT_SDL3
+    if (mainWindow->getBackend() == WindowBackend::SDL3_IMPL) {
+        int numDisplays = 0;
+        auto* displays = SDL_GetDisplays(&numDisplays);
+        if (!displays) {
+            SDLWindow::errorCheckSDL();
+            return 0;
+        }
+        SDL_free(displays);
+        return numDisplays;
+    }
+#endif
 #ifdef SUPPORT_GLFW
     if (mainWindow->getBackend() == WindowBackend::GLFW_IMPL) {
         int numMonitors = 0;
@@ -898,6 +921,33 @@ void AppSettings::getCurrentDisplayMode(int& width, int& height, int& refreshRat
         width = displayMode.w;
         height = displayMode.h;
         refreshRate = displayMode.refresh_rate;
+        return;
+    }
+#endif
+#ifdef SUPPORT_SDL3
+    if (mainWindow->getBackend() == WindowBackend::SDL3_IMPL) {
+        int numDisplays = 0;
+        auto* displays = SDL_GetDisplays(&numDisplays);
+        if (!displays) {
+            SDLWindow::errorCheckSDL();
+            return;
+        }
+        if (displayIndex >= numDisplays) {
+            sgl::Logfile::get()->writeError(
+                    "Error in AppSettings::getDesktopDisplayMode: Display index " + std::to_string(displayIndex)
+                    + " is out of bounds.");
+            SDL_free(displays);
+            return;
+        }
+        auto* displayMode = SDL_GetCurrentDisplayMode(displays[displayIndex]);
+        SDL_free(displays);
+        if (!displayMode) {
+            SDLWindow::errorCheckSDL();
+            return;
+        }
+        width = displayMode->w;
+        height = displayMode->h;
+        refreshRate = int(std::round(displayMode->refresh_rate));
         return;
     }
 #endif
@@ -933,6 +983,33 @@ void AppSettings::getDesktopDisplayMode(int& width, int& height, int& refreshRat
         return;
     }
 #endif
+#ifdef SUPPORT_SDL3
+    if (mainWindow->getBackend() == WindowBackend::SDL3_IMPL) {
+        int numDisplays = 0;
+        auto* displays = SDL_GetDisplays(&numDisplays);
+        if (!displays) {
+            SDLWindow::errorCheckSDL();
+            return;
+        }
+        if (displayIndex >= numDisplays) {
+            sgl::Logfile::get()->writeError(
+                    "Error in AppSettings::getDesktopDisplayMode: Display index " + std::to_string(displayIndex)
+                    + " is out of bounds.");
+            SDL_free(displays);
+            return;
+        }
+        auto* displayMode = SDL_GetDesktopDisplayMode(displays[displayIndex]);
+        SDL_free(displays);
+        if (!displayMode) {
+            SDLWindow::errorCheckSDL();
+            return;
+        }
+        width = displayMode->w;
+        height = displayMode->h;
+        refreshRate = int(std::round(displayMode->refresh_rate));
+        return;
+    }
+#endif
 #ifdef SUPPORT_GLFW
     if (mainWindow->getBackend() == WindowBackend::GLFW_IMPL) {
         int numMonitors = 0;
@@ -963,6 +1040,30 @@ glm::ivec2 AppSettings::getCurrentDisplayModeResolution(int displayIndex) {
         return { displayMode.w, displayMode.h };
     }
 #endif
+#ifdef SUPPORT_SDL3
+    if (mainWindow->getBackend() == WindowBackend::SDL3_IMPL) {
+        int numDisplays = 0;
+        auto* displays = SDL_GetDisplays(&numDisplays);
+        if (!displays) {
+            SDLWindow::errorCheckSDL();
+            return { 0, 0 };
+        }
+        if (displayIndex >= numDisplays) {
+            sgl::Logfile::get()->writeError(
+                    "Error in AppSettings::getDesktopDisplayMode: Display index " + std::to_string(displayIndex)
+                    + " is out of bounds.");
+            SDL_free(displays);
+            return { 0, 0 };
+        }
+        auto* displayMode = SDL_GetCurrentDisplayMode(displays[displayIndex]);
+        SDL_free(displays);
+        if (!displayMode) {
+            SDLWindow::errorCheckSDL();
+            return { 0, 0 };
+        }
+        return { displayMode->w, displayMode->h };
+    }
+#endif
 #ifdef SUPPORT_GLFW
     if (mainWindow->getBackend() == WindowBackend::GLFW_IMPL) {
         int numMonitors = 0;
@@ -987,6 +1088,30 @@ glm::ivec2 AppSettings::getDesktopResolution(int displayIndex) {
         return { displayMode.w, displayMode.h };
     }
 #endif
+#ifdef SUPPORT_SDL3
+    if (mainWindow->getBackend() == WindowBackend::SDL3_IMPL) {
+        int numDisplays = 0;
+        auto* displays = SDL_GetDisplays(&numDisplays);
+        if (!displays) {
+            SDLWindow::errorCheckSDL();
+            return { 0, 0 };
+        }
+        if (displayIndex >= numDisplays) {
+            sgl::Logfile::get()->writeError(
+                    "Error in AppSettings::getDesktopDisplayMode: Display index " + std::to_string(displayIndex)
+                    + " is out of bounds.");
+            SDL_free(displays);
+            return { 0, 0 };
+        }
+        auto* displayMode = SDL_GetDesktopDisplayMode(displays[displayIndex]);
+        SDL_free(displays);
+        if (!displayMode) {
+            SDLWindow::errorCheckSDL();
+            return { 0, 0 };
+        }
+        return { displayMode->w, displayMode->h };
+    }
+#endif
 #ifdef SUPPORT_GLFW
     if (mainWindow->getBackend() == WindowBackend::GLFW_IMPL) {
         // Technically, there would be glfwGetVideoModes, but it is hard to say which mode is the desktop mode...
@@ -1000,6 +1125,11 @@ void AppSettings::captureMouse(bool _capture) {
 #ifdef SUPPORT_SDL2
     if (mainWindow->getBackend() == WindowBackend::SDL2_IMPL) {
         SDL_CaptureMouse(_capture ? SDL_TRUE : SDL_FALSE);
+    }
+#endif
+#ifdef SUPPORT_SDL3
+    if (mainWindow->getBackend() == WindowBackend::SDL3_IMPL) {
+        SDL_CaptureMouse(_capture);
     }
 #endif
 #ifdef SUPPORT_GLFW

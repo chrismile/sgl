@@ -57,7 +57,7 @@ typedef std::shared_ptr<TextureView> TextureViewPtr;
 }}
 #endif
 
-#ifdef SUPPORT_SDL2
+#ifdef SUPPORT_SDL
 union SDL_Event;
 #endif
 
@@ -112,7 +112,7 @@ public:
     // Insert your ImGui code between "renderStart" and "renderEnd".
     void renderStart();
     void renderEnd();
-#ifdef SUPPORT_SDL2
+#ifdef SUPPORT_SDL
     void processSDLEvent(const SDL_Event &event);
 #endif
     void onResolutionChanged();

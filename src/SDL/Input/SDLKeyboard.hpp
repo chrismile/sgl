@@ -77,7 +77,11 @@ public:
 public:
     int numKeys;
     /// State of the keyboard in the current and the last frame
+#ifdef SUPPORT_SDL3
+    bool *keystate, *oldKeystate;
+#else
     Uint8 *keystate, *oldKeystate;
+#endif
     /// CTRL, SHIFT, etc.
     SDL_Keymod modifier;
     std::string utf8KeyBuffer;

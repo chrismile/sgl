@@ -68,7 +68,7 @@ public:
     bool scancodeReleased(int button) override;
     int getNumKeys() override;
     bool getModifier(ImGuiKey modifier) override;
-#ifdef SUPPORT_SDL2
+#if defined(SUPPORT_SDL)
     SDL_Keymod getModifier() override;
 #endif
 

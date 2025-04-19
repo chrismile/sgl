@@ -26,6 +26,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef SUPPORT_SDL3
+#define SDL_ENABLE_OLD_NAMES
+#endif
+
 #include <memory>
 #include <set>
 #include <iostream>
@@ -36,9 +40,14 @@
 
 #include <Graphics/Window.hpp>
 
-#ifdef SUPPORT_SDL2
+#ifdef  SUPPORT_SDL
 #include <SDL/SDLWindow.hpp>
+#ifdef SUPPORT_SDL3
+#include <SDL3/SDL_vulkan.h>
+#else
 #include <SDL2/SDL_vulkan.h>
+#endif
+#include <SDL/SDL3Helper.hpp>
 #endif
 
 #ifdef SUPPORT_GLFW
@@ -69,8 +78,8 @@ void Swapchain::create(Window* window) {
 
     useDownloadSwapchain = window->getUseDownloadSwapchain();
     if (useDownloadSwapchain) {
-#ifdef SUPPORT_SDL2
-        if (window->getBackend() == WindowBackend::SDL2_IMPL) {
+#ifdef SUPPORT_SDL
+        if (getIsSdlWindowBackend(window->getBackend())) {
             auto* sdlWindow = static_cast<SDLWindow*>(window);
             SDL_Window* sdlWindowData = sdlWindow->getSDLWindow();
             window->errorCheck();
@@ -84,7 +93,7 @@ void Swapchain::create(Window* window) {
                 while (SDL_GetError()[0] != '\0') {
                     std::string errorString = SDL_GetError();
                     bool openMessageBox = true;
-                    if (sgl::stringContains(errorString, "That operation is not supported")) {
+                    if (stringContains(errorString, "That operation is not supported")) {
                         openMessageBox = false;
                     }
                     Logfile::get()->writeError(std::string() + "SDL error: " + errorString, openMessageBox);
@@ -301,6 +310,12 @@ void Swapchain::recreateSwapchain() {
             if (window->getBackend() == WindowBackend::SDL2_IMPL) {
                 SDL_Window* sdlWindowData = static_cast<SDLWindow*>(window)->getSDLWindow();
                 SDL_Vulkan_GetDrawableSize(sdlWindowData, &windowWidth, &windowHeight);
+            }
+#endif
+#ifdef SUPPORT_SDL3
+            if (window->getBackend() == WindowBackend::SDL3_IMPL) {
+                SDL_Window* sdlWindowData = static_cast<SDLWindow*>(window)->getSDLWindow();
+                SDL_GetWindowSizeInPixels(sdlWindowData, &windowWidth, &windowHeight);
             }
 #endif
 #ifdef SUPPORT_GLFW
@@ -547,7 +562,7 @@ void Swapchain::renderFrame(const std::vector<sgl::vk::CommandBufferPtr>& comman
 }
 
 void Swapchain::downloadSwapchainRender() {
-#ifdef SUPPORT_SDL2
+#ifdef SUPPORT_SDL
     if (window->getBackend() == WindowBackend::SDL2_IMPL) {
         int width = int(swapchainImageCpu->getImageSettings().width);
         int height = int(swapchainImageCpu->getImageSettings().height);

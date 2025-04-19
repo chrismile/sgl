@@ -56,7 +56,7 @@
 #include <Graphics/WebGPU/Render/Renderer.hpp>
 #endif
 
-#ifdef SUPPORT_SDL2
+#ifdef SUPPORT_SDL
 #include <SDL/SDLWindow.hpp>
 #endif
 
@@ -73,9 +73,9 @@ AppLogic::AppLogic() : framerateSmoother(16) {
     printFPS = true;
     fps = 60.0f;
 
-#ifdef SUPPORT_SDL2
+#ifdef SUPPORT_SDL
     window = AppSettings::get()->getMainWindow();
-    if (window->getBackend() == WindowBackend::SDL2_IMPL) {
+    if (getIsSdlWindowBackend(window->getBackend())) {
         static_cast<SDLWindow*>(window)->setEventHandler([this](const SDL_Event &event) {
             this->processSDLEvent(event);
         });

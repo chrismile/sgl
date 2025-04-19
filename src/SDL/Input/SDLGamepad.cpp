@@ -26,10 +26,17 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef SUPPORT_SDL3
+#define SDL_ENABLE_OLD_NAMES
+#endif
 #include "SDLGamepad.hpp"
 #include <Utils/Convert.hpp>
 #include <Utils/File/Logfile.hpp>
+#ifdef SUPPORT_SDL3
+#include <SDL3/SDL.h>
+#else
 #include <SDL2/SDL.h>
+#endif
 
 namespace sgl {
 
@@ -40,7 +47,7 @@ struct DLL_OBJECT OldBallDelta {
 
 class DLL_OBJECT OldGamepadState {
 public:
-    OldGamepadState(SDL_Joystick *_joy);
+    explicit OldGamepadState(SDL_Joystick *_joy);
     ~OldGamepadState();
     void updateOldState();
     bool getButtonDown(int button);
@@ -107,12 +114,20 @@ SDLGamepad::~SDLGamepad() {
 }
 
 void SDLGamepad::initialize() {
+#ifdef SUPPORT_SDL3
+    SDL_JoystickID* joysticks = SDL_GetJoysticks(&numGamepads);
+#else
     numGamepads = SDL_NumJoysticks();
+#endif
     for (int j = 0; j < numGamepads; j++) {
-        gamepads.push_back(static_cast<SDL_Joystick*>(0));
-        oldGamepads.push_back(static_cast<OldGamepadState*>(0));
-        hapticList.push_back(static_cast<SDL_Haptic*>(0));
+        gamepads.push_back(nullptr);
+        oldGamepads.push_back(nullptr);
+        hapticList.push_back(nullptr);
+#ifdef SUPPORT_SDL3
+        gamepads.at(j) = SDL_JoystickOpen(joysticks[j]);
+#else
         gamepads.at(j) = SDL_JoystickOpen(j);
+#endif
         oldGamepads.at(j) = new OldGamepadState(gamepads.at(j));
 
         // Does the gamepad support force feedback?
@@ -135,6 +150,9 @@ void SDLGamepad::initialize() {
         Logfile::get()->write(std::string() + "INFO: SDLGamepad::initialize: Adress of Joystick #"
                 + toString(j+1) + ": " + toString(gamepads.at(j)), BLUE);
     }
+#ifdef SUPPORT_SDL3
+    SDL_free(joysticks);
+#endif
 }
 
 void SDLGamepad::release() {
@@ -169,11 +187,19 @@ void SDLGamepad::refresh() {
 
 
 int SDLGamepad::getNumGamepads() {
+#ifdef SUPPORT_SDL3
+    return int(gamepads.size());
+#else
     return SDL_NumJoysticks();
+#endif
 }
 
 const char *SDLGamepad::getGamepadName(int j) {
+#ifdef SUPPORT_SDL3
+    return SDL_GetJoystickName(gamepads.at(j));
+#else
     return SDL_JoystickNameForIndex(j);
+#endif
 }
 
 
@@ -224,12 +250,12 @@ float remapAnalogStickAxis(float in, float min, float max) {
 
 float SDLGamepad::axisX(int stickIndex /* = 0 */, int gamepadIndex /* = 0 */) {
     Sint16 axisX = SDL_JoystickGetAxis(gamepads.at(gamepadIndex), stickIndex*2);
-    return remapAnalogStickAxis(axisX/32768.0f, 0.05f, 0.95f);
+    return remapAnalogStickAxis(float(axisX) / 32768.0f, 0.05f, 0.95f);
 }
 
 float SDLGamepad::axisY(int stickIndex /* = 0 */, int gamepadIndex /* = 0 */) {
     Sint16 axisY = SDL_JoystickGetAxis(gamepads.at(gamepadIndex), stickIndex*2+1);
-    return remapAnalogStickAxis(axisY/32768.0f, 0.05f, 0.95f);
+    return remapAnalogStickAxis(float(axisY) / 32768.0f, 0.05f, 0.95f);
 }
 
 glm::vec2 SDLGamepad::axis(int stickIndex /* = 0 */, int gamepadIndex /* = 0 */) {
@@ -263,8 +289,7 @@ Uint8 SDLGamepad::getDirectionPadPressed(int dirPadIndex /* = 0 */, int gamepadI
 
 
 // Force Feedback support:
-void SDLGamepad::rumble(float strength, float time, int gamepadIndex /* = 0 */) // time in seconds
-{
+void SDLGamepad::rumble(float strength, float time, int gamepadIndex /* = 0 */) { // time in seconds
     if (rumbleInited.at(gamepadIndex)) {
         SDL_HapticRumblePlay(hapticList.at(gamepadIndex), strength, uint32_t(time*1000));
     }

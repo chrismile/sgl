@@ -55,9 +55,14 @@
 #include <Graphics/WebGPU/Render/Renderer.hpp>
 #endif
 
-#ifdef SUPPORT_SDL2
+#ifdef SUPPORT_SDL
 #include <SDL/SDLWindow.hpp>
+#endif
+#ifdef SUPPORT_SDL2
 #include "imgui_impl_sdl2.h"
+#endif
+#ifdef SUPPORT_SDL3
+#include "imgui_impl_sdl3.h"
 #endif
 
 #ifdef SUPPORT_GLFW
@@ -108,7 +113,7 @@ void ImGuiWrapper::initialize(
 
 #if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN) || defined(SUPPORT_WEBGPU)
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
-#if defined(SUPPORT_SDL2) || defined(SUPPORT_GLFW)
+#if defined(SUPPORT_SDL) || defined(SUPPORT_GLFW)
     auto* window = AppSettings::get()->getMainWindow();
 #endif
 #endif
@@ -121,6 +126,17 @@ void ImGuiWrapper::initialize(
             if (!ImGui_ImplSDL2_InitForOpenGL(sdlWindow->getSDLWindow(), context)) {
                 sgl::Logfile::get()->writeError(
                         "Error in ImGuiWrapper::initialize: ImGui_ImplSDL2_InitForOpenGL failed.");
+                return;
+            }
+        }
+#endif
+#ifdef SUPPORT_SDL3
+        if (window->getBackend() == WindowBackend::SDL3_IMPL) {
+            auto* sdlWindow = static_cast<SDLWindow*>(window);
+            SDL_GLContext context = sdlWindow->getGLContext();
+            if (!ImGui_ImplSDL3_InitForOpenGL(sdlWindow->getSDLWindow(), context)) {
+                sgl::Logfile::get()->writeError(
+                        "Error in ImGuiWrapper::initialize: ImGui_ImplSDL3_InitForOpenGL failed.");
                 return;
             }
         }
@@ -181,6 +197,16 @@ void ImGuiWrapper::initialize(
             }
         }
 #endif
+#ifdef SUPPORT_SDL3
+        if (window->getBackend() == WindowBackend::SDL3_IMPL) {
+            auto* sdlWindow = static_cast<SDLWindow*>(window);
+            if (!ImGui_ImplSDL3_InitForVulkan(sdlWindow->getSDLWindow())) {
+                sgl::Logfile::get()->writeError(
+                        "Error in ImGuiWrapper::initialize: ImGui_ImplSDL3_InitForVulkan failed.");
+                return;
+            }
+        }
+#endif
 #ifdef SUPPORT_GLFW
         if (window->getBackend() == WindowBackend::GLFW_IMPL) {
             auto* glfwWindow = static_cast<GlfwWindow*>(window);
@@ -201,6 +227,16 @@ void ImGuiWrapper::initialize(
             if (!ImGui_ImplSDL2_InitForOther(sdlWindow->getSDLWindow())) {
                 sgl::Logfile::get()->writeError(
                         "Error in ImGuiWrapper::initialize: ImGui_ImplSDL2_InitForOther failed.");
+                return;
+            }
+        }
+#endif
+#ifdef SUPPORT_SDL3
+        if (window->getBackend() == WindowBackend::SDL3_IMPL) {
+            auto* sdlWindow = static_cast<SDLWindow*>(window);
+            if (!ImGui_ImplSDL3_InitForOther(sdlWindow->getSDLWindow())) {
+                sgl::Logfile::get()->writeError(
+                        "Error in ImGuiWrapper::initialize: ImGui_ImplSDL3_InitForOther failed.");
                 return;
             }
         }
@@ -320,12 +356,17 @@ void ImGuiWrapper::shutdown() {
     }
 #endif
 
-#if defined(SUPPORT_SDL2) || defined(SUPPORT_GLFW)
+#if defined(SUPPORT_SDL) || defined(SUPPORT_GLFW)
     auto* window = AppSettings::get()->getMainWindow();
 #endif
 #ifdef SUPPORT_SDL2
     if (window->getBackend() == WindowBackend::SDL2_IMPL) {
         ImGui_ImplSDL2_Shutdown();
+    }
+#endif
+#ifdef SUPPORT_SDL3
+    if (window->getBackend() == WindowBackend::SDL3_IMPL) {
+        ImGui_ImplSDL3_Shutdown();
     }
 #endif
 #ifdef SUPPORT_GLFW
@@ -337,9 +378,13 @@ void ImGuiWrapper::shutdown() {
     ImGui::DestroyContext();
 }
 
-#ifdef SUPPORT_SDL2
+#ifdef SUPPORT_SDL
 void ImGuiWrapper::processSDLEvent(const SDL_Event &event) {
+#ifdef SUPPORT_SDL3
+    ImGui_ImplSDL3_ProcessEvent(&event);
+#else
     ImGui_ImplSDL2_ProcessEvent(&event);
+#endif
 }
 #endif
 
@@ -471,6 +516,11 @@ void ImGuiWrapper::renderStart() {
         ImGui_ImplSDL2_NewFrame();
     }
 #endif
+#ifdef SUPPORT_SDL3
+    if (window->getBackend() == WindowBackend::SDL3_IMPL) {
+        ImGui_ImplSDL3_NewFrame();
+    }
+#endif
 #ifdef SUPPORT_GLFW
     if (window->getBackend() == WindowBackend::GLFW_IMPL) {
         ImGui_ImplGlfw_NewFrame();
@@ -579,11 +629,17 @@ void ImGuiWrapper::renderEnd() {
 #ifdef SUPPORT_OPENGL
         if (renderSystem == RenderSystem::OPENGL) {
             ZoneScopedN("SDL_GL_MakeCurrent");
-#if defined(SUPPORT_SDL2) || defined(SUPPORT_GLFW)
+#if defined(SUPPORT_SDL) || defined(SUPPORT_GLFW)
             auto* window = AppSettings::get()->getMainWindow();
 #endif
 #ifdef SUPPORT_SDL2
             if (window->getBackend() == WindowBackend::SDL2_IMPL) {
+                auto* sdlWindow = static_cast<SDLWindow*>(window);
+                SDL_GL_MakeCurrent(sdlWindow->getSDLWindow(), sdlWindow->getGLContext());
+            }
+#endif
+#ifdef SUPPORT_SDL3
+            if (window->getBackend() == WindowBackend::SDL3_IMPL) {
                 auto* sdlWindow = static_cast<SDLWindow*>(window);
                 SDL_GL_MakeCurrent(sdlWindow->getSDLWindow(), sdlWindow->getGLContext());
             }

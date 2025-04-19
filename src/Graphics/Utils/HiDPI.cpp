@@ -26,14 +26,19 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef SUPPORT_SDL3
+#define SDL_ENABLE_OLD_NAMES
+#include <SDL3/SDL.h>
+#else
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
+#endif
 
 #include <Utils/AppSettings.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Graphics/Window.hpp>
 
-#ifdef SUPPORT_SDL2
+#if defined(SUPPORT_SDL)
 #include <SDL/SDLWindow.hpp>
 #endif
 
@@ -147,7 +152,7 @@ float getHighDPIScaleFactor() {
 
     bool scaleFactorSetManually = false;
 
-#if defined(SUPPORT_SDL2) || defined(SUPPORT_GLFW)
+#if defined(SUPPORT_SDL) || defined(SUPPORT_GLFW)
     bool allowHighDPI = false;
 #endif
 #ifdef __linux__
@@ -198,6 +203,30 @@ float getHighDPIScaleFactor() {
         isCocoa = wminfo.subsystem == SDL_SYSWM_COCOA;
 #endif
         allowHighDPI = (SDL_GetWindowFlags(sdlWindow) & SDL_WINDOW_ALLOW_HIGHDPI) != 0;
+    }
+#endif
+
+#ifdef SUPPORT_SDL3
+    if (window->getBackend() == WindowBackend::SDL3_IMPL) {
+        window->errorCheck();
+        SDL_Window* sdlWindow = static_cast<sgl::SDLWindow*>(window)->getSDLWindow();
+#ifdef SDL_PLATFORM_LINUX
+    if (SDL_strcmp(SDL_GetCurrentVideoDriver(), "x11") == 0) {
+        auto* xdisplay = static_cast<Display*>(SDL_GetPointerProperty(
+                SDL_GetWindowProperties(sdlWindow), SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr));
+        scaleFactorSetManually = getScreenScalingX11(xdisplay, scaleFactorHiDPI);
+    }
+#endif
+#ifdef SDL_PLATFORM_WIN32
+        scaleFactorSetManually = getScreenScalingWindows(scaleFactorHiDPI);
+#endif
+#ifdef __linux__
+        isWayland = SDL_strcmp(SDL_GetCurrentVideoDriver(), "wayland") == 0;
+#endif
+#ifdef __APPLE__
+        isCocoa = true;
+#endif
+        allowHighDPI = (SDL_GetWindowFlags(sdlWindow) & SDL_WINDOW_HIGH_PIXEL_DENSITY) != 0;
     }
 #endif
 
@@ -293,6 +322,12 @@ float getHighDPIScaleFactor() {
                 scaleFactorHiDPI = hdpi / 96.0f;
             }
         }
+    }
+#endif
+
+#ifdef SUPPORT_SDL3
+    if (window->getBackend() == WindowBackend::SDL3_IMPL && !scaleFactorSetManually && allowHighDPI) {
+        scaleFactorHiDPI = SDL_GetWindowDisplayScale(static_cast<SDLWindow*>(window)->getSDLWindow());
     }
 #endif
 

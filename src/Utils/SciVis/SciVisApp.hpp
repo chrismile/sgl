@@ -102,7 +102,7 @@ public:
     //void render();
     void update(float dt) override;
     void resolutionChanged(sgl::EventPtr event) override;
-#ifdef SUPPORT_SDL2
+#ifdef SUPPORT_SDL
     void processSDLEvent(const SDL_Event &event) override;
 #endif
 #ifdef SUPPORT_GLFW

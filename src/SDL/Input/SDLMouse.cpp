@@ -26,12 +26,19 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef SUPPORT_SDL3
+#define SDL_ENABLE_OLD_NAMES
+#endif
 #include "SDLMouse.hpp"
 #include <Math/Geometry/Point2.hpp>
 #include <Utils/AppSettings.hpp>
 #include <SDL/SDLWindow.hpp>
 #include <Utils/Events/EventManager.hpp>
+#ifdef SUPPORT_SDL3
+#include <SDL3/SDL.h>
+#else
 #include <SDL2/SDL.h>
+#endif
 
 namespace sgl {
 
@@ -53,30 +60,34 @@ void SDLMouse::update(float dt) {
 
 // Mouse position
 Point2 SDLMouse::getAxis() {
+#ifdef SUPPORT_SDL3
+    return Point2(int(state.pos.x), int(state.pos.y));
+#else
     return state.pos;
+#endif
 }
 
 int SDLMouse::getX() {
-    return state.pos.x;
+    return int(state.pos.x);
 }
 
 int SDLMouse::getY() {
-    return state.pos.y;
+    return int(state.pos.y);
 }
 
 Point2 SDLMouse::mouseMovement() {
-    return Point2(state.pos.x-oldState.pos.x, state.pos.y-oldState.pos.y);
+    return Point2(int(state.pos.x - oldState.pos.x), int(state.pos.y - oldState.pos.y));
 }
 
 bool SDLMouse::mouseMoved() {
-    return state.pos.x-oldState.pos.x != 0 || state.pos.y-oldState.pos.y != 0;
+    return state.pos.x - oldState.pos.x != 0 || state.pos.y - oldState.pos.y != 0;
 }
 
 void SDLMouse::warp(const Point2 &windowPosition) {
     SDLWindow *mainWindow = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
     SDL_WarpMouseInWindow(mainWindow->getSDLWindow(), windowPosition.x, windowPosition.y);
-    state.pos.x = windowPosition.x;
-    state.pos.y = windowPosition.y;
+    state.pos.x = SCROLL_TYPE(windowPosition.x);
+    state.pos.y = SCROLL_TYPE(windowPosition.y);
     //EventManager::get()->queueEvent(EventDataPtr(new EventData(MOUSE_MOVED_EVENT)));
 }
 
@@ -103,7 +114,7 @@ float SDLMouse::getScrollWheel() {
     return float(state.scrollWheel);
 }
 
-void SDLMouse::setScrollWheelValue(int val) {
+void SDLMouse::setScrollWheelValue(SCROLL_TYPE val) {
     oldState.scrollWheel = state.scrollWheel;
     state.scrollWheel = val;
 }

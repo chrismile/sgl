@@ -29,7 +29,11 @@
 #ifndef SDL_SDLGAMEPAD_HPP_
 #define SDL_SDLGAMEPAD_HPP_
 
+#ifdef SUPPORT_SDL3
+#include <SDL3/SDL.h>
+#else
 #include <SDL2/SDL.h>
+#endif
 #include <vector>
 #include <Input/Gamepad.hpp>
 #include <glm/vec2.hpp>
@@ -73,7 +77,7 @@ protected:
     std::vector<SDL_Joystick*> gamepads;
     /// Array containing the state of the gamepads in the last frame
     std::vector<OldGamepadState*> oldGamepads;
-    int numGamepads;
+    int numGamepads = 0;
 
     std::vector<SDL_Haptic*> hapticList;
     std::vector<bool> rumbleInited;

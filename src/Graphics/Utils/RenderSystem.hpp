@@ -44,6 +44,10 @@ enum class WindowBackend {
     NONE, SDL2_IMPL, GLFW_IMPL, SDL3_IMPL
 };
 
+inline bool getIsSdlWindowBackend(WindowBackend backend) {
+    return backend == WindowBackend::SDL2_IMPL || backend == WindowBackend::SDL3_IMPL;
+}
+
 }
 
 #endif //SGL_RENDERSYSTEM_HPP

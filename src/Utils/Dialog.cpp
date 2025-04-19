@@ -28,12 +28,12 @@
 
 #include <utility>
 
-#if defined(SUPPORT_SDL2) || defined(SUPPORT_GLFW)
+#if defined(SUPPORT_SDL) || defined(SUPPORT_GLFW)
 #include <Utils/AppSettings.hpp>
 #endif
 #include "Dialog.hpp"
 
-#ifdef SUPPORT_SDL2
+#ifdef SUPPORT_SDL
 #include <SDL/SDLWindow.hpp>
 #endif
 
@@ -114,8 +114,8 @@ void openMessageBoxModal(
         std::string const& text,
         sgl::Window* window,
         Icon icon) {
-#ifdef SUPPORT_SDL2
-    if (window->getBackend() == WindowBackend::SDL2_IMPL) {
+#ifdef SUPPORT_SDL
+    if (getIsSdlWindowBackend(window->getBackend())) {
         SDL_Window* sdlWindow = static_cast<SDLWindow*>(window)->getSDLWindow();
         SDL_MessageBoxFlags flags = SDL_MESSAGEBOX_ERROR;
         if (icon == Icon::ERROR) {
@@ -141,7 +141,7 @@ void openMessageBoxModal(
         std::string const& title,
         std::string const& text,
         Icon icon) {
-#if defined(SUPPORT_SDL2) || defined(SUPPORT_GLFW)
+#if defined(SUPPORT_SDL) || defined(SUPPORT_GLFW)
     openMessageBoxModal(title, text, sgl::AppSettings::get()->getMainWindow(), icon);
 #else
     openMessageBox(title, text, icon);

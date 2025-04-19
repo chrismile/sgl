@@ -26,8 +26,16 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "SDLKeyboard.hpp"
+#ifdef SUPPORT_SDL3
+#define SDL_ENABLE_OLD_NAMES
+#endif
+#ifdef SUPPORT_SDL3
+#include <SDL3/SDL.h>
+#define SDL_GetScancodeFromKey(button) SDL_GetScancodeFromKey(button, &keymod)
+#else
 #include <SDL2/SDL.h>
+#endif
+#include "SDLKeyboard.hpp"
 
 namespace sgl {
 
@@ -36,8 +44,13 @@ SDLKeyboard::SDLKeyboard() {
     SDL_GetKeyboardState(&numKeys);
 
     // Allocate and initialize the memory for the keystates
+#ifdef SUPPORT_SDL3
+    oldKeystate = new bool[numKeys];
+    keystate = new bool[numKeys];
+#else
     oldKeystate = new Uint8[numKeys];
     keystate = new Uint8[numKeys];
+#endif
     memset((void*)oldKeystate, 0, numKeys);
     memset((void*)keystate, 0, numKeys);
     modifier = KMOD_NONE;
@@ -173,17 +186,20 @@ SDLKeyboard::~SDLKeyboard() {
 
 void SDLKeyboard::update(float dt) {
     // Copy the the keystates to the oldKeystate array
-    memcpy((void*)oldKeystate, keystate, numKeys);
+    memcpy(oldKeystate, keystate, numKeys);
 
     // Get the new keystates from SDL
-    const Uint8 *sdlKeystate = SDL_GetKeyboardState(&numKeys);
-    memcpy((void*)keystate, sdlKeystate, numKeys);
+    const auto *sdlKeystate = SDL_GetKeyboardState(&numKeys);
+    memcpy(keystate, sdlKeystate, numKeys);
     modifier = SDL_GetModState();
 }
 
 
 // Keyboard keys
 bool SDLKeyboard::isKeyDown(int button) {
+#ifdef SUPPORT_SDL3
+    SDL_Keymod keymod = SDL_KMOD_NONE;
+#endif
     if (button < int(ImGuiKey::ImGuiKey_NamedKey_BEGIN)) {
         return keystate[SDL_GetScancodeFromKey(button)];
     } else {
@@ -200,6 +216,9 @@ bool SDLKeyboard::isKeyUp(int button) {
 }
 
 bool SDLKeyboard::keyPressed(int button) {
+#ifdef SUPPORT_SDL3
+    SDL_Keymod keymod = SDL_KMOD_NONE;
+#endif
     if (button < int(ImGuiKey::ImGuiKey_NamedKey_BEGIN)) {
         return keystate[SDL_GetScancodeFromKey(button)] && !oldKeystate[SDL_GetScancodeFromKey(button)];
     } else {
@@ -213,6 +232,9 @@ bool SDLKeyboard::keyPressed(int button) {
 }
 
 bool SDLKeyboard::keyReleased(int button) {
+#ifdef SUPPORT_SDL3
+    SDL_Keymod keymod = SDL_KMOD_NONE;
+#endif
     if (button < int(ImGuiKey::ImGuiKey_NamedKey_BEGIN)) {
         return !keystate[SDL_GetScancodeFromKey(button)] && oldKeystate[SDL_GetScancodeFromKey(button)];
     } else {

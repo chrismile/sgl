@@ -35,6 +35,9 @@
 #ifdef SUPPORT_SDL2
 #include <SDL2/SDL_keycode.h>
 #endif
+#ifdef SUPPORT_SDL3
+#include <SDL3/SDL_keycode.h>
+#endif
 
 namespace sgl {
 
@@ -62,7 +65,7 @@ public:
     virtual bool scancodeReleased(int button)=0;
     virtual int getNumKeys()=0;
     virtual bool getModifier(ImGuiKey modifier)=0;
-#ifdef SUPPORT_SDL2
+#if defined(SUPPORT_SDL)
     virtual SDL_Keymod getModifier()=0;
 #endif
 

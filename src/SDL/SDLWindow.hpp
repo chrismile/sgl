@@ -31,7 +31,11 @@
 
 #include <unordered_map>
 
+#ifdef SUPPORT_SDL3
+#include <SDL3/SDL.h>
+#else
 #include <SDL2/SDL.h>
+#endif
 #include <Graphics/Window.hpp>
 
 #ifdef SUPPORT_WEBGPU
@@ -44,7 +48,13 @@ class DLL_OBJECT SDLWindow : public Window {
 public:
     SDLWindow();
     ~SDLWindow() override;
-    [[nodiscard]] WindowBackend getBackend() const override { return WindowBackend::SDL2_IMPL; }
+    [[nodiscard]] WindowBackend getBackend() const override {
+#ifdef SUPPORT_SDL3
+        return WindowBackend::SDL3_IMPL;
+#else
+        return WindowBackend::SDL2_IMPL;
+#endif
+    }
 
     /// Outputs e.g. "SDL_GetError"
     void errorCheck() override;

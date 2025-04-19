@@ -30,15 +30,27 @@
 #define SDL_SDLMOUSE_HPP_
 
 #include <Input/Mouse.hpp>
+#ifdef SUPPORT_SDL3
+#include <glm/vec2.hpp>
+#else
 #include <Math/Geometry/Point2.hpp>
+#endif
 
 namespace sgl {
+
+#ifdef SUPPORT_SDL3
+typedef float SCROLL_TYPE;
+typedef glm::vec2 POS_TYPE;
+#else
+typedef int SCROLL_TYPE;
+typedef Point2 POS_TYPE;
+#endif
 
 struct DLL_OBJECT MouseState {
     MouseState() : buttonState(0), scrollWheel(0) {}
     int buttonState;
-    Point2 pos;
-    int scrollWheel;
+    POS_TYPE pos;
+    SCROLL_TYPE scrollWheel;
 };
 
 class DLL_OBJECT SDLMouse : public MouseInterface {
@@ -64,7 +76,7 @@ public:
     float getScrollWheel() override;
 
     /// Function for event processing (SDL only supports querying scroll wheel state within the event queue)
-    void setScrollWheelValue(int val);
+    void setScrollWheelValue(SCROLL_TYPE val);
 
 protected:
     /// States in the current and last frame

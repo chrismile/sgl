@@ -28,8 +28,12 @@
 
 #include <iostream>
 #include <cstdlib>
+#ifdef SUPPORT_SDL3
+#include "SDL3Helper.hpp"
+#else
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
+#endif
 
 #include <Math/Math.hpp>
 #include <Utils/StringUtils.hpp>
@@ -55,11 +59,19 @@
 #include <Graphics/Vulkan/Utils/Instance.hpp>
 #include <Graphics/Vulkan/Utils/Device.hpp>
 #include <Graphics/Vulkan/Utils/Swapchain.hpp>
+#ifdef SUPPORT_SDL3
+#include <SDL3/SDL_vulkan.h>
+#else
 #include <SDL2/SDL_vulkan.h>
+#endif
 #endif
 
 #ifdef SUPPORT_WEBGPU
+#ifdef SUPPORT_SDL3
+#include <sdl3webgpu.h>
+#else
 #include <sdl2webgpu.h>
+#endif
 
 // Xlib.h defines "Bool" on Linux, which conflicts with webgpu.hpp.
 #ifdef Bool
@@ -79,6 +91,7 @@
 
 #include <Graphics/WebGPU/Utils/Instance.hpp>
 #include <Graphics/WebGPU/Utils/Swapchain.hpp>
+#include <utility>
 #endif
 
 #ifdef __APPLE__
@@ -200,7 +213,11 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
 
     errorCheckSDLCritical();
 
+#ifdef SUPPORT_SDL3
+    Uint32 flags = 0;
+#else
     Uint32 flags = SDL_WINDOW_SHOWN;
+#endif
 #ifndef __APPLE__
     flags |= SDL_WINDOW_ALLOW_HIGHDPI;
 #else
@@ -230,9 +247,22 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
     if (windowSettings.resizable) flags |= SDL_WINDOW_RESIZABLE;
 
     // Create the window
-    sdlWindow = SDL_CreateWindow(FileUtils::get()->getAppName().c_str(),
+#ifdef SUPPORT_SDL3
+    SDL_PropertiesID props = SDL_CreateProperties();
+    SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, FileUtils::get()->getAppName().c_str());
+    SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_X_NUMBER, SDL_WINDOWPOS_CENTERED);
+    SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_Y_NUMBER, SDL_WINDOWPOS_CENTERED);
+    SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, windowSettings.width);
+    SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, windowSettings.height);
+    SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_FLAGS_NUMBER, flags);
+    sdlWindow = SDL_CreateWindowWithProperties(props);
+    SDL_DestroyProperties(props);
+#else
+    sdlWindow = SDL_CreateWindow(
+            FileUtils::get()->getAppName().c_str(),
             SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
             windowSettings.width, windowSettings.height, flags);
+#endif
 
     errorCheckSDLCritical();
 #ifdef SUPPORT_OPENGL
@@ -250,17 +280,32 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
          */
         std::vector<const char*> instanceExtensionNames =
                 sgl::AppSettings::get()->getRequiredVulkanInstanceExtensions();
+#ifdef SUPPORT_SDL3
+        uint32_t extensionCount;
+        auto sdlExtensions = SDL_Vulkan_GetInstanceExtensions(&extensionCount);
+        size_t additionalExtensionCount = instanceExtensionNames.size();
+        instanceExtensionNames.reserve(extensionCount + instanceExtensionNames.size());
+        for (uint32_t i = 0; i < additionalExtensionCount; i++) {
+            instanceExtensionNames.push_back(sdlExtensions[i]);
+        }
+#else
         uint32_t extensionCount;
         SDL_Vulkan_GetInstanceExtensions(sdlWindow, &extensionCount, nullptr);
         size_t additionalExtensionCount = instanceExtensionNames.size();
         instanceExtensionNames.resize(extensionCount + instanceExtensionNames.size());
         SDL_Vulkan_GetInstanceExtensions(
                 sdlWindow, &extensionCount, instanceExtensionNames.data() + additionalExtensionCount);
+#endif
 
         sgl::vk::Instance* instance = sgl::AppSettings::get()->getVulkanInstance();
         instance->createInstance(instanceExtensionNames, windowSettings.debugContext);
 
-        if (!SDL_Vulkan_CreateSurface(sdlWindow, instance->getVkInstance(), &windowSurface)) {
+        if (!SDL_Vulkan_CreateSurface(
+                sdlWindow, instance->getVkInstance(),
+#ifdef SUPPORT_SDL3
+                nullptr,
+#endif
+                &windowSurface)) {
             sgl::Logfile::get()->throwError(
                     std::string() + "Error in SDLWindow::initialize: Failed to create a Vulkan surface.");
         }
@@ -280,7 +325,11 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
                     std::string() + "Error in SDLWindow::initialize: Failed to create a WebGPU instance.");
         }
         errorCheckSDLCritical();
+#ifdef SUPPORT_SDL3
+        webgpuSurface = SDL3_GetWGPUSurface(instance->getWGPUInstance(), sdlWindow);
+#else
         webgpuSurface = SDL2_GetWGPUSurface(instance->getWGPUInstance(), sdlWindow);
+#endif
         if (!webgpuSurface) {
             sgl::Logfile::get()->throwError(
                     std::string() + "Error in SDLWindow::initialize: Failed to create a WebGPU surface.");
@@ -317,7 +366,16 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
     // Did something fail during the initialization?
     errorCheck();
 
-
+#ifdef SUPPORT_SDL3
+#ifdef SDL_PLATFORM_LINUX
+    usesX11Backend = SDL_strcmp(SDL_GetCurrentVideoDriver(), "x11") == 0;
+    usesWaylandBackend = SDL_strcmp(SDL_GetCurrentVideoDriver(), "wayland") == 0;
+    const char* waylandDisplayVar = getenv("WAYLAND_DISPLAY");
+    if (usesX11Backend && waylandDisplayVar) {
+        usesXWaylandBackend = true;
+    }
+#endif
+#else
     SDL_SysWMinfo wminfo;
     SDL_VERSION(&wminfo.version);
     if (SDL_GetWindowWMInfo(sdlWindow, &wminfo)) {
@@ -330,6 +388,7 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
         }
 #endif
     }
+#endif
 #ifdef __EMSCRIPTEN__
     // For whatever reason, we get "SDL error: That operation is not supported" after SDL_GetWindowWMInfo.
     errorCheckIgnoreUnsupportedOperation();
@@ -340,12 +399,20 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
 #if defined(__APPLE__) || defined(__linux__)
 #ifdef SUPPORT_OPENGL
     if (renderSystem == RenderSystem::OPENGL) {
+#ifdef SUPPORT_SDL3
+        SDL_GetWindowSizeInPixels(sdlWindow, &windowSettings.pixelWidth, &windowSettings.pixelHeight);
+#else
         SDL_GL_GetDrawableSize(sdlWindow, &windowSettings.pixelWidth, &windowSettings.pixelHeight);
+#endif
     }
 #endif
 #ifdef SUPPORT_VULKAN
     if (renderSystem == RenderSystem::VULKAN && !windowSettings.useDownloadSwapchain) {
+#ifdef SUPPORT_SDL3
+        SDL_GetWindowSizeInPixels(sdlWindow, &windowSettings.pixelWidth, &windowSettings.pixelHeight);
+#else
         SDL_Vulkan_GetDrawableSize(sdlWindow, &windowSettings.pixelWidth, &windowSettings.pixelHeight);
+#endif
     }
 #endif
 #endif
@@ -373,8 +440,13 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
 
 void SDLWindow::toggleFullscreen(bool nativeFullscreen) {
     windowSettings.fullscreen = !windowSettings.fullscreen;
+#ifdef SUPPORT_SDL3
+    // TODO: Use SDL_SetWindowFullscreenMode()?
+    SDL_SetWindowFullscreen(sdlWindow, windowSettings.fullscreen);
+#else
     int fullscreenMode = nativeFullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN;
     SDL_SetWindowFullscreen(sdlWindow, windowSettings.fullscreen ? fullscreenMode : 0);
+#endif
 }
 
 void SDLWindow::setWindowVirtualSize(int width, int height) {
@@ -388,7 +460,11 @@ void SDLWindow::setWindowVirtualSize(int width, int height) {
         int oldWidth = 0, oldHeight = 0;
         int oldPixelWidth = 0, oldPixelHeight = 0;
         SDL_GetWindowSize(sdlWindow, &oldWidth, &oldHeight);
+#ifdef SUPPORT_SDL3
+        SDL_GetWindowSizeInPixels(sdlWindow, &oldPixelWidth, &oldPixelHeight);
+#else
         SDL_GL_GetDrawableSize(sdlWindow, &oldPixelWidth, &oldPixelHeight);
+#endif
         windowSettings.pixelWidth = width * oldPixelWidth / oldWidth;
         windowSettings.pixelWidth = height * oldPixelHeight / oldHeight;
     }
@@ -398,7 +474,11 @@ void SDLWindow::setWindowVirtualSize(int width, int height) {
         int oldWidth = 0, oldHeight = 0;
         int oldPixelWidth = 0, oldPixelHeight = 0;
         SDL_GetWindowSize(sdlWindow, &oldWidth, &oldHeight);
+#ifdef SUPPORT_SDL3
+        SDL_GetWindowSizeInPixels(sdlWindow, &oldPixelWidth, &oldPixelHeight);
+#else
         SDL_Vulkan_GetDrawableSize(sdlWindow, &oldPixelWidth, &oldPixelHeight);
+#endif
         windowSettings.pixelWidth = width * oldPixelWidth / oldWidth;
         windowSettings.pixelWidth = height * oldPixelHeight / oldHeight;
     }
@@ -427,7 +507,11 @@ void SDLWindow::setWindowPixelSize(int width, int height) {
         int oldWidth = 0, oldHeight = 0;
         int oldPixelWidth = 0, oldPixelHeight = 0;
         SDL_GetWindowSize(sdlWindow, &oldWidth, &oldHeight);
+#ifdef SUPPORT_SDL3
+        SDL_GetWindowSizeInPixels(sdlWindow, &oldPixelWidth, &oldPixelHeight);
+#else
         SDL_GL_GetDrawableSize(sdlWindow, &oldPixelWidth, &oldPixelHeight);
+#endif
         windowSettings.width = width * oldWidth / oldPixelWidth;
         windowSettings.height = height * oldHeight / oldPixelHeight;
     }
@@ -437,7 +521,11 @@ void SDLWindow::setWindowPixelSize(int width, int height) {
         int oldWidth = 0, oldHeight = 0;
         int oldPixelWidth = 0, oldPixelHeight = 0;
         SDL_GetWindowSize(sdlWindow, &oldWidth, &oldHeight);
+#ifdef SUPPORT_SDL3
+        SDL_GetWindowSizeInPixels(sdlWindow, &oldPixelWidth, &oldPixelHeight);
+#else
         SDL_Vulkan_GetDrawableSize(sdlWindow, &oldPixelWidth, &oldPixelHeight);
+#endif
         windowSettings.width = width * oldWidth / oldPixelWidth;
         windowSettings.height = height * oldHeight / oldPixelHeight;
     }
@@ -469,7 +557,7 @@ void SDLWindow::update() {
 }
 
 void SDLWindow::setEventHandler(std::function<void(const SDL_Event&)> eventHandler) {
-    this->eventHandler = eventHandler;
+    this->eventHandler = std::move(eventHandler);
     eventHandlerSet = true;
 }
 
@@ -477,18 +565,22 @@ bool SDLWindow::processEvents() {
     SDL_PumpEvents();
 
     bool running = true;
-    SDLMouse* sdlMouse = (SDLMouse*)Mouse;
+    auto* sdlMouse = static_cast<SDLMouse*>(Mouse);
     sdlMouse->setScrollWheelValue(0);
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
-        case (SDL_QUIT):
+        case SDL_QUIT:
             running = false;
             break;
 
-        case (SDL_KEYDOWN):
+        case SDL_KEYDOWN:
+#ifdef SUPPORT_SDL3
+            switch (event.key.key) {
+#else
             switch (event.key.keysym.sym) {
-            case (SDLK_v):
+#endif
+            case SDLK_v:
                 if (SDL_GetModState() & KMOD_CTRL) {
                     char* clipboardText = SDL_GetClipboardText();
                     Keyboard->addToKeyBuffer(clipboardText);
@@ -504,6 +596,46 @@ bool SDLWindow::processEvents() {
             }
             break;
 
+#ifdef SUPPORT_SDL3
+        case SDL_WINDOWEVENT_RESIZED:
+            if (event.window.windowID == SDL_GetWindowID(sdlWindow)) {
+                windowSettings.width = event.window.data1;
+                windowSettings.height = event.window.data2;
+                windowSettings.pixelWidth = windowSettings.width;
+                windowSettings.pixelHeight = windowSettings.height;
+#if (defined(__APPLE__) || defined(__linux__)) && (defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN))
+                if (renderSystem == RenderSystem::OPENGL
+                        || (renderSystem == RenderSystem::VULKAN && !windowSettings.useDownloadSwapchain)) {
+                    SDL_GetWindowSizeInPixels(sdlWindow, &windowSettings.pixelWidth, &windowSettings.pixelHeight);
+                        }
+#endif
+#ifdef SUPPORT_WEBGPU
+                if (renderSystem == RenderSystem::WEBGPU) {
+                    webgpu::Swapchain* swapchain = AppSettings::get()->getWebGPUSwapchain();
+                    if (swapchain) {
+                        swapchain->recreateSwapchain();
+                    }
+                }
+#endif
+                if (renderSystem != RenderSystem::VULKAN) {
+                    EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
+                }
+#ifdef SUPPORT_VULKAN
+                else {
+                    vk::Swapchain* swapchain = AppSettings::get()->getSwapchain();
+                    if (swapchain && !swapchain->getIsWaitingForResizeEnd()) {
+                        swapchain->recreateSwapchain();
+                    }
+                }
+#endif
+            }
+            break;
+      case SDL_WINDOWEVENT_CLOSE:
+           if (event.window.windowID == SDL_GetWindowID(sdlWindow)) {
+               running = false;
+           }
+           break;
+#else
         case SDL_WINDOWEVENT:
             if (event.window.windowID == SDL_GetWindowID(sdlWindow)) {
                 switch (event.window.event) {
@@ -552,6 +684,7 @@ bool SDLWindow::processEvents() {
                 }
             }
             break;
+#endif
 
         case SDL_MOUSEWHEEL:
             sdlMouse->setScrollWheelValue(event.wheel.y);
@@ -740,12 +873,24 @@ void SDLWindow::setShowCursor(bool _show) {
         return;
     }
     showCursor = _show;
+#ifdef SUPPORT_SDL3
+    if (showCursor) {
+        SDL_ShowCursor();
+    } else {
+        SDL_HideCursor();
+    }
+#else
     SDL_ShowCursor(showCursor ? SDL_TRUE : SDL_FALSE);
+#endif
 }
 
 #ifdef SUPPORT_OPENGL
 void* SDLWindow::getOpenGLFunctionPointer(const char* functionName) {
+#ifdef SUPPORT_SDL3
+    return reinterpret_cast<void*>(SDL_GL_GetProcAddress(functionName));
+#else
     return SDL_GL_GetProcAddress(functionName);
+#endif
 }
 #endif
 

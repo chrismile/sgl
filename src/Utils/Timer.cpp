@@ -32,6 +32,9 @@
 #ifdef SUPPORT_SDL2
 #include <SDL2/SDL.h>
 #endif
+#ifdef SUPPORT_SDL3
+#include <SDL3/SDL.h>
+#endif
 
 #ifdef SUPPORT_GLFW
 #include <GLFW/glfw3.h>
@@ -45,11 +48,11 @@ namespace sgl {
 
 TimerInterface::TimerInterface() : currentTime(0), lastTime(0), elapsedMicroSeconds(0),
         fpsLimitEnabled(true), fpsLimit(60), fixedPhysicsFPSEnabled(true), physicsFPS(60) {
-#if defined(SUPPORT_SDL2) || defined(SUPPORT_GLFW)
+#if defined(SUPPORT_SDL) || defined(SUPPORT_GLFW)
     WindowBackend windowBackend = AppSettings::get()->getWindowBackend();
 #endif
-#ifdef SUPPORT_SDL2
-    if (windowBackend == WindowBackend::SDL2_IMPL) {
+#ifdef SUPPORT_SDL
+    if (getIsSdlWindowBackend(windowBackend)) {
         perfFreq = SDL_GetPerformanceFrequency();
         startFrameTime = SDL_GetPerformanceCounter();
     }
@@ -104,11 +107,11 @@ void TimerInterface::update() {
 }
 
 uint64_t TimerInterface::getTicksMicroseconds() const {
-#if defined(SUPPORT_SDL2) || defined(SUPPORT_GLFW)
+#if defined(SUPPORT_SDL) || defined(SUPPORT_GLFW)
     auto* window = AppSettings::get()->getMainWindow();
 #endif
-#ifdef SUPPORT_SDL2
-    if (window->getBackend() == WindowBackend::SDL2_IMPL) {
+#ifdef SUPPORT_SDL
+    if (getIsSdlWindowBackend(window->getBackend())) {
         auto _currentTime =
                 uint64_t(static_cast<double>(SDL_GetPerformanceCounter() - startFrameTime) / double(perfFreq) * 1e6);
         return _currentTime;

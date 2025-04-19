@@ -26,13 +26,25 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_SDL3MOUSE_HPP
-#define SGL_SDL3MOUSE_HPP
 
+#ifndef SDL3HELPER_HPP
+#define SDL3HELPER_HPP
 
-class SDL3Mouse {
+#ifdef SUPPORT_SDL3
 
-};
+#ifndef SDL_ENABLE_OLD_NAMES
+#define SDL_ENABLE_OLD_NAMES
+#endif
+#include <SDL3/SDL.h>
 
+// https://github.com/libsdl-org/SDL/blob/main/docs/README-migration.md#sdl_surfaceh
+inline SDL_Surface *SDL_CreateRGBSurfaceFrom(
+        void *pixels, int width, int height, int depth, int pitch,
+        Uint32 Rmask, Uint32 Gmask, Uint32 Bmask, Uint32 Amask) {
+    return SDL_CreateSurfaceFrom(
+            width, height, SDL_GetPixelFormatForMasks(depth, Rmask, Gmask, Bmask, Amask), pixels, pitch);
+}
 
-#endif //SGL_SDL3MOUSE_HPP
+#endif
+
+#endif //SDL3HELPER_HPP

@@ -26,6 +26,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef SUPPORT_SDL3
+#define SDL_ENABLE_OLD_NAMES
+#endif
 #include <GLFW/glfw3.h>
 #include <GLFW/GlfwWindow.hpp>
 #include <Utils/AppSettings.hpp>
@@ -286,8 +289,18 @@ bool GlfwKeyboard::getModifier(ImGuiKey modifierImGui) {
     return (modifier & modifierImGui) != 0;
 }
 
-#ifdef SUPPORT_SDL2
+#if defined(SUPPORT_SDL)
 SDL_Keymod GlfwKeyboard::getModifier() {
+#ifdef SUPPORT_SDL3
+    int keymod = SDL_KMOD_NONE;
+    if ((modifier & SDL_KMOD_CTRL) != 0) {
+        keymod |= SDL_KMOD_CTRL;
+    } else if ((modifier & SDL_KMOD_SHIFT) != 0) {
+        keymod |= SDL_KMOD_SHIFT;
+    } else if ((modifier & SDL_KMOD_ALT) != 0) {
+        keymod |= SDL_KMOD_ALT;
+    }
+#else
     int keymod = KMOD_NONE;
     if ((modifier & KMOD_CTRL) != 0) {
         keymod |= KMOD_CTRL;
@@ -296,6 +309,7 @@ SDL_Keymod GlfwKeyboard::getModifier() {
     } else if ((modifier & KMOD_ALT) != 0) {
         keymod |= KMOD_ALT;
     }
+#endif
     return SDL_Keymod(keymod);
 }
 #endif

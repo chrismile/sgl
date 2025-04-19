@@ -36,6 +36,11 @@
 #include <Input/Mouse.hpp>
 #include <Graphics/Window.hpp>
 #include <Graphics/Scene/RenderTarget.hpp>
+#ifdef SUPPORT_SDL3
+#include <SDL3/SDL.h>
+#else
+#include <SDL2/SDL.h>
+#endif
 #ifdef SUPPORT_OPENGL
 #include <GL/glew.h>
 #include <Graphics/Renderer.hpp>
@@ -486,11 +491,24 @@ void SciVisApp::updateColorSpaceMode() {
 #endif
 }
 
-#ifdef SUPPORT_SDL2
+#ifdef SUPPORT_SDL
 void SciVisApp::processSDLEvent(const SDL_Event &event) {
+#ifdef SUPPORT_SDL3
+    if (event.type == SDL_EVENT_KEY_DOWN) {
+        if ((useDockSpaceMode && event.key.key == SDLK_Q && (event.key.mod & SDL_KMOD_CTRL) != 0)
+                || (!useDockSpaceMode && event.key.key == SDLK_ESCAPE)) {
+            quit();
+        }
+    }
+
+    if (event.type == SDL_EVENT_DROP_FILE) {
+        std::string droppedFileName = event.drop.data;
+        onFileDropped(droppedFileName);
+    }
+#else
     if (event.type == SDL_KEYDOWN) {
         if ((useDockSpaceMode && event.key.keysym.sym == SDLK_q && (event.key.keysym.mod & KMOD_CTRL) != 0)
-            || (!useDockSpaceMode && event.key.keysym.sym == SDLK_ESCAPE)) {
+                || (!useDockSpaceMode && event.key.keysym.sym == SDLK_ESCAPE)) {
             quit();
         }
     }
@@ -500,6 +518,7 @@ void SciVisApp::processSDLEvent(const SDL_Event &event) {
         onFileDropped(droppedFileName);
         SDL_free(event.drop.file);
     }
+#endif
 
     sgl::ImGuiWrapper::get()->processSDLEvent(event);
 }
