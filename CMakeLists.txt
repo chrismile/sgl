@@ -1255,7 +1255,7 @@ if (${USE_SDL3} AND NOT EMSCRIPTEN)
         target_link_libraries(sgl PUBLIC SDL3::SDL3)
     endif()
     get_target_property(SDL3_INCLUDE_DIRS SDL3::Headers INTERFACE_INCLUDE_DIRECTORIES)
-    target_include_directories(sgl PUBLIC "${SDL3_INCLUDE_DIRS}/SDL3")
+    target_include_directories(sgl PRIVATE "${SDL3_INCLUDE_DIRS}/SDL3")
 endif()
 
 if (${USE_SDL3} AND EMSCRIPTEN)
