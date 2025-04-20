@@ -1279,7 +1279,8 @@ if (${USE_SDL3} AND NOT EMSCRIPTEN)
 endif()
 
 if (${USE_SDL3} AND EMSCRIPTEN)
-    set(EMSCRIPTEN_SGL_FLAGS "${EMSCRIPTEN_SGL_FLAGS}" "--use-port=sdl3" "--use-port=sdl3_image:formats=png")
+    # https://github.com/emscripten-core/emscripten/blob/main/ChangeLog.md#404---022525
+    set(EMSCRIPTEN_SGL_FLAGS "${EMSCRIPTEN_SGL_FLAGS}" "-sUSE_SDL=3")
 endif()
 
 
@@ -1483,7 +1484,7 @@ if (EMSCRIPTEN)
         file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "\nset(EMSCRIPTEN_APP_FLAGS \"\${EMSCRIPTEN_APP_FLAGS}\" \"--use-port=sdl2\" \"--use-port=sdl2_image:formats=png\")\n")
     endif()
     if (${USE_SDL3})
-        file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "\nset(EMSCRIPTEN_APP_FLAGS \"\${EMSCRIPTEN_APP_FLAGS}\" \"--use-port=sdl3\" \"--use-port=sdl3_image:formats=png\")\n")
+        file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "\nset(EMSCRIPTEN_APP_FLAGS \"\${EMSCRIPTEN_APP_FLAGS}\" \"---sUSE_SDL=3\")\n")
     endif()
     if (${USE_GLFW})
         file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "\nset(EMSCRIPTEN_LINKER_FLAGS \"\${EMSCRIPTEN_LINKER_FLAGS}\" \"-sUSE_GLFW=3\")\n")
