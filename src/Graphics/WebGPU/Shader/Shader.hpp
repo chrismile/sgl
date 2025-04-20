@@ -100,7 +100,7 @@ private:
     std::map<std::string, uint32_t> inputVariableNameLocationIndexMap; ///< input interface variable name -> loc. index
 
     std::map<uint32_t, std::vector<BindingEntry>> bindGroupsInfo; ///< group index -> binding group info
-    std::unordered_map<uint32_t, std::unordered_map<uint32_t, WGPUShaderStageFlags>> bindingEntryStageFlags;
+    std::unordered_map<uint32_t, std::unordered_map<uint32_t, WGPUShaderStage>> bindingEntryStageFlags;
     std::vector<WGPUBindGroupLayout> bindGroupLayouts;
 
     // for getInputVariableDescriptors.

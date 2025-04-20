@@ -118,7 +118,7 @@ ShaderStages::ShaderStages(
 
         for (const auto& bindGroupInfo : reflectInfo.bindingGroups) {
             for (const auto& bindingEntryInfo : bindGroupInfo.second) {
-                WGPUShaderStageFlags newFlags = WGPUShaderStage_None;
+                WGPUShaderStage newFlags = WGPUShaderStage_None;
                 if (shaderInfo.shaderType == ShaderType::VERTEX) {
                     newFlags = WGPUShaderStage_Vertex;
                 } else if (shaderInfo.shaderType == ShaderType::FRAGMENT) {
@@ -126,7 +126,7 @@ ShaderStages::ShaderStages(
                 } else if (shaderInfo.shaderType == ShaderType::COMPUTE) {
                     newFlags = WGPUShaderStage_Compute;
                 }
-                WGPUShaderStageFlags currentFlags =
+                WGPUShaderStage currentFlags =
                         bindingEntryStageFlags[bindGroupInfo.first][bindingEntryInfo.bindingIndex];
                 currentFlags = currentFlags | newFlags;
                 bindingEntryStageFlags[bindGroupInfo.first][bindingEntryInfo.bindingIndex] = currentFlags;

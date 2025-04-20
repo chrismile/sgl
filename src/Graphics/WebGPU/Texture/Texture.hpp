@@ -40,7 +40,7 @@ namespace sgl { namespace webgpu {
 class Device;
 
 struct DLL_OBJECT TextureSettings {
-    WGPUTextureUsageFlags usage = WGPUTextureUsage_None;
+    WGPUTextureUsage usage = WGPUTextureUsage_None;
     WGPUTextureDimension dimension = WGPUTextureDimension_2D;
     WGPUExtent3D size = { 1, 1, 1 };
     WGPUTextureFormat format = WGPUTextureFormat_RGBA8Unorm;

@@ -73,29 +73,29 @@ void Data::setBufferOptional(const BufferPtr& buffer, const std::string& descNam
 
 void Data::setBufferUnused(uint32_t bindingIndex) {
     const BindingEntry& descriptorInfo = shaderStages->getBindingEntryByIndex(0, bindingIndex);
-    WGPUBufferUsageFlags usageFlags = WGPUBufferUsage_Storage;
+    WGPUBufferUsage bufferUsage = WGPUBufferUsage_Storage;
     if (descriptorInfo.bindingEntryType == BindingEntryType::UNIFORM_BUFFER) {
-        usageFlags = WGPUBufferUsage_Uniform;
+        bufferUsage = WGPUBufferUsage_Uniform;
     } else if (descriptorInfo.bindingEntryType == BindingEntryType::STORAGE_BUFFER) {
-        usageFlags = WGPUBufferUsage_Storage;
+        bufferUsage = WGPUBufferUsage_Storage;
     }
     sgl::webgpu::BufferSettings bufferSettings{};
     bufferSettings.sizeInBytes = sizeof(uint32_t);
-    bufferSettings.usage = usageFlags;
+    bufferSettings.usage = bufferUsage;
     buffers[bindingIndex] = std::make_shared<sgl::webgpu::Buffer>(device, bufferSettings);
     isDirty = true;
 }
 void Data::setBufferUnused(const std::string& descName) {
     const BindingEntry& descriptorInfo = shaderStages->getBindingEntryByName(0, descName);
-    WGPUBufferUsageFlags usageFlags = WGPUBufferUsage_Storage;
+    WGPUBufferUsage bufferUsage = WGPUBufferUsage_Storage;
     if (descriptorInfo.bindingEntryType == BindingEntryType::UNIFORM_BUFFER) {
-        usageFlags = WGPUBufferUsage_Uniform;
+        bufferUsage = WGPUBufferUsage_Uniform;
     } else if (descriptorInfo.bindingEntryType == BindingEntryType::STORAGE_BUFFER) {
-        usageFlags = WGPUBufferUsage_Storage;
+        bufferUsage = WGPUBufferUsage_Storage;
     }
     sgl::webgpu::BufferSettings bufferSettings{};
     bufferSettings.sizeInBytes = sizeof(uint32_t);
-    bufferSettings.usage = usageFlags;
+    bufferSettings.usage = bufferUsage;
     buffers[descriptorInfo.bindingIndex] = std::make_shared<sgl::webgpu::Buffer>(device, bufferSettings);
     isDirty = true;
 }

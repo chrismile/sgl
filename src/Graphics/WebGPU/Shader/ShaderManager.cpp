@@ -323,12 +323,12 @@ ShaderModulePtr ShaderManagerWgpu::loadAsset(ShaderModuleInfo& shaderInfo) {
     }
 
     WGPUShaderModuleDescriptor shaderModuleDescriptor{};
-    WGPUShaderModuleWGSLDescriptor shaderModuleWgslDescriptor{};
-    // TODO: Is WGPUSType_ShaderModuleSPIRVDescriptor only available in WGPU?
-    shaderModuleWgslDescriptor.chain.sType = WGPUSType_ShaderModuleWGSLDescriptor;
-    shaderModuleWgslDescriptor.code = shaderString.c_str();
-    shaderModuleDescriptor.nextInChain = &shaderModuleWgslDescriptor.chain;
-    shaderModuleDescriptor.label = id.c_str();
+    WGPUShaderSourceWGSL shaderSourceWgsl{};
+    // TODO: Is WGPUSType_ShaderSourceSPIRV only available in WGPU?
+    shaderSourceWgsl.chain.sType = WGPUSType_ShaderSourceWGSL;
+    shaderSourceWgsl.code = { shaderString.c_str(), shaderString.length() };
+    shaderModuleDescriptor.nextInChain = &shaderSourceWgsl.chain;
+    shaderModuleDescriptor.label = { id.c_str(), id.length() };
     errorMessageExternal.clear();
     WGPUShaderModule shaderModuleWgpu = wgpuDeviceCreateShaderModule(device->getWGPUDevice(), &shaderModuleDescriptor);
     if (!errorMessageExternal.empty()) {

@@ -9,7 +9,7 @@
  *   https://github.com/gfx-rs/wgpu-native/blob/master/examples/triangle/main.c
  * 
  * MIT License
- * Copyright (c) 2022-2024 Elie Michel and the wgpu-native authors
+ * Copyright (c) 2022-2025 Elie Michel and the wgpu-native authors
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -36,65 +36,62 @@
 
 #include <GLFW/glfw3.h>
 
-// Fallback for older versions of GLFW
-#if !(GLFW_VERSION_MAJOR >= 3 && GLFW_VERSION_MINOR >= 4)
-#if defined(__linux__)
-// We will assume a system with an old GLFW version will most likely not use Wayland, but X11.
+#ifdef __EMSCRIPTEN__
+#define GLFW_EXPOSE_NATIVE_EMSCRIPTEN
+#ifndef GLFW_PLATFORM_EMSCRIPTEN // not defined in older versions of emscripten
+#define GLFW_PLATFORM_EMSCRIPTEN 0
+#endif
+#else // __EMSCRIPTEN__
+#ifdef GLFW_SUPPORTS_X11
 #define GLFW_EXPOSE_NATIVE_X11
-#elif defined(_WIN32)
-#define GLFW_EXPOSE_NATIVE_WIN32
-#elif defined(__APPLE__)
+#endif
+#ifdef GLFW_SUPPORTS_WAYLAND
+#define GLFW_EXPOSE_NATIVE_WAYLAND
+#endif
+#ifdef GLFW_SUPPORTS_COCOA
 #define GLFW_EXPOSE_NATIVE_COCOA
-#else
+#endif
+#ifdef GLFW_SUPPORTS_WIN32
+#define GLFW_EXPOSE_NATIVE_WIN32
+#endif
+#if (GLFW_VERSION_MAJOR <= 3 && GLFW_VERSION_MINOR < 4) && !defined(__linux__) && !defined(_WIN32) && !defined(GLFW_SUPPORTS_COCOA) && !defined(__APPLE__)
 #include <Utils/File/Logfile.hpp>
 #endif
-#endif
-
-#ifdef __EMSCRIPTEN__
-#  define GLFW_EXPOSE_NATIVE_EMSCRIPTEN
-#else // __EMSCRIPTEN__
-#  ifdef _GLFW_X11
-#    define GLFW_EXPOSE_NATIVE_X11
-#  endif
-#  ifdef _GLFW_WAYLAND
-#    define GLFW_EXPOSE_NATIVE_WAYLAND
-#  endif
-#  ifdef _GLFW_COCOA
-#    define GLFW_EXPOSE_NATIVE_COCOA
-#  endif
-#  ifdef _GLFW_WIN32
-#    define GLFW_EXPOSE_NATIVE_WIN32
-#  endif
 #endif // __EMSCRIPTEN__
 
 #ifdef GLFW_EXPOSE_NATIVE_COCOA
-#  include <Foundation/Foundation.h>
-#  include <QuartzCore/CAMetalLayer.h>
+#include <Foundation/Foundation.h>
+#include <QuartzCore/CAMetalLayer.h>
 #endif
 
 #ifndef __EMSCRIPTEN__
-#  include <GLFW/glfw3native.h>
+#include <GLFW/glfw3native.h>
 #endif
 
 WGPUSurface glfwGetWGPUSurface(WGPUInstance instance, GLFWwindow* window) {
-#if GLFW_VERSION_MAJOR >= 3 && GLFW_VERSION_MINOR >= 4
+#if (GLFW_VERSION_MAJOR == 3 && GLFW_VERSION_MINOR >= 4) || GLFW_VERSION_MAJOR > 3
 
+#ifndef __EMSCRIPTEN__
     switch (glfwGetPlatform()) {
+#else
+    // glfwGetPlatform is not available in older versions of emscripten
+    switch (GLFW_PLATFORM_EMSCRIPTEN) {
+#endif
 
 #ifdef GLFW_EXPOSE_NATIVE_X11
     case GLFW_PLATFORM_X11: {
         Display* x11_display = glfwGetX11Display();
         Window x11_window = glfwGetX11Window(window);
 
-        WGPUSurfaceDescriptorFromXlibWindow fromXlibWindow;
+        WGPUSurfaceSourceXlibWindow fromXlibWindow;
+        fromXlibWindow.chain.sType = WGPUSType_SurfaceSourceXlibWindow;
         fromXlibWindow.chain.next = NULL;
-        fromXlibWindow.chain.sType = WGPUSType_SurfaceDescriptorFromXlibWindow;
         fromXlibWindow.display = x11_display;
         fromXlibWindow.window = x11_window;
 
         WGPUSurfaceDescriptor surfaceDescriptor;
         surfaceDescriptor.nextInChain = &fromXlibWindow.chain;
-        surfaceDescriptor.label = NULL;
+        surfaceDescriptor.label = (WGPUStringView){ NULL, WGPU_STRLEN };
 
         return wgpuInstanceCreateSurface(instance, &surfaceDescriptor);
     }
@@ -105,15 +102,15 @@ WGPUSurface glfwGetWGPUSurface(WGPUInstance instance, GLFWwindow* window) {
         struct wl_display* wayland_display = glfwGetWaylandDisplay();
         struct wl_surface* wayland_surface = glfwGetWaylandWindow(window);
 
-        WGPUSurfaceDescriptorFromWaylandSurface fromWaylandSurface;
+        WGPUSurfaceSourceWaylandSurface fromWaylandSurface;
+        fromWaylandSurface.chain.sType = WGPUSType_SurfaceSourceWaylandSurface;
         fromWaylandSurface.chain.next = NULL;
-        fromWaylandSurface.chain.sType = WGPUSType_SurfaceDescriptorFromWaylandSurface;
         fromWaylandSurface.display = wayland_display;
         fromWaylandSurface.surface = wayland_surface;
 
         WGPUSurfaceDescriptor surfaceDescriptor;
         surfaceDescriptor.nextInChain = &fromWaylandSurface.chain;
-        surfaceDescriptor.label = NULL;
+        surfaceDescriptor.label = (WGPUStringView){ NULL, WGPU_STRLEN };
 
         return wgpuInstanceCreateSurface(instance, &surfaceDescriptor);
     }
@@ -126,14 +123,14 @@ WGPUSurface glfwGetWGPUSurface(WGPUInstance instance, GLFWwindow* window) {
         [ns_window.contentView setWantsLayer : YES] ;
         [ns_window.contentView setLayer : metal_layer] ;
 
-        WGPUSurfaceDescriptorFromMetalLayer fromMetalLayer;
+        WGPUSurfaceSourceMetalLayer fromMetalLayer;
+        fromMetalLayer.chain.sType = WGPUSType_SurfaceSourceMetalLayer;
         fromMetalLayer.chain.next = NULL;
-        fromMetalLayer.chain.sType = WGPUSType_SurfaceDescriptorFromMetalLayer;
         fromMetalLayer.layer = metal_layer;
 
         WGPUSurfaceDescriptor surfaceDescriptor;
         surfaceDescriptor.nextInChain = &fromMetalLayer.chain;
-        surfaceDescriptor.label = NULL;
+        surfaceDescriptor.label = (WGPUStringView){ NULL, WGPU_STRLEN };
 
         return wgpuInstanceCreateSurface(instance, &surfaceDescriptor);
     }
@@ -144,15 +141,15 @@ WGPUSurface glfwGetWGPUSurface(WGPUInstance instance, GLFWwindow* window) {
         HWND hwnd = glfwGetWin32Window(window);
         HINSTANCE hinstance = GetModuleHandle(NULL);
 
-        WGPUSurfaceDescriptorFromWindowsHWND fromWindowsHWND;
+        WGPUSurfaceSourceWindowsHWND fromWindowsHWND;
+        fromWindowsHWND.chain.sType = WGPUSType_SurfaceSourceWindowsHWND;
         fromWindowsHWND.chain.next = NULL;
-        fromWindowsHWND.chain.sType = WGPUSType_SurfaceDescriptorFromWindowsHWND;
         fromWindowsHWND.hinstance = hinstance;
         fromWindowsHWND.hwnd = hwnd;
 
         WGPUSurfaceDescriptor surfaceDescriptor;
         surfaceDescriptor.nextInChain = &fromWindowsHWND.chain;
-        surfaceDescriptor.label = NULL;
+        surfaceDescriptor.label = (WGPUStringView){ NULL, WGPU_STRLEN };
 
         return wgpuInstanceCreateSurface(instance, &surfaceDescriptor);
     }
@@ -160,9 +157,14 @@ WGPUSurface glfwGetWGPUSurface(WGPUInstance instance, GLFWwindow* window) {
 
 #ifdef GLFW_EXPOSE_NATIVE_EMSCRIPTEN
     case GLFW_PLATFORM_EMSCRIPTEN: {
+#ifdef WEBGPU_BACKEND_EMDAWNWEBGPU
+        WGPUEmscriptenSurfaceSourceCanvasHTMLSelector fromCanvasHTMLSelector;
+        fromCanvasHTMLSelector.chain.sType = WGPUSType_EmscriptenSurfaceSourceCanvasHTMLSelector;
+#else
         WGPUSurfaceDescriptorFromCanvasHTMLSelector fromCanvasHTMLSelector;
-        fromCanvasHTMLSelector.chain.next = NULL;
         fromCanvasHTMLSelector.chain.sType = WGPUSType_SurfaceDescriptorFromCanvasHTMLSelector;
+#endif
+        fromCanvasHTMLSelector.chain.next = NULL;
         fromCanvasHTMLSelector.selector = "canvas";
 
         WGPUSurfaceDescriptor surfaceDescriptor;
@@ -178,36 +180,36 @@ WGPUSurface glfwGetWGPUSurface(WGPUInstance instance, GLFWwindow* window) {
         return NULL;
     }
 
-#else // GLFW_VERSION_MAJOR >= 3 && GLFW_VERSION_MINOR >= 4
+#else // GLFW_VERSION_MAJOR <= 3 && GLFW_VERSION_MINOR < 4
 
 #if defined(__linux__)
     Display* x11_display = glfwGetX11Display();
     Window x11_window = glfwGetX11Window(window);
 
-    WGPUSurfaceDescriptorFromXlibWindow fromXlibWindow;
+    WGPUSurfaceSourceXlibWindow fromXlibWindow;
+    fromXlibWindow.chain.sType = WGPUSType_SurfaceSourceXlibWindow;
     fromXlibWindow.chain.next = NULL;
-    fromXlibWindow.chain.sType = WGPUSType_SurfaceDescriptorFromXlibWindow;
     fromXlibWindow.display = x11_display;
     fromXlibWindow.window = x11_window;
 
     WGPUSurfaceDescriptor surfaceDescriptor;
     surfaceDescriptor.nextInChain = &fromXlibWindow.chain;
-    surfaceDescriptor.label = NULL;
+    surfaceDescriptor.label = (WGPUStringView){ NULL, WGPU_STRLEN };
 
     return wgpuInstanceCreateSurface(instance, &surfaceDescriptor);
 #elif defined(_WIN32)
     HWND hwnd = glfwGetWin32Window(window);
     HINSTANCE hinstance = GetModuleHandle(NULL);
 
-    WGPUSurfaceDescriptorFromWindowsHWND fromWindowsHWND;
+    WGPUSurfaceSourceWindowsHWND fromWindowsHWND;
+    fromWindowsHWND.chain.sType = WGPUSType_SurfaceSourceWindowsHWND;
     fromWindowsHWND.chain.next = NULL;
-    fromWindowsHWND.chain.sType = WGPUSType_SurfaceDescriptorFromWindowsHWND;
     fromWindowsHWND.hinstance = hinstance;
     fromWindowsHWND.hwnd = hwnd;
 
     WGPUSurfaceDescriptor surfaceDescriptor;
     surfaceDescriptor.nextInChain = &fromWindowsHWND.chain;
-    surfaceDescriptor.label = NULL;
+    surfaceDescriptor.label = (WGPUStringView){ NULL, WGPU_STRLEN };
 
     return wgpuInstanceCreateSurface(instance, &surfaceDescriptor);
 #elif defined(__APPLE__)
@@ -216,14 +218,14 @@ WGPUSurface glfwGetWGPUSurface(WGPUInstance instance, GLFWwindow* window) {
     [ns_window.contentView setWantsLayer : YES] ;
     [ns_window.contentView setLayer : metal_layer] ;
 
-    WGPUSurfaceDescriptorFromMetalLayer fromMetalLayer;
+    WGPUSurfaceSourceMetalLayer fromMetalLayer;
+    fromMetalLayer.chain.sType = WGPUSType_SurfaceSourceMetalLayer;
     fromMetalLayer.chain.next = NULL;
-    fromMetalLayer.chain.sType = WGPUSType_SurfaceDescriptorFromMetalLayer;
     fromMetalLayer.layer = metal_layer;
 
     WGPUSurfaceDescriptor surfaceDescriptor;
     surfaceDescriptor.nextInChain = &fromMetalLayer.chain;
-    surfaceDescriptor.label = NULL;
+    surfaceDescriptor.label = (WGPUStringView){ NULL, WGPU_STRLEN };
 
     return wgpuInstanceCreateSurface(instance, &surfaceDescriptor);
 #else

@@ -26,6 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <cstring>
 #include <map>
 
 #ifdef WEBGPU_BACKEND_WGPU
@@ -47,10 +48,10 @@ Swapchain::Swapchain(Device* device) : device(device) {
 Swapchain::~Swapchain() {
     cleanup();
 
-#ifdef WEBGPU_BACKEND_DAWN
+#ifdef WEBGPU_IMPL_SUPPORTS_WAIT_ON_FUTURE
     WGPUFutureWaitInfo futureWaitInfo{};
     futureWaitInfo.future = submittedWorkFuture;
-    wgpuInstanceWaitAny(device->getInstance()->getWGPUInstance(), 1, &futureWaitInfo, 0xFFFFFFFFu);
+    wgpuInstanceWaitAny(device->getInstance()->getWGPUInstance(), 1, &futureWaitInfo, 0);
 #endif
 }
 
@@ -81,7 +82,8 @@ void Swapchain::create(Window* window) {
         }
     }
     if (surfaceFormat == WGPUTextureFormat_Undefined) {
-        surfaceFormat = wgpuSurfaceGetPreferredFormat(surface, device->getWGPUAdapter());
+        //surfaceFormat = wgpuSurfaceGetPreferredFormat(surface, device->getWGPUAdapter()); // deprecated
+        sgl::Logfile::get()->throwError("Error in Swapchain::create: Could not find matching format.");
     }
 
     WGPUSurfaceConfiguration config{};
@@ -120,12 +122,12 @@ void Swapchain::cleanup() {
 }
 
 static std::map<WGPUSurfaceGetCurrentTextureStatus, std::string> surfaceTextureStatusNameMap = {
-        { WGPUSurfaceGetCurrentTextureStatus_Success, "Success" },
+        { WGPUSurfaceGetCurrentTextureStatus_SuccessOptimal, "Success optimal" },
+        { WGPUSurfaceGetCurrentTextureStatus_SuccessSuboptimal, "Success suboptimal" },
         { WGPUSurfaceGetCurrentTextureStatus_Timeout, "Timeout" },
         { WGPUSurfaceGetCurrentTextureStatus_Outdated, "Outdated" },
         { WGPUSurfaceGetCurrentTextureStatus_Lost, "Lost" },
-        { WGPUSurfaceGetCurrentTextureStatus_OutOfMemory, "Out of memory" },
-        { WGPUSurfaceGetCurrentTextureStatus_DeviceLost, "Device lost" },
+        { WGPUSurfaceGetCurrentTextureStatus_Error, "Error" },
 #ifdef WEBGPU_BACKEND_DAWN
         { WGPUSurfaceGetCurrentTextureStatus_Error, "Error" },
 #endif
@@ -139,12 +141,14 @@ bool Swapchain::beginFrame() {
     WGPUSurfaceTexture surfaceTexture;
     wgpuSurfaceGetCurrentTexture(surface, &surfaceTexture);
     if (surfaceTexture.status == WGPUSurfaceGetCurrentTextureStatus_Outdated) {
+        // TODO: Handle WGPUSurfaceGetCurrentTextureStatus_SuccessSuboptimal here, too?
         if (surfaceTexture.texture != nullptr) {
             wgpuTextureRelease(surfaceTexture.texture);
         }
         recreateSwapchain();
         return false;
-    } else if (surfaceTexture.status != WGPUSurfaceGetCurrentTextureStatus_Success) {
+    } else if (surfaceTexture.status != WGPUSurfaceGetCurrentTextureStatus_SuccessOptimal
+            && surfaceTexture.status != WGPUSurfaceGetCurrentTextureStatus_SuccessSuboptimal) {
         auto it = surfaceTextureStatusNameMap.find(surfaceTexture.status);
         if (it != surfaceTextureStatusNameMap.end()) {
             sgl::Logfile::get()->throwError(
@@ -159,7 +163,8 @@ bool Swapchain::beginFrame() {
     }
 
     WGPUTextureViewDescriptor viewDescriptor{};
-    viewDescriptor.label = "Surface texture view";
+    viewDescriptor.label.data = "Surface texture view";
+    viewDescriptor.label.length = strlen(viewDescriptor.label.data);
     viewDescriptor.format = wgpuTextureGetFormat(surfaceTexture.texture);
     viewDescriptor.dimension = WGPUTextureViewDimension_2D;
     viewDescriptor.baseMipLevel = 0;
@@ -178,47 +183,41 @@ bool Swapchain::beginFrame() {
 
 static std::map<WGPUQueueWorkDoneStatus, std::string> queueWorkDoneStatusNameMap = {
         { WGPUQueueWorkDoneStatus_Success, "Success" },
-        { WGPUQueueWorkDoneStatus_Error, "Error" },
-        { WGPUQueueWorkDoneStatus_Unknown, "Unknown" },
-        { WGPUQueueWorkDoneStatus_DeviceLost, "Device lost" },
-#ifdef WEBGPU_BACKEND_DAWN
         { WGPUQueueWorkDoneStatus_InstanceDropped, "Instance dropped" },
+        { WGPUQueueWorkDoneStatus_Error, "Error" },
+#ifdef WEBGPU_BACKEND_WGPU
+        { WGPUQueueWorkDoneStatus_Unknown, "Unknown" },
 #endif
 };
 
 void Swapchain::renderFrame(const std::vector<WGPUCommandBuffer>& commandBuffers) {
     wgpuQueueSubmit(device->getWGPUQueue(), commandBuffers.size(), commandBuffers.data());
 
-#ifndef WEBGPU_BACKEND_DAWN
-    auto onQueueWorkDone = [](WGPUQueueWorkDoneStatus status, void* userdata) {
+    auto onQueueWorkDone = [](WGPUQueueWorkDoneStatus status, void* userdata1, void* userdata2) {
         if (status != WGPUQueueWorkDoneStatus_Success) {
+#ifdef WEBGPU_BACKEND_DAWN
+            // TODO: Check if this is necessary for WGPU or Emscripten.
+            if (status == WGPUQueueWorkDoneStatus_InstanceDropped) {
+                auto* instance = reinterpret_cast<sgl::webgpu::Instance*>(userdata1);
+                if (instance->getIsInDestructor()) {
+                    return;
+                }
+            }
+#endif
             auto it = queueWorkDoneStatusNameMap.find(status);
             if (it != queueWorkDoneStatusNameMap.end()) {
                 sgl::Logfile::get()->throwError(
                         "Error in wgpuQueueOnSubmittedWorkDone: " + it->second);
             } else {
-                sgl::Logfile::get()->throwError("Error in wgpuQueueOnSubmittedWorkDone: Queue work failed!");
-            }
-        }
-    };
-    wgpuQueueOnSubmittedWorkDone(device->getWGPUQueue(), onQueueWorkDone, nullptr);
-#else
-    auto onQueueWorkDone2 = [](WGPUQueueWorkDoneStatus status, void* userdata1, void* userdata2) {
-        if (status != WGPUQueueWorkDoneStatus_Success) {
-            auto it = queueWorkDoneStatusNameMap.find(status);
-            if (it != queueWorkDoneStatusNameMap.end()) {
-                sgl::Logfile::get()->throwError(
-                        "Error in wgpuQueueOnSubmittedWorkDone2: " + it->second);
-            } else {
                 sgl::Logfile::get()->throwError("Error in wgpuQueueOnSubmittedWorkDone2: Queue work failed!");
             }
         }
     };
-    WGPUQueueWorkDoneCallbackInfo2 queueWorkDoneCallbackInfo2{};
-    queueWorkDoneCallbackInfo2.mode = WGPUCallbackMode_AllowSpontaneous;
-    queueWorkDoneCallbackInfo2.callback = onQueueWorkDone2;
-    submittedWorkFuture = wgpuQueueOnSubmittedWorkDone2(device->getWGPUQueue(), queueWorkDoneCallbackInfo2);
-#endif
+    WGPUQueueWorkDoneCallbackInfo queueWorkDoneCallbackInfo{};
+    queueWorkDoneCallbackInfo.mode = WGPUCallbackMode_AllowSpontaneous;
+    queueWorkDoneCallbackInfo.callback = onQueueWorkDone;
+    queueWorkDoneCallbackInfo.userdata1 = device->getInstance();
+    submittedWorkFuture = wgpuQueueOnSubmittedWorkDone(device->getWGPUQueue(), queueWorkDoneCallbackInfo);
 
 #ifndef __EMSCRIPTEN__
     wgpuSurfacePresent(surface);

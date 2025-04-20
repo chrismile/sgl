@@ -104,8 +104,10 @@ void RenderTextVertical(
         text_end = text_begin + strlen(text_begin); // ImGui:: functions generally already provides a valid text_end, so this is merely to handle direct calls.
 
     // Align to be pixel perfect
-    pos.x = IM_FLOOR(pos.x + font->ConfigData->GlyphOffset.y);
-    pos.y = IM_FLOOR(pos.y + font->ConfigData->GlyphOffset.x);
+    //pos.x = IM_FLOOR(pos.x + font->ConfigData->GlyphOffset.y);
+    //pos.y = IM_FLOOR(pos.y + font->ConfigData->GlyphOffset.x);
+    pos.x = IM_FLOOR(pos.x + font->Sources->GlyphOffset.y);
+    pos.y = IM_FLOOR(pos.y + font->Sources->GlyphOffset.x);
     float x = pos.x;
     float y = pos.y;
     if (x > clip_rect.z)

@@ -51,7 +51,7 @@ void RenderPipelineInfo::reset() {
     primitiveState.cullMode = WGPUCullMode_Back;
 
     depthStencilState.format = WGPUTextureFormat_Undefined;
-    depthStencilState.depthWriteEnabled = true;
+    depthStencilState.depthWriteEnabled = WGPUOptionalBool_True;
     depthStencilState.depthCompare = WGPUCompareFunction_Less;
     depthStencilState.stencilFront = {};
     depthStencilState.stencilBack = {};
@@ -280,7 +280,7 @@ void RenderPipelineInfo::setDepthTestEnabled(bool enableDepthTest) {
 }
 
 void RenderPipelineInfo::setDepthWriteEnabled(bool enableDepthWrite) {
-    depthStencilState.depthWriteEnabled = enableDepthWrite;
+    depthStencilState.depthWriteEnabled = enableDepthWrite ? WGPUOptionalBool_True : WGPUOptionalBool_False;
 }
 
 void RenderPipelineInfo::setDepthCompareFunction(WGPUCompareFunction compareFunction) {
@@ -384,7 +384,7 @@ RenderPipeline::RenderPipeline(Device* device, const RenderPipelineInfo& pipelin
         constantEntriesVertex.reserve(itVert->second.size());
         for (const auto& constantEntryPair : itVert->second) {
             WGPUConstantEntry constantEntry{};
-            constantEntry.key = constantEntryPair.first.c_str();
+            constantEntry.key = { constantEntryPair.first.c_str(), constantEntryPair.first.length() };
             constantEntry.value = constantEntryPair.second;
             constantEntriesVertex.push_back(constantEntry);
         }
@@ -404,7 +404,8 @@ RenderPipeline::RenderPipeline(Device* device, const RenderPipelineInfo& pipelin
     pipelineDesc.vertex.constantCount = constantEntriesVertex.size();
     pipelineDesc.vertex.constants = constantEntriesVertex.empty() ? nullptr : constantEntriesVertex.data();
     pipelineDesc.vertex.module = shaderStages->getShaderModule(ShaderType::VERTEX)->getWGPUShaderModule();
-    pipelineDesc.vertex.entryPoint = shaderStages->getEntryPoint(ShaderType::VERTEX).c_str();
+    const auto& entryPointVert = shaderStages->getEntryPoint(ShaderType::VERTEX);
+    pipelineDesc.vertex.entryPoint = { entryPointVert.c_str(), entryPointVert.length() };
 
     pipelineDesc.primitive = pipelineInfo.primitiveState;
 
@@ -414,7 +415,7 @@ RenderPipeline::RenderPipeline(Device* device, const RenderPipelineInfo& pipelin
         constantEntriesFragment.reserve(itFrag->second.size());
         for (const auto& constantEntryPair : itFrag->second) {
             WGPUConstantEntry constantEntry{};
-            constantEntry.key = constantEntryPair.first.c_str();
+            constantEntry.key = { constantEntryPair.first.c_str(), constantEntryPair.first.length() };
             constantEntry.value = constantEntryPair.second;
             constantEntriesFragment.push_back(constantEntry);
         }
@@ -422,7 +423,8 @@ RenderPipeline::RenderPipeline(Device* device, const RenderPipelineInfo& pipelin
 
     WGPUFragmentState fragmentState{};
     fragmentState.module = shaderStages->getShaderModule(ShaderType::FRAGMENT)->getWGPUShaderModule();
-    fragmentState.entryPoint = shaderStages->getEntryPoint(ShaderType::FRAGMENT).c_str();
+    const auto& entryPointFrag = shaderStages->getEntryPoint(ShaderType::FRAGMENT);
+    fragmentState.entryPoint = { entryPointFrag.c_str(), entryPointFrag.length() };
     fragmentState.constantCount = constantEntriesFragment.size();
     fragmentState.constants = constantEntriesFragment.empty() ? nullptr : constantEntriesFragment.data();
     fragmentState.targetCount = pipelineInfo.colorTargetStates.size();

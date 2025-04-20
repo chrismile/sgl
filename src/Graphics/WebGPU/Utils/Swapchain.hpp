@@ -73,9 +73,7 @@ private:
     WGPUTexture currentTexture{};
     WGPUTextureView currentTextureView{};
     bool validPixelSize = false;
-#ifdef WEBGPU_BACKEND_DAWN
     WGPUFuture submittedWorkFuture{};
-#endif
 };
 
 }}

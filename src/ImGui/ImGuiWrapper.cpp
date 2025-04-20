@@ -482,7 +482,7 @@ void ImGuiWrapper::renderStart() {
         initInfo.Allocator = nullptr;
         initInfo.CheckVkResultFn = checkImGuiVkResult;
 
-        ImGui_ImplVulkan_LoadFunctions([](const char* functionName, void* instance) {
+        ImGui_ImplVulkan_LoadFunctions(device->getApiVersion(), [](const char* functionName, void* instance) {
             return vkGetInstanceProcAddr(static_cast<VkInstance>(instance), functionName);
         }, instance->getVkInstance());
         ImGui_ImplVulkan_Init(&initInfo);

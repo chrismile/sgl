@@ -29,6 +29,7 @@
 #include <Utils/StringUtils.hpp>
 #include <Utils/File/Logfile.hpp>
 
+#include "../Utils/Instance.hpp"
 #include "../Utils/Device.hpp"
 #include "Buffer.hpp"
 
@@ -39,7 +40,10 @@ Buffer::Buffer(Device* device, const BufferSettings& bufferSettings) : device(de
     bufferDesc.size = bufferSettings.sizeInBytes;
     bufferDesc.usage = bufferSettings.usage;
     bufferDesc.mappedAtCreation = bufferSettings.mappedAtCreation;
-    bufferDesc.label = bufferSettings.label;
+    if (!bufferSettings.label.empty()) {
+        bufferDesc.label.data = bufferSettings.label.c_str();
+        bufferDesc.label.length = bufferSettings.label.size();
+    }
     buffer = wgpuDeviceCreateBuffer(device->getWGPUDevice(), &bufferDesc);
 }
 
@@ -89,20 +93,22 @@ void Buffer::mapAsyncRead(
     context.offset = offset;
     context.size = size;
     context.onBufferMappedCallback = onBufferMappedCallback;
-    wgpuBufferMapAsync(
-            buffer, WGPUMapMode_Read, offset, size,
-            [](WGPUBufferMapAsyncStatus status, void* userData) {
-                if (status != WGPUBufferMapAsyncStatus_Success) {
-                    sgl::Logfile::get()->writeError(
-                            "Error in Buffer::mapAsyncRead: Failed with error code 0x"
-                            + sgl::toHexString(status) + ".");
-                    return;
-                }
-                auto* context = reinterpret_cast<ContextMapAsyncR*>(userData);
-                const void* dataPtr = wgpuBufferGetConstMappedRange(context->buffer, context->offset, context->size);
-                context->onBufferMappedCallback(dataPtr);
-                wgpuBufferUnmap(context->buffer);
-            }, (void*)&context);
+    WGPUBufferMapCallbackInfo bufferMapCallbackInfo{};
+    bufferMapCallbackInfo.mode = WGPUCallbackMode_AllowSpontaneous;
+    bufferMapCallbackInfo.userdata1 = (void*)&context;
+    bufferMapCallbackInfo.callback = [](WGPUMapAsyncStatus status, struct WGPUStringView message, void* userData1, void* userData2) {
+        if (status != WGPUMapAsyncStatus_Success) {
+            sgl::Logfile::get()->writeError(
+                    "Error in Buffer::mapAsyncRead: Failed with error code 0x"
+                    + sgl::toHexString(status) + ": " + std::string(message.data, message.length));
+            return;
+        }
+        auto* context = reinterpret_cast<ContextMapAsyncR*>(userData1);
+        const void* dataPtr = wgpuBufferGetConstMappedRange(context->buffer, context->offset, context->size);
+        context->onBufferMappedCallback(dataPtr);
+        wgpuBufferUnmap(context->buffer);
+    };
+    wgpuBufferMapAsync(buffer, WGPUMapMode_Read, offset, size, bufferMapCallbackInfo);
 }
 
 void Buffer::mapAsyncWrite(const std::function<void(void* dataPtr)>& onBufferMappedCallback) {
@@ -122,20 +128,22 @@ void Buffer::mapAsyncWrite(
     context.offset = offset;
     context.size = size;
     context.onBufferMappedCallback = onBufferMappedCallback;
-    wgpuBufferMapAsync(
-            buffer, WGPUMapMode_Write, offset, size,
-            [](WGPUBufferMapAsyncStatus status, void* userData) {
-                if (status != WGPUBufferMapAsyncStatus_Success) {
-                    sgl::Logfile::get()->writeError(
-                            "Error in Buffer::mapAsyncWrite: Failed with error code 0x"
-                            + sgl::toHexString(status) + ".");
-                    return;
-                }
-                auto* context = reinterpret_cast<ContextMapAsyncW*>(userData);
-                void* dataPtr = wgpuBufferGetMappedRange(context->buffer, context->offset, context->size);
-                context->onBufferMappedCallback(dataPtr);
-                wgpuBufferUnmap(context->buffer);
-            }, (void*)&context);
+    WGPUBufferMapCallbackInfo bufferMapCallbackInfo{};
+    bufferMapCallbackInfo.mode = WGPUCallbackMode_AllowSpontaneous;
+    bufferMapCallbackInfo.userdata1 = (void*)&context;
+    bufferMapCallbackInfo.callback = [](WGPUMapAsyncStatus status, struct WGPUStringView message, void* userData1, void* userData2) {
+        if (status != WGPUMapAsyncStatus_Success) {
+            sgl::Logfile::get()->writeError(
+                    "Error in Buffer::mapAsyncWrite: Failed with error code 0x"
+                    + sgl::toHexString(status) + ": " + std::string(message.data, message.length));
+            return;
+        }
+        auto* context = reinterpret_cast<ContextMapAsyncW*>(userData1);
+        void* dataPtr = wgpuBufferGetMappedRange(context->buffer, context->offset, context->size);
+        context->onBufferMappedCallback(dataPtr);
+        wgpuBufferUnmap(context->buffer);
+    };
+    wgpuBufferMapAsync(buffer, WGPUMapMode_Write, offset, size, bufferMapCallbackInfo);
 }
 
 void Buffer::mapAsyncReadWrite(const std::function<void(void* dataPtr)>& onBufferMappedCallback) {
@@ -155,20 +163,22 @@ void Buffer::mapAsyncReadWrite(
     context.offset = offset;
     context.size = size;
     context.onBufferMappedCallback = onBufferMappedCallback;
-    wgpuBufferMapAsync(
-            buffer, WGPUMapMode_Read | WGPUMapMode_Write, offset, size,
-            [](WGPUBufferMapAsyncStatus status, void* userData) {
-                if (status != WGPUBufferMapAsyncStatus_Success) {
-                    sgl::Logfile::get()->writeError(
-                            "Error in Buffer::mapAsyncReadWrite: Failed with error code 0x"
-                            + sgl::toHexString(status) + ".");
-                    return;
-                }
-                auto* context = reinterpret_cast<ContextMapAsyncRW*>(userData);
-                void* dataPtr = wgpuBufferGetMappedRange(context->buffer, context->offset, context->size);
-                context->onBufferMappedCallback(dataPtr);
-                wgpuBufferUnmap(context->buffer);
-            }, (void*)&context);
+    WGPUBufferMapCallbackInfo bufferMapCallbackInfo{};
+    bufferMapCallbackInfo.mode = WGPUCallbackMode_AllowSpontaneous;
+    bufferMapCallbackInfo.userdata1 = (void*)&context;
+    bufferMapCallbackInfo.callback = [](WGPUMapAsyncStatus status, struct WGPUStringView message, void* userData1, void* userData2) {
+        if (status != WGPUMapAsyncStatus_Success) {
+            sgl::Logfile::get()->writeError(
+                    "Error in Buffer::mapAsyncReadWrite: Failed with error code 0x"
+                    + sgl::toHexString(status) + ": " + std::string(message.data, message.length));
+            return;
+        }
+        auto* context = reinterpret_cast<ContextMapAsyncRW*>(userData1);
+        void* dataPtr = wgpuBufferGetMappedRange(context->buffer, context->offset, context->size);
+        context->onBufferMappedCallback(dataPtr);
+        wgpuBufferUnmap(context->buffer);
+    };
+    wgpuBufferMapAsync(buffer, WGPUMapMode_Read | WGPUMapMode_Write, offset, size, bufferMapCallbackInfo);
 }
 
 
@@ -182,21 +192,36 @@ const void* Buffer::mapSyncRead(size_t offset, size_t size) {
         bool ready = false;
     };
     ContextMapSyncR context{};
-    wgpuBufferMapAsync(
-            buffer, WGPUMapMode_Read, offset, size,
-            [](WGPUBufferMapAsyncStatus status, void* userData) {
-                if (status != WGPUBufferMapAsyncStatus_Success) {
-                    sgl::Logfile::get()->writeError(
-                            "Error in Buffer::mapSyncRead: Failed with error code 0x"
-                            + sgl::toHexString(status) + ".");
-                    return;
-                }
-                auto* context = reinterpret_cast<ContextMapSyncR*>(userData);
-                context->ready = true;
-            }, (void*)&context);
+    WGPUBufferMapCallbackInfo bufferMapCallbackInfo{};
+#ifdef WEBGPU_IMPL_SUPPORTS_WAIT_ON_FUTURE
+    bufferMapCallbackInfo.mode = WGPUCallbackMode_WaitAnyOnly;
+#else
+    bufferMapCallbackInfo.mode = WGPUCallbackMode_AllowSpontaneous;
+#endif
+    bufferMapCallbackInfo.userdata1 = (void*)&context;
+    bufferMapCallbackInfo.callback = [](WGPUMapAsyncStatus status, struct WGPUStringView message, void* userData1, void* userData2) {
+        if (status != WGPUMapAsyncStatus_Success) {
+            sgl::Logfile::get()->writeError(
+                    "Error in Buffer::mapSyncRead: Failed with error code 0x"
+                    + sgl::toHexString(status) + ": " + std::string(message.data, message.length));
+            return;
+        }
+        auto* context = reinterpret_cast<ContextMapSyncR*>(userData1);
+        context->ready = true;
+    };
+#ifdef WEBGPU_IMPL_SUPPORTS_WAIT_ON_FUTURE
+    WGPUFuture mapFuture =
+#endif
+    wgpuBufferMapAsync(buffer, WGPUMapMode_Read, offset, size, bufferMapCallbackInfo);
+#ifdef WEBGPU_IMPL_SUPPORTS_WAIT_ON_FUTURE
+    WGPUFutureWaitInfo futureWaitInfo{};
+    futureWaitInfo.future = mapFuture;
+    wgpuInstanceWaitAny(device->getInstance()->getWGPUInstance(), 1, &futureWaitInfo, 0);
+#else
     while (!context.ready) {
         device->pollEvents(true);
     }
+#endif
     return wgpuBufferGetConstMappedRange(buffer, offset, size);
 }
 
@@ -210,21 +235,36 @@ void* Buffer::mapSyncWrite(size_t offset, size_t size) {
         bool ready = false;
     };
     ContextMapSyncW context{};
-    wgpuBufferMapAsync(
-            buffer, WGPUMapMode_Write, offset, size,
-            [](WGPUBufferMapAsyncStatus status, void* userData) {
-                if (status != WGPUBufferMapAsyncStatus_Success) {
-                    sgl::Logfile::get()->writeError(
-                            "Error in Buffer::mapSyncWrite: Failed with error code 0x"
-                            + sgl::toHexString(status) + ".");
-                    return;
-                }
-                auto* context = reinterpret_cast<ContextMapSyncW*>(userData);
-                context->ready = true;
-            }, (void*)&context);
+    WGPUBufferMapCallbackInfo bufferMapCallbackInfo{};
+#ifdef WEBGPU_IMPL_SUPPORTS_WAIT_ON_FUTURE
+    bufferMapCallbackInfo.mode = WGPUCallbackMode_WaitAnyOnly;
+#else
+    bufferMapCallbackInfo.mode = WGPUCallbackMode_AllowSpontaneous;
+#endif
+    bufferMapCallbackInfo.userdata1 = (void*)&context;
+    bufferMapCallbackInfo.callback = [](WGPUMapAsyncStatus status, struct WGPUStringView message, void* userData1, void* userData2) {
+        if (status != WGPUMapAsyncStatus_Success) {
+            sgl::Logfile::get()->writeError(
+                    "Error in Buffer::mapSyncWrite: Failed with error code 0x"
+                    + sgl::toHexString(status) + ": " + std::string(message.data, message.length));
+            return;
+        }
+        auto* context = reinterpret_cast<ContextMapSyncW*>(userData1);
+        context->ready = true;
+    };
+#ifdef WEBGPU_IMPL_SUPPORTS_WAIT_ON_FUTURE
+    WGPUFuture mapFuture =
+#endif
+    wgpuBufferMapAsync(buffer, WGPUMapMode_Write, offset, size, bufferMapCallbackInfo);
+#ifdef WEBGPU_IMPL_SUPPORTS_WAIT_ON_FUTURE
+    WGPUFutureWaitInfo futureWaitInfo{};
+    futureWaitInfo.future = mapFuture;
+    wgpuInstanceWaitAny(device->getInstance()->getWGPUInstance(), 1, &futureWaitInfo, 0);
+#else
     while (!context.ready) {
         device->pollEvents(true);
     }
+#endif
     return wgpuBufferGetMappedRange(buffer, offset, size);
 }
 
@@ -238,21 +278,36 @@ void* Buffer::mapSyncReadWrite(size_t offset, size_t size) {
         bool ready = false;
     };
     ContextMapSyncRW context{};
-    wgpuBufferMapAsync(
-            buffer, WGPUMapMode_Read | WGPUMapMode_Write, offset, size,
-            [](WGPUBufferMapAsyncStatus status, void* userData) {
-                if (status != WGPUBufferMapAsyncStatus_Success) {
-                    sgl::Logfile::get()->writeError(
-                            "Error in Buffer::mapSyncReadWrite: Failed with error code 0x"
-                            + sgl::toHexString(status) + ".");
-                    return;
-                }
-                auto* context = reinterpret_cast<ContextMapSyncRW*>(userData);
-                context->ready = true;
-            }, (void*)&context);
+    WGPUBufferMapCallbackInfo bufferMapCallbackInfo{};
+#ifdef WEBGPU_IMPL_SUPPORTS_WAIT_ON_FUTURE
+    bufferMapCallbackInfo.mode = WGPUCallbackMode_WaitAnyOnly;
+#else
+    bufferMapCallbackInfo.mode = WGPUCallbackMode_AllowSpontaneous;
+#endif
+    bufferMapCallbackInfo.userdata1 = (void*)&context;
+    bufferMapCallbackInfo.callback = [](WGPUMapAsyncStatus status, struct WGPUStringView message, void* userData1, void* userData2) {
+        if (status != WGPUMapAsyncStatus_Success) {
+            sgl::Logfile::get()->writeError(
+                    "Error in Buffer::mapSyncReadWrite: Failed with error code 0x"
+                    + sgl::toHexString(status) + ": " + std::string(message.data, message.length));
+            return;
+        }
+        auto* context = reinterpret_cast<ContextMapSyncRW*>(userData1);
+        context->ready = true;
+    };
+#ifdef WEBGPU_IMPL_SUPPORTS_WAIT_ON_FUTURE
+    WGPUFuture mapFuture =
+#endif
+    wgpuBufferMapAsync(buffer, WGPUMapMode_Read | WGPUMapMode_Write, offset, size, bufferMapCallbackInfo);
+#ifdef WEBGPU_IMPL_SUPPORTS_WAIT_ON_FUTURE
+    WGPUFutureWaitInfo futureWaitInfo{};
+    futureWaitInfo.future = mapFuture;
+    wgpuInstanceWaitAny(device->getInstance()->getWGPUInstance(), 1, &futureWaitInfo, 0);
+#else
     while (!context.ready) {
         device->pollEvents(true);
     }
+#endif
     return wgpuBufferGetMappedRange(buffer, offset, size);
 }
 

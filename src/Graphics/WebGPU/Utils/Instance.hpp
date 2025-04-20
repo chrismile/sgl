@@ -35,7 +35,6 @@ namespace sgl { namespace webgpu {
 
 class DLL_OBJECT Instance {
 public:
-public:
     Instance();
     ~Instance();
     void createInstance();
@@ -43,9 +42,11 @@ public:
 
     // Access to internal data.
     inline WGPUInstance getWGPUInstance() { return instance; }
+    inline bool getIsInDestructor() { return isInDestructor; }
 
 private:
     WGPUInstance instance{};
+    bool isInDestructor = false; //< for wgpuQueueOnSubmittedWorkDone.
 };
 
 }}

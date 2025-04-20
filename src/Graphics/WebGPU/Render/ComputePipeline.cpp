@@ -59,7 +59,7 @@ ComputePipeline::ComputePipeline(Device* device, const ComputePipelineInfo& pipe
     constantEntries.reserve(pipelineInfo.constantEntriesMap.size());
     for (const auto& constantEntryPair : pipelineInfo.constantEntriesMap) {
         WGPUConstantEntry constantEntry{};
-        constantEntry.key = constantEntryPair.first.c_str();
+        constantEntry.key = { constantEntryPair.first.c_str(), constantEntryPair.first.length() };
         constantEntry.value = constantEntryPair.second;
         constantEntries.push_back(constantEntry);
     }
@@ -68,7 +68,8 @@ ComputePipeline::ComputePipeline(Device* device, const ComputePipelineInfo& pipe
     pipelineDesc.compute.constantCount = constantEntries.size();
     pipelineDesc.compute.constants = constantEntries.empty() ? nullptr : constantEntries.data();
     pipelineDesc.compute.module = shaderStages->getShaderModule(ShaderType::COMPUTE)->getWGPUShaderModule();
-    pipelineDesc.compute.entryPoint = shaderStages->getEntryPoint(ShaderType::COMPUTE).c_str();
+    const auto& entryPoint = shaderStages->getEntryPoint(ShaderType::COMPUTE);
+    pipelineDesc.compute.entryPoint = { entryPoint.c_str(), entryPoint.length() };
     pipelineDesc.layout = pipelineLayout;
 
     pipeline = wgpuDeviceCreateComputePipeline(device->getWGPUDevice(), &pipelineDesc);

@@ -219,7 +219,8 @@ Texture::Texture(Device* device, TextureSettings _textureSettings)
         textureDescriptor.viewFormats = textureSettings.viewFormats.data();
     }
     if (!textureSettings.label.empty()) {
-        textureDescriptor.label = textureSettings.label.c_str();
+        textureDescriptor.label.data = textureSettings.label.c_str();
+        textureDescriptor.label.length = textureSettings.label.size();
     }
     texture = wgpuDeviceCreateTexture(device->getWGPUDevice(), &textureDescriptor);
     if (!texture) {
@@ -244,7 +245,7 @@ Texture::~Texture() {
 void Texture::write(const TextureWriteInfo& writeInfo, WGPUQueue queue) {
     uint8_t* alignedDataPtr = nullptr;
     const void* dataPtr = writeInfo.srcPtr;
-    WGPUTextureDataLayout textureDataLayout{};
+    WGPUTexelCopyBufferLayout textureDataLayout{};
     textureDataLayout.offset = writeInfo.srcOffset;
     textureDataLayout.bytesPerRow = writeInfo.srcBytesPerRow;
     textureDataLayout.rowsPerImage = writeInfo.srcRowsPerImage;
@@ -267,7 +268,7 @@ void Texture::write(const TextureWriteInfo& writeInfo, WGPUQueue queue) {
         //sgl::Logfile::get()->writeError("Error in Texture::write: bytesPerRow % 256 != 0.");
     }
 
-    WGPUImageCopyTexture imageCopyTexture{};
+    WGPUTexelCopyTextureInfo imageCopyTexture{};
     imageCopyTexture.texture = texture;
     imageCopyTexture.mipLevel = writeInfo.dstMipLevel;
     imageCopyTexture.origin = writeInfo.dstOrigin;
@@ -323,7 +324,8 @@ TextureView::TextureView(TexturePtr _texture, TextureViewSettings _textureViewSe
     textureViewDescriptor.arrayLayerCount = textureViewSettings.arrayLayerCount;
     textureViewDescriptor.aspect = textureViewSettings.aspect;
     if (!textureViewSettings.label.empty()) {
-        textureViewDescriptor.label = textureViewSettings.label.c_str();
+        textureViewDescriptor.label.data = textureViewSettings.label.c_str();
+        textureViewDescriptor.label.length = textureViewSettings.label.size();
     }
     textureView = wgpuTextureCreateView(texture->getWGPUTexture(), &textureViewDescriptor);
     if (!textureView) {

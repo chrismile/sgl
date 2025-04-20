@@ -34,11 +34,15 @@ Instance::Instance() {
 }
 
 Instance::~Instance() {
+    isInDestructor = true;
     wgpuInstanceRelease(instance);
 }
 
 void Instance::onPreDeviceDestroy() {
+    // TODO: Should already be implemented in WGPU via: https://github.com/gfx-rs/wgpu-native/pull/430
+#ifdef WEBGPU_IMPL_SUPPORTS_WAIT_ON_FUTURE
     wgpuInstanceProcessEvents(instance);
+#endif
 }
 
 void Instance::createInstance() {

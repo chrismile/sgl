@@ -28,6 +28,9 @@
 
 #ifdef SUPPORT_SDL3
 #define SDL_ENABLE_OLD_NAMES
+#ifdef _WIN32
+#define NOMINMAX
+#endif
 #include <SDL3/SDL.h>
 #else
 #include <SDL2/SDL.h>
@@ -232,7 +235,7 @@ float getHighDPIScaleFactor() {
 
 #ifdef SUPPORT_GLFW
     if (window->getBackend() == WindowBackend::GLFW_IMPL) {
-#if GLFW_VERSION_MAJOR >= 3 && GLFW_VERSION_MINOR >= 4
+#if (GLFW_VERSION_MAJOR == 3 && GLFW_VERSION_MINOR >= 4) || GLFW_VERSION_MAJOR > 3
 
 #if defined(GLFW_EXPOSE_NATIVE_X11) || defined(GLFW_EXPOSE_NATIVE_WIN32) || defined(GLFW_EXPOSE_NATIVE_WAYLAND) || defined(GLFW_EXPOSE_NATIVE_COCOA)
         auto glfwPlatform = glfwGetPlatform();
@@ -256,7 +259,7 @@ float getHighDPIScaleFactor() {
         allowHighDPI = true;
 #endif
 
-#else // !(GLFW_VERSION_MAJOR >= 3 && GLFW_VERSION_MINOR >= 4)
+#else // GLFW_VERSION_MAJOR <= 3 && GLFW_VERSION_MINOR < 4
 
 #if defined(__linux__)
         /*
@@ -271,7 +274,7 @@ float getHighDPIScaleFactor() {
         allowHighDPI = true;
 #endif
 
-#endif // GLFW_VERSION_MAJOR >= 3 && GLFW_VERSION_MINOR >= 4
+#endif // (GLFW_VERSION_MAJOR == 3 && GLFW_VERSION_MINOR >= 4) || GLFW_VERSION_MAJOR > 3
     }
 #endif // SUPPORT_GLFW
 

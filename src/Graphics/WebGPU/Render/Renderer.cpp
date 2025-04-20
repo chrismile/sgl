@@ -26,6 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <cstring>
 #include "../Utils/Device.hpp"
 #include "../Buffer/Framebuffer.hpp"
 #include "../Texture/Texture.hpp"
@@ -48,13 +49,15 @@ Renderer::~Renderer() {
 void Renderer::beginCommandBuffer() {
     WGPUCommandEncoderDescriptor commandEncoderDescriptor = {};
     commandEncoderDescriptor.nextInChain = nullptr;
-    commandEncoderDescriptor.label = "Renderer frame command encoder";
+    commandEncoderDescriptor.label.data = "Renderer frame command encoder";
+    commandEncoderDescriptor.label.length = strlen(commandEncoderDescriptor.label.data);
     encoder = wgpuDeviceCreateCommandEncoder(device->getWGPUDevice(), &commandEncoderDescriptor);
 }
 
 WGPUCommandBuffer Renderer::endCommandBuffer() {
     WGPUCommandBufferDescriptor commandBufferDescriptor{};
-    commandBufferDescriptor.label = "Renderer frame command buffer";
+    commandBufferDescriptor.label.data = "Renderer frame command buffer";
+    commandBufferDescriptor.label.length = strlen(commandBufferDescriptor.label.data);
     commandBuffer = wgpuCommandEncoderFinish(encoder, &commandBufferDescriptor);
     commandBuffersWgpu = { commandBuffer };
 

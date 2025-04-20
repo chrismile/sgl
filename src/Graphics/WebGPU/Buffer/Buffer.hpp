@@ -43,9 +43,9 @@ typedef std::shared_ptr<Buffer> BufferPtr;
 
 struct DLL_OBJECT BufferSettings {
     uint64_t sizeInBytes = 0;
-    WGPUBufferUsageFlags usage{};
+    WGPUBufferUsage usage{};
     bool mappedAtCreation = false;
-    char const* label = nullptr;
+    std::string label;
 };
 
 class DLL_OBJECT Buffer {
@@ -62,7 +62,7 @@ public:
     [[nodiscard]] inline Device* getDevice() { return device; }
     [[nodiscard]] inline WGPUBuffer getWGPUBuffer() { return buffer; }
     [[nodiscard]] inline size_t getSizeInBytes() const { return bufferSettings.sizeInBytes; }
-    [[nodiscard]] inline WGPUBufferUsageFlags getVkBufferUsageFlags() const { return bufferSettings.usage; }
+    [[nodiscard]] inline WGPUTextureUsage getVkBufferUsageFlags() const { return bufferSettings.usage; }
 
     void mapAsyncRead(const std::function<void(const void* dataPtr)>& onBufferMappedCallback);
     void mapAsyncRead(size_t offset, size_t size, const std::function<void(const void* dataPtr)>& onBufferMappedCallback);

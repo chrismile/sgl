@@ -691,6 +691,14 @@ if (${SUPPORT_WEBGPU})
     add_subdirectory(${WEBGPU_DIST_DIR} WebGPU)
     target_copy_webgpu_binaries(sgl)
 
+    # TODO:
+    # - https://github.com/gfx-rs/wgpu-native/pull/430 adds support for wgpuInstanceProcessEvents, but seems not yet
+    #   available in WebGPU-distribution...
+    # - WGPU still misses (as of 2025-04-20) the support for wgpuInstanceWaitAny.
+    if (${USE_WEBGPU_IMPL_DAWN})
+        target_compile_definitions(sgl PRIVATE WEBGPU_IMPL_SUPPORTS_WAIT_ON_FUTURE)
+    endif()
+
     #target_include_directories(sgl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/WebGPU/libs)
     target_include_directories(sgl PUBLIC
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/WebGPU/libs>
@@ -708,6 +716,13 @@ if (${SUPPORT_WEBGPU})
     get_target_property(WEBGPU_IMPORTED_IMPLIB webgpu IMPORTED_IMPLIB)
     get_target_property(WEBGPU_INTERFACE_LINK_OPTIONS webgpu INTERFACE_LINK_OPTIONS)
     get_target_property(WEBGPU_INTERFACE_INCLUDE_DIRECTORIES webgpu INTERFACE_INCLUDE_DIRECTORIES)
+    if (${USE_WEBGPU_IMPL_DAWN} AND NOT ${WEBGPU_BUILD_FROM_SOURCE} AND NOT TARGET dawn::webgpu_dawn)
+        # 2025-04-20: Don't ask me why the target no longer exists at this point...
+        #get_target_property(WEBGPU_RUNTIME_LIB dawn::webgpu_dawn IMPORTED_LOCATION_RELEASE)
+        set(WEBGPU_INTERFACE_LINK_LIBRARIES "${WEBGPU_RUNTIME_LIB}")
+        get_directory_property(Dawn_ROOT DIRECTORY ${WEBGPU_DIST_DIR}/dawn DEFINITION Dawn_ROOT)
+        list(APPEND WEBGPU_INTERFACE_INCLUDE_DIRECTORIES "${Dawn_ROOT}/include")
+    endif()
     if (WEBGPU_INTERFACE_COMPILE_DEFINITIONS)
         message(STATUS "WEBGPU_INTERFACE_COMPILE_DEFINITIONS: ${WEBGPU_INTERFACE_COMPILE_DEFINITIONS}")
         target_compile_definitions(sgl PUBLIC ${WEBGPU_INTERFACE_COMPILE_DEFINITIONS})
@@ -738,7 +753,7 @@ if (${SUPPORT_WEBGPU})
     endif()
 
     # Only wgpu-native is linked dynamically.
-    if (NOT EMSCRIPTEN AND NOT ${USE_WEBGPU_IMPL_DAWN})
+    if (NOT EMSCRIPTEN AND ${WEBGPU_LINK_TYPE} STREQUAL "SHARED")
         # Find the .so or .dll file from WebGPU to install.
         if (WIN32)
             set(LIBRARY_INSTALL_DIR "bin")
@@ -753,11 +768,16 @@ if (${SUPPORT_WEBGPU})
         #        set(WEBGPU_LIBRARY_NAME "${LIBRARY_NAME}")
         #    endif()
         #endforeach()
-        set(WEBGPU_LIBRARY_FILE "${WEBGPU_IMPORTED_LOCATION}")
+        if (WEBGPU_IMPORTED_LOCATION)
+            set(WEBGPU_LIBRARY_FILE "${WEBGPU_IMPORTED_LOCATION}")
+        else()
+            set(WEBGPU_LIBRARY_FILE "${WEBGPU_INTERFACE_LINK_LIBRARIES}")
+        endif()
         get_filename_component(WEBGPU_LIBRARY_NAME ${WEBGPU_LIBRARY_FILE} NAME)
 
         # Set the rpath, as otherwise apps not using any WebGPU symbols will not set the rpath, but sgl needs it.
         if (NOT EMSCRIPTEN)
+            #set_target_properties(sgl PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
             set_target_properties(sgl PROPERTIES INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${LIBRARY_INSTALL_DIR}")
         endif()
     endif()
@@ -1629,7 +1649,7 @@ if (WIN32 AND ((CMAKE_CXX_COMPILER_ID STREQUAL "MSVC") OR (CMAKE_CXX_COMPILER_ID
 endif()
 
 # Install WebGPU binaries if Emscripten is not used (in this case, the browser provides the implementation).
-if (${SUPPORT_WEBGPU} AND NOT EMSCRIPTEN AND NOT ${USE_WEBGPU_IMPL_DAWN})
+if (${SUPPORT_WEBGPU} AND NOT EMSCRIPTEN AND ${WEBGPU_LINK_TYPE} STREQUAL "SHARED")
     if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.21.0" AND NOT ${USE_WEBGPU_IMPL_DAWN})
         install(IMPORTED_RUNTIME_ARTIFACTS webgpu)
     else()
@@ -1638,7 +1658,7 @@ if (${SUPPORT_WEBGPU} AND NOT EMSCRIPTEN AND NOT ${USE_WEBGPU_IMPL_DAWN})
                 DESTINATION ${LIBRARY_INSTALL_DIR}
         )
     endif()
-    if (MSVC AND WEBGPU_IMPORTED_IMPLIB AND NOT ${USE_WEBGPU_IMPL_DAWN})
+    if (MSVC AND WEBGPU_IMPORTED_IMPLIB AND ${WEBGPU_LINK_TYPE} STREQUAL "SHARED")  # TODO: NOT ${USE_WEBGPU_IMPL_DAWN}?
         install(
                 FILES ${WEBGPU_IMPORTED_IMPLIB}
                 DESTINATION lib

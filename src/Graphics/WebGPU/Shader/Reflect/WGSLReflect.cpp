@@ -26,6 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <optional>
 #include <set>
 #include <algorithm>
 
@@ -241,18 +242,18 @@ static const std::unordered_map<std::string, WGPUVertexFormat> typeNameVertexFor
         { "vec2h", WGPUVertexFormat_Float16x2 },
         { "vec4h", WGPUVertexFormat_Float16x4 },
 };
-WGPUVertexFormat WGSLTypeToWGPUVertexFormat(const wgsl_type& type, std::string& errorString) {
+std::optional<WGPUVertexFormat> WGSLTypeToWGPUVertexFormat(const wgsl_type& type, std::string& errorString) {
     std::unordered_map<std::string, WGPUVertexFormat>::const_iterator it;
     if (type.name == "vec2" || type.name == "vec3" || type.name == "vec4") {
         std::string vecTypeName = type.name;
         if (!type.template_parameters.has_value()) {
             errorString = "Vector vertex format without type template parameter.";
-            return WGPUVertexFormat_Undefined;
+            return {}; // WGPUVertexFormat_Undefined was removed...
         }
         const std::vector<wgsl_type>& templateParameters = type.template_parameters.get();
         if (templateParameters.size() != 1) {
             errorString = "Vector vertex format with incorrect number of template parameters.";
-            return WGPUVertexFormat_Undefined;
+            return {}; // WGPUVertexFormat_Undefined was removed...
         }
         const std::string& templateTypeName = templateParameters.front().name;
         if (templateTypeName == "f32") {
@@ -263,7 +264,7 @@ WGPUVertexFormat WGSLTypeToWGPUVertexFormat(const wgsl_type& type, std::string& 
             vecTypeName += "u";
         } else {
             errorString = "Vector vertex format with unsupported template parameter \"" + templateTypeName + "\".";
-            return WGPUVertexFormat_Undefined;
+            return {}; // WGPUVertexFormat_Undefined was removed...
         }
         it = typeNameVertexFormatMap.find(vecTypeName);
     } else {
@@ -271,7 +272,7 @@ WGPUVertexFormat WGSLTypeToWGPUVertexFormat(const wgsl_type& type, std::string& 
     }
     if (it == typeNameVertexFormatMap.end()) {
         errorString = "Could not match type \"" + type.name + "\" to a vertex format.";
-        return WGPUVertexFormat_Undefined;
+            return {}; // WGPUVertexFormat_Undefined was removed...
     }
     return it->second;
 }
@@ -288,10 +289,11 @@ bool processInOut(
             InOutEntry inOutEntry{};
             inOutEntry.variableName = inOutName;
             inOutEntry.locationIndex = sgl::fromString<uint32_t>(locationAttribute->expression);
-            inOutEntry.vertexFormat = WGSLTypeToWGPUVertexFormat(type, errorString);
-            if (inOutEntry.vertexFormat == WGPUVertexFormat_Undefined) {
+            auto vertexFormat = WGSLTypeToWGPUVertexFormat(type, errorString);
+            if (!vertexFormat.has_value()) {
                 return false;
             }
+            inOutEntry.vertexFormat = vertexFormat.value();
             inOutEntries.push_back(inOutEntry);
         }
         return true;
@@ -314,13 +316,13 @@ bool processInOut(
                 InOutEntry inOutEntry{};
                 inOutEntry.variableName = entry.name;
                 inOutEntry.locationIndex = sgl::fromString<uint32_t>(locationAttribute->expression);
-                inOutEntry.vertexFormat = WGSLTypeToWGPUVertexFormat(entry.type, errorString);
-                if (inOutEntry.vertexFormat == WGPUVertexFormat_Undefined) {
+                auto vertexFormat = WGSLTypeToWGPUVertexFormat(entry.type, errorString);
+                if (!vertexFormat.has_value()) {
                     return false;
                 }
+                inOutEntry.vertexFormat = vertexFormat.value();
                 inOutEntries.push_back(inOutEntry);
             }
-            continue;
         }
     }
     return true;

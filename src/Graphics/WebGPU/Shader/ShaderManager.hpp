@@ -105,7 +105,7 @@ public:
     [[nodiscard]] const std::string& getShaderPathPrefix() const { return pathPrefix; }
 
     // For use by device error callback.
-    inline void onCompilationFailed(const char* messagePtr) { errorMessageExternal = messagePtr; }
+    inline void onCompilationFailed(const std::string& messagePtr) { errorMessageExternal = messagePtr; }
 
 private:
     Device* device = nullptr;
