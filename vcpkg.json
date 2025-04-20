@@ -13,7 +13,6 @@
             "platform": "windows"
         },
         "libpng",
-        "sdl2-image",
         {
             "name": "glfw3",
             "platform": "!linux"
@@ -33,11 +32,11 @@
         "tbb"
     ],
     "default-features": [
-        "sdl2"
+        "sdl3"
     ],
     "features": {
         "sdl2": {
-            "description": "",
+            "description": "SDL2 backend support.",
             "dependencies": [
                 {
                     "name": "sdl2",
@@ -54,11 +53,12 @@
                     "default-features": false,
                     "features": [],
                     "platform": "linux"
-                }
+                },
+                "sdl2-image"
             ]
         },
         "sdl3": {
-            "description": "",
+            "description": "SDL3 backend support.",
             "dependencies": [
                 {
                     "name": "sdl3",

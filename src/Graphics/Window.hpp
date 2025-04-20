@@ -69,8 +69,9 @@ struct DLL_OBJECT WindowSettings {
     // Pixel width and height may differ on macOS.
     int pixelWidth;
     int pixelHeight;
-    bool fullscreen;
-    bool resizable;
+    bool isFullscreen;
+    bool isMaximized;
+    bool isResizable;
     int multisamples;
     int depthSize;
     int stencilSize;
@@ -86,8 +87,9 @@ struct DLL_OBJECT WindowSettings {
         height = 1080;
         pixelWidth = width;
         pixelHeight = height;
-        fullscreen = false;
-        resizable = true;
+        isFullscreen = false;
+        isMaximized = false;
+        isResizable = true;
         multisamples = 16;
         depthSize = 24;
         stencilSize = 8;

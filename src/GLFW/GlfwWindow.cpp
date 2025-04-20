@@ -126,7 +126,7 @@ void GlfwWindow::initialize(const WindowSettings &settings, RenderSystem renderS
 
     int redBits = 8, greenBits = 8, blueBits = 8, alphaBits = 8, refreshRate = 0;
     GLFWmonitor* fullscreenMonitor = nullptr;
-    if (windowSettings.fullscreen) {
+    if (windowSettings.isFullscreen) {
         // TODO: Remember monitor over application runs?
         fullscreenMonitor = glfwGetPrimaryMonitor();
         const GLFWvidmode* mode = glfwGetVideoMode(fullscreenMonitor);
@@ -140,6 +140,10 @@ void GlfwWindow::initialize(const WindowSettings &settings, RenderSystem renderS
 
     if (refreshRate > 0) {
         glfwWindowHint(GLFW_REFRESH_RATE, refreshRate);
+    }
+
+    if (windowSettings.isMaximized) {
+        glfwWindowHint(GLFW_MAXIMIZED, windowSettings.isMaximized);
     }
 
 #ifdef SUPPORT_OPENGL
@@ -204,7 +208,7 @@ void GlfwWindow::initialize(const WindowSettings &settings, RenderSystem renderS
     }
     glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, int(useHiDpi));
 #endif
-    if (windowSettings.resizable) {
+    if (windowSettings.isResizable) {
         glfwWindowHint(GLFW_VISIBLE, GLFW_RESIZABLE);
     }
 
@@ -414,6 +418,13 @@ void GlfwWindow::initialize(const WindowSettings &settings, RenderSystem renderS
         }
     });
 
+    glfwSetWindowMaximizeCallback(glfwWindow, [](GLFWwindow* window, int maximized) {
+        void* userPtr = glfwGetWindowUserPointer(window);
+        if (userPtr) {
+            reinterpret_cast<GlfwWindow*>(userPtr)->setIsMaximized(maximized == GLFW_TRUE);
+        }
+    });
+
     glfwSetJoystickCallback([](int jid, int event) {
         static_cast<GlfwGamepad*>(Gamepad)->onJoystick(jid, event);
     });
@@ -442,10 +453,10 @@ void GlfwWindow::initialize(const WindowSettings &settings, RenderSystem renderS
 
 void GlfwWindow::toggleFullscreen(bool nativeFullscreen) {
     // TODO: Ignore nativeFullscreen for now.
-    windowSettings.fullscreen = !windowSettings.fullscreen;
+    windowSettings.isFullscreen = !windowSettings.isFullscreen;
     GLFWmonitor* fullscreenMonitor = glfwGetPrimaryMonitor();
     const GLFWvidmode* mode = glfwGetVideoMode(fullscreenMonitor);
-    if (windowSettings.fullscreen) {
+    if (windowSettings.isFullscreen) {
         widthOld = windowSettings.width;
         heightOld = windowSettings.height;
         if (nativeFullscreen) {
@@ -614,6 +625,10 @@ void GlfwWindow::onWindowContentScale(float xscale, float yscale) {
     // TODO
 }
 
+void GlfwWindow::setIsMaximized(bool isMaximized) {
+    windowSettings.isMaximized = isMaximized;
+}
+
 
 void GlfwWindow::setRefreshRateCallback(std::function<void(int)> callback) {
     refreshRateCallback = std::move(callback);
@@ -646,8 +661,9 @@ void GlfwWindow::flip() {
 void GlfwWindow::serializeSettings(SettingsFile &settings) {
     settings.addKeyValue("window-width", windowSettings.width);
     settings.addKeyValue("window-height", windowSettings.height);
-    settings.addKeyValue("window-fullscreen", windowSettings.fullscreen);
-    settings.addKeyValue("window-resizable", windowSettings.resizable);
+    settings.addKeyValue("window-fullscreen", windowSettings.isFullscreen);
+    settings.addKeyValue("window-maximized", windowSettings.isMaximized);
+    settings.addKeyValue("window-resizable", windowSettings.isResizable);
     settings.addKeyValue("window-multisamples", windowSettings.multisamples);
     settings.addKeyValue("window-depthSize", windowSettings.depthSize);
     settings.addKeyValue("window-stencilSize", windowSettings.stencilSize);
@@ -679,8 +695,9 @@ WindowSettings GlfwWindow::deserializeSettings(const SettingsFile &settings) {
     }
     settings.getValueOpt("window-width", windowSettings.width);
     settings.getValueOpt("window-height", windowSettings.height);
-    settings.getValueOpt("window-fullscreen", windowSettings.fullscreen);
-    settings.getValueOpt("window-resizable", windowSettings.resizable);
+    settings.getValueOpt("window-fullscreen", windowSettings.isFullscreen);
+    settings.getValueOpt("window-maximized", windowSettings.isMaximized);
+    settings.getValueOpt("window-resizable", windowSettings.isResizable);
     settings.getValueOpt("window-multisamples", windowSettings.multisamples);
     settings.getValueOpt("window-depthSize", windowSettings.depthSize);
     settings.getValueOpt("window-stencilSize", windowSettings.stencilSize);

@@ -334,19 +334,83 @@ size_t getImageFormatNumChannels(VkFormat format) {
 }
 
 std::string getImageFormatGlslString(VkFormat format) {
-    // TODO: Support more formats.
+    // TODO: Support r11f_g11f_b10f?
     if (format == VK_FORMAT_R32_SFLOAT) {
         return "r32f";
+    } else if (format == VK_FORMAT_R32G32_SFLOAT) {
+        return "rg32f";
     } else if (format == VK_FORMAT_R32G32B32A32_SFLOAT) {
         return "rgba32f";
+    } else if (format == VK_FORMAT_R16_SFLOAT) {
+        return "r16f";
+    } else if (format == VK_FORMAT_R16G16_SFLOAT) {
+        return "rg16f";
+    } else if (format == VK_FORMAT_R16G16B16A16_SFLOAT) {
+        return "rgba16f";
     } else if (format == VK_FORMAT_R8_UNORM) {
         return "r8";
+    } else if (format == VK_FORMAT_R8G8_UNORM) {
+        return "rg8";
     } else if (format == VK_FORMAT_R8G8B8A8_UNORM) {
         return "rgba8";
     } else if (format == VK_FORMAT_R16_UNORM) {
         return "r16";
+    } else if (format == VK_FORMAT_R16G16_UNORM) {
+        return "rg16";
     } else if (format == VK_FORMAT_R16G16B16A16_UNORM) {
         return "rgba16";
+    } else if (format == VK_FORMAT_R8_SNORM) {
+        return "r8_snorm";
+    } else if (format == VK_FORMAT_R8G8_SNORM) {
+        return "rg8_snorm";
+    } else if (format == VK_FORMAT_R8G8B8A8_SNORM) {
+        return "rgba8_snorm";
+    } else if (format == VK_FORMAT_R16_SNORM) {
+        return "r16_snorm";
+    } else if (format == VK_FORMAT_R16G16_SNORM) {
+        return "rg16_snorm";
+    } else if (format == VK_FORMAT_R16G16B16A16_SNORM) {
+        return "rgba16_snorm";
+    } else if (format == VK_FORMAT_A2R10G10B10_UNORM_PACK32) {
+        return "rgb10_a2";
+    } else if (format == VK_FORMAT_R16G16B16A16_SNORM) {
+        return "rgba16_snorm";
+    } else if (format == VK_FORMAT_R8_SINT) {
+        return "r8i";
+    } else if (format == VK_FORMAT_R8G8_SINT) {
+        return "rg8i";
+    } else if (format == VK_FORMAT_R8G8B8A8_SINT) {
+        return "rgba8i";
+    } else if (format == VK_FORMAT_R16_SINT) {
+        return "r16i";
+    } else if (format == VK_FORMAT_R16G16_SINT) {
+        return "rg16i";
+    } else if (format == VK_FORMAT_R16G16B16A16_SINT) {
+        return "rgba16i";
+    } else if (format == VK_FORMAT_R32_SINT) {
+        return "r32i";
+    } else if (format == VK_FORMAT_R32G32_SINT) {
+        return "rg32i";
+    } else if (format == VK_FORMAT_R32G32B32A32_SINT) {
+        return "rgba32i";
+    } else if (format == VK_FORMAT_R8_UINT) {
+        return "r8ui";
+    } else if (format == VK_FORMAT_R8G8_UINT) {
+        return "rg8ui";
+    } else if (format == VK_FORMAT_R8G8B8A8_UINT) {
+        return "rgba8ui";
+    } else if (format == VK_FORMAT_R16_UINT) {
+        return "r16ui";
+    } else if (format == VK_FORMAT_R16G16_UINT) {
+        return "rg16ui";
+    } else if (format == VK_FORMAT_R16G16B16A16_UINT) {
+        return "rgba16ui";
+    } else if (format == VK_FORMAT_R32_UINT) {
+        return "r32ui";
+    } else if (format == VK_FORMAT_R32G32_UINT) {
+        return "rg32ui";
+    } else if (format == VK_FORMAT_R32G32B32A32_UINT) {
+        return "rgba32ui";
     } else {
         sgl::Logfile::get()->throwError("Error in getImageFormatGlslString: Invalid format.");
         return "r32f";

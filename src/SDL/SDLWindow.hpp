@@ -86,7 +86,7 @@ public:
     /// Utility functions and getters & setters for the main window attributes.
     // Virtual and pixel size is equivalent on Linux and Windows, but not on macOS.
     void saveScreenshot(const char *filename) override;
-    bool isFullscreen() override { return windowSettings.fullscreen; }
+    bool isFullscreen() override { return windowSettings.isFullscreen; }
     int getVirtualWidth() override { return windowSettings.width; }
     int getVirtualHeight() override { return windowSettings.height; }
     int getPixelWidth() override { return windowSettings.pixelWidth; }

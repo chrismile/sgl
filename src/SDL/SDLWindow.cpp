@@ -243,8 +243,9 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
         flags |= SDL_WINDOW_VULKAN;
     }
 #endif
-    if (windowSettings.fullscreen) flags |= SDL_WINDOW_FULLSCREEN;
-    if (windowSettings.resizable) flags |= SDL_WINDOW_RESIZABLE;
+    if (windowSettings.isFullscreen) flags |= SDL_WINDOW_FULLSCREEN;
+    if (windowSettings.isMaximized) flags |= SDL_WINDOW_MAXIMIZED;
+    if (windowSettings.isResizable) flags |= SDL_WINDOW_RESIZABLE;
 
     // Create the window
 #ifdef SUPPORT_SDL3
@@ -283,9 +284,8 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
 #ifdef SUPPORT_SDL3
         uint32_t extensionCount;
         auto sdlExtensions = SDL_Vulkan_GetInstanceExtensions(&extensionCount);
-        size_t additionalExtensionCount = instanceExtensionNames.size();
         instanceExtensionNames.reserve(extensionCount + instanceExtensionNames.size());
-        for (uint32_t i = 0; i < additionalExtensionCount; i++) {
+        for (uint32_t i = 0; i < extensionCount; i++) {
             instanceExtensionNames.push_back(sdlExtensions[i]);
         }
 #else
@@ -439,13 +439,13 @@ void SDLWindow::initialize(const WindowSettings &settings, RenderSystem renderSy
 
 
 void SDLWindow::toggleFullscreen(bool nativeFullscreen) {
-    windowSettings.fullscreen = !windowSettings.fullscreen;
+    windowSettings.isFullscreen = !windowSettings.isFullscreen;
 #ifdef SUPPORT_SDL3
     // TODO: Use SDL_SetWindowFullscreenMode()?
-    SDL_SetWindowFullscreen(sdlWindow, windowSettings.fullscreen);
+    SDL_SetWindowFullscreen(sdlWindow, windowSettings.isFullscreen);
 #else
     int fullscreenMode = nativeFullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN;
-    SDL_SetWindowFullscreen(sdlWindow, windowSettings.fullscreen ? fullscreenMode : 0);
+    SDL_SetWindowFullscreen(sdlWindow, windowSettings.isFullscreen ? fullscreenMode : 0);
 #endif
 }
 
@@ -597,7 +597,10 @@ bool SDLWindow::processEvents() {
             break;
 
 #ifdef SUPPORT_SDL3
-        case SDL_WINDOWEVENT_RESIZED:
+        // https://github.com/libsdl-org/SDL/blob/main/docs/README-migration.md
+        // TODO: Investigate if we need both events from below.
+        //case SDL_EVENT_WINDOW_RESIZED:
+        case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
             if (event.window.windowID == SDL_GetWindowID(sdlWindow)) {
                 windowSettings.width = event.window.data1;
                 windowSettings.height = event.window.data2;
@@ -607,7 +610,7 @@ bool SDLWindow::processEvents() {
                 if (renderSystem == RenderSystem::OPENGL
                         || (renderSystem == RenderSystem::VULKAN && !windowSettings.useDownloadSwapchain)) {
                     SDL_GetWindowSizeInPixels(sdlWindow, &windowSettings.pixelWidth, &windowSettings.pixelHeight);
-                        }
+                }
 #endif
 #ifdef SUPPORT_WEBGPU
                 if (renderSystem == RenderSystem::WEBGPU) {
@@ -721,10 +724,14 @@ void SDLWindow::flip() {
 }
 
 void SDLWindow::serializeSettings(SettingsFile &settings) {
+    auto windowFlags = SDL_GetWindowFlags(sdlWindow);
+    windowSettings.isFullscreen = (windowFlags & SDL_WINDOW_FULLSCREEN) != 0;
+    windowSettings.isMaximized = (windowFlags & SDL_WINDOW_MAXIMIZED) != 0;
     settings.addKeyValue("window-width", windowSettings.width);
     settings.addKeyValue("window-height", windowSettings.height);
-    settings.addKeyValue("window-fullscreen", windowSettings.fullscreen);
-    settings.addKeyValue("window-resizable", windowSettings.resizable);
+    settings.addKeyValue("window-fullscreen", windowSettings.isFullscreen);
+    settings.addKeyValue("window-maximized", windowSettings.isMaximized);
+    settings.addKeyValue("window-resizable", windowSettings.isResizable);
     settings.addKeyValue("window-multisamples", windowSettings.multisamples);
     settings.addKeyValue("window-depthSize", windowSettings.depthSize);
     settings.addKeyValue("window-stencilSize", windowSettings.stencilSize);
@@ -756,8 +763,9 @@ WindowSettings SDLWindow::deserializeSettings(const SettingsFile &settings) {
     }
     settings.getValueOpt("window-width", windowSettings.width);
     settings.getValueOpt("window-height", windowSettings.height);
-    settings.getValueOpt("window-fullscreen", windowSettings.fullscreen);
-    settings.getValueOpt("window-resizable", windowSettings.resizable);
+    settings.getValueOpt("window-fullscreen", windowSettings.isFullscreen);
+    settings.getValueOpt("window-maximized", windowSettings.isMaximized);
+    settings.getValueOpt("window-resizable", windowSettings.isResizable);
     settings.getValueOpt("window-multisamples", windowSettings.multisamples);
     settings.getValueOpt("window-depthSize", windowSettings.depthSize);
     settings.getValueOpt("window-stencilSize", windowSettings.stencilSize);
