@@ -753,7 +753,7 @@ if (${SUPPORT_WEBGPU})
     endif()
 
     # Only wgpu-native is linked dynamically.
-    if (NOT EMSCRIPTEN AND ${WEBGPU_LINK_TYPE} STREQUAL "SHARED")
+    if (NOT EMSCRIPTEN AND "${WEBGPU_LINK_TYPE}" STREQUAL "SHARED")
         # Find the .so or .dll file from WebGPU to install.
         if (WIN32)
             set(LIBRARY_INSTALL_DIR "bin")
@@ -1649,7 +1649,7 @@ if (WIN32 AND ((CMAKE_CXX_COMPILER_ID STREQUAL "MSVC") OR (CMAKE_CXX_COMPILER_ID
 endif()
 
 # Install WebGPU binaries if Emscripten is not used (in this case, the browser provides the implementation).
-if (${SUPPORT_WEBGPU} AND NOT EMSCRIPTEN AND ${WEBGPU_LINK_TYPE} STREQUAL "SHARED")
+if (${SUPPORT_WEBGPU} AND NOT EMSCRIPTEN AND "${WEBGPU_LINK_TYPE}" STREQUAL "SHARED")
     if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.21.0" AND NOT ${USE_WEBGPU_IMPL_DAWN})
         install(IMPORTED_RUNTIME_ARTIFACTS webgpu)
     else()
@@ -1658,7 +1658,7 @@ if (${SUPPORT_WEBGPU} AND NOT EMSCRIPTEN AND ${WEBGPU_LINK_TYPE} STREQUAL "SHARE
                 DESTINATION ${LIBRARY_INSTALL_DIR}
         )
     endif()
-    if (MSVC AND WEBGPU_IMPORTED_IMPLIB AND ${WEBGPU_LINK_TYPE} STREQUAL "SHARED")  # TODO: NOT ${USE_WEBGPU_IMPL_DAWN}?
+    if (MSVC AND WEBGPU_IMPORTED_IMPLIB AND "${WEBGPU_LINK_TYPE}" STREQUAL "SHARED")  # TODO: NOT ${USE_WEBGPU_IMPL_DAWN}?
         install(
                 FILES ${WEBGPU_IMPORTED_IMPLIB}
                 DESTINATION lib

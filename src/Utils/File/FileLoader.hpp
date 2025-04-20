@@ -30,6 +30,7 @@
 #define SGL_FILELOADER_HPP
 
 #include <string>
+#include <cstdint> // needed by GCC 15
 
 namespace sgl {
 

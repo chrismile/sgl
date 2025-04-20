@@ -32,6 +32,7 @@
 #include <string>
 #include <memory>
 #include <unordered_map>
+#include <cstdint> // needed by GCC 15
 
 namespace sgl {
 
