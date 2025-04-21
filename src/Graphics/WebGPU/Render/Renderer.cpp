@@ -27,6 +27,7 @@
  */
 
 #include <cstring>
+#include "../Utils/Common.hpp"
 #include "../Utils/Device.hpp"
 #include "../Buffer/Framebuffer.hpp"
 #include "../Texture/Texture.hpp"
@@ -49,15 +50,14 @@ Renderer::~Renderer() {
 void Renderer::beginCommandBuffer() {
     WGPUCommandEncoderDescriptor commandEncoderDescriptor = {};
     commandEncoderDescriptor.nextInChain = nullptr;
-    commandEncoderDescriptor.label.data = "Renderer frame command encoder";
-    commandEncoderDescriptor.label.length = strlen(commandEncoderDescriptor.label.data);
+    cStringToWgpuView(commandEncoderDescriptor.label, "Renderer frame command encoder");
     encoder = wgpuDeviceCreateCommandEncoder(device->getWGPUDevice(), &commandEncoderDescriptor);
 }
 
 WGPUCommandBuffer Renderer::endCommandBuffer() {
     WGPUCommandBufferDescriptor commandBufferDescriptor{};
-    commandBufferDescriptor.label.data = "Renderer frame command buffer";
-    commandBufferDescriptor.label.length = strlen(commandBufferDescriptor.label.data);
+    cStringToWgpuView(commandBufferDescriptor.label, "Renderer frame command buffer");
+
     commandBuffer = wgpuCommandEncoderFinish(encoder, &commandBufferDescriptor);
     commandBuffersWgpu = { commandBuffer };
 

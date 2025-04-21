@@ -155,11 +155,11 @@ void BlitRenderPass::setupGeometryBuffers() {
     };
 #endif
     BufferSettings bufferSettings{};
-    bufferSettings.usage = WGPUBufferUsage_Index | WGPUBufferUsage_CopyDst;
+    bufferSettings.usage = WGPUBufferUsage(WGPUBufferUsage_Index | WGPUBufferUsage_CopyDst);
     bufferSettings.sizeInBytes = indexData.size() * sizeof(uint32_t);
     indexBuffer = std::make_shared<sgl::webgpu::Buffer>(device, bufferSettings);
     indexBuffer->write(indexData.data(), indexBuffer->getSizeInBytes(), renderer->getDevice()->getWGPUQueue());
-    bufferSettings.usage = WGPUBufferUsage_Vertex | WGPUBufferUsage_CopyDst;
+    bufferSettings.usage = WGPUBufferUsage(WGPUBufferUsage_Vertex | WGPUBufferUsage_CopyDst);
     bufferSettings.sizeInBytes = vertexData.size() * sizeof(float);
     vertexBuffer = std::make_shared<sgl::webgpu::Buffer>(device, bufferSettings);
     vertexBuffer->write(vertexData.data(), vertexBuffer->getSizeInBytes(), renderer->getDevice()->getWGPUQueue());

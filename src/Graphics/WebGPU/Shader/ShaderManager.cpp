@@ -39,6 +39,7 @@
 #include <Utils/File/FileUtils.hpp>
 #include <Graphics/GLSL/PreprocessorGlsl.hpp>
 
+#include "../Utils/Common.hpp"
 #include "Reflect/WGSLReflect.hpp"
 #include "Shader.hpp"
 #include "ShaderManager.hpp"
@@ -323,12 +324,18 @@ ShaderModulePtr ShaderManagerWgpu::loadAsset(ShaderModuleInfo& shaderInfo) {
     }
 
     WGPUShaderModuleDescriptor shaderModuleDescriptor{};
+#ifdef WEBGPU_LEGACY_API
+    WGPUShaderModuleWGSLDescriptor shaderSourceWgsl{};
+    // TODO: Is WGPUSType_ShaderModuleSPIRVDescriptor only available in WGPU?
+    shaderSourceWgsl.chain.sType = WGPUSType_ShaderModuleWGSLDescriptor;
+#else
     WGPUShaderSourceWGSL shaderSourceWgsl{};
     // TODO: Is WGPUSType_ShaderSourceSPIRV only available in WGPU?
     shaderSourceWgsl.chain.sType = WGPUSType_ShaderSourceWGSL;
-    shaderSourceWgsl.code = { shaderString.c_str(), shaderString.length() };
+#endif
+    stdStringToWgpuView(shaderSourceWgsl.code, shaderString);
     shaderModuleDescriptor.nextInChain = &shaderSourceWgsl.chain;
-    shaderModuleDescriptor.label = { id.c_str(), id.length() };
+    stdStringToWgpuView(shaderModuleDescriptor.label, id);
     errorMessageExternal.clear();
     WGPUShaderModule shaderModuleWgpu = wgpuDeviceCreateShaderModule(device->getWGPUDevice(), &shaderModuleDescriptor);
     if (!errorMessageExternal.empty()) {

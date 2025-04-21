@@ -152,19 +152,22 @@ WGPUSurface SDL3_GetWGPUSurface(WGPUInstance instance, SDL_Window* window) {
     }
 #elif defined(__EMSCRIPTEN__)
     {
+        WGPUSurfaceDescriptor surfaceDescriptor;
 #  ifdef WEBGPU_BACKEND_EMDAWNWEBGPU
         WGPUEmscriptenSurfaceSourceCanvasHTMLSelector fromCanvasHTMLSelector;
         fromCanvasHTMLSelector.chain.sType = WGPUSType_EmscriptenSurfaceSourceCanvasHTMLSelector;
+        fromCanvasHTMLSelector.selector.data = "canvas";
+        fromCanvasHTMLSelector.selector.length = strlen(fromCanvasHTMLSelector.selector.data);
+        surfaceDescriptor.label.data = NULL;
+        surfaceDescriptor.label.length = 0;
 #  else
         WGPUSurfaceDescriptorFromCanvasHTMLSelector fromCanvasHTMLSelector;
         fromCanvasHTMLSelector.chain.sType = WGPUSType_SurfaceDescriptorFromCanvasHTMLSelector;
+        fromCanvasHTMLSelector.selector = "canvas";
+        surfaceDescriptor.label = NULL;
 #  endif
         fromCanvasHTMLSelector.chain.next = NULL;
-        fromCanvasHTMLSelector.selector = "canvas";
-
-        WGPUSurfaceDescriptor surfaceDescriptor;
         surfaceDescriptor.nextInChain = &fromCanvasHTMLSelector.chain;
-        surfaceDescriptor.label = NULL;
 
         return wgpuInstanceCreateSurface(instance, &surfaceDescriptor);
     }  

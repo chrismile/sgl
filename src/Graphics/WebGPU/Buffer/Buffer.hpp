@@ -62,7 +62,7 @@ public:
     [[nodiscard]] inline Device* getDevice() { return device; }
     [[nodiscard]] inline WGPUBuffer getWGPUBuffer() { return buffer; }
     [[nodiscard]] inline size_t getSizeInBytes() const { return bufferSettings.sizeInBytes; }
-    [[nodiscard]] inline WGPUTextureUsage getVkBufferUsageFlags() const { return bufferSettings.usage; }
+    [[nodiscard]] inline WGPUBufferUsage getVkBufferUsageFlags() const { return bufferSettings.usage; }
 
     void mapAsyncRead(const std::function<void(const void* dataPtr)>& onBufferMappedCallback);
     void mapAsyncRead(size_t offset, size_t size, const std::function<void(const void* dataPtr)>& onBufferMappedCallback);

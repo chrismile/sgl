@@ -28,6 +28,7 @@
 
 #include <Utils/File/Logfile.hpp>
 #include <utility>
+#include "../Utils/Common.hpp"
 #include "../Utils/Device.hpp"
 #include "../Shader/Shader.hpp"
 #include "ComputePipeline.hpp"
@@ -59,7 +60,7 @@ ComputePipeline::ComputePipeline(Device* device, const ComputePipelineInfo& pipe
     constantEntries.reserve(pipelineInfo.constantEntriesMap.size());
     for (const auto& constantEntryPair : pipelineInfo.constantEntriesMap) {
         WGPUConstantEntry constantEntry{};
-        constantEntry.key = { constantEntryPair.first.c_str(), constantEntryPair.first.length() };
+        stdStringToWgpuView(constantEntry.key, constantEntryPair.first);
         constantEntry.value = constantEntryPair.second;
         constantEntries.push_back(constantEntry);
     }
@@ -69,7 +70,7 @@ ComputePipeline::ComputePipeline(Device* device, const ComputePipelineInfo& pipe
     pipelineDesc.compute.constants = constantEntries.empty() ? nullptr : constantEntries.data();
     pipelineDesc.compute.module = shaderStages->getShaderModule(ShaderType::COMPUTE)->getWGPUShaderModule();
     const auto& entryPoint = shaderStages->getEntryPoint(ShaderType::COMPUTE);
-    pipelineDesc.compute.entryPoint = { entryPoint.c_str(), entryPoint.length() };
+    stdStringToWgpuView(pipelineDesc.compute.entryPoint, entryPoint);
     pipelineDesc.layout = pipelineLayout;
 
     pipeline = wgpuDeviceCreateComputePipeline(device->getWGPUDevice(), &pipelineDesc);

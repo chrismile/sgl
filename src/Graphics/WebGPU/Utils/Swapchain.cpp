@@ -36,6 +36,7 @@
 #include <Utils/File/Logfile.hpp>
 #include <Utils/Events/EventManager.hpp>
 
+#include "Common.hpp"
 #include "Instance.hpp"
 #include "Device.hpp"
 #include "Swapchain.hpp"
@@ -122,15 +123,18 @@ void Swapchain::cleanup() {
 }
 
 static std::map<WGPUSurfaceGetCurrentTextureStatus, std::string> surfaceTextureStatusNameMap = {
+#ifdef WEBGPU_LEGACY_API
+        { WGPUSurfaceGetCurrentTextureStatus_Success, "Success" },
+        { WGPUSurfaceGetCurrentTextureStatus_OutOfMemory, "Out of memory" },
+        { WGPUSurfaceGetCurrentTextureStatus_DeviceLost, "Device lost" },
+#else
         { WGPUSurfaceGetCurrentTextureStatus_SuccessOptimal, "Success optimal" },
         { WGPUSurfaceGetCurrentTextureStatus_SuccessSuboptimal, "Success suboptimal" },
+        { WGPUSurfaceGetCurrentTextureStatus_Error, "Error" },
+#endif
         { WGPUSurfaceGetCurrentTextureStatus_Timeout, "Timeout" },
         { WGPUSurfaceGetCurrentTextureStatus_Outdated, "Outdated" },
         { WGPUSurfaceGetCurrentTextureStatus_Lost, "Lost" },
-        { WGPUSurfaceGetCurrentTextureStatus_Error, "Error" },
-#ifdef WEBGPU_BACKEND_DAWN
-        { WGPUSurfaceGetCurrentTextureStatus_Error, "Error" },
-#endif
 };
 
 bool Swapchain::beginFrame() {
@@ -147,8 +151,14 @@ bool Swapchain::beginFrame() {
         }
         recreateSwapchain();
         return false;
-    } else if (surfaceTexture.status != WGPUSurfaceGetCurrentTextureStatus_SuccessOptimal
-            && surfaceTexture.status != WGPUSurfaceGetCurrentTextureStatus_SuccessSuboptimal) {
+    } else if (
+#ifdef WEBGPU_LEGACY_API
+            surfaceTexture.status != WGPUSurfaceGetCurrentTextureStatus_Success
+#else
+            surfaceTexture.status != WGPUSurfaceGetCurrentTextureStatus_SuccessOptimal
+            && surfaceTexture.status != WGPUSurfaceGetCurrentTextureStatus_SuccessSuboptimal
+#endif
+            ) {
         auto it = surfaceTextureStatusNameMap.find(surfaceTexture.status);
         if (it != surfaceTextureStatusNameMap.end()) {
             sgl::Logfile::get()->throwError(
@@ -163,8 +173,7 @@ bool Swapchain::beginFrame() {
     }
 
     WGPUTextureViewDescriptor viewDescriptor{};
-    viewDescriptor.label.data = "Surface texture view";
-    viewDescriptor.label.length = strlen(viewDescriptor.label.data);
+    cStringToWgpuView(viewDescriptor.label, "Surface texture view");
     viewDescriptor.format = wgpuTextureGetFormat(surfaceTexture.texture);
     viewDescriptor.dimension = WGPUTextureViewDimension_2D;
     viewDescriptor.baseMipLevel = 0;
@@ -183,8 +192,15 @@ bool Swapchain::beginFrame() {
 
 static std::map<WGPUQueueWorkDoneStatus, std::string> queueWorkDoneStatusNameMap = {
         { WGPUQueueWorkDoneStatus_Success, "Success" },
-        { WGPUQueueWorkDoneStatus_InstanceDropped, "Instance dropped" },
         { WGPUQueueWorkDoneStatus_Error, "Error" },
+#ifdef WEBGPU_BACKEND_EMDAWNWEBGPU
+        { WGPUQueueWorkDoneStatus_CallbackCancelled, "Callback cancelled" },
+#endif
+#ifdef WEBGPU_LEGACY_API
+        { WGPUQueueWorkDoneStatus_DeviceLost, "Device lost" },
+#elif !defined(WEBGPU_BACKEND_EMDAWNWEBGPU)
+        { WGPUQueueWorkDoneStatus_InstanceDropped, "Instance dropped" },
+#endif
 #ifdef WEBGPU_BACKEND_WGPU
         { WGPUQueueWorkDoneStatus_Unknown, "Unknown" },
 #endif
@@ -193,6 +209,20 @@ static std::map<WGPUQueueWorkDoneStatus, std::string> queueWorkDoneStatusNameMap
 void Swapchain::renderFrame(const std::vector<WGPUCommandBuffer>& commandBuffers) {
     wgpuQueueSubmit(device->getWGPUQueue(), commandBuffers.size(), commandBuffers.data());
 
+#ifdef WEBGPU_LEGACY_API
+    auto onQueueWorkDone = [](WGPUQueueWorkDoneStatus status, void* userdata) {
+        if (status != WGPUQueueWorkDoneStatus_Success) {
+            auto it = queueWorkDoneStatusNameMap.find(status);
+            if (it != queueWorkDoneStatusNameMap.end()) {
+                sgl::Logfile::get()->throwError(
+                        "Error in wgpuQueueOnSubmittedWorkDone: " + it->second);
+            } else {
+                sgl::Logfile::get()->throwError("Error in wgpuQueueOnSubmittedWorkDone: Queue work failed!");
+            }
+        }
+    };
+    wgpuQueueOnSubmittedWorkDone(device->getWGPUQueue(), onQueueWorkDone, nullptr);
+#else
     auto onQueueWorkDone = [](WGPUQueueWorkDoneStatus status, void* userdata1, void* userdata2) {
         if (status != WGPUQueueWorkDoneStatus_Success) {
 #ifdef WEBGPU_BACKEND_DAWN
@@ -218,6 +248,7 @@ void Swapchain::renderFrame(const std::vector<WGPUCommandBuffer>& commandBuffers
     queueWorkDoneCallbackInfo.callback = onQueueWorkDone;
     queueWorkDoneCallbackInfo.userdata1 = device->getInstance();
     submittedWorkFuture = wgpuQueueOnSubmittedWorkDone(device->getWGPUQueue(), queueWorkDoneCallbackInfo);
+#endif
 
 #ifndef __EMSCRIPTEN__
     wgpuSurfacePresent(surface);

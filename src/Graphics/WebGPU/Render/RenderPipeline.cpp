@@ -27,6 +27,7 @@
  */
 
 #include <Utils/File/Logfile.hpp>
+#include "../Utils/Common.hpp"
 #include "../Utils/Device.hpp"
 #include "../Buffer/Framebuffer.hpp"
 #include "../Texture/Texture.hpp"
@@ -51,7 +52,11 @@ void RenderPipelineInfo::reset() {
     primitiveState.cullMode = WGPUCullMode_Back;
 
     depthStencilState.format = WGPUTextureFormat_Undefined;
+#ifdef WEBGPU_LEGACY_API
+    depthStencilState.depthWriteEnabled = true;
+#else
     depthStencilState.depthWriteEnabled = WGPUOptionalBool_True;
+#endif
     depthStencilState.depthCompare = WGPUCompareFunction_Less;
     depthStencilState.stencilFront = {};
     depthStencilState.stencilBack = {};
@@ -280,7 +285,11 @@ void RenderPipelineInfo::setDepthTestEnabled(bool enableDepthTest) {
 }
 
 void RenderPipelineInfo::setDepthWriteEnabled(bool enableDepthWrite) {
+#ifdef WEBGPU_LEGACY_API
+    depthStencilState.depthWriteEnabled = enableDepthWrite;
+#else
     depthStencilState.depthWriteEnabled = enableDepthWrite ? WGPUOptionalBool_True : WGPUOptionalBool_False;
+#endif
 }
 
 void RenderPipelineInfo::setDepthCompareFunction(WGPUCompareFunction compareFunction) {
@@ -384,7 +393,7 @@ RenderPipeline::RenderPipeline(Device* device, const RenderPipelineInfo& pipelin
         constantEntriesVertex.reserve(itVert->second.size());
         for (const auto& constantEntryPair : itVert->second) {
             WGPUConstantEntry constantEntry{};
-            constantEntry.key = { constantEntryPair.first.c_str(), constantEntryPair.first.length() };
+            stdStringToWgpuView(constantEntry.key, constantEntryPair.first);
             constantEntry.value = constantEntryPair.second;
             constantEntriesVertex.push_back(constantEntry);
         }
@@ -405,7 +414,7 @@ RenderPipeline::RenderPipeline(Device* device, const RenderPipelineInfo& pipelin
     pipelineDesc.vertex.constants = constantEntriesVertex.empty() ? nullptr : constantEntriesVertex.data();
     pipelineDesc.vertex.module = shaderStages->getShaderModule(ShaderType::VERTEX)->getWGPUShaderModule();
     const auto& entryPointVert = shaderStages->getEntryPoint(ShaderType::VERTEX);
-    pipelineDesc.vertex.entryPoint = { entryPointVert.c_str(), entryPointVert.length() };
+    stdStringToWgpuView(pipelineDesc.vertex.entryPoint, entryPointVert);
 
     pipelineDesc.primitive = pipelineInfo.primitiveState;
 
@@ -415,7 +424,7 @@ RenderPipeline::RenderPipeline(Device* device, const RenderPipelineInfo& pipelin
         constantEntriesFragment.reserve(itFrag->second.size());
         for (const auto& constantEntryPair : itFrag->second) {
             WGPUConstantEntry constantEntry{};
-            constantEntry.key = { constantEntryPair.first.c_str(), constantEntryPair.first.length() };
+            stdStringToWgpuView(constantEntry.key, constantEntryPair.first);
             constantEntry.value = constantEntryPair.second;
             constantEntriesFragment.push_back(constantEntry);
         }
@@ -424,7 +433,7 @@ RenderPipeline::RenderPipeline(Device* device, const RenderPipelineInfo& pipelin
     WGPUFragmentState fragmentState{};
     fragmentState.module = shaderStages->getShaderModule(ShaderType::FRAGMENT)->getWGPUShaderModule();
     const auto& entryPointFrag = shaderStages->getEntryPoint(ShaderType::FRAGMENT);
-    fragmentState.entryPoint = { entryPointFrag.c_str(), entryPointFrag.length() };
+    stdStringToWgpuView(fragmentState.entryPoint, entryPointFrag);
     fragmentState.constantCount = constantEntriesFragment.size();
     fragmentState.constants = constantEntriesFragment.empty() ? nullptr : constantEntriesFragment.data();
     fragmentState.targetCount = pipelineInfo.colorTargetStates.size();

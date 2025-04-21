@@ -110,12 +110,16 @@ private:
     WGPUPowerPreference powerPreference{};
     bool adapterInfoValid = false;
     WGPUAdapterInfo adapterInfo{};
-#if defined(__EMSCRIPTEN__)
+#if defined(__EMSCRIPTEN__) && defined(WEBGPU_LEGACY_API)
     WGPUAdapterProperties adapterProperties{};
 #endif
     std::vector<WGPUFeatureName> adapterSupportedFeatures;
     bool adapterSupportedLimitsValid = false;
+#ifdef WEBGPU_LEGACY_API
+    WGPUSupportedLimits adapterSupportedLimits{};
+#else
     WGPULimits adapterSupportedLimits{};
+#endif
 
     // Device.
     WGPUDevice device{};

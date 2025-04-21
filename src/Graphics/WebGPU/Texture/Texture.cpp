@@ -32,6 +32,7 @@
 #include <Math/Math.hpp>
 #include <Utils/AppSettings.hpp>
 #include <Utils/File/Logfile.hpp>
+#include "../Utils/Common.hpp"
 #include "../Utils/Device.hpp"
 #include "../Utils/Swapchain.hpp"
 #include "Texture.hpp"
@@ -218,10 +219,7 @@ Texture::Texture(Device* device, TextureSettings _textureSettings)
         textureDescriptor.viewFormatCount = textureSettings.viewFormats.size();
         textureDescriptor.viewFormats = textureSettings.viewFormats.data();
     }
-    if (!textureSettings.label.empty()) {
-        textureDescriptor.label.data = textureSettings.label.c_str();
-        textureDescriptor.label.length = textureSettings.label.size();
-    }
+    stdStringToWgpuView(textureDescriptor.label, textureSettings.label);
     texture = wgpuDeviceCreateTexture(device->getWGPUDevice(), &textureDescriptor);
     if (!texture) {
         sgl::Logfile::get()->throwError("Error in Texture::Texture: wgpuDeviceCreateTexture failed!");
@@ -245,7 +243,11 @@ Texture::~Texture() {
 void Texture::write(const TextureWriteInfo& writeInfo, WGPUQueue queue) {
     uint8_t* alignedDataPtr = nullptr;
     const void* dataPtr = writeInfo.srcPtr;
+#ifdef WEBGPU_LEGACY_API
+    WGPUTextureDataLayout textureDataLayout{};
+#else
     WGPUTexelCopyBufferLayout textureDataLayout{};
+#endif
     textureDataLayout.offset = writeInfo.srcOffset;
     textureDataLayout.bytesPerRow = writeInfo.srcBytesPerRow;
     textureDataLayout.rowsPerImage = writeInfo.srcRowsPerImage;
@@ -268,7 +270,11 @@ void Texture::write(const TextureWriteInfo& writeInfo, WGPUQueue queue) {
         //sgl::Logfile::get()->writeError("Error in Texture::write: bytesPerRow % 256 != 0.");
     }
 
+#ifdef WEBGPU_LEGACY_API
+    WGPUImageCopyTexture imageCopyTexture{};
+#else
     WGPUTexelCopyTextureInfo imageCopyTexture{};
+#endif
     imageCopyTexture.texture = texture;
     imageCopyTexture.mipLevel = writeInfo.dstMipLevel;
     imageCopyTexture.origin = writeInfo.dstOrigin;
@@ -323,10 +329,7 @@ TextureView::TextureView(TexturePtr _texture, TextureViewSettings _textureViewSe
     textureViewDescriptor.baseArrayLayer = textureViewSettings.baseArrayLayer;
     textureViewDescriptor.arrayLayerCount = textureViewSettings.arrayLayerCount;
     textureViewDescriptor.aspect = textureViewSettings.aspect;
-    if (!textureViewSettings.label.empty()) {
-        textureViewDescriptor.label.data = textureViewSettings.label.c_str();
-        textureViewDescriptor.label.length = textureViewSettings.label.size();
-    }
+    stdStringToWgpuView(textureViewDescriptor.label, textureViewSettings.label);
     textureView = wgpuTextureCreateView(texture->getWGPUTexture(), &textureViewDescriptor);
     if (!textureView) {
         sgl::Logfile::get()->throwError("Error in TextureView::TextureView: wgpuTextureCreateView failed!");

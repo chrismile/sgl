@@ -128,7 +128,7 @@ ShaderStages::ShaderStages(
                 }
                 WGPUShaderStage currentFlags =
                         bindingEntryStageFlags[bindGroupInfo.first][bindingEntryInfo.bindingIndex];
-                currentFlags = currentFlags | newFlags;
+                currentFlags = WGPUShaderStage(currentFlags | newFlags);
                 bindingEntryStageFlags[bindGroupInfo.first][bindingEntryInfo.bindingIndex] = currentFlags;
             }
         }

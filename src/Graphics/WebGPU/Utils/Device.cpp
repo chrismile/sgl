@@ -40,6 +40,7 @@
 #include <Utils/File/Logfile.hpp>
 #include <Graphics/Window.hpp>
 #include "../Shader/ShaderManager.hpp"
+#include "Common.hpp"
 #include "Instance.hpp"
 #include "Device.hpp"
 
@@ -70,6 +71,9 @@ WGPULimits getDefaultWGPULimits() {
     limits.maxBufferSize = 268435456; // bytes; 256 MiB
     limits.maxVertexAttributes = 16;
     limits.maxVertexBufferArrayStride = 2048; // bytes
+#ifdef WEBGPU_LEGACY_API
+    limits.maxInterStageShaderComponents = 64;
+#endif
     limits.maxInterStageShaderVariables = 16;
     limits.maxColorAttachments = 8;
     limits.maxColorAttachmentBytesPerSample = 32;
@@ -91,6 +95,26 @@ Ret requestSync(const char* funcName, Func func, Parent parent, const Options& o
     };
     RequestData requestData{};
     requestData.funcName = funcName;
+#ifdef WEBGPU_LEGACY_API
+    auto onRequestFinished = [](Status status, Ret ret, char const* message, void* userdata) {
+        RequestData& requestData = *reinterpret_cast<RequestData*>(userdata);
+        if (status == statusSuccess) {
+            requestData.ret = ret;
+        } else {
+            if (message) {
+                sgl::Logfile::get()->writeError(
+                        "Error in requestSync: " + std::string(requestData.funcName)
+                        + " failed with status 0x" + sgl::toHexString(status) + "and message: " + std::string(message));
+            } else {
+                sgl::Logfile::get()->writeError(
+                        "Error in requestSync: " + std::string(requestData.funcName)
+                        + " failed with status 0x" + sgl::toHexString(status) + ".");
+            }
+        }
+        requestData.requestFinished = true;
+    };
+    func(parent, &options, onRequestFinished, (void*)&requestData);
+#else
     auto onRequestFinished = [](Status status, Ret ret, WGPUStringView message, void* userdata1, void* userdata2) {
         RequestData& requestData = *reinterpret_cast<RequestData*>(userdata1);
         if (status == statusSuccess) {
@@ -122,6 +146,8 @@ Ret requestSync(const char* funcName, Func func, Parent parent, const Options& o
     callbackInfo.mode = WGPUCallbackMode_AllowSpontaneous;
     func(parent, &options, callbackInfo);
 #endif
+#endif
+
 #ifdef __EMSCRIPTEN__
     while (!requestData.requestFinished) {
         // Needs "-sASYNCIFY"
@@ -190,14 +216,26 @@ void Device::createInternal(
 
     // Same as above, but for limits.
     bool isAnyLimitRequired = false;
+#ifdef WEBGPU_LEGACY_API
+    WGPURequiredLimits requestedLimits{};
+#else
     WGPULimits requestedLimits{};
+#endif
     if (requiredLimits.has_value()) {
         isAnyLimitRequired = true;
+#ifdef WEBGPU_LEGACY_API
+        requestedLimits.limits = requiredLimits.value();
+#else
         requestedLimits = requiredLimits.value();
+#endif
     }
     if (optionalLimits.has_value() && adapterSupportedLimitsValid) {
         isAnyLimitRequired = true;
+#ifdef WEBGPU_LEGACY_API
+#define SET_LIMIT_MAX(x) requestedLimits.limits.x = std::max(requestedLimits.limits.x, std::min(adapterSupportedLimits.limits.x, optionalLimits.value().x))
+#else
 #define SET_LIMIT_MAX(x) requestedLimits.x = std::max(requestedLimits.x, std::min(adapterSupportedLimits.x, optionalLimits.value().x))
+#endif
         SET_LIMIT_MAX(maxTextureDimension1D);
         SET_LIMIT_MAX(maxTextureDimension2D);
         SET_LIMIT_MAX(maxTextureDimension3D);
@@ -218,6 +256,9 @@ void Device::createInternal(
         SET_LIMIT_MAX(maxBufferSize);
         SET_LIMIT_MAX(maxVertexAttributes);
         SET_LIMIT_MAX(maxVertexBufferArrayStride);
+#ifdef WEBGPU_LEGACY_API
+        SET_LIMIT_MAX(maxInterStageShaderComponents);
+#endif
         SET_LIMIT_MAX(maxInterStageShaderVariables);
         SET_LIMIT_MAX(maxColorAttachments);
         SET_LIMIT_MAX(maxColorAttachmentBytesPerSample);
@@ -227,21 +268,34 @@ void Device::createInternal(
         SET_LIMIT_MAX(maxComputeWorkgroupSizeY);
         SET_LIMIT_MAX(maxComputeWorkgroupSizeZ);
         SET_LIMIT_MAX(maxComputeWorkgroupsPerDimension);
+#ifdef WEBGPU_LEGACY_API
+#define SET_LIMIT_MIN(x, defaultVal) requestedLimits.limits.x = std::min(requestedLimits.limits.x, std::max(adapterSupportedLimits.limits.x, optionalLimits.value().x))
+#else
 #define SET_LIMIT_MIN(x, defaultVal) requestedLimits.x = std::min(requestedLimits.x, std::max(adapterSupportedLimits.x, optionalLimits.value().x))
+#endif
         SET_LIMIT_MIN(minUniformBufferOffsetAlignment, 256);
         SET_LIMIT_MIN(minStorageBufferOffsetAlignment, 256);
     }
 
     WGPUDeviceDescriptor deviceDescriptor{};
-    deviceDescriptor.label.data = "PrimaryDevice";
-    deviceDescriptor.label.length = strlen(deviceDescriptor.label.data);
+    cStringToWgpuView(deviceDescriptor.label, "PrimaryDevice");
     deviceDescriptor.requiredFeatureCount = requestedFeatures.size();
     deviceDescriptor.requiredFeatures = requestedFeatures.data();
     if (isAnyLimitRequired) {
         deviceDescriptor.requiredLimits = &requestedLimits;
     }
-    deviceDescriptor.defaultQueue.label.data = "DefaultQueue";
-    deviceDescriptor.defaultQueue.label.length = strlen(deviceDescriptor.defaultQueue.label.data);
+    cStringToWgpuView(deviceDescriptor.defaultQueue.label, "DefaultQueue");
+#ifdef WEBGPU_LEGACY_API
+    deviceDescriptor.deviceLostCallback = [](WGPUDeviceLostReason reason, char const* message, void* userdata) {
+        if (message) {
+            sgl::Logfile::get()->writeInfo("Device lost: " + std::string(message));
+        } else {
+            sgl::Logfile::get()->writeInfo("Device lost");
+        }
+    };
+    device = requestSync<WGPUDevice, WGPURequestDeviceStatus, bool, WGPURequestDeviceStatus_Success>(
+            "wgpuAdapterRequestDevice", wgpuAdapterRequestDevice, adapter, deviceDescriptor, instance->getWGPUInstance());
+#else
     deviceDescriptor.deviceLostCallbackInfo.callback = [](WGPUDevice const* device, WGPUDeviceLostReason reason, WGPUStringView message, void* userdata1, void* userdata2) {
         if (message.length > 0 && message.data) {
             sgl::Logfile::get()->writeInfo("Device lost: " + std::string(message.data, message.length));
@@ -268,7 +322,23 @@ void Device::createInternal(
     };
     device = requestSync<WGPUDevice, WGPURequestDeviceStatus, WGPURequestDeviceCallbackInfo, WGPURequestDeviceStatus_Success>(
             "wgpuAdapterRequestDevice", wgpuAdapterRequestDevice, adapter, deviceDescriptor, instance->getWGPUInstance());
+#endif
     queryDeviceCapabilities();
+
+#ifdef WEBGPU_LEGACY_API
+    auto uncapturedErrorCallback = [](WGPUErrorType type, char const* message, void* userdata) {
+        if (message && sgl::stringContains(message, "wgpuDeviceCreateShaderModule")) {
+            ShaderManager->onCompilationFailed(message);
+        } else if (message) {
+            sgl::Logfile::get()->writeInfo("Uncaptured device error: " + std::string(message));
+        } else {
+            sgl::Logfile::get()->writeInfo("Uncaptured device error");
+        }
+        auto* device = reinterpret_cast<Device*>(userdata);
+        device->onUncapturedError(type, message);
+    };
+    wgpuDeviceSetUncapturedErrorCallback(device, uncapturedErrorCallback, this);
+#endif
 
     queue = wgpuDeviceGetQueue(device);
 }
@@ -298,7 +368,7 @@ void Device::onUncapturedError(WGPUErrorType type, const std::string& message) {
 }
 
 static std::map<WGPUFeatureName, std::string> featureNames = {
-#ifndef WEBGPU_BACKEND_DAWN
+#ifdef WEBGPU_BACKEND_WGPU
         { WGPUFeatureName_Undefined, "Undefined" },
 #endif
         { WGPUFeatureName_DepthClipControl, "DepthClipControl" },
@@ -331,8 +401,8 @@ static std::map<WGPUNativeFeature, std::string> wgpuNativeFeatureNames = {
 #endif
 
 void Device::queryAdapterCapabilities() {
-#if defined(__EMSCRIPTEN__)
-#error TODO: Check if this is still valid...
+#if defined(__EMSCRIPTEN__) && defined(WEBGPU_LEGACY_API)
+    // TODO: Check if this is still valid...
     bool isFirefox = EM_ASM_INT({ return navigator.userAgent.toLowerCase().includes('firefox'); });
     if (isFirefox) {
         wgpuAdapterGetProperties(adapter, &adapterProperties);
@@ -348,18 +418,37 @@ void Device::queryAdapterCapabilities() {
     adapterInfoValid = wgpuAdapterGetInfo(adapter, &adapterInfo) == WGPUStatus_Success;
 #endif
 
+#ifdef WEBGPU_LEGACY_API
+    adapterSupportedLimitsValid = wgpuAdapterGetLimits(adapter, &adapterSupportedLimits);
+    auto numFeatures = wgpuAdapterEnumerateFeatures(adapter, nullptr);
+    adapterSupportedFeatures.resize(numFeatures);
+    wgpuAdapterEnumerateFeatures(adapter, adapterSupportedFeatures.data());
+#else
     adapterSupportedLimitsValid = wgpuAdapterGetLimits(adapter, &adapterSupportedLimits) == WGPUStatus_Success;
-
     WGPUSupportedFeatures supportedFeatures{};
     wgpuAdapterGetFeatures(adapter, &supportedFeatures);
     adapterSupportedFeatures.resize(supportedFeatures.featureCount);
     for (size_t i = 0; i < supportedFeatures.featureCount; ++i) {
         adapterSupportedFeatures[i] = supportedFeatures.features[i];
     }
+#endif
 }
 
 void Device::printAdapterInfo() {
-#if defined(__EMSCRIPTEN__) || defined(WEBGPU_BACKEND_DAWN)
+#ifdef WEBGPU_LEGACY_API
+    if (adapterInfoValid) {
+        sgl::Logfile::get()->writeInfo("Adapter info:");
+        if (adapterInfo.vendor) sgl::Logfile::get()->writeInfo("- vendorName: " + std::string(adapterInfo.vendor));
+        if (adapterInfo.architecture) sgl::Logfile::get()->writeInfo("- architecture: " + std::string(adapterInfo.architecture));
+        if (adapterInfo.device) sgl::Logfile::get()->writeInfo("- device: " + std::string(adapterInfo.device));
+        if (adapterInfo.description) sgl::Logfile::get()->writeInfo("- description: " + std::string(adapterInfo.description));
+        sgl::Logfile::get()->writeInfo("- backendType: 0x" + sgl::toHexString(adapterInfo.backendType));
+        sgl::Logfile::get()->writeInfo("- adapterType: 0x" + sgl::toHexString(adapterInfo.adapterType));
+        sgl::Logfile::get()->writeInfo("- vendorID: 0x" + sgl::toHexString(adapterInfo.vendorID));
+        sgl::Logfile::get()->writeInfo("- deviceID: 0x" + sgl::toHexString(adapterInfo.deviceID));
+        sgl::Logfile::get()->writeInfo("");
+    }
+#else
     if (adapterInfoValid) {
         sgl::Logfile::get()->writeInfo("Adapter info:");
         if (adapterInfo.vendor.data && adapterInfo.vendor.length > 0) sgl::Logfile::get()->writeInfo(
@@ -377,23 +466,18 @@ void Device::printAdapterInfo() {
         sgl::Logfile::get()->writeInfo("");
     }
 #endif
-#if defined(__EMSCRIPTEN__)
+#if defined(__EMSCRIPTEN__) && defined(WEBGPU_LEGACY_API)
     if (!adapterInfoValid) {
-#endif
-#if defined(__EMSCRIPTEN__)
-#error TODO: Check if this is still valid...
-    sgl::Logfile::get()->writeInfo("Adapter properties:");
-    sgl::Logfile::get()->writeInfo("- vendorID: 0x" + sgl::toHexString(adapterProperties.vendorID));
-    if (adapterProperties.vendorName) sgl::Logfile::get()->writeInfo("- vendorName: " + std::string(adapterProperties.vendorName));
-    if (adapterProperties.architecture) sgl::Logfile::get()->writeInfo("- architecture: " + std::string(adapterProperties.architecture));
-    sgl::Logfile::get()->writeInfo("- deviceID: 0x" + sgl::toHexString(adapterProperties.deviceID));
-    if (adapterProperties.name) sgl::Logfile::get()->writeInfo("- name: " + std::string(adapterProperties.name));
-    if (adapterProperties.driverDescription) sgl::Logfile::get()->writeInfo("- driverDescription: " + std::string(adapterProperties.driverDescription));
-    sgl::Logfile::get()->writeInfo("- adapterType: 0x" + sgl::toHexString(adapterProperties.adapterType));
-    sgl::Logfile::get()->writeInfo("- backendType: 0x" + sgl::toHexString(adapterProperties.backendType));
-    sgl::Logfile::get()->writeInfo("");
-#endif
-#if defined(__EMSCRIPTEN__)
+        sgl::Logfile::get()->writeInfo("Adapter properties:");
+        sgl::Logfile::get()->writeInfo("- vendorID: 0x" + sgl::toHexString(adapterProperties.vendorID));
+        if (adapterProperties.vendorName) sgl::Logfile::get()->writeInfo("- vendorName: " + std::string(adapterProperties.vendorName));
+        if (adapterProperties.architecture) sgl::Logfile::get()->writeInfo("- architecture: " + std::string(adapterProperties.architecture));
+        sgl::Logfile::get()->writeInfo("- deviceID: 0x" + sgl::toHexString(adapterProperties.deviceID));
+        if (adapterProperties.name) sgl::Logfile::get()->writeInfo("- name: " + std::string(adapterProperties.name));
+        if (adapterProperties.driverDescription) sgl::Logfile::get()->writeInfo("- driverDescription: " + std::string(adapterProperties.driverDescription));
+        sgl::Logfile::get()->writeInfo("- adapterType: 0x" + sgl::toHexString(adapterProperties.adapterType));
+        sgl::Logfile::get()->writeInfo("- backendType: 0x" + sgl::toHexString(adapterProperties.backendType));
+        sgl::Logfile::get()->writeInfo("");
     }
 #endif
 
@@ -417,7 +501,11 @@ void Device::printAdapterInfo() {
     }
 
     if (adapterSupportedLimitsValid) {
+#ifdef WEBGPU_LEGACY_API
+#define PRINT_LIMIT_ADAPTER(x) sgl::Logfile::get()->writeInfo("- "#x": " + sgl::toString(adapterSupportedLimits.limits.x))
+#else
 #define PRINT_LIMIT_ADAPTER(x) sgl::Logfile::get()->writeInfo("- "#x": " + sgl::toString(adapterSupportedLimits.x))
+#endif
         sgl::Logfile::get()->writeInfo("Adapter limits:");
         PRINT_LIMIT_ADAPTER(maxTextureDimension1D);
         PRINT_LIMIT_ADAPTER(maxTextureDimension2D);
@@ -441,6 +529,9 @@ void Device::printAdapterInfo() {
         PRINT_LIMIT_ADAPTER(maxBufferSize);
         PRINT_LIMIT_ADAPTER(maxVertexAttributes);
         PRINT_LIMIT_ADAPTER(maxVertexBufferArrayStride);
+#ifdef WEBGPU_LEGACY_API
+        PRINT_LIMIT_ADAPTER(maxInterStageShaderComponents);
+#endif
         PRINT_LIMIT_ADAPTER(maxInterStageShaderVariables);
         PRINT_LIMIT_ADAPTER(maxColorAttachments);
         PRINT_LIMIT_ADAPTER(maxColorAttachmentBytesPerSample);
@@ -455,22 +546,33 @@ void Device::printAdapterInfo() {
 }
 
 void Device::queryDeviceCapabilities() {
-
+#ifdef WEBGPU_LEGACY_API
+    auto numDeviceFeatures = wgpuDeviceEnumerateFeatures(device, nullptr);
+    deviceFeatures.resize(numDeviceFeatures);
+    wgpuDeviceEnumerateFeatures(device, deviceFeatures.data());
+#else
     WGPUSupportedFeatures supportedFeatures{};
     wgpuDeviceGetFeatures(device, &supportedFeatures);
     deviceFeatures.resize(supportedFeatures.featureCount);
     for (size_t i = 0; i < supportedFeatures.featureCount; ++i) {
         deviceFeatures[i] = supportedFeatures.features[i];
     }
+#endif
+    deviceFeaturesSet = std::set<WGPUFeatureName>(deviceFeatures.begin(), deviceFeatures.end());
 
-    WGPULimits supportedLimits{};
-#ifdef WEBGPU_BACKEND_DAWN
-    deviceSupportedLimitsValid = wgpuDeviceGetLimits(device, &supportedLimits) == WGPUStatus_Success;
-#else
+#ifdef WEBGPU_LEGACY_API
+    WGPUSupportedLimits supportedLimits{};
     deviceSupportedLimitsValid = wgpuDeviceGetLimits(device, &supportedLimits);
+#else
+    WGPULimits supportedLimits{};
+    deviceSupportedLimitsValid = wgpuDeviceGetLimits(device, &supportedLimits) == WGPUStatus_Success;
 #endif
     if (deviceSupportedLimitsValid) {
+#ifdef WEBGPU_LEGACY_API
+        deviceLimits = supportedLimits.limits;
+#else
         deviceLimits = supportedLimits;
+#endif
     } else {
         deviceLimits = getDefaultWGPULimits();
     }
@@ -521,6 +623,9 @@ void Device::printDeviceInfo() {
         PRINT_LIMIT_DEVICE(maxBufferSize);
         PRINT_LIMIT_DEVICE(maxVertexAttributes);
         PRINT_LIMIT_DEVICE(maxVertexBufferArrayStride);
+#ifdef WEBGPU_LEGACY_API
+        PRINT_LIMIT_DEVICE(maxInterStageShaderComponents);
+#endif
         PRINT_LIMIT_DEVICE(maxInterStageShaderVariables);
         PRINT_LIMIT_DEVICE(maxColorAttachments);
         PRINT_LIMIT_DEVICE(maxColorAttachmentBytesPerSample);

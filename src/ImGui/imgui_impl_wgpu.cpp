@@ -62,7 +62,7 @@
 #include <limits.h>
 #include <webgpu/webgpu.h>
 
-#ifdef IMGUI_IMPL_WEBGPU_BACKEND_DAWN
+#if defined(IMGUI_IMPL_WEBGPU_BACKEND_DAWN) || defined(WEBGPU_BACKEND_EMDAWNWEBGPU)
 // Dawn renamed WGPUProgrammableStageDescriptor to WGPUComputeState (see: https://github.com/webgpu-native/webgpu-headers/pull/413)
 // Using type alias until WGPU adopts the same naming convention (#8369)
 using WGPUProgrammableStageDescriptor = WGPUComputeState;
@@ -269,7 +269,7 @@ static WGPUProgrammableStageDescriptor ImGui_ImplWGPU_CreateShaderModule(const c
 {
     ImGui_ImplWGPU_Data* bd = ImGui_ImplWGPU_GetBackendData();
 
-#if defined(IMGUI_IMPL_WEBGPU_BACKEND_DAWN) || defined(IMGUI_IMPL_WEBGPU_BACKEND_WGPU)
+#if defined(IMGUI_IMPL_WEBGPU_BACKEND_DAWN) || defined(IMGUI_IMPL_WEBGPU_BACKEND_WGPU) || defined(WEBGPU_BACKEND_EMDAWNWEBGPU)
     WGPUShaderSourceWGSL wgsl_desc = {};
     wgsl_desc.chain.sType = WGPUSType_ShaderSourceWGSL;
     wgsl_desc.code = { wgsl_source, WGPU_STRLEN };
@@ -285,7 +285,7 @@ static WGPUProgrammableStageDescriptor ImGui_ImplWGPU_CreateShaderModule(const c
     WGPUProgrammableStageDescriptor stage_desc = {};
     stage_desc.module = wgpuDeviceCreateShaderModule(bd->wgpuDevice, &desc);
 
-#if defined(IMGUI_IMPL_WEBGPU_BACKEND_DAWN) || defined(IMGUI_IMPL_WEBGPU_BACKEND_WGPU)
+#if defined(IMGUI_IMPL_WEBGPU_BACKEND_DAWN) || defined(IMGUI_IMPL_WEBGPU_BACKEND_WGPU) || defined(WEBGPU_BACKEND_EMDAWNWEBGPU)
     stage_desc.entryPoint = { "main", WGPU_STRLEN };
 #else
     stage_desc.entryPoint = "main";
@@ -402,7 +402,7 @@ void ImGui_ImplWGPU_RenderDrawData(ImDrawData* draw_data, WGPURenderPassEncoder 
         {
             nullptr,
             "Dear ImGui Vertex buffer",
-#if defined(IMGUI_IMPL_WEBGPU_BACKEND_DAWN) || defined(IMGUI_IMPL_WEBGPU_BACKEND_WGPU)
+#if defined(IMGUI_IMPL_WEBGPU_BACKEND_DAWN) || defined(IMGUI_IMPL_WEBGPU_BACKEND_WGPU) || defined(WEBGPU_BACKEND_EMDAWNWEBGPU)
             WGPU_STRLEN,
 #endif
             WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex,
@@ -429,7 +429,7 @@ void ImGui_ImplWGPU_RenderDrawData(ImDrawData* draw_data, WGPURenderPassEncoder 
         {
             nullptr,
             "Dear ImGui Index buffer",
-#if defined(IMGUI_IMPL_WEBGPU_BACKEND_DAWN) || defined(IMGUI_IMPL_WEBGPU_BACKEND_WGPU)
+#if defined(IMGUI_IMPL_WEBGPU_BACKEND_DAWN) || defined(IMGUI_IMPL_WEBGPU_BACKEND_WGPU) || defined(WEBGPU_BACKEND_EMDAWNWEBGPU)
             WGPU_STRLEN,
 #endif
             WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index,
@@ -548,7 +548,7 @@ static void ImGui_ImplWGPU_CreateFontsTexture()
     // Upload texture to graphics system
     {
         WGPUTextureDescriptor tex_desc = {};
-#if defined(IMGUI_IMPL_WEBGPU_BACKEND_DAWN) || defined(IMGUI_IMPL_WEBGPU_BACKEND_WGPU)
+#if defined(IMGUI_IMPL_WEBGPU_BACKEND_DAWN) || defined(IMGUI_IMPL_WEBGPU_BACKEND_WGPU) || defined(WEBGPU_BACKEND_EMDAWNWEBGPU)
         tex_desc.label = { "Dear ImGui Font Texture", WGPU_STRLEN };
 #else
         tex_desc.label = "Dear ImGui Font Texture";
@@ -576,7 +576,7 @@ static void ImGui_ImplWGPU_CreateFontsTexture()
 
     // Upload texture data
     {
-#if defined(IMGUI_IMPL_WEBGPU_BACKEND_DAWN) || defined(IMGUI_IMPL_WEBGPU_BACKEND_WGPU)
+#if defined(IMGUI_IMPL_WEBGPU_BACKEND_DAWN) || defined(IMGUI_IMPL_WEBGPU_BACKEND_WGPU) || defined(WEBGPU_BACKEND_EMDAWNWEBGPU)
         WGPUTexelCopyTextureInfo dst_view = {};
 #else
         WGPUImageCopyTexture dst_view = {};
@@ -585,7 +585,7 @@ static void ImGui_ImplWGPU_CreateFontsTexture()
         dst_view.mipLevel = 0;
         dst_view.origin = { 0, 0, 0 };
         dst_view.aspect = WGPUTextureAspect_All;
-#if defined(IMGUI_IMPL_WEBGPU_BACKEND_DAWN) || defined(IMGUI_IMPL_WEBGPU_BACKEND_WGPU)
+#if defined(IMGUI_IMPL_WEBGPU_BACKEND_DAWN) || defined(IMGUI_IMPL_WEBGPU_BACKEND_WGPU) || defined(WEBGPU_BACKEND_EMDAWNWEBGPU)
         WGPUTexelCopyBufferLayout layout = {};
 #else
         WGPUTextureDataLayout layout = {};
@@ -623,7 +623,7 @@ static void ImGui_ImplWGPU_CreateUniformBuffer()
     {
         nullptr,
         "Dear ImGui Uniform buffer",
-#if defined(IMGUI_IMPL_WEBGPU_BACKEND_DAWN) || defined(IMGUI_IMPL_WEBGPU_BACKEND_WGPU)
+#if defined(IMGUI_IMPL_WEBGPU_BACKEND_DAWN) || defined(IMGUI_IMPL_WEBGPU_BACKEND_WGPU) || defined(WEBGPU_BACKEND_EMDAWNWEBGPU)
         WGPU_STRLEN,
 #endif
         WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform,
@@ -689,7 +689,7 @@ bool ImGui_ImplWGPU_CreateDeviceObjects()
     // Vertex input configuration
     WGPUVertexAttribute attribute_desc[] =
     {
-#ifdef IMGUI_IMPL_WEBGPU_BACKEND_DAWN
+#if defined(IMGUI_IMPL_WEBGPU_BACKEND_DAWN) || defined(WEBGPU_BACKEND_EMDAWNWEBGPU)
         { nullptr, WGPUVertexFormat_Float32x2, (uint64_t)offsetof(ImDrawVert, pos), 0 },
         { nullptr, WGPUVertexFormat_Float32x2, (uint64_t)offsetof(ImDrawVert, uv),  1 },
         { nullptr, WGPUVertexFormat_Unorm8x4,  (uint64_t)offsetof(ImDrawVert, col), 2 },
@@ -737,7 +737,7 @@ bool ImGui_ImplWGPU_CreateDeviceObjects()
     // Create depth-stencil State
     WGPUDepthStencilState depth_stencil_state = {};
     depth_stencil_state.format = bd->depthStencilFormat;
-#if defined(IMGUI_IMPL_WEBGPU_BACKEND_DAWN) || defined(IMGUI_IMPL_WEBGPU_BACKEND_WGPU)
+#if defined(IMGUI_IMPL_WEBGPU_BACKEND_DAWN) || defined(IMGUI_IMPL_WEBGPU_BACKEND_WGPU) || defined(WEBGPU_BACKEND_EMDAWNWEBGPU)
     depth_stencil_state.depthWriteEnabled = WGPUOptionalBool_False;
 #else
     depth_stencil_state.depthWriteEnabled = false;

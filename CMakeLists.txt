@@ -3,7 +3,7 @@ project(sgl)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/CMake)
 #MESSAGE(STATUS "CMAKE_MODULE_PATH: " ${CMAKE_MODULE_PATH})
 
-# Eventuall, we will want to switch to C++20 for Emscripten to be able to use co_await and co_yield as a replacement for
+# Eventually, we will want to switch to C++20 for Emscripten to be able to use co_await and co_yield as a replacement for
 # emscripten_sleep with "-sASYNCIFY".
 #if (EMSCRIPTEN)
 #    set(CMAKE_CXX_STANDARD 20)
@@ -228,6 +228,9 @@ if (${SUPPORT_WEBGPU})
     if (WEBGPU_BACKEND)
         if ("${WEBGPU_BACKEND}" STREQUAL "DAWN")
             set(USE_WEBGPU_IMPL_DAWN TRUE)
+        endif()
+        if ("${WEBGPU_BACKEND}" STREQUAL "WGPU")
+            set(USE_WEBGPU_IMPL_WGPU TRUE)
         endif()
     endif()
     # Use naga_cross (https://github.com/chrismile/naga_cross) if available.
@@ -675,6 +678,42 @@ if (${SUPPORT_OPENGL} AND OpenGL_FOUND AND GLEW_FOUND)
     endif()
 endif()
 
+# Get all propreties that cmake supports
+if(NOT CMAKE_PROPERTY_LIST)
+    execute_process(COMMAND cmake --help-property-list OUTPUT_VARIABLE CMAKE_PROPERTY_LIST)
+
+    # Convert command output into a CMake list
+    string(REGEX REPLACE ";" "\\\\;" CMAKE_PROPERTY_LIST "${CMAKE_PROPERTY_LIST}")
+    string(REGEX REPLACE "\n" ";" CMAKE_PROPERTY_LIST "${CMAKE_PROPERTY_LIST}")
+    list(REMOVE_DUPLICATES CMAKE_PROPERTY_LIST)
+endif()
+
+function(print_properties)
+    message("CMAKE_PROPERTY_LIST = ${CMAKE_PROPERTY_LIST}")
+endfunction()
+
+function(print_target_properties target)
+    if(NOT TARGET ${target})
+        message(STATUS "There is no target named '${target}'")
+        return()
+    endif()
+
+    foreach(property ${CMAKE_PROPERTY_LIST})
+        string(REPLACE "<CONFIG>" "${CMAKE_BUILD_TYPE}" property ${property})
+
+        # Fix https://stackoverflow.com/questions/32197663/how-can-i-remove-the-the-location-property-may-not-be-read-from-target-error-i
+        if(property STREQUAL "LOCATION" OR property MATCHES "^LOCATION_" OR property MATCHES "_LOCATION$")
+            continue()
+        endif()
+
+        get_property(was_set TARGET ${target} PROPERTY ${property} SET)
+        if(was_set)
+            get_target_property(value ${target} ${property})
+            message("${target} ${property} = ${value}")
+        endif()
+    endforeach()
+endfunction()
+
 if (${SUPPORT_WEBGPU})
     target_compile_definitions(sgl PUBLIC SUPPORT_WEBGPU)
 
@@ -699,6 +738,11 @@ if (${SUPPORT_WEBGPU})
         target_compile_definitions(sgl PRIVATE WEBGPU_IMPL_SUPPORTS_WAIT_ON_FUTURE)
     endif()
 
+    if (EMSCRIPTEN AND "${WEBGPU_BACKEND}" STREQUAL "EMSCRIPTEN")
+        # Emscripten is not updating to new API yet: https://github.com/eliemichel/WebGPU-distribution/issues/45
+        target_compile_definitions(sgl PRIVATE WEBGPU_LEGACY_API)
+    endif()
+
     #target_include_directories(sgl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/WebGPU/libs)
     target_include_directories(sgl PUBLIC
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/WebGPU/libs>
@@ -711,11 +755,13 @@ if (${SUPPORT_WEBGPU})
     #    which is prefixed in the build directory."
     #target_link_libraries(sgl PRIVATE webgpu)
     get_target_property(WEBGPU_INTERFACE_COMPILE_DEFINITIONS webgpu INTERFACE_COMPILE_DEFINITIONS)
+    get_target_property(WEBGPU_INTERFACE_COMPILE_OPTIONS webgpu INTERFACE_COMPILE_OPTIONS)
     get_target_property(WEBGPU_INTERFACE_LINK_LIBRARIES webgpu INTERFACE_LINK_LIBRARIES)
     get_target_property(WEBGPU_IMPORTED_LOCATION webgpu IMPORTED_LOCATION)
     get_target_property(WEBGPU_IMPORTED_IMPLIB webgpu IMPORTED_IMPLIB)
     get_target_property(WEBGPU_INTERFACE_LINK_OPTIONS webgpu INTERFACE_LINK_OPTIONS)
     get_target_property(WEBGPU_INTERFACE_INCLUDE_DIRECTORIES webgpu INTERFACE_INCLUDE_DIRECTORIES)
+    #print_target_properties(webgpu)
     if (${USE_WEBGPU_IMPL_DAWN} AND NOT ${WEBGPU_BUILD_FROM_SOURCE} AND NOT TARGET dawn::webgpu_dawn)
         # 2025-04-20: Don't ask me why the target no longer exists at this point...
         #get_target_property(WEBGPU_RUNTIME_LIB dawn::webgpu_dawn IMPORTED_LOCATION_RELEASE)
@@ -726,6 +772,10 @@ if (${SUPPORT_WEBGPU})
     if (WEBGPU_INTERFACE_COMPILE_DEFINITIONS)
         message(STATUS "WEBGPU_INTERFACE_COMPILE_DEFINITIONS: ${WEBGPU_INTERFACE_COMPILE_DEFINITIONS}")
         target_compile_definitions(sgl PUBLIC ${WEBGPU_INTERFACE_COMPILE_DEFINITIONS})
+    endif()
+    if (WEBGPU_INTERFACE_COMPILE_OPTIONS)
+        # Used by emdawnwebgpu.
+        target_compile_options(sgl PUBLIC ${WEBGPU_INTERFACE_COMPILE_OPTIONS})
     endif()
     if (WEBGPU_INTERFACE_LINK_LIBRARIES)
         message(STATUS "WEBGPU_INTERFACE_LINK_LIBRARIES: ${WEBGPU_INTERFACE_LINK_LIBRARIES}")
@@ -784,7 +834,7 @@ if (${SUPPORT_WEBGPU})
 
     if (${USE_WEBGPU_IMPL_DAWN})
         target_compile_definitions(sgl PRIVATE IMGUI_IMPL_WEBGPU_BACKEND_DAWN)
-    else()
+    elseif(${USE_WEBGPU_IMPL_WGPU})
         target_compile_definitions(sgl PRIVATE IMGUI_IMPL_WEBGPU_BACKEND_WGPU)
     endif()
 
@@ -1280,7 +1330,7 @@ endif()
 
 if (${USE_SDL3} AND EMSCRIPTEN)
     # https://github.com/emscripten-core/emscripten/blob/main/ChangeLog.md#404---022525
-    set(EMSCRIPTEN_SGL_FLAGS "${EMSCRIPTEN_SGL_FLAGS}" "-sUSE_SDL=3")
+    set(EMSCRIPTEN_SGL_FLAGS "${EMSCRIPTEN_SGL_FLAGS}" "--use-port=sdl3")
 endif()
 
 
@@ -1484,7 +1534,7 @@ if (EMSCRIPTEN)
         file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "\nset(EMSCRIPTEN_APP_FLAGS \"\${EMSCRIPTEN_APP_FLAGS}\" \"--use-port=sdl2\" \"--use-port=sdl2_image:formats=png\")\n")
     endif()
     if (${USE_SDL3})
-        file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "\nset(EMSCRIPTEN_APP_FLAGS \"\${EMSCRIPTEN_APP_FLAGS}\" \"---sUSE_SDL=3\")\n")
+        file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "\nset(EMSCRIPTEN_APP_FLAGS \"\${EMSCRIPTEN_APP_FLAGS}\" \"--use-port=sdl3\")\n")
     endif()
     if (${USE_GLFW})
         file(APPEND "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp" "\nset(EMSCRIPTEN_LINKER_FLAGS \"\${EMSCRIPTEN_LINKER_FLAGS}\" \"-sUSE_GLFW=3\")\n")

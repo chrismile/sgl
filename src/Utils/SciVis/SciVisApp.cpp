@@ -341,8 +341,8 @@ void SciVisApp::createSceneFramebuffer() {
 
         // Create scene texture.
         textureSettings.usage =
-                WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding | WGPUTextureUsage_StorageBinding
-                | WGPUTextureUsage_CopyDst;
+                WGPUTextureUsage(WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding
+                | WGPUTextureUsage_StorageBinding | WGPUTextureUsage_CopyDst);
         if (useLinearRGB) {
             textureSettings.format = WGPUTextureFormat_RGBA16Float;
         } else {
@@ -353,7 +353,7 @@ void SciVisApp::createSceneFramebuffer() {
 
         // Create composited (gamma-resolved, if VK_FORMAT_R16G16B16A16_UNORM for scene texture) scene texture.
         textureSettings.usage =
-                WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding;
+                WGPUTextureUsage(WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding);
         textureSettings.format = WGPUTextureFormat_RGBA8Unorm;
         compositedTextureWgpu = std::make_shared<sgl::webgpu::TextureView>(std::make_shared<sgl::webgpu::Texture>(
                 deviceWgpu, textureSettings), textureViewSettings);
