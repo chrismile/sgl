@@ -32,8 +32,9 @@
 
 #define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
 
-#include <Utils/File/Logfile.hpp>
 #include <Math/Math.hpp>
+#include <Utils/StringUtils.hpp>
+#include <Utils/File/Logfile.hpp>
 #include <Graphics/Vulkan/Buffers/Buffer.hpp>
 #include "Status.hpp"
 #include "Instance.hpp"
@@ -538,17 +539,86 @@ void getPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice, VkPhysicalDev
     vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
 }
 
-VkPhysicalDevice Device::createPhysicalDeviceBinding(
+static std::string getEnvVarStringDevice(const char* envVarName) {
+#ifdef _MSC_VER
+    char* envVarContent = nullptr;
+    size_t stringSize = 0;
+    if (_dupenv_s(&envVarContent, &stringSize, envVarName) != 0) {
+        envVarContent = nullptr;
+    }
+#else // !defined(_MSC_VER)
+    const char* envVarContent = getenv(envVarName);
+#endif // _MSC_VER
+    std::string envVarString;
+    if (envVarContent && strlen(envVarContent) != 0) {
+        envVarString = envVarContent;
+    }
+#ifdef _MSC_VER
+    free(envVarContent);
+#endif
+    return envVarString;
+}
+
+void Device::selectPhysicalDevice(
         VkSurfaceKHR surface,
         std::vector<const char*>& requiredDeviceExtensions,
         std::vector<const char*>& optionalDeviceExtensions,
         std::set<std::string>& deviceExtensionsSet, std::vector<const char*>& deviceExtensions,
-        DeviceFeatures& requestedDeviceFeatures, bool computeOnly) {
-    std::vector<VkPhysicalDevice> physicalDevices = enumeratePhysicalDevices(instance);
-    deviceExtensionsSet = {requiredDeviceExtensions.begin(), requiredDeviceExtensions.end()};
-    deviceExtensions.insert(
-            deviceExtensions.end(), requiredDeviceExtensions.begin(), requiredDeviceExtensions.end());
+        DeviceFeatures& requestedDeviceFeatures, bool computeOnly,
+        std::vector<VkPhysicalDevice>& physicalDevices) {
+    std::string forceVkDeviceByNameVar = getEnvVarStringDevice("FORCE_VK_DEVICE_BY_NAME");
+    if (!forceVkDeviceByNameVar.empty()) {
+        for (const VkPhysicalDevice& physicalDeviceIt : physicalDevices) {
+            VkPhysicalDeviceProperties physicalDeviceItProperties{};
+            vkGetPhysicalDeviceProperties(physicalDeviceIt, &physicalDeviceItProperties);
+            if (forceVkDeviceByNameVar == physicalDeviceItProperties.deviceName) {
+                physicalDevice = physicalDeviceIt;
+                if (isDeviceSuitable(
+                        physicalDeviceIt, surface, requiredDeviceExtensions, optionalDeviceExtensions,
+                        deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures, computeOnly)) {
+                    physicalDevice = physicalDeviceIt;
+                    return;
+                } else {
+                    sgl::Logfile::get()->throwError(
+                            "Error in Device::selectPhysicalDevice: Forced device not suitable.");
+                }
+            }
+        }
+    }
+    std::string forceVkDeviceByTypeVar = getEnvVarStringDevice("FORCE_VK_DEVICE_BY_TYPE");
+    if (!forceVkDeviceByTypeVar.empty()) {
+        sgl::toLower(forceVkDeviceByTypeVar);
+        VkPhysicalDeviceType physicalDeviceType = VK_PHYSICAL_DEVICE_TYPE_OTHER;
+        if (forceVkDeviceByTypeVar == "discrete") {
+            physicalDeviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+        } else if (forceVkDeviceByTypeVar == "integrated") {
+            physicalDeviceType = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
+        } else if (forceVkDeviceByTypeVar == "virtual") {
+            physicalDeviceType = VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU;
+        } else if (forceVkDeviceByTypeVar == "cpu") {
+            physicalDeviceType = VK_PHYSICAL_DEVICE_TYPE_CPU;
+        } else {
+            sgl::Logfile::get()->throwError("Error in Device::selectPhysicalDevice: Unknown device type name.");
+        }
+        for (const VkPhysicalDevice& physicalDeviceIt : physicalDevices) {
+            VkPhysicalDeviceProperties physicalDeviceItProperties{};
+            vkGetPhysicalDeviceProperties(physicalDeviceIt, &physicalDeviceItProperties);
+            if (physicalDeviceType == physicalDeviceItProperties.deviceType) {
+                physicalDevice = physicalDeviceIt;
+                if (isDeviceSuitable(
+                        physicalDeviceIt, surface, requiredDeviceExtensions, optionalDeviceExtensions,
+                        deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures, computeOnly)) {
+                    physicalDevice = physicalDeviceIt;
+                    return;
+                } else {
+                    sgl::Logfile::get()->throwError(
+                            "Error in Device::selectPhysicalDevice: Forced device not suitable.");
+                }
+            }
+        }
+    }
 
+    // Use a heuristic for finding the device the user might most likely want.
 #ifdef __linux__
     /*
      * Give priority to GPUs in this order: Discrete, integrated, virtual, CPU, other.
@@ -604,6 +674,22 @@ VkPhysicalDevice Device::createPhysicalDeviceBinding(
         }
     }
 #endif
+}
+
+VkPhysicalDevice Device::createPhysicalDeviceBinding(
+        VkSurfaceKHR surface,
+        std::vector<const char*>& requiredDeviceExtensions,
+        std::vector<const char*>& optionalDeviceExtensions,
+        std::set<std::string>& deviceExtensionsSet, std::vector<const char*>& deviceExtensions,
+        DeviceFeatures& requestedDeviceFeatures, bool computeOnly) {
+    std::vector<VkPhysicalDevice> physicalDevices = enumeratePhysicalDevices(instance);
+    deviceExtensionsSet = {requiredDeviceExtensions.begin(), requiredDeviceExtensions.end()};
+    deviceExtensions.insert(
+            deviceExtensions.end(), requiredDeviceExtensions.begin(), requiredDeviceExtensions.end());
+
+    selectPhysicalDevice(
+            surface, requiredDeviceExtensions, optionalDeviceExtensions, deviceExtensionsSet, deviceExtensions,
+            requestedDeviceFeatures, computeOnly, physicalDevices);
 
     if (physicalDevice == VK_NULL_HANDLE) {
         std::string errorText =

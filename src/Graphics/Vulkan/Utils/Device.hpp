@@ -636,6 +636,13 @@ private:
             std::vector<const char*>& optionalDeviceExtensionsIn,
             std::set<std::string>& deviceExtensionsSet, std::vector<const char*>& deviceExtensions,
             DeviceFeatures& requestedDeviceFeaturesIn, bool computeOnly);
+    void selectPhysicalDevice(
+            VkSurfaceKHR surface,
+            std::vector<const char*>& requiredDeviceExtensions,
+            std::vector<const char*>& optionalDeviceExtensions,
+            std::set<std::string>& deviceExtensionsSet, std::vector<const char*>& deviceExtensions,
+            DeviceFeatures& requestedDeviceFeatures, bool computeOnly,
+            std::vector<VkPhysicalDevice>& physicalDevices);
     VkPhysicalDevice createPhysicalDeviceBinding(
             VkSurfaceKHR surface,
             std::vector<const char*>& requiredDeviceExtensions,
