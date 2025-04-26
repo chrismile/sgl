@@ -1649,9 +1649,23 @@ void Device::createVulkanMemoryAllocator() {
     uint32_t vulkanApiVersion = std::min(instance->getInstanceVulkanVersion(), getApiVersion());
 
     // The shipped version of VMA only supports up to Vulkan 1.4 at the moment.
+#ifdef VK_VERSION_1_4
     if (vulkanApiVersion >= VK_MAKE_API_VERSION(0, 1, 5, 0)) {
-        vulkanApiVersion = VK_MAKE_API_VERSION(0, 1, 4, 311);
+        vulkanApiVersion = VK_MAKE_API_VERSION(0, 1, 4, 313);
     }
+#elif defined(VK_VERSION_1_3)
+    if (vulkanApiVersion >= VK_MAKE_API_VERSION(0, 1, 4, 0)) {
+        vulkanApiVersion = VK_MAKE_API_VERSION(0, 1, 3, 302);
+    }
+#elif defined(VK_VERSION_1_2)
+    if (vulkanApiVersion >= VK_MAKE_API_VERSION(0, 1, 3, 0)) {
+        vulkanApiVersion = VK_MAKE_API_VERSION(0, 1, 2, 203);
+    }
+#else
+    if (vulkanApiVersion >= VK_MAKE_API_VERSION(0, 1, 2, 0)) {
+        vulkanApiVersion = VK_MAKE_API_VERSION(0, 1, 1, 130);
+    }
+#endif
 
     sgl::Logfile::get()->write(
             "VMA Vulkan API version: " + Instance::convertVulkanVersionToString(vulkanApiVersion),
