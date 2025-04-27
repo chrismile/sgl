@@ -1134,6 +1134,11 @@ static uint32_t ImGui_ImplVulkan_GetDefaultApiVersion()
 #endif
 }
 
+inline bool ImGui_FunctionNameEndsWithKHR(const char* function_name) {
+    auto str_len = strlen(function_name);
+    return str_len >= 3 && strcmp(function_name + str_len - 3, "KHR") == 0;
+}
+
 bool    ImGui_ImplVulkan_LoadFunctions(uint32_t api_version, PFN_vkVoidFunction(*loader_func)(const char* function_name, void* user_data), void* user_data)
 {
     // Load function pointers
@@ -1146,7 +1151,7 @@ bool    ImGui_ImplVulkan_LoadFunctions(uint32_t api_version, PFN_vkVoidFunction(
 #ifdef IMGUI_IMPL_VULKAN_USE_LOADER
 #define IMGUI_VULKAN_FUNC_LOAD(func) \
     func = reinterpret_cast<decltype(func)>(loader_func(#func, user_data)); \
-    if (func == nullptr)   \
+    if (func == nullptr && !ImGui_FunctionNameEndsWithKHR(#func))   \
         return false;
     IMGUI_VULKAN_FUNC_MAP(IMGUI_VULKAN_FUNC_LOAD)
 #undef IMGUI_VULKAN_FUNC_LOAD
