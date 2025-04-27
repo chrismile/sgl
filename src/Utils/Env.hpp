@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2017, Christoph Neuhauser
+ * Copyright (c) 2025, Christoph Neuhauser
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,61 +26,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SRC_DEFS_HPP_
-#define SRC_DEFS_HPP_
+#ifndef SGL_ENV_HPP
+#define SGL_ENV_HPP
 
-#include <cstddef>
+#include <string>
 
-#ifndef SDL2
-#define SDL2
-#endif
+namespace sgl {
 
-#ifdef _WIN32
-#ifndef WIN32
-#define WIN32
-#endif
-#endif
+DLL_OBJECT std::string getEnvVarString(const char* envVarName);
 
-//#if defined(_WIN32 ) && !defined(__MINGW32__)
-//#ifdef DLL_BUILD
-//#define DLL_OBJECT __declspec(dllexport)
-//#else
-//#define DLL_OBJECT __declspec(dllimport)
-//#endif
-//#else
-//#define DLL_OBJECT
-//#endif
-#ifndef DLL_OBJECT
-#define DLL_OBJECT
-#endif
-
-/// The MinGW version of GDB doesn't break on the standard assert.
-#include <cassert>
-#define CUSTOM_ASSERT
-
-#ifdef CUSTOM_ASSERT
-#ifndef NDEBUG
-#include <iostream>
-inline void MY_ASSERT(bool expression) {
-    if (!expression) {
-        std::cerr << "PUT YOUR BREAKPOINT HERE";
-    }
-    assert(expression);
 }
-#else
-#define MY_ASSERT(expr) do { (void)sizeof(expr); } while(0)
-#endif
-#else
-#define MY_ASSERT assert
-#endif
 
-#define UNUSED(x) ((void)(x))
-
-#ifdef __clang__
-#define MAYBE_UNUSED_MEMBER [[maybe_unused]]
-#else
-#define MAYBE_UNUSED_MEMBER
-#endif
-
-/*! SRC_DEFS_HPP_ */
-#endif
+#endif //SGL_ENV_HPP

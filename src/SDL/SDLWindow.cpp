@@ -743,7 +743,7 @@ void SDLWindow::serializeSettings(SettingsFile &settings) {
         settings.addKeyValue("window-windowPosition", windowSettings.windowPosition);
     }
 #endif
-    settings.addKeyValue("window-useDownloadSwapchain", windowSettings.useDownloadSwapchain);
+    //settings.addKeyValue("window-useDownloadSwapchain", windowSettings.useDownloadSwapchain);
 }
 
 WindowSettings SDLWindow::deserializeSettings(const SettingsFile &settings) {

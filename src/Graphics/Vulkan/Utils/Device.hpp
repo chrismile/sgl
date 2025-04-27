@@ -700,27 +700,27 @@ private:
     VkPhysicalDeviceVulkan11Features physicalDeviceVulkan11Features{};
     VkPhysicalDeviceVulkan11Properties physicalDeviceVulkan11Properties{};
 #else
-    [[maybe_unused]] VkPhysicalDeviceVulkan11Features_Compat physicalDeviceVulkan11Features{};
-    [[maybe_unused]] VkPhysicalDeviceVulkan11Properties_Compat physicalDeviceVulkan11Properties{};
+    MAYBE_UNUSED_MEMBER VkPhysicalDeviceVulkan11Features_Compat physicalDeviceVulkan11Features{};
+    MAYBE_UNUSED_MEMBER VkPhysicalDeviceVulkan11Properties_Compat physicalDeviceVulkan11Properties{};
 #endif
 #ifdef VK_VERSION_1_2
     VkPhysicalDeviceVulkan12Features physicalDeviceVulkan12Features{};
 #else
-    [[maybe_unused]] VkPhysicalDeviceVulkan12Features_Compat physicalDeviceVulkan12Features{};
+    MAYBE_UNUSED_MEMBER VkPhysicalDeviceVulkan12Features_Compat physicalDeviceVulkan12Features{};
 #endif
 #ifdef VK_VERSION_1_3
     VkPhysicalDeviceVulkan13Features physicalDeviceVulkan13Features{};
     VkPhysicalDeviceVulkan13Properties physicalDeviceVulkan13Properties{};
 #else
-    [[maybe_unused]] VkPhysicalDeviceVulkan13Features_Compat physicalDeviceVulkan13Features{};
-    [[maybe_unused]] VkPhysicalDeviceVulkan13Properties_Compat physicalDeviceVulkan13Properties{};
+    MAYBE_UNUSED_MEMBER VkPhysicalDeviceVulkan13Features_Compat physicalDeviceVulkan13Features{};
+    MAYBE_UNUSED_MEMBER VkPhysicalDeviceVulkan13Properties_Compat physicalDeviceVulkan13Properties{};
 #endif
 #ifdef VK_VERSION_1_4
     VkPhysicalDeviceVulkan14Features physicalDeviceVulkan14Features{};
     VkPhysicalDeviceVulkan14Properties physicalDeviceVulkan14Properties{};
 #else
-    [[maybe_unused]] VkPhysicalDeviceVulkan14Features_Compat physicalDeviceVulkan14Features{};
-    [[maybe_unused]] VkPhysicalDeviceVulkan14Properties_Compat physicalDeviceVulkan14Properties{};
+    MAYBE_UNUSED_MEMBER VkPhysicalDeviceVulkan14Features_Compat physicalDeviceVulkan14Features{};
+    MAYBE_UNUSED_MEMBER VkPhysicalDeviceVulkan14Properties_Compat physicalDeviceVulkan14Properties{};
 #endif
     VkPhysicalDeviceSubgroupProperties subgroupProperties{};
     VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties{};
@@ -729,7 +729,7 @@ private:
 #ifdef VK_EXT_mesh_shader
     VkPhysicalDeviceMeshShaderPropertiesEXT meshShaderPropertiesEXT{};
 #else
-    [[maybe_unused]] VkPhysicalDeviceMeshShaderPropertiesEXT_Compat meshShaderPropertiesEXT{};
+    MAYBE_UNUSED_MEMBER VkPhysicalDeviceMeshShaderPropertiesEXT_Compat meshShaderPropertiesEXT{};
 #endif
 
     VkPhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeatures{};
@@ -750,55 +750,55 @@ private:
 #ifdef VK_EXT_shader_atomic_float2
     VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT shaderAtomicFloat2Features{};
 #else
-    [[maybe_unused]] VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT_Compat shaderAtomicFloat2Features{};
+    MAYBE_UNUSED_MEMBER VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT_Compat shaderAtomicFloat2Features{};
 #endif
 #ifdef VK_KHR_shader_bfloat16
     VkPhysicalDeviceShaderBfloat16FeaturesKHR shaderBfloat16Features{};
 #else
-    [[maybe_unused]] VkPhysicalDeviceShaderBfloat16FeaturesKHR_Compat shaderBfloat16Features{};
+    MAYBE_UNUSED_MEMBER VkPhysicalDeviceShaderBfloat16FeaturesKHR_Compat shaderBfloat16Features{};
 #endif
     VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragmentShaderBarycentricFeaturesNV{};
     VkPhysicalDeviceMeshShaderFeaturesNV meshShaderFeaturesNV{};
 #ifdef VK_EXT_mesh_shader
     VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeaturesEXT{};
 #else
-    [[maybe_unused]] VkPhysicalDeviceMeshShaderFeaturesEXT_Compat meshShaderFeaturesEXT{};
+    MAYBE_UNUSED_MEMBER VkPhysicalDeviceMeshShaderFeaturesEXT_Compat meshShaderFeaturesEXT{};
 #endif
 #ifdef VK_NV_cooperative_matrix
     VkPhysicalDeviceCooperativeMatrixFeaturesNV cooperativeMatrixFeaturesNV{};
     VkPhysicalDeviceCooperativeMatrixPropertiesNV cooperativeMatrixPropertiesNV{};
     std::vector<VkCooperativeMatrixPropertiesNV> supportedCooperativeMatrixPropertiesNV;
 #else
-    [[maybe_unused]] VkPhysicalDeviceCooperativeMatrixFeaturesNV_Compat cooperativeMatrixFeaturesNV{};
-    [[maybe_unused]] VkPhysicalDeviceCooperativeMatrixPropertiesNV_Compat cooperativeMatrixPropertiesNV{};
-    [[maybe_unused]] std::vector<VkPhysicalDeviceCooperativeMatrixFeaturesNV_Compat> supportedCooperativeMatrixPropertiesNV;
+    MAYBE_UNUSED_MEMBER VkPhysicalDeviceCooperativeMatrixFeaturesNV_Compat cooperativeMatrixFeaturesNV{};
+    MAYBE_UNUSED_MEMBER VkPhysicalDeviceCooperativeMatrixPropertiesNV_Compat cooperativeMatrixPropertiesNV{};
+    MAYBE_UNUSED_MEMBER std::vector<VkPhysicalDeviceCooperativeMatrixFeaturesNV_Compat> supportedCooperativeMatrixPropertiesNV;
 #endif
 #ifdef VK_KHR_cooperative_matrix
     VkPhysicalDeviceCooperativeMatrixFeaturesKHR cooperativeMatrixFeaturesKHR{};
     VkPhysicalDeviceCooperativeMatrixPropertiesKHR cooperativeMatrixPropertiesKHR{};
     std::vector<VkCooperativeMatrixPropertiesKHR> supportedCooperativeMatrixPropertiesKHR;
 #else
-    [[maybe_unused]] VkPhysicalDeviceCooperativeMatrixFeaturesKHR_Compat cooperativeMatrixFeaturesKHR{};
-    [[maybe_unused]] VkPhysicalDeviceCooperativeMatrixPropertiesKHR_Compat cooperativeMatrixPropertiesKHR{};
-    [[maybe_unused]] std::vector<VkPhysicalDeviceCooperativeMatrixFeaturesKHR_Compat> supportedCooperativeMatrixPropertiesKHR;
+    MAYBE_UNUSED_MEMBER VkPhysicalDeviceCooperativeMatrixFeaturesKHR_Compat cooperativeMatrixFeaturesKHR{};
+    MAYBE_UNUSED_MEMBER VkPhysicalDeviceCooperativeMatrixPropertiesKHR_Compat cooperativeMatrixPropertiesKHR{};
+    MAYBE_UNUSED_MEMBER std::vector<VkPhysicalDeviceCooperativeMatrixFeaturesKHR_Compat> supportedCooperativeMatrixPropertiesKHR;
 #endif
 #ifdef VK_NV_cooperative_matrix2
     VkPhysicalDeviceCooperativeMatrix2FeaturesNV cooperativeMatrix2FeaturesNV{};
     VkPhysicalDeviceCooperativeMatrix2PropertiesNV cooperativeMatrix2PropertiesNV{};
     std::vector<VkCooperativeMatrixFlexibleDimensionsPropertiesNV> supportedCooperativeMatrixFlexibleDimensionsPropertiesNV;
 #else
-    [[maybe_unused]] VkPhysicalDeviceCooperativeMatrix2FeaturesNV_Compat cooperativeMatrix2FeaturesNV{};
-    [[maybe_unused]] VkPhysicalDeviceCooperativeMatrix2PropertiesNV_Compat cooperativeMatrix2PropertiesNV{};
-    [[maybe_unused]] std::vector<VkPhysicalDeviceCooperativeMatrix2PropertiesNV_Compat> supportedCooperativeMatrixFlexibleDimensionsPropertiesNV;
+    MAYBE_UNUSED_MEMBER VkPhysicalDeviceCooperativeMatrix2FeaturesNV_Compat cooperativeMatrix2FeaturesNV{};
+    MAYBE_UNUSED_MEMBER VkPhysicalDeviceCooperativeMatrix2PropertiesNV_Compat cooperativeMatrix2PropertiesNV{};
+    MAYBE_UNUSED_MEMBER std::vector<VkPhysicalDeviceCooperativeMatrix2PropertiesNV_Compat> supportedCooperativeMatrixFlexibleDimensionsPropertiesNV;
 #endif
 #ifdef VK_NV_cooperative_vector
     VkPhysicalDeviceCooperativeVectorFeaturesNV cooperativeVectorFeaturesNV{};
     VkPhysicalDeviceCooperativeVectorPropertiesNV cooperativeVectorPropertiesNV{};
     std::vector<VkCooperativeVectorPropertiesNV> supportedCooperativeVectorPropertiesNV;
 #else
-    [[maybe_unused]] VkPhysicalDeviceCooperativeVectorFeaturesNV_Compat cooperativeVectorFeaturesNV{};
-    [[maybe_unused]] VkPhysicalDeviceCooperativeVectorPropertiesNV_Compat cooperativeVectorPropertiesNV{};
-    [[maybe_unused]] std::vector<VkPhysicalDeviceCooperativeVectorPropertiesNV_Compat> supportedCooperativeVectorPropertiesNV;
+    MAYBE_UNUSED_MEMBER VkPhysicalDeviceCooperativeVectorFeaturesNV_Compat cooperativeVectorFeaturesNV{};
+    MAYBE_UNUSED_MEMBER VkPhysicalDeviceCooperativeVectorPropertiesNV_Compat cooperativeVectorPropertiesNV{};
+    MAYBE_UNUSED_MEMBER std::vector<VkPhysicalDeviceCooperativeVectorPropertiesNV_Compat> supportedCooperativeVectorPropertiesNV;
 #endif
     bool isInitializedSupportedCooperativeMatrixPropertiesNV = false;
     bool isInitializedSupportedCooperativeMatrixPropertiesKHR = false;
@@ -828,7 +828,7 @@ private:
     VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
 
     // Vulkan-OpenGL interoperability enabled?
-    [[maybe_unused]] bool openGlInteropEnabled = false;
+    MAYBE_UNUSED_MEMBER bool openGlInteropEnabled = false;
 };
 
 }}

@@ -707,7 +707,7 @@ WindowSettings GlfwWindow::deserializeSettings(const SettingsFile &settings) {
     settings.getValueOpt("window-savePosition", windowSettings.savePosition);
     settings.getValueOpt("window-windowPosition", windowSettings.windowPosition);
 #endif
-    settings.getValueOpt("window-useDownloadSwapchain", windowSettings.useDownloadSwapchain);
+    //settings.getValueOpt("window-useDownloadSwapchain", windowSettings.useDownloadSwapchain);
     return windowSettings;
 }
 

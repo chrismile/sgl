@@ -28,6 +28,7 @@
 
 #include "AppSettings.hpp"
 #include <Utils/StringUtils.hpp>
+#include <Utils/Env.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
 #include <Input/Mouse.hpp>
@@ -274,6 +275,15 @@ Window *AppSettings::createWindow() {
     boost::locale::generator gen;
     std::locale l = gen("");
     std::locale::global(l);
+#endif
+
+#ifdef SUPPORT_VULKAN
+    if (renderSystem == RenderSystem::VULKAN) {
+        std::string forceVkDownloadSwapchainVar = getEnvVarString("FORCE_VK_DLSWAP");
+        if (!forceVkDownloadSwapchainVar.empty()) {
+            settings.addKeyValue("window-useDownloadSwapchain", forceVkDownloadSwapchainVar);
+        }
+    }
 #endif
 
     initializeDataDirectory();

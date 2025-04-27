@@ -34,6 +34,7 @@
 
 #include <Math/Math.hpp>
 #include <Utils/StringUtils.hpp>
+#include <Utils/Env.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Graphics/Vulkan/Buffers/Buffer.hpp>
 #include "Status.hpp"
@@ -539,26 +540,6 @@ void getPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice, VkPhysicalDev
     vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
 }
 
-static std::string getEnvVarStringDevice(const char* envVarName) {
-#ifdef _MSC_VER
-    char* envVarContent = nullptr;
-    size_t stringSize = 0;
-    if (_dupenv_s(&envVarContent, &stringSize, envVarName) != 0) {
-        envVarContent = nullptr;
-    }
-#else // !defined(_MSC_VER)
-    const char* envVarContent = getenv(envVarName);
-#endif // _MSC_VER
-    std::string envVarString;
-    if (envVarContent && strlen(envVarContent) != 0) {
-        envVarString = envVarContent;
-    }
-#ifdef _MSC_VER
-    free(envVarContent);
-#endif
-    return envVarString;
-}
-
 void Device::selectPhysicalDevice(
         VkSurfaceKHR surface,
         std::vector<const char*>& requiredDeviceExtensions,
@@ -566,7 +547,7 @@ void Device::selectPhysicalDevice(
         std::set<std::string>& deviceExtensionsSet, std::vector<const char*>& deviceExtensions,
         DeviceFeatures& requestedDeviceFeatures, bool computeOnly,
         std::vector<VkPhysicalDevice>& physicalDevices) {
-    std::string forceVkDeviceByNameVar = getEnvVarStringDevice("FORCE_VK_DEVICE_BY_NAME");
+    std::string forceVkDeviceByNameVar = getEnvVarString("FORCE_VK_DEVICE_BY_NAME");
     if (!forceVkDeviceByNameVar.empty()) {
         for (const VkPhysicalDevice& physicalDeviceIt : physicalDevices) {
             VkPhysicalDeviceProperties physicalDeviceItProperties{};
@@ -585,7 +566,7 @@ void Device::selectPhysicalDevice(
             }
         }
     }
-    std::string forceVkDeviceByTypeVar = getEnvVarStringDevice("FORCE_VK_DEVICE_BY_TYPE");
+    std::string forceVkDeviceByTypeVar = getEnvVarString("FORCE_VK_DEVICE_BY_TYPE");
     if (!forceVkDeviceByTypeVar.empty()) {
         sgl::toLower(forceVkDeviceByTypeVar);
         VkPhysicalDeviceType physicalDeviceType = VK_PHYSICAL_DEVICE_TYPE_OTHER;
