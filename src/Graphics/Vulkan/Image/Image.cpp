@@ -1041,6 +1041,7 @@ void Image::blit(ImagePtr& destImage, VkCommandBuffer commandBuffer) {
     }
 }
 
+#ifdef USE_GLM
 void Image::clearColor(const glm::vec4& clearColor, VkCommandBuffer commandBuffer) {
     Image::clearColor(
             0, imageSettings.mipLevels, 0, imageSettings.arrayLayers,
@@ -1076,6 +1077,7 @@ void Image::clearColor(
         device->endSingleTimeCommands(commandBuffer);
     }
 }
+#endif
 
 void Image::clearDepthStencil(
         VkImageAspectFlags aspectFlags, float clearDepth, uint32_t clearStencil, VkCommandBuffer commandBuffer) {
@@ -1543,6 +1545,7 @@ ImageViewPtr ImageView::copy(bool copyImage, bool copyContent) {
     return newImageView;
 }
 
+#ifdef USE_GLM
 void ImageView::clearColor(const glm::vec4& clearColor, VkCommandBuffer commandBuffer) {
     if (subresourceRange.aspectMask != VK_IMAGE_ASPECT_COLOR_BIT) {
         Logfile::get()->throwError("Error in ImageView::clearColor: Invalid aspect flags!");
@@ -1552,6 +1555,7 @@ void ImageView::clearColor(const glm::vec4& clearColor, VkCommandBuffer commandB
             subresourceRange.baseArrayLayer, subresourceRange.layerCount,
             clearColor, commandBuffer);
 }
+#endif
 
 void ImageView::clearDepthStencil(
         float clearDepth, uint32_t clearStencil, VkCommandBuffer commandBuffer) {

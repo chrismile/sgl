@@ -34,7 +34,9 @@
 #include <algorithm>
 #include <cmath>
 
+#ifdef USE_GLM
 #include <glm/vec4.hpp>
+#endif
 
 #include <Defs.hpp>
 #include "../libs/volk/volk.h"
@@ -253,6 +255,7 @@ public:
      */
     void blit(ImagePtr& destImage, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 
+#ifdef USE_GLM
     void clearColor(
             const glm::vec4& clearColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f),
             VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
@@ -260,6 +263,7 @@ public:
             uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount,
             const glm::vec4& clearColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f),
             VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
+#endif
     void clearDepthStencil(
             VkImageAspectFlags aspectFlags, float clearDepth = 1.0f, uint32_t clearStencil = 0,
             VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
@@ -435,9 +439,11 @@ public:
      */
     ImageViewPtr copy(bool copyImage, bool copyContent);
 
+#ifdef USE_GLM
     void clearColor(
             const glm::vec4& clearColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f),
             VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
+#endif
     void clearDepthStencil(
             float clearDepth = 1.0f, uint32_t clearStencil = 0, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 
