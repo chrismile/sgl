@@ -30,6 +30,7 @@
 #define SRC_MATH_MATH_HPP_
 
 #include <cmath>
+#include <cstdint>
 #ifdef USE_GLM
 #include <glm/fwd.hpp>
 #endif
