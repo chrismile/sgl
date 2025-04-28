@@ -32,6 +32,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <cstdint>
 
 // Avoid windows.h defining "ERROR".
 #ifdef _WIN32
