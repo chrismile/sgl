@@ -142,10 +142,15 @@ SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop(
 #ifdef SUPPORT_SYCL_INTEROP
     useSycl = g_syclQueue != nullptr;
 #endif
-    if (int(useCuda) + int(useHip) + int(useLevelZero) + int(useSycl) != 1) {
+    int numComputeApis = int(useCuda) + int(useHip) + int(useLevelZero) + int(useSycl);
+    if (numComputeApis > 1) {
         sgl::Logfile::get()->throwError(
                 "Error in SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop: "
                 "Only one out of CUDA, HIP, Level Zero and SYCL interop can be initialized at a time.");
+    } else if (numComputeApis < 1) {
+        sgl::Logfile::get()->throwError(
+                "Error in SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop: "
+                "No interop API out of CUDA, HIP, Level Zero or SYCL is initialized.");
     }
 
 #if defined(_WIN32)
@@ -565,10 +570,15 @@ BufferComputeApiExternalMemoryVk::BufferComputeApiExternalMemoryVk(vk::BufferPtr
 #ifdef SUPPORT_SYCL_INTEROP
     useSycl = g_syclQueue != nullptr;
 #endif
-    if (int(useCuda) + int(useHip) + int(useLevelZero) + int(useSycl) != 1) {
+    int numComputeApis = int(useCuda) + int(useHip) + int(useLevelZero) + int(useSycl);
+    if (numComputeApis > 1) {
         sgl::Logfile::get()->throwError(
                 "Error in BufferComputeApiExternalMemoryVk::BufferComputeApiExternalMemoryVk: "
                 "Only one out of CUDA, HIP, Level Zero and SYCL interop can be initialized at a time.");
+    } else if (numComputeApis < 1) {
+        sgl::Logfile::get()->throwError(
+                "Error in BufferComputeApiExternalMemoryVk::BufferComputeApiExternalMemoryVk: "
+                "No interop API out of CUDA, HIP, Level Zero or SYCL is initialized.");
     }
 
 
