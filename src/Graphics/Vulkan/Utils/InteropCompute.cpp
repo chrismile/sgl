@@ -769,7 +769,7 @@ BufferComputeApiExternalMemoryVk::BufferComputeApiExternalMemoryVk(vk::BufferPtr
 #ifdef SUPPORT_SYCL_INTEROP
         auto* wrapper = reinterpret_cast<SyclExternalMemWrapper*>(externalMemoryBuffer);
         devicePtr = sycl::ext::oneapi::experimental::map_external_linear_memory(
-            wrapper->syclExternalMem, vulkanBuffer->getDeviceMemorySize(), 0, *g_syclQueue);
+            wrapper->syclExternalMem, 0, vulkanBuffer->getDeviceMemorySize(), *g_syclQueue);
 #endif
     }
 
