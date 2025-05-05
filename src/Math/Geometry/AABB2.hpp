@@ -29,8 +29,14 @@
 #ifndef SRC_MATH_GEOMETRY_AABB2_HPP_
 #define SRC_MATH_GEOMETRY_AABB2_HPP_
 
-#include <glm/glm.hpp>
 #include <cfloat>
+
+#ifdef USE_GLM
+#include <glm/glm.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
+#endif
+
 #include <Defs.hpp>
 
 namespace sgl {

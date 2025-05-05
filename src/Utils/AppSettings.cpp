@@ -34,8 +34,6 @@
 #include <Input/Mouse.hpp>
 #include <Input/Keyboard.hpp>
 #include <Input/Gamepad.hpp>
-#include <Graphics/Renderer.hpp>
-#include <Graphics/Mesh/Material.hpp>
 #include <Utils/Timer.hpp>
 #ifndef DISABLE_IMGUI
 #include <ImGui/ImGuiWrapper.hpp>
@@ -50,13 +48,15 @@
 
 #ifdef SUPPORT_OPENGL
 #include <GL/glew.h>
+#include <Graphics/Renderer.hpp>
+#include <Graphics/Mesh/Material.hpp>
 #include <Graphics/OpenGL/RendererGL.hpp>
 #include <Graphics/OpenGL/ShaderManager.hpp>
 #include <Graphics/OpenGL/TextureManager.hpp>
 #include <Graphics/OpenGL/SystemGL.hpp>
 #endif
 
-#if defined(SUPPORT_VULKAN) || defined(SUPPORT_WEBGPU)
+#if (defined(SUPPORT_VULKAN) || defined(SUPPORT_WEBGPU)) && !defined(DISABLE_SCENE_GRAPH_SOURCES)
 #include <Graphics/Scene/Camera.hpp>
 #endif
 

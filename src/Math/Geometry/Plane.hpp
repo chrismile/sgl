@@ -29,7 +29,11 @@
 #ifndef SRC_MATH_GEOMETRY_PLANE_HPP_
 #define SRC_MATH_GEOMETRY_PLANE_HPP_
 
+#ifdef USE_GLM
 #include <glm/glm.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
+#endif
 
 namespace sgl {
 

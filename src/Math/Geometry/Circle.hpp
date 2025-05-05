@@ -29,7 +29,11 @@
 #ifndef SGL_CIRCLE_HPP
 #define SGL_CIRCLE_HPP
 
+#ifdef USE_GLM
 #include <glm/vec2.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
+#endif
 
 namespace sgl {
 

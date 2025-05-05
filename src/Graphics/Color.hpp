@@ -29,7 +29,8 @@
 #ifndef SRC_GRAPHICS_COLOR_HPP_
 #define SRC_GRAPHICS_COLOR_HPP_
 
-#include <Math/Math.hpp>
+#include <algorithm>
+#include <cmath>
 #include <Utils/Convert.hpp>
 #ifdef USE_GLM
 #include <glm/glm.hpp>
@@ -43,15 +44,15 @@ class DLL_OBJECT Color {
 public:
     Color(uint8_t R = 255, uint8_t G = 255, uint8_t B = 255, uint8_t A = 255) : r(R), g(G), b(B), a(A) {}
     Color(const glm::vec4 &colorNormalized) {
-        this->r = sgl::clamp((int)std::round(colorNormalized.r*255.0f), 0, 255);
-        this->g = sgl::clamp((int)std::round(colorNormalized.g*255.0f), 0, 255);
-        this->b = sgl::clamp((int)std::round(colorNormalized.b*255.0f), 0, 255);
-        this->a = sgl::clamp((int)std::round(colorNormalized.a*255.0f), 0, 255);
+        this->r = std::clamp((int)std::round(colorNormalized.r*255.0f), 0, 255);
+        this->g = std::clamp((int)std::round(colorNormalized.g*255.0f), 0, 255);
+        this->b = std::clamp((int)std::round(colorNormalized.b*255.0f), 0, 255);
+        this->a = std::clamp((int)std::round(colorNormalized.a*255.0f), 0, 255);
     }
     Color(const glm::vec3 &colorNormalized) {
-        this->r = sgl::clamp((int)std::round(colorNormalized.r*255.0f), 0, 255);
-        this->g = sgl::clamp((int)std::round(colorNormalized.g*255.0f), 0, 255);
-        this->b = sgl::clamp((int)std::round(colorNormalized.b*255.0f), 0, 255);
+        this->r = std::clamp((int)std::round(colorNormalized.r*255.0f), 0, 255);
+        this->g = std::clamp((int)std::round(colorNormalized.g*255.0f), 0, 255);
+        this->b = std::clamp((int)std::round(colorNormalized.b*255.0f), 0, 255);
         this->a = 255;
     }
     bool operator==(const Color &color) const { return r == color.r && g == color.g && b == color.b && a == color.a; }
@@ -109,15 +110,15 @@ public:
         a = uint16_t(std::round(colorFloat.a * 65535));
     }
     Color16(const glm::vec4 &colorNormalized) {
-        this->r = sgl::clamp((int)std::round(colorNormalized.r*65535.0f), 0, 65535);
-        this->g = sgl::clamp((int)std::round(colorNormalized.g*65535.0f), 0, 65535);
-        this->b = sgl::clamp((int)std::round(colorNormalized.b*65535.0f), 0, 65535);
-        this->a = sgl::clamp((int)std::round(colorNormalized.a*65535.0f), 0, 65535);
+        this->r = std::clamp((int)std::round(colorNormalized.r*65535.0f), 0, 65535);
+        this->g = std::clamp((int)std::round(colorNormalized.g*65535.0f), 0, 65535);
+        this->b = std::clamp((int)std::round(colorNormalized.b*65535.0f), 0, 65535);
+        this->a = std::clamp((int)std::round(colorNormalized.a*65535.0f), 0, 65535);
     }
     Color16(const glm::vec3 &colorNormalized) {
-        this->r = sgl::clamp((int)std::round(colorNormalized.r*65535.0f), 0, 65535);
-        this->g = sgl::clamp((int)std::round(colorNormalized.g*65535.0f), 0, 65535);
-        this->b = sgl::clamp((int)std::round(colorNormalized.b*65535.0f), 0, 65535);
+        this->r = std::clamp((int)std::round(colorNormalized.r*65535.0f), 0, 65535);
+        this->g = std::clamp((int)std::round(colorNormalized.g*65535.0f), 0, 65535);
+        this->b = std::clamp((int)std::round(colorNormalized.b*65535.0f), 0, 65535);
         this->a = 65535;
     }
     bool operator==(const Color16 &color) const { return r == color.r && g == color.g && b == color.b && a == color.a; }
