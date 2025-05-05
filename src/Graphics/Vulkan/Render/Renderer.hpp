@@ -94,9 +94,11 @@ public:
     // Graphics pipeline.
     void render(const RasterDataPtr& rasterData);
     void render(const RasterDataPtr& rasterData, const FramebufferPtr& framebuffer);
+#ifdef USE_GLM
     void setModelMatrix(const glm::mat4 &matrix);
     void setViewMatrix(const glm::mat4 &matrix);
     void setProjectionMatrix(const glm::mat4 &matrix);
+#endif
 
     // Compute pipeline.
     void dispatch(const ComputeDataPtr& computeData, uint32_t groupCountX);
@@ -226,10 +228,12 @@ public:
         recordingCommandBufferStarted = true;
     }
     [[nodiscard]] inline bool getIsCommandBufferInRecordingState() const { return isCommandBufferInRecordingState; }
+#ifdef USE_GLM
     [[nodiscard]] inline const glm::mat4& getModelMatrix() const { return matrixBlock.mMatrix; }
     [[nodiscard]] inline const glm::mat4& getViewMatrix() const { return matrixBlock.vMatrix; }
     [[nodiscard]] inline const glm::mat4& getProjectionMatrix() const { return matrixBlock.pMatrix; }
     [[nodiscard]] inline const glm::mat4& getModelViewProjectionMatrix() const { return matrixBlock.mvpMatrix; }
+#endif
 
 private:
     Device* device;
@@ -256,10 +260,17 @@ private:
     // Global state.
     bool updateMatrixBlock();
     struct MatrixBlock {
+#ifdef USE_GLM
         glm::mat4 mMatrix = matrixIdentity(); // Model matrix
         glm::mat4 vMatrix = matrixIdentity(); // View matrix
         glm::mat4 pMatrix = matrixIdentity(); // Projection matrix
         glm::mat4 mvpMatrix = matrixIdentity(); // Model-view-projection matrix
+#else
+        float mMatrix[16]; // Model matrix
+        float vMatrix[16]; // View matrix
+        float pMatrix[16]; // Projection matrix
+        float mvpMatrix[16]; // Model-view-projection matrix
+#endif
     };
     bool useMatrixBlock = true;
     bool matrixBlockNeedsUpdate = true;

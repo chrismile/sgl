@@ -534,6 +534,7 @@ void Renderer::render(const RasterDataPtr& rasterData, const FramebufferPtr& fra
     lastFramebuffer = framebuffer;
 }
 
+#ifdef USE_GLM
 void Renderer::setModelMatrix(const glm::mat4 &matrix) {
     matrixBlock.mMatrix = matrix;
     matrixBlockNeedsUpdate = true;
@@ -548,8 +549,10 @@ void Renderer::setProjectionMatrix(const glm::mat4 &matrix) {
     matrixBlock.pMatrix = matrix;
     matrixBlockNeedsUpdate = true;
 }
+#endif
 
 bool Renderer::updateMatrixBlock() {
+#ifdef USE_GLM
     if (matrixBlockNeedsUpdate) {
         matrixBlock.mvpMatrix = matrixBlock.pMatrix * matrixBlock.vMatrix * matrixBlock.mMatrix;
         if (frameCaches.at(frameIndex).freeCameraMatrixBuffers.is_empty()) {
@@ -602,6 +605,10 @@ bool Renderer::updateMatrixBlock() {
         matrixBlockNeedsUpdate = false;
         return true;
     }
+#else
+    sgl::Logfile::get()->throwError("Renderer::updateMatrixBlock: glm support is not enabled.");
+#endif
+
     return false;
 }
 
