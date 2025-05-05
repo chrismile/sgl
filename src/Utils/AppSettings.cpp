@@ -822,7 +822,7 @@ void AppSettings::release() {
     //delete AudioManager;
     delete Timer;
 
-#ifdef SUPPORT_VULKAN
+#if defined(SUPPORT_VULKAN) && !defined(DISABLE_VULKAN_SWAPCHAIN_SUPPORT)
     if (renderSystem == RenderSystem::VULKAN) {
         if (swapchain) {
             delete swapchain;
