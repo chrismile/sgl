@@ -37,6 +37,7 @@ template<class T> DLL_OBJECT class tvec2 {
 public:
     tvec2() : x(0), y(0) {}
     tvec2(T x, T y) : x(x), y(y) {}
+    explicit tvec2(T val) : x(val), y(val) {}
     union { T x, r; };
     union { T y, g; };
     constexpr T& operator[](int i) {
@@ -67,6 +68,7 @@ template<class T> DLL_OBJECT class tvec3 {
 public:
     tvec3() : x(0), y(0), z(0) {}
     tvec3(T x, T y, T z) : x(x), y(y), z(z) {}
+    explicit tvec3(T val) : x(val), y(val), z(val) {}
     union { T x, r; };
     union { T y, g; };
     union { T z, b; };
@@ -102,6 +104,7 @@ template<class T> DLL_OBJECT class tvec4 {
 public:
     tvec4() : x(0), y(0), z(0), w(0) {}
     tvec4(T x, T y, T z, T w) : x(x), y(y), z(z), w(w) {}
+    explicit tvec4(T val) : x(val), y(val), z(val), w(val) {}
     union { T x, r; };
     union { T y, g; };
     union { T z, b; };
