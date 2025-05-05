@@ -34,12 +34,12 @@
 
 #ifdef USE_GLM
 #include <glm/mat4x4.hpp>
+#include <Math/Geometry/MatrixUtil.hpp>
 #endif
 
 #include "../libs/volk/volk.h"
 
 #include <Utils/CircularQueue.hpp>
-#include <Math/Geometry/MatrixUtil.hpp>
 
 namespace sgl { namespace vk {
 
