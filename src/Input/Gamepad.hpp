@@ -30,7 +30,11 @@
 #define INPUT_GAMEPAD_HPP_
 
 #include <Defs.hpp>
+#ifdef USE_GLM
 #include <glm/vec2.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
+#endif
 
 namespace sgl {
 
