@@ -30,8 +30,14 @@
 #define SGL_ACCELERATIONSTRUCTURE_HPP
 
 #include <memory>
-#include <glm/glm.hpp>
 #include <utility>
+
+#ifdef USE_GLM
+#include <glm/glm.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
+#endif
+
 #include "../libs/volk/volk.h"
 
 namespace sgl { namespace vk {
