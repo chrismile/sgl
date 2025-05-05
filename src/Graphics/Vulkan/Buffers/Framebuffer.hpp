@@ -31,7 +31,13 @@
 
 #include <vector>
 #include <memory>
+
+#ifdef USE_GLM
 #include <glm/vec4.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
+#endif
+
 #include "../libs/volk/volk.h"
 
 namespace sgl { namespace vk {
