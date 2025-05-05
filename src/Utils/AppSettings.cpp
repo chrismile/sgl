@@ -717,20 +717,24 @@ void AppSettings::initializeSubsystems() {
     }
 #endif
 #ifdef SUPPORT_VULKAN
+#ifndef DISABLE_SCENE_GRAPH_SOURCES
     if (renderSystem == RenderSystem::VULKAN) {
         Camera::depthRange = Camera::DepthRange::ZERO_ONE;
         Camera::coordinateOrigin = Camera::CoordinateOrigin::TOP_LEFT;
     }
+#endif
     if (primaryDevice) {
         vk::ShaderManager = new vk::ShaderManagerVk(primaryDevice);
     }
 #endif
 
 #ifdef SUPPORT_WEBGPU
+#ifndef DISABLE_SCENE_GRAPH_SOURCES
     if (renderSystem == RenderSystem::WEBGPU) {
         Camera::depthRange = Camera::DepthRange::ZERO_ONE;
         Camera::coordinateOrigin = Camera::CoordinateOrigin::TOP_LEFT;
     }
+#endif
     if (webgpuPrimaryDevice) {
         webgpu::ShaderManager = new webgpu::ShaderManagerWgpu(webgpuPrimaryDevice);
     }
