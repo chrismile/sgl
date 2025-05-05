@@ -37,7 +37,8 @@ template<class T> DLL_OBJECT class tvec2 {
 public:
     tvec2() : x(0), y(0) {}
     tvec2(T x, T y) : x(x), y(y) {}
-    T x, y;
+    union { T x, r; };
+    union { T y, g; };
     constexpr T& operator[](int i) {
         switch(i) {
             default:
@@ -66,7 +67,9 @@ template<class T> DLL_OBJECT class tvec3 {
 public:
     tvec3() : x(0), y(0), z(0) {}
     tvec3(T x, T y, T z) : x(x), y(y), z(z) {}
-    T x, y, z;
+    union { T x, r; };
+    union { T y, g; };
+    union { T z, b; };
     constexpr T& operator[](int i) {
         switch(i) {
             default:
@@ -99,7 +102,10 @@ template<class T> DLL_OBJECT class tvec4 {
 public:
     tvec4() : x(0), y(0), z(0), w(0) {}
     tvec4(T x, T y, T z, T w) : x(x), y(y), z(z), w(w) {}
-    T x, y, z, w;
+    union { T x, r; };
+    union { T y, g; };
+    union { T z, b; };
+    union { T w, a; };
     constexpr T& operator[](int i) {
         switch(i) {
             default:
