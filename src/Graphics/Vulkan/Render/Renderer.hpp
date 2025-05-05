@@ -31,7 +31,11 @@
 
 #include <vector>
 #include <memory>
+
+#ifdef USE_GLM
 #include <glm/mat4x4.hpp>
+#endif
+
 #include "../libs/volk/volk.h"
 
 #include <Utils/CircularQueue.hpp>
