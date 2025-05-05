@@ -1042,7 +1042,6 @@ void AppSettings::getDesktopDisplayMode(int& width, int& height, int& refreshRat
     displayIndex = 0;
 }
 
-#ifdef USE_GLM
 glm::ivec2 AppSettings::getCurrentDisplayModeResolution(int displayIndex) {
 #ifdef SUPPORT_SDL2
     if (mainWindow->getBackend() == WindowBackend::SDL2_IMPL) {
@@ -1131,7 +1130,6 @@ glm::ivec2 AppSettings::getDesktopResolution(int displayIndex) {
 #endif
     return { 800, 600 };
 }
-#endif
 
 void AppSettings::captureMouse(bool _capture) {
 #ifdef SUPPORT_SDL2

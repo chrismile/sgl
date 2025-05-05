@@ -30,7 +30,11 @@
 #define SRC_GRAPHICS_WINDOW_HPP_
 
 #include <functional>
+#ifdef USE_GLM
 #include <glm/vec2.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
+#endif
 
 #ifdef SUPPORT_VULKAN
 #include <Graphics/Vulkan/libs/volk/volk.h>

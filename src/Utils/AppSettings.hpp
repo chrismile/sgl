@@ -33,7 +33,10 @@
 #include <string>
 #ifdef USE_GLM
 #include <glm/vec2.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
 #endif
+
 
 #include <Defs.hpp>
 #include <Utils/Singleton.hpp>
@@ -244,10 +247,8 @@ public:
     int getNumDisplays();
     void getCurrentDisplayMode(int& width, int& height, int& refreshRate, int displayIndex = 0);
     void getDesktopDisplayMode(int& width, int& height, int& refreshRate, int displayIndex = 0);
-#ifdef USE_GLM
     glm::ivec2 getCurrentDisplayModeResolution(int displayIndex = 0);
     glm::ivec2 getDesktopResolution(int displayIndex = 0);
-#endif
     void captureMouse(bool _capture);
 
     // Get the directory where the application data is stored.

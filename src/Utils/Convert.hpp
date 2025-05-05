@@ -38,6 +38,8 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
 #endif
 
 namespace sgl {
@@ -105,9 +107,41 @@ DLL_OBJECT int stringToNumber(const char *str);
 /// Converts e.g. 123456789 to "123,456,789"
 DLL_OBJECT std::string numberToCommaString(int64_t number);
 
-#ifdef USE_GLM
-
-#if GLM_VERSION < 980
+#ifndef USE_GLM
+template <typename T>
+std::string toString(const glm::tvec2<T>& obj) {
+    std::ostringstream ostr;
+    for (int i = 0; i < 2; i++) {
+        ostr << obj[i];
+        if (i != 1) {
+            ostr << " ";
+        }
+    }
+    return ostr.str();
+}
+template <typename T>
+std::string toString(const glm::tvec3<T>& obj) {
+    std::ostringstream ostr;
+    for (int i = 0; i < 3; i++) {
+        ostr << obj[i];
+        if (i != 2) {
+            ostr << " ";
+        }
+    }
+    return ostr.str();
+}
+template <typename T>
+std::string toString(const glm::tvec4<T>& obj) {
+    std::ostringstream ostr;
+    for (int i = 0; i < 4; i++) {
+        ostr << obj[i];
+        if (i != 3) {
+            ostr << " ";
+        }
+    }
+    return ostr.str();
+}
+#elif GLM_VERSION < 980
 template <typename T, glm::precision P>
 std::string toString(const glm::tvec2<T, P>& obj) {
     std::ostringstream ostr;
@@ -168,7 +202,6 @@ glm::vec<L, T, Q> fromString(const std::string &stringObject) {
 
 template<>
 glm::ivec2 fromString<glm::ivec2>(const std::string &stringObject);
-#endif
 
 }
 
