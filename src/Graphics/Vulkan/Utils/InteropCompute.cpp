@@ -835,6 +835,7 @@ BufferComputeApiExternalMemoryVk::~BufferComputeApiExternalMemoryVk() {
     } else if (useSycl) {
 #ifdef SUPPORT_SYCL_INTEROP
         auto* wrapper = reinterpret_cast<SyclExternalMemWrapper*>(externalMemoryBuffer);
+        sycl::ext::oneapi::experimental::unmap_external_linear_memory(devicePtr, *g_syclQueue);
         sycl::ext::oneapi::experimental::release_external_memory(wrapper->syclExternalMem, *g_syclQueue);
         delete wrapper;
 #endif

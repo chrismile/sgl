@@ -1234,6 +1234,13 @@ if (USE_ONEAPI)
             message(WARNING "The installed SYCL version does not support external timeline semaphores.")
             target_compile_definitions(sgl PUBLIC SYCL_NO_EXTERNAL_TIMELINE_SEMAPHORE_SUPPORT)
         endif ()
+
+        # Importing linear memory into SYCL is broken until (and including) Intel DPC++ 2025.1.
+        # A fix was added with this PR: https://github.com/intel/llvm/pull/18353
+        string(FIND "${SYCL_BINDLESS_IMAGES_INTEROP_HEADER_CONTENT}" "unmap_external_linear_memory" SYCL_UNMAP_LINEAR_MEMORY_MATCH_RES)
+        if(${SYCL_UNMAP_LINEAR_MEMORY_MATCH_RES} EQUAL -1)
+            message(FATAL_ERROR "The installed SYCL version does not support unmap_external_linear_memory. Upgrade to oneAPI >= 2025.2 or SYCL >= 6.2.")
+        endif ()
     endif()
 endif()
 
