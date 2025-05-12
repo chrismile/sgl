@@ -27,6 +27,9 @@
  */
 
 #include <Utils/AppSettings.hpp>
+#ifdef SUPPORT_VULKAN
+#include <Graphics/Vulkan/Utils/Interop.hpp>
+#endif
 
 #ifdef __linux__
 #include "OffscreenContextGLX.hpp"
@@ -101,8 +104,17 @@ OffscreenContext* createOffscreenContext(
     // Check whether the OpenGL context supports Vulkan interop.
     if (offscreenContext && vulkanDevice) {
         offscreenContext->makeCurrent();
+
         sgl::AppSettings::get()->initializeOffscreenContextFunctionPointers();
         if (!sgl::AppSettings::get()->checkOpenGLVulkanInteropExtensionsSupported()) {
+            delete offscreenContext;
+            offscreenContext = nullptr;
+        }
+
+        // Check if the device is actually compatible. If not, destroy the context.
+        if (!sgl::isDeviceCompatibleWithOpenGl(vulkanDevice->getVkPhysicalDevice())) {
+            sgl::Logfile::get()->writeError(
+                "Disabling OpenGL interop due to mismatch in selected Vulkan device and OpenGL context.");
             delete offscreenContext;
             offscreenContext = nullptr;
         }
