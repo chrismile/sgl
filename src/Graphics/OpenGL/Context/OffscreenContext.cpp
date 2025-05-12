@@ -114,7 +114,7 @@ OffscreenContext* createOffscreenContext(
         // Check if the device is actually compatible. If not, destroy the context.
         if (!sgl::isDeviceCompatibleWithOpenGl(vulkanDevice->getVkPhysicalDevice())) {
             sgl::Logfile::get()->writeError(
-                "Disabling OpenGL interop due to mismatch in selected Vulkan device and OpenGL context.");
+                "Disabling OpenGL interop due to mismatch in selected Vulkan device and OpenGL context.", false);
             delete offscreenContext;
             offscreenContext = nullptr;
         }
