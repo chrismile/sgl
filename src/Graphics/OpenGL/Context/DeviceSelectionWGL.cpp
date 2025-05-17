@@ -71,7 +71,6 @@ DeviceSelectorWGL::DeviceSelectorWGL() {
     DWORD adapterIdx = 0;
     DISPLAY_DEVICEA displayDevice{};
     displayDevice.cb = sizeof(DISPLAY_DEVICEA);
-    CHAR currentDeviceName[32];
     std::map<uint16_t, std::set<std::string>> vendorDeviceNameMap;
     do {
         bool retVal = pEnumDisplayDevicesA(nullptr, adapterIdx, &displayDevice, 0);
