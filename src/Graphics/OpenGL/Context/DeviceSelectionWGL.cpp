@@ -26,10 +26,14 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <set>
+#include <string>
 #include <cassert>
 
 #include <Utils/HashCombine.hpp>
 #include <Utils/Json/SimpleJson.hpp>
+#include <ImGui/imgui.h>
+
 #include "DeviceSelectionWGL.hpp"
 
 #ifndef NOMINMAX
@@ -37,11 +41,13 @@
 #endif
 #include <windows.h>
 
+typedef BOOL ( WINAPI *PFN_EnumDisplayDevicesA )( LPCSTR lpDevice, DWORD iDevNum, PDISPLAY_DEVICEA lpDisplayDevice, DWORD dwFlags );
+
 extern "C" {
     // https://developer.download.nvidia.com/devzone/devcenter/gamegraphics/files/OptimusRenderingPolicies.pdf
-    _declspec(dllexport) DWORD NvOptimusEnablement = 0x00000000;
+    __declspec(dllexport) DWORD NvOptimusEnablement = 0x00000000;
     // https://gpuopen.com/learn/amdpowerxpressrequesthighperformance/
-    _declspec(dllexport) DWORD AmdPowerXpressRequestHighPerformance = 0x00000000;
+    __declspec(dllexport) DWORD AmdPowerXpressRequestHighPerformance = 0x00000000;
 }
 
 namespace sgl {

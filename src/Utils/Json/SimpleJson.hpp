@@ -48,7 +48,7 @@ enum class JsonValueType {
 
 class JsonValue;
 
-DLL_OBJECT class JsonValue {
+class DLL_OBJECT JsonValue {
 public:
     JsonValue();
     explicit JsonValue(JsonValueType valueType);
