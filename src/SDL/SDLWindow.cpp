@@ -43,6 +43,7 @@
 #include <Utils/Events/EventManager.hpp>
 #include <Utils/File/ResourceBuffer.hpp>
 #include <Utils/File/ResourceManager.hpp>
+#include <Utils/Json/ConversionHelpers.hpp>
 #include <Graphics/Texture/Bitmap.hpp>
 
 #include "Input/SDLMouse.hpp"
@@ -727,28 +728,31 @@ void SDLWindow::serializeSettings(SettingsFile &settings) {
     auto windowFlags = SDL_GetWindowFlags(sdlWindow);
     windowSettings.isFullscreen = (windowFlags & SDL_WINDOW_FULLSCREEN) != 0;
     windowSettings.isMaximized = (windowFlags & SDL_WINDOW_MAXIMIZED) != 0;
-    settings.addKeyValue("window-width", windowSettings.width);
-    settings.addKeyValue("window-height", windowSettings.height);
-    settings.addKeyValue("window-fullscreen", windowSettings.isFullscreen);
-    settings.addKeyValue("window-maximized", windowSettings.isMaximized);
-    settings.addKeyValue("window-resizable", windowSettings.isResizable);
-    settings.addKeyValue("window-multisamples", windowSettings.multisamples);
-    settings.addKeyValue("window-depthSize", windowSettings.depthSize);
-    settings.addKeyValue("window-stencilSize", windowSettings.stencilSize);
-    settings.addKeyValue("window-vSync", windowSettings.vSync);
+    auto& windowVals = settings.getSettingsObject()["window"];
+    windowVals["width"] = windowSettings.width;
+    windowVals["height"] = windowSettings.height;
+    windowVals["fullscreen"] = windowSettings.isFullscreen;
+    windowVals["maximized"] = windowSettings.isMaximized;
+    windowVals["resizable"] = windowSettings.isResizable;
+    windowVals["multisamples"] = windowSettings.multisamples;
+    windowVals["depthSize"] = windowSettings.depthSize;
+    windowVals["stencilSize"] = windowSettings.stencilSize;
+    windowVals["vSync"] = windowSettings.vSync;
 #ifndef __EMSCRIPTEN__
-    settings.addKeyValue("window-savePosition", windowSettings.savePosition);
+    windowVals["savePosition"] = windowSettings.savePosition;
     if (windowSettings.savePosition) {
         windowSettings.windowPosition = getWindowPosition();
-        settings.addKeyValue("window-windowPosition", windowSettings.windowPosition);
+        windowVals["windowPosition"] = glmVecToJsonValue(windowSettings.windowPosition);
     }
 #endif
-    //settings.addKeyValue("window-useDownloadSwapchain", windowSettings.useDownloadSwapchain);
+    //windowVals["useDownloadSwapchain"] = windowSettings.useDownloadSwapchain;
 }
 
 WindowSettings SDLWindow::deserializeSettings(const SettingsFile &settings) {
     WindowSettings windowSettings;
-    if (!settings.hasKey("window-width") || !settings.hasKey("window-height")) {
+    if (!settings.getSettingsObject().hasMember("window")
+            || !settings.getSettingsObject()["window"].hasMember("width")
+            || !settings.getSettingsObject()["window"].hasMember("height")) {
         int desktopWidth = 1920;
         int desktopHeight = 1080;
         int refreshRate = 60;
@@ -761,21 +765,22 @@ WindowSettings SDLWindow::deserializeSettings(const SettingsFile &settings) {
             windowSettings.height = 1080;
         }
     }
-    settings.getValueOpt("window-width", windowSettings.width);
-    settings.getValueOpt("window-height", windowSettings.height);
-    settings.getValueOpt("window-fullscreen", windowSettings.isFullscreen);
-    settings.getValueOpt("window-maximized", windowSettings.isMaximized);
-    settings.getValueOpt("window-resizable", windowSettings.isResizable);
-    settings.getValueOpt("window-multisamples", windowSettings.multisamples);
-    settings.getValueOpt("window-depthSize", windowSettings.depthSize);
-    settings.getValueOpt("window-stencilSize", windowSettings.stencilSize);
-    settings.getValueOpt("window-vSync", windowSettings.vSync);
-    settings.getValueOpt("window-debugContext", windowSettings.debugContext);
+    const auto& windowVals = settings.getSettingsObject()["window"];
+    getJsonOptional(windowVals, "width", windowSettings.width);
+    getJsonOptional(windowVals, "height", windowSettings.height);
+    getJsonOptional(windowVals, "fullscreen", windowSettings.isFullscreen);
+    getJsonOptional(windowVals, "maximized", windowSettings.isMaximized);
+    getJsonOptional(windowVals, "resizable", windowSettings.isResizable);
+    getJsonOptional(windowVals, "multisamples", windowSettings.multisamples);
+    getJsonOptional(windowVals, "depthSize", windowSettings.depthSize);
+    getJsonOptional(windowVals, "stencilSize", windowSettings.stencilSize);
+    getJsonOptional(windowVals, "vSync", windowSettings.vSync);
+    getJsonOptional(windowVals, "debugContext", windowSettings.debugContext);
 #ifndef __EMSCRIPTEN__
-    settings.getValueOpt("window-savePosition", windowSettings.savePosition);
-    settings.getValueOpt("window-windowPosition", windowSettings.windowPosition);
+    getJsonOptional(windowVals, "savePosition", windowSettings.savePosition);
+    getJsonOptional(windowVals, "windowPosition", windowSettings.windowPosition);
 #endif
-    settings.getValueOpt("window-useDownloadSwapchain", windowSettings.useDownloadSwapchain);
+    getJsonOptional(windowVals, "useDownloadSwapchain", windowSettings.useDownloadSwapchain);
     return windowSettings;
 }
 

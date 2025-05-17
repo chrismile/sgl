@@ -41,6 +41,7 @@
 #include <Defs.hpp>
 #include <Utils/Singleton.hpp>
 #include <Utils/Convert.hpp>
+#include <Utils/Json/SimpleJson.hpp>
 #include <Graphics/Utils/RenderSystem.hpp>
 
 #ifdef SUPPORT_VULKAN
@@ -51,6 +52,8 @@ namespace sgl {
 
 class Window;
 class OffscreenContext;
+class DeviceSelector;
+DLL_OBJECT bool startsWith(const std::string& str, const std::string& prefix);
 
 #ifdef SUPPORT_VULKAN
 namespace vk { class Instance; class Device; class Swapchain; }
@@ -62,47 +65,53 @@ namespace webgpu { class Instance; class Device; class Swapchain; }
 
 class DLL_OBJECT SettingsFile {
 public:
-    inline std::string getValue(const char *key) const { auto it = settings.find(key); return it == settings.end() ? "" : it->second; }
-    inline int getIntValue(const char *key) const { return fromString<int>(getValue(key)); }
-    inline float getFloatValue(const char *key) const { return fromString<float>(getValue(key)); }
-    inline bool getBoolValue(const char *key) const { std::string val = getValue(key); if (val == "false" || val == "0") return false; return val.length() > 0; }
-    inline void addKeyValue(const std::string &key, const std::string &value) { settings[key] = value; }
-    template<class T> inline void addKeyValue(const std::string &key, const T &value) { settings[key] = toString(value); }
-    [[nodiscard]] inline bool hasKey(const std::string &key) const { return settings.find(key) != settings.end(); }
-    inline void removeKey(const std::string &key) { settings.erase(key); }
-    inline void clear() { settings.clear(); }
+    inline JsonValue& getSettingsObject() { return settings; }
+    [[nodiscard]] inline const JsonValue& getSettingsObject() const { return settings; }
+    inline std::string getValue(const char* key) const { return settings.hasMember(key) ? settings.asString() : ""; }
+    inline int getIntValue(const char* key) const { return settings.hasMember(key) ? settings.asInt32() : 0; }
+    inline float getFloatValue(const char* key) const { return settings.hasMember(key) ? settings.asFloat() : 0.0f; }
+    inline bool getBoolValue(const char* key) const { return settings.hasMember(key) ? settings.asBool() : false; }
+#ifdef USE_GLM
+    inline void addKeyValue(const std::string& key, const glm::vec2& value) {
+        if (startsWith(key, "window-")) {
+            settings["window"][key.substr(7)] = toString(value);
+        } else {
+            settings[key] = toString(value);
+        }
+    }
+#endif
+    inline void addKeyValue(const std::string& key, const char* value) {
+        if (startsWith(key, "window-")) {
+            settings["window"][key.substr(7)] = std::string(value);
+        } else {
+            settings[key] = std::string(value);
+        }
+    }
+    template<class T> inline void addKeyValue(const std::string& key, const T& value) {
+        if (startsWith(key, "window-")) {
+            settings["window"][key.substr(7)] = value;
+        } else {
+            settings[key] = value;
+        }
+    }
+    [[nodiscard]] inline bool hasKey(const std::string& key) const { return settings.hasMember(key); }
+    inline void removeKey(const std::string& key) { settings.erase(key); }
+    inline void clear() { settings = JsonValue(); }
 
-    bool getValueOpt(const char *key, std::string &toset) const {
-        auto it = settings.find(key);
-        if (it != settings.end()) {
-            toset = it->second;
-            return true;
-        }
-        return false;
-    }
-    template<class T> bool getValueOpt(const char *key, T &toset) const {
-        auto it = settings.find(key);
-        if (it != settings.end()) {
-            toset = fromString<T>(it->second);
-            return true;
-        }
-        return false;
-    }
-    bool getValueOpt(const char *key, bool &toset) const {
-        auto it = settings.find(key);
-        if (it != settings.end()) {
-            std::string val = getValue(key);
-            toset = val != "false" && val != "0";
+    template<class T> bool getValueOpt(const char* key, T& toset) const {
+        if (settings.hasMember(key)) {
+            settings[key].getTyped(toset);
             return true;
         }
         return false;
     }
 
-    void saveToFile(const char *filename);
-    void loadFromFile(const char *filename);
+    void saveToFile(const char* filename);
+    void loadFromFile(const char* filename);
+    void loadFromFileJson(const std::string& filename);
 
 private:
-    std::map<std::string, std::string> settings;
+    JsonValue settings;
 };
 
 /// State of OpenGL-Vulkan interoperability capabilities.
@@ -132,9 +141,9 @@ public:
     AppSettings();
     void setWindowBackend(WindowBackend _windowBackend);
     [[nodiscard]] WindowBackend getWindowBackend() const { return windowBackend; }
-    void loadSettings(const char *filename);
+    void loadSettings(const char* filename);
     inline void setSaveSettings(bool _saveSettings) { saveSettings = _saveSettings; }
-    inline SettingsFile &getSettings() { return settings; }
+    inline SettingsFile& getSettings() { return settings; }
 
     /**
      * Sets the description of the functionality of the application.#

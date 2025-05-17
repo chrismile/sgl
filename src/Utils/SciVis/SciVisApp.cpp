@@ -174,7 +174,7 @@ SciVisApp::SciVisApp(float fovy)
     sgl::AppSettings::get()->getDesktopDisplayMode(desktopWidth, desktopHeight, refreshRate);
     sgl::Logfile::get()->writeInfo("Desktop refresh rate: " + std::to_string(refreshRate) + " FPS");
 
-    bool useVsync = sgl::AppSettings::get()->getSettings().getBoolValue("window-vSync");
+    bool useVsync = sgl::AppSettings::get()->getMainWindow()->getWindowSettings().vSync;
     if (useVsync) {
         sgl::Timer->setFPSLimit(true, refreshRate);
     } else {
@@ -188,7 +188,7 @@ SciVisApp::SciVisApp(float fovy)
     if (window->getBackend() == WindowBackend::GLFW_IMPL) {
         static_cast<GlfwWindow*>(window)->setRefreshRateCallback([](int refreshRate) {
             sgl::Logfile::get()->writeInfo("Desktop refresh rate: " + std::to_string(refreshRate) + " FPS");
-            bool useVsync = sgl::AppSettings::get()->getSettings().getBoolValue("window-vSync");
+            bool useVsync = sgl::AppSettings::get()->getMainWindow()->getWindowSettings().vSync;
             if (useVsync) {
                 sgl::Timer->setFPSLimit(true, refreshRate);
             } else {

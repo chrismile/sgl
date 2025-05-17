@@ -31,6 +31,7 @@
 #include <Utils/Env.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
+#include <Utils/Json/ConversionHelpers.hpp>
 #include <Input/Mouse.hpp>
 #include <Input/Keyboard.hpp>
 #include <Input/Gamepad.hpp>
@@ -110,30 +111,30 @@
 
 namespace sgl {
 
-DLL_OBJECT TimerInterface *Timer = nullptr;
+DLL_OBJECT TimerInterface* Timer = nullptr;
 
 #ifdef SUPPORT_OPENGL
-DLL_OBJECT RendererInterface *Renderer = nullptr;
-DLL_OBJECT ShaderManagerInterface *ShaderManager = nullptr;
-DLL_OBJECT TextureManagerInterface *TextureManager = nullptr;
-DLL_OBJECT MaterialManagerInterface *MaterialManager = nullptr;
+DLL_OBJECT RendererInterface* Renderer = nullptr;
+DLL_OBJECT ShaderManagerInterface* ShaderManager = nullptr;
+DLL_OBJECT TextureManagerInterface* TextureManager = nullptr;
+DLL_OBJECT MaterialManagerInterface* MaterialManager = nullptr;
 #endif
 
 #ifdef SUPPORT_VULKAN
 namespace vk {
-DLL_OBJECT ShaderManagerVk *ShaderManager = nullptr;
+DLL_OBJECT ShaderManagerVk* ShaderManager = nullptr;
 }
 #endif
 
 #ifdef SUPPORT_WEBGPU
 namespace webgpu {
-DLL_OBJECT ShaderManagerWgpu *ShaderManager = nullptr;
+DLL_OBJECT ShaderManagerWgpu* ShaderManager = nullptr;
 }
 #endif
 
-DLL_OBJECT MouseInterface *Mouse = nullptr;
-DLL_OBJECT KeyboardInterface *Keyboard = nullptr;
-DLL_OBJECT GamepadInterface *Gamepad = nullptr;
+DLL_OBJECT MouseInterface* Mouse = nullptr;
+DLL_OBJECT KeyboardInterface* Keyboard = nullptr;
+DLL_OBJECT GamepadInterface* Gamepad = nullptr;
 
 #ifdef WIN32
 // Don't upscale window content on Windows with High-DPI settings
@@ -187,25 +188,29 @@ void AppSettings::setWindowBackend(WindowBackend _windowBackend) {
 }
 
 // Load the settings from the configuration file
-void AppSettings::loadSettings(const char *filename) {
-    settings.loadFromFile(filename);
-    settingsFilename = filename;
-}
-
-void SettingsFile::saveToFile(const char *filename) {
-    std::ofstream file(filename);
-    file << "{\n";
-
-    for (auto it = settings.begin(); it != settings.end(); ++it) {
-        file << "\"" + it->first + "\": \"" + it->second  + "\"\n";
+void AppSettings::loadSettings(const char* filename) {
+    std::string settingsFilePathJson = filename;
+    if (FileUtils::get()->hasExtension(filename, ".txt")) {
+        settingsFilePathJson = FileUtils::get()->removeExtension(filename) + ".json";
     }
-
-    file << "}\n";
-    file.close();
+    if (FileUtils::get()->fileExists(settingsFilePathJson)) {
+        settings.loadFromFileJson(settingsFilePathJson.c_str());
+    } else {
+        settings.loadFromFile(filename);
+    }
+    if (FileUtils::get()->fileExists(filename)) {
+        // Remove legacy .txt file.
+        FileUtils::get()->removeFile(filename);
+    }
+    settingsFilename = settingsFilePathJson;
 }
 
-void SettingsFile::loadFromFile(const char *filename) {
-    // VERY basic and lacking JSON parser
+void SettingsFile::saveToFile(const char* filename) {
+    writeSimpleJson(filename, settings, 4);
+}
+
+void SettingsFile::loadFromFile(const char* filename) {
+    // VERY basic and lacking legacy JSON parser
     std::ifstream file(filename);
     if (!file.is_open()) {
         return;
@@ -223,12 +228,30 @@ void SettingsFile::loadFromFile(const char *filename) {
         size_t string2Start = line.find('\"', string1End + 1) + 1;
         size_t string2End = line.find('\"', string2Start);
 
-        std::string key = line.substr(string1Start, string1End-string1Start);
-        std::string value = line.substr(string2Start, string2End-string2Start);
-        settings.insert(make_pair(key, value));
+        std::string key = line.substr(string1Start, string1End - string1Start);
+        std::string value = line.substr(string2Start, string2End - string2Start);
+        JsonValue jsonValue;
+        if (isInteger(value)) {
+            jsonValue = fromString<int64_t>(value);
+        } else if (isNumeric(value)) {
+            jsonValue = fromString<double>(value);
+        }
+        if (startsWith(key, "window-")) {
+            key = key.substr(7);
+            if (key == "windowPosition") {
+                jsonValue = glmVecToJsonValue(sgl::fromString<glm::ivec2>(value));
+            }
+            settings["window"][key] = jsonValue;
+        } else {
+            settings[key] = jsonValue;
+        }
     }
 
     file.close();
+}
+
+void SettingsFile::loadFromFileJson(const std::string& filename) {
+    settings = readSimpleJson(filename, true);
 }
 
 void AppSettings::initializeDataDirectory() {
@@ -270,7 +293,7 @@ void AppSettings::loadApplicationIconFromFile(const std::string& _iconPath) {
     }
 }
 
-Window *AppSettings::createWindow() {
+Window* AppSettings::createWindow() {
 #ifdef USE_BOOST_LOCALE
     boost::locale::generator gen;
     std::locale l = gen("");
@@ -281,7 +304,7 @@ Window *AppSettings::createWindow() {
     if (renderSystem == RenderSystem::VULKAN) {
         std::string forceVkDownloadSwapchainVar = getEnvVarString("FORCE_VK_DLSWAP");
         if (!forceVkDownloadSwapchainVar.empty()) {
-            settings.addKeyValue("window-useDownloadSwapchain", forceVkDownloadSwapchainVar);
+            settings.getSettingsObject()["window"]["useDownloadSwapchain"] = forceVkDownloadSwapchainVar;
         }
     }
 #endif
@@ -295,7 +318,7 @@ Window *AppSettings::createWindow() {
     static int windowIdx = 0;
     windowIdx++;
     if (windowIdx != 1) {
-        Logfile::get()->writeError("ERROR: AppSettings::createWindow: More than one instance of a window created!");
+        Logfile::get()->writeError("Error in AppSettings::createWindow: More than one instance of a window created!");
         return nullptr;
     }
 
@@ -324,7 +347,7 @@ Window *AppSettings::createWindow() {
 #else
         if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
 #endif
-            Logfile::get()->writeError("ERROR: AppSettings::createWindow: Couldn't initialize SDL3!");
+            Logfile::get()->writeError("Error in AppSettings::createWindow: Couldn't initialize SDL3!");
             Logfile::get()->writeError(std::string() + "SDL Error: " + SDL_GetError());
         }
         SDLWindow::errorCheckSDL();
@@ -433,7 +456,7 @@ HeadlessData AppSettings::createHeadless() {
 #ifdef SUPPORT_VULKAN
     if (renderSystem == RenderSystem::VULKAN) {
         bool debugContext = false;
-        settings.getValueOpt("window-debugContext", debugContext);
+        getJsonOptional(settings.getSettingsObject()["window"], "debugContext", debugContext);
         instance = new vk::Instance;
         if (isDebugPrintfEnabled) {
             instance->setIsDebugPrintfEnabled(isDebugPrintfEnabled);
@@ -461,7 +484,7 @@ void AppSettings::setRequiredVulkanInstanceExtensions(const std::vector<const ch
 #endif
 
 #if defined(SUPPORT_OPENGL) && defined(SUPPORT_VULKAN)
-void checkGlExtension(const char *extensionName, VulkanInteropCapabilities& vulkanInteropCapabilities) {
+void checkGlExtension(const char* extensionName, VulkanInteropCapabilities& vulkanInteropCapabilities) {
     if (!sgl::SystemGL::get()->isGLExtensionAvailable(extensionName)) {
         sgl::Logfile::get()->writeInfo(
                 std::string() + "Warning in AppSettings::initializeVulkanInteropSupport: The OpenGL extension "
@@ -772,9 +795,6 @@ void AppSettings::release() {
     if (mainWindow) {
         mainWindow->serializeSettings(settings);
     }
-    if (saveSettings) {
-        settings.saveToFile(settingsFilename.c_str());
-    }
 
 #ifndef DISABLE_IMGUI
     if (useGUI) {
@@ -873,6 +893,10 @@ void AppSettings::release() {
     }
 #endif
 
+    if (saveSettings) {
+        settings.saveToFile(settingsFilename.c_str());
+    }
+
 #ifdef SUPPORT_SDL
     if (getIsSdlWindowBackend(windowBackend)) {
         //Mix_CloseAudio();
@@ -891,11 +915,11 @@ void AppSettings::setLoadGUI(
     this->uiScaleFactor = uiScaleFactor;
 }
 
-Window *AppSettings::getMainWindow() {
+Window* AppSettings::getMainWindow() {
     return mainWindow;
 }
 
-Window *AppSettings::setMainWindow(Window *window) {
+Window* AppSettings::setMainWindow(Window* window) {
     return mainWindow;
 }
 

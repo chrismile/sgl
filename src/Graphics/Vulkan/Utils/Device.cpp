@@ -315,7 +315,7 @@ bool Device::isDeviceSuitable(
         std::vector<const char*>& requiredDeviceExtensionsIn,
         std::vector<const char*>& optionalDeviceExtensionsIn,
         std::set<std::string>& deviceExtensionsSet, std::vector<const char*>& deviceExtensions,
-        DeviceFeatures& requestedDeviceFeaturesIn, bool computeOnly) {
+        DeviceFeatures& requestedDeviceFeaturesIn, bool computeOnly, bool testOnly) {
     std::vector<const char*> requiredDeviceExtensions = requiredDeviceExtensionsIn;
     std::vector<const char*> optionalDeviceExtensions = optionalDeviceExtensionsIn;
     DeviceFeatures requestedDeviceFeatures = requestedDeviceFeaturesIn;
@@ -381,7 +381,7 @@ bool Device::isDeviceSuitable(
             instance, physicalDevice, physicalDeviceProperties, physicalDeviceFeatures, requestedDeviceFeatures);
 
     bool isSuitable = presentSupport && requiredExtensions.empty() && requestedFeaturesAvailable;
-    if (isSuitable && !optionalDeviceExtensions.empty()) {
+    if (isSuitable && !optionalDeviceExtensions.empty() && !testOnly) {
         for (const char* extensionName : optionalDeviceExtensions) {
             if (availableDeviceExtensionNames.find(extensionName) != availableDeviceExtensionNames.end()) {
                 deviceExtensionsSet.insert(extensionName);
@@ -397,7 +397,7 @@ bool Device::isDeviceSuitable(
         }
     }
 
-    if (isSuitable && physicalDeviceCheckCallback) {
+    if (isSuitable && physicalDeviceCheckCallback && !testOnly) {
         requiredDeviceExtensionsIn = requiredDeviceExtensions;
         optionalDeviceExtensionsIn = optionalDeviceExtensions;
         requestedDeviceFeaturesIn = requestedDeviceFeatures;
@@ -536,6 +536,10 @@ bool checkIsPhysicalDeviceSuitable(
     return isSuitable;
 }
 
+void getPhysicalDeviceProperties(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties& deviceProperties) {
+    vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
+}
+
 void getPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties2& deviceProperties2) {
     vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
 }
@@ -556,7 +560,7 @@ void Device::selectPhysicalDevice(
                 physicalDevice = physicalDeviceIt;
                 if (isDeviceSuitable(
                         physicalDeviceIt, surface, requiredDeviceExtensions, optionalDeviceExtensions,
-                        deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures, computeOnly)) {
+                        deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures, computeOnly, false)) {
                     physicalDevice = physicalDeviceIt;
                     return;
                 } else {
@@ -588,13 +592,39 @@ void Device::selectPhysicalDevice(
                 physicalDevice = physicalDeviceIt;
                 if (isDeviceSuitable(
                         physicalDeviceIt, surface, requiredDeviceExtensions, optionalDeviceExtensions,
-                        deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures, computeOnly)) {
+                        deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures, computeOnly, false)) {
                     physicalDevice = physicalDeviceIt;
                     return;
                 } else {
                     sgl::Logfile::get()->throwError(
                             "Error in Device::selectPhysicalDevice: Forced device not suitable.");
                 }
+            }
+        }
+    }
+
+    if (useAppDeviceSelector) {
+        if (!deviceSelector) {
+            std::vector<VkPhysicalDevice> suitablePhysicalDevices;
+            for (const VkPhysicalDevice& physicalDeviceIt : physicalDevices) {
+                if (isDeviceSuitable(
+                        physicalDeviceIt, surface, requiredDeviceExtensions, optionalDeviceExtensions,
+                        deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures, computeOnly, true)) {
+                    suitablePhysicalDevices.push_back(physicalDeviceIt);
+                }
+            }
+            deviceSelector = new DeviceSelectorVulkan(suitablePhysicalDevices);
+            deviceSelector->deserializeSettingsGlobal();
+        }
+        physicalDevice = deviceSelector->getSelectedPhysicalDevice();
+        for (const VkPhysicalDevice& physicalDeviceIt : physicalDevices) {
+            if (physicalDeviceIt != physicalDevice) {
+                continue;
+            }
+            if (isDeviceSuitable(
+                    physicalDeviceIt, surface, requiredDeviceExtensions, optionalDeviceExtensions,
+                    deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures, computeOnly, false)) {
+                return;
             }
         }
     }
@@ -632,11 +662,10 @@ void Device::selectPhysicalDevice(
                 sortedPhysicalDevices.end(), physicalDeviceList.begin(), physicalDeviceList.end());
     }
 
-    physicalDevice = VK_NULL_HANDLE;
     for (const VkPhysicalDevice& physicalDeviceIt : sortedPhysicalDevices) {
         if (isDeviceSuitable(
                 physicalDeviceIt, surface, requiredDeviceExtensions, optionalDeviceExtensions,
-                deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures, computeOnly)) {
+                deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures, computeOnly, false)) {
             physicalDevice = physicalDeviceIt;
             break;
         }
@@ -645,11 +674,10 @@ void Device::selectPhysicalDevice(
     /**
      * Select the first device on, e.g., Windows, as the selected GPU on hybrid GPU systems seems to always be first.
      */
-    physicalDevice = VK_NULL_HANDLE;
     for (const VkPhysicalDevice& physicalDeviceIt : physicalDevices) {
         if (isDeviceSuitable(
                 physicalDeviceIt, surface, requiredDeviceExtensions, optionalDeviceExtensions,
-                deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures, computeOnly)) {
+                deviceExtensionsSet, deviceExtensions, requestedDeviceFeatures, computeOnly, false)) {
             physicalDevice = physicalDeviceIt;
             break;
         }
@@ -687,6 +715,9 @@ VkPhysicalDevice Device::createPhysicalDeviceBinding(
         } else {
             sgl::Logfile::get()->writeError(errorText, false);
         }
+    }
+    if (deviceSelector && physicalDevice) {
+        deviceSelector->setUsedPhysicalDevice(physicalDevice);
     }
 
     return physicalDevice;
@@ -2131,7 +2162,7 @@ void Device::createDeviceHeadlessFromPhysicalDevice(
             enabledDeviceExtensionNames.end(), requiredDeviceExtensions.begin(), requiredDeviceExtensions.end());
     if (isDeviceSuitable(
             usedPhysicalDevice, nullptr, requiredDeviceExtensions, optionalDeviceExtensions,
-            deviceExtensionsSet, enabledDeviceExtensionNames, requestedDeviceFeatures, computeOnly)) {
+            deviceExtensionsSet, enabledDeviceExtensionNames, requestedDeviceFeatures, computeOnly, false)) {
         physicalDevice = usedPhysicalDevice;
     } else {
         sgl::Logfile::get()->writeError(
@@ -2171,6 +2202,11 @@ Device::~Device() {
     }
     if (device) {
         vkDestroyDevice(device, nullptr);
+    }
+
+    if (deviceSelector) {
+        deviceSelector->serializeSettingsGlobal();
+        delete deviceSelector;
     }
 }
 

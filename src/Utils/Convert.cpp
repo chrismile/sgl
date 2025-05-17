@@ -72,8 +72,38 @@ bool isInteger(const std::string &stringObject) {
 
 // Integer or floating-point number?
 bool isNumeric(const std::string &stringObject) {
+    if (stringObject.empty()) {
+        return false;
+    }
+    if (stringObject.front() == 'e' || stringObject.front() == 'E'
+            || stringObject.back() == 'e' || stringObject.back() == 'E') {
+        // Exponential notation must have a number in front and after the 'e'.
+        return false;
+    }
+    // ".1" and "1." are valid numbers, but "." is not. Also, a minus may not be the only character.
+    if (stringObject.size() == 1 && (stringObject.front() == '.' || stringObject.front() == '-')) {
+        return false;
+    }
+    bool hasEncounteredDecimalPointOrE = false;
+    char c, c_prev;
     for (size_t i = 0; i < stringObject.size(); ++i) {
-        if ((stringObject.at(i) < '0' || stringObject.at(i) > '9') && (stringObject.at(i) != '.')) {
+        c = stringObject[i];
+        if (c == '-') {
+            // A minus may only appear at the beginning or after the exponential notation 'e'.
+            if (i != 0) {
+                c_prev = stringObject.at(i - 1);
+                if (c_prev != 'e' && c_prev != 'E') {
+                    return false;
+                }
+            }
+        } else if (c == '.' || c == 'e' || c == 'E') {
+            // There may only be one decimal point or exponential notation 'e'.
+            if (hasEncounteredDecimalPointOrE) {
+                return false;
+            }
+            hasEncounteredDecimalPointOrE = true;
+        } else if (c < '0' || c > '9') {
+            // If we neither have '-', '.', 'e' or 'E', the character must be a number.
             return false;
         }
     }

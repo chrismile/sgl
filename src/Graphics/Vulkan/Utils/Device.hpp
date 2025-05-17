@@ -44,6 +44,8 @@
 #include "../libs/VMA/vk_mem_alloc.h"
 #include <vulkan/vk_platform.h>
 #include <Utils/HashCombine.hpp>
+
+#include "DeviceSelectionVulkan.hpp"
 #include "VulkanCompat.hpp"
 
 namespace sgl { class Window; }
@@ -269,6 +271,8 @@ DLL_OBJECT bool checkIsPhysicalDeviceSuitable(
         Instance* instance, VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
         const std::vector<const char*>& requiredDeviceExtensions,
         const DeviceFeatures& requestedDeviceFeatures, bool computeOnly = false);
+DLL_OBJECT void getPhysicalDeviceProperties(
+        VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties& deviceProperties);
 
 // Wrapper for use in PhysicalDeviceCheckCallback.
 DLL_OBJECT void getPhysicalDeviceProperties2(
@@ -321,6 +325,14 @@ public:
     inline void setPhysicalDeviceCheckCallback(PhysicalDeviceCheckCallback callback) {
         physicalDeviceCheckCallback = std::move(callback);
     }
+
+    /**
+     * Enables the use of DeviceSelectorVulkan, which lets the user decide on the device to use in the UI.
+     */
+    inline void setUseAppDeviceSelector() {
+        useAppDeviceSelector = true;
+    }
+    [[nodiscard]] inline DeviceSelectorVulkan* getDeviceSelector() { return deviceSelector; }
 
     /// Waits for the device to become idle.
     void waitIdle();
@@ -635,7 +647,7 @@ private:
             std::vector<const char*>& requiredDeviceExtensionsIn,
             std::vector<const char*>& optionalDeviceExtensionsIn,
             std::set<std::string>& deviceExtensionsSet, std::vector<const char*>& deviceExtensions,
-            DeviceFeatures& requestedDeviceFeaturesIn, bool computeOnly);
+            DeviceFeatures& requestedDeviceFeaturesIn, bool computeOnly, bool testOnly);
     void selectPhysicalDevice(
             VkSurfaceKHR surface,
             std::vector<const char*>& requiredDeviceExtensions,
@@ -671,6 +683,8 @@ private:
     std::set<std::string> availableDeviceExtensionNames;
 
     PhysicalDeviceCheckCallback physicalDeviceCheckCallback;
+    bool useAppDeviceSelector = false;
+    sgl::DeviceSelectorVulkan* deviceSelector = nullptr;
 
     VkDevice device = VK_NULL_HANDLE;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
