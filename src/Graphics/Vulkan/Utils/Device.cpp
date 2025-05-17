@@ -544,6 +544,43 @@ void getPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice, VkPhysicalDev
     vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
 }
 
+#ifdef __linux__
+static std::vector<VkPhysicalDevice> sortPhysicalDevicesLinux(std::vector<VkPhysicalDevice>& physicalDevices) {
+    /*
+     * Give priority to GPUs in this order: Discrete, integrated, virtual, CPU, other.
+     * This is necessary on Linux, as VK_LAYER_NV_optimus, which should make sure that on systems with hybrid GPU
+     * solutions the selected GPU always comes first, seems to not work correctly at least on Ubuntu 20.04.
+     * When selecting the Intel GPU on Ubuntu 20.04, the NVIDIA GPU is not reported. When selecting the NVIDIA GPU,
+     * the Intel GPU still comes first, but the system crashes when using the Intel GPU. Thus, the discrete GPU is
+     * prioritized when available. On Arch Linux, which per default uses prime-run, it seems like only the correct GPU
+     * is reported at all, so this should have no side effect for prime-run based systems.
+     */
+    std::vector<VkPhysicalDeviceType> deviceTypePriorityList = {
+            VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
+            VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU,
+            VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU,
+            VK_PHYSICAL_DEVICE_TYPE_CPU,
+            VK_PHYSICAL_DEVICE_TYPE_OTHER
+    };
+    std::map<VkPhysicalDeviceType, std::vector<VkPhysicalDevice>> physicalDeviceMap;
+    for (const VkPhysicalDevice& physicalDeviceIt : physicalDevices) {
+        VkPhysicalDeviceProperties physicalDeviceItProperties{};
+        vkGetPhysicalDeviceProperties(physicalDeviceIt, &physicalDeviceItProperties);
+        physicalDeviceMap[physicalDeviceItProperties.deviceType].push_back(physicalDeviceIt);
+    }
+
+    std::vector<VkPhysicalDevice> sortedPhysicalDevices;
+    sortedPhysicalDevices.reserve(physicalDevices.size());
+    for (VkPhysicalDeviceType deviceType : deviceTypePriorityList) {
+        const std::vector<VkPhysicalDevice>& physicalDeviceList = physicalDeviceMap[deviceType];
+        sortedPhysicalDevices.insert(
+                sortedPhysicalDevices.end(), physicalDeviceList.begin(), physicalDeviceList.end());
+    }
+
+    return sortedPhysicalDevices;
+}
+#endif
+
 void Device::selectPhysicalDevice(
         VkSurfaceKHR surface,
         std::vector<const char*>& requiredDeviceExtensions,
@@ -615,6 +652,16 @@ void Device::selectPhysicalDevice(
             }
             deviceSelector = new DeviceSelectorVulkan(suitablePhysicalDevices);
             deviceSelector->deserializeSettingsGlobal();
+            if (!suitablePhysicalDevices.empty()) {
+#ifdef __linux__
+                std::vector<VkPhysicalDevice> sortedSuitablePhysicalDevices =
+                    sortPhysicalDevicesLinux(suitablePhysicalDevices);
+                deviceSelector->setDefaultPhysicalDevice(sortedSuitablePhysicalDevices.front());
+#else
+                deviceSelector->setDefaultPhysicalDevice(suitablePhysicalDevices.front());
+#endif
+
+            }
         }
         physicalDevice = deviceSelector->getSelectedPhysicalDevice();
         for (const VkPhysicalDevice& physicalDeviceIt : physicalDevices) {
@@ -631,37 +678,7 @@ void Device::selectPhysicalDevice(
 
     // Use a heuristic for finding the device the user might most likely want.
 #ifdef __linux__
-    /*
-     * Give priority to GPUs in this order: Discrete, integrated, virtual, CPU, other.
-     * This is necessary on Linux, as VK_LAYER_NV_optimus, which should make sure that on systems with hybrid GPU
-     * solutions the selected GPU always comes first, seems to not work correctly at least on Ubuntu 20.04.
-     * When selecting the Intel GPU on Ubuntu 20.04, the NVIDIA GPU is not reported. When selecting the NVIDIA GPU,
-     * the Intel GPU still comes first, but the system crashes when using the Intel GPU. Thus, the discrete GPU is
-     * prioritized when available. On Arch Linux, which per default uses prime-run, it seems like only the correct GPU
-     * is reported at all, so this should have no side effect for prime-run based systems.
-     */
-    std::vector<VkPhysicalDeviceType> deviceTypePriorityList = {
-            VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
-            VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU,
-            VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU,
-            VK_PHYSICAL_DEVICE_TYPE_CPU,
-            VK_PHYSICAL_DEVICE_TYPE_OTHER
-    };
-    std::map<VkPhysicalDeviceType, std::vector<VkPhysicalDevice>> physicalDeviceMap;
-    for (const VkPhysicalDevice& physicalDeviceIt : physicalDevices) {
-        VkPhysicalDeviceProperties physicalDeviceItProperties{};
-        vkGetPhysicalDeviceProperties(physicalDeviceIt, &physicalDeviceItProperties);
-        physicalDeviceMap[physicalDeviceItProperties.deviceType].push_back(physicalDeviceIt);
-    }
-
-    std::vector<VkPhysicalDevice> sortedPhysicalDevices;
-    sortedPhysicalDevices.reserve(physicalDevices.size());
-    for (VkPhysicalDeviceType deviceType : deviceTypePriorityList) {
-        const std::vector<VkPhysicalDevice>& physicalDeviceList = physicalDeviceMap[deviceType];
-        sortedPhysicalDevices.insert(
-                sortedPhysicalDevices.end(), physicalDeviceList.begin(), physicalDeviceList.end());
-    }
-
+    std::vector<VkPhysicalDevice> sortedPhysicalDevices = sortPhysicalDevicesLinux(physicalDevices);
     for (const VkPhysicalDevice& physicalDeviceIt : sortedPhysicalDevices) {
         if (isDeviceSuitable(
                 physicalDeviceIt, surface, requiredDeviceExtensions, optionalDeviceExtensions,

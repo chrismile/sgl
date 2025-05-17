@@ -46,11 +46,14 @@ public:
     void deserializeSettings(const JsonValue& settings) override;
     void renderGui() override;
     VkPhysicalDevice getSelectedPhysicalDevice();
+    void setDefaultPhysicalDevice(VkPhysicalDevice usedPhysicalDevice);
     void setUsedPhysicalDevice(VkPhysicalDevice usedPhysicalDevice);
 
 private:
     std::vector<std::pair<std::string, VkPhysicalDevice>> physicalDevices;
     size_t selectedDeviceIndex = 0;
+    std::string defaultDeviceName;
+    std::string usedDeviceName;
 };
 
 }

@@ -72,7 +72,7 @@ DeviceSelectorWGL::DeviceSelectorWGL() {
     DISPLAY_DEVICEA displayDevice{};
     displayDevice.cb = sizeof(DISPLAY_DEVICEA);
     CHAR currentDeviceName[32];
-    std::map<uint16_t, std::set<std::wstring>> vendorDeviceNameMap;
+    std::map<uint16_t, std::set<std::string>> vendorDeviceNameMap;
     do {
         bool retVal = pEnumDisplayDevicesA(nullptr, adapterIdx, &displayDevice, 0);
         if (!retVal) {
@@ -81,17 +81,17 @@ DeviceSelectorWGL::DeviceSelectorWGL() {
         }
         if (strstr(displayDevice.DeviceID, VENDOR_STRING_NVIDIA)) {
             isHybridNvidia = true;
-            vendorDeviceNameMap[vendorIdNvidia].insert(std::wstring(displayDevice.DeviceString));
+            vendorDeviceNameMap[vendorIdNvidia].insert(std::string(displayDevice.DeviceString));
         }
         if (strstr(displayDevice.DeviceID, VENDOR_STRING_AMD)) {
             hasAmdGpu = true;
-            vendorDeviceNameMap[vendorIdAmd].insert(std::wstring(displayDevice.DeviceString));
+            vendorDeviceNameMap[vendorIdAmd].insert(std::string(displayDevice.DeviceString));
         }
         if (strstr(displayDevice.DeviceID, VENDOR_STRING_INTEL)) {
             hasIntelGpu = true;
-            vendorDeviceNameMap[vendorIdIntel].insert(std::wstring(displayDevice.DeviceString));
+            vendorDeviceNameMap[vendorIdIntel].insert(std::string(displayDevice.DeviceString));
         }
-        hash_combine(systemConfigurationHash, std::wstring(displayDevice.DeviceID));
+        hash_combine(systemConfigurationHash, std::string(displayDevice.DeviceID));
         // displayDevice.DeviceString would be a human-readable string.
         adapterIdx++;
     } while (true);

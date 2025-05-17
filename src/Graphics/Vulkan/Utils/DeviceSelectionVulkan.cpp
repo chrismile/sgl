@@ -115,6 +115,7 @@ void DeviceSelectorVulkan::renderGui() {
         return;
     }
     if (ImGui::BeginMenu("Device selection")) {
+        ImGui::MenuItem(usedDeviceName.c_str(), nullptr, true, false);
         for (size_t i = 0; i < physicalDevices.size(); i++) {
             bool useDevice = selectedDeviceIndex == i;
             if (ImGui::MenuItem(physicalDevices[i].first.c_str(), nullptr, useDevice)) {
@@ -132,11 +133,17 @@ VkPhysicalDevice DeviceSelectorVulkan::getSelectedPhysicalDevice() {
     return physicalDevices.at(selectedDeviceIndex).second;
 }
 
-void DeviceSelectorVulkan::setUsedPhysicalDevice(VkPhysicalDevice usedPhysicalDevice) {
+void DeviceSelectorVulkan::setDefaultPhysicalDevice(VkPhysicalDevice usedPhysicalDevice) {
     VkPhysicalDeviceProperties physicalDeviceProperties;
     vk::getPhysicalDeviceProperties(usedPhysicalDevice, physicalDeviceProperties);
     physicalDevices.at(0).first = "Default (" + std::string(physicalDeviceProperties.deviceName) + ")";
     physicalDevices.at(0).second = usedPhysicalDevice;
+}
+
+void DeviceSelectorVulkan::setUsedPhysicalDevice(VkPhysicalDevice usedPhysicalDevice) {
+    VkPhysicalDeviceProperties physicalDeviceProperties;
+    vk::getPhysicalDeviceProperties(usedPhysicalDevice, physicalDeviceProperties);
+    usedDeviceName = "Used: " + std::string(physicalDeviceProperties.deviceName);
 }
 
 }
