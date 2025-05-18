@@ -39,7 +39,7 @@ class Instance;
 struct DeviceFeatures;
 }
 
-class DeviceSelectorVulkan : public DeviceSelector {
+class DLL_OBJECT DeviceSelectorVulkan : public DeviceSelector {
 public:
     DeviceSelectorVulkan(const std::vector<VkPhysicalDevice>& suitablePhysicalDevices);
     void serializeSettings(JsonValue& settings) override;

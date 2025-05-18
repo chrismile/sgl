@@ -36,7 +36,7 @@
 namespace sgl {
 class JsonValue;
 
-class DeviceSelector {
+class DLL_OBJECT DeviceSelector {
 public:
     virtual ~DeviceSelector()=default;
     virtual bool getShallRestartApp() { return restartAppNow; }
@@ -60,8 +60,8 @@ private:
     bool restartAppNow = false;
 };
 
-void convertUuidToJsonValue(uint8_t* uuid, JsonValue& uuidValue);
-std::array<uint8_t, 16> convertJsonValueToUuid(const JsonValue& uuidValue);
+DLL_OBJECT void convertUuidToJsonValue(uint8_t* uuid, JsonValue& uuidValue);
+DLL_OBJECT std::array<uint8_t, 16> convertJsonValueToUuid(const JsonValue& uuidValue);
 
 }
 
