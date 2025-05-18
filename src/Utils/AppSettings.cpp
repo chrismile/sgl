@@ -55,6 +55,10 @@
 #include <Graphics/OpenGL/ShaderManager.hpp>
 #include <Graphics/OpenGL/TextureManager.hpp>
 #include <Graphics/OpenGL/SystemGL.hpp>
+#include <Graphics/Utils/DeviceSelection.hpp>
+#ifdef _WIN32
+#include <Graphics/OpenGL/Context/DeviceSelectionWGL.hpp>
+#endif
 #endif
 
 #if (defined(SUPPORT_VULKAN) || defined(SUPPORT_WEBGPU)) && !defined(DISABLE_SCENE_GRAPH_SOURCES)
@@ -321,6 +325,12 @@ Window* AppSettings::createWindow() {
         Logfile::get()->writeError("Error in AppSettings::createWindow: More than one instance of a window created!");
         return nullptr;
     }
+
+#ifdef SUPPORT_OPENGL
+    if (renderSystem == RenderSystem::OPENGL && deviceSelector) {
+        deviceSelector->deserializeSettingsGlobal();
+    }
+#endif
 
 #ifdef SUPPORT_SDL2
     if (windowBackend == WindowBackend::SDL2_IMPL) {
@@ -676,6 +686,26 @@ bool AppSettings::checkOpenGLVulkanInteropExtensionsSupported() {
 }
 #endif
 
+#ifdef SUPPORT_OPENGL
+void AppSettings::setUseAppDeviceSelectorOpenGL() {
+    /*
+     * Currently only supported on Windows, as there we only have the option to set a few exported symbols.
+     * On Linux, we would need to manipulate SDL/GLFW to (a) use EGL and (b) use the correct platform device.
+     * SDL has a SDL_GLAttr entry called SDL_GL_EGL_PLATFORM and has functions such as SDL_EGL_GetProcAddress,
+     * SDL_EGL_GetCurrentDisplay, SDL_EGL_GetCurrentConfig, SDL_EGL_GetWindowSurface and SDL_EGL_SetAttributeCallbacks.
+     * SDL offers callbacks like SDL_EGLAttribArrayCallback to specify the inputs of functions such as
+     * eglGetPlatformDisplay. However, this only lets us control the last parameter to eglGetPlatformDisplay, i.e.,
+     * "const EGLint *attrib_list". The full call to the function would need to look like this for device selection:
+     * "eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT, eglDevices[matchingDeviceIdx], nullptr)"
+     */
+#ifdef _WIN32
+    if (!deviceSelector) {
+        deviceSelector = new sgl::DeviceSelectorWGL;
+    }
+#endif
+}
+#endif
+
 void AppSettings::setDataDirectory(const std::string& dataDirectory) {
     char lastChar = dataDirectory.empty() ? '\0' : dataDirectory.at(dataDirectory.size() - 1);
     if (lastChar != '/' && lastChar != '\\') {
@@ -749,6 +779,9 @@ void AppSettings::initializeSubsystems() {
     if (primaryDevice) {
         vk::ShaderManager = new vk::ShaderManagerVk(primaryDevice);
     }
+    if (renderSystem == RenderSystem::VULKAN && primaryDevice) {
+        deviceSelector = primaryDevice->getDeviceSelector();
+    }
 #endif
 
 #ifdef SUPPORT_WEBGPU
@@ -817,6 +850,11 @@ void AppSettings::release() {
             TextureManager = nullptr;
         }
         delete MaterialManager;
+    }
+    if (renderSystem == RenderSystem::OPENGL && deviceSelector) {
+        deviceSelector->serializeSettingsGlobal();
+        delete deviceSelector;
+        deviceSelector = nullptr;
     }
 #endif
 

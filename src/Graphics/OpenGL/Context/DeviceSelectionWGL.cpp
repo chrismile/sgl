@@ -34,6 +34,10 @@
 #include <Utils/Json/SimpleJson.hpp>
 #include <ImGui/imgui.h>
 
+#ifdef SUPPORT_VULKAN
+#include <Graphics/Vulkan/Utils/Device.hpp>
+#endif
+
 #include "DeviceSelectionWGL.hpp"
 
 #ifndef NOMINMAX
@@ -155,5 +159,49 @@ void DeviceSelectorWGL::renderGui() {
         ImGui::EndMenu();
     }
 }
+
+#ifdef SUPPORT_VULKAN
+namespace vk {
+class Device;
+}
+DLL_OBJECT void attemptForceWglContextForVulkanDevice(sgl::vk::Device* device) {
+    bool isHybridNvidia = false;
+    bool isHybridAmd = false;
+    bool hasIntegratedGpu = false;
+
+    VkPhysicalDeviceProperties physicalDeviceProperties;
+    std::vector<VkPhysicalDevice> physicalDevices = sgl::vk::enumeratePhysicalDevices(device->getInstance());
+    for (auto& physicalDevice : physicalDevices) {
+        vk::getPhysicalDeviceProperties(physicalDevice, physicalDeviceProperties);
+        if (physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
+            hasIntegratedGpu = true;
+        }
+    }
+
+    if (hasIntegratedGpu && device->getDeviceType() == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+        if (device->getDeviceDriverId() == VK_DRIVER_ID_NVIDIA_PROPRIETARY) {
+            isHybridNvidia = true;
+        } else if (device->getDeviceDriverId() == VK_DRIVER_ID_AMD_PROPRIETARY) {
+            isHybridAmd = true;
+        }
+    }
+
+    if (isHybridNvidia) {
+        NvOptimusEnablement = 0x00000001;
+    }
+    if (isHybridAmd) {
+        AmdPowerXpressRequestHighPerformance = 0x00000001;
+    }
+
+    /*
+     * TODO: It would be optimal if we had more control over context creation.
+     * It seems like CreateDCA could be used in the past for something like this:
+     * - https://community.khronos.org/t/how-to-use-opengl-with-a-device-chosen-by-you/63017/6
+     * - https://community.khronos.org/t/how-to-create-wgl-context-for-specific-device/111852
+     * - https://stackoverflow.com/questions/62372029/can-i-use-different-multigpu-in-opengl
+     * However, it seems like I cannot get CreateDCA to return a non-nullptr value for anything than "\\.DISPLAY1".
+     */
+}
+#endif
 
 }

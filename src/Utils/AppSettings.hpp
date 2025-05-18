@@ -240,6 +240,13 @@ public:
     inline void setWebGPUSwapchain(webgpu::Swapchain* _webgpuSwapchain) { this->webgpuSwapchain = _webgpuSwapchain; }
     inline webgpu::Swapchain* getWebGPUSwapchain() { return webgpuSwapchain; }
 #endif
+#ifdef SUPPORT_OPENGL
+    // Handled by sgl::vk::Device in the Vulkan case and AppSettings in the OpenGL case.
+    void setUseAppDeviceSelectorOpenGL();
+#endif
+#if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN)
+    inline sgl::DeviceSelector* getDeviceSelector() { return deviceSelector; }
+#endif
     void release();
 
     /// Called in main if GUI should be loaded.
@@ -282,6 +289,11 @@ private:
 #endif
     Window* mainWindow = nullptr;
     std::string applicationDescription;
+
+#if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN)
+    // Handled by sgl::vk::Device in the Vulkan case and AppSettings in the OpenGL case.
+    sgl::DeviceSelector* deviceSelector = nullptr;
+#endif
 
 #ifdef SUPPORT_OPENGL
     sgl::OffscreenContext* offscreenContext = nullptr;

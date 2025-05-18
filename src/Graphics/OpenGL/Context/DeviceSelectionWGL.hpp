@@ -33,7 +33,7 @@
 
 namespace sgl {
 
-class DeviceSelectorWGL : public DeviceSelector {
+class DLL_OBJECT DeviceSelectorWGL : public DeviceSelector {
 public:
     DeviceSelectorWGL();
     void serializeSettings(JsonValue& settings) override;
@@ -49,6 +49,13 @@ private:
     bool forceUseNvidiaDiscrete = false;
     bool forceUseAmdDiscrete = false;
 };
+
+#ifdef SUPPORT_VULKAN
+namespace vk {
+class Device;
+}
+DLL_OBJECT void attemptForceWglContextForVulkanDevice(sgl::vk::Device* device);
+#endif
 
 }
 

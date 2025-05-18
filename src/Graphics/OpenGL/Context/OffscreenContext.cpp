@@ -37,6 +37,10 @@
 #ifndef _WIN32
 #include "OffscreenContextEGL.hpp"
 #endif
+#ifdef _WIN32
+#include "OffscreenContextWGL.hpp"
+#include "DeviceSelectionWGL.hpp"
+#endif
 #include "OffscreenContextGlfw.hpp"
 
 namespace sgl {
@@ -83,19 +87,25 @@ OffscreenContext* createOffscreenContext(
         paramsEgl.device = vulkanDevice;
         offscreenContext = new sgl::OffscreenContextEGL(paramsEgl);
         offscreenContext->initialize();
+#else
+#ifdef SUPPORT_VULKAN
+        attemptForceWglContextForVulkanDevice(vulkanDevice);
+#endif
+        sgl::OffscreenContextWGLParams paramsWgl{};
+        paramsWgl.device = vulkanDevice;
+        offscreenContext = new sgl::OffscreenContextWGL(paramsWgl);
+        offscreenContext->initialize();
+#endif
 
         if (!offscreenContext->getIsInitialized()) {
             delete offscreenContext;
-#endif
             offscreenContext = new sgl::OffscreenContextGlfw();
             offscreenContext->initialize();
             if (!offscreenContext->getIsInitialized()) {
                 delete offscreenContext;
                 offscreenContext = nullptr;
             }
-#ifndef _WIN32
         }
-#endif
 #ifdef __linux__
     }
 #endif
