@@ -100,6 +100,9 @@ public:
 
     template<class T> bool getValueOpt(const char* key, T& toset) const {
         if (settings.hasMember(key)) {
+            if (settings[key].isNull()) {
+                return false;
+            }
             settings[key].getTyped(toset);
             return true;
         }
