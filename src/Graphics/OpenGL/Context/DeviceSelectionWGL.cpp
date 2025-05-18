@@ -84,7 +84,7 @@ DeviceSelectorWGL::DeviceSelectorWGL() {
             break;
         }
         if (strstr(displayDevice.DeviceID, VENDOR_STRING_NVIDIA)) {
-            isHybridNvidia = true;
+            hasNvidiaGpu = true;
             vendorDeviceNameMap[vendorIdNvidia].insert(std::string(displayDevice.DeviceString));
         }
         if (strstr(displayDevice.DeviceID, VENDOR_STRING_AMD)) {
@@ -199,7 +199,7 @@ void DeviceSelectorWGL::renderGuiMenu() {
 namespace vk {
 class Device;
 }
-DLL_OBJECT void attemptForceWglContextForVulkanDevice(sgl::vk::Device* device) {
+void attemptForceWglContextForVulkanDevice(sgl::vk::Device* device) {
     bool isHybridNvidia = false;
     bool isHybridAmd = false;
     bool hasIntegratedGpu = false;

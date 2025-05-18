@@ -55,9 +55,11 @@
 #include <Graphics/OpenGL/ShaderManager.hpp>
 #include <Graphics/OpenGL/TextureManager.hpp>
 #include <Graphics/OpenGL/SystemGL.hpp>
+#ifndef DISABLE_DEVICE_SELECTION_SUPPORT
 #include <Graphics/Utils/DeviceSelection.hpp>
 #ifdef _WIN32
 #include <Graphics/OpenGL/Context/DeviceSelectionWGL.hpp>
+#endif
 #endif
 #endif
 
@@ -70,6 +72,9 @@
 #include <Graphics/Vulkan/Utils/Swapchain.hpp>
 #include <Graphics/Vulkan/Utils/Device.hpp>
 #include <Graphics/Vulkan/Shader/ShaderManager.hpp>
+#ifndef DISABLE_DEVICE_SELECTION_SUPPORT
+#include <Graphics/Vulkan/Utils/DeviceSelectionVulkan.hpp>
+#endif
 #endif
 
 #ifdef SUPPORT_WEBGPU
@@ -326,7 +331,7 @@ Window* AppSettings::createWindow() {
         return nullptr;
     }
 
-#ifdef SUPPORT_OPENGL
+#if defined(SUPPORT_OPENGL) && !defined(DISABLE_DEVICE_SELECTION_SUPPORT)
     if (renderSystem == RenderSystem::OPENGL && deviceSelector) {
         deviceSelector->deserializeSettingsGlobal();
     }
@@ -698,7 +703,7 @@ void AppSettings::setUseAppDeviceSelectorOpenGL() {
      * "const EGLint *attrib_list". The full call to the function would need to look like this for device selection:
      * "eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT, eglDevices[matchingDeviceIdx], nullptr)"
      */
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(DISABLE_DEVICE_SELECTION_SUPPORT)
     if (!deviceSelector) {
         deviceSelector = new sgl::DeviceSelectorWGL;
     }
@@ -779,9 +784,11 @@ void AppSettings::initializeSubsystems() {
     if (primaryDevice) {
         vk::ShaderManager = new vk::ShaderManagerVk(primaryDevice);
     }
+#ifndef DISABLE_DEVICE_SELECTION_SUPPORT
     if (renderSystem == RenderSystem::VULKAN && primaryDevice) {
         deviceSelector = primaryDevice->getDeviceSelector();
     }
+#endif
 #endif
 
 #ifdef SUPPORT_WEBGPU
@@ -851,11 +858,13 @@ void AppSettings::release() {
         }
         delete MaterialManager;
     }
+#ifndef DISABLE_DEVICE_SELECTION_SUPPORT
     if (renderSystem == RenderSystem::OPENGL && deviceSelector) {
         deviceSelector->serializeSettingsGlobal();
         delete deviceSelector;
         deviceSelector = nullptr;
     }
+#endif
 #endif
 
 #ifdef SUPPORT_VULKAN

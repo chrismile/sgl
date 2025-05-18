@@ -45,10 +45,12 @@
 #include <vulkan/vk_platform.h>
 #include <Utils/HashCombine.hpp>
 
-#include "DeviceSelectionVulkan.hpp"
 #include "VulkanCompat.hpp"
 
-namespace sgl { class Window; }
+namespace sgl {
+class Window;
+class DeviceSelectorVulkan;
+}
 
 namespace sgl { namespace vk {
 /**

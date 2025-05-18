@@ -43,6 +43,9 @@
 #include <Graphics/Window.hpp>
 #include "Swapchain.hpp"
 #endif
+#ifndef DISABLE_DEVICE_SELECTION_SUPPORT
+#include "DeviceSelectionVulkan.hpp"
+#endif
 #include "Device.hpp"
 
 #ifdef SUPPORT_OPENGL
@@ -640,6 +643,7 @@ void Device::selectPhysicalDevice(
         }
     }
 
+#ifndef DISABLE_DEVICE_SELECTION_SUPPORT
     if (useAppDeviceSelector) {
         if (!deviceSelector) {
             std::vector<VkPhysicalDevice> suitablePhysicalDevices;
@@ -675,6 +679,7 @@ void Device::selectPhysicalDevice(
             }
         }
     }
+#endif
 
     // Use a heuristic for finding the device the user might most likely want.
 #ifdef __linux__
@@ -733,9 +738,11 @@ VkPhysicalDevice Device::createPhysicalDeviceBinding(
             sgl::Logfile::get()->writeError(errorText, false);
         }
     }
+#ifndef DISABLE_DEVICE_SELECTION_SUPPORT
     if (deviceSelector && physicalDevice) {
         deviceSelector->setUsedPhysicalDevice(physicalDevice);
     }
+#endif
 
     return physicalDevice;
 }
@@ -2221,10 +2228,12 @@ Device::~Device() {
         vkDestroyDevice(device, nullptr);
     }
 
+#ifndef DISABLE_DEVICE_SELECTION_SUPPORT
     if (deviceSelector) {
         deviceSelector->serializeSettingsGlobal();
         delete deviceSelector;
     }
+#endif
 }
 
 void Device::waitIdle() {

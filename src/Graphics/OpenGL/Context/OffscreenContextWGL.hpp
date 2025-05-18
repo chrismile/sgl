@@ -29,12 +29,19 @@
 #ifndef OFFSCREENCONTEXTWGL_HPP
 #define OFFSCREENCONTEXTWGL_HPP
 
+#include <optional>
 #include "OffscreenContext.hpp"
 
 #if defined(_WIN32) && !defined(_WINDEF_)
 struct HINSTANCE__;
 typedef HINSTANCE__* HINSTANCE;
 typedef HINSTANCE HMODULE;
+struct HGLRC__;
+typedef struct HGLRC__* HGLRC;
+struct HDC__;
+typedef struct HDC__* HDC;
+struct HWND__;
+typedef struct HWND__* HWND;
 #endif
 
 namespace sgl {
@@ -60,13 +67,14 @@ class Device;
  * - https://community.khronos.org/t/how-to-use-opengl-with-a-device-chosen-by-you/63017/6
  * - https://community.khronos.org/t/how-to-create-wgl-context-for-specific-device/111852
  * - https://stackoverflow.com/questions/62372029/can-i-use-different-multigpu-in-opengl
- * However, it seems like I cannot get CreateDCA to return a non-nullptr value for anything than "\\.DISPLAY1".
+ * However, it seems like I cannot get CreateDCA to return a non-nullptr value for anything than "\\\\.\\DISPLAY1".
+ * Consequently, useDefaultDisplay is by default set to true.
+ *
  */
 struct DLL_OBJECT OffscreenContextWGLParams {
-    bool useDefaultDisplay = false;
-    bool createPBuffer = true;
-    int pbufferWidth = 32;
-    int pbufferHeight = 32;
+    bool useDefaultDisplay = true;
+    int virtualWindowWidth = 640;
+    int virtualWindowHeight = 480;
     sgl::vk::Device* device = nullptr;
 };
 
@@ -82,8 +90,24 @@ public:
     [[nodiscard]] bool getIsInitialized() const override { return isInitialized; }
 
 private:
+    bool initializeFromWindow();
+    bool initializeFromDeviceContextExperimental();
+#ifdef SUPPORT_VULKAN
+    /*
+     * Returns the name of the display adapter associated with the GPU (e.g., \\.\DISPLAY1).
+     * On Windows, multiple display adapters may exist for the same GPU.
+     * Each display adapter may have multiple display monitors attached (e.g., \\.\DISPLAY1\Monitor0).
+     * The name of the display adapter can be used with CreateDCA and the above patching code to create a suitable
+     * OpenGL context.
+     */
+    std::string selectDisplayNameForVulkanDevice();
+#endif
     bool isInitialized = false;
-    HMODULE wglHandle = nullptr;
+    HMODULE user32Module = nullptr;
+    HMODULE opengl32Module = nullptr;
+    HDC deviceContext = {};
+    HGLRC glrc = {};
+    HWND hWnd = {};
     OffscreenContextWGLParams params = {};
 
     // Function table.

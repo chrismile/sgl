@@ -13,10 +13,6 @@
             "platform": "windows"
         },
         "libpng",
-        {
-            "name": "glfw3",
-            "platform": "!linux"
-        },
         "tinyxml2",
         "glew",
         "glm",
@@ -76,6 +72,12 @@
                     "features": [],
                     "platform": "linux"
                 }
+            ]
+        },
+        "glfw3": {
+            "description": "GLFW3 backend support.",
+            "dependencies": [
+                "glfw3"
             ]
         },
         "tbb": {

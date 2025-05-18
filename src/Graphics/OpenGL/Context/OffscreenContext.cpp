@@ -113,7 +113,7 @@ OffscreenContext* createOffscreenContext(
 #ifdef SUPPORT_VULKAN
     // Check whether the OpenGL context supports Vulkan interop.
     if (offscreenContext && vulkanDevice) {
-        offscreenContext->makeCurrent();
+        //offscreenContext->makeCurrent();
 
         sgl::AppSettings::get()->initializeOffscreenContextFunctionPointers();
         if (!sgl::AppSettings::get()->checkOpenGLVulkanInteropExtensionsSupported()) {

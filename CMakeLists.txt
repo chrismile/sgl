@@ -205,9 +205,6 @@ else()
         list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/OpenGL/Context/OffscreenContextGlfw.hpp)
         list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/OpenGL/Context/OffscreenContextGlfw.cpp)
     endif()
-    if (WIN32 AND NOT EMSCRIPTEN)
-        set(USE_GLFW ON)
-    endif()
 endif()
 
 if (${USE_GLFW} AND NOT EMSCRIPTEN)
@@ -1159,9 +1156,14 @@ if (${SUPPORT_VULKAN} AND (shaderc_FOUND OR glslang_FOUND))
     endif()
 endif()
 
+if ((WIN32 AND ${SUPPORT_OPENGL}) OR ${SUPPORT_D3D12})
+    target_link_libraries(sgl PRIVATE
+            dxgi.lib
+    )
+endif()
 if (${SUPPORT_D3D12})
     target_link_libraries(sgl PRIVATE
-            d3d12.lib dxgi.lib dxguid.lib uuid.lib
+            d3d12.lib dxguid.lib uuid.lib
             kernel32.lib user32.lib
             comdlg32.lib advapi32.lib shell32.lib
             ole32.lib oleaut32.lib
