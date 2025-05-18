@@ -36,8 +36,6 @@
 
 #include "OffscreenContextWGL.hpp"
 
-#include <GL/gl.h>
-
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
@@ -67,7 +65,10 @@ typedef WINBOOL ( WINAPI *PFN_wglDeleteContext )( HGLRC );
 typedef WINBOOL ( WINAPI *PFN_wglMakeCurrent )( HDC, HGLRC );
 typedef PROC ( WINAPI *PFN_wglGetProcAddress )( LPCSTR );
 typedef const char *( WINAPI *PFN_wglGetExtensionsStringARB )( HDC hdc );
-typedef const GLubyte* ( APIENTRY *PFN_glGetString )( GLenum name );
+
+//typedef unsigned char GLubyte;
+//typedef unsigned int GLenum;
+//typedef const GLubyte* ( APIENTRY *PFN_glGetString )( GLenum name );
 
 namespace sgl {
 
