@@ -39,11 +39,19 @@ public:
     void serializeSettings(JsonValue& settings) override;
     void deserializeSettings(const JsonValue& settings) override;
     void renderGui() override;
+    void renderGuiMenu() override;
 
 private:
+    void checkUsedVendor();
+    bool isFirstFrame = true;
+
     // System configuration.
     bool isHybridNvidia = false;
     bool isHybridAmd = false;
+
+    // Current selection.
+    bool useNvidiaDiscrete = false;
+    bool useAmdDiscrete = false;
 
     // User selection.
     bool forceUseNvidiaDiscrete = false;

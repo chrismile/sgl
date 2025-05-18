@@ -116,6 +116,25 @@ void DeviceSelectorVulkan::renderGui() {
     if (physicalDevices.size() == 2) {
         return;
     }
+    if (ImGui::BeginCombo("Device selection", physicalDevices[selectedDeviceIndex].first.c_str())) {
+        ImGui::Selectable(usedDeviceName.c_str(), false, ImGuiSelectableFlags_Disabled);
+        for (size_t i = 0; i < physicalDevices.size(); i++) {
+            bool useDevice = selectedDeviceIndex == i;
+            if (ImGui::Selectable(physicalDevices[i].first.c_str(), useDevice)) {
+                if (selectedDeviceIndex != i) {
+                    selectedDeviceIndex = i;
+                    requestOpenRestartAppDialog();
+                }
+            }
+        }
+        ImGui::EndCombo();
+    }
+}
+
+void DeviceSelectorVulkan::renderGuiMenu() {
+    if (physicalDevices.size() == 2) {
+        return;
+    }
     if (ImGui::BeginMenu("Device selection")) {
         ImGui::MenuItem(usedDeviceName.c_str(), nullptr, true, false);
         for (size_t i = 0; i < physicalDevices.size(); i++) {

@@ -45,6 +45,7 @@ public:
     void deserializeSettingsGlobal();
     virtual void deserializeSettings(const JsonValue& settings)=0;
     virtual void renderGui()=0;
+    virtual void renderGuiMenu()=0;
     void renderGuiDialog();
     bool getShallShowRestartAppDialog() { return showRestartAppDialog; }
     void openRestartAppDialog();

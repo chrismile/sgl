@@ -45,6 +45,7 @@ public:
     void serializeSettings(JsonValue& settings) override;
     void deserializeSettings(const JsonValue& settings) override;
     void renderGui() override;
+    void renderGuiMenu() override;
     VkPhysicalDevice getSelectedPhysicalDevice();
     void setDefaultPhysicalDevice(VkPhysicalDevice usedPhysicalDevice);
     void setUsedPhysicalDevice(VkPhysicalDevice usedPhysicalDevice);

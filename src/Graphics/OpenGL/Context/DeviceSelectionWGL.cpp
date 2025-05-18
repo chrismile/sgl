@@ -37,6 +37,7 @@
 #ifdef SUPPORT_VULKAN
 #include <Graphics/Vulkan/Utils/Device.hpp>
 #endif
+#include <Graphics/OpenGL/SystemGL.hpp>
 
 #include "DeviceSelectionWGL.hpp"
 
@@ -144,16 +145,50 @@ void DeviceSelectorWGL::deserializeSettings(const JsonValue& settings) {
     }
 }
 
+void DeviceSelectorWGL::checkUsedVendor() {
+    if (isHybridNvidia) {
+        std::string vendorString = sgl::SystemGL::get()->getVendorString();
+        useNvidiaDiscrete = vendorString.find("NVIDIA") != std::string::npos;
+    }
+    if (isHybridAmd) {
+        std::string vendorString = sgl::SystemGL::get()->getVendorString();
+        useAmdDiscrete = vendorString.find("ATI") != std::string::npos || vendorString.find("AMD") != std::string::npos;
+    }
+}
+
 void DeviceSelectorWGL::renderGui() {
     if (!isHybridNvidia && !isHybridAmd) {
         return;
     }
+    if (isFirstFrame) {
+        checkUsedVendor();
+        isFirstFrame = false;
+    }
+    if (isHybridNvidia && ImGui::Checkbox("Use Discrete NVIDIA GPU", &useNvidiaDiscrete)) {
+        forceUseNvidiaDiscrete = useNvidiaDiscrete;
+        requestOpenRestartAppDialog();
+    } else if (isHybridAmd && ImGui::Checkbox("Use Discrete AMD GPU", &useAmdDiscrete)) {
+        forceUseAmdDiscrete = useAmdDiscrete;
+        requestOpenRestartAppDialog();
+    }
+}
+
+void DeviceSelectorWGL::renderGuiMenu() {
+    if (!isHybridNvidia && !isHybridAmd) {
+        return;
+    }
+    if (isFirstFrame) {
+        checkUsedVendor();
+        isFirstFrame = false;
+    }
     if (ImGui::BeginMenu("Window")) {
-        if (isHybridNvidia && ImGui::MenuItem("Tet Mesh Volume Renderer", nullptr, forceUseNvidiaDiscrete)) {
-            forceUseNvidiaDiscrete = !forceUseNvidiaDiscrete;
+        if (isHybridNvidia && ImGui::MenuItem("Use Discrete NVIDIA GPU", nullptr, useNvidiaDiscrete)) {
+            useNvidiaDiscrete = !useNvidiaDiscrete;
+            forceUseNvidiaDiscrete = useNvidiaDiscrete;
             requestOpenRestartAppDialog();
-        } else if (isHybridAmd && ImGui::MenuItem("FPS Overlay", nullptr, forceUseAmdDiscrete)) {
-            forceUseAmdDiscrete = !forceUseAmdDiscrete;
+        } else if (isHybridAmd && ImGui::MenuItem("Use Discrete AMD GPU", nullptr, useAmdDiscrete)) {
+            useAmdDiscrete = !useAmdDiscrete;
+            forceUseAmdDiscrete = useAmdDiscrete;
             requestOpenRestartAppDialog();
         }
         ImGui::EndMenu();
