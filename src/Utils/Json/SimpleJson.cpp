@@ -36,8 +36,6 @@
 #include <Utils/File/FileLoader.hpp>
 #include "SimpleJson.hpp"
 
-#include <boost/proto/transform/env.hpp>
-
 namespace sgl {
 
 JsonValue::JsonValue() : JsonValue(JsonValueType::NULL_VALUE) {}
