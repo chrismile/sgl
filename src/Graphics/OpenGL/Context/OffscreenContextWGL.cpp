@@ -313,7 +313,7 @@ std::string OffscreenContextWGL::selectDisplayNameForVulkanDevice() {
          */
         //dxgiAdapterDesc1.VendorId;
         ComPtr<IDXGIOutput> out;
-        for (size_t odx = 0; dxgiAdapter1->EnumOutputs(odx, &out) == S_OK; odx++) {
+        for (size_t odx = 0; dxgiAdapter1->EnumOutputs((UINT)odx, &out) == S_OK; odx++) {
             DXGI_OUTPUT_DESC desc2;
             out->GetDesc(&desc2);
             displayName = sgl::wideStringArrayToStdString(desc2.DeviceName);
