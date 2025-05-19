@@ -692,20 +692,24 @@ bool AppSettings::checkOpenGLVulkanInteropExtensionsSupported() {
 #endif
 
 #ifdef SUPPORT_OPENGL
-void AppSettings::setUseAppDeviceSelectorOpenGL() {
-    /*
-     * Currently only supported on Windows, as there we only have the option to set a few exported symbols.
-     * On Linux, we would need to manipulate SDL/GLFW to (a) use EGL and (b) use the correct platform device.
-     * SDL has a SDL_GLAttr entry called SDL_GL_EGL_PLATFORM and has functions such as SDL_EGL_GetProcAddress,
-     * SDL_EGL_GetCurrentDisplay, SDL_EGL_GetCurrentConfig, SDL_EGL_GetWindowSurface and SDL_EGL_SetAttributeCallbacks.
-     * SDL offers callbacks like SDL_EGLAttribArrayCallback to specify the inputs of functions such as
-     * eglGetPlatformDisplay. However, this only lets us control the last parameter to eglGetPlatformDisplay, i.e.,
-     * "const EGLint *attrib_list". The full call to the function would need to look like this for device selection:
-     * "eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT, eglDevices[matchingDeviceIdx], nullptr)"
-     */
+/*
+ * Currently only supported on Windows, as there we only have the option to set a few exported symbols.
+ * On Linux, we would need to manipulate SDL/GLFW to (a) use EGL and (b) use the correct platform device.
+ * SDL has a SDL_GLAttr entry called SDL_GL_EGL_PLATFORM and has functions such as SDL_EGL_GetProcAddress,
+ * SDL_EGL_GetCurrentDisplay, SDL_EGL_GetCurrentConfig, SDL_EGL_GetWindowSurface and SDL_EGL_SetAttributeCallbacks.
+ * SDL offers callbacks like SDL_EGLAttribArrayCallback to specify the inputs of functions such as
+ * eglGetPlatformDisplay. However, this only lets us control the last parameter to eglGetPlatformDisplay, i.e.,
+ * "const EGLint *attrib_list". The full call to the function would need to look like this for device selection:
+ * "eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT, eglDevices[matchingDeviceIdx], nullptr)"
+ */
+void AppSettings::setUseAppDeviceSelectorOpenGL(
+#ifdef _WIN32
+        DWORD* _NvOptimusEnablement, DWORD* _AmdPowerXpressRequestHighPerformance
+#endif
+    ) {
 #if defined(_WIN32) && !defined(DISABLE_DEVICE_SELECTION_SUPPORT)
     if (!deviceSelector) {
-        deviceSelector = new sgl::DeviceSelectorWGL;
+        deviceSelector = new sgl::DeviceSelectorWGL(_NvOptimusEnablement, _AmdPowerXpressRequestHighPerformance);
     }
 #endif
 }

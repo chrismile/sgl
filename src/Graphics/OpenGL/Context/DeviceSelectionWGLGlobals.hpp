@@ -1,5 +1,5 @@
 /*
- * BSD 2-Clause License
+* BSD 2-Clause License
  *
  * Copyright (c) 2025, Christoph Neuhauser
  * All rights reserved.
@@ -26,8 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DEVICESELECTIONWGL_HPP
-#define DEVICESELECTIONWGL_HPP
+#ifndef DEVICESELECTIONWGLGLOBALS_HPP
+#define DEVICESELECTIONWGLGLOBALS_HPP
 
 #ifndef __LP64__
 typedef unsigned long DWORD;
@@ -35,48 +35,12 @@ typedef unsigned long DWORD;
 typedef unsigned int DWORD;
 #endif
 
-#include <Graphics/Utils/DeviceSelection.hpp>
-
-namespace sgl {
-
-// The user needs to include DeviceSelectionWGLGlobals.hpp in some module.
-
-class DLL_OBJECT DeviceSelectorWGL : public DeviceSelector {
-public:
-    DeviceSelectorWGL(DWORD* _NvOptimusEnablement, DWORD* _AmdPowerXpressRequestHighPerformance);
-    void serializeSettings(JsonValue& settings) override;
-    void deserializeSettings(const JsonValue& settings) override;
-    void renderGui() override;
-    void renderGuiMenu() override;
-
-private:
-    void checkUsedVendor();
-    bool isFirstFrame = true;
-
-    // System configuration.
-    bool isHybridNvidia = false;
-    bool isHybridAmd = false;
-
-    // Current selection.
-    bool useNvidiaDiscrete = false;
-    bool useAmdDiscrete = false;
-
-    // User selection.
-    bool forceUseNvidiaDiscrete = false;
-    bool forceUseAmdDiscrete = false;
-
-    DWORD* _NvOptimusEnablement = nullptr;
-    DWORD* _AmdPowerXpressRequestHighPerformance = nullptr;
-};
-
-#ifdef SUPPORT_VULKAN
-namespace vk {
-class Device;
-}
-DLL_OBJECT void attemptForceWglContextForVulkanDevice(
-    sgl::vk::Device* device, DWORD* _NvOptimusEnablement, DWORD* _AmdPowerXpressRequestHighPerformance);
-#endif
-
+// The code below needs to be defined in an .exe file and not a .dll file.
+extern "C" {
+    // https://developer.download.nvidia.com/devzone/devcenter/gamegraphics/files/OptimusRenderingPolicies.pdf
+    __declspec(dllexport) DWORD NvOptimusEnablement = 0x00000000;
+    // https://gpuopen.com/learn/amdpowerxpressrequesthighperformance/
+    __declspec(dllexport) DWORD AmdPowerXpressRequestHighPerformance = 0x00000000;
 }
 
-#endif //DEVICESELECTIONWGL_HPP
+#endif //DEVICESELECTIONWGLGLOBALS_HPP

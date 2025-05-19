@@ -89,7 +89,6 @@ OffscreenContext* createOffscreenContext(
         offscreenContext->initialize();
 #else
 #ifdef SUPPORT_VULKAN
-        attemptForceWglContextForVulkanDevice(vulkanDevice);
 #endif
         sgl::OffscreenContextWGLParams paramsWgl{};
         paramsWgl.device = vulkanDevice;

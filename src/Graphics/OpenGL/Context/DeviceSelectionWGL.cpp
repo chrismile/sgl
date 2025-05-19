@@ -48,13 +48,6 @@
 
 typedef BOOL ( WINAPI *PFN_EnumDisplayDevicesA )( LPCSTR lpDevice, DWORD iDevNum, PDISPLAY_DEVICEA lpDisplayDevice, DWORD dwFlags );
 
-extern "C" {
-    // https://developer.download.nvidia.com/devzone/devcenter/gamegraphics/files/OptimusRenderingPolicies.pdf
-    __declspec(dllexport) DWORD NvOptimusEnablement = 0x00000000;
-    // https://gpuopen.com/learn/amdpowerxpressrequesthighperformance/
-    __declspec(dllexport) DWORD AmdPowerXpressRequestHighPerformance = 0x00000000;
-}
-
 namespace sgl {
 
 constexpr uint16_t vendorIdNvidia = 0x10DE;
@@ -64,7 +57,9 @@ constexpr uint16_t vendorIdIntel = 0x8086;
 #define VENDOR_STRING_AMD "PCI\\VEN_1002&"
 #define VENDOR_STRING_INTEL "PCI\\VEN_8086&"
 
-DeviceSelectorWGL::DeviceSelectorWGL() {
+DeviceSelectorWGL::DeviceSelectorWGL(DWORD* _NvOptimusEnablement, DWORD* _AmdPowerXpressRequestHighPerformance)
+        : _NvOptimusEnablement(_NvOptimusEnablement),
+          _AmdPowerXpressRequestHighPerformance(_AmdPowerXpressRequestHighPerformance) {
     // Check if we have a dGPU from NVIDIA or AMD and a separate iGPU.
     HMODULE user32Module = LoadLibrary("user32.dll");
     auto* pEnumDisplayDevicesA = PFN_EnumDisplayDevicesA(GetProcAddress(user32Module, "EnumDisplayDevicesA"));
@@ -138,10 +133,10 @@ void DeviceSelectorWGL::deserializeSettings(const JsonValue& settings) {
         forceUseAmdDiscrete = deviceSelection["forceUseAmdDiscrete"].asBool();
     }
     if (forceUseNvidiaDiscrete) {
-        NvOptimusEnablement = 0x00000001;
+        *_NvOptimusEnablement = 0x00000001;
     }
     if (forceUseAmdDiscrete) {
-        AmdPowerXpressRequestHighPerformance = 0x00000001;
+        *_AmdPowerXpressRequestHighPerformance = 0x00000001;
     }
 }
 
@@ -199,7 +194,8 @@ void DeviceSelectorWGL::renderGuiMenu() {
 namespace vk {
 class Device;
 }
-void attemptForceWglContextForVulkanDevice(sgl::vk::Device* device) {
+void attemptForceWglContextForVulkanDevice(
+        sgl::vk::Device* device, DWORD* _NvOptimusEnablement, DWORD* _AmdPowerXpressRequestHighPerformance) {
     bool isHybridNvidia = false;
     bool isHybridAmd = false;
     bool hasIntegratedGpu = false;
@@ -221,11 +217,11 @@ void attemptForceWglContextForVulkanDevice(sgl::vk::Device* device) {
         }
     }
 
-    if (isHybridNvidia) {
-        NvOptimusEnablement = 0x00000001;
+    if (isHybridNvidia && _NvOptimusEnablement) {
+        *_NvOptimusEnablement = 0x00000001;
     }
-    if (isHybridAmd) {
-        AmdPowerXpressRequestHighPerformance = 0x00000001;
+    if (isHybridAmd && _AmdPowerXpressRequestHighPerformance) {
+        *_AmdPowerXpressRequestHighPerformance = 0x00000001;
     }
 
     /*

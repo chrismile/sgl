@@ -29,6 +29,14 @@
 #ifndef SYSTEM_APPSETTINGS_HPP_
 #define SYSTEM_APPSETTINGS_HPP_
 
+#ifdef _WIN32
+#ifndef __LP64__
+typedef unsigned long DWORD;
+#else
+typedef unsigned int DWORD;
+#endif
+#endif
+
 #include <map>
 #include <string>
 #ifdef USE_GLM
@@ -36,7 +44,6 @@
 #else
 #include <Math/Geometry/vec.hpp>
 #endif
-
 
 #include <Defs.hpp>
 #include <Utils/Singleton.hpp>
@@ -245,7 +252,11 @@ public:
 #endif
 #ifdef SUPPORT_OPENGL
     // Handled by sgl::vk::Device in the Vulkan case and AppSettings in the OpenGL case.
+#ifdef _WIN32
+    void setUseAppDeviceSelectorOpenGL(DWORD* _NvOptimusEnablement, DWORD* _AmdPowerXpressRequestHighPerformance);
+#else
     void setUseAppDeviceSelectorOpenGL();
+#endif
 #endif
 #if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN)
     inline sgl::DeviceSelector* getDeviceSelector() { return deviceSelector; }
