@@ -488,10 +488,6 @@ void VectorBackendNanoVG::renderEnd() {
             }
             interopSyncVkGl->getRenderFinishedSemaphore()->signalSemaphoreGl(textures, dstLayouts);
         }
-        // 2023-01-22: With the Intel driver contained in Mesa 22.0.5, the synchronization didn't work as expected.
-        if (device->getDeviceDriverId() == VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA) {
-            glFinish();
-        }
         sgl::vk::CommandBufferPtr commandBufferPost =
                 commandBuffersPost.at(swapchain ? swapchain->getCurrentFrame() : 0);
         commandBufferPost->pushWaitSemaphore(
@@ -501,7 +497,7 @@ void VectorBackendNanoVG::renderEnd() {
                 renderTargetImageViewVk->getImage()->getVkImageLayout(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                 VK_ACCESS_NONE_KHR, VK_ACCESS_SHADER_READ_BIT,
-                VK_QUEUE_FAMILY_EXTERNAL, rendererVk->getDevice()->getGraphicsQueueIndex());
+                VK_QUEUE_FAMILY_EXTERNAL, device->getGraphicsQueueIndex());
         interopSyncVkGl->frameFinished();
     }
 #endif
