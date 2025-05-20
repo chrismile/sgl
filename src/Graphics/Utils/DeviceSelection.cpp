@@ -75,7 +75,7 @@ void DeviceSelector::renderGuiDialog() {
     }
 }
 
-void convertUuidToJsonValue(uint8_t* uuid, JsonValue& uuidValue) {
+void convertUuidToJsonValue(const uint8_t* uuid, JsonValue& uuidValue) {
     for (uint32_t i = 0; i < 16u; i++) {
         uuidValue[i] = uint32_t(uuid[i]);
     }

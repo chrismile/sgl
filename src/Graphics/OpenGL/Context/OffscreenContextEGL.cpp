@@ -57,10 +57,6 @@
 #define dlsym GetProcAddress
 #endif
 
-namespace sgl {
-
-OffscreenContextEGL::OffscreenContextEGL(OffscreenContextEGLParams params) : params(params) {}
-
 // https://registry.khronos.org/EGL/extensions/EXT/EGL_EXT_device_persistent_id.txt
 #ifndef EGL_EXT_device_persistent_id
 typedef EGLBoolean (EGLAPIENTRYP PFNEGLQUERYDEVICEBINARYEXTPROC) (EGLDeviceEXT device, EGLint name, EGLint max_size, void *value, EGLint *size);
@@ -80,6 +76,10 @@ typedef EGLBoolean (EGLAPIENTRYP PFNEGLQUERYDEVICEBINARYEXTPROC) (EGLDeviceEXT d
 #ifndef EGL_EXT_device_drm_render_node
 #define EGL_DRM_RENDER_NODE_FILE_EXT 0x3377
 #endif
+
+namespace sgl {
+
+OffscreenContextEGL::OffscreenContextEGL(OffscreenContextEGLParams params) : params(params) {}
 
 struct OffscreenContextEGLFunctionTable {
     PFNEGLGETPROCADDRESSPROC eglGetProcAddress;

@@ -192,6 +192,8 @@ if ((NOT ${SUPPORT_OPENGL}) OR (NOT OpenGL_FOUND) OR (NOT GLEW_FOUND))
 else()
     # EGL context creation is not supported on Windows so far due to the (usually) missing EGL implementation.
     if (WIN32 OR EMSCRIPTEN)
+        list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/OpenGL/Context/DeviceSelectionEGL.hpp)
+        list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/OpenGL/Context/DeviceSelectionEGL.cpp)
         list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/OpenGL/Context/OffscreenContextEGL.hpp)
         list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/OpenGL/Context/OffscreenContextEGL.cpp)
     endif()
@@ -653,6 +655,7 @@ if (${SUPPORT_OPENGL} AND OpenGL_FOUND AND GLEW_FOUND)
 
     if (EMSCRIPTEN)
         set(EMSCRIPTEN_SGL_LINKER_FLAGS "${EMSCRIPTEN_SGL_LINKER_FLAGS}" "-sMAX_WEBGL_VERSION=2")
+        target_compile_definitions(sgl PUBLIC DISABLE_DEVICE_SELECTION_SUPPORT)
     endif()
 
     if (ANDROID OR IOS OR EMSCRIPTEN)

@@ -54,6 +54,7 @@ SystemGL::SystemGL() {
     }
 
     vendorString = (const char*)glGetString(GL_VENDOR);
+    rendererString = (const char*)glGetString(GL_RENDERER);
 
     // Get OpenGL version (including GLSL)
     versionString = (const char*)glGetString(GL_VERSION);

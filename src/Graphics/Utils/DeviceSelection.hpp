@@ -60,7 +60,7 @@ private:
     bool restartAppNow = false;
 };
 
-DLL_OBJECT void convertUuidToJsonValue(uint8_t* uuid, JsonValue& uuidValue);
+DLL_OBJECT void convertUuidToJsonValue(const uint8_t* uuid, JsonValue& uuidValue);
 DLL_OBJECT std::array<uint8_t, 16> convertJsonValueToUuid(const JsonValue& uuidValue);
 
 }

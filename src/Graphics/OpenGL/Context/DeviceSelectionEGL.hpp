@@ -26,37 +26,57 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef DEVICESELECTIONEGL_HPP
+#define DEVICESELECTIONEGL_HPP
 
-#ifndef DEVICESELECTIONVULKAN_HPP
-#define DEVICESELECTIONVULKAN_HPP
-
+#include <string>
+#include <vector>
+#include <array>
+#include <cstdint>
 #include <Graphics/Utils/DeviceSelection.hpp>
+
+#if defined(_WIN32) && !defined(_WINDEF_)
+struct HINSTANCE__;
+typedef HINSTANCE__* HINSTANCE;
+typedef HINSTANCE HMODULE;
+#endif
 
 namespace sgl {
 
-namespace vk {
-class Instance;
-struct DeviceFeatures;
-}
+struct DeviceSelectionEntryEGL {
+    std::string name;
+    int deviceIdx = 0;
+    bool hasUuid = false;
+    std::array<uint8_t, 16> driverUuid;
+    std::array<uint8_t, 16> deviceUuid;
+};
 
-class DLL_OBJECT DeviceSelectorVulkan : public DeviceSelector {
+struct DeviceSelectionEGLFunctionTable;
+
+class DLL_OBJECT DeviceSelectorEGL : public DeviceSelector {
 public:
-    explicit DeviceSelectorVulkan(const std::vector<VkPhysicalDevice>& suitablePhysicalDevices);
+    DeviceSelectorEGL();
+    ~DeviceSelectorEGL() override;
     void serializeSettings(JsonValue& settings) override;
     void deserializeSettings(const JsonValue& settings) override;
     void renderGui() override;
     void renderGuiMenu() override;
-    VkPhysicalDevice getSelectedPhysicalDevice();
-    void setDefaultPhysicalDevice(VkPhysicalDevice usedPhysicalDevice);
-    void setUsedPhysicalDevice(VkPhysicalDevice usedPhysicalDevice);
+    int getSelectedEglDeviceIdx();
+    void retrieveUsedDevice();
 
 private:
-    std::vector<std::pair<std::string, VkPhysicalDevice>> physicalDevices;
+#ifdef _WIN32
+    HMODULE eglHandle = nullptr;
+#else
+    void* eglHandle = nullptr;
+#endif
+    DeviceSelectionEGLFunctionTable* f = nullptr;
+
+    std::vector<DeviceSelectionEntryEGL> deviceList;
     size_t selectedDeviceIndex = 0;
-    std::string defaultDeviceName;
     std::string usedDeviceName;
 };
 
 }
 
-#endif //DEVICESELECTIONVULKAN_HPP
+#endif //DEVICESELECTIONEGL_HPP

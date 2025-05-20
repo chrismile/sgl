@@ -57,6 +57,9 @@
 #include <Graphics/OpenGL/SystemGL.hpp>
 #ifndef DISABLE_DEVICE_SELECTION_SUPPORT
 #include <Graphics/Utils/DeviceSelection.hpp>
+#ifdef __linux__
+#include <Graphics/OpenGL/Context/DeviceSelectionEGL.hpp>
+#endif
 #ifdef _WIN32
 #include <Graphics/OpenGL/Context/DeviceSelectionWGL.hpp>
 #endif
@@ -334,6 +337,20 @@ Window* AppSettings::createWindow() {
 #if defined(SUPPORT_OPENGL) && !defined(DISABLE_DEVICE_SELECTION_SUPPORT)
     if (renderSystem == RenderSystem::OPENGL && deviceSelector) {
         deviceSelector->deserializeSettingsGlobal();
+#if __linux__ && defined(SUPPORT_SDL3)
+        // Unfortunately, this currently only seems to exist for offscreen contexts (cf. SDL_EGL_InitializeOffscreen).
+        // Also, SDL_EGL_CreateSurface fails with "unable to create an EGL window surface" when forcing EGL.
+        /*if (windowBackend == WindowBackend::SDL3_IMPL) {
+            auto* deviceSelectorEgl = static_cast<sgl::DeviceSelectorEGL*>(deviceSelector);
+            int selectedEglDeviceIdx = deviceSelectorEgl->getSelectedEglDeviceIdx();
+            if (selectedEglDeviceIdx >= 0) {
+                std::string deviceIdxString = std::to_string(selectedEglDeviceIdx);
+                SDL_SetHint(SDL_HINT_VIDEO_FORCE_EGL, "1");
+                SDL_SetHint(SDL_HINT_VIDEO_EGL_ALLOW_GETDISPLAY_FALLBACK, "1");
+                SDL_SetHint("SDL_HINT_EGL_DEVICE", deviceIdxString.c_str());
+            }
+        }*/
+#endif
     }
 #endif
 
@@ -460,6 +477,17 @@ Window* AppSettings::createWindow() {
     if (!iconPath.empty()) {
         mainWindow->setWindowIconFromFile(iconPath);
     }
+
+#if defined(SUPPORT_OPENGL) && !defined(DISABLE_DEVICE_SELECTION_SUPPORT)
+    if (renderSystem == RenderSystem::OPENGL && deviceSelector) {
+#if __linux__ && defined(SUPPORT_SDL3)
+        if (windowBackend == WindowBackend::SDL3_IMPL) {
+            auto* deviceSelectorEgl = static_cast<sgl::DeviceSelectorEGL*>(deviceSelector);
+            deviceSelectorEgl->retrieveUsedDevice();
+        }
+#endif
+    }
+#endif
 
     return mainWindow;
 }
@@ -692,21 +720,20 @@ bool AppSettings::checkOpenGLVulkanInteropExtensionsSupported() {
 #endif
 
 #ifdef SUPPORT_OPENGL
-/*
- * Currently only supported on Windows, as there we only have the option to set a few exported symbols.
- * On Linux, we would need to manipulate SDL/GLFW to (a) use EGL and (b) use the correct platform device.
- * SDL has a SDL_GLAttr entry called SDL_GL_EGL_PLATFORM and has functions such as SDL_EGL_GetProcAddress,
- * SDL_EGL_GetCurrentDisplay, SDL_EGL_GetCurrentConfig, SDL_EGL_GetWindowSurface and SDL_EGL_SetAttributeCallbacks.
- * SDL offers callbacks like SDL_EGLAttribArrayCallback to specify the inputs of functions such as
- * eglGetPlatformDisplay. However, this only lets us control the last parameter to eglGetPlatformDisplay, i.e.,
- * "const EGLint *attrib_list". The full call to the function would need to look like this for device selection:
- * "eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT, eglDevices[matchingDeviceIdx], nullptr)"
- */
 void AppSettings::setUseAppDeviceSelectorOpenGL(
 #ifdef _WIN32
         DWORD* _NvOptimusEnablement, DWORD* _AmdPowerXpressRequestHighPerformance
 #endif
     ) {
+#if defined(__linux__) && !defined(DISABLE_DEVICE_SELECTION_SUPPORT)
+        // SDL2 has SDL_HINT_VIDEO_X11_FORCE_EGL, but no way of setting the used device.
+#ifdef SUPPORT_SDL3
+    if (!deviceSelector && windowBackend == WindowBackend::SDL3_IMPL) {
+        deviceSelector = new sgl::DeviceSelectorEGL();
+    }
+#endif
+#endif
+
 #if defined(_WIN32) && !defined(DISABLE_DEVICE_SELECTION_SUPPORT)
     if (!deviceSelector) {
         deviceSelector = new sgl::DeviceSelectorWGL(_NvOptimusEnablement, _AmdPowerXpressRequestHighPerformance);
