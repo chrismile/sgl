@@ -73,8 +73,8 @@ AppLogic::AppLogic() : framerateSmoother(16) {
     printFPS = true;
     fps = 60.0f;
 
-#ifdef SUPPORT_SDL
     window = AppSettings::get()->getMainWindow();
+#ifdef SUPPORT_SDL
     if (getIsSdlWindowBackend(window->getBackend())) {
         static_cast<SDLWindow*>(window)->setEventHandler([this](const SDL_Event &event) {
             this->processSDLEvent(event);

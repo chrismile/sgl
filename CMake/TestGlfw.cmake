@@ -27,12 +27,12 @@
 try_compile(
         GLFW_SUPPORTS_X11
         "${CMAKE_BINARY_DIR}/TestGlfw/X11"
-        "${CMAKE_SOURCE_DIR}/CMake/TestGlfwBackend.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/CMake/TestGlfwBackend.cpp"
         LINK_LIBRARIES glfw
         COMPILE_DEFINITIONS -DTEST_X11)
 try_compile(
         GLFW_SUPPORTS_WAYLAND
         "${CMAKE_BINARY_DIR}/TestGlfw/Wayland"
-        "${CMAKE_SOURCE_DIR}/CMake/TestGlfwBackend.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/CMake/TestGlfwBackend.cpp"
         LINK_LIBRARIES glfw
         COMPILE_DEFINITIONS -DTEST_WAYLAND)
