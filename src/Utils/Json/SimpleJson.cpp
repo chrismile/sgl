@@ -68,9 +68,10 @@ JsonValue::JsonValue(const JsonValue& other) : valueType(other.valueType) {
 }
 
 JsonValue::JsonValue(JsonValue&& other) noexcept {
-    valueType = JsonValueType::NULL_VALUE;
-    std::swap(valueType, other.valueType);
-    std::swap(data, other.data);
+    valueType = other.valueType;
+    data = other.data;
+    other.valueType = JsonValueType::NULL_VALUE;
+    other.data.intValue = 0;
 }
 
 void JsonValue::deleteData() {
