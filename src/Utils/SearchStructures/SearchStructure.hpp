@@ -34,7 +34,11 @@
 #ifdef TRACY_ENABLE
 #include <tracy/Tracy.hpp>
 #endif
+#ifdef USE_GLM
 #include <glm/glm.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
+#endif
 
 #if __cplusplus >= 201703L
 #include <variant>

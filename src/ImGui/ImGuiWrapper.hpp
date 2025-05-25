@@ -30,7 +30,11 @@
 #define SGL_IMGUIWRAPPER_HPP
 
 #include <vector>
+#ifdef USE_GLM
 #include <glm/vec4.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
+#endif
 
 #include <Utils/Singleton.hpp>
 

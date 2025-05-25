@@ -32,7 +32,11 @@
 #include <functional>
 #include <memory>
 
+#ifdef USE_GLM
 #include <glm/fwd.hpp>
+#else
+#include <Math/Geometry/vec_fwd.hpp>
+#endif
 
 #include <Defs.hpp>
 #include <Math/Geometry/AABB2.hpp>

@@ -30,7 +30,13 @@
 #define SGL_COORDINATEAXESOVERLAYWIDGET_HPP
 
 #include <memory>
+
+#ifdef USE_GLM
 #include <glm/vec3.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
+#endif
+
 #include <Graphics/Color.hpp>
 
 namespace sgl {

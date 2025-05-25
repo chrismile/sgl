@@ -34,7 +34,11 @@
 #include <poll.h>
 #endif
 
+#ifdef USE_GLM
 #include <glm/glm.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
+#endif
 
 #include <Utils/AppSettings.hpp>
 #include <Utils/File/Logfile.hpp>
@@ -829,7 +833,7 @@ void GuiVarData::onColorBarClick() {
                 glm::vec3 newColor_linearRGB = glm::mix(
                         colorPoints_LinearRGB.at(insertPosition-1).color,
                         colorPoints_LinearRGB.at(insertPosition).color,
-                        1.0 - (colorPoints_LinearRGB.at(insertPosition).position - newPosition)
+                        1.0f - (colorPoints_LinearRGB.at(insertPosition).position - newPosition)
                               / (colorPoints_LinearRGB.at(insertPosition).position
                                  - colorPoints_LinearRGB.at(insertPosition-1).position));
                 sgl::Color16 newColorsRGB(sgl::TransferFunctionWindow::linearRGBTosRGB(newColor_linearRGB));

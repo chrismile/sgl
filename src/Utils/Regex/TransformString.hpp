@@ -30,7 +30,12 @@
 #define STRESSLINEVIS_TRANSFORMSTRING_HPP
 
 #include <string>
+
+#ifdef USE_GLM
 #include <glm/glm.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
+#endif
 
 /**
  * Parses SVG/CSS-like transform strings. The strings are read from left to right.

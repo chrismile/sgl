@@ -31,7 +31,11 @@
 
 #include <memory>
 
+#ifdef USE_GLM
 #include <glm/glm.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
+#endif
 
 #include <Defs.hpp>
 #include <Graphics/Buffers/GeometryBuffer.hpp>

@@ -29,7 +29,11 @@
 #ifndef SGL_VECTORBACKENDNANOVG_HPP
 #define SGL_VECTORBACKENDNANOVG_HPP
 
+#ifdef USE_GLM
 #include <glm/vec4.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
+#endif
 
 #ifdef SUPPORT_VULKAN
 #include <Graphics/Vulkan/Utils/Swapchain.hpp>

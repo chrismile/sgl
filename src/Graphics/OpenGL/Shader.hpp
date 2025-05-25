@@ -91,7 +91,9 @@ public:
     bool setUniform(const char *name, const glm::vec3 &value) override;
     bool setUniform(const char *name, const glm::vec4 &value) override;
     bool setUniform(const char *name, const glm::mat3 &value) override;
+#ifdef USE_GLM
     bool setUniform(const char *name, const glm::mat3x4 &value) override;
+#endif
     bool setUniform(const char *name, const glm::mat4 &value) override;
     bool setUniform(const char *name, const TexturePtr &value, int textureUnit = 0) override;
     bool setUniform(const char *name, const Color &value) override;
@@ -120,7 +122,9 @@ public:
     bool setUniform(int location, const glm::vec3 &value) override;
     bool setUniform(int location, const glm::vec4 &value) override;
     bool setUniform(int location, const glm::mat3 &value) override;
+#ifdef USE_GLM
     bool setUniform(int location, const glm::mat3x4 &value) override;
+#endif
     bool setUniform(int location, const glm::mat4 &value) override;
     bool setUniform(int location, const TexturePtr &value, int textureUnit = 0) override;
     bool setUniform(int location, const Color &value) override;

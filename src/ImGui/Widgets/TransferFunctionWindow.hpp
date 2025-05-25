@@ -32,7 +32,11 @@
 #include <string>
 #include <vector>
 
+#ifdef USE_GLM
 #include <glm/glm.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
+#endif
 
 #include <Math/Geometry/AABB2.hpp>
 #include <Utils/File/PathWatch.hpp>

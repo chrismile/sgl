@@ -31,7 +31,12 @@
 
 #include <vector>
 #include <functional>
+
+#ifdef USE_GLM
 #include <glm/gtc/quaternion.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
+#endif
 
 #include <Math/Geometry/MatrixUtil.hpp>
 #include <Math/Geometry/AABB3.hpp>
@@ -70,15 +75,15 @@ public:
     void normalizeToTotalTime(float totalTime);
     void update(float currentTime);
     void resetTime();
-    [[nodiscard]] inline const glm::mat4x4& getViewMatrix() const { return currentTransform; }
+    [[nodiscard]] inline const glm::mat4& getViewMatrix() const { return currentTransform; }
     [[nodiscard]] inline float getEndTime() const { return controlPoints.empty() ? 0.0f : controlPoints.back().time; }
     [[nodiscard]] inline bool empty() const { return controlPoints.empty(); }
 
 private:
-    glm::mat4x4 toTransform(const glm::vec3 &position, const glm::quat &orientation);
+    glm::mat4 toTransform(const glm::vec3 &position, const glm::quat &orientation);
 
     const uint32_t CAMERA_PATH_FORMAT_VERSION = 1u;
-    glm::mat4x4 currentTransform{};
+    glm::mat4 currentTransform{};
     std::vector<ControlPoint> controlPoints;
     float time = 0.0f;
 

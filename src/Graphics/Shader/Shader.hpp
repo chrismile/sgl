@@ -33,7 +33,11 @@
 #include <vector>
 #include <memory>
 
+#ifdef USE_GLM
 #include <glm/fwd.hpp>
+#else
+#include <Math/Geometry/vec_fwd.hpp>
+#endif
 
 #include <Defs.hpp>
 #include <Graphics/Buffers/GeometryBuffer.hpp>
@@ -105,7 +109,9 @@ public:
     virtual bool setUniform(const char *name, const glm::vec3 &value)=0;
     virtual bool setUniform(const char *name, const glm::vec4 &value)=0;
     virtual bool setUniform(const char *name, const glm::mat3 &value)=0;
+#ifdef USE_GLM
     virtual bool setUniform(const char *name, const glm::mat3x4 &value)=0;
+#endif
     virtual bool setUniform(const char *name, const glm::mat4 &value)=0;
     virtual bool setUniform(const char *name, const TexturePtr &value, int textureUnit = 0)=0;
     virtual bool setUniform(const char *name, const Color &value)=0;
@@ -134,7 +140,9 @@ public:
     virtual bool setUniform(int location, const glm::vec3 &value)=0;
     virtual bool setUniform(int location, const glm::vec4 &value)=0;
     virtual bool setUniform(int location, const glm::mat3 &value)=0;
+#ifdef USE_GLM
     virtual bool setUniform(int location, const glm::mat3x4 &value)=0;
+#endif
     virtual bool setUniform(int location, const glm::mat4 &value)=0;
     virtual bool setUniform(int location, const TexturePtr &value, int textureUnit = 0)=0;
     virtual bool setUniform(int location, const Color &value)=0;

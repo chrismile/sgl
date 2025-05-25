@@ -29,10 +29,14 @@
 #include <iostream>
 #include <fstream>
 
+#ifdef USE_GLM
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/euler_angles.hpp>
 #include <glm/gtx/norm.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
+#endif
 
 #include <Utils/Events/Stream/Stream.hpp>
 #include <Utils/File/Logfile.hpp>
@@ -179,7 +183,7 @@ void CameraPath::resetTime() {
     update(0.0f);
 }
 
-glm::mat4x4 CameraPath::toTransform(const glm::vec3& position, const glm::quat& orientation) {
+glm::mat4 CameraPath::toTransform(const glm::vec3& position, const glm::quat& orientation) {
     return glm::toMat4(orientation) * sgl::matrixTranslation(-position);
 }
 

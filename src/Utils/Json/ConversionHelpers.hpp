@@ -33,6 +33,8 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
 #endif
 
 #include "SimpleJson.hpp"
@@ -90,6 +92,33 @@ JsonValue glmVecToJsonValue(const glm::vec<L, T, Q>& obj) {
     return val;
 }
 #endif
+
+#else
+
+template <typename T>
+JsonValue glmVecToJsonValue(const glm::tvec2<T>& obj) {
+    JsonValue val;
+    for (int i = 0; i < 2; i++) {
+        val[i] = obj[i];
+    }
+    return val;
+}
+template <typename T>
+JsonValue glmVecToJsonValue(const glm::tvec3<T>& obj) {
+    JsonValue val;
+    for (int i = 0; i < 3; i++) {
+        val[i] = obj[i];
+    }
+    return val;
+}
+template <typename T>
+JsonValue glmVecToJsonValue(const glm::tvec4<T>& obj) {
+    JsonValue val;
+    for (int i = 0; i < 4; i++) {
+        val[i] = obj[i];
+    }
+    return val;
+}
 
 #endif
 

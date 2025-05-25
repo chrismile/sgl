@@ -31,7 +31,13 @@
 
 #include <vector>
 #include <string>
+
+#ifdef USE_GLM
 #include <glm/glm.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
+#endif
+
 #include <Math/Geometry/AABB2.hpp>
 #include <Graphics/Vulkan/Image/Image.hpp>
 #include "Pass.hpp"

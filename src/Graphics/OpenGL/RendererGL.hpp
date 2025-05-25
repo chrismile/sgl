@@ -30,7 +30,12 @@
 #define GRAPHICS_OPENGL_RENDERERGL_HPP_
 
 #include <vector>
+
+#ifdef USE_GLM
 #include <glm/glm.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
+#endif
 #include <GL/glew.h>
 
 #include <Graphics/Renderer.hpp>

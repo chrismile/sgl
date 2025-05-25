@@ -32,7 +32,12 @@
 #include <string>
 #include <vector>
 #include <map>
+
+#ifdef USE_GLM
 #include <glm/glm.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
+#endif
 
 #include <Graphics/Scene/Camera.hpp>
 

@@ -34,12 +34,13 @@
 
 #ifdef USE_GLM
 #include <glm/mat4x4.hpp>
-#include <Math/Geometry/MatrixUtil.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
 #endif
+#include <Math/Geometry/MatrixUtil.hpp>
+#include <Utils/CircularQueue.hpp>
 
 #include "../libs/volk/volk.h"
-
-#include <Utils/CircularQueue.hpp>
 
 namespace sgl { namespace vk {
 
@@ -98,11 +99,9 @@ public:
     // Graphics pipeline.
     void render(const RasterDataPtr& rasterData);
     void render(const RasterDataPtr& rasterData, const FramebufferPtr& framebuffer);
-#ifdef USE_GLM
     void setModelMatrix(const glm::mat4 &matrix);
     void setViewMatrix(const glm::mat4 &matrix);
     void setProjectionMatrix(const glm::mat4 &matrix);
-#endif
 
     // Compute pipeline.
     void dispatch(const ComputeDataPtr& computeData, uint32_t groupCountX);
@@ -270,17 +269,10 @@ private:
     // Global state.
     bool updateMatrixBlock();
     struct MatrixBlock {
-#ifdef USE_GLM
         glm::mat4 mMatrix = matrixIdentity(); // Model matrix
         glm::mat4 vMatrix = matrixIdentity(); // View matrix
         glm::mat4 pMatrix = matrixIdentity(); // Projection matrix
         glm::mat4 mvpMatrix = matrixIdentity(); // Model-view-projection matrix
-#else
-        float mMatrix[16]; // Model matrix
-        float vMatrix[16]; // View matrix
-        float pMatrix[16]; // Projection matrix
-        float mvpMatrix[16]; // Model-view-projection matrix
-#endif
     };
     bool useMatrixBlock = true;
     bool matrixBlockNeedsUpdate = true;

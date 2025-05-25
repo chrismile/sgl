@@ -29,8 +29,12 @@
 #ifndef SRC_GRAPHICS_SCENE_TRANSFORM_HPP_
 #define SRC_GRAPHICS_SCENE_TRANSFORM_HPP_
 
+#ifdef USE_GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
+#endif
 
 namespace sgl {
 

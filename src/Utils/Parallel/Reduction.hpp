@@ -31,8 +31,13 @@
 
 #include <vector>
 #include <map>
+
+#ifdef USE_GLM
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
+#endif
 
 class HalfFloat;
 

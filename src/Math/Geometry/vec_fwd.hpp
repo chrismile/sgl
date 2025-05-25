@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2015, Christoph Neuhauser
+ * Copyright (c) 2025, Christoph Neuhauser
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,44 +26,39 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef GRAPHICS_MESH_VERTEX_HPP_
-#define GRAPHICS_MESH_VERTEX_HPP_
+#ifndef SGL_VEC_FWD_HPP
+#define SGL_VEC_FWD_HPP
 
-#ifdef USE_GLM
-#include <glm/glm.hpp>
-#else
-#include <Math/Geometry/vec.hpp>
-#endif
-#include <Graphics/Color.hpp>
+// Drop-in replacement for glm.
 
-namespace sgl {
+#include <cmath>
 
-struct DLL_OBJECT VertexPlain {
-    explicit VertexPlain(glm::vec3 _position) : position(_position) {}
-    glm::vec3 position;
-};
+namespace glm {
 
-struct DLL_OBJECT VertexTextured {
-    VertexTextured(glm::vec2 _position, glm::vec2 _texcoord) : position(_position.x, _position.y, 0.0f), texcoord(_texcoord) {}
-    VertexTextured(glm::vec3 _position, glm::vec2 _texcoord) : position(_position), texcoord(_texcoord) {}
-    glm::vec3 position;
-    glm::vec2 texcoord;
-};
+template<typename T> class tvec2;
+typedef tvec2<float> vec2;
+typedef tvec2<double> dvec2;
+typedef tvec2<int> ivec2;
+typedef tvec2<unsigned int> uvec2;
+typedef tvec2<bool> bvec2;
 
-struct DLL_OBJECT VertexColor {
-    VertexColor(glm::vec3 _position, Color _color) : position(_position), color(_color) {}
-    glm::vec3 position;
-    Color color;
-};
+template<typename T> class tvec3;
+typedef tvec3<float> vec3;
+typedef tvec3<double> dvec3;
+typedef tvec3<int> ivec3;
+typedef tvec3<unsigned int> uvec3;
+typedef tvec3<bool> bvec3;
 
-struct DLL_OBJECT VertexColorTextured {
-    VertexColorTextured(glm::vec3 _position, glm::vec2 _texcoord) : position(_position), texcoord(_texcoord) {}
-    glm::vec3 position;
-    glm::vec2 texcoord;
-    Color color;
-};
+template<typename T> class tvec4;
+typedef tvec4<float> vec4;
+typedef tvec4<double> dvec4;
+typedef tvec4<int> ivec4;
+typedef tvec4<unsigned int> uvec4;
+typedef tvec4<bool> bvec4;
+
+class mat3;
+class mat4;
 
 }
 
-/*! GRAPHICS_MESH_VERTEX_HPP_ */
-#endif
+#endif //SGL_VEC_FWD_HPP

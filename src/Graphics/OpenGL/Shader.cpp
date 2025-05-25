@@ -26,16 +26,21 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef USE_GLM
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
+#endif
 #include <GL/glew.h>
+
+#include <Utils/File/Logfile.hpp>
 #include "Shader.hpp"
 #include "SystemGL.hpp"
 #include "RendererGL.hpp"
 #include "Texture.hpp"
 #include "ShaderAttributes.hpp"
 #include "ShaderManager.hpp"
-#include <Utils/File/Logfile.hpp>
-#include <glm/glm.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 namespace sgl {
 
@@ -300,9 +305,11 @@ bool ShaderProgramGL::setUniform(const char *name, const glm::mat3 &value) {
     return setUniform(getUniformLoc_error(name), value);
 }
 
+#ifdef USE_GLM
 bool ShaderProgramGL::setUniform(const char *name, const glm::mat3x4 &value) {
     return setUniform(getUniformLoc_error(name), value);
 }
+#endif
 
 bool ShaderProgramGL::setUniform(const char *name, const TexturePtr &value, int textureUnit /* = 0 */) {
     return setUniform(getUniformLoc_error(name), value, textureUnit);
@@ -445,11 +452,13 @@ bool ShaderProgramGL::setUniform(int location, const glm::mat3 &value) {
     return true;
 }
 
+#ifdef USE_GLM
 bool ShaderProgramGL::setUniform(int location, const glm::mat3x4 &value) {
     bind();
     glUniformMatrix3x4fv(location, 1, false, glm::value_ptr(value));
     return true;
 }
+#endif
 
 bool ShaderProgramGL::setUniform(int location, const glm::mat4 &value) {
     bind();

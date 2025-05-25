@@ -27,7 +27,11 @@
  */
 
 #include <algorithm>
+#ifdef USE_GLM
 #include <glm/glm.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
+#endif
 
 #ifdef USE_TBB
 #include <tbb/parallel_for.h>

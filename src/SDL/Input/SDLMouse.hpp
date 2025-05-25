@@ -31,7 +31,11 @@
 
 #include <Input/Mouse.hpp>
 #ifdef SUPPORT_SDL3
+#ifdef USE_GLM
 #include <glm/vec2.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
+#endif
 #else
 #include <Math/Geometry/Point2.hpp>
 #endif

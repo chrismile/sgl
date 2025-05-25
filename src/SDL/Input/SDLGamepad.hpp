@@ -29,14 +29,21 @@
 #ifndef SDL_SDLGAMEPAD_HPP_
 #define SDL_SDLGAMEPAD_HPP_
 
+#include <vector>
+
 #ifdef SUPPORT_SDL3
 #include <SDL3/SDL.h>
 #else
 #include <SDL2/SDL.h>
 #endif
-#include <vector>
-#include <Input/Gamepad.hpp>
+
+#ifdef USE_GLM
 #include <glm/vec2.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
+#endif
+
+#include <Input/Gamepad.hpp>
 
 namespace sgl {
 

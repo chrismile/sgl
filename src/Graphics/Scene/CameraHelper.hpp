@@ -30,8 +30,12 @@
 #define SGL_CAMERAHELPER_HPP
 
 #include <utility>
+#ifdef USE_GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
+#endif
 
 /**
  * Helpers for camera orientation mode conversions.
