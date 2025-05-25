@@ -38,7 +38,8 @@
 #include <Graphics/Scene/RenderTarget.hpp>
 #ifdef SUPPORT_SDL3
 #include <SDL3/SDL.h>
-#else
+#endif
+#ifdef SUPPORT_SDL2
 #include <SDL2/SDL.h>
 #endif
 #ifdef SUPPORT_OPENGL

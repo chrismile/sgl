@@ -27,7 +27,13 @@
  */
 
 #include <cmath>
+
+#ifdef USE_GLM
 #include <glm/glm.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
+#endif
+
 #include "Math.hpp"
 
 #if __cplusplus >= 202002L

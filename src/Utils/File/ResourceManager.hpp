@@ -29,6 +29,7 @@
 #ifndef UTILS_FILE_RESOURCEMANAGER_HPP_
 #define UTILS_FILE_RESOURCEMANAGER_HPP_
 
+#include <string>
 #include <map>
 #include <memory>
 

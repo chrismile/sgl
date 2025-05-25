@@ -31,14 +31,14 @@
 
 #include <cmath>
 #include <cstdint>
+#if _cplusplus >= 201907L
+#include <bit>
+#endif
+
 #ifdef USE_GLM
 #include <glm/fwd.hpp>
 #else
 #include <Math/Geometry/vec.hpp>
-#endif
-
-#if _cplusplus >= 201907L
-#include <bit>
 #endif
 
 /// Collection of math utility functions
