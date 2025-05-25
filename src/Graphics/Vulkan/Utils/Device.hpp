@@ -134,6 +134,10 @@ struct DLL_OBJECT DeviceFeatures {
                 VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_ATOMIC_INT64_FEATURES_EXT;
         shaderAtomicFloatFeatures.sType =
                 VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT;
+#ifdef VK_EXT_mutable_descriptor_type
+        mutableDescriptorTypeFeatures.sType =
+                VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT;
+#endif
 #ifdef VK_EXT_shader_atomic_float2
         shaderAtomicFloat2Features.sType =
                 VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_2_FEATURES_EXT;
@@ -180,6 +184,11 @@ struct DLL_OBJECT DeviceFeatures {
     VkPhysicalDeviceShaderAtomicInt64FeaturesKHR shaderAtomicInt64Features{};
     VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT shaderImageAtomicInt64Features{};
     VkPhysicalDeviceShaderAtomicFloatFeaturesEXT shaderAtomicFloatFeatures{};
+#ifdef VK_EXT_mutable_descriptor_type
+    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutableDescriptorTypeFeatures{};
+#else
+    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT_Compat mutableDescriptorTypeFeatures{};
+#endif
 #ifdef VK_EXT_shader_atomic_float2
     VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT shaderAtomicFloat2Features{};
 #else
@@ -424,6 +433,11 @@ public:
     inline const VkPhysicalDeviceShaderAtomicFloatFeaturesEXT& getPhysicalDeviceShaderAtomicFloatFeatures() const {
         return shaderAtomicFloatFeatures;
     }
+#ifdef VK_EXT_mutable_descriptor_type
+    inline const VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT& getVkPhysicalDeviceMutableDescriptorTypeFeatures() const {
+        return mutableDescriptorTypeFeatures;
+    }
+#endif
 #ifdef VK_EXT_shader_atomic_float2
     inline const VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT& getPhysicalDeviceShaderAtomicFloat2Features() const {
         return shaderAtomicFloat2Features;
@@ -763,6 +777,11 @@ private:
     VkPhysicalDeviceShaderAtomicInt64FeaturesKHR shaderAtomicInt64Features{};
     VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT shaderImageAtomicInt64Features{};
     VkPhysicalDeviceShaderAtomicFloatFeaturesEXT shaderAtomicFloatFeatures{};
+#ifdef VK_EXT_mutable_descriptor_type
+    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutableDescriptorTypeFeatures{};
+#else
+    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT_Compat mutableDescriptorTypeFeatures{};
+#endif
 #ifdef VK_EXT_shader_atomic_float2
     VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT shaderAtomicFloat2Features{};
 #else

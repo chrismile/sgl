@@ -81,6 +81,11 @@ option(USE_TBB "Build with TBB threading support instead of using OpenMP." ${DEF
 option(TRACY_ENABLE "Build with Tracy Profiler support." OFF)
 option(EMSCRIPTEN_DEBUG "Build with Emscripten debug symbols." OFF)
 
+if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    # Build as static library if used as a submodule.
+    set(BUILD_STATIC_LIBRARY ON)
+endif()
+
 if (EMSCRIPTEN)
     # When using emscripten and targeting the web, turn off all meaningless/incompatible components.
     # In the future, Boost could be supported.
@@ -1265,7 +1270,7 @@ if (DEFINED USE_CUDA OR DEFINED USE_HIP OR ${SUPPORT_LEVEL_ZERO_INTEROP})
 endif()
 
 # Windows needs Boost::Interprocess for the singleton class.
-if (WIN32 OR ${USE_BOOST})
+if ((WIN32 AND NOT ${BUILD_STATIC_LIBRARY}) OR ${USE_BOOST})
     if (EMSCRIPTEN)
         # Necessary for Boost::Spirit WGSL parser.
         set(EMSCRIPTEN_SGL_FLAGS "${EMSCRIPTEN_SGL_FLAGS}" "-sUSE_BOOST_HEADERS=1")
@@ -1282,6 +1287,9 @@ if (WIN32 OR ${USE_BOOST})
     if (Boost_FOUND AND ${USE_BOOST_ALGORITHM})
         target_compile_definitions(sgl PRIVATE USE_BOOST_ALGORITHM)
     endif()
+endif()
+if (WIN32 AND ${BUILD_STATIC_LIBRARY})
+    target_compile_definitions(sgl PRIVATE DISABLE_SINGLETON_BOOST_INTERPROCESS)
 endif()
 
 if (${USE_ICU})

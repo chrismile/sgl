@@ -334,6 +334,12 @@ typedef struct VkPhysicalDeviceVulkan14Properties_Compat {
     VkBool32                              identicalMemoryTypeRequirements;
 } VkPhysicalDeviceVulkan14Properties_Compat;
 
+typedef struct VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT_Compat {
+    VkStructureType    sType;
+    void*              pNext;
+    VkBool32           mutableDescriptorType;
+} VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT_Compat;
+
 typedef struct VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT_Compat {
     VkStructureType    sType;
     void*              pNext;

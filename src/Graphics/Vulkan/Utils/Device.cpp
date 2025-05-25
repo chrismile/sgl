@@ -1259,6 +1259,20 @@ void Device::createLogicalDeviceAndQueues(
             requestedDeviceFeatures.shaderAtomicFloatFeatures = shaderAtomicFloatFeatures;
         }
     }
+#ifdef VK_EXT_mutable_descriptor_type
+    if (deviceExtensionsSet.find(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME) != deviceExtensionsSet.end()) {
+        mutableDescriptorTypeFeatures.sType =
+                VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT;
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &mutableDescriptorTypeFeatures;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        if (requestedDeviceFeatures.mutableDescriptorTypeFeatures.mutableDescriptorType == VK_FALSE) {
+            requestedDeviceFeatures.mutableDescriptorTypeFeatures = mutableDescriptorTypeFeatures;
+        }
+    }
+#endif
 #ifdef VK_EXT_shader_atomic_float2
     if (deviceExtensionsSet.find(VK_EXT_SHADER_ATOMIC_FLOAT_2_EXTENSION_NAME) != deviceExtensionsSet.end()) {
         shaderAtomicFloat2Features.sType =
@@ -1463,6 +1477,12 @@ void Device::createLogicalDeviceAndQueues(
         *pNextPtr = &requestedDeviceFeatures.shaderAtomicFloatFeatures;
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.shaderAtomicFloatFeatures.pNext);
     }
+#ifdef VK_EXT_mutable_descriptor_type
+    if (requestedDeviceFeatures.mutableDescriptorTypeFeatures.mutableDescriptorType) {
+        *pNextPtr = &requestedDeviceFeatures.mutableDescriptorTypeFeatures;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.mutableDescriptorTypeFeatures.pNext);
+    }
+#endif
 #ifdef VK_EXT_shader_atomic_float2
     if (requestedDeviceFeatures.shaderAtomicFloat2Features.shaderBufferFloat32AtomicMinMax) {
         *pNextPtr = &requestedDeviceFeatures.shaderAtomicFloat2Features;
