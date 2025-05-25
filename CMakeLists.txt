@@ -1652,137 +1652,140 @@ if (${BUILD_STATIC_LIBRARY} AND NOT EMSCRIPTEN)
 endif()
 
 
-# For creating sglConfig.cmake.in
-include(GenerateExportHeader)
-generate_export_header(sgl)
-install(
-        TARGETS sgl EXPORT sglTargets
-        ARCHIVE DESTINATION lib
-        LIBRARY DESTINATION lib
-        RUNTIME DESTINATION bin
-        INCLUDES DESTINATION include/sgl
-)
-
-if (${TRACY_ENABLE} AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/submodules/tracy/Tracy.hpp")
+# Only add "install" commands when not in a subdirectory.
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    # For creating sglConfig.cmake.in
+    include(GenerateExportHeader)
+    generate_export_header(sgl)
     install(
-            DIRECTORY ${CMAKE_SOURCE_DIR}/submodules/tracy/
-            DESTINATION include/sgl/tracy
-            FILES_MATCHING PATTERN "*.h*"
-            PATTERN ".github" EXCLUDE
-            PATTERN ".vscode" EXCLUDE
-            PATTERN "capture" EXCLUDE
-            PATTERN "csvexport" EXCLUDE
-            PATTERN "doc" EXCLUDE
-            PATTERN "examples" EXCLUDE
-            PATTERN "extra" EXCLUDE
-            PATTERN "getopt" EXCLUDE
-            PATTERN "icon" EXCLUDE
-            PATTERN "imgui" EXCLUDE
-            PATTERN "import-chrome" EXCLUDE
-            PATTERN "libbacktrace" EXCLUDE
-            PATTERN "library" EXCLUDE
-            PATTERN "manual" EXCLUDE
-            PATTERN "nfd" EXCLUDE
-            PATTERN "profiler" EXCLUDE
-            PATTERN "server" EXCLUDE
-            PATTERN "test" EXCLUDE
-            PATTERN "update" EXCLUDE
-            PATTERN "vcpkg" EXCLUDE
-            PATTERN "zstd" EXCLUDE
+            TARGETS sgl EXPORT sglTargets
+            ARCHIVE DESTINATION lib
+            LIBRARY DESTINATION lib
+            RUNTIME DESTINATION bin
+            INCLUDES DESTINATION include/sgl
     )
-else()
-    # If the submodule does not exist or Tracy was not enabled, add empty compile definitions as a fallback.
-    if (NOT ${TRACY_ENABLE} OR NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/submodules/tracy/Tracy.hpp")
+
+    if (${TRACY_ENABLE} AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/submodules/tracy/Tracy.hpp")
         install(
-                DIRECTORY ${CMAKE_SOURCE_DIR}/submodules/fallback/tracy/
+                DIRECTORY ${CMAKE_SOURCE_DIR}/submodules/tracy/
                 DESTINATION include/sgl/tracy
                 FILES_MATCHING PATTERN "*.h*"
+                PATTERN ".github" EXCLUDE
+                PATTERN ".vscode" EXCLUDE
+                PATTERN "capture" EXCLUDE
+                PATTERN "csvexport" EXCLUDE
+                PATTERN "doc" EXCLUDE
+                PATTERN "examples" EXCLUDE
+                PATTERN "extra" EXCLUDE
+                PATTERN "getopt" EXCLUDE
+                PATTERN "icon" EXCLUDE
+                PATTERN "imgui" EXCLUDE
+                PATTERN "import-chrome" EXCLUDE
+                PATTERN "libbacktrace" EXCLUDE
+                PATTERN "library" EXCLUDE
+                PATTERN "manual" EXCLUDE
+                PATTERN "nfd" EXCLUDE
+                PATTERN "profiler" EXCLUDE
+                PATTERN "server" EXCLUDE
+                PATTERN "test" EXCLUDE
+                PATTERN "update" EXCLUDE
+                PATTERN "vcpkg" EXCLUDE
+                PATTERN "zstd" EXCLUDE
         )
-    endif()
-endif()
-
-install(
-        DIRECTORY ${CMAKE_SOURCE_DIR}/src/
-        DESTINATION include/sgl
-        FILES_MATCHING PATTERN "*.h*" PATTERN "*.inl"
-)
-
-include(CMakePackageConfigHelpers)
-#write_basic_package_version_file()
-
-export(
-        EXPORT sglTargets
-        FILE "${CMAKE_CURRENT_BINARY_DIR}/sgl/sglTargets.cmake"
-)
-configure_file(
-        "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp"
-        "${CMAKE_CURRENT_BINARY_DIR}/sgl/sglConfig.cmake"
-        COPYONLY
-)
-
-set(ConfigPackageLocation lib/cmake/sgl)
-install(
-        EXPORT sglTargets
-        FILE sglTargets.cmake
-        DESTINATION ${ConfigPackageLocation}
-)
-install(
-        FILES "${CMAKE_CURRENT_BINARY_DIR}/sgl/sglConfig.cmake"
-        DESTINATION ${ConfigPackageLocation}
-)
-if (WIN32 AND ((CMAKE_CXX_COMPILER_ID STREQUAL "MSVC") OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")))
-    install(
-            FILES $<TARGET_PDB_FILE:sgl>
-            DESTINATION bin OPTIONAL
-    )
-endif()
-
-# Install WebGPU binaries if Emscripten is not used (in this case, the browser provides the implementation).
-if (${SUPPORT_WEBGPU} AND NOT EMSCRIPTEN AND "${WEBGPU_LINK_TYPE}" STREQUAL "SHARED")
-    if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.21.0" AND NOT ${USE_WEBGPU_IMPL_DAWN})
-        install(IMPORTED_RUNTIME_ARTIFACTS webgpu)
     else()
-        install(
-                FILES ${WEBGPU_LIBRARY_FILE}
-                DESTINATION ${LIBRARY_INSTALL_DIR}
-        )
-    endif()
-    if (MSVC AND WEBGPU_IMPORTED_IMPLIB AND "${WEBGPU_LINK_TYPE}" STREQUAL "SHARED")  # TODO: NOT ${USE_WEBGPU_IMPL_DAWN}?
-        install(
-                FILES ${WEBGPU_IMPORTED_IMPLIB}
-                DESTINATION lib
-        )
-    endif()
-endif()
-# Install the WebGPU includes if available.
-if (WEBGPU_INTERFACE_INCLUDE_DIRECTORIES)
-    if (${USE_WEBGPU_IMPL_DAWN})
-        #get_target_property(WEBGPU_INTERFACE_INCLUDE_DIRECTORIES_2 webgpu_dawn INTERFACE_INCLUDE_DIRECTORIES)
-        #message(FATAL_ERROR "WEBGPU_INTERFACE_INCLUDE_DIRECTORIES_2: ${WEBGPU_INTERFACE_INCLUDE_DIRECTORIES_2}")
-        foreach(WEBGPU_INTERFACE_INCLUDE_DIRECTORY IN LISTS WEBGPU_INTERFACE_INCLUDE_DIRECTORIES)
-            set(DAWN_INCLUDE_DIR "${WEBGPU_INTERFACE_INCLUDE_DIRECTORY}")
-        endforeach()
-        # [...]/_deps/dawn-src/include
-        # -> [...]/_deps/dawn-build/gen/include/dawn/webgpu.h
-        get_filename_component(DAWN_INCLUDE_DIR "${DAWN_INCLUDE_DIR}" PATH) # _deps/dawn-src
-        get_filename_component(DAWN_INCLUDE_DIR "${DAWN_INCLUDE_DIR}" PATH) # _deps
-        set(DAWN_INCLUDE_DIR "${DAWN_INCLUDE_DIR}/dawn-build/gen/include/dawn") # _deps/dawn-build/gen/include/dawn
-        #list(APPEND WEBGPU_INTERFACE_INCLUDE_DIRECTORIES "${DAWN_INCLUDE_DIR}")
-        set(WEBGPU_INTERFACE_INCLUDE_DIRECTORY_DAWN "${DAWN_INCLUDE_DIR}")
-        foreach(WEBGPU_INTERFACE_INCLUDE_DIRECTORY IN LISTS WEBGPU_INTERFACE_INCLUDE_DIRECTORY_DAWN)
+        # If the submodule does not exist or Tracy was not enabled, add empty compile definitions as a fallback.
+        if (NOT ${TRACY_ENABLE} OR NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/submodules/tracy/Tracy.hpp")
             install(
-                    DIRECTORY "${WEBGPU_INTERFACE_INCLUDE_DIRECTORY}"
-                    DESTINATION include/sgl/webgpu
+                    DIRECTORY ${CMAKE_SOURCE_DIR}/submodules/fallback/tracy/
+                    DESTINATION include/sgl/tracy
+                    FILES_MATCHING PATTERN "*.h*"
+            )
+        endif()
+    endif()
+
+    install(
+            DIRECTORY ${CMAKE_SOURCE_DIR}/src/
+            DESTINATION include/sgl
+            FILES_MATCHING PATTERN "*.h*" PATTERN "*.inl"
+    )
+
+    include(CMakePackageConfigHelpers)
+    #write_basic_package_version_file()
+
+    export(
+            EXPORT sglTargets
+            FILE "${CMAKE_CURRENT_BINARY_DIR}/sgl/sglTargets.cmake"
+    )
+    configure_file(
+            "${CMAKE_BINARY_DIR}/sglConfig.cmake.tmp"
+            "${CMAKE_CURRENT_BINARY_DIR}/sgl/sglConfig.cmake"
+            COPYONLY
+    )
+
+    set(ConfigPackageLocation lib/cmake/sgl)
+    install(
+            EXPORT sglTargets
+            FILE sglTargets.cmake
+            DESTINATION ${ConfigPackageLocation}
+    )
+    install(
+            FILES "${CMAKE_CURRENT_BINARY_DIR}/sgl/sglConfig.cmake"
+            DESTINATION ${ConfigPackageLocation}
+    )
+    if (WIN32 AND ((CMAKE_CXX_COMPILER_ID STREQUAL "MSVC") OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")))
+        install(
+                FILES $<TARGET_PDB_FILE:sgl>
+                DESTINATION bin OPTIONAL
+        )
+    endif()
+
+    # Install WebGPU binaries if Emscripten is not used (in this case, the browser provides the implementation).
+    if (${SUPPORT_WEBGPU} AND NOT EMSCRIPTEN AND "${WEBGPU_LINK_TYPE}" STREQUAL "SHARED")
+        if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.21.0" AND NOT ${USE_WEBGPU_IMPL_DAWN})
+            install(IMPORTED_RUNTIME_ARTIFACTS webgpu)
+        else()
+            install(
+                    FILES ${WEBGPU_LIBRARY_FILE}
+                    DESTINATION ${LIBRARY_INSTALL_DIR}
+            )
+        endif()
+        if (MSVC AND WEBGPU_IMPORTED_IMPLIB AND "${WEBGPU_LINK_TYPE}" STREQUAL "SHARED")  # TODO: NOT ${USE_WEBGPU_IMPL_DAWN}?
+            install(
+                    FILES ${WEBGPU_IMPORTED_IMPLIB}
+                    DESTINATION lib
+            )
+        endif()
+    endif()
+    # Install the WebGPU includes if available.
+    if (WEBGPU_INTERFACE_INCLUDE_DIRECTORIES)
+        if (${USE_WEBGPU_IMPL_DAWN})
+            #get_target_property(WEBGPU_INTERFACE_INCLUDE_DIRECTORIES_2 webgpu_dawn INTERFACE_INCLUDE_DIRECTORIES)
+            #message(FATAL_ERROR "WEBGPU_INTERFACE_INCLUDE_DIRECTORIES_2: ${WEBGPU_INTERFACE_INCLUDE_DIRECTORIES_2}")
+            foreach(WEBGPU_INTERFACE_INCLUDE_DIRECTORY IN LISTS WEBGPU_INTERFACE_INCLUDE_DIRECTORIES)
+                set(DAWN_INCLUDE_DIR "${WEBGPU_INTERFACE_INCLUDE_DIRECTORY}")
+            endforeach()
+            # [...]/_deps/dawn-src/include
+            # -> [...]/_deps/dawn-build/gen/include/dawn/webgpu.h
+            get_filename_component(DAWN_INCLUDE_DIR "${DAWN_INCLUDE_DIR}" PATH) # _deps/dawn-src
+            get_filename_component(DAWN_INCLUDE_DIR "${DAWN_INCLUDE_DIR}" PATH) # _deps
+            set(DAWN_INCLUDE_DIR "${DAWN_INCLUDE_DIR}/dawn-build/gen/include/dawn") # _deps/dawn-build/gen/include/dawn
+            #list(APPEND WEBGPU_INTERFACE_INCLUDE_DIRECTORIES "${DAWN_INCLUDE_DIR}")
+            set(WEBGPU_INTERFACE_INCLUDE_DIRECTORY_DAWN "${DAWN_INCLUDE_DIR}")
+            foreach(WEBGPU_INTERFACE_INCLUDE_DIRECTORY IN LISTS WEBGPU_INTERFACE_INCLUDE_DIRECTORY_DAWN)
+                install(
+                        DIRECTORY "${WEBGPU_INTERFACE_INCLUDE_DIRECTORY}"
+                        DESTINATION include/sgl/webgpu
+                        FILES_MATCHING PATTERN "*.h*" PATTERN "*.inl"
+                )
+            endforeach()
+        endif()
+
+        foreach(WEBGPU_INTERFACE_INCLUDE_DIRECTORY IN LISTS WEBGPU_INTERFACE_INCLUDE_DIRECTORIES)
+            install(
+                    DIRECTORY "${WEBGPU_INTERFACE_INCLUDE_DIRECTORY}/"
+                    DESTINATION include/sgl
                     FILES_MATCHING PATTERN "*.h*" PATTERN "*.inl"
             )
         endforeach()
     endif()
-
-    foreach(WEBGPU_INTERFACE_INCLUDE_DIRECTORY IN LISTS WEBGPU_INTERFACE_INCLUDE_DIRECTORIES)
-        install(
-                DIRECTORY "${WEBGPU_INTERFACE_INCLUDE_DIRECTORY}/"
-                DESTINATION include/sgl
-                FILES_MATCHING PATTERN "*.h*" PATTERN "*.inl"
-        )
-    endforeach()
 endif()
