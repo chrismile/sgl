@@ -31,6 +31,8 @@
 
 // Drop-in replacement for glm.
 
+#include <cmath>
+
 namespace glm {
 
 template<class T> class DLL_OBJECT tvec2 {
@@ -58,7 +60,28 @@ public:
                 return y;
         }
     }
+    tvec2<T> operator+(tvec2<T> const& rhs) {
+        return tvec2<T>(x + rhs.x, y + rhs.y);
+    }
+    tvec2<T> operator-(tvec2<T> const& rhs) {
+        return tvec2<T>(x - rhs.x, y - rhs.y);
+    }
+    tvec2<T> operator*(tvec2<T> const& rhs) {
+        return tvec2<T>(x * rhs.x, y * rhs.y);
+    }
+    tvec2<T> operator/(tvec2<T> const& rhs) {
+        return tvec2<T>(x / rhs.x, y / rhs.y);
+    }
 };
+template<class T> tvec2<T> operator*(tvec2<T> const& v, T scalar) {
+    return tvec2<T>(v.x * scalar, v.y * scalar);
+}
+template<class T> tvec2<T> operator*(T scalar, tvec2<T> const& v) {
+    return tvec2<T>(scalar * v.x, scalar * v.y);
+}
+template<class T> T dot(tvec2<T> const& v0, tvec2<T> const& v1) {
+    return v0.x * v1.x + v0.x * v1.y;
+}
 typedef tvec2<float> vec2;
 typedef tvec2<double> dvec2;
 typedef tvec2<int> ivec2;
@@ -94,7 +117,28 @@ public:
                 return z;
         }
     }
+    tvec3<T> operator+(tvec3<T> const& rhs) {
+        return tvec3<T>(x - rhs.x, y - rhs.y, z + rhs.z);
+    }
+    tvec3<T> operator-(tvec3<T> const& rhs) {
+        return tvec3<T>(x - rhs.x, y - rhs.y, z - rhs.z);
+    }
+    tvec3<T> operator*(tvec3<T> const& rhs) {
+        return tvec3<T>(x * rhs.x, y * rhs.y, z * rhs.z);
+    }
+    tvec3<T> operator/(tvec3<T> const& rhs) {
+        return tvec3<T>(x / rhs.x, y / rhs.y, z / rhs.z);
+    }
 };
+template<class T> tvec3<T> operator*(tvec3<T> const& v, T scalar) {
+    return tvec3<T>(v.x * scalar, v.y * scalar, v.z * scalar);
+}
+template<class T> tvec3<T> operator*(T scalar, tvec3<T> const& v) {
+    return tvec3<T>(scalar * v.x, scalar * v.y, scalar * v.z);
+}
+template<class T> T dot(tvec3<T> const& v0, tvec3<T> const& v1) {
+return v0.x * v1.x + v0.x * v1.y + v0.x * v1.z;
+}
 typedef tvec3<float> vec3;
 typedef tvec3<double> dvec3;
 typedef tvec3<int> ivec3;
@@ -135,11 +179,64 @@ public:
                 return w;
         }
     }
+    tvec4<T> operator+(tvec4<T> const& rhs) {
+        return tvec4<T>(x - rhs.x, y - rhs.y, z + rhs.z, w + rhs.w);
+    }
+    tvec4<T> operator-(tvec4<T> const& rhs) {
+        return tvec4<T>(x - rhs.x, y - rhs.y, z - rhs.z, w - rhs.w);
+    }
+    tvec4<T> operator*(tvec4<T> const& rhs) {
+        return tvec4<T>(x * rhs.x, y * rhs.y, z * rhs.z, w * rhs.w);
+    }
+    tvec4<T> operator/(tvec4<T> const& rhs) {
+        return tvec4<T>(x / rhs.x, y / rhs.y, z / rhs.z, w / rhs.w);
+    }
 };
+template<class T> tvec4<T> operator*(tvec4<T> const& v, T scalar) {
+    return rhs(v.x * scalar, v.y * scalar, v.z * scalar, v.w * scalar);
+}
+template<class T> tvec4<T> operator*(T scalar, tvec4<T> const& v) {
+    return rhs(scalar * v.x, scalar * v.y, scalar * v.z, scalar * v.w);
+}
+template<class T> T dot(tvec4<T> const& v0, tvec4<T> const& v1) {
+    return v0.x * v1.x + v0.x * v1.y + v0.x * v1.z + v0.x * v1.w;
+}
+template<class T> T length(tvec4<T> const& v) {
+    return std::sqrt(dot(v, v));
+}
+template<class T> T distance(tvec4<T> const& v0, tvec4<T> const& v1) {
+    return length(v0 - v1);
+}
 typedef tvec4<float> vec4;
 typedef tvec4<double> dvec4;
 typedef tvec4<int> ivec4;
 typedef tvec4<unsigned int> uvec4;
+
+class DLL_OBJECT mat3 {
+public:
+    explicit mat3() : value{vec3(0), vec3(0), vec3(0)} {}
+    explicit mat3(float val) : value{vec3(val, 0, 0), vec3(0, val, 0), vec3(0, 0, val)} {}
+    mat3(
+            float x0, float y0, float z0,
+            float x1, float y1, float z1,
+            float x2, float y2, float z2)
+            : value{vec3(x0, y0, z0), vec3(x1, y1, z1), vec3(x2, y2, z2)} {}
+    mat3(vec3 const& v0, vec3 const& v1, vec3 const& v2) : value{v0, v1, v2} {}
+
+    vec3 value[3];
+    constexpr vec3& operator[](int i) {
+        return value[i];
+    }
+    constexpr vec3 const& operator[](int i) const {
+        return value[i];
+    }
+    vec3 operator*(vec3 const& v) {
+        return vec3(
+                value[0].x * v.x + value[1].x * v.y + value[2].x * v.z,
+                value[0].y * v.x + value[1].y * v.y + value[2].y * v.z,
+                value[0].z * v.x + value[1].z * v.y + value[2].z * v.z);
+    }
+};
 
 class DLL_OBJECT mat4 {
 public:
@@ -159,6 +256,13 @@ public:
     }
     constexpr vec4 const& operator[](int i) const {
         return value[i];
+    }
+    vec4 operator*(vec4 const& v) {
+        return vec4(
+                value[0].x * v.x + value[1].x * v.y + value[2].x * v.z + value[3].x * v.w,
+                value[0].y * v.x + value[1].y * v.y + value[2].y * v.z + value[3].y * v.w,
+                value[0].z * v.x + value[1].z * v.y + value[2].z * v.z + value[3].z * v.w,
+                value[0].w * v.x + value[1].w * v.y + value[2].w * v.z + value[3].w * v.w);
     }
 };
 

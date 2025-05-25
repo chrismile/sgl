@@ -32,7 +32,8 @@
 #define NOMINMAX
 #endif
 #include <SDL3/SDL.h>
-#else
+#endif
+#ifdef SUPPORT_SDL2
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
 #endif

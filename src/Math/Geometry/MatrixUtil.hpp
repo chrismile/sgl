@@ -29,10 +29,14 @@
 #ifndef SRC_MATH_GEOMETRY_MATRIXUTIL_HPP_
 #define SRC_MATH_GEOMETRY_MATRIXUTIL_HPP_
 
-#define GLM_ENABLE_EXPERIMENTAL
 #include <Defs.hpp>
+#ifdef USE_GLM
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
+#else
+#include <Math/Geometry/vec.hpp>
+#endif
 
 namespace sgl {
 

@@ -30,8 +30,10 @@
 #define BITMAP_HPP_
 
 #include <string>
-#include <cstdint>
 #include <memory>
+#include <cstdint>
+#include <cassert>
+
 #include "../Color.hpp"
 
 namespace sgl {
