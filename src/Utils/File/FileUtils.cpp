@@ -36,6 +36,9 @@
 
 #ifdef _WIN32
 #define _WIN32_IE 0x0400
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include <shlobj.h>
 #include <windef.h>
 #endif
