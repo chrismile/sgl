@@ -33,7 +33,17 @@
 #include <Math/Geometry/Point2.hpp>
 #include <cstring>
 #include <iostream>
+
+#ifdef USE_LIBPNG
 #include <png.h>
+#else
+#ifdef DISABLE_IMGUI
+#define STB_IMAGE_IMPLEMENTATION
+#endif
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <Graphics/Vulkan/libs/stb/stb_image.h>
+#include <Graphics/Vulkan/libs/stb/stb_image_write.h>
+#endif
 
 namespace sgl {
 
@@ -173,26 +183,27 @@ BitmapPtr Bitmap::rotated(int degree) {
 }
 
 void Bitmap::fromFile(const char *filename) {
+#ifdef USE_LIBPNG
     png_byte header[8];
 
     FILE *fp = fopen(filename, "rb");
     if (fp == 0) {
         sgl::Logfile::get()->writeError(
-                std::string() + "ERROR: Bitmap::fromFile: Cannot load file \"" + filename + "\".");
+                std::string() + "Error in Bitmap::fromFile: Cannot load file \"" + filename + "\".");
         return;
     }
 
     // Read the header
     size_t numBytes = fread(header, 1, 8, fp);
     if (numBytes != 8) {
-        sgl::Logfile::get()->writeError("ERROR: Bitmap::fromFile: fread failed.");
+        sgl::Logfile::get()->writeError("Error in Bitmap::fromFile: fread failed.");
         fclose(fp);
         return;
     }
 
     if (png_sig_cmp(header, 0, 8)) {
         sgl::Logfile::get()->writeError(
-                std::string() + "ERROR: Bitmap::fromFile: The file \"" + filename + "\" is not a PNG file.");
+                std::string() + "Error in Bitmap::fromFile: The file \"" + filename + "\" is not a PNG file.");
         fclose(fp);
         return;
     }
@@ -200,7 +211,7 @@ void Bitmap::fromFile(const char *filename) {
     png_structp png_ptr = png_create_read_struct(
             PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
     if (!png_ptr) {
-        sgl::Logfile::get()->writeError("ERROR: Bitmap::fromFile: png_create_read_struct returned 0.");
+        sgl::Logfile::get()->writeError("Error in Bitmap::fromFile: png_create_read_struct returned 0.");
         fclose(fp);
         return;
     }
@@ -208,7 +219,7 @@ void Bitmap::fromFile(const char *filename) {
     // Create png_infop struct
     png_infop info_ptr = png_create_info_struct(png_ptr);
     if (!info_ptr) {
-        sgl::Logfile::get()->writeError("ERROR: Bitmap::fromFile: png_create_info_struct returned 0.");
+        sgl::Logfile::get()->writeError("Error in Bitmap::fromFile: png_create_info_struct returned 0.");
         png_destroy_read_struct(&png_ptr, (png_infopp)nullptr, (png_infopp)nullptr);
         fclose(fp);
         return;
@@ -217,7 +228,7 @@ void Bitmap::fromFile(const char *filename) {
     // Create png info struct
     png_infop end_info = png_create_info_struct(png_ptr);
     if (!end_info) {
-        sgl::Logfile::get()->writeError("ERROR: Bitmap::fromFile: png_create_info_struct returned 0. (2)");
+        sgl::Logfile::get()->writeError("Error in Bitmap::fromFile: png_create_info_struct returned 0. (2)");
         png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)nullptr);
         fclose(fp);
         return;
@@ -225,7 +236,7 @@ void Bitmap::fromFile(const char *filename) {
 
     // This code gets called if libpng encounters an error
     if (setjmp(png_jmpbuf(png_ptr))) {
-        sgl::Logfile::get()->writeError("ERROR: Bitmap::fromFile: Error in libpng.");
+        sgl::Logfile::get()->writeError("Error in Bitmap::fromFile: Error in libpng.");
         png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
         fclose(fp);
         return;
@@ -251,7 +262,7 @@ void Bitmap::fromFile(const char *filename) {
 
     if (colorType != PNG_COLOR_TYPE_RGB_ALPHA && colorType != PNG_COLOR_TYPE_RGB) {
         sgl::Logfile::get()->writeError(
-                "ERROR: Bitmap::fromFile: Only 32-bit RGBA or 24-bit RGB PNG images supported.");
+                "Error in Bitmap::fromFile: Only 32-bit RGBA or 24-bit RGB PNG images supported.");
         png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
         fclose(fp);
         return;
@@ -271,7 +282,7 @@ void Bitmap::fromFile(const char *filename) {
     uint8_t *dataPointer = new uint8_t[rowbytes * tempHeight];
     png_byte *imageData = (png_byte*)dataPointer;
     if (imageData == nullptr) {
-        sgl::Logfile::get()->writeError("ERROR: Bitmap::fromFile: Could not allocate memory for PNG image data.");
+        sgl::Logfile::get()->writeError("Error in Bitmap::fromFile: Could not allocate memory for PNG image data.");
         png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
         fclose(fp);
         return;
@@ -280,7 +291,7 @@ void Bitmap::fromFile(const char *filename) {
     // rowPointers is pointing to imageData for reading the png with libpng
     png_bytep *rowPointers = new png_bytep[tempHeight];
     if (rowPointers == nullptr) {
-        sgl::Logfile::get()->writeError("ERROR: Bitmap::fromFile: Could not allocate memory for PNG row pointers.");
+        sgl::Logfile::get()->writeError("Error in Bitmap::fromFile: Could not allocate memory for PNG row pointers.");
         png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
         delete[] imageData;
         fclose(fp);
@@ -313,14 +324,30 @@ void Bitmap::fromFile(const char *filename) {
         }
         delete[] dataPointer;
     }
+#else
+    int numChannels = 0;
+    uint8_t* colorData = stbi_load(filename, &w, &h, &numChannels, 4);
+    if (!colorData) {
+        w = 0;
+        h = 0;
+        return;
+    }
+    bpp = numChannels * 8;
+    bitmap = new uint8_t[w * h * numChannels];
+    memcpy(bitmap, colorData, w * h * numChannels);
+    stbi_image_free(colorData);
+    return;
+#endif
 }
 
 bool Bitmap::savePNG(const char *filename, bool mirror /* = false */) {
+#ifdef USE_LIBPNG
     FILE *file = nullptr;
     file = fopen(filename, "wb");
     if (!file) {
-        std::cerr << "ERROR: Bitmap::savePNG: The file couldn't be saved to \""
-                << filename << "\"!" << std::endl;
+        sgl::Logfile::get()->writeError(
+                std::string() + "Error in Bitmap::savePNG: The file could not be saved to \""
+                + filename + "\"!", false);
         return false;
     }
 
@@ -367,6 +394,27 @@ bool Bitmap::savePNG(const char *filename, bool mirror /* = false */) {
     fclose(file);
 
     return true;
+#else
+    if (bpp % 8 != 0 || bpp <= 0) {
+        sgl::Logfile::get()->writeError(
+                std::string() + "Error in Bitmap::savePNG: Invalid number of bits per pixel.", false);
+    }
+    if (mirror) {
+        stbi_flip_vertically_on_write(true);
+    }
+    int numChannels = bpp / 8;
+    auto retVal = stbi_write_png(filename, w, h, numChannels, bitmap, w * numChannels);
+    if (mirror) {
+        stbi_flip_vertically_on_write(false);
+    }
+    if (!retVal) {
+        sgl::Logfile::get()->writeError(
+                std::string() + "Error in Bitmap::savePNG: The file could not be saved to \""
+                + filename + "\"!", false);
+        return false;
+    }
+    return true;
+#endif
 }
 
 void Bitmap::freeData() {

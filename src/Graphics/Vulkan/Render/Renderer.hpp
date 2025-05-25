@@ -121,6 +121,12 @@ public:
     // Image pipeline barrier.
     void transitionImageLayout(vk::ImagePtr& image, VkImageLayout newLayout);
     void transitionImageLayout(vk::ImageViewPtr& imageView, VkImageLayout newLayout);
+    void transitionImageLayoutEx(
+            vk::ImagePtr& image, VkImageLayout newLayout,
+            VkPipelineStageFlags dstStage, VkAccessFlags dstAccessMask);
+    void transitionImageLayoutEx(
+            vk::ImageViewPtr& imageView, VkImageLayout newLayout,
+            VkPipelineStageFlags dstStage, VkAccessFlags dstAccessMask);
     void transitionImageLayoutSubresource(
             vk::ImagePtr& image, VkImageLayout newLayout,
             uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount);

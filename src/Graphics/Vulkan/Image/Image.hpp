@@ -277,6 +277,9 @@ public:
     void transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout);
     void transitionImageLayout(VkImageLayout newLayout, VkCommandBuffer commandBuffer);
     void transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout, VkCommandBuffer commandBuffer);
+    void transitionImageLayoutEx(
+            VkImageLayout newLayout, VkPipelineStageFlags dstStage, VkAccessFlags dstAccessMask,
+            VkCommandBuffer commandBuffer);
     void insertMemoryBarrier(
             VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout,
             VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
@@ -450,6 +453,9 @@ public:
     void transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout);
     void transitionImageLayout(VkImageLayout newLayout, VkCommandBuffer commandBuffer);
     void transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout, VkCommandBuffer commandBuffer);
+    void transitionImageLayoutEx(
+            VkImageLayout newLayout, VkPipelineStageFlags dstStage, VkAccessFlags dstAccessMask,
+            VkCommandBuffer commandBuffer);
     void insertMemoryBarrier(
             VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout,
             VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
