@@ -29,13 +29,14 @@
 #include "AppSettings.hpp"
 #include <Utils/StringUtils.hpp>
 #include <Utils/Env.hpp>
+#include <Utils/Timer.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Utils/File/FileUtils.hpp>
 #include <Utils/Json/ConversionHelpers.hpp>
 #include <Input/Mouse.hpp>
 #include <Input/Keyboard.hpp>
 #include <Input/Gamepad.hpp>
-#include <Utils/Timer.hpp>
+#include <Graphics/Window.hpp>
 #ifndef DISABLE_IMGUI
 #include <ImGui/ImGuiWrapper.hpp>
 #endif

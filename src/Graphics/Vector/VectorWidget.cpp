@@ -210,7 +210,7 @@ void VectorWidget::syncRendererWithCpu() {
 }
 
 bool VectorWidget::getIsMouseOverDiagram() const {
-    glm::vec2 mousePosition(sgl::Mouse->getX(), sgl::Mouse->getY());
+    glm::vec2 mousePosition(sgl::Mouse->getXFractional(), sgl::Mouse->getYFractional());
 
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
     if (renderSystem == RenderSystem::OPENGL) {
@@ -225,7 +225,7 @@ bool VectorWidget::getIsMouseOverDiagram() const {
 }
 
 bool VectorWidget::getIsMouseOverDiagram(int parentX, int parentY, int parentWidth, int parentHeight) const {
-    glm::vec2 mousePosition(sgl::Mouse->getX(), sgl::Mouse->getY());
+    glm::vec2 mousePosition(sgl::Mouse->getXFractional(), sgl::Mouse->getYFractional());
     mousePosition.x -= float(parentX);
 
     RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();

@@ -64,13 +64,13 @@ void Camera::setRenderTarget(RenderTargetPtr target, bool bindFramebuffer) {
 glm::ivec4 Camera::getViewportLTWH() {
     int targetW = renderTarget->getWidth();
     int targetH = renderTarget->getHeight();
-    glm::vec2 absMin(viewport.min.x * targetW, viewport.min.y * targetH);
-    glm::vec2 absMax(viewport.max.x * targetW, viewport.max.y * targetH);
+    glm::vec2 absMin(viewport.min.x * float(targetW), viewport.min.y * float(targetH));
+    glm::vec2 absMax(viewport.max.x * float(targetW), viewport.max.y * float(targetH));
     return glm::ivec4(
-            roundf(absMin.x), // left
-            roundf(targetH - absMax.y), // top
-            roundf(absMax.x - absMin.x), // width
-            roundf(absMax.y - absMin.y)); // height
+            int(std::round(absMin.x)), // left
+            int(std::round(float(targetH) - absMax.y)), // top
+            int(std::round(absMax.x - absMin.x)), // width
+            int(std::round(absMax.y - absMin.y))); // height
 }
 
 void Camera::resetOrientation() {

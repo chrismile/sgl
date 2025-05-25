@@ -79,6 +79,24 @@ Point2 SDLMouse::mouseMovement() {
     return Point2(int(state.pos.x - oldState.pos.x), int(state.pos.y - oldState.pos.y));
 }
 
+#ifdef SUPPORT_SDL3
+std::pair<double, double> SDLMouse::getAxisFractional() {
+    return { state.pos.x, state.pos.y };
+}
+
+double SDLMouse::getXFractional() {
+    return state.pos.x;
+}
+
+double SDLMouse::getYFractional() {
+    return state.pos.y;
+}
+
+std::pair<double, double> SDLMouse::mouseMovementFractional() {
+    return { state.pos.x - oldState.pos.x, state.pos.y - oldState.pos.y };
+}
+#endif
+
 bool SDLMouse::mouseMoved() {
     return state.pos.x - oldState.pos.x != 0 || state.pos.y - oldState.pos.y != 0;
 }

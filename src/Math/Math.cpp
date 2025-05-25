@@ -90,7 +90,6 @@ uint32_t convertBitRepresentationFloatToUint32(float val) {
     return u.valUint32;
 }
 
-#ifdef USE_GLM
 float vectorAngle(const glm::vec2 &u, const glm::vec2& v) {
     glm::vec2 un = glm::normalize(u);
     glm::vec2 vn = glm::normalize(v);
@@ -99,6 +98,5 @@ float vectorAngle(const glm::vec2 &u, const glm::vec2& v) {
     if (r > 1.0f) r = 1.0f;
     return ((u.x*v.y < u.y*v.x) ? -1.0f : 1.0f) * acosf(r);
 }
-#endif
 
 }
