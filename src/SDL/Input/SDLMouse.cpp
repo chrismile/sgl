@@ -80,19 +80,19 @@ Point2 SDLMouse::mouseMovement() {
 }
 
 #ifdef SUPPORT_SDL3
-std::pair<double, double> SDLMouse::getAxisFractional() {
+std::pair<float, float> SDLMouse::getAxisFractional() {
     return { state.pos.x, state.pos.y };
 }
 
-double SDLMouse::getXFractional() {
+float SDLMouse::getXFractional() {
     return state.pos.x;
 }
 
-double SDLMouse::getYFractional() {
+float SDLMouse::getYFractional() {
     return state.pos.y;
 }
 
-std::pair<double, double> SDLMouse::mouseMovementFractional() {
+std::pair<float, float> SDLMouse::mouseMovementFractional() {
     return { state.pos.x - oldState.pos.x, state.pos.y - oldState.pos.y };
 }
 #endif

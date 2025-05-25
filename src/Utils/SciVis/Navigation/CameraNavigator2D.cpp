@@ -42,7 +42,7 @@ bool CameraNavigator2D::moveCameraMouse(sgl::CameraPtr &camera, float dt) {
     bool reRender = false;
 
     if (sgl::Mouse->isButtonDown(1) && sgl::Mouse->mouseMoved()) {
-        sgl::Point2 pixelMovement = sgl::Mouse->mouseMovement();
+        auto pixelMovement = sgl::Mouse->mouseMovementFractional();
 
         auto renderTarget = camera->getRenderTarget();
         float hPixel;
@@ -54,7 +54,7 @@ bool CameraNavigator2D::moveCameraMouse(sgl::CameraPtr &camera, float dt) {
         }
         float hWorld = 2.0f * camera->getPosition().z * std::tan(camera->getFOVy() * 0.5f);
 
-        glm::vec2 translationVector = hWorld / hPixel * glm::vec2(pixelMovement.x, pixelMovement.y);
+        glm::vec2 translationVector = hWorld / hPixel * glm::vec2(pixelMovement.first, pixelMovement.second);
         camera->translate(glm::vec3(-translationVector.x, translationVector.y, 0.0f));
 
         reRender = true;

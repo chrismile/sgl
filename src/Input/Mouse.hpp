@@ -48,10 +48,10 @@ public:
     virtual int getX()=0;
     virtual int getY()=0;
     virtual Point2 mouseMovement()=0;
-    virtual std::pair<double, double> getAxisFractional() { auto pt = getAxis(); return { double(pt.x), double(pt.y) }; }
-    virtual double getXFractional() { return double(getX()); }
-    virtual double getYFractional() { return double(getY()); }
-    virtual std::pair<double, double> mouseMovementFractional() { auto pt = mouseMovement(); return { double(pt.x), double(pt.y) }; }
+    virtual std::pair<float, float> getAxisFractional() { auto pt = getAxis(); return { float(pt.x), float(pt.y) }; }
+    virtual float getXFractional() { return float(getX()); }
+    virtual float getYFractional() { return float(getY()); }
+    virtual std::pair<float, float> mouseMovementFractional() { auto pt = mouseMovement(); return { float(pt.x), float(pt.y) }; }
     virtual bool mouseMoved()=0;
     virtual void warp(const Point2 &windowPosition)=0;
 

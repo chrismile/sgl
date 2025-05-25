@@ -77,19 +77,19 @@ void GlfwMouse::onScroll(double xoffset, double yoffset) {
 
 
 // Mouse position
-std::pair<double, double> GlfwMouse::getAxisFractional() {
+std::pair<float, float> GlfwMouse::getAxisFractional() {
     return { state.posX, state.posY };
 }
 
-double GlfwMouse::getXFractional() {
+float GlfwMouse::getXFractional() {
     return state.posX;
 }
 
-double GlfwMouse::getYFractional() {
+float GlfwMouse::getYFractional() {
     return state.posY;
 }
 
-std::pair<double, double> GlfwMouse::mouseMovementFractional() {
+std::pair<float, float> GlfwMouse::mouseMovementFractional() {
     return { state.posX - oldState.posX, state.posY - oldState.posY };
 }
 

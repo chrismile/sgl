@@ -69,10 +69,10 @@ public:
     int getY() override;
     Point2 mouseMovement() override;
 #ifdef SUPPORT_SDL3
-    std::pair<double, double> getAxisFractional() override;
-    double getXFractional() override;
-    double getYFractional() override;
-    std::pair<double, double> mouseMovementFractional() override;
+    std::pair<float, float> getAxisFractional() override;
+    float getXFractional() override;
+    float getYFractional() override;
+    std::pair<float, float> mouseMovementFractional() override;
 #endif
     bool mouseMoved() override;
     void warp(const Point2 &windowPosition) override;
