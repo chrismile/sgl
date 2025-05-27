@@ -36,7 +36,8 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #else
-#include <Math/Geometry/vec.hpp>
+#include <Math/Geometry/fallback/vec2.hpp>
+#include <Math/Geometry/fallback/vec3.hpp>
 #endif
 
 class HalfFloat;

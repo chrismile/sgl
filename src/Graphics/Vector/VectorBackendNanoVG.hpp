@@ -32,7 +32,7 @@
 #ifdef USE_GLM
 #include <glm/vec4.hpp>
 #else
-#include <Math/Geometry/vec.hpp>
+#include <Math/Geometry/fallback/vec4.hpp>
 #endif
 
 #ifdef SUPPORT_VULKAN

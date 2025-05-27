@@ -36,7 +36,7 @@
 #ifdef USE_GLM
 #include <glm/glm.hpp>
 #else
-#include <Math/Geometry/vec.hpp>
+#include <Math/Geometry/fallback/linalg.hpp>
 #endif
 
 #include <Graphics/Scene/Camera.hpp>

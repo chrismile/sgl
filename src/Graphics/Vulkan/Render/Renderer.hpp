@@ -35,7 +35,7 @@
 #ifdef USE_GLM
 #include <glm/mat4x4.hpp>
 #else
-#include <Math/Geometry/vec.hpp>
+#include <Math/Geometry/fallback/mat.hpp>
 #endif
 #include <Math/Geometry/MatrixUtil.hpp>
 #include <Utils/CircularQueue.hpp>
@@ -237,12 +237,10 @@ public:
         recordingCommandBufferStarted = true;
     }
     [[nodiscard]] inline bool getIsCommandBufferInRecordingState() const { return isCommandBufferInRecordingState; }
-#ifdef USE_GLM
     [[nodiscard]] inline const glm::mat4& getModelMatrix() const { return matrixBlock.mMatrix; }
     [[nodiscard]] inline const glm::mat4& getViewMatrix() const { return matrixBlock.vMatrix; }
     [[nodiscard]] inline const glm::mat4& getProjectionMatrix() const { return matrixBlock.pMatrix; }
     [[nodiscard]] inline const glm::mat4& getModelViewProjectionMatrix() const { return matrixBlock.mvpMatrix; }
-#endif
 
 private:
     Device* device;

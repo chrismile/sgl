@@ -31,7 +31,13 @@
 
 #include <vector>
 #include <string>
-#include <glm/glm.hpp>
+
+#ifdef USE_GLM
+#include <glm/vec4.hpp>
+#else
+#include <Math/Geometry/fallback/vec4.hpp>
+#endif
+
 #include <Math/Geometry/AABB2.hpp>
 #include <Graphics/WebGPU/Texture/Texture.hpp>
 #include <Graphics/WebGPU/Render/RenderPipeline.hpp>

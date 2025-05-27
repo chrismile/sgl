@@ -38,7 +38,7 @@
 #ifdef USE_GLM
 #include <glm/fwd.hpp>
 #else
-#include <Math/Geometry/vec.hpp>
+#include <Math/Geometry/fallback/fwd.hpp>
 #endif
 
 /// Collection of math utility functions

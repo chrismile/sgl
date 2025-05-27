@@ -39,7 +39,7 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #else
-#include <Math/Geometry/vec.hpp>
+#include <Math/Geometry/fallback/vec.hpp>
 #endif
 
 namespace sgl {

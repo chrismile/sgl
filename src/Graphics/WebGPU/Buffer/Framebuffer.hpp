@@ -31,8 +31,12 @@
 
 #include <vector>
 #include <memory>
-#include <glm/vec4.hpp>
 #include <webgpu/webgpu.h>
+#ifdef USE_GLM
+#include <glm/vec4.hpp>
+#else
+#include <Math/Geometry/fallback/vec4.hpp>
+#endif
 
 #include <Utils/File/Logfile.hpp>
 #include "../Texture/Texture.hpp"

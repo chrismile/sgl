@@ -30,11 +30,12 @@
 #define SGL_TRIANGLENORMALS_HPP
 
 #include <vector>
+#include <cstdint>
 
 #ifdef USE_GLM
 #include <glm/fwd.hpp>
 #else
-#include <Math/Geometry/vec_fwd.hpp>
+#include <Math/Geometry/fallback/fwd.hpp>
 #endif
 
 namespace sgl {

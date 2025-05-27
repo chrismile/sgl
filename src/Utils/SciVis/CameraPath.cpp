@@ -35,7 +35,7 @@
 #include <glm/gtx/euler_angles.hpp>
 #include <glm/gtx/norm.hpp>
 #else
-#include <Math/Geometry/vec.hpp>
+#include <Math/Geometry/fallback/linalg.hpp>
 #endif
 
 #include <Utils/Events/Stream/Stream.hpp>

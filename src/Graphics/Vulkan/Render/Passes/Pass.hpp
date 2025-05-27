@@ -29,11 +29,6 @@
 #ifndef SGL_PASS_HPP
 #define SGL_PASS_HPP
 
-#ifdef USE_GLM
-#include <glm/vec4.hpp>
-#else
-#include <Math/Geometry/vec.hpp>
-#endif
 #include <Graphics/Vulkan/Shader/ShaderManager.hpp>
 #include <Graphics/Vulkan/Render/GraphicsPipeline.hpp>
 #include <Graphics/Vulkan/Image/Image.hpp>

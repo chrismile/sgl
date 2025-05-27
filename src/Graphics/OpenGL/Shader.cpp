@@ -30,7 +30,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #else
-#include <Math/Geometry/vec.hpp>
+#include <Math/Geometry/fallback/linalg.hpp>
 #endif
 #include <GL/glew.h>
 

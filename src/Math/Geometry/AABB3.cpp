@@ -26,8 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "AABB3.hpp"
 #include <Math/Geometry/MatrixUtil.hpp>
+#include "AABB3.hpp"
 
 namespace sgl {
 

@@ -35,7 +35,8 @@
 #ifdef USE_GLM
 #include <glm/gtc/quaternion.hpp>
 #else
-#include <Math/Geometry/vec.hpp>
+#include <Math/Geometry/fallback/vec3.hpp>
+#include <Math/Geometry/fallback/quat.hpp>
 #endif
 
 #include <Math/Geometry/MatrixUtil.hpp>

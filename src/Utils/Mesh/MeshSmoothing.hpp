@@ -32,11 +32,12 @@
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
+#include <cstdint>
 
 #ifdef USE_GLM
 #include <glm/fwd.hpp>
 #else
-#include <Math/Geometry/vec_fwd.hpp>
+#include <Math/Geometry/fallback/fwd.hpp>
 #endif
 
 namespace sgl {

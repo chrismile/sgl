@@ -32,7 +32,11 @@
 #include <vector>
 #include <memory>
 #include <Input/Gamepad.hpp>
+#ifdef USE_GLM
 #include <glm/vec2.hpp>
+#else
+#include <Math/Geometry/fallback/vec2.hpp>
+#endif
 
 namespace sgl {
 

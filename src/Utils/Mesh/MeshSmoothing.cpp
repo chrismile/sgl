@@ -29,7 +29,7 @@
 #ifdef USE_GLM
 #include <glm/glm.hpp>
 #else
-#include <Math/Geometry/vec.hpp>
+#include <Math/Geometry/fallback/vec3.hpp>
 #endif
 #ifdef TRACY_ENABLE
 #include <tracy/Tracy.hpp>

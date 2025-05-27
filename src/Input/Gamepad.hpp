@@ -33,7 +33,7 @@
 #ifdef USE_GLM
 #include <glm/vec2.hpp>
 #else
-#include <Math/Geometry/vec.hpp>
+#include <Math/Geometry/fallback/vec2.hpp>
 #endif
 
 namespace sgl {

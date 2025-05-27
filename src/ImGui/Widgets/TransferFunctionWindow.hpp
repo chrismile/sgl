@@ -35,7 +35,7 @@
 #ifdef USE_GLM
 #include <glm/glm.hpp>
 #else
-#include <Math/Geometry/vec.hpp>
+#include <Math/Geometry/fallback/vec.hpp>
 #endif
 
 #include <Math/Geometry/AABB2.hpp>

@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2017, Christoph Neuhauser
+ * Copyright (c) 2025, Christoph Neuhauser
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,37 +26,38 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SRC_MATH_GEOMETRY_PLANE_HPP_
-#define SRC_MATH_GEOMETRY_PLANE_HPP_
+#ifndef SGL_GEOMETRY_FALLBACK_FWD_HPP
+#define SGL_GEOMETRY_FALLBACK_FWD_HPP
 
-#ifdef USE_GLM
-#include <glm/glm.hpp>
-#else
-#include <Math/Geometry/fallback/vec3.hpp>
-#endif
+// Drop-in replacement for glm.
 
-namespace sgl {
+namespace glm {
 
-class AABB3;
+template<typename T> class tvec2;
+typedef tvec2<float> vec2;
+typedef tvec2<double> dvec2;
+typedef tvec2<int> ivec2;
+typedef tvec2<unsigned int> uvec2;
+typedef tvec2<bool> bvec2;
 
-/// Plane in 3D, ax + by + cz + d = 0
-class DLL_OBJECT Plane {
-public:
-    Plane() : a(0.0f), b(0.0f), c(1.0f), d(0.0f) {}
-    Plane(float a, float b, float c, float d) : a(a), b(b), c(c), d(d) {}
-    Plane(glm::vec3 normal, float offset) : a(normal.x), b(normal.y), c(normal.z), d(-offset) {}
-    Plane(glm::vec3 normal, glm::vec3 point) : a(normal.x), b(normal.y), c(normal.z) { d = -glm::dot(normal, point); }
-    [[nodiscard]] glm::vec3 getNormal() const { return glm::vec3(a,b,c); }
-    [[nodiscard]] float getOffset() const { return d; }
+template<typename T> class tvec3;
+typedef tvec3<float> vec3;
+typedef tvec3<double> dvec3;
+typedef tvec3<int> ivec3;
+typedef tvec3<unsigned int> uvec3;
+typedef tvec3<bool> bvec3;
 
-    [[nodiscard]] float getDistance(const glm::vec3 &pt) const;
-    [[nodiscard]] bool isOutside(const glm::vec3 &pt) const;
-    [[nodiscard]] bool isOutside(const AABB3 &aabb) const;
+template<typename T> class tvec4;
+typedef tvec4<float> vec4;
+typedef tvec4<double> dvec4;
+typedef tvec4<int> ivec4;
+typedef tvec4<unsigned int> uvec4;
+typedef tvec4<bool> bvec4;
 
-    float a, b, c, d;
-};
+class mat3;
+class mat4;
+class quat;
 
 }
 
-/*! SRC_MATH_GEOMETRY_PLANE_HPP_ */
-#endif
+#endif //SGL_GEOMETRY_FALLBACK_FWD_HPP

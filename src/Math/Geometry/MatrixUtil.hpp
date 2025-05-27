@@ -35,7 +35,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 #else
-#include <Math/Geometry/vec.hpp>
+#include <Math/Geometry/fallback/linalg.hpp>
 #endif
 
 namespace sgl {

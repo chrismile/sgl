@@ -35,7 +35,7 @@
 #ifdef USE_GLM
 #include <glm/fwd.hpp>
 #else
-#include <Math/Geometry/vec_fwd.hpp>
+#include <Math/Geometry/fallback/fwd.hpp>
 #endif
 
 #include <Defs.hpp>

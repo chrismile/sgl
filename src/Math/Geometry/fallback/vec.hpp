@@ -26,39 +26,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_VEC_FWD_HPP
-#define SGL_VEC_FWD_HPP
+#ifndef SGL_GEOMETRY_FALLBACK_VEC_HPP
+#define SGL_GEOMETRY_FALLBACK_VEC_HPP
 
 // Drop-in replacement for glm.
 
-#include <cmath>
+#include "vec2.hpp"
+#include "vec3.hpp"
+#include "vec4.hpp"
 
-namespace glm {
-
-template<typename T> class tvec2;
-typedef tvec2<float> vec2;
-typedef tvec2<double> dvec2;
-typedef tvec2<int> ivec2;
-typedef tvec2<unsigned int> uvec2;
-typedef tvec2<bool> bvec2;
-
-template<typename T> class tvec3;
-typedef tvec3<float> vec3;
-typedef tvec3<double> dvec3;
-typedef tvec3<int> ivec3;
-typedef tvec3<unsigned int> uvec3;
-typedef tvec3<bool> bvec3;
-
-template<typename T> class tvec4;
-typedef tvec4<float> vec4;
-typedef tvec4<double> dvec4;
-typedef tvec4<int> ivec4;
-typedef tvec4<unsigned int> uvec4;
-typedef tvec4<bool> bvec4;
-
-class mat3;
-class mat4;
-
-}
-
-#endif //SGL_VEC_FWD_HPP
+#endif //SGL_GEOMETRY_FALLBACK_VEC_HPP

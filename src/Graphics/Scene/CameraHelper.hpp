@@ -34,7 +34,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #else
-#include <Math/Geometry/vec.hpp>
+#include <Math/Geometry/fallback/fwd.hpp>
 #endif
 
 /**
