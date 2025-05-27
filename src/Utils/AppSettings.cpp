@@ -207,7 +207,7 @@ void AppSettings::loadSettings(const char* filename) {
         settingsFilePathJson = FileUtils::get()->removeExtension(filename) + ".json";
     }
     if (FileUtils::get()->fileExists(settingsFilePathJson)) {
-        settings.loadFromFileJson(settingsFilePathJson.c_str());
+        settings.loadFromFileJson(settingsFilePathJson);
     } else {
         settings.loadFromFile(filename);
     }
@@ -248,6 +248,8 @@ void SettingsFile::loadFromFile(const char* filename) {
             jsonValue = fromString<int64_t>(value);
         } else if (isNumeric(value)) {
             jsonValue = fromString<double>(value);
+        } else {
+            jsonValue = value;
         }
         if (startsWith(key, "window-")) {
             key = key.substr(7);
