@@ -48,6 +48,10 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugCallback(
         const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
         void* userData) {
     Instance* instance = static_cast<Instance*>(userData);
+    if (instance->callFilterDebugMessageCallback(callbackData)) {
+        // The app can suppress certain messages.
+        return VK_FALSE;
+    }
     if ((int)messageSeverity >= (int)instance->getDebugMessageSeverityLevel()) {
         sgl::Logfile::get()->writeError(
                 std::string() + "Validation layer: " + callbackData->pMessage);

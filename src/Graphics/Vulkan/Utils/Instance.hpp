@@ -74,6 +74,16 @@ public:
     inline void callDebugCallback() { if (debugCallback) { debugCallback(); } }
     inline void setDebugMessageSeverityLevel(MessageSeverity messageSeverity) { messageSeverityLevel = messageSeverity; }
     [[nodiscard]] inline MessageSeverity getDebugMessageSeverityLevel() const { return messageSeverityLevel; }
+    // The debug message filter callback returns true if the message should be suppressed.
+    inline void setFilterDebugMessageCallback(std::function<bool(const VkDebugUtilsMessengerCallbackDataEXT*)> callback) {
+        filterDebugMessageCallback = std::move(callback);
+    }
+    [[nodiscard]] inline bool callFilterDebugMessageCallback(const VkDebugUtilsMessengerCallbackDataEXT* callbackData) {
+        if (filterDebugMessageCallback) {
+            return filterDebugMessageCallback(callbackData);
+        }
+        return false;
+    }
     /// The device extension VK_KHR_shader_non_semantic_info must be enabled if shader debug printf is enabled.
     inline void setIsDebugPrintfEnabled(bool enabled) { enableDebugPrintf = enabled; }
     [[nodiscard]] inline bool getIsDebugPrintfEnabled() const { return enableDebugPrintf; }
@@ -103,6 +113,7 @@ private:
     std::vector<const char*> enabledInstanceExtensionNames;
     std::vector<const char*> instanceLayerNames;
     std::function<void()> debugCallback;
+    std::function<bool(const VkDebugUtilsMessengerCallbackDataEXT*)> filterDebugMessageCallback;
 };
 
 }}
