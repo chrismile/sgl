@@ -1863,6 +1863,34 @@ bool Device::isDeviceExtensionSupported(const std::string& name) {
     return deviceExtensionsSet.find(name) != deviceExtensionsSet.end();
 }
 
+bool Device::getIsDriverVersionGreaterOrEqual(const DriverVersion& driverVersionComp) const {
+    if (driverVersion.major > driverVersionComp.major) {
+        return true;
+    }
+    if (driverVersion.major < driverVersionComp.major) {
+        return false;
+    }
+    // driverVersion.major == driverVersionComp.major
+    if (driverVersion.minor > driverVersionComp.minor) {
+        return true;
+    }
+    if (driverVersion.minor < driverVersionComp.minor) {
+        return false;
+    }
+    // driverVersion.minor == driverVersionComp.minor
+    if (driverVersion.subminor < driverVersionComp.subminor) {
+        return true;
+    }
+    if (driverVersion.subminor < driverVersionComp.subminor) {
+        return false;
+    }
+    // driverVersion.subminor == driverVersionComp.subminor
+    if (driverVersion.patch < driverVersionComp.patch) {
+        return false;
+    }
+    return true; //< driverVersion.patch >= driverVersionComp.patch
+}
+
 void Device::_getDeviceInformation() {
     vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &physicalDeviceMemoryProperties);
@@ -1875,6 +1903,53 @@ void Device::_getDeviceInformation() {
         deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
         deviceProperties2.pNext = &physicalDeviceDriverProperties;
         vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
+
+        // Check the driver version.
+        if (physicalDeviceDriverProperties.driverID == VK_DRIVER_ID_NVIDIA_PROPRIETARY) {
+            driverVersion.major = physicalDeviceProperties.driverVersion >> 22u;
+            driverVersion.minor = (physicalDeviceProperties.driverVersion >> 14u) & 0xffu;
+            driverVersion.subminor = (physicalDeviceProperties.driverVersion >> 6u) & 0xffu;
+            driverVersion.patch = physicalDeviceProperties.driverVersion & 0x3u;
+            hasDriverVersionPatch = driverVersion.patch != 0u;
+        } else if (physicalDeviceDriverProperties.driverID == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS) {
+            driverVersion.major = physicalDeviceProperties.driverVersion >> 14u;
+            driverVersion.minor = physicalDeviceProperties.driverVersion & 0x3ffu;
+            driverVersion.subminor = 0u;
+            driverVersion.patch = 0u;
+            hasDriverVersionSubminor = hasDriverVersionPatch = false;
+        } else if (physicalDeviceDriverProperties.driverID == VK_DRIVER_ID_BROADCOM_PROPRIETARY) {
+            driverVersion.major = physicalDeviceProperties.driverVersion / 10000u;
+            driverVersion.minor = (physicalDeviceProperties.driverVersion % 10000u) / 100u;
+            driverVersion.subminor = 0u;
+            driverVersion.patch = 0u;
+            hasDriverVersionSubminor = hasDriverVersionPatch = false;
+        } else if (physicalDeviceDriverProperties.driverID == VK_DRIVER_ID_IMAGINATION_PROPRIETARY) {
+            driverVersion.major = physicalDeviceProperties.driverVersion;
+            driverVersion.minor = 0u;
+            driverVersion.subminor = 0u;
+            driverVersion.patch = 0u;
+            hasDriverVersionMinor = hasDriverVersionSubminor = hasDriverVersionPatch = false;
+        } else {
+            driverVersion.major = physicalDeviceProperties.driverVersion >> 22u;
+            driverVersion.minor = (physicalDeviceProperties.driverVersion >> 12u) & 0x3ffu;
+            driverVersion.subminor = physicalDeviceProperties.driverVersion & 0xfffu;
+            driverVersion.patch = 0u;
+            hasDriverVersionPatch = false;
+        }
+        driverVersionString = std::to_string(driverVersion.major);
+        if (hasDriverVersionMinor) {
+            driverVersionString += "." + std::to_string(driverVersion.minor);
+        }
+        if (hasDriverVersionSubminor) {
+            driverVersionString += "." + std::to_string(driverVersion.subminor);
+        }
+        if (hasDriverVersionPatch) {
+            driverVersionString += "." + std::to_string(driverVersion.patch);
+        }
+    } else {
+        driverVersion.major = physicalDeviceProperties.driverVersion;
+        driverVersionString = std::to_string(driverVersion.major);
+        hasDriverVersionMinor = hasDriverVersionSubminor = hasDriverVersionPatch = false;
     }
     if (physicalDeviceProperties.apiVersion >= VK_API_VERSION_1_1
             || isDeviceExtensionSupported(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME)
@@ -2088,6 +2163,7 @@ void Device::writeDeviceInfoToLog(const std::vector<const char*>& deviceExtensio
         sgl::Logfile::get()->write(std::string() + "Device driver info: " + getDeviceDriverInfo(), BLUE);
         sgl::Logfile::get()->write(
                 std::string() + "Device driver ID: " + sgl::toString(getDeviceDriverId()), BLUE);
+        sgl::Logfile::get()->write(std::string() + "Device driver version: " + getDriverVersionString(), BLUE);
     }
 
     printAvailableDeviceExtensionList();

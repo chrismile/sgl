@@ -488,6 +488,20 @@ void VectorBackendNanoVG::renderEnd() {
             }
             interopSyncVkGl->getRenderFinishedSemaphore()->signalSemaphoreGl(textures, dstLayouts);
         }
+
+        /*
+         * GL_EXT_semaphore is broken in all Mesa drivers as of 2025-05-31.
+         * - https://gitlab.freedesktop.org/mesa/mesa/-/issues/12650
+         * - Fixes for Intel drivers in: https://gitlab.freedesktop.org/tpalli/mesa/-/commits/sync-that-fence
+         * For now I will assume that this will be fixed by Mesa 26.0.
+         * This code can be updated in the future to reflect when the fix has landed.
+         */
+        if ((device->getDeviceDriverId() == VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA
+                    || device->getDeviceDriverId() == VK_DRIVER_ID_MESA_RADV)
+                && device->getIsDriverVersionLessThan(vk::DriverVersion{ 26, 0, 0, 0 })) {
+            glFinish();
+        }
+
         sgl::vk::CommandBufferPtr commandBufferPost =
                 commandBuffersPost.at(swapchain ? swapchain->getCurrentFrame() : 0);
         commandBufferPost->pushWaitSemaphore(

@@ -291,6 +291,13 @@ DLL_OBJECT void getPhysicalDeviceProperties2(
 
 typedef std::function<bool(VkPhysicalDevice, VkPhysicalDeviceProperties, std::vector<const char*>&, std::vector<const char*>&, DeviceFeatures&)> PhysicalDeviceCheckCallback;
 
+struct DriverVersion {
+    uint32_t major;
+    uint32_t minor;
+    uint32_t subminor;
+    uint32_t patch;
+};
+
 /**
  * An encapsulation of VkDevice and VkPhysicalDevice.
  */
@@ -375,6 +382,9 @@ public:
     inline const VkPhysicalDeviceProperties& getPhysicalDeviceProperties() const { return physicalDeviceProperties; }
     inline uint32_t getApiVersion() const { return physicalDeviceProperties.apiVersion; }
     inline uint32_t getDriverVersion() const { return physicalDeviceProperties.driverVersion; }
+    inline const std::string& getDriverVersionString() const { return driverVersionString; }
+    bool getIsDriverVersionGreaterOrEqual(const DriverVersion& driverVersionComp) const;
+    inline bool getIsDriverVersionLessThan(const DriverVersion& driverVersionComp) const { return !getIsDriverVersionGreaterOrEqual(driverVersionComp); }
     inline uint32_t getVendorId() const { return physicalDeviceProperties.vendorID; }
     inline uint32_t getDeviceId() const { return physicalDeviceProperties.deviceID; }
     inline VkPhysicalDeviceType getDeviceType() const { return physicalDeviceProperties.deviceType; }
@@ -839,6 +849,13 @@ private:
     bool isInitializedSupportedCooperativeMatrixPropertiesKHR = false;
     bool isInitializedSupportedCooperativeMatrixFlexibleDimensionsPropertiesNV = false;
     bool isInitializedSupportedCooperativeVectorPropertiesNV = false;
+
+    // Driver version string (mapped from VkPhysicalDeviceProperties::driverVersion).
+    DriverVersion driverVersion{};
+    bool hasDriverVersionMinor = true;
+    bool hasDriverVersionSubminor = true;
+    bool hasDriverVersionPatch = true;
+    std::string driverVersionString;
 
     // AMD-specific properties.
     VkPhysicalDeviceShaderCorePropertiesAMD deviceShaderCorePropertiesAMD{};
