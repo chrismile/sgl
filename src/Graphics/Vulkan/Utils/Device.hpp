@@ -167,6 +167,11 @@ struct DLL_OBJECT DeviceFeatures {
         optionalVulkan14Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_4_FEATURES;
 #endif
     }
+    /// Returns false if a pNext entry is not supported by sgl.
+    bool setRequestedFeaturesFromPNextChain(const void* pNext, std::vector<const char*>& requiredDeviceExtensions);
+    bool setOptionalFeaturesFromPNextChain(const void* pNext, std::vector<const char*>& optionalDeviceExtensions);
+    /// Called by the two functions above.
+    bool setExtensionFeaturesFromPNextEntry(const void* pNext, std::vector<const char*>& deviceExtensions);
     VkPhysicalDeviceFeatures requestedPhysicalDeviceFeatures{};
     VkPhysicalDeviceFeatures optionalPhysicalDeviceFeatures{};
     VkPhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeatures{};
@@ -274,6 +279,20 @@ DLL_OBJECT void mergePhysicalDeviceFeatures12(
 #else
 DLL_OBJECT void mergePhysicalDeviceFeatures12(
         VkPhysicalDeviceVulkan12Features_Compat& featuresDst, const VkPhysicalDeviceVulkan12Features_Compat& featuresSrc);
+#endif
+#ifdef VK_VERSION_1_3
+DLL_OBJECT void mergePhysicalDeviceFeatures13(
+        VkPhysicalDeviceVulkan13Features& featuresDst, const VkPhysicalDeviceVulkan13Features& featuresSrc);
+#else
+DLL_OBJECT void mergePhysicalDeviceFeatures13(
+        VkPhysicalDeviceVulkan13Features_Compat& featuresDst, const VkPhysicalDeviceVulkan13Features_Compat& featuresSrc);
+#endif
+#ifdef VK_VERSION_1_4
+DLL_OBJECT void mergePhysicalDeviceFeatures14(
+        VkPhysicalDeviceVulkan14Features& featuresDst, const VkPhysicalDeviceVulkan14Features& featuresSrc);
+#else
+DLL_OBJECT void mergePhysicalDeviceFeatures14(
+        VkPhysicalDeviceVulkan14Features_Compat& featuresDst, const VkPhysicalDeviceVulkan14Features_Compat& featuresSrc);
 #endif
 
 // Public interface for checking all available devices on the user side.
