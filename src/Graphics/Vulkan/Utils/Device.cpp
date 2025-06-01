@@ -777,9 +777,7 @@ void mergePhysicalDeviceFeatures14(
         VkPhysicalDeviceVulkan14Features_Compat& featuresDst, const VkPhysicalDeviceVulkan14Features_Compat& featuresSrc) {
 #endif
 #ifdef VK_VERSION_1_4
-    const size_t numVulkan14Features =
-                1 + (&requestedDeviceFeatures.requestedVulkan14Features.pushDescriptor)
-                - (&requestedDeviceFeatures.requestedVulkan14Features.globalPriorityQuery);
+    const size_t numVulkan14Features = 1 + (&featuresDst.pushDescriptor) - (&featuresDst.globalPriorityQuery);
     auto featuresDstArray = reinterpret_cast<VkBool32*>(&featuresDst.globalPriorityQuery);
     auto featuresSrcArray = reinterpret_cast<const VkBool32*>(&featuresSrc.globalPriorityQuery);
     for (size_t i = 0; i < numVulkan14Features; i++) {
