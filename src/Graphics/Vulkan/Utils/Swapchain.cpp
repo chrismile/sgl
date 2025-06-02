@@ -625,7 +625,7 @@ void Swapchain::cleanupRecreate() {
 void Swapchain::cleanup() {
     cleanupRecreate();
 
-    for (size_t i = 0; i < swapchainImages.size(); i++) {
+    for (size_t i = 0; i < renderFinishedSemaphores.size(); i++) {
         vkDestroySemaphore(device->getVkDevice(), renderFinishedSemaphores[i], nullptr);
     }
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
