@@ -1241,6 +1241,14 @@ glm::ivec2 AppSettings::getDesktopResolution(int displayIndex) {
 }
 
 void AppSettings::captureMouse(bool _capture) {
+    if (!mainWindow) {
+        return;
+    }
+    if (mainWindow && mainWindow->getUsesWaylandBackend()) {
+        // Wayland does not support capturing the mouse.
+        // SDL_CaptureMouse causes "that operation is not supported" SDL error.
+        return;
+    }
 #ifdef SUPPORT_SDL2
     if (mainWindow->getBackend() == WindowBackend::SDL2_IMPL) {
         SDL_CaptureMouse(_capture ? SDL_TRUE : SDL_FALSE);

@@ -537,7 +537,8 @@ void GlfwWindow::update() {
 
 bool GlfwWindow::processEvents() {
     if (isFirstFrame) {
-        if (windowSettings.savePosition && windowSettings.windowPosition.x != std::numeric_limits<int>::min()) {
+        if (windowSettings.savePosition && windowSettings.windowPosition.x != std::numeric_limits<int>::min()
+                && !usesWaylandBackend) {
             setWindowPosition(windowSettings.windowPosition.x, windowSettings.windowPosition.y);
         }
         onFramebufferSize(windowSettings.width, windowSettings.height);

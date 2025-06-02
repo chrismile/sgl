@@ -551,6 +551,11 @@ glm::ivec2 SDLWindow::getWindowPosition() {
 }
 
 void SDLWindow::setWindowPosition(int x, int y) {
+    if (usesWaylandBackend) {
+        sgl::Logfile::get()->writeWarning(
+            "Warning in SDLWindow::setWindowPosition: Wayland backend does not support setting the window position.");
+        return;
+    }
     SDL_SetWindowPosition(sdlWindow, x, y);
 }
 
@@ -700,7 +705,8 @@ bool SDLWindow::processEvents() {
     }
 
     if (isFirstFrame) {
-        if (windowSettings.savePosition && windowSettings.windowPosition.x != std::numeric_limits<int>::min()) {
+        if (windowSettings.savePosition && windowSettings.windowPosition.x != std::numeric_limits<int>::min()
+                && !usesWaylandBackend) {
             setWindowPosition(windowSettings.windowPosition.x, windowSettings.windowPosition.y);
         }
         isFirstFrame = false;

@@ -1583,6 +1583,11 @@ inline notify::notify(std::string const &title,
         command.push_back(message);
         command.push_back("5");
     }
+    else if (command.front() == "echo")
+    {
+        // 2025-06-02 (Christoph): echo hangs for whatever reason...
+        return;
+    }
 
     if (flags(flag::is_verbose))
         std::cerr << "pfd: " << command << std::endl;
@@ -1786,6 +1791,12 @@ inline message::message(std::string const &title,
         // Must be after the above part
         if (_choice == choice::ok_cancel)
             command.insert(command.end(), { "--yes-label", "OK", "--no-label", "Cancel" });
+    }
+    else if (command.front() == "echo")
+    {
+        // 2025-06-02 (Christoph): echo hangs for whatever reason...
+        //command.push_back(title + " " + text);
+        return;
     }
 
     if (flags(flag::is_verbose))

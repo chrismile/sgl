@@ -246,8 +246,10 @@ void Swapchain::create(Window* window) {
 }
 
 void Swapchain::createSyncObjects() {
+    // 2025-06-02: Switched from MAX_FRAMES_IN_FLIGHT to swapchainImages.size() for number of semaphores to avoid
+    // validation layer error VUID-vkQueueSubmit-pSignalSemaphores-00067.
     imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    renderFinishedSemaphores.resize(swapchainImages.size());
     inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
     imagesInFlight.resize(swapchainImages.size(), VK_NULL_HANDLE);
 
@@ -258,13 +260,17 @@ void Swapchain::createSyncObjects() {
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
+    for (size_t i = 0; i < swapchainImages.size(); i++) {
+        if (vkCreateSemaphore(
+                    device->getVkDevice(), &semaphoreInfo, nullptr,
+                    &renderFinishedSemaphores[i]) != VK_SUCCESS) {
+            sgl::Logfile::get()->throwError("Error in Swapchain::createSyncObjects: Could not create semaphores.");
+        }
+    }
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         if (vkCreateSemaphore(
                 device->getVkDevice(), &semaphoreInfo, nullptr,
-                &imageAvailableSemaphores[i]) != VK_SUCCESS
-            || vkCreateSemaphore(
-                    device->getVkDevice(), &semaphoreInfo, nullptr,
-                    &renderFinishedSemaphores[i]) != VK_SUCCESS) {
+                &imageAvailableSemaphores[i]) != VK_SUCCESS) {
             sgl::Logfile::get()->throwError("Error in Swapchain::createSyncObjects: Could not create semaphores.");
         }
         if (vkCreateFence(
@@ -372,7 +378,7 @@ void Swapchain::beginFrame() {
 
 void Swapchain::renderFrame(const std::vector<VkCommandBuffer>& commandBuffers) {
     VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
-    VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
+    VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[imageIndex] };
     VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -452,7 +458,7 @@ void Swapchain::renderFrame(const std::vector<sgl::vk::CommandBufferPtr>& comman
     const sgl::vk::CommandBufferPtr& commandBufferLast = commandBuffers.back();
 
     //VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
-    VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
+    VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[imageIndex] };
     if (useDownloadSwapchain) {
         signalSemaphores[0] = frameRenderedSemaphore->getVkSemaphore();
     }
@@ -619,8 +625,10 @@ void Swapchain::cleanupRecreate() {
 void Swapchain::cleanup() {
     cleanupRecreate();
 
-    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    for (size_t i = 0; i < swapchainImages.size(); i++) {
         vkDestroySemaphore(device->getVkDevice(), renderFinishedSemaphores[i], nullptr);
+    }
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroySemaphore(device->getVkDevice(), imageAvailableSemaphores[i], nullptr);
         vkDestroyFence(device->getVkDevice(), inFlightFences[i], nullptr);
     }
