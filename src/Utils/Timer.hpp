@@ -29,10 +29,12 @@
 #ifndef SYSTEM_TIMER_HPP_
 #define SYSTEM_TIMER_HPP_
 
-#include <cstring>
 #include <cstdint>
 #include <Defs.hpp>
-#include <Utils/Singleton.hpp>
+
+#ifdef _WIN32
+typedef void* HANDLE;
+#endif
 
 namespace sgl {
 

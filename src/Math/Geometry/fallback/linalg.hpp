@@ -39,6 +39,7 @@
 
 namespace glm {
 
+template <class...> constexpr std::false_type templated_false{};
 template<class T> T identity() {
     if constexpr (std::is_same_v<T, mat3>) {
         return mat3(
@@ -54,7 +55,7 @@ template<class T> T identity() {
     } else if constexpr (std::is_same_v<T, quat>) {
         return quat(0, 0, 0, 1);
     } else {
-        static_assert(false, "Unsupported type passed to identity<T>().");
+        static_assert(templated_false<T>, "Unsupported type passed to identity<T>().");
     }
 }
 
