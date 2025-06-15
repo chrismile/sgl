@@ -130,9 +130,8 @@ void TimerInterface::waitForFPSLimit() {
                 return;
             }
         } else
-#else
-        std::this_thread::sleep_for(std::chrono::microseconds(sleepTimeMicroSeconds));
 #endif
+        std::this_thread::sleep_for(std::chrono::microseconds(sleepTimeMicroSeconds));
     }
 }
 
