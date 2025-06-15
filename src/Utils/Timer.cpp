@@ -78,7 +78,7 @@ TimerInterface::TimerInterface() : currentTime(0), lastTime(0), elapsedMicroSeco
         if (GetLastError() != ERROR_INVALID_PARAMETER) {
             Logfile::get()->writeError(
                 "TimerInterface::TimerInterface: CreateWaitableTimerExW failed with error code "
-                + std::to_string(GetLastError())) + ".";
+                + std::to_string(GetLastError()) + ".");
         }
     }
 #endif
@@ -120,13 +120,13 @@ void TimerInterface::waitForFPSLimit() {
             if (!SetWaitableTimer(timerHandle, &waitTime, 0, nullptr, nullptr, 0)) {
                 Logfile::get()->writeError(
                     "Error in TimerInterface::waitForFPSLimit: SetWaitableTimer failed with error code "
-                    + std::to_string(GetLastError())) + ".";
+                    + std::to_string(GetLastError()) + ".");
                 return;
             }
             if (WaitForSingleObject(timerHandle, INFINITE) != WAIT_OBJECT_0) {
                 Logfile::get()->writeError(
                     "Error in TimerInterface::waitForFPSLimit: WaitForSingleObject failed with error code "
-                    + std::to_string(GetLastError())) + ".";
+                    + std::to_string(GetLastError()) + ".");
                 return;
             }
         } else
