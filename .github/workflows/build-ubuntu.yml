@@ -72,7 +72,8 @@ jobs:
           #  sudo apt-get upgrade
           #fi
           sudo apt-get install git cmake libglm-dev libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
-          libpng-dev libboost-filesystem-dev libtinyxml2-dev libarchive-dev libglew-dev opencl-c-headers ocl-icd-opencl-dev
+          libpng-dev libboost-filesystem-dev libtinyxml2-dev libarchive-dev libglew-dev opencl-c-headers \
+          ocl-icd-opencl-dev libgtest-dev
 
       - name: Configure CMake
         shell: bash
@@ -84,7 +85,10 @@ jobs:
           else
             export VULKAN_SDK="/usr"
           fi
-          cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+          cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DUSE_GTEST=ON
 
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --parallel 4
+
+      - name: Run tests
+        run: ${{github.workspace}}/build/sgl_test

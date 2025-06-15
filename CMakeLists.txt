@@ -67,6 +67,7 @@ option(USE_LIBPNG "Build with libpng support." ON)
 option(USE_ICU "Build with ICU unicode support." OFF)
 option(USE_LIBARCHIVE "Build with libarchive support." ON)
 option(USE_TINYXML2 "Build with TinyXML2 support." ON)
+option(USE_GTEST "Build the GoogleTest test suites." OFF)
 
 # Window manager backends
 option(USE_SDL2 "Build with SDL2 support." OFF)
@@ -1513,6 +1514,18 @@ if (EMSCRIPTEN)
     target_link_options(sgl PUBLIC ${EMSCRIPTEN_SGL_LINKER_FLAGS})
 endif()
 
+
+# Unit tests.
+if (${USE_GTEST})
+    include(GoogleTest)
+    enable_testing()
+    file(GLOB_RECURSE TEST_SOURCES tests/*.cpp tests/*.c tests/*.hpp tests/*.h)
+    add_executable(sgl_test ${TEST_SOURCES})
+    target_link_libraries(sgl_test PRIVATE gtest gtest_main)
+    target_link_libraries(sgl_test PRIVATE sgl)
+    target_include_directories(sgl_test PRIVATE ${sgl_INCLUDES})
+    gtest_add_tests(TARGET sgl_test)
+endif()
 
 
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/sglConfig.cmake.in" CONTENTS)

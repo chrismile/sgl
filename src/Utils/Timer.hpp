@@ -39,6 +39,7 @@ namespace sgl {
 class DLL_OBJECT TimerInterface {
 public:
     TimerInterface();
+    ~TimerInterface();
 
     void update();
     void sleepMilliseconds(unsigned int milliseconds);
@@ -81,6 +82,11 @@ private:
     unsigned int fpsLimit;
     bool fixedPhysicsFPSEnabled;
     unsigned int physicsFPS;
+
+#ifdef _WIN32
+    bool useHighResTimers = true;
+    HANDLE timerHandle = {};
+#endif
 };
 
 DLL_OBJECT extern TimerInterface *Timer;

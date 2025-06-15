@@ -41,8 +41,15 @@
 #endif
 
 #include <Utils/AppSettings.hpp>
+#include <Utils/File/Logfile.hpp>
 #include <Graphics/Window.hpp>
 #include "Timer.hpp"
+
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <timeapi.h>
+#endif
 
 namespace sgl {
 
@@ -63,6 +70,27 @@ TimerInterface::TimerInterface() : currentTime(0), lastTime(0), elapsedMicroSeco
         startFrameTime = glfwGetTimerValue();
     }
 #endif
+
+#ifdef _WIN32
+    timerHandle = CreateWaitableTimerExW(
+        nullptr, nullptr, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
+    if (!timerHandle) {
+        if (GetLastError() != ERROR_INVALID_PARAMETER) {
+            Logfile::get()->writeError(
+                "TimerInterface::TimerInterface: CreateWaitableTimerExW failed with error code "
+                + std::to_string(GetLastError())) + ".";
+        }
+    }
+#endif
+}
+
+TimerInterface::~TimerInterface() {
+#ifdef _WIN32
+    if (timerHandle) {
+        CloseHandle(timerHandle);
+        timerHandle = {};
+    }
+#endif
 }
 
 void TimerInterface::sleepMilliseconds(unsigned int milliseconds) {
@@ -76,12 +104,35 @@ void TimerInterface::waitForFPSLimit() {
 
     uint64_t timeSinceUpdate = getTicksMicroseconds() - lastTime;
 #ifdef _WIN32
-    int64_t sleepTimeMicroSeconds = int64_t(1e6 / (fpsLimit+10) - timeSinceUpdate);
+    auto sleepTimeMicroSeconds = int64_t(1e6 / double(fpsLimit + 10) - double(timeSinceUpdate));
 #else
-    int64_t sleepTimeMicroSeconds = 1e6 / (fpsLimit+2) - timeSinceUpdate;
+    auto sleepTimeMicroSeconds = int64_t(1e6 / double(fpsLimit + 2) - double(timeSinceUpdate));
 #endif
     if (sleepTimeMicroSeconds > 0) {
+#ifdef _WIN32
+        if (timerHandle) {
+            /*
+             * CREATE_WAITABLE_TIMER_HIGH_RESOLUTION is only supported since Windows 10, version 1803.
+             * Wait time is specified in 100 nanosecond intervals.
+             */
+            LARGE_INTEGER waitTime;
+            waitTime.QuadPart = -sleepTimeMicroSeconds * 10;
+            if (!SetWaitableTimer(timerHandle, &waitTime, 0, nullptr, nullptr, 0)) {
+                Logfile::get()->writeError(
+                    "Error in TimerInterface::waitForFPSLimit: SetWaitableTimer failed with error code "
+                    + std::to_string(GetLastError())) + ".";
+                return;
+            }
+            if (WaitForSingleObject(timerHandle, INFINITE) != WAIT_OBJECT_0) {
+                Logfile::get()->writeError(
+                    "Error in TimerInterface::waitForFPSLimit: WaitForSingleObject failed with error code "
+                    + std::to_string(GetLastError())) + ".";
+                return;
+            }
+        } else
+#else
         std::this_thread::sleep_for(std::chrono::microseconds(sleepTimeMicroSeconds));
+#endif
     }
 }
 
