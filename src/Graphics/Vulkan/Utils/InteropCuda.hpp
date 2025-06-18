@@ -275,6 +275,7 @@ protected:
 #endif
 };
 
+DLL_OBJECT CUarray_format getCudaArrayFormatFromVkFormat(VkFormat format);
 typedef std::shared_ptr<ImageCudaExternalMemoryVk> ImageCudaExternalMemoryVkPtr;
 typedef ImageCudaExternalMemoryVk ImageCudaDriverApiExternalMemoryVk;
 typedef std::shared_ptr<ImageCudaDriverApiExternalMemoryVk> ImageCudaDriverApiExternalMemoryVkPtr;

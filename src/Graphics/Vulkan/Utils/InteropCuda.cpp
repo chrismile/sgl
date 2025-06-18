@@ -677,7 +677,7 @@ ImageCudaExternalMemoryVk::ImageCudaExternalMemoryVk(
     _initialize(vulkanImage, imageViewType, surfaceLoadStore);
 }
 
-static CUarray_format getCudaArrayFormat(VkFormat format) {
+CUarray_format getCudaArrayFormatFromVkFormat(VkFormat format) {
     switch (format) {
         case VK_FORMAT_R8_UINT:
         case VK_FORMAT_R8G8_UINT:
@@ -757,7 +757,7 @@ static CUarray_format getCudaArrayFormat(VkFormat format) {
         case VK_FORMAT_D32_SFLOAT:
             return CU_AD_FORMAT_FLOAT;
         default:
-            sgl::Logfile::get()->throwError("Error in getCudaArrayFormat: Unsupported format.");
+            sgl::Logfile::get()->throwError("Error in getCudaArrayFormatFromVkFormat: Unsupported format.");
             return CU_AD_FORMAT_FLOAT;
     }
 }
@@ -865,7 +865,7 @@ void ImageCudaExternalMemoryVk::_initialize(
             || imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY || imageViewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
         arrayDescriptor.Depth = imageSettings.arrayLayers;
     }
-    arrayDescriptor.Format = getCudaArrayFormat(imageSettings.format);
+    arrayDescriptor.Format = getCudaArrayFormatFromVkFormat(imageSettings.format);
     arrayDescriptor.NumChannels = uint32_t(getImageFormatNumChannels(imageSettings.format));
     if (imageSettings.usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
         arrayDescriptor.Flags |= CUDA_ARRAY3D_COLOR_ATTACHMENT;

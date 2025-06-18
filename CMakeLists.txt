@@ -1246,7 +1246,12 @@ if (USE_ONEAPI)
     target_include_directories(sgl PUBLIC "${ONEAPI_INCLUDE_DIR}")
     target_include_directories(sgl PUBLIC "${ONEAPI_INCLUDE_DIR}/sycl")
     target_link_directories(sgl PUBLIC "${ONEAPI_ROOT_DIR}/lib")
-    target_link_libraries(sgl PUBLIC sycl)
+    if (WIN32)
+        target_link_libraries(sgl PUBLIC "$<$<CONFIG:Release>:sycl8.lib>")
+        target_link_libraries(sgl PUBLIC "$<$<CONFIG:Debug>:sycl8d.lib>")
+    else()
+        target_link_libraries(sgl PUBLIC sycl)
+    endif()
     if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         # Ignore "warning: multi-line comment" in <sycl/detail/builtins/builtins.hpp>.
         set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Vulkan/Utils/InteropLevelZero.cpp PROPERTIES COMPILE_FLAGS -Wno-comment)
@@ -1761,7 +1766,7 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
             FILES "${CMAKE_CURRENT_BINARY_DIR}/sgl/sglConfig.cmake"
             DESTINATION ${ConfigPackageLocation}
     )
-    if (WIN32 AND ((CMAKE_CXX_COMPILER_ID STREQUAL "MSVC") OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")))
+    if (WIN32 AND NOT ${BUILD_STATIC_LIBRARY} AND ((CMAKE_CXX_COMPILER_ID STREQUAL "MSVC") OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")))
         install(
                 FILES $<TARGET_PDB_FILE:sgl>
                 DESTINATION bin OPTIONAL

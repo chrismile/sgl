@@ -65,8 +65,11 @@ class queue;
 
 /*
  * This file provides wrappers over InteropCuda, InteropHIP and InteropLevelZero.
- * Depending on what interop API has been initialized, CUDA, HIP or Level Zero objects, semaphores, memory, etc. are
- * used internally.
+ * Depending on what interop API has been initialized, CUDA, HIP, Level Zero or SYCL objects, semaphores, memory, etc.
+ * are used internally.
+ *
+ * Documentation of SYCL side code:
+ * https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
  */
 
 namespace sgl { namespace vk {
@@ -155,8 +158,8 @@ public:
 
 protected:
     sgl::vk::BufferPtr vulkanBuffer;
-    void* externalMemoryBuffer{}; // CUexternalMemory or hipExternalMemory_t
-    void* devicePtr{}; // CUdeviceptr or hipDeviceptr_t
+    void* externalMemoryBuffer{}; // CUexternalMemory or hipExternalMemory_t or SyclExternalMemWrapper
+    void* devicePtr{}; // CUdeviceptr or hipDeviceptr_t or void* device pointer
 
 #ifdef _WIN32
     HANDLE handle = nullptr;
@@ -166,6 +169,47 @@ protected:
 };
 
 typedef std::shared_ptr<BufferComputeApiExternalMemoryVk> BufferComputeApiExternalMemoryVkPtr;
+
+
+/**
+ * A CUDA driver API CUmipmappedArray object created from a Vulkan image.
+ */
+class DLL_OBJECT ImageComputeApiExternalMemoryVk
+{
+public:
+    explicit ImageComputeApiExternalMemoryVk(vk::ImagePtr& vulkanImage);
+    ImageComputeApiExternalMemoryVk(
+            vk::ImagePtr& vulkanImage, VkImageViewType imageViewType, bool surfaceLoadStore);
+    virtual ~ImageComputeApiExternalMemoryVk();
+
+    inline const sgl::vk::ImagePtr& getVulkanImage() { return vulkanImage; }
+#ifdef SUPPORT_CUDA_INTEROP
+    [[nodiscard]] inline CUmipmappedArray getCudaMipmappedArray() const { return reinterpret_cast<CUdeviceptr>(cudaMipmappedArray); }
+    CUarray getCudaMipmappedArrayLevel(uint32_t level = 0);
+#endif
+
+    /*
+     * Asynchronous copy from a device pointer to level 0 mipmap level.
+     */
+    void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream);
+
+protected:
+    void _initialize(vk::ImagePtr& _vulkanImage, VkImageViewType _imageViewType, bool surfaceLoadStore);
+
+    sgl::vk::ImagePtr vulkanImage;
+    VkImageViewType imageViewType;
+    void* externalMemoryBuffer{}; // CUexternalMemory or hipExternalMemory_t or SyclExternalMemWrapper (external_mem)
+    void* mipmappedArray{}; // CUmipmappedArray or ze_image_handle_t or SyclImageMemHandleWrapper (image_mem_handle)
+
+    // Cache for storing the array for mipmap level 0.
+    void* arrayLevel0{}; // CUarray
+
+#ifdef _WIN32
+    HANDLE handle = nullptr;
+#else
+    int fileDescriptor = -1;
+#endif
+};
 
 }}
 

@@ -97,7 +97,41 @@ struct SyclExternalSemaphoreWrapper {
 struct SyclExternalMemWrapper {
     sycl::ext::oneapi::experimental::external_mem syclExternalMem;
 };
+struct SyclImageMemHandleWrapper {
+    sycl::ext::oneapi::experimental::image_descriptor syclImageDescriptor;
+    sycl::ext::oneapi::experimental::image_mem_handle syclImageMemHandle;
+};
 #endif
+
+
+#ifdef SUPPORT_CUDA_INTEROP
+#define CHECK_USE_CUDA useCuda = getIsCudaDeviceApiFunctionTableInitialized();
+#else
+#define CHECK_USE_CUDA
+#endif
+#ifdef SUPPORT_HIP_INTEROP
+#define CHECK_USE_HIP useHip = getIsHipDeviceApiFunctionTableInitialized();
+#else
+#define CHECK_USE_HIP
+#endif
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+#define CHECK_USE_LEVEL_ZERO useLevelZero = getIsLevelZeroFunctionTableInitialized();
+#else
+#define CHECK_USE_LEVEL_ZERO
+#endif
+#ifdef SUPPORT_SYCL_INTEROP
+#define CHECK_USE_SYCL useSycl = g_syclQueue != nullptr;
+#else
+#define CHECK_USE_SYCL
+#endif
+
+#define CHECK_COMPUTE_API_SUPPORT \
+bool useCuda = false, useHip = false, useLevelZero = false, useSycl = false; \
+CHECK_USE_CUDA \
+CHECK_USE_HIP \
+CHECK_USE_LEVEL_ZERO \
+CHECK_USE_SYCL
+
 
 SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop(
         sgl::vk::Device* device, VkSemaphoreCreateFlags semaphoreCreateFlags,
@@ -118,19 +152,17 @@ SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop(
             &exportSemaphoreCreateInfo);
 
 
-    bool useCuda = false, useHip = false, useLevelZero = false, useSycl = false;
+    CHECK_COMPUTE_API_SUPPORT;
+
 #ifdef SUPPORT_CUDA_INTEROP
     CUDA_EXTERNAL_SEMAPHORE_HANDLE_DESC externalSemaphoreHandleDesc{};
-    useCuda = getIsCudaDeviceApiFunctionTableInitialized();
 #endif
 #ifdef SUPPORT_HIP_INTEROP
     hipExternalSemaphoreHandleDesc externalSemaphoreHandleDescHip{};
-    useHip = getIsHipDeviceApiFunctionTableInitialized();
 #endif
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
     ze_external_semaphore_ext_desc_t externalSemaphoreExtDesc{};
     externalSemaphoreExtDesc.stype = ZE_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_EXT_DESC;
-    useLevelZero = getIsLevelZeroFunctionTableInitialized();
     if (useLevelZero) {
         if (!g_zeDevice) {
             sgl::Logfile::get()->throwError(
@@ -138,9 +170,6 @@ SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop(
                     "Level Zero is initialized, but the global device object is not set.");
         }
     }
-#endif
-#ifdef SUPPORT_SYCL_INTEROP
-    useSycl = g_syclQueue != nullptr;
 #endif
     int numComputeApis = int(useCuda) + int(useHip) + int(useLevelZero) + int(useSycl);
     if (numComputeApis > 1) {
@@ -379,19 +408,7 @@ SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop(
 }
 
 SemaphoreVkComputeApiInterop::~SemaphoreVkComputeApiInterop() {
-    bool useCuda = false, useHip = false, useLevelZero = false, useSycl = false;
-#ifdef SUPPORT_CUDA_INTEROP
-    useCuda = getIsCudaDeviceApiFunctionTableInitialized();
-#endif
-#ifdef SUPPORT_HIP_INTEROP
-    useHip = getIsHipDeviceApiFunctionTableInitialized();
-#endif
-#ifdef SUPPORT_LEVEL_ZERO_INTEROP
-    useLevelZero = getIsLevelZeroFunctionTableInitialized();
-#endif
-#ifdef SUPPORT_SYCL_INTEROP
-    useSycl = g_syclQueue != nullptr;
-#endif
+    CHECK_COMPUTE_API_SUPPORT;
 
     if (useCuda) {
 #ifdef SUPPORT_CUDA_INTEROP
@@ -421,19 +438,7 @@ SemaphoreVkComputeApiInterop::~SemaphoreVkComputeApiInterop() {
 }
 
 void SemaphoreVkComputeApiInterop::signalSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue) {
-    bool useCuda = false, useHip = false, useLevelZero = false, useSycl = false;
-#ifdef SUPPORT_CUDA_INTEROP
-    useCuda = getIsCudaDeviceApiFunctionTableInitialized();
-#endif
-#ifdef SUPPORT_HIP_INTEROP
-    useHip = getIsHipDeviceApiFunctionTableInitialized();
-#endif
-#ifdef SUPPORT_LEVEL_ZERO_INTEROP
-    useLevelZero = getIsLevelZeroFunctionTableInitialized();
-#endif
-#ifdef SUPPORT_SYCL_INTEROP
-    useSycl = g_syclQueue != nullptr;
-#endif
+    CHECK_COMPUTE_API_SUPPORT;
 
     if (useCuda) {
 #ifdef SUPPORT_CUDA_INTEROP
@@ -478,19 +483,7 @@ void SemaphoreVkComputeApiInterop::signalSemaphoreComputeApi(StreamWrapper strea
 }
 
 void SemaphoreVkComputeApiInterop::waitSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue) {
-    bool useCuda = false, useHip = false, useLevelZero = false, useSycl = false;
-#ifdef SUPPORT_CUDA_INTEROP
-    useCuda = getIsCudaDeviceApiFunctionTableInitialized();
-#endif
-#ifdef SUPPORT_HIP_INTEROP
-    useHip = getIsHipDeviceApiFunctionTableInitialized();
-#endif
-#ifdef SUPPORT_LEVEL_ZERO_INTEROP
-    useLevelZero = getIsLevelZeroFunctionTableInitialized();
-#endif
-#ifdef SUPPORT_SYCL_INTEROP
-    useSycl = g_syclQueue != nullptr;
-#endif
+    CHECK_COMPUTE_API_SUPPORT;
 
     if (useCuda) {
 #ifdef SUPPORT_CUDA_INTEROP
@@ -543,22 +536,20 @@ BufferComputeApiExternalMemoryVk::BufferComputeApiExternalMemoryVk(vk::BufferPtr
     VkMemoryRequirements memoryRequirements{};
     vkGetBufferMemoryRequirements(device, vulkanBuffer->getVkBuffer(), &memoryRequirements);
 
-    bool useCuda = false, useHip = false, useLevelZero = false, useSycl = false;
+    CHECK_COMPUTE_API_SUPPORT;
+
 #ifdef SUPPORT_CUDA_INTEROP
     CUDA_EXTERNAL_MEMORY_HANDLE_DESC externalMemoryHandleDesc{};
     externalMemoryHandleDesc.size = vulkanBuffer->getDeviceMemorySize(); // memoryRequirements.size
-    useCuda = getIsCudaDeviceApiFunctionTableInitialized();
 #endif
 #ifdef SUPPORT_HIP_INTEROP
     hipExternalMemoryHandleDesc externalMemoryHandleDescHip{};
     externalMemoryHandleDescHip.size = vulkanBuffer->getDeviceMemorySize(); // memoryRequirements.size
-    useHip = getIsHipDeviceApiFunctionTableInitialized();
 #endif
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
     ze_device_mem_alloc_desc_t deviceMemAllocDesc{};
     deviceMemAllocDesc.stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC;
     //deviceMemAllocDesc.ordinal; // TODO: Necessary?
-    useLevelZero = getIsLevelZeroFunctionTableInitialized();
     if (useLevelZero) {
         if (!g_zeDevice || !g_zeContext) {
             sgl::Logfile::get()->throwError(
@@ -566,9 +557,6 @@ BufferComputeApiExternalMemoryVk::BufferComputeApiExternalMemoryVk(vk::BufferPtr
                     "Level Zero is initialized, but the global device or context object are not set.");
         }
     }
-#endif
-#ifdef SUPPORT_SYCL_INTEROP
-    useSycl = g_syclQueue != nullptr;
 #endif
     int numComputeApis = int(useCuda) + int(useHip) + int(useLevelZero) + int(useSycl);
     if (numComputeApis > 1) {
@@ -795,19 +783,7 @@ BufferComputeApiExternalMemoryVk::~BufferComputeApiExternalMemoryVk() {
     }
 #endif
 
-    bool useCuda = false, useHip = false, useLevelZero = false, useSycl = false;
-#ifdef SUPPORT_CUDA_INTEROP
-    useCuda = getIsCudaDeviceApiFunctionTableInitialized();
-#endif
-#ifdef SUPPORT_HIP_INTEROP
-    useHip = getIsHipDeviceApiFunctionTableInitialized();
-#endif
-#ifdef SUPPORT_LEVEL_ZERO_INTEROP
-    useLevelZero = getIsLevelZeroFunctionTableInitialized();
-#endif
-#ifdef SUPPORT_SYCL_INTEROP
-    useSycl = g_syclQueue != nullptr;
-#endif
+    CHECK_COMPUTE_API_SUPPORT;
 
     if (useCuda) {
 #ifdef SUPPORT_CUDA_INTEROP
@@ -843,19 +819,7 @@ BufferComputeApiExternalMemoryVk::~BufferComputeApiExternalMemoryVk() {
 }
 
 void BufferComputeApiExternalMemoryVk::copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream) {
-    bool useCuda = false, useHip = false, useLevelZero = false, useSycl = false;
-#ifdef SUPPORT_CUDA_INTEROP
-    useCuda = getIsCudaDeviceApiFunctionTableInitialized();
-#endif
-#ifdef SUPPORT_HIP_INTEROP
-    useHip = getIsHipDeviceApiFunctionTableInitialized();
-#endif
-#ifdef SUPPORT_LEVEL_ZERO_INTEROP
-    useLevelZero = getIsLevelZeroFunctionTableInitialized();
-#endif
-#ifdef SUPPORT_SYCL_INTEROP
-    useSycl = g_syclQueue != nullptr;
-#endif
+    CHECK_COMPUTE_API_SUPPORT;
 
     if (useCuda) {
 #ifdef SUPPORT_CUDA_INTEROP
@@ -886,19 +850,7 @@ void BufferComputeApiExternalMemoryVk::copyFromDevicePtrAsync(void* devicePtrSrc
 }
 
 void BufferComputeApiExternalMemoryVk::copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream) {
-    bool useCuda = false, useHip = false, useLevelZero = false, useSycl = false;
-#ifdef SUPPORT_CUDA_INTEROP
-    useCuda = getIsCudaDeviceApiFunctionTableInitialized();
-#endif
-#ifdef SUPPORT_HIP_INTEROP
-    useHip = getIsHipDeviceApiFunctionTableInitialized();
-#endif
-#ifdef SUPPORT_LEVEL_ZERO_INTEROP
-    useLevelZero = getIsLevelZeroFunctionTableInitialized();
-#endif
-#ifdef SUPPORT_SYCL_INTEROP
-    useSycl = g_syclQueue != nullptr;
-#endif
+    CHECK_COMPUTE_API_SUPPORT;
 
     if (useCuda) {
 #ifdef SUPPORT_CUDA_INTEROP
@@ -924,6 +876,849 @@ void BufferComputeApiExternalMemoryVk::copyToDevicePtrAsync(void* devicePtrDst, 
     } else if (useSycl) {
 #ifdef SUPPORT_SYCL_INTEROP
         stream.syclQueuePtr->memcpy(devicePtrDst, devicePtr, vulkanBuffer->getSizeInBytes());
+#endif
+    }
+}
+
+
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+static void getZeImageFormatFromVkFormat(VkFormat vkFormat, ze_image_format_t& zeFormat) {
+    switch (vkFormat) {
+    case VK_FORMAT_R8_UINT:
+    case VK_FORMAT_R8G8_UINT:
+    case VK_FORMAT_R8G8B8_UINT:
+    case VK_FORMAT_B8G8R8_UINT:
+    case VK_FORMAT_R8G8B8A8_UINT:
+    case VK_FORMAT_B8G8R8A8_UINT:
+    case VK_FORMAT_A8B8G8R8_UINT_PACK32:
+    case VK_FORMAT_S8_UINT:
+    case VK_FORMAT_R16_UINT:
+    case VK_FORMAT_R16G16_UINT:
+    case VK_FORMAT_R16G16B16_UINT:
+    case VK_FORMAT_R16G16B16A16_UINT:
+    case VK_FORMAT_R32_UINT:
+    case VK_FORMAT_R32G32_UINT:
+    case VK_FORMAT_R32G32B32_UINT:
+    case VK_FORMAT_R32G32B32A32_UINT:
+        zeFormat.type = ZE_IMAGE_FORMAT_TYPE_UINT;
+        break;
+    case VK_FORMAT_R8_SINT:
+    case VK_FORMAT_R8G8_SINT:
+    case VK_FORMAT_R8G8B8_SINT:
+    case VK_FORMAT_B8G8R8_SINT:
+    case VK_FORMAT_R8G8B8A8_SINT:
+    case VK_FORMAT_B8G8R8A8_SINT:
+    case VK_FORMAT_A8B8G8R8_SINT_PACK32:
+    case VK_FORMAT_R16_SINT:
+    case VK_FORMAT_R16G16_SINT:
+    case VK_FORMAT_R16G16B16_SINT:
+    case VK_FORMAT_R16G16B16A16_SINT:
+    case VK_FORMAT_R32_SINT:
+    case VK_FORMAT_R32G32_SINT:
+    case VK_FORMAT_R32G32B32_SINT:
+    case VK_FORMAT_R32G32B32A32_SINT:
+        zeFormat.type = ZE_IMAGE_FORMAT_TYPE_SINT;
+        break;
+    case VK_FORMAT_R8_UNORM:
+    case VK_FORMAT_R8G8_UNORM:
+    case VK_FORMAT_R8G8B8A8_UNORM:
+    case VK_FORMAT_B8G8R8A8_UNORM:
+    case VK_FORMAT_A8B8G8R8_UNORM_PACK32:
+    case VK_FORMAT_R16_UNORM:
+    case VK_FORMAT_D16_UNORM:
+    case VK_FORMAT_R16G16_UNORM:
+    case VK_FORMAT_R16G16B16A16_UNORM:
+        zeFormat.type = ZE_IMAGE_FORMAT_TYPE_UNORM;
+        break;
+    case VK_FORMAT_R8_SNORM:
+    case VK_FORMAT_R8G8_SNORM:
+    case VK_FORMAT_R8G8B8A8_SNORM:
+    case VK_FORMAT_B8G8R8A8_SNORM:
+    case VK_FORMAT_A8B8G8R8_SNORM_PACK32:
+    case VK_FORMAT_R16_SNORM:
+    case VK_FORMAT_R16G16_SNORM:
+    case VK_FORMAT_R16G16B16A16_SNORM:
+        zeFormat.type = ZE_IMAGE_FORMAT_TYPE_SNORM;
+        break;
+    case VK_FORMAT_R16_SFLOAT:
+    case VK_FORMAT_R16G16_SFLOAT:
+    case VK_FORMAT_R16G16B16_SFLOAT:
+    case VK_FORMAT_R16G16B16A16_SFLOAT:
+    case VK_FORMAT_R32_SFLOAT:
+    case VK_FORMAT_R32G32_SFLOAT:
+    case VK_FORMAT_R32G32B32_SFLOAT:
+    case VK_FORMAT_R32G32B32A32_SFLOAT:
+    case VK_FORMAT_D32_SFLOAT:
+        zeFormat.type = ZE_IMAGE_FORMAT_TYPE_FLOAT;
+        break;
+    default:
+        sgl::Logfile::get()->throwError("Error in getZeImageFormatFromVkFormat: Unsupported type.");
+        return;
+    }
+    switch (vkFormat) {
+    case VK_FORMAT_R8_UINT:
+    case VK_FORMAT_R8_SINT:
+    case VK_FORMAT_R8_UNORM:
+    case VK_FORMAT_R8_SNORM:
+        zeFormat.layout = ZE_IMAGE_FORMAT_LAYOUT_8;
+        break;
+    case VK_FORMAT_R8G8_UINT:
+    case VK_FORMAT_R8G8_SINT:
+    case VK_FORMAT_R8G8_UNORM:
+    case VK_FORMAT_R8G8_SNORM:
+        zeFormat.layout = ZE_IMAGE_FORMAT_LAYOUT_8_8;
+        break;
+    case VK_FORMAT_R8G8B8_UINT:
+    case VK_FORMAT_B8G8R8_UINT:
+    case VK_FORMAT_R8G8B8_SINT:
+    case VK_FORMAT_B8G8R8_SINT:
+    case VK_FORMAT_R8G8B8_UNORM:
+    case VK_FORMAT_B8G8R8_UNORM:
+    case VK_FORMAT_R8G8B8_SNORM:
+    case VK_FORMAT_B8G8R8_SNORM:
+        zeFormat.layout = ZE_IMAGE_FORMAT_LAYOUT_8_8_8;
+        break;
+    case VK_FORMAT_R8G8B8A8_UINT:
+    case VK_FORMAT_B8G8R8A8_UINT:
+    case VK_FORMAT_A8B8G8R8_UINT_PACK32:
+    case VK_FORMAT_R8G8B8A8_SINT:
+    case VK_FORMAT_B8G8R8A8_SINT:
+    case VK_FORMAT_A8B8G8R8_SINT_PACK32:
+    case VK_FORMAT_R8G8B8A8_UNORM:
+    case VK_FORMAT_B8G8R8A8_UNORM:
+    case VK_FORMAT_A8B8G8R8_UNORM_PACK32:
+    case VK_FORMAT_R8G8B8A8_SNORM:
+    case VK_FORMAT_B8G8R8A8_SNORM:
+    case VK_FORMAT_A8B8G8R8_SNORM_PACK32:
+        zeFormat.layout = ZE_IMAGE_FORMAT_LAYOUT_8_8_8_8;
+        break;
+    case VK_FORMAT_S8_UINT:
+        zeFormat.layout = ZE_IMAGE_FORMAT_LAYOUT_8;
+        break;
+    case VK_FORMAT_R16_UINT:
+    case VK_FORMAT_R16_SINT:
+    case VK_FORMAT_R16_UNORM:
+    case VK_FORMAT_R16_SNORM:
+    case VK_FORMAT_R16_SFLOAT:
+    case VK_FORMAT_D16_UNORM:
+        zeFormat.layout = ZE_IMAGE_FORMAT_LAYOUT_16;
+        break;
+    case VK_FORMAT_R16G16_UINT:
+    case VK_FORMAT_R16G16_SINT:
+    case VK_FORMAT_R16G16_UNORM:
+    case VK_FORMAT_R16G16_SNORM:
+    case VK_FORMAT_R16G16_SFLOAT:
+        zeFormat.layout = ZE_IMAGE_FORMAT_LAYOUT_16_16;
+        break;
+    case VK_FORMAT_R16G16B16_UINT:
+    case VK_FORMAT_R16G16B16_SINT:
+    case VK_FORMAT_R16G16B16_UNORM:
+    case VK_FORMAT_R16G16B16_SNORM:
+    case VK_FORMAT_R16G16B16_SFLOAT:
+        zeFormat.layout = ZE_IMAGE_FORMAT_LAYOUT_16_16_16;
+        break;
+    case VK_FORMAT_R16G16B16A16_UINT:
+    case VK_FORMAT_R16G16B16A16_SINT:
+    case VK_FORMAT_R16G16B16A16_UNORM:
+    case VK_FORMAT_R16G16B16A16_SNORM:
+    case VK_FORMAT_R16G16B16A16_SFLOAT:
+        zeFormat.layout = ZE_IMAGE_FORMAT_LAYOUT_16_16_16_16;
+        break;
+    case VK_FORMAT_R32_UINT:
+    case VK_FORMAT_R32_SINT:
+    case VK_FORMAT_R32_SFLOAT:
+    case VK_FORMAT_D32_SFLOAT:
+        zeFormat.layout = ZE_IMAGE_FORMAT_LAYOUT_32;
+        break;
+    case VK_FORMAT_R32G32_UINT:
+    case VK_FORMAT_R32G32_SINT:
+    case VK_FORMAT_R32G32_SFLOAT:
+        zeFormat.layout = ZE_IMAGE_FORMAT_LAYOUT_32;
+        break;
+    case VK_FORMAT_R32G32B32_UINT:
+    case VK_FORMAT_R32G32B32_SINT:
+    case VK_FORMAT_R32G32B32_SFLOAT:
+        zeFormat.layout = ZE_IMAGE_FORMAT_LAYOUT_32;
+        break;
+    case VK_FORMAT_R32G32B32A32_UINT:
+    case VK_FORMAT_R32G32B32A32_SINT:
+    case VK_FORMAT_R32G32B32A32_SFLOAT:
+        zeFormat.layout = ZE_IMAGE_FORMAT_LAYOUT_32;
+        break;
+    default:
+        sgl::Logfile::get()->throwError("Error in getZeImageFormatFromVkFormat: Unsupported layout.");
+        return;
+    }
+    switch (vkFormat) {
+    case VK_FORMAT_R8_UINT:
+    case VK_FORMAT_R8G8_UINT:
+    case VK_FORMAT_R8G8B8_UINT:
+    case VK_FORMAT_R8G8B8A8_UINT:
+    case VK_FORMAT_S8_UINT:
+    case VK_FORMAT_R16_UINT:
+    case VK_FORMAT_R16G16_UINT:
+    case VK_FORMAT_R16G16B16_UINT:
+    case VK_FORMAT_R16G16B16A16_UINT:
+    case VK_FORMAT_R32_UINT:
+    case VK_FORMAT_R32G32_UINT:
+    case VK_FORMAT_R32G32B32_UINT:
+    case VK_FORMAT_R32G32B32A32_UINT:
+    case VK_FORMAT_R8_SINT:
+    case VK_FORMAT_R8G8_SINT:
+    case VK_FORMAT_R8G8B8_SINT:
+    case VK_FORMAT_R8G8B8A8_SINT:
+    case VK_FORMAT_R16_SINT:
+    case VK_FORMAT_R16G16_SINT:
+    case VK_FORMAT_R16G16B16_SINT:
+    case VK_FORMAT_R16G16B16A16_SINT:
+    case VK_FORMAT_R32_SINT:
+    case VK_FORMAT_R32G32_SINT:
+    case VK_FORMAT_R32G32B32_SINT:
+    case VK_FORMAT_R32G32B32A32_SINT:
+    case VK_FORMAT_R8_UNORM:
+    case VK_FORMAT_R8G8_UNORM:
+    case VK_FORMAT_R8G8B8A8_UNORM:
+    case VK_FORMAT_R16_UNORM:
+    case VK_FORMAT_D16_UNORM:
+    case VK_FORMAT_R16G16_UNORM:
+    case VK_FORMAT_R16G16B16A16_UNORM:
+    case VK_FORMAT_R8_SNORM:
+    case VK_FORMAT_R8G8_SNORM:
+    case VK_FORMAT_R8G8B8A8_SNORM:
+    case VK_FORMAT_R16_SNORM:
+    case VK_FORMAT_R16G16_SNORM:
+    case VK_FORMAT_R16G16B16A16_SNORM:
+    case VK_FORMAT_R16_SFLOAT:
+    case VK_FORMAT_R16G16_SFLOAT:
+    case VK_FORMAT_R16G16B16_SFLOAT:
+    case VK_FORMAT_R16G16B16A16_SFLOAT:
+    case VK_FORMAT_R32_SFLOAT:
+    case VK_FORMAT_R32G32_SFLOAT:
+    case VK_FORMAT_R32G32B32_SFLOAT:
+    case VK_FORMAT_R32G32B32A32_SFLOAT:
+    case VK_FORMAT_D32_SFLOAT:
+        zeFormat.x = ZE_IMAGE_FORMAT_SWIZZLE_R;
+        zeFormat.y = ZE_IMAGE_FORMAT_SWIZZLE_G;
+        zeFormat.z = ZE_IMAGE_FORMAT_SWIZZLE_B;
+        zeFormat.w = ZE_IMAGE_FORMAT_SWIZZLE_A;
+        break;
+    case VK_FORMAT_B8G8R8_UINT:
+    case VK_FORMAT_B8G8R8A8_UINT:
+    case VK_FORMAT_B8G8R8_SINT:
+    case VK_FORMAT_B8G8R8A8_SINT:
+    case VK_FORMAT_B8G8R8A8_UNORM:
+    case VK_FORMAT_B8G8R8A8_SNORM:
+        zeFormat.x = ZE_IMAGE_FORMAT_SWIZZLE_B;
+        zeFormat.y = ZE_IMAGE_FORMAT_SWIZZLE_G;
+        zeFormat.z = ZE_IMAGE_FORMAT_SWIZZLE_R;
+        zeFormat.w = ZE_IMAGE_FORMAT_SWIZZLE_A;
+        break;
+    case VK_FORMAT_A8B8G8R8_UINT_PACK32:
+    case VK_FORMAT_A8B8G8R8_UNORM_PACK32:
+    case VK_FORMAT_A8B8G8R8_SINT_PACK32:
+    case VK_FORMAT_A8B8G8R8_SNORM_PACK32:
+        zeFormat.x = ZE_IMAGE_FORMAT_SWIZZLE_A;
+        zeFormat.y = ZE_IMAGE_FORMAT_SWIZZLE_B;
+        zeFormat.z = ZE_IMAGE_FORMAT_SWIZZLE_G;
+        zeFormat.w = ZE_IMAGE_FORMAT_SWIZZLE_R;
+        break;
+    default:
+        sgl::Logfile::get()->throwError("Error in getZeImageFormatFromVkFormat: Unsupported swizzle.");
+        return;
+    }
+    size_t numChannels = getImageFormatNumChannels(vkFormat);
+    // TODO: Check if this is what we expect.
+    if (numChannels == 3) {
+        zeFormat.w = ZE_IMAGE_FORMAT_SWIZZLE_1;
+    } else if (numChannels == 2) {
+        zeFormat.y = ZE_IMAGE_FORMAT_SWIZZLE_0;
+        zeFormat.w = ZE_IMAGE_FORMAT_SWIZZLE_1;
+    } else if (numChannels == 1) {
+        zeFormat.y = ZE_IMAGE_FORMAT_SWIZZLE_0;
+        zeFormat.z = ZE_IMAGE_FORMAT_SWIZZLE_0;
+        zeFormat.w = ZE_IMAGE_FORMAT_SWIZZLE_1;
+    }
+}
+#endif
+
+
+ImageComputeApiExternalMemoryVk::ImageComputeApiExternalMemoryVk(vk::ImagePtr& vulkanImage) {
+    VkImageViewType imageViewType = VK_IMAGE_VIEW_TYPE_2D;
+    const auto& imageSettings = vulkanImage->getImageSettings();
+    if (imageSettings.imageType == VK_IMAGE_TYPE_1D) {
+        imageViewType = VK_IMAGE_VIEW_TYPE_1D;
+    } else if (imageSettings.imageType == VK_IMAGE_TYPE_2D) {
+        imageViewType = VK_IMAGE_VIEW_TYPE_2D;
+    } else if (imageSettings.imageType == VK_IMAGE_TYPE_3D) {
+        imageViewType = VK_IMAGE_VIEW_TYPE_3D;
+    }
+    bool surfaceLoadStore = (imageSettings.usage & VK_IMAGE_USAGE_STORAGE_BIT) != 0;
+    _initialize(vulkanImage, imageViewType, surfaceLoadStore);
+}
+
+ImageComputeApiExternalMemoryVk::ImageComputeApiExternalMemoryVk(
+        vk::ImagePtr& vulkanImage, VkImageViewType imageViewType, bool surfaceLoadStore) {
+    _initialize(vulkanImage, imageViewType, surfaceLoadStore);
+}
+
+void ImageComputeApiExternalMemoryVk::_initialize(
+        vk::ImagePtr& _vulkanImage, VkImageViewType _imageViewType, bool surfaceLoadStore) {
+    vulkanImage = _vulkanImage;
+    imageViewType = _imageViewType;
+    const sgl::vk::ImageSettings& imageSettings = vulkanImage->getImageSettings();
+
+    VkDevice device = vulkanImage->getDevice()->getVkDevice();
+    VkDeviceMemory deviceMemory = vulkanImage->getVkDeviceMemory();
+
+    VkMemoryRequirements memoryRequirements{};
+    vkGetImageMemoryRequirements(device, vulkanImage->getVkImage(), &memoryRequirements);
+
+    CHECK_COMPUTE_API_SUPPORT;
+
+#ifdef SUPPORT_CUDA_INTEROP
+    CUDA_EXTERNAL_MEMORY_HANDLE_DESC externalMemoryHandleDesc{};
+    externalMemoryHandleDesc.size = vulkanBuffer->getDeviceMemorySize(); // memoryRequirements.size
+#endif
+#ifdef SUPPORT_HIP_INTEROP
+    hipExternalMemoryHandleDesc externalMemoryHandleDescHip{};
+    externalMemoryHandleDescHip.size = vulkanBuffer->getDeviceMemorySize(); // memoryRequirements.size
+#endif
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+    ze_image_desc_t zeImageDesc{};
+    zeImageDesc.stype = ZE_STRUCTURE_TYPE_IMAGE_DESC;
+    //deviceMemAllocDesc.ordinal; // TODO: Necessary?
+    if (useLevelZero) {
+        if (!g_zeDevice || !g_zeContext) {
+            sgl::Logfile::get()->throwError(
+                    "Error in ImageComputeApiExternalMemoryVk::ImageComputeApiExternalMemoryVk: "
+                    "Level Zero is initialized, but the global device or context object are not set.");
+        }
+    }
+#endif
+    int numComputeApis = int(useCuda) + int(useHip) + int(useLevelZero) + int(useSycl);
+    if (numComputeApis > 1) {
+        sgl::Logfile::get()->throwError(
+                "Error in ImageComputeApiExternalMemoryVk::ImageComputeApiExternalMemoryVk: "
+                "Only one out of CUDA, HIP, Level Zero and SYCL interop can be initialized at a time.");
+    } else if (numComputeApis < 1) {
+        sgl::Logfile::get()->throwError(
+                "Error in ImageComputeApiExternalMemoryVk::ImageComputeApiExternalMemoryVk: "
+                "No interop API out of CUDA, HIP, Level Zero or SYCL is initialized.");
+    }
+
+
+#if defined(_WIN32)
+    auto _vkGetMemoryWin32HandleKHR = (PFN_vkGetMemoryWin32HandleKHR)vkGetDeviceProcAddr(
+            device, "vkGetMemoryWin32HandleKHR");
+    if (!_vkGetMemoryWin32HandleKHR) {
+        Logfile::get()->throwError(
+                "Error in ImageComputeApiExternalMemoryVk::ImageComputeApiExternalMemoryVk: "
+                "vkGetMemoryWin32HandleKHR was not found!");
+        return;
+    }
+    VkMemoryGetWin32HandleInfoKHR memoryGetWin32HandleInfo = {};
+    memoryGetWin32HandleInfo.sType = VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR;
+    memoryGetWin32HandleInfo.memory = deviceMemory;
+    memoryGetWin32HandleInfo.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+
+    HANDLE handle = nullptr;
+    if (_vkGetMemoryWin32HandleKHR(device, &memoryGetWin32HandleInfo, &handle) != VK_SUCCESS) {
+        Logfile::get()->throwError(
+                "Error in ImageComputeApiExternalMemoryVk::ImageComputeApiExternalMemoryVk: "
+                "Could not retrieve the file descriptor from the Vulkan device memory!");
+        return;
+    }
+
+    if (useCuda) {
+#ifdef SUPPORT_CUDA_INTEROP
+        externalMemoryHandleDesc.type = CU_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32;
+        externalMemoryHandleDesc.handle.win32.handle = (void*)handle;
+#endif
+    }
+
+    if (useHip) {
+#ifdef SUPPORT_HIP_INTEROP
+        externalMemoryHandleDescHip.type = hipExternalMemoryHandleTypeOpaqueWin32;
+        externalMemoryHandleDescHip.handle.win32.handle = (void*)handle;
+#endif
+    }
+
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+    ze_external_memory_import_win32_handle_t externalMemoryImportWin32Handle{};
+#endif
+    if (useLevelZero) {
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+        externalMemoryImportWin32Handle.stype = ZE_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMPORT_WIN32;
+        zeImageDesc.pNext = &externalMemoryImportWin32Handle;
+        externalMemoryImportWin32Handle.flags = ZE_EXTERNAL_MEMORY_TYPE_FLAG_OPAQUE_WIN32;
+        externalMemoryImportWin32Handle.handle = (void*)handle;
+#endif
+    }
+
+    if (useSycl) {
+#ifdef SUPPORT_SYCL_INTEROP
+        // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
+        auto memoryHandleType = sycl::ext::oneapi::experimental::external_mem_handle_type::win32_nt_handle;
+        sycl::ext::oneapi::experimental::external_mem_descriptor<sycl::ext::oneapi::experimental::resource_win32_handle>
+            syclExternalMemDescriptor{(void*)handle, memoryHandleType};
+        auto* wrapper = new SyclExternalMemWrapper;
+        wrapper->syclExternalMem = sycl::ext::oneapi::experimental::import_external_memory(
+            syclExternalMemDescriptor, *g_syclQueue);
+        externalMemoryBuffer = reinterpret_cast<void*>(wrapper);
+#endif
+    }
+
+    this->handle = handle;
+
+#elif defined(__linux__)
+
+    auto _vkGetMemoryFdKHR = (PFN_vkGetMemoryFdKHR)vkGetDeviceProcAddr(device, "vkGetMemoryFdKHR");
+    if (!_vkGetMemoryFdKHR) {
+        Logfile::get()->throwError(
+                "Error in ImageComputeApiExternalMemoryVk::ImageComputeApiExternalMemoryVk: "
+                "vkGetMemoryFdKHR was not found!");
+        return;
+    }
+
+    VkMemoryGetFdInfoKHR memoryGetFdInfoKhr = {};
+    memoryGetFdInfoKhr.sType = VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR;
+    memoryGetFdInfoKhr.memory = deviceMemory;
+    memoryGetFdInfoKhr.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+
+    int fileDescriptor = 0;
+    if (_vkGetMemoryFdKHR(device, &memoryGetFdInfoKhr, &fileDescriptor) != VK_SUCCESS) {
+        Logfile::get()->throwError(
+                "Error in ImageComputeApiExternalMemoryVk::ImageComputeApiExternalMemoryVk: "
+                "Could not retrieve the file descriptor from the Vulkan device memory!");
+        return;
+    }
+
+    if (useCuda) {
+#ifdef SUPPORT_CUDA_INTEROP
+        externalMemoryHandleDesc.type = CU_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD;
+        externalMemoryHandleDesc.handle.fd = fileDescriptor;
+#endif
+    }
+
+    if (useHip) {
+#ifdef SUPPORT_HIP_INTEROP
+        externalMemoryHandleDescHip.type = hipExternalMemoryHandleTypeOpaqueFd;
+        externalMemoryHandleDescHip.handle.fd = fileDescriptor;
+#endif
+    }
+
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+    ze_external_memory_import_fd_t externalMemoryImportFd{};
+#endif
+    if (useLevelZero) {
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+        externalMemoryImportFd.stype = ZE_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMPORT_FD;
+        zeImageDesc.pNext = &externalMemoryImportFd;
+        externalMemoryImportFd.flags = ZE_EXTERNAL_MEMORY_TYPE_FLAG_OPAQUE_FD;
+        externalMemoryImportFd.fd = fileDescriptor;
+#endif
+    }
+
+    if (useSycl) {
+#ifdef SUPPORT_SYCL_INTEROP
+        // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
+        auto memoryHandleType = sycl::ext::oneapi::experimental::external_mem_handle_type::opaque_fd;
+        sycl::ext::oneapi::experimental::external_mem_descriptor<sycl::ext::oneapi::experimental::resource_fd>
+            syclExternalMemDescriptor{fileDescriptor, memoryHandleType};
+        auto* wrapper = new SyclExternalMemWrapper;
+        wrapper->syclExternalMem = sycl::ext::oneapi::experimental::import_external_memory(
+            syclExternalMemDescriptor, *g_syclQueue);
+        externalMemoryBuffer = reinterpret_cast<void*>(wrapper);
+#endif
+    }
+
+    this->fileDescriptor = fileDescriptor;
+
+#else // defined(__linux__)
+
+    Logfile::get()->throwError(
+            "Error in ImageComputeApiExternalMemoryVk::ImageComputeApiExternalMemoryVk: "
+            "External memory is only supported on Linux, Android and Windows systems!");
+
+#endif
+
+    if (useCuda) {
+#ifdef SUPPORT_CUDA_INTEROP
+        CUexternalMemory cudaExternalMemoryBuffer{};
+        CUresult cuResult = g_cudaDeviceApiFunctionTable.cuImportExternalMemory(
+                &cudaExternalMemoryBuffer, &externalMemoryHandleDesc);
+        checkCUresult(cuResult, "Error in cuImportExternalMemory: ");
+        externalMemoryBuffer = reinterpret_cast<void*>(cudaExternalMemoryBuffer);
+
+        CUDA_ARRAY3D_DESCRIPTOR arrayDescriptor{};
+        arrayDescriptor.Width = imageSettings.width;
+        if (imageViewType == VK_IMAGE_VIEW_TYPE_2D || imageViewType == VK_IMAGE_VIEW_TYPE_3D
+                || imageViewType == VK_IMAGE_VIEW_TYPE_CUBE || imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY
+                || imageViewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
+            arrayDescriptor.Height = imageSettings.height;
+        }
+        if (imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
+            arrayDescriptor.Depth = imageSettings.depth;
+        } else if (imageViewType == VK_IMAGE_VIEW_TYPE_CUBE || imageViewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY
+                || imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY || imageViewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
+            arrayDescriptor.Depth = imageSettings.arrayLayers;
+        }
+        arrayDescriptor.Format = getCudaArrayFormatFromVkFormat(imageSettings.format);
+        arrayDescriptor.NumChannels = uint32_t(getImageFormatNumChannels(imageSettings.format));
+        if (imageSettings.usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
+            arrayDescriptor.Flags |= CUDA_ARRAY3D_COLOR_ATTACHMENT;
+        }
+        if (surfaceLoadStore) {
+            arrayDescriptor.Flags |= CUDA_ARRAY3D_SURFACE_LDST;
+        }
+        if (isDepthStencilFormat(imageSettings.format)) {
+            arrayDescriptor.Flags |= CUDA_ARRAY3D_DEPTH_TEXTURE;
+        }
+        if (imageViewType == VK_IMAGE_VIEW_TYPE_CUBE || imageViewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
+            arrayDescriptor.Flags |= CUDA_ARRAY3D_CUBEMAP;
+        }
+        if (imageViewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY || imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY
+                || imageViewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
+            arrayDescriptor.Flags |= CUDA_ARRAY3D_LAYERED;
+        }
+
+        CUmipmappedArray cudaMipmappedArray{};
+        CUDA_EXTERNAL_MEMORY_MIPMAPPED_ARRAY_DESC externalMemoryMipmappedArrayDesc{};
+        externalMemoryMipmappedArrayDesc.offset = vulkanImage->getDeviceMemoryOffset();
+        externalMemoryMipmappedArrayDesc.numLevels = imageSettings.mipLevels;
+        externalMemoryMipmappedArrayDesc.arrayDesc = arrayDescriptor;
+        cuResult = g_cudaDeviceApiFunctionTable.cuExternalMemoryGetMappedMipmappedArray(
+                &cudaMipmappedArray, cudaExternalMemoryBuffer, &externalMemoryMipmappedArrayDesc);
+        checkCUresult(cuResult, "Error in cuExternalMemoryGetMappedMipmappedArray: ");
+        mipmappedArray = reinterpret_cast<void*>(cudaMipmappedArray);
+#endif
+    }
+
+    if (useHip) {
+#ifdef SUPPORT_HIP_INTEROP
+        hipExternalMemory_t hipExternalMemory{};
+        hipError_t hipResult = g_hipDeviceApiFunctionTable.hipImportExternalMemory(
+                &hipExternalMemory, &externalMemoryHandleDescHip);
+        checkHipResult(hipResult, "Error in hipImportExternalMemory: ");
+        externalMemoryBuffer = reinterpret_cast<void*>(hipExternalMemory);
+
+        // TODO: Not implemented
+        sgl::Logfile::get()->throwError(
+                "ImageComputeApiExternalMemoryVk::_initialize: HIP code path is not implemented.");
+#endif
+    }
+
+    if (useLevelZero) {
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+        zeImageDesc.width = imageSettings.width;
+        if (imageViewType == VK_IMAGE_VIEW_TYPE_2D || imageViewType == VK_IMAGE_VIEW_TYPE_3D
+                || imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
+            zeImageDesc.height = imageSettings.height;
+        }
+        if (imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
+            zeImageDesc.depth = imageSettings.depth;
+        } else if (imageViewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY || imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
+            zeImageDesc.arraylevels = imageSettings.arrayLayers;
+        }
+        if (imageViewType == VK_IMAGE_VIEW_TYPE_1D) {
+            zeImageDesc.type = ZE_IMAGE_TYPE_1D;
+        } else if (imageViewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY) {
+            zeImageDesc.type = ZE_IMAGE_TYPE_1DARRAY;
+        } else if (imageViewType == VK_IMAGE_VIEW_TYPE_2D) {
+            zeImageDesc.type = ZE_IMAGE_TYPE_2D;
+        } else if (imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
+            zeImageDesc.type = ZE_IMAGE_TYPE_2DARRAY;
+        } else if (imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
+            zeImageDesc.type = ZE_IMAGE_TYPE_3D;
+        }
+        getZeImageFormatFromVkFormat(imageSettings.format, zeImageDesc.format);
+        if (surfaceLoadStore) {
+            zeImageDesc.flags |= ZE_IMAGE_FLAG_KERNEL_WRITE;
+        }
+        // ZE_IMAGE_FLAG_BIAS_UNCACHED currently unused here.
+
+        ze_image_handle_t imageHandle{};
+        ze_result_t zeResult = g_levelZeroFunctionTable.zeImageCreate(
+                g_zeContext, g_zeDevice, &zeImageDesc, &imageHandle);
+        checkZeResult(zeResult, "Error in zeMemAllocDevice: ");
+        mipmappedArray = reinterpret_cast<void*>(imageHandle);
+#endif
+    }
+
+    if (useSycl) {
+#ifdef SUPPORT_SYCL_INTEROP
+        auto* wrapperImg = new SyclImageMemHandleWrapper;
+        sycl::ext::oneapi::experimental::image_descriptor& syclImageDescriptor = wrapperImg->syclImageDescriptor;
+        syclImageDescriptor.width = imageSettings.width;
+        if (imageViewType == VK_IMAGE_VIEW_TYPE_2D || imageViewType == VK_IMAGE_VIEW_TYPE_3D
+                || imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
+            syclImageDescriptor.height = imageSettings.height;
+        }
+        if (imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
+            syclImageDescriptor.depth = imageSettings.depth;
+        } else if (imageViewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY || imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
+            syclImageDescriptor.array_size = imageSettings.arrayLayers;
+        }
+        syclImageDescriptor.num_levels = imageSettings.mipLevels;
+
+        syclImageDescriptor.num_channels = unsigned(getImageFormatNumChannels(imageSettings.format));
+        if (imageViewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY || imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
+            syclImageDescriptor.type = sycl::ext::oneapi::experimental::image_type::array;
+        } else if (imageViewType == VK_IMAGE_VIEW_TYPE_CUBE) {
+            syclImageDescriptor.type = sycl::ext::oneapi::experimental::image_type::cubemap;
+        } else if (imageViewType == VK_IMAGE_VIEW_TYPE_1D || imageViewType == VK_IMAGE_VIEW_TYPE_2D
+                || imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
+            if (syclImageDescriptor.num_levels > 1) {
+                syclImageDescriptor.type = sycl::ext::oneapi::experimental::image_type::mipmap;
+            } else {
+                syclImageDescriptor.type = sycl::ext::oneapi::experimental::image_type::standard;
+            }
+        } else {
+            Logfile::get()->throwError(
+                    "Error in ImageComputeApiExternalMemoryVk::_initialize: "
+                    "Unsupported image view type for SYCL.");
+        }
+        switch (imageSettings.format) {
+        case VK_FORMAT_R8_UINT:
+        case VK_FORMAT_R8G8_UINT:
+        case VK_FORMAT_R8G8B8_UINT:
+        case VK_FORMAT_B8G8R8_UINT:
+        case VK_FORMAT_R8G8B8A8_UINT:
+        case VK_FORMAT_B8G8R8A8_UINT:
+        case VK_FORMAT_A8B8G8R8_UINT_PACK32:
+        case VK_FORMAT_S8_UINT:
+            syclImageDescriptor.channel_type = sycl::image_channel_type::unsigned_int8;
+            break;
+        case VK_FORMAT_R16_UINT:
+        case VK_FORMAT_R16G16_UINT:
+        case VK_FORMAT_R16G16B16_UINT:
+        case VK_FORMAT_R16G16B16A16_UINT:
+            syclImageDescriptor.channel_type = sycl::image_channel_type::unsigned_int16;
+            break;
+        case VK_FORMAT_R32_UINT:
+        case VK_FORMAT_R32G32_UINT:
+        case VK_FORMAT_R32G32B32_UINT:
+        case VK_FORMAT_R32G32B32A32_UINT:
+            syclImageDescriptor.channel_type = sycl::image_channel_type::unsigned_int32;
+            break;
+        case VK_FORMAT_R8_SINT:
+        case VK_FORMAT_R8G8_SINT:
+        case VK_FORMAT_R8G8B8_SINT:
+        case VK_FORMAT_B8G8R8_SINT:
+        case VK_FORMAT_R8G8B8A8_SINT:
+        case VK_FORMAT_B8G8R8A8_SINT:
+        case VK_FORMAT_A8B8G8R8_SINT_PACK32:
+            syclImageDescriptor.channel_type = sycl::image_channel_type::signed_int8;
+            break;
+        case VK_FORMAT_R16_SINT:
+        case VK_FORMAT_R16G16_SINT:
+        case VK_FORMAT_R16G16B16_SINT:
+        case VK_FORMAT_R16G16B16A16_SINT:
+            syclImageDescriptor.channel_type = sycl::image_channel_type::signed_int16;
+            break;
+        case VK_FORMAT_R32_SINT:
+        case VK_FORMAT_R32G32_SINT:
+        case VK_FORMAT_R32G32B32_SINT:
+        case VK_FORMAT_R32G32B32A32_SINT:
+            syclImageDescriptor.channel_type = sycl::image_channel_type::signed_int32;
+            break;
+        case VK_FORMAT_R8_UNORM:
+        case VK_FORMAT_R8G8_UNORM:
+        case VK_FORMAT_R8G8B8A8_UNORM:
+        case VK_FORMAT_B8G8R8A8_UNORM:
+        case VK_FORMAT_A8B8G8R8_UNORM_PACK32:
+            syclImageDescriptor.channel_type = sycl::image_channel_type::unorm_int8;
+            break;
+        case VK_FORMAT_R16_UNORM:
+        case VK_FORMAT_D16_UNORM:
+        case VK_FORMAT_R16G16_UNORM:
+        case VK_FORMAT_R16G16B16A16_UNORM:
+            syclImageDescriptor.channel_type = sycl::image_channel_type::unorm_int16;
+            break;
+        case VK_FORMAT_R8_SNORM:
+        case VK_FORMAT_R8G8_SNORM:
+        case VK_FORMAT_R8G8B8A8_SNORM:
+        case VK_FORMAT_B8G8R8A8_SNORM:
+        case VK_FORMAT_A8B8G8R8_SNORM_PACK32:
+            syclImageDescriptor.channel_type = sycl::image_channel_type::snorm_int8;
+            break;
+        case VK_FORMAT_R16_SNORM:
+        case VK_FORMAT_R16G16_SNORM:
+        case VK_FORMAT_R16G16B16A16_SNORM:
+            syclImageDescriptor.channel_type = sycl::image_channel_type::snorm_int16;
+            break;
+        case VK_FORMAT_R16_SFLOAT:
+        case VK_FORMAT_R16G16_SFLOAT:
+        case VK_FORMAT_R16G16B16_SFLOAT:
+        case VK_FORMAT_R16G16B16A16_SFLOAT:
+            syclImageDescriptor.channel_type = sycl::image_channel_type::fp16;
+            break;
+        case VK_FORMAT_R32_SFLOAT:
+        case VK_FORMAT_R32G32_SFLOAT:
+        case VK_FORMAT_R32G32B32_SFLOAT:
+        case VK_FORMAT_R32G32B32A32_SFLOAT:
+        case VK_FORMAT_D32_SFLOAT:
+            syclImageDescriptor.channel_type = sycl::image_channel_type::fp32;
+            break;
+        default:
+            sgl::Logfile::get()->throwError(
+                    "Error in ImageComputeApiExternalMemoryVk::_initialize: "
+                    "Unsupported channel type for SYCL.");
+            return;
+        }
+
+        auto* wrapperMem = reinterpret_cast<SyclExternalMemWrapper*>(externalMemoryBuffer);
+        wrapperImg->syclImageMemHandle = sycl::ext::oneapi::experimental::map_external_image_memory(
+            wrapperMem->syclExternalMem, syclImageDescriptor, *g_syclQueue);
+        mipmappedArray = reinterpret_cast<void*>(wrapperImg);
+#endif
+    }
+
+    /*
+     * https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__EXTRES__INTEROP.html
+     * - CU_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD: "Ownership of the file descriptor is transferred to the CUDA driver
+     * when the handle is imported successfully."
+     * - CU_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32: "Ownership of this handle is not transferred to CUDA after the
+     * import operation, so the application must release the handle using the appropriate system call."
+     */
+#if defined(__linux__)
+    this->fileDescriptor = -1;
+#endif
+}
+
+ImageComputeApiExternalMemoryVk::~ImageComputeApiExternalMemoryVk() {
+#ifdef _WIN32
+    CloseHandle(handle);
+#elif defined(__linux__)
+    if (fileDescriptor != -1) {
+        close(fileDescriptor);
+        fileDescriptor = -1;
+    }
+#endif
+
+    CHECK_COMPUTE_API_SUPPORT;
+
+    if (useCuda) {
+#ifdef SUPPORT_CUDA_INTEROP
+        CUmipmappedArray cudaMipmappedArray = getCudaMipmappedArray();
+        CUresult cuResult = g_cudaDeviceApiFunctionTable.cuMipmappedArrayDestroy(cudaMipmappedArray);
+        checkCUresult(cuResult, "Error in cuMipmappedArrayDestroy: ");
+        cuResult = g_cudaDeviceApiFunctionTable.cuDestroyExternalMemory(cudaExternalMemoryBuffer);
+        checkCUresult(cuResult, "Error in cuDestroyExternalMemory: ");
+#endif
+    } else if (useHip) {
+#ifdef SUPPORT_HIP_INTEROP
+        hipDeviceptr_t hipDevicePtr = getHipDevicePtr();
+        auto hipExternalMemory = reinterpret_cast<hipExternalMemory_t>(externalMemoryBuffer);
+        hipError_t hipResult = g_hipDeviceApiFunctionTable.hipFree(hipDevicePtr);
+        // TODO
+#endif
+    } else if (useLevelZero) {
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+        auto imageHandle = reinterpret_cast<ze_image_handle_t>(mipmappedArray);
+        ze_result_t zeResult = g_levelZeroFunctionTable.zeImageDestroy(imageHandle);
+        checkZeResult(zeResult, "Error in zeImageDestroy: ");
+#endif
+    } else if (useSycl) {
+#ifdef SUPPORT_SYCL_INTEROP
+        auto* wrapperMem = reinterpret_cast<SyclExternalMemWrapper*>(externalMemoryBuffer);
+        auto* wrapperImg = reinterpret_cast<SyclImageMemHandleWrapper*>(externalMemoryBuffer);
+        sycl::ext::oneapi::experimental::free_image_mem(
+                wrapperImg->syclImageMemHandle, wrapperImg->syclImageDescriptor.type, *g_syclQueue);
+        sycl::ext::oneapi::experimental::release_external_memory(wrapperMem->syclExternalMem, *g_syclQueue);
+        delete wrapperMem;
+        delete wrapperImg;
+#endif
+    }
+}
+
+#ifdef SUPPORT_CUDA_INTEROP
+CUarray ImageComputeApiExternalMemoryVk::getCudaMipmappedArrayLevel(uint32_t level) {
+    if (level == 0 && arrayLevel0) {
+        return reinterpret_cast<CUarray>(arrayLevel0);
+    }
+
+    CUarray levelArray;
+    CUresult cuResult = g_cudaDeviceApiFunctionTable.cuMipmappedArrayGetLevel(&levelArray, cudaMipmappedArray, level);
+    checkCUresult(cuResult, "Error in cuMipmappedArrayGetLevel: ");
+
+    if (level == 0) {
+        arrayLevel0 = reinterpret_cast<void*>(levelArray);
+    }
+
+    return levelArray;
+}
+#endif
+
+void ImageComputeApiExternalMemoryVk::copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream) {
+    const sgl::vk::ImageSettings& imageSettings = vulkanImage->getImageSettings();
+
+    CHECK_COMPUTE_API_SUPPORT;
+
+    if (useCuda) {
+#ifdef SUPPORT_CUDA_INTEROP
+        size_t entryByteSize = getImageFormatEntryByteSize(imageSettings.format);
+        if (imageViewType == VK_IMAGE_VIEW_TYPE_2D) {
+            CUDA_MEMCPY2D memcpySettings{};
+            memcpySettings.srcMemoryType = CU_MEMORYTYPE_DEVICE;
+            memcpySettings.srcDevice = reinterpret_cast<CUdeviceptr>(devicePtrSrc);
+            memcpySettings.srcPitch = imageSettings.width * entryByteSize;
+
+            memcpySettings.dstMemoryType = CU_MEMORYTYPE_ARRAY;
+            memcpySettings.dstArray = getCudaMipmappedArrayLevel(0);
+
+            memcpySettings.WidthInBytes = imageSettings.width * entryByteSize;
+            memcpySettings.Height = imageSettings.height;
+
+            CUresult cuResult = g_cudaDeviceApiFunctionTable.cuMemcpy2DAsync(&memcpySettings, stream.cuStream);
+            checkCUresult(cuResult, "Error in cuMemcpy2DAsync: ");
+        } else if (imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
+            CUDA_MEMCPY3D memcpySettings{};
+            memcpySettings.srcMemoryType = CU_MEMORYTYPE_DEVICE;
+            memcpySettings.srcDevice = reinterpret_cast<CUdeviceptr>(devicePtrSrc);
+            memcpySettings.srcPitch = imageSettings.width * entryByteSize;
+            memcpySettings.srcHeight = imageSettings.height;
+
+            memcpySettings.dstMemoryType = CU_MEMORYTYPE_ARRAY;
+            memcpySettings.dstArray = getCudaMipmappedArrayLevel(0);
+
+            memcpySettings.WidthInBytes = imageSettings.width * entryByteSize;
+            memcpySettings.Height = imageSettings.height;
+            memcpySettings.Depth = imageSettings.depth;
+
+            CUresult cuResult = g_cudaDeviceApiFunctionTable.cuMemcpy3DAsync(&memcpySettings, stream.cuStream);
+            checkCUresult(cuResult, "Error in cuMemcpy3DAsync: ");
+        } else {
+            Logfile::get()->throwError(
+                    "Error in ImageComputeApiExternalMemoryVk::copyFromDevicePtrAsync: "
+                    "Unsupported image view type.");
+        }
+#endif
+    } else if (useHip) {
+#ifdef SUPPORT_HIP_INTEROP
+        // TODO, hipDrvMemcpy2DAsync, reinterpret_cast<hipDeviceptr_t>(devicePtrSrc), stream.hipStream
+        //checkHipResult(hipResult, "Error in hipDrvMemcpy2DAsync: ");
+#endif
+    } else if (useLevelZero) {
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+        auto imageHandle = reinterpret_cast<ze_image_handle_t>(mipmappedArray);
+        ze_image_region_t dstRegion{};
+        dstRegion.originX = 0;
+        dstRegion.originY = 0;
+        dstRegion.originZ = 0;
+        dstRegion.width = imageSettings.width;
+        dstRegion.height = imageSettings.height;
+        dstRegion.depth = imageSettings.depth;
+        ze_result_t zeResult = g_levelZeroFunctionTable.zeCommandListAppendImageCopyFromMemory(
+                stream.zeCommandList, imageHandle, devicePtrSrc, &dstRegion,
+                g_zeSignalEvent, g_numWaitEvents, g_zeWaitEvents);
+        checkZeResult(zeResult, "Error in zeCommandListAppendImageCopyFromMemory: ");
+#endif
+    } else if (useSycl) {
+#ifdef SUPPORT_SYCL_INTEROP
+        auto* wrapperImg = reinterpret_cast<SyclImageMemHandleWrapper*>(externalMemoryBuffer);
+        stream.syclQueuePtr->ext_oneapi_copy(
+            devicePtrSrc, wrapperImg->syclImageMemHandle, wrapperImg->syclImageDescriptor);
 #endif
     }
 }
