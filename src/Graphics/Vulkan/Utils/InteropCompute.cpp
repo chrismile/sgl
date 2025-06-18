@@ -833,7 +833,7 @@ void BufferComputeApiExternalMemoryVk::copyFromDevicePtrAsync(void* devicePtrSrc
         hipError_t hipResult = g_hipDeviceApiFunctionTable.hipMemcpyAsync(
                 this->getHipDevicePtr(), reinterpret_cast<hipDeviceptr_t>(devicePtrSrc),
                 vulkanBuffer->getSizeInBytes(), stream.hipStream);
-        checkHipResult(hipResult, "Error in cuMemcpyAsync: ");
+        checkHipResult(hipResult, "Error in hipMemcpyAsync: ");
 #endif
     } else if (useLevelZero) {
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
@@ -864,7 +864,7 @@ void BufferComputeApiExternalMemoryVk::copyToDevicePtrAsync(void* devicePtrDst, 
         hipError_t hipResult = g_hipDeviceApiFunctionTable.hipMemcpyAsync(
                 reinterpret_cast<hipDeviceptr_t>(devicePtrDst), this->getHipDevicePtr(),
                 vulkanBuffer->getSizeInBytes(), stream.hipStream);
-        checkHipResult(hipResult, "Error in cuMemcpyAsync: ");
+        checkHipResult(hipResult, "Error in hipMemcpyAsync: ");
 #endif
     } else if (useLevelZero) {
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
@@ -960,6 +960,7 @@ static void getZeImageFormatFromVkFormat(VkFormat vkFormat, ze_image_format_t& z
     case VK_FORMAT_R8_SINT:
     case VK_FORMAT_R8_UNORM:
     case VK_FORMAT_R8_SNORM:
+    case VK_FORMAT_S8_UINT:
         zeFormat.layout = ZE_IMAGE_FORMAT_LAYOUT_8;
         break;
     case VK_FORMAT_R8G8_UINT:
@@ -991,9 +992,6 @@ static void getZeImageFormatFromVkFormat(VkFormat vkFormat, ze_image_format_t& z
     case VK_FORMAT_B8G8R8A8_SNORM:
     case VK_FORMAT_A8B8G8R8_SNORM_PACK32:
         zeFormat.layout = ZE_IMAGE_FORMAT_LAYOUT_8_8_8_8;
-        break;
-    case VK_FORMAT_S8_UINT:
-        zeFormat.layout = ZE_IMAGE_FORMAT_LAYOUT_8;
         break;
     case VK_FORMAT_R16_UINT:
     case VK_FORMAT_R16_SINT:
@@ -1033,17 +1031,17 @@ static void getZeImageFormatFromVkFormat(VkFormat vkFormat, ze_image_format_t& z
     case VK_FORMAT_R32G32_UINT:
     case VK_FORMAT_R32G32_SINT:
     case VK_FORMAT_R32G32_SFLOAT:
-        zeFormat.layout = ZE_IMAGE_FORMAT_LAYOUT_32;
+        zeFormat.layout = ZE_IMAGE_FORMAT_LAYOUT_32_32;
         break;
     case VK_FORMAT_R32G32B32_UINT:
     case VK_FORMAT_R32G32B32_SINT:
     case VK_FORMAT_R32G32B32_SFLOAT:
-        zeFormat.layout = ZE_IMAGE_FORMAT_LAYOUT_32;
+        zeFormat.layout = ZE_IMAGE_FORMAT_LAYOUT_32_32_32;
         break;
     case VK_FORMAT_R32G32B32A32_UINT:
     case VK_FORMAT_R32G32B32A32_SINT:
     case VK_FORMAT_R32G32B32A32_SFLOAT:
-        zeFormat.layout = ZE_IMAGE_FORMAT_LAYOUT_32;
+        zeFormat.layout = ZE_IMAGE_FORMAT_LAYOUT_32_32_32_32;
         break;
     default:
         sgl::Logfile::get()->throwError("Error in getZeImageFormatFromVkFormat: Unsupported layout.");
@@ -1137,6 +1135,195 @@ static void getZeImageFormatFromVkFormat(VkFormat vkFormat, ze_image_format_t& z
         zeFormat.y = ZE_IMAGE_FORMAT_SWIZZLE_0;
         zeFormat.z = ZE_IMAGE_FORMAT_SWIZZLE_0;
         zeFormat.w = ZE_IMAGE_FORMAT_SWIZZLE_1;
+    }
+}
+#endif
+
+#ifdef SUPPORT_HIP_INTEROP
+static void getHipFormatDescFromVkFormat(VkFormat vkFormat, hipChannelFormatDesc& hipFormat) {
+    switch (vkFormat) {
+    case VK_FORMAT_R8_UINT:
+    case VK_FORMAT_R8G8_UINT:
+    case VK_FORMAT_R8G8B8_UINT:
+    case VK_FORMAT_B8G8R8_UINT:
+    case VK_FORMAT_R8G8B8A8_UINT:
+    case VK_FORMAT_B8G8R8A8_UINT:
+    case VK_FORMAT_A8B8G8R8_UINT_PACK32:
+    case VK_FORMAT_S8_UINT:
+    case VK_FORMAT_R16_UINT:
+    case VK_FORMAT_R16G16_UINT:
+    case VK_FORMAT_R16G16B16_UINT:
+    case VK_FORMAT_R16G16B16A16_UINT:
+    case VK_FORMAT_R32_UINT:
+    case VK_FORMAT_R32G32_UINT:
+    case VK_FORMAT_R32G32B32_UINT:
+    case VK_FORMAT_R32G32B32A32_UINT:
+        hipFormat.f = hipChannelFormatKindUnsigned;
+        break;
+    case VK_FORMAT_R8_SINT:
+    case VK_FORMAT_R8G8_SINT:
+    case VK_FORMAT_R8G8B8_SINT:
+    case VK_FORMAT_B8G8R8_SINT:
+    case VK_FORMAT_R8G8B8A8_SINT:
+    case VK_FORMAT_B8G8R8A8_SINT:
+    case VK_FORMAT_A8B8G8R8_SINT_PACK32:
+    case VK_FORMAT_R16_SINT:
+    case VK_FORMAT_R16G16_SINT:
+    case VK_FORMAT_R16G16B16_SINT:
+    case VK_FORMAT_R16G16B16A16_SINT:
+    case VK_FORMAT_R32_SINT:
+    case VK_FORMAT_R32G32_SINT:
+    case VK_FORMAT_R32G32B32_SINT:
+    case VK_FORMAT_R32G32B32A32_SINT:
+        hipFormat.f = hipChannelFormatKindSigned;
+        break;
+    case VK_FORMAT_R8_UNORM:
+    case VK_FORMAT_R8G8_UNORM:
+    case VK_FORMAT_R8G8B8A8_UNORM:
+    case VK_FORMAT_B8G8R8A8_UNORM:
+    case VK_FORMAT_A8B8G8R8_UNORM_PACK32:
+    case VK_FORMAT_R16_UNORM:
+    case VK_FORMAT_D16_UNORM:
+    case VK_FORMAT_R16G16_UNORM:
+    case VK_FORMAT_R16G16B16A16_UNORM:
+        hipFormat.f = hipChannelFormatKindUnsigned;
+        break;
+    case VK_FORMAT_R8_SNORM:
+    case VK_FORMAT_R8G8_SNORM:
+    case VK_FORMAT_R8G8B8A8_SNORM:
+    case VK_FORMAT_B8G8R8A8_SNORM:
+    case VK_FORMAT_A8B8G8R8_SNORM_PACK32:
+    case VK_FORMAT_R16_SNORM:
+    case VK_FORMAT_R16G16_SNORM:
+    case VK_FORMAT_R16G16B16A16_SNORM:
+        hipFormat.f = hipChannelFormatKindSigned;
+        break;
+    case VK_FORMAT_R16_SFLOAT:
+    case VK_FORMAT_R16G16_SFLOAT:
+    case VK_FORMAT_R16G16B16_SFLOAT:
+    case VK_FORMAT_R16G16B16A16_SFLOAT:
+    case VK_FORMAT_R32_SFLOAT:
+    case VK_FORMAT_R32G32_SFLOAT:
+    case VK_FORMAT_R32G32B32_SFLOAT:
+    case VK_FORMAT_R32G32B32A32_SFLOAT:
+    case VK_FORMAT_D32_SFLOAT:
+        hipFormat.f = hipChannelFormatKindFloat;
+        break;
+    default:
+        sgl::Logfile::get()->throwError("Error in getZeImageFormatFromVkFormat: Unsupported channel format.");
+        return;
+    }
+
+    hipFormat.x = hipFormat.y = hipFormat.z = hipFormat.w;
+    switch (vkFormat) {
+    case VK_FORMAT_R8_UINT:
+    case VK_FORMAT_R8_SINT:
+    case VK_FORMAT_R8_UNORM:
+    case VK_FORMAT_R8_SNORM:
+    case VK_FORMAT_S8_UINT:
+        hipFormat.x = 8;
+        break;
+    case VK_FORMAT_R8G8_UINT:
+    case VK_FORMAT_R8G8_SINT:
+    case VK_FORMAT_R8G8_UNORM:
+    case VK_FORMAT_R8G8_SNORM:
+        hipFormat.x = 8;
+        hipFormat.y = 8;
+        break;
+    case VK_FORMAT_R8G8B8_UINT:
+    case VK_FORMAT_B8G8R8_UINT:
+    case VK_FORMAT_R8G8B8_SINT:
+    case VK_FORMAT_B8G8R8_SINT:
+    case VK_FORMAT_R8G8B8_UNORM:
+    case VK_FORMAT_B8G8R8_UNORM:
+    case VK_FORMAT_R8G8B8_SNORM:
+    case VK_FORMAT_B8G8R8_SNORM:
+        hipFormat.x = 8;
+        hipFormat.y = 8;
+        hipFormat.z = 8;
+        break;
+    case VK_FORMAT_R8G8B8A8_UINT:
+    case VK_FORMAT_B8G8R8A8_UINT:
+    case VK_FORMAT_A8B8G8R8_UINT_PACK32:
+    case VK_FORMAT_R8G8B8A8_SINT:
+    case VK_FORMAT_B8G8R8A8_SINT:
+    case VK_FORMAT_A8B8G8R8_SINT_PACK32:
+    case VK_FORMAT_R8G8B8A8_UNORM:
+    case VK_FORMAT_B8G8R8A8_UNORM:
+    case VK_FORMAT_A8B8G8R8_UNORM_PACK32:
+    case VK_FORMAT_R8G8B8A8_SNORM:
+    case VK_FORMAT_B8G8R8A8_SNORM:
+    case VK_FORMAT_A8B8G8R8_SNORM_PACK32:
+        hipFormat.x = 8;
+        hipFormat.y = 8;
+        hipFormat.z = 8;
+        hipFormat.w = 8;
+        break;
+    case VK_FORMAT_R16_UINT:
+    case VK_FORMAT_R16_SINT:
+    case VK_FORMAT_R16_UNORM:
+    case VK_FORMAT_R16_SNORM:
+    case VK_FORMAT_R16_SFLOAT:
+    case VK_FORMAT_D16_UNORM:
+        hipFormat.x = 16;
+        break;
+    case VK_FORMAT_R16G16_UINT:
+    case VK_FORMAT_R16G16_SINT:
+    case VK_FORMAT_R16G16_UNORM:
+    case VK_FORMAT_R16G16_SNORM:
+    case VK_FORMAT_R16G16_SFLOAT:
+        hipFormat.x = 16;
+        hipFormat.y = 16;
+        break;
+    case VK_FORMAT_R16G16B16_UINT:
+    case VK_FORMAT_R16G16B16_SINT:
+    case VK_FORMAT_R16G16B16_UNORM:
+    case VK_FORMAT_R16G16B16_SNORM:
+    case VK_FORMAT_R16G16B16_SFLOAT:
+        hipFormat.x = 16;
+        hipFormat.y = 16;
+        hipFormat.z = 16;
+        break;
+    case VK_FORMAT_R16G16B16A16_UINT:
+    case VK_FORMAT_R16G16B16A16_SINT:
+    case VK_FORMAT_R16G16B16A16_UNORM:
+    case VK_FORMAT_R16G16B16A16_SNORM:
+    case VK_FORMAT_R16G16B16A16_SFLOAT:
+        hipFormat.x = 16;
+        hipFormat.y = 16;
+        hipFormat.z = 16;
+        hipFormat.w = 16;
+        break;
+    case VK_FORMAT_R32_UINT:
+    case VK_FORMAT_R32_SINT:
+    case VK_FORMAT_R32_SFLOAT:
+    case VK_FORMAT_D32_SFLOAT:
+        hipFormat.x = 32;
+        break;
+    case VK_FORMAT_R32G32_UINT:
+    case VK_FORMAT_R32G32_SINT:
+    case VK_FORMAT_R32G32_SFLOAT:
+        hipFormat.x = 32;
+        hipFormat.y = 32;
+        break;
+    case VK_FORMAT_R32G32B32_UINT:
+    case VK_FORMAT_R32G32B32_SINT:
+    case VK_FORMAT_R32G32B32_SFLOAT:
+        hipFormat.x = 32;
+        hipFormat.y = 32;
+        hipFormat.z = 32;
+        break;
+    case VK_FORMAT_R32G32B32A32_UINT:
+    case VK_FORMAT_R32G32B32A32_SINT:
+    case VK_FORMAT_R32G32B32A32_SFLOAT:
+        hipFormat.x = 32;
+        hipFormat.y = 32;
+        hipFormat.z = 32;
+        hipFormat.w = 32;
+        break;
+    default:
+        sgl::Logfile::get()->throwError("Error in getZeImageFormatFromVkFormat: Unsupported channels.");
+        return;
     }
 }
 #endif
@@ -1402,9 +1589,29 @@ void ImageComputeApiExternalMemoryVk::_initialize(
         checkHipResult(hipResult, "Error in hipImportExternalMemory: ");
         externalMemoryBuffer = reinterpret_cast<void*>(hipExternalMemory);
 
-        // TODO: Not implemented
-        sgl::Logfile::get()->throwError(
-                "ImageComputeApiExternalMemoryVk::_initialize: HIP code path is not implemented.");
+        hipExternalMemoryMipmappedArrayDesc externalMemoryMipmappedArrayDesc{};
+        externalMemoryMipmappedArrayDesc.extent.width = imageSettings.width;
+        if (imageViewType == VK_IMAGE_VIEW_TYPE_2D || imageViewType == VK_IMAGE_VIEW_TYPE_3D
+                || imageViewType == VK_IMAGE_VIEW_TYPE_CUBE || imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY
+                || imageViewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
+            externalMemoryMipmappedArrayDesc.extent.height = imageSettings.height;
+        }
+        if (imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
+            externalMemoryMipmappedArrayDesc.extent.depth = imageSettings.depth;
+        } else if (imageViewType == VK_IMAGE_VIEW_TYPE_CUBE || imageViewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY
+                || imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY || imageViewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
+            externalMemoryMipmappedArrayDesc.extent.depth = imageSettings.arrayLayers;
+        }
+        externalMemoryMipmappedArrayDesc.offset = vulkanImage->getDeviceMemoryOffset();
+        externalMemoryMipmappedArrayDesc.numLevels = imageSettings.mipLevels;
+        getHipFormatDescFromVkFormat(imageSettings.format, externalMemoryMipmappedArrayDesc.formatDesc);
+        externalMemoryMipmappedArrayDesc.flags = 0;
+
+        hipMipmappedArray_t hipMipmappedArray{};
+        hipResult = g_hipDeviceApiFunctionTable.hipExternalMemoryGetMappedMipmappedArray(
+                &hipMipmappedArray, hipExternalMemory, &externalMemoryMipmappedArrayDesc);
+        checkHipResult(hipResult, "Error in hipImportExternalMemory: ");
+        mipmappedArray = reinterpret_cast<void*>(hipMipmappedArray);
 #endif
     }
 
@@ -1609,9 +1816,11 @@ ImageComputeApiExternalMemoryVk::~ImageComputeApiExternalMemoryVk() {
 #endif
     } else if (useHip) {
 #ifdef SUPPORT_HIP_INTEROP
-        // TODO
+        hipMipmappedArray_t hipMipmappedArray = getHipMipmappedArray();
+        auto hipResult = g_hipDeviceApiFunctionTable.hipMipmappedArrayDestroy(hipMipmappedArray);
+        checkHipResult(hipResult, "Error in hipMipmappedArrayDestroy: ");
         auto hipExternalMemory = reinterpret_cast<hipExternalMemory_t>(externalMemoryBuffer);
-        auto hipResult = g_hipDeviceApiFunctionTable.hipDestroyExternalMemory(hipExternalMemory);
+        hipResult = g_hipDeviceApiFunctionTable.hipDestroyExternalMemory(hipExternalMemory);
         checkHipResult(hipResult, "Error in hipDestroyExternalMemory: ");
 #endif
     } else if (useLevelZero) {
@@ -1643,6 +1852,25 @@ CUarray ImageComputeApiExternalMemoryVk::getCudaMipmappedArrayLevel(uint32_t lev
     CUarray levelArray;
     CUresult cuResult = g_cudaDeviceApiFunctionTable.cuMipmappedArrayGetLevel(&levelArray, cudaMipmappedArray, level);
     checkCUresult(cuResult, "Error in cuMipmappedArrayGetLevel: ");
+
+    if (level == 0) {
+        arrayLevel0 = reinterpret_cast<void*>(levelArray);
+    }
+
+    return levelArray;
+}
+#endif
+
+#ifdef SUPPORT_CUDA_INTEROP
+hipArray_t ImageComputeApiExternalMemoryVk::getHipMipmappedArrayLevel(uint32_t level) {
+    if (level == 0 && arrayLevel0) {
+        return reinterpret_cast<hipArray_t>(arrayLevel0);
+    }
+
+    hipMipmappedArray_t hipMipmappedArray = getHipMipmappedArray();
+    hipArray_t levelArray;
+    hipError_t hipResult = g_hipDeviceApiFunctionTable.hipMipmappedArrayGetLevel(&levelArray, hipMipmappedArray, level);
+    checkHipResult(hipResult, "Error in hipMipmappedArrayGetLevel: ");
 
     if (level == 0) {
         arrayLevel0 = reinterpret_cast<void*>(levelArray);
@@ -1698,8 +1926,32 @@ void ImageComputeApiExternalMemoryVk::copyFromDevicePtrAsync(void* devicePtrSrc,
 #endif
     } else if (useHip) {
 #ifdef SUPPORT_HIP_INTEROP
-        // TODO, hipDrvMemcpy2DAsync, reinterpret_cast<hipDeviceptr_t>(devicePtrSrc), stream.hipStream
-        //checkHipResult(hipResult, "Error in hipDrvMemcpy2DAsync: ");
+        size_t entryByteSize = getImageFormatEntryByteSize(imageSettings.format);
+        if (imageViewType == VK_IMAGE_VIEW_TYPE_2D) {
+            // TODO: AMD seems to have forgotten hipDrvMemcpy2DAsync in the headers...
+            hipError_t hipResult = hipErrorNotSupported;
+            checkHipResult(hipResult, "Error in hipDrvMemcpy2DAsync: ");
+        } else if (imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
+            HIP_MEMCPY3D memcpySettings{};
+            memcpySettings.srcMemoryType = hipMemoryTypeDevice;
+            memcpySettings.srcDevice = reinterpret_cast<hipDeviceptr_t>(devicePtrSrc);
+            memcpySettings.srcPitch = imageSettings.width * entryByteSize;
+            memcpySettings.srcHeight = imageSettings.height;
+
+            memcpySettings.dstMemoryType = hipMemoryTypeArray;
+            memcpySettings.dstArray = getHipMipmappedArrayLevel(0);
+
+            memcpySettings.WidthInBytes = imageSettings.width * entryByteSize;
+            memcpySettings.Height = imageSettings.height;
+            memcpySettings.Depth = imageSettings.depth;
+
+            hipError_t hipResult = g_hipDeviceApiFunctionTable.hipDrvMemcpy3DAsync(&memcpySettings, stream.hipStream);
+            checkHipResult(hipResult, "Error in hipDrvMemcpy3DAsync: ");
+        } else {
+            Logfile::get()->throwError(
+                    "Error in ImageComputeApiExternalMemoryVk::copyFromDevicePtrAsync: "
+                    "Unsupported image view type.");
+        }
 #endif
     } else if (useLevelZero) {
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP

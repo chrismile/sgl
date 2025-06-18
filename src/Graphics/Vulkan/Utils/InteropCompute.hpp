@@ -51,6 +51,8 @@ typedef struct CUstream_st *CUstream;
 
 #ifdef SUPPORT_HIP_INTEROP
 typedef void* hipDeviceptr_t;
+typedef struct hipMipmappedArray* hipMipmappedArray_t;
+typedef struct hipArray* hipArray_t;
 typedef struct ihipStream_t* hipStream_t;
 #endif
 
@@ -192,6 +194,10 @@ public:
     [[nodiscard]] inline CUmipmappedArray getCudaMipmappedArray() const { return reinterpret_cast<CUmipmappedArray>(mipmappedArray); }
     CUarray getCudaMipmappedArrayLevel(uint32_t level = 0);
 #endif
+#ifdef SUPPORT_HIP_INTEROP
+    [[nodiscard]] inline hipMipmappedArray_t getHipMipmappedArray() const { return reinterpret_cast<hipMipmappedArray_t>(mipmappedArray); }
+    hipArray_t getHipMipmappedArrayLevel(uint32_t level = 0);
+#endif
 
     /*
      * Asynchronous copy from a device pointer to level 0 mipmap level.
@@ -204,10 +210,10 @@ protected:
     sgl::vk::ImagePtr vulkanImage;
     VkImageViewType imageViewType;
     void* externalMemoryBuffer{}; // CUexternalMemory or hipExternalMemory_t or SyclExternalMemWrapper (external_mem)
-    void* mipmappedArray{}; // CUmipmappedArray or ze_image_handle_t or SyclImageMemHandleWrapper (image_mem_handle)
+    void* mipmappedArray{}; // CUmipmappedArray or hipMipmappedArray_t or ze_image_handle_t or SyclImageMemHandleWrapper (image_mem_handle)
 
     // Cache for storing the array for mipmap level 0.
-    void* arrayLevel0{}; // CUarray
+    void* arrayLevel0{}; // CUarray or hipArray_t
 
 #ifdef _WIN32
     HANDLE handle = nullptr;

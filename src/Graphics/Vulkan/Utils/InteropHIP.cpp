@@ -90,18 +90,16 @@ bool initializeHipDeviceApiFunctionTable() {
     typedef hipError_t ( *PFN_hipArrayDestroy )( hipArray hArray );
     typedef hipError_t ( *PFN_hipMipmappedArrayCreate )( hipMipmappedArray_t *pHandle, const HIP_ARRAY3D_DESCRIPTOR *pMipmappedArrayDesc, unsigned int numMipmapLevels );
     typedef hipError_t ( *PFN_hipMipmappedArrayDestroy )( hipMipmappedArray_t hMipmappedArray );
-    typedef hipError_t ( *PFN_hipMipmappedArrayGetLevel )( hipArray* pLevelArray, hipMipmappedArray_t hMipmappedArray, unsigned int level );
+    typedef hipError_t ( *PFN_hipMipmappedArrayGetLevel )( hipArray_t* pLevelArray, hipMipmappedArray_t hMipmappedArray, unsigned int level );
     typedef hipError_t ( *PFN_hipTexObjectCreate )( hipTextureObject_t *pTexObject, const HIP_RESOURCE_DESC *pResDesc, const HIP_TEXTURE_DESC *pTexDesc, const HIP_RESOURCE_VIEW_DESC *pResViewDesc );
     typedef hipError_t ( *PFN_hipTexObjectDestroy )( hipTextureObject_t texObject );
-    //typedef hipError_t ( *PFN_hipSurfObjectCreate )( hipSurfaceObject_t *pSurfObject, const HIP_RESOURCE_DESC *pResDesc );
-    //typedef hipError_t ( *PFN_hipSurfObjectDestroy )( hipSurfaceObject_t surfObject );
     typedef hipError_t ( *PFN_hipCreateTextureObject )( hipTextureObject_t* pTexObject, const hipResourceDesc* pResDesc, const hipTextureDesc* pTexDesc, const hipResourceViewDesc* pResViewDesc );
     typedef hipError_t ( *PFN_hipDestroyTextureObject )( hipTextureObject_t textureObject );
     typedef hipError_t ( *PFN_hipCreateSurfaceObject )( hipSurfaceObject_t* pSurfObject, const hipResourceDesc* pResDesc );
     typedef hipError_t ( *PFN_hipDestroySurfaceObject )( hipSurfaceObject_t surfaceObject );
     typedef hipError_t ( *PFN_hipImportExternalMemory )( hipExternalMemory_t *extMem_out, const hipExternalMemoryHandleDesc *memHandleDesc );
     typedef hipError_t ( *PFN_hipExternalMemoryGetMappedBuffer )( hipDeviceptr_t *devPtr, hipExternalMemory_t extMem, const hipExternalMemoryBufferDesc *bufferDesc );
-    //typedef hipError_t ( *PFN_hipExternalMemoryGetMappedMipmappedArray )( hipMipmappedArray_t *mipmap, hipExternalMemory_t extMem, const HIP_EXTERNAL_MEMORY_MIPMAPPED_ARRAY_DESC *mipmapDesc );
+    typedef hipError_t ( *PFN_hipExternalMemoryGetMappedMipmappedArray )( hipMipmappedArray_t* mipmap, hipExternalMemory_t extMem, const hipExternalMemoryMipmappedArrayDesc* mipmapDesc );
     typedef hipError_t ( *PFN_hipDestroyExternalMemory )( hipExternalMemory_t extMem );
     typedef hipError_t ( *PFN_hipImportExternalSemaphore )( hipExternalSemaphore_t *extSem_out, const hipExternalSemaphoreHandleDesc *semHandleDesc );
     typedef hipError_t ( *PFN_hipSignalExternalSemaphoresAsync )( const hipExternalSemaphore_t *extSemArray, const hipExternalSemaphoreSignalParams *paramsArray, unsigned int numExtSems, hipStream_t stream );
@@ -173,7 +171,7 @@ bool initializeHipDeviceApiFunctionTable() {
     g_hipDeviceApiFunctionTable.hipDestroySurfaceObject = PFN_hipDestroySurfaceObject(dlsym(g_hipLibraryHandle, TOSTRING(hipDestroySurfaceObject)));
     g_hipDeviceApiFunctionTable.hipImportExternalMemory = PFN_hipImportExternalMemory(dlsym(g_hipLibraryHandle, TOSTRING(hipImportExternalMemory)));
     g_hipDeviceApiFunctionTable.hipExternalMemoryGetMappedBuffer = PFN_hipExternalMemoryGetMappedBuffer(dlsym(g_hipLibraryHandle, TOSTRING(hipExternalMemoryGetMappedBuffer)));
-    //g_hipDeviceApiFunctionTable.hipExternalMemoryGetMappedMipmappedArray = PFN_hipExternalMemoryGetMappedMipmappedArray(dlsym(g_hipLibraryHandle, TOSTRING(hipExternalMemoryGetMappedMipmappedArray)));
+    g_hipDeviceApiFunctionTable.hipExternalMemoryGetMappedMipmappedArray = PFN_hipExternalMemoryGetMappedMipmappedArray(dlsym(g_hipLibraryHandle, TOSTRING(hipExternalMemoryGetMappedMipmappedArray)));
     g_hipDeviceApiFunctionTable.hipDestroyExternalMemory = PFN_hipDestroyExternalMemory(dlsym(g_hipLibraryHandle, TOSTRING(hipDestroyExternalMemory)));
     g_hipDeviceApiFunctionTable.hipImportExternalSemaphore = PFN_hipImportExternalSemaphore(dlsym(g_hipLibraryHandle, TOSTRING(hipImportExternalSemaphore)));
     g_hipDeviceApiFunctionTable.hipSignalExternalSemaphoresAsync = PFN_hipSignalExternalSemaphoresAsync(dlsym(g_hipLibraryHandle, TOSTRING(hipSignalExternalSemaphoresAsync)));
@@ -224,15 +222,13 @@ bool initializeHipDeviceApiFunctionTable() {
             || !g_hipDeviceApiFunctionTable.hipMipmappedArrayGetLevel
             || !g_hipDeviceApiFunctionTable.hipTexObjectCreate
             || !g_hipDeviceApiFunctionTable.hipTexObjectDestroy
-            //|| !g_hipDeviceApiFunctionTable.hipSurfObjectCreate
-            //|| !g_hipDeviceApiFunctionTable.hipSurfObjectDestroy
             || !g_hipDeviceApiFunctionTable.hipCreateTextureObject
             || !g_hipDeviceApiFunctionTable.hipDestroyTextureObject
             || !g_hipDeviceApiFunctionTable.hipCreateSurfaceObject
             || !g_hipDeviceApiFunctionTable.hipDestroySurfaceObject
             || !g_hipDeviceApiFunctionTable.hipImportExternalMemory
             || !g_hipDeviceApiFunctionTable.hipExternalMemoryGetMappedBuffer
-            //|| !g_hipDeviceApiFunctionTable.hipExternalMemoryGetMappedMipmappedArray
+            || !g_hipDeviceApiFunctionTable.hipExternalMemoryGetMappedMipmappedArray
             || !g_hipDeviceApiFunctionTable.hipDestroyExternalMemory
             || !g_hipDeviceApiFunctionTable.hipImportExternalSemaphore
             || !g_hipDeviceApiFunctionTable.hipSignalExternalSemaphoresAsync

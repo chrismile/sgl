@@ -85,12 +85,10 @@ struct HipDeviceApiFunctionTable {
     hipError_t ( *hipArrayDestroy )( hipArray hArray );
     hipError_t ( *hipMipmappedArrayCreate )( hipMipmappedArray_t* pHandle, const HIP_ARRAY3D_DESCRIPTOR* pMipmappedArrayDesc, unsigned int numMipmapLevels );
     hipError_t ( *hipMipmappedArrayDestroy )( hipMipmappedArray_t hMipmappedArray );
-    hipError_t ( *hipMipmappedArrayGetLevel )( hipArray* pLevelArray, hipMipmappedArray_t hMipmappedArray, unsigned int level );
+    hipError_t ( *hipMipmappedArrayGetLevel )( hipArray_t* pLevelArray, hipMipmappedArray_t hMipmappedArray, unsigned int level );
 
     hipError_t ( *hipTexObjectCreate )( hipTextureObject_t* pTexObject, const HIP_RESOURCE_DESC* pResDesc, const HIP_TEXTURE_DESC* pTexDesc, const HIP_RESOURCE_VIEW_DESC* pResViewDesc );
     hipError_t ( *hipTexObjectDestroy )( hipTextureObject_t texObject );
-    //hipError_t ( *hipSurfObjectCreate )( hipSurfaceObject_t* pSurfObject, const HIP_RESOURCE_DESC* pResDesc );
-    //hipError_t ( *hipSurfObjectDestroy )( hipSurfaceObject_t surfObject );
     hipError_t ( *hipCreateTextureObject )( hipTextureObject_t* pTexObject, const hipResourceDesc* pResDesc, const hipTextureDesc* pTexDesc, const hipResourceViewDesc* pResViewDesc );
     hipError_t ( *hipDestroyTextureObject )( hipTextureObject_t textureObject );
     hipError_t ( *hipCreateSurfaceObject )( hipSurfaceObject_t* pSurfObject, const hipResourceDesc* pResDesc );
@@ -98,7 +96,7 @@ struct HipDeviceApiFunctionTable {
 
     hipError_t ( *hipImportExternalMemory )( hipExternalMemory_t* extMem_out, const hipExternalMemoryHandleDesc* memHandleDesc );
     hipError_t ( *hipExternalMemoryGetMappedBuffer )( hipDeviceptr_t* devPtr, hipExternalMemory_t extMem, const hipExternalMemoryBufferDesc* bufferDesc );
-    //hipError_t ( *hipExternalMemoryGetMappedMipmappedArray )( hipMipmappedArray_t* mipmap, hipExternalMemory_t extMem, const HIP_EXTERNAL_MEMORY_MIPMAPPED_ARRAY_DESC* mipmapDesc );
+    hipError_t ( *hipExternalMemoryGetMappedMipmappedArray )( hipMipmappedArray_t* mipmap, hipExternalMemory_t extMem, const hipExternalMemoryMipmappedArrayDesc* mipmapDesc );
     hipError_t ( *hipDestroyExternalMemory )( hipExternalMemory_t extMem );
 
     hipError_t ( *hipImportExternalSemaphore )( hipExternalSemaphore_t* extSem_out, const hipExternalSemaphoreHandleDesc* semHandleDesc );
