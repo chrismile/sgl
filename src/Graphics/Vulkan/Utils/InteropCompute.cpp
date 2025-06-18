@@ -1177,11 +1177,11 @@ void ImageComputeApiExternalMemoryVk::_initialize(
 
 #ifdef SUPPORT_CUDA_INTEROP
     CUDA_EXTERNAL_MEMORY_HANDLE_DESC externalMemoryHandleDesc{};
-    externalMemoryHandleDesc.size = vulkanBuffer->getDeviceMemorySize(); // memoryRequirements.size
+    externalMemoryHandleDesc.size = vulkanImage->getDeviceMemorySize();; // memoryRequirements.size
 #endif
 #ifdef SUPPORT_HIP_INTEROP
     hipExternalMemoryHandleDesc externalMemoryHandleDescHip{};
-    externalMemoryHandleDescHip.size = vulkanBuffer->getDeviceMemorySize(); // memoryRequirements.size
+    externalMemoryHandleDescHip.size = vulkanImage->getDeviceMemorySize();; // memoryRequirements.size
 #endif
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
     ze_image_desc_t zeImageDesc{};
@@ -1603,15 +1603,16 @@ ImageComputeApiExternalMemoryVk::~ImageComputeApiExternalMemoryVk() {
         CUmipmappedArray cudaMipmappedArray = getCudaMipmappedArray();
         CUresult cuResult = g_cudaDeviceApiFunctionTable.cuMipmappedArrayDestroy(cudaMipmappedArray);
         checkCUresult(cuResult, "Error in cuMipmappedArrayDestroy: ");
+        auto cudaExternalMemoryBuffer = reinterpret_cast<CUexternalMemory>(externalMemoryBuffer);
         cuResult = g_cudaDeviceApiFunctionTable.cuDestroyExternalMemory(cudaExternalMemoryBuffer);
         checkCUresult(cuResult, "Error in cuDestroyExternalMemory: ");
 #endif
     } else if (useHip) {
 #ifdef SUPPORT_HIP_INTEROP
-        hipDeviceptr_t hipDevicePtr = getHipDevicePtr();
-        auto hipExternalMemory = reinterpret_cast<hipExternalMemory_t>(externalMemoryBuffer);
-        hipError_t hipResult = g_hipDeviceApiFunctionTable.hipFree(hipDevicePtr);
         // TODO
+        auto hipExternalMemory = reinterpret_cast<hipExternalMemory_t>(externalMemoryBuffer);
+        auto hipResult = g_hipDeviceApiFunctionTable.hipDestroyExternalMemory(hipExternalMemory);
+        checkHipResult(hipResult, "Error in hipDestroyExternalMemory: ");
 #endif
     } else if (useLevelZero) {
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
@@ -1638,6 +1639,7 @@ CUarray ImageComputeApiExternalMemoryVk::getCudaMipmappedArrayLevel(uint32_t lev
         return reinterpret_cast<CUarray>(arrayLevel0);
     }
 
+    CUmipmappedArray cudaMipmappedArray = getCudaMipmappedArray();
     CUarray levelArray;
     CUresult cuResult = g_cudaDeviceApiFunctionTable.cuMipmappedArrayGetLevel(&levelArray, cudaMipmappedArray, level);
     checkCUresult(cuResult, "Error in cuMipmappedArrayGetLevel: ");

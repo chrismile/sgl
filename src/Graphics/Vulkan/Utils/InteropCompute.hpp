@@ -35,14 +35,19 @@
 #include "Device.hpp"
 
 // Forward declarations for CUDA, HIP and Level Zero objects.
+
 extern "C" {
+#ifdef SUPPORT_CUDA_INTEROP
 #if defined(_WIN64) || defined(__LP64__)
 typedef unsigned long long CUdeviceptr_v2;
 #else
 typedef unsigned int CUdeviceptr_v2;
 #endif
 typedef CUdeviceptr_v2 CUdeviceptr;
+typedef struct CUmipmappedArray_st *CUmipmappedArray;
+typedef struct CUarray_st *CUarray;
 typedef struct CUstream_st *CUstream;
+#endif
 
 #ifdef SUPPORT_HIP_INTEROP
 typedef void* hipDeviceptr_t;
@@ -184,7 +189,7 @@ public:
 
     inline const sgl::vk::ImagePtr& getVulkanImage() { return vulkanImage; }
 #ifdef SUPPORT_CUDA_INTEROP
-    [[nodiscard]] inline CUmipmappedArray getCudaMipmappedArray() const { return reinterpret_cast<CUdeviceptr>(cudaMipmappedArray); }
+    [[nodiscard]] inline CUmipmappedArray getCudaMipmappedArray() const { return reinterpret_cast<CUmipmappedArray>(mipmappedArray); }
     CUarray getCudaMipmappedArrayLevel(uint32_t level = 0);
 #endif
 
