@@ -38,8 +38,12 @@
  * We ship the Level Zero headers with sgl, as they are released under the MIT license.
  * For Windows, it seems like the loader DLL is automatically installed with the drivers at C:/Windows/System32/ze_loader.dll.
  * On Linux, the necessary components can be obtained from here:
- * - Level Zero driver (intel-level-zero-gpu): https://github.com/intel/compute-runtime/releases
+ * - Ubuntu: sudo apt install libze1 libze-intel-gpu1
+ * - Arch Linux: sudo dnf install level-zero-loader intel-compute-runtime
+ * - Fedora: sudo pacman -S oneapi-level-zero intel-level-zero
+ * On other Linux systems, the libraries can be obtained from:
  * - Level Zero loader (level-zero, level-zero-devel): https://github.com/oneapi-src/level-zero/releases
+ * - Level Zero driver (intel-level-zero-gpu): https://github.com/intel/compute-runtime/releases
  * For more details see: https://github.com/intel/compute-runtime/blob/master/level_zero/doc/BUILD.md
  *
  * How to check what backends SYCL supports?
