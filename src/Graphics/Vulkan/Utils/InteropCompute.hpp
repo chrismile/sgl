@@ -222,6 +222,8 @@ protected:
 #endif
 };
 
+typedef std::shared_ptr<ImageComputeApiExternalMemoryVk> ImageComputeApiExternalMemoryVkPtr;
+
 }}
 
 #endif //SGL_INTEROPCOMPUTE_HPP
