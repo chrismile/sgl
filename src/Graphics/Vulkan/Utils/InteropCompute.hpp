@@ -81,6 +81,10 @@ class queue;
 
 namespace sgl { namespace vk {
 
+enum class InteropComputeApi {
+    NONE, CUDA, HIP, LEVEL_ZERO, SYCL
+};
+
 union DLL_OBJECT StreamWrapper {
     void* stream;
 #ifdef SUPPORT_CUDA_INTEROP

@@ -1861,7 +1861,7 @@ CUarray ImageComputeApiExternalMemoryVk::getCudaMipmappedArrayLevel(uint32_t lev
 }
 #endif
 
-#ifdef SUPPORT_CUDA_INTEROP
+#ifdef SUPPORT_HIP_INTEROP
 hipArray_t ImageComputeApiExternalMemoryVk::getHipMipmappedArrayLevel(uint32_t level) {
     if (level == 0 && arrayLevel0) {
         return reinterpret_cast<hipArray_t>(arrayLevel0);

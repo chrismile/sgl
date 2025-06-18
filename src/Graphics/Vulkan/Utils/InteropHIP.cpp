@@ -29,6 +29,7 @@
 #include <Utils/StringUtils.hpp>
 #include <Utils/File/FileUtils.hpp>
 #include <Utils/File/Logfile.hpp>
+#include "Device.hpp"
 #include "InteropHIP.hpp"
 
 #if defined(__linux__)
@@ -370,6 +371,42 @@ void freeHiprtcFunctionTable() {
         g_hiprtcLibraryHandle = {};
     }
 }
+
+
+bool getMatchingHipDevice(sgl::vk::Device* device, hipDevice_t* hipDevice) {
+    const VkPhysicalDeviceIDProperties& deviceIdProperties = device->getDeviceIDProperties();
+    bool foundDevice = false;
+
+    int numDevices = 0;
+    hipError_t hipResult = sgl::vk::g_hipDeviceApiFunctionTable.hipGetDeviceCount(&numDevices);
+    checkHipResult(hipResult, "Error in hipGetDeviceCount: ");
+
+    for (int deviceIdx = 0; deviceIdx < numDevices; deviceIdx++) {
+        hipDevice_t currDevice = 0;
+        hipResult = sgl::vk::g_hipDeviceApiFunctionTable.hipDeviceGet(&currDevice, deviceIdx);
+        checkHipResult(hipResult, "Error in hipDeviceGet: ");
+
+        hipUUID currUuid = {};
+        hipResult = sgl::vk::g_hipDeviceApiFunctionTable.hipDeviceGetUuid(&currUuid, currDevice);
+        checkHipResult(hipResult, "Error in hipDeviceGetUuid: ");
+
+        bool isSameUuid = true;
+        for (int i = 0; i < 16; i++) {
+            if (deviceIdProperties.deviceUUID[i] != reinterpret_cast<uint8_t*>(&currUuid.bytes)[i]) {
+                isSameUuid = false;
+                break;
+            }
+        }
+        if (isSameUuid) {
+            foundDevice = true;
+            *hipDevice = currDevice;
+            break;
+        }
+    }
+
+    return foundDevice;
+}
+
 
 void _checkHipResult(hipError_t hipResult, const char* text, const char* locationText) {
     if (hipResult != hipSuccess) {

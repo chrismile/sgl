@@ -70,6 +70,8 @@ class queue;
 
 namespace sgl { namespace vk {
 
+class Device;
+
 struct LevelZeroFunctionTable {
     ze_result_t ( *zeInit )( ze_init_flags_t flags );
     ze_result_t ( *zeDriverGet )( uint32_t* pCount, ze_driver_handle_t* phDrivers );
@@ -293,6 +295,16 @@ DLL_OBJECT void _checkZeResultDriver(ze_result_t zeResult, ze_driver_handle_t hD
 DLL_OBJECT bool initializeLevelZeroFunctionTable();
 DLL_OBJECT bool getIsLevelZeroFunctionTableInitialized();
 DLL_OBJECT void freeLevelZeroFunctionTable();
+
+/**
+ * Calls zeInit or zeInitDrivers and selects the closest matching Level Zero device for the passed Vulkan device.
+ * @param device The Vulkan device.
+ * @param zeDriver The Level Zero driver (if true is returned).
+ * @param zeDevice The Level Zero device (if true is returned).
+ * @return Whether a matching Level Zero device was found.
+ */
+DLL_OBJECT bool initializeLevelZeroAndFindMatchingDevice(
+        sgl::vk::Device* device, ze_driver_handle_t* zeDriver, ze_device_handle_t* zeDevice);
 
 #ifdef SUPPORT_SYCL_INTEROP
 // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/sycl_ext_oneapi_backend_level_zero.md

@@ -43,6 +43,8 @@
 
 namespace sgl { namespace vk {
 
+class Device;
+
 /*
  * Utility functions for Vulkan-HIP driver API interoperability.
  */
@@ -147,6 +149,14 @@ DLL_OBJECT void _checkHiprtcResult(hiprtcResult result, const char* text, const 
 DLL_OBJECT bool initializeHiprtcFunctionTable();
 DLL_OBJECT bool getIsHiprtcFunctionTableInitialized();
 DLL_OBJECT void freeHiprtcFunctionTable();
+
+/**
+ * Returns the closest matching HIP device.
+ * @param device The Vulkan device.
+ * @param hipDevice The HIP device (if true is returned).
+ * @return Whether a matching HIP device was found.
+ */
+DLL_OBJECT bool getMatchingHipDevice(sgl::vk::Device* device, hipDevice_t* hipDevice);
 
 }}
 
