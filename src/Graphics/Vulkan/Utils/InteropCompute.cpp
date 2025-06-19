@@ -623,7 +623,7 @@ BufferComputeApiExternalMemoryVk::BufferComputeApiExternalMemoryVk(vk::BufferPtr
         // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
         auto memoryHandleType = sycl::ext::oneapi::experimental::external_mem_handle_type::win32_nt_handle;
         sycl::ext::oneapi::experimental::external_mem_descriptor<sycl::ext::oneapi::experimental::resource_win32_handle>
-            syclExternalMemDescriptor{(void*)handle, memoryHandleType};
+            syclExternalMemDescriptor{(void*)handle, memoryHandleType, vulkanBuffer->getDeviceMemorySize()}; // memoryRequirements.size;
         auto* wrapper = new SyclExternalMemWrapper;
         wrapper->syclExternalMem = sycl::ext::oneapi::experimental::import_external_memory(
             syclExternalMemDescriptor, *g_syclQueue);
@@ -687,7 +687,7 @@ BufferComputeApiExternalMemoryVk::BufferComputeApiExternalMemoryVk(vk::BufferPtr
         // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
         auto memoryHandleType = sycl::ext::oneapi::experimental::external_mem_handle_type::opaque_fd;
         sycl::ext::oneapi::experimental::external_mem_descriptor<sycl::ext::oneapi::experimental::resource_fd>
-            syclExternalMemDescriptor{fileDescriptor, memoryHandleType};
+            syclExternalMemDescriptor{fileDescriptor, memoryHandleType, vulkanBuffer->getDeviceMemorySize()}; // memoryRequirements.size;
         auto* wrapper = new SyclExternalMemWrapper;
         wrapper->syclExternalMem = sycl::ext::oneapi::experimental::import_external_memory(
             syclExternalMemDescriptor, *g_syclQueue);
@@ -1364,11 +1364,11 @@ void ImageComputeApiExternalMemoryVk::_initialize(
 
 #ifdef SUPPORT_CUDA_INTEROP
     CUDA_EXTERNAL_MEMORY_HANDLE_DESC externalMemoryHandleDesc{};
-    externalMemoryHandleDesc.size = vulkanImage->getDeviceMemorySize();; // memoryRequirements.size
+    externalMemoryHandleDesc.size = vulkanImage->getDeviceMemorySize(); // memoryRequirements.size
 #endif
 #ifdef SUPPORT_HIP_INTEROP
     hipExternalMemoryHandleDesc externalMemoryHandleDescHip{};
-    externalMemoryHandleDescHip.size = vulkanImage->getDeviceMemorySize();; // memoryRequirements.size
+    externalMemoryHandleDescHip.size = vulkanImage->getDeviceMemorySize(); // memoryRequirements.size
 #endif
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
     ze_image_desc_t zeImageDesc{};
@@ -1447,7 +1447,7 @@ void ImageComputeApiExternalMemoryVk::_initialize(
         // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
         auto memoryHandleType = sycl::ext::oneapi::experimental::external_mem_handle_type::win32_nt_handle;
         sycl::ext::oneapi::experimental::external_mem_descriptor<sycl::ext::oneapi::experimental::resource_win32_handle>
-            syclExternalMemDescriptor{(void*)handle, memoryHandleType};
+            syclExternalMemDescriptor{(void*)handle, memoryHandleType, vulkanImage->getDeviceMemorySize()}; // memoryRequirements.size;
         auto* wrapper = new SyclExternalMemWrapper;
         wrapper->syclExternalMem = sycl::ext::oneapi::experimental::import_external_memory(
             syclExternalMemDescriptor, *g_syclQueue);
@@ -1511,7 +1511,7 @@ void ImageComputeApiExternalMemoryVk::_initialize(
         // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
         auto memoryHandleType = sycl::ext::oneapi::experimental::external_mem_handle_type::opaque_fd;
         sycl::ext::oneapi::experimental::external_mem_descriptor<sycl::ext::oneapi::experimental::resource_fd>
-            syclExternalMemDescriptor{fileDescriptor, memoryHandleType};
+            syclExternalMemDescriptor{fileDescriptor, memoryHandleType, vulkanImage->getDeviceMemorySize()}; // memoryRequirements.size;
         auto* wrapper = new SyclExternalMemWrapper;
         wrapper->syclExternalMem = sycl::ext::oneapi::experimental::import_external_memory(
             syclExternalMemDescriptor, *g_syclQueue);
