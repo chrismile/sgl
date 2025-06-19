@@ -1832,7 +1832,7 @@ ImageComputeApiExternalMemoryVk::~ImageComputeApiExternalMemoryVk() {
     } else if (useSycl) {
 #ifdef SUPPORT_SYCL_INTEROP
         auto* wrapperMem = reinterpret_cast<SyclExternalMemWrapper*>(externalMemoryBuffer);
-        auto* wrapperImg = reinterpret_cast<SyclImageMemHandleWrapper*>(externalMemoryBuffer);
+        auto* wrapperImg = reinterpret_cast<SyclImageMemHandleWrapper*>(mipmappedArray);
         sycl::ext::oneapi::experimental::free_image_mem(
                 wrapperImg->syclImageMemHandle, wrapperImg->syclImageDescriptor.type, *g_syclQueue);
         sycl::ext::oneapi::experimental::release_external_memory(wrapperMem->syclExternalMem, *g_syclQueue);
@@ -1970,7 +1970,7 @@ void ImageComputeApiExternalMemoryVk::copyFromDevicePtrAsync(void* devicePtrSrc,
 #endif
     } else if (useSycl) {
 #ifdef SUPPORT_SYCL_INTEROP
-        auto* wrapperImg = reinterpret_cast<SyclImageMemHandleWrapper*>(externalMemoryBuffer);
+        auto* wrapperImg = reinterpret_cast<SyclImageMemHandleWrapper*>(mipmappedArray);
         stream.syclQueuePtr->ext_oneapi_copy(
             devicePtrSrc, wrapperImg->syclImageMemHandle, wrapperImg->syclImageDescriptor);
 #endif

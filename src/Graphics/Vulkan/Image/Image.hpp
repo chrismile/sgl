@@ -115,6 +115,12 @@ DLL_OBJECT size_t getImageFormatNumChannels(VkFormat format);
 // Returns the GLSL format specifier of the format, e.g., "rgba32f" or "r16".
 DLL_OBJECT std::string getImageFormatGlslString(VkFormat format);
 
+// Converts the VkFormat entry to a string representation.
+DLL_OBJECT std::string convertVkFormatToString(VkFormat format);
+
+// Converts the VkFormatFeatureFlags flags to a string representation.
+DLL_OBJECT std::string convertVkFormatFeatureFlagsToString(VkFormatFeatureFlags flags);
+
 class DLL_OBJECT Image {
     friend class Renderer;
 public:
