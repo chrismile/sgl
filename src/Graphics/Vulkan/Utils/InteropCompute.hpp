@@ -132,10 +132,10 @@ public:
     ~SemaphoreVkComputeApiInterop() override;
 
     /// Signal semaphore.
-    void signalSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue = 0);
+    void signalSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue = 0, void* eventOut = nullptr);
 
     /// Wait on semaphore.
-    void waitSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue = 0);
+    void waitSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue = 0, void* eventOut = nullptr);
 
 private:
     void* externalSemaphore = {}; // CUexternalSemaphore or hipExternalSemaphore_t
@@ -164,8 +164,8 @@ public:
     [[nodiscard]] inline hipDeviceptr_t getHipDevicePtr() const { return reinterpret_cast<hipDeviceptr_t>(devicePtr); }
 #endif
 
-    void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream);
-    void copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream);
+    void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr);
+    void copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream, void* eventOut = nullptr);
 
 protected:
     sgl::vk::BufferPtr vulkanBuffer;
@@ -206,7 +206,7 @@ public:
     /*
      * Asynchronous copy from a device pointer to level 0 mipmap level.
      */
-    void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream);
+    void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr);
 
 protected:
     void _initialize(vk::ImagePtr& _vulkanImage, VkImageViewType _imageViewType, bool surfaceLoadStore);

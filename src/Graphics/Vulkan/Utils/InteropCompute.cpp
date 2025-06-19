@@ -437,7 +437,8 @@ SemaphoreVkComputeApiInterop::~SemaphoreVkComputeApiInterop() {
     }
 }
 
-void SemaphoreVkComputeApiInterop::signalSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue) {
+void SemaphoreVkComputeApiInterop::signalSemaphoreComputeApi(
+        StreamWrapper stream, unsigned long long timelineValue, void* eventOut) {
     CHECK_COMPUTE_API_SUPPORT;
 
     if (useCuda) {
@@ -476,13 +477,17 @@ void SemaphoreVkComputeApiInterop::signalSemaphoreComputeApi(StreamWrapper strea
     } else if (useSycl) {
 #ifdef SUPPORT_SYCL_INTEROP
         auto* wrapper = reinterpret_cast<SyclExternalSemaphoreWrapper*>(externalSemaphore);
-        stream.syclQueuePtr->ext_oneapi_signal_external_semaphore(
+        auto syclEvent = stream.syclQueuePtr->ext_oneapi_signal_external_semaphore(
             wrapper->syclExternalSemaphore, uint64_t(timelineValue));
+        if (eventOut) {
+            *reinterpret_cast<sycl::event*>(eventOut) = std::move(syclEvent);
+        }
 #endif
     }
 }
 
-void SemaphoreVkComputeApiInterop::waitSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue) {
+void SemaphoreVkComputeApiInterop::waitSemaphoreComputeApi(
+        StreamWrapper stream, unsigned long long timelineValue, void* eventOut) {
     CHECK_COMPUTE_API_SUPPORT;
 
     if (useCuda) {
@@ -521,8 +526,11 @@ void SemaphoreVkComputeApiInterop::waitSemaphoreComputeApi(StreamWrapper stream,
     } else if (useSycl) {
 #ifdef SUPPORT_SYCL_INTEROP
         auto* wrapper = reinterpret_cast<SyclExternalSemaphoreWrapper*>(externalSemaphore);
-        stream.syclQueuePtr->ext_oneapi_wait_external_semaphore(
+        auto syclEvent = stream.syclQueuePtr->ext_oneapi_wait_external_semaphore(
             wrapper->syclExternalSemaphore, uint64_t(timelineValue));
+        if (eventOut) {
+            *reinterpret_cast<sycl::event*>(eventOut) = std::move(syclEvent);
+        }
 #endif
     }
 }
@@ -818,7 +826,8 @@ BufferComputeApiExternalMemoryVk::~BufferComputeApiExternalMemoryVk() {
     }
 }
 
-void BufferComputeApiExternalMemoryVk::copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream) {
+void BufferComputeApiExternalMemoryVk::copyFromDevicePtrAsync(
+    void* devicePtrSrc, StreamWrapper stream, void* eventOut) {
     CHECK_COMPUTE_API_SUPPORT;
 
     if (useCuda) {
@@ -844,12 +853,16 @@ void BufferComputeApiExternalMemoryVk::copyFromDevicePtrAsync(void* devicePtrSrc
 #endif
     } else if (useSycl) {
 #ifdef SUPPORT_SYCL_INTEROP
-        stream.syclQueuePtr->memcpy(devicePtr, devicePtrSrc, vulkanBuffer->getSizeInBytes());
+        auto syclEvent = stream.syclQueuePtr->memcpy(devicePtr, devicePtrSrc, vulkanBuffer->getSizeInBytes());
+        if (eventOut) {
+            *reinterpret_cast<sycl::event*>(eventOut) = std::move(syclEvent);
+        }
 #endif
     }
 }
 
-void BufferComputeApiExternalMemoryVk::copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream) {
+void BufferComputeApiExternalMemoryVk::copyToDevicePtrAsync(
+    void* devicePtrDst, StreamWrapper stream, void* eventOut) {
     CHECK_COMPUTE_API_SUPPORT;
 
     if (useCuda) {
@@ -875,7 +888,10 @@ void BufferComputeApiExternalMemoryVk::copyToDevicePtrAsync(void* devicePtrDst, 
 #endif
     } else if (useSycl) {
 #ifdef SUPPORT_SYCL_INTEROP
-        stream.syclQueuePtr->memcpy(devicePtrDst, devicePtr, vulkanBuffer->getSizeInBytes());
+        auto syclEvent = stream.syclQueuePtr->memcpy(devicePtrDst, devicePtr, vulkanBuffer->getSizeInBytes());
+        if (eventOut) {
+            *reinterpret_cast<sycl::event*>(eventOut) = std::move(syclEvent);
+        }
 #endif
     }
 }
@@ -1880,7 +1896,8 @@ hipArray_t ImageComputeApiExternalMemoryVk::getHipMipmappedArrayLevel(uint32_t l
 }
 #endif
 
-void ImageComputeApiExternalMemoryVk::copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream) {
+void ImageComputeApiExternalMemoryVk::copyFromDevicePtrAsync(
+        void* devicePtrSrc, StreamWrapper stream, void* eventOut) {
     const sgl::vk::ImageSettings& imageSettings = vulkanImage->getImageSettings();
 
     CHECK_COMPUTE_API_SUPPORT;
@@ -1971,8 +1988,11 @@ void ImageComputeApiExternalMemoryVk::copyFromDevicePtrAsync(void* devicePtrSrc,
     } else if (useSycl) {
 #ifdef SUPPORT_SYCL_INTEROP
         auto* wrapperImg = reinterpret_cast<SyclImageMemHandleWrapper*>(mipmappedArray);
-        stream.syclQueuePtr->ext_oneapi_copy(
+        auto syclEvent = stream.syclQueuePtr->ext_oneapi_copy(
             devicePtrSrc, wrapperImg->syclImageMemHandle, wrapperImg->syclImageDescriptor);
+        if (eventOut) {
+            *reinterpret_cast<sycl::event*>(eventOut) = std::move(syclEvent);
+        }
 #endif
     }
 }
