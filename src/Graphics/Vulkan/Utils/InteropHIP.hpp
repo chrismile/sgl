@@ -79,7 +79,8 @@ struct HipDeviceApiFunctionTable {
     hipError_t ( *hipMemcpyAsync )( hipDeviceptr_t dst, hipDeviceptr_t src, size_t ByteCount, hipStream_t hStream );
     hipError_t ( *hipMemcpyDtoHAsync )( void* dstHost, hipDeviceptr_t srcDevice, size_t ByteCount, hipStream_t hStream );
     hipError_t ( *hipMemcpyHtoDAsync )( hipDeviceptr_t dstDevice, const void* srcHost, size_t ByteCount, hipStream_t hStream );
-    //hipError_t ( *hipDrvMemcpy2DAsync )( const HIP_MEMCPY2D* pCopy, hipStream_t hStream );
+    hipError_t ( *hipMemcpy2DToArrayAsync )( hipArray_t dst, size_t wOffset, size_t hOffset, const void* src, size_t spitch, size_t width, size_t height, hipMemcpyKind kind, hipStream_t stream );
+    hipError_t ( *hipMemcpy2DFromArrayAsync )( void* dst, size_t dpitch, hipArray_const_t src, size_t wOffset, size_t hOffset, size_t width, size_t height, hipMemcpyKind kind, hipStream_t stream );
     hipError_t ( *hipDrvMemcpy3DAsync )( const HIP_MEMCPY3D* pCopy, hipStream_t hStream );
 
     hipError_t ( *hipArrayCreate )( hipArray* pHandle, const HIP_ARRAY_DESCRIPTOR* pAllocateArray );

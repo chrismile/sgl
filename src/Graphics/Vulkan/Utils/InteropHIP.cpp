@@ -84,7 +84,8 @@ bool initializeHipDeviceApiFunctionTable() {
     typedef hipError_t ( *PFN_hipMemcpyAsync )( hipDeviceptr_t dst, hipDeviceptr_t src, size_t ByteCount, hipStream_t hStream );
     typedef hipError_t ( *PFN_hipMemcpyDtoHAsync )( void *dstHost, hipDeviceptr_t srcDevice, size_t ByteCount, hipStream_t hStream );
     typedef hipError_t ( *PFN_hipMemcpyHtoDAsync )( hipDeviceptr_t dstDevice, const void *srcHost, size_t ByteCount, hipStream_t hStream );
-    //typedef hipError_t ( *PFN_hipDrvMemcpy2DAsync )( const HIP_MEMCPY2D* pCopy, hipStream_t hStream );
+    typedef hipError_t ( *PFN_hipMemcpy2DToArrayAsync )( hipArray_t dst, size_t wOffset, size_t hOffset, const void* src, size_t spitch, size_t width, size_t height, hipMemcpyKind kind, hipStream_t stream );
+    typedef hipError_t ( *PFN_hipMemcpy2DFromArrayAsync )( void* dst, size_t dpitch, hipArray_const_t src, size_t wOffset, size_t hOffset, size_t width, size_t height, hipMemcpyKind kind, hipStream_t stream );
     typedef hipError_t ( *PFN_hipDrvMemcpy3DAsync )( const HIP_MEMCPY3D* pCopy, hipStream_t hStream );
     typedef hipError_t ( *PFN_hipArrayCreate )( hipArray *pHandle, const HIP_ARRAY_DESCRIPTOR *pAllocateArray );
     typedef hipError_t ( *PFN_hipArray3DCreate )( hipArray *pHandle, const HIP_ARRAY3D_DESCRIPTOR *pAllocateArray );
@@ -154,7 +155,8 @@ bool initializeHipDeviceApiFunctionTable() {
     g_hipDeviceApiFunctionTable.hipMemcpyAsync = PFN_hipMemcpyAsync(dlsym(g_hipLibraryHandle, TOSTRING(hipMemcpyAsync)));
     g_hipDeviceApiFunctionTable.hipMemcpyDtoHAsync = PFN_hipMemcpyDtoHAsync(dlsym(g_hipLibraryHandle, TOSTRING(hipMemcpyDtoHAsync)));
     g_hipDeviceApiFunctionTable.hipMemcpyHtoDAsync = PFN_hipMemcpyHtoDAsync(dlsym(g_hipLibraryHandle, TOSTRING(hipMemcpyHtoDAsync)));
-    //g_hipDeviceApiFunctionTable.hipDrvMemcpy2DAsync = PFN_hipDrvMemcpy2DAsync(dlsym(g_hipLibraryHandle, TOSTRING(hipDrvMemcpy2DAsync)));
+    g_hipDeviceApiFunctionTable.hipMemcpy2DToArrayAsync = PFN_hipMemcpy2DToArrayAsync(dlsym(g_hipLibraryHandle, TOSTRING(hipDrvMemcpy2DAsync)));
+    g_hipDeviceApiFunctionTable.hipMemcpy2DFromArrayAsync = PFN_hipMemcpy2DFromArrayAsync(dlsym(g_hipLibraryHandle, TOSTRING(hipDrvMemcpy2DAsync)));
     g_hipDeviceApiFunctionTable.hipDrvMemcpy3DAsync = PFN_hipDrvMemcpy3DAsync(dlsym(g_hipLibraryHandle, TOSTRING(hipDrvMemcpy3DAsync)));
     g_hipDeviceApiFunctionTable.hipArrayCreate = PFN_hipArrayCreate(dlsym(g_hipLibraryHandle, TOSTRING(hipArrayCreate)));
     g_hipDeviceApiFunctionTable.hipArray3DCreate = PFN_hipArray3DCreate(dlsym(g_hipLibraryHandle, TOSTRING(hipArray3DCreate)));
@@ -164,8 +166,6 @@ bool initializeHipDeviceApiFunctionTable() {
     g_hipDeviceApiFunctionTable.hipMipmappedArrayGetLevel = PFN_hipMipmappedArrayGetLevel(dlsym(g_hipLibraryHandle, TOSTRING(hipMipmappedArrayGetLevel)));
     g_hipDeviceApiFunctionTable.hipTexObjectCreate = PFN_hipTexObjectCreate(dlsym(g_hipLibraryHandle, TOSTRING(hipTexObjectCreate)));
     g_hipDeviceApiFunctionTable.hipTexObjectDestroy = PFN_hipTexObjectDestroy(dlsym(g_hipLibraryHandle, TOSTRING(hipTexObjectDestroy)));
-    //g_hipDeviceApiFunctionTable.hipSurfObjectCreate = PFN_hipSurfObjectCreate(dlsym(g_hipLibraryHandle, TOSTRING(hipSurfObjectCreate)));
-    //g_hipDeviceApiFunctionTable.hipSurfObjectDestroy = PFN_hipSurfObjectDestroy(dlsym(g_hipLibraryHandle, TOSTRING(hipSurfObjectDestroy)));
     g_hipDeviceApiFunctionTable.hipCreateTextureObject = PFN_hipCreateTextureObject(dlsym(g_hipLibraryHandle, TOSTRING(hipCreateTextureObject)));
     g_hipDeviceApiFunctionTable.hipDestroyTextureObject = PFN_hipDestroyTextureObject(dlsym(g_hipLibraryHandle, TOSTRING(hipDestroyTextureObject)));
     g_hipDeviceApiFunctionTable.hipCreateSurfaceObject = PFN_hipCreateSurfaceObject(dlsym(g_hipLibraryHandle, TOSTRING(hipCreateSurfaceObject)));
@@ -213,7 +213,8 @@ bool initializeHipDeviceApiFunctionTable() {
             || !g_hipDeviceApiFunctionTable.hipMemcpyAsync
             || !g_hipDeviceApiFunctionTable.hipMemcpyDtoHAsync
             || !g_hipDeviceApiFunctionTable.hipMemcpyHtoDAsync
-            //|| !g_hipDeviceApiFunctionTable.hipDrvMemcpy2DAsync
+            || !g_hipDeviceApiFunctionTable.hipMemcpy2DToArrayAsync
+            || !g_hipDeviceApiFunctionTable.hipMemcpy2DFromArrayAsync
             || !g_hipDeviceApiFunctionTable.hipDrvMemcpy3DAsync
             || !g_hipDeviceApiFunctionTable.hipArrayCreate
             || !g_hipDeviceApiFunctionTable.hipArray3DCreate

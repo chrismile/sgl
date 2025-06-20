@@ -1945,9 +1945,10 @@ void ImageComputeApiExternalMemoryVk::copyFromDevicePtrAsync(
 #ifdef SUPPORT_HIP_INTEROP
         size_t entryByteSize = getImageFormatEntryByteSize(imageSettings.format);
         if (imageViewType == VK_IMAGE_VIEW_TYPE_2D) {
-            // TODO: AMD seems to have forgotten hipDrvMemcpy2DAsync in the headers...
-            hipError_t hipResult = hipErrorNotSupported;
-            checkHipResult(hipResult, "Error in hipDrvMemcpy2DAsync: ");
+            hipError_t hipResult = g_hipDeviceApiFunctionTable.hipMemcpy2DToArrayAsync(
+                    getHipMipmappedArrayLevel(0), 0, 0, devicePtrSrc, imageSettings.width * entryByteSize,
+                    imageSettings.width, imageSettings.height, hipMemcpyDeviceToDevice, stream.hipStream);
+            checkHipResult(hipResult, "Error in hipMemcpy2DToArrayAsync: ");
         } else if (imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
             HIP_MEMCPY3D memcpySettings{};
             memcpySettings.srcMemoryType = hipMemoryTypeDevice;
