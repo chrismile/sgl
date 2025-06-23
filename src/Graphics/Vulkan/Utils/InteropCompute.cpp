@@ -1790,6 +1790,23 @@ void ImageComputeApiExternalMemoryVk::_initialize(
             return;
         }
 
+        syclImageDescriptor.verify();
+
+        bool supportsHandleType = false;
+        std::vector<sycl::ext::oneapi::experimental::image_memory_handle_type> supportedHandleTypes =
+                sycl::ext::oneapi::experimental::get_image_memory_support(syclImageDescriptor, *g_syclQueue);
+        for (auto supportedHandleType : supportedHandleTypes) {
+            if (supportedHandleType == sycl::ext::oneapi::experimental::image_memory_handle_type::opaque_handle) {
+                supportsHandleType = true;
+                break;
+            }
+        }
+        if (!supportsHandleType) {
+            sgl::Logfile::get()->throwError(
+                    "Error in ImageComputeApiExternalMemoryVk::_initialize: "
+                    "Unsupported SYCL image memory type.");
+        }
+
         auto* wrapperMem = reinterpret_cast<SyclExternalMemWrapper*>(externalMemoryBuffer);
         wrapperImg->syclImageMemHandle = sycl::ext::oneapi::experimental::map_external_image_memory(
             wrapperMem->syclExternalMem, syclImageDescriptor, *g_syclQueue);
