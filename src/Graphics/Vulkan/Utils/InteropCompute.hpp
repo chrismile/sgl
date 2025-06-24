@@ -29,6 +29,9 @@
 #ifndef SGL_INTEROPCOMPUTE_HPP
 #define SGL_INTEROPCOMPUTE_HPP
 
+#include <stdexcept>
+#include <utility>
+
 #include "../Buffers/Buffer.hpp"
 #include "../Image/Image.hpp"
 #include "SyncObjects.hpp"
@@ -118,6 +121,7 @@ void setLevelZeroGlobalStateFromSyclQueue(sycl::queue& syclQueue);
 // For more information on SYCL interop:
 // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
 void setGlobalSyclQueue(sycl::queue& syclQueue);
+void setOpenMessageBoxOnSyclError(bool _openMessageBox);
 #endif
 
 /**
@@ -181,6 +185,15 @@ protected:
 
 typedef std::shared_ptr<BufferComputeApiExternalMemoryVk> BufferComputeApiExternalMemoryVkPtr;
 
+
+class UnsupportedComputeApiImageFormatException : public std::exception {
+public:
+    explicit UnsupportedComputeApiImageFormatException(std::string msg) : message(std::move(msg)) {}
+    [[nodiscard]] char const* what() const override { return message.c_str(); }
+
+private:
+    std::string message;
+};
 
 /**
  * A CUDA driver API CUmipmappedArray object created from a Vulkan image.

@@ -90,6 +90,10 @@ static sycl::queue* g_syclQueue = nullptr;
 void setGlobalSyclQueue(sycl::queue& syclQueue) {
     g_syclQueue = &syclQueue;
 }
+static bool openMessageBoxOnSyclError = true;
+void setOpenMessageBoxOnSyclError(bool _openMessageBox) {
+    openMessageBoxOnSyclError = _openMessageBox;
+}
 
 struct SyclExternalSemaphoreWrapper {
     sycl::ext::oneapi::experimental::external_semaphore syclExternalSemaphore;
@@ -1792,6 +1796,7 @@ void ImageComputeApiExternalMemoryVk::_initialize(
 
         syclImageDescriptor.verify();
 
+        auto* wrapperMem = reinterpret_cast<SyclExternalMemWrapper*>(externalMemoryBuffer);
         bool supportsHandleType = false;
         std::vector<sycl::ext::oneapi::experimental::image_memory_handle_type> supportedHandleTypes =
                 sycl::ext::oneapi::experimental::get_image_memory_support(syclImageDescriptor, *g_syclQueue);
@@ -1802,12 +1807,21 @@ void ImageComputeApiExternalMemoryVk::_initialize(
             }
         }
         if (!supportsHandleType) {
-            sgl::Logfile::get()->throwError(
-                    "Error in ImageComputeApiExternalMemoryVk::_initialize: "
-                    "Unsupported SYCL image memory type.");
+            sycl::ext::oneapi::experimental::release_external_memory(wrapperMem->syclExternalMem, *g_syclQueue);
+            delete wrapperMem;
+            externalMemoryBuffer = nullptr;
+            if (openMessageBoxOnSyclError) {
+                sgl::Logfile::get()->writeError(
+                        "Error in ImageComputeApiExternalMemoryVk::_initialize: "
+                        "Unsupported SYCL image memory type.");
+            } else {
+                sgl::Logfile::get()->write(
+                        "Error in ImageComputeApiExternalMemoryVk::_initialize: "
+                        "Unsupported SYCL image memory type.", sgl::RED);
+            }
+            throw UnsupportedComputeApiImageFormatException("Unsupported SYCL image memory type");
         }
 
-        auto* wrapperMem = reinterpret_cast<SyclExternalMemWrapper*>(externalMemoryBuffer);
         wrapperImg->syclImageMemHandle = sycl::ext::oneapi::experimental::map_external_image_memory(
             wrapperMem->syclExternalMem, syclImageDescriptor, *g_syclQueue);
         mipmappedArray = reinterpret_cast<void*>(wrapperImg);
