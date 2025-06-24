@@ -189,7 +189,7 @@ typedef std::shared_ptr<BufferComputeApiExternalMemoryVk> BufferComputeApiExtern
 class UnsupportedComputeApiImageFormatException : public std::exception {
 public:
     explicit UnsupportedComputeApiImageFormatException(std::string msg) : message(std::move(msg)) {}
-    [[nodiscard]] char const* what() const override { return message.c_str(); }
+    [[nodiscard]] char const* what() const noexcept override { return message.c_str(); }
 
 private:
     std::string message;
