@@ -334,7 +334,7 @@ void Swapchain::recreateSwapchain() {
     } else {
         while (windowWidth == 0 || windowHeight == 0) {
             windowWidth = window->getWidth();
-            windowHeight = window->processEvents();
+            windowHeight = window->getHeight();
             window->processEvents();
         }
     }
