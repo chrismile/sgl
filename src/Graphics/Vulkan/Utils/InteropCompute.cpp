@@ -64,12 +64,16 @@ namespace sgl { namespace vk {
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
 static ze_device_handle_t g_zeDevice = {};
 static ze_context_handle_t g_zeContext = {};
+static ze_command_queue_handle_t g_zeCommandQueue = {};
 static ze_event_handle_t g_zeSignalEvent = {};
 static uint32_t g_numWaitEvents = 0;
 static ze_event_handle_t* g_zeWaitEvents = {};
 void setLevelZeroGlobalState(ze_device_handle_t zeDevice, ze_context_handle_t zeContext) {
     g_zeDevice = zeDevice;
     g_zeContext = zeContext;
+}
+void setLevelZeroGlobalCommandQueue(ze_command_queue_handle_t zeCommandQueue) {
+    g_zeCommandQueue = zeCommandQueue;
 }
 void setLevelZeroNextCommandEvents(
         ze_event_handle_t zeSignalEvent, uint32_t numWaitEvents, ze_event_handle_t* zeWaitEvents) {
@@ -135,6 +139,68 @@ CHECK_USE_CUDA \
 CHECK_USE_HIP \
 CHECK_USE_LEVEL_ZERO \
 CHECK_USE_SYCL
+
+
+void waitForCompletion(StreamWrapper stream, void* event) {
+    CHECK_COMPUTE_API_SUPPORT;
+
+#ifdef SUPPORT_CUDA_INTEROP
+    if (useCuda) {
+        CUresult cuResult = g_cudaDeviceApiFunctionTable.cuStreamSynchronize(stream.cuStream);
+        checkCUresult(cuResult, "Error in cuStreamSynchronize: ");
+    }
+#endif
+
+#ifdef SUPPORT_HIP_INTEROP
+    if (useHip) {
+        hipError_t hipResult = g_hipDeviceApiFunctionTable.hipStreamSynchronize(stream.hipStream);
+        checkHipResult(hipResult, "Error in hipStreamSynchronize: ");
+    }
+#endif
+
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+    if (useLevelZero) {
+        ze_result_t zeResult;
+        if (event) {
+            zeResult = g_levelZeroFunctionTable.zeCommandQueueExecuteCommandLists(
+                    g_zeCommandQueue, 1, &stream.zeCommandList, nullptr);
+            checkZeResult(zeResult, "Error in zeCommandQueueExecuteCommandLists: ");
+
+            zeResult = g_levelZeroFunctionTable.zeEventHostSynchronize(
+                    reinterpret_cast<ze_event_handle_t>(event), UINT64_MAX);
+            checkZeResult(zeResult, "Error in zeDeviceImportExternalSemaphoreExt: ");
+        } else {
+            ze_fence_desc_t fenceDesc{};
+            fenceDesc.stype = ZE_STRUCTURE_TYPE_FENCE_DESC;
+            ze_fence_handle_t zeFence{};
+            zeResult = g_levelZeroFunctionTable.zeFenceCreate(g_zeCommandQueue, &fenceDesc, &zeFence);
+            checkZeResult(zeResult, "Error in zeFenceCreate: ");
+
+            zeResult = g_levelZeroFunctionTable.zeCommandQueueExecuteCommandLists(
+                    g_zeCommandQueue, 1, &stream.zeCommandList, zeFence);
+            checkZeResult(zeResult, "Error in zeCommandQueueExecuteCommandLists: ");
+
+            zeResult = g_levelZeroFunctionTable.zeFenceHostSynchronize(zeFence, UINT32_MAX);
+            checkZeResult(zeResult, "Error in zeFenceHostSynchronize: ");
+            zeResult = g_levelZeroFunctionTable.zeFenceReset(zeFence);
+            checkZeResult(zeResult, "Error in zeFenceReset: ");
+
+            zeResult = g_levelZeroFunctionTable.zeFenceDestroy(zeFence);
+            checkZeResult(zeResult, "Error in zeFenceDestroy: ");
+        }
+    }
+#endif
+
+#ifdef SUPPORT_SYCL_INTEROP
+    if (useSycl) {
+        if (!event) {
+            sgl::Logfile::get()->throwError("sgl::vk::waitForCompletion called with nullptr SYCL event.");
+        }
+        sycl::event* syclEvent = reinterpret_cast<sycl::event*>(event);
+        syclEvent->wait_and_throw();
+    }
+#endif
+}
 
 
 SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop(
@@ -882,6 +948,76 @@ void BufferComputeApiExternalMemoryVk::copyToDevicePtrAsync(
                 reinterpret_cast<hipDeviceptr_t>(devicePtrDst), this->getHipDevicePtr(),
                 vulkanBuffer->getSizeInBytes(), stream.hipStream);
         checkHipResult(hipResult, "Error in hipMemcpyAsync: ");
+#endif
+    } else if (useLevelZero) {
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+        ze_result_t zeResult = g_levelZeroFunctionTable.zeCommandListAppendMemoryCopy(
+                stream.zeCommandList, devicePtrDst, devicePtr, vulkanBuffer->getSizeInBytes(),
+                g_zeSignalEvent, g_numWaitEvents, g_zeWaitEvents);
+        checkZeResult(zeResult, "Error in zeCommandListAppendMemoryCopy: ");
+#endif
+    } else if (useSycl) {
+#ifdef SUPPORT_SYCL_INTEROP
+        auto syclEvent = stream.syclQueuePtr->memcpy(devicePtrDst, devicePtr, vulkanBuffer->getSizeInBytes());
+        if (eventOut) {
+            *reinterpret_cast<sycl::event*>(eventOut) = std::move(syclEvent);
+        }
+#endif
+    }
+}
+
+void BufferComputeApiExternalMemoryVk::copyFromHostPtrAsync(
+    void* devicePtrSrc, StreamWrapper stream, void* eventOut) {
+    CHECK_COMPUTE_API_SUPPORT;
+
+    if (useCuda) {
+#ifdef SUPPORT_CUDA_INTEROP
+        CUresult cuResult = g_cudaDeviceApiFunctionTable.cuMemcpyHtoDAsync(
+                this->getCudaDevicePtr(), reinterpret_cast<CUdeviceptr>(devicePtrSrc),
+                vulkanBuffer->getSizeInBytes(), stream.cuStream);
+        checkCUresult(cuResult, "Error in cuMemcpyHtoDAsync: ");
+#endif
+    } else if (useHip) {
+#ifdef SUPPORT_HIP_INTEROP
+        hipError_t hipResult = g_hipDeviceApiFunctionTable.hipMemcpyHtoDAsync(
+                this->getHipDevicePtr(), reinterpret_cast<hipDeviceptr_t>(devicePtrSrc),
+                vulkanBuffer->getSizeInBytes(), stream.hipStream);
+        checkHipResult(hipResult, "Error in hipMemcpyHtoDAsync: ");
+#endif
+    } else if (useLevelZero) {
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+        ze_result_t zeResult = g_levelZeroFunctionTable.zeCommandListAppendMemoryCopy(
+                stream.zeCommandList, devicePtr, devicePtrSrc, vulkanBuffer->getSizeInBytes(),
+                g_zeSignalEvent, g_numWaitEvents, g_zeWaitEvents);
+        checkZeResult(zeResult, "Error in zeCommandListAppendMemoryCopy: ");
+#endif
+    } else if (useSycl) {
+#ifdef SUPPORT_SYCL_INTEROP
+        auto syclEvent = stream.syclQueuePtr->memcpy(devicePtr, devicePtrSrc, vulkanBuffer->getSizeInBytes());
+        if (eventOut) {
+            *reinterpret_cast<sycl::event*>(eventOut) = std::move(syclEvent);
+        }
+#endif
+    }
+}
+
+void BufferComputeApiExternalMemoryVk::copyToHostPtrAsync(
+    void* devicePtrDst, StreamWrapper stream, void* eventOut) {
+    CHECK_COMPUTE_API_SUPPORT;
+
+    if (useCuda) {
+#ifdef SUPPORT_CUDA_INTEROP
+        CUresult cuResult = g_cudaDeviceApiFunctionTable.cuMemcpyDtoHAsync(
+                reinterpret_cast<CUdeviceptr>(devicePtrDst), this->getCudaDevicePtr(),
+                vulkanBuffer->getSizeInBytes(), stream.cuStream);
+        checkCUresult(cuResult, "Error in cuMemcpyDtoHAsync: ");
+#endif
+    } else if (useHip) {
+#ifdef SUPPORT_HIP_INTEROP
+        hipError_t hipResult = g_hipDeviceApiFunctionTable.hipMemcpyDtoHAsync(
+                reinterpret_cast<hipDeviceptr_t>(devicePtrDst), this->getHipDevicePtr(),
+                vulkanBuffer->getSizeInBytes(), stream.hipStream);
+        checkHipResult(hipResult, "Error in hipMemcpyDtoHAsync: ");
 #endif
     } else if (useLevelZero) {
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP

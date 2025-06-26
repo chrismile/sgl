@@ -109,20 +109,27 @@ union DLL_OBJECT StreamWrapper {
  * Internally, Level Zero interop needs more information (device, context, ...) than CUDA or HIP interop.
  * The functions below can be used for setting the state globally.
  */
-void setLevelZeroGlobalState(ze_device_handle_t zeDevice, ze_context_handle_t zeContext);
-void setLevelZeroNextCommandEvents(
+DLL_OBJECT void setLevelZeroGlobalState(ze_device_handle_t zeDevice, ze_context_handle_t zeContext);
+DLL_OBJECT void setLevelZeroGlobalCommandQueue(ze_command_queue_handle_t zeCommandQueue);
+DLL_OBJECT void setLevelZeroNextCommandEvents(
         ze_event_handle_t zeSignalEvent, uint32_t numWaitEvents, ze_event_handle_t* zeWaitEvents);
 #ifdef SUPPORT_SYCL_INTEROP
-void setLevelZeroGlobalStateFromSyclQueue(sycl::queue& syclQueue);
+DLL_OBJECT void setLevelZeroGlobalStateFromSyclQueue(sycl::queue& syclQueue);
 #endif
 #endif
 
 #ifdef SUPPORT_SYCL_INTEROP
 // For more information on SYCL interop:
 // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
-void setGlobalSyclQueue(sycl::queue& syclQueue);
-void setOpenMessageBoxOnSyclError(bool _openMessageBox);
+DLL_OBJECT void setGlobalSyclQueue(sycl::queue& syclQueue);
+DLL_OBJECT void setOpenMessageBoxOnSyclError(bool _openMessageBox);
 #endif
+
+/*
+ * Waits for completion of the stream (CUDA, HIP, Level Zero) or event (SYCL, and optionally Level Zero if not nullptr).
+ * If using Level Zero, @see setLevelZeroGlobalCommandQueue must have been called.
+ */
+DLL_OBJECT void waitForCompletion(StreamWrapper stream, void* event = nullptr);
 
 /**
  * A CUDA driver API CUexternalSemaphore/HIP driver API hipExternalSemaphore_t object created from a Vulkan semaphore.
@@ -170,6 +177,8 @@ public:
 
     void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr);
     void copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream, void* eventOut = nullptr);
+    void copyFromHostPtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr);
+    void copyToHostPtrAsync(void* devicePtrDst, StreamWrapper stream, void* eventOut = nullptr);
 
 protected:
     sgl::vk::BufferPtr vulkanBuffer;
