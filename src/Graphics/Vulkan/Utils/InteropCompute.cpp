@@ -113,10 +113,6 @@ void setGlobalSyclQueue(sycl::queue& syclQueue) {
 #endif
     g_syclQueue = &syclQueue;
 }
-static bool openMessageBoxOnSyclError = true;
-void setOpenMessageBoxOnSyclError(bool _openMessageBox) {
-    openMessageBoxOnSyclError = _openMessageBox;
-}
 
 struct SyclExternalSemaphoreWrapper {
     sycl::ext::oneapi::experimental::external_semaphore syclExternalSemaphore;
@@ -160,6 +156,11 @@ CHECK_USE_LEVEL_ZERO \
 CHECK_USE_SYCL
 
 
+static bool openMessageBoxOnComputeApiError = true;
+void setOpenMessageBoxOnComputeApiError(bool _openMessageBox) {
+    openMessageBoxOnComputeApiError = _openMessageBox;
+}
+
 void resetComputeApiState() {
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
     g_zeDevice = {};
@@ -201,7 +202,7 @@ void waitForCompletion(StreamWrapper stream, void* event) {
 
             zeResult = g_levelZeroFunctionTable.zeEventHostSynchronize(
                     reinterpret_cast<ze_event_handle_t>(event), UINT64_MAX);
-            checkZeResult(zeResult, "Error in zeDeviceImportExternalSemaphoreExt: ");
+            checkZeResult(zeResult, "Error in zeEventHostSynchronize: ");
         } else {
             ze_fence_desc_t fenceDesc{};
             fenceDesc.stype = ZE_STRUCTURE_TYPE_FENCE_DESC;
@@ -491,7 +492,20 @@ SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop(
         ze_external_semaphore_ext_handle_t zeExternalSemaphore{};
         ze_result_t zeResult = g_levelZeroFunctionTable.zeDeviceImportExternalSemaphoreExt(
                 g_zeDevice, &externalSemaphoreExtDesc, &zeExternalSemaphore);
-        checkZeResult(zeResult, "Error in zeDeviceImportExternalSemaphoreExt: ");
+        if (zeResult == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
+            if (openMessageBoxOnComputeApiError) {
+                sgl::Logfile::get()->writeError(
+                        "Error in ImageComputeApiExternalMemoryVk::_initialize: "
+                        "Unsupported Level Zero external semaphore type.");
+            } else {
+                sgl::Logfile::get()->write(
+                        "Error in ImageComputeApiExternalMemoryVk::_initialize: "
+                        "Unsupported Level Zero external semaphore type.", sgl::RED);
+            }
+            throw UnsupportedComputeApiFeatureException("Unsupported Level Zero external semaphore type");
+        } else {
+            checkZeResult(zeResult, "Error in zeDeviceImportExternalSemaphoreExt: ");
+        }
         externalSemaphore = reinterpret_cast<void*>(zeExternalSemaphore);
 #endif
     }
@@ -1979,7 +1993,7 @@ void ImageComputeApiExternalMemoryVk::_initialize(
             sycl::ext::oneapi::experimental::release_external_memory(wrapperMem->syclExternalMem, *g_syclQueue);
             delete wrapperMem;
             externalMemoryBuffer = nullptr;
-            if (openMessageBoxOnSyclError) {
+            if (openMessageBoxOnComputeApiError) {
                 sgl::Logfile::get()->writeError(
                         "Error in ImageComputeApiExternalMemoryVk::_initialize: "
                         "Unsupported SYCL image memory type.");
@@ -1988,7 +2002,7 @@ void ImageComputeApiExternalMemoryVk::_initialize(
                         "Error in ImageComputeApiExternalMemoryVk::_initialize: "
                         "Unsupported SYCL image memory type.", sgl::RED);
             }
-            throw UnsupportedComputeApiImageFormatException("Unsupported SYCL image memory type");
+            throw UnsupportedComputeApiFeatureException("Unsupported SYCL image memory type");
         }
 
         wrapperImg->syclImageMemHandle = sycl::ext::oneapi::experimental::map_external_image_memory(

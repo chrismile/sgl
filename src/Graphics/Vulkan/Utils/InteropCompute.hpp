@@ -123,17 +123,31 @@ DLL_OBJECT void setLevelZeroGlobalStateFromSyclQueue(sycl::queue& syclQueue);
 // For more information on SYCL interop:
 // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
 DLL_OBJECT void setGlobalSyclQueue(sycl::queue& syclQueue);
-DLL_OBJECT void setOpenMessageBoxOnSyclError(bool _openMessageBox);
 #endif
+
+/// Whether a message box should be shown when a compute API error is generated that is not fatal.
+DLL_OBJECT void setOpenMessageBoxOnComputeApiError(bool _openMessageBox);
 
 /// Reset function for unit tests, as static variables may persist across GoogleTest test cases.
 DLL_OBJECT void resetComputeApiState();
 
-/*
+/**
  * Waits for completion of the stream (CUDA, HIP, Level Zero) or event (SYCL, and optionally Level Zero if not nullptr).
  * If using Level Zero, @see setLevelZeroGlobalCommandQueue must have been called.
  */
 DLL_OBJECT void waitForCompletion(StreamWrapper stream, void* event = nullptr);
+
+/**
+ * An exception that can be thrown when the compute API does not support the used feature.
+ */
+class UnsupportedComputeApiFeatureException : public std::exception {
+public:
+    explicit UnsupportedComputeApiFeatureException(std::string msg) : message(std::move(msg)) {}
+    [[nodiscard]] char const* what() const noexcept override { return message.c_str(); }
+
+private:
+    std::string message;
+};
 
 /**
  * A CUDA driver API CUexternalSemaphore/HIP driver API hipExternalSemaphore_t object created from a Vulkan semaphore.
@@ -198,15 +212,6 @@ protected:
 
 typedef std::shared_ptr<BufferComputeApiExternalMemoryVk> BufferComputeApiExternalMemoryVkPtr;
 
-
-class UnsupportedComputeApiImageFormatException : public std::exception {
-public:
-    explicit UnsupportedComputeApiImageFormatException(std::string msg) : message(std::move(msg)) {}
-    [[nodiscard]] char const* what() const noexcept override { return message.c_str(); }
-
-private:
-    std::string message;
-};
 
 /**
  * A CUDA driver API CUmipmappedArray object created from a Vulkan image.
