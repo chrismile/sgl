@@ -194,7 +194,9 @@ void waitForCompletion(StreamWrapper stream, void* event) {
 
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
     if (useLevelZero) {
-        ze_result_t zeResult;
+        ze_result_t zeResult = g_levelZeroFunctionTable.zeCommandListClose(stream.zeCommandList);
+        checkZeResult(zeResult, "Error in zeFenceCreate: ");
+
         if (event) {
             zeResult = g_levelZeroFunctionTable.zeCommandQueueExecuteCommandLists(
                     g_zeCommandQueue, 1, &stream.zeCommandList, nullptr);
@@ -221,6 +223,9 @@ void waitForCompletion(StreamWrapper stream, void* event) {
 
             zeResult = g_levelZeroFunctionTable.zeFenceDestroy(zeFence);
             checkZeResult(zeResult, "Error in zeFenceDestroy: ");
+
+            zeResult = g_levelZeroFunctionTable.zeCommandListReset(stream.zeCommandList);
+            checkZeResult(zeResult, "Error in zeFenceCreate: ");
         }
     }
 #endif
