@@ -150,6 +150,7 @@ struct SyclImageMemHandleWrapper {
 
 #define CHECK_COMPUTE_API_SUPPORT \
 bool useCuda = false, useHip = false, useLevelZero = false, useSycl = false; \
+(void)useCuda; (void)useHip; (void)useLevelZero; (void)useSycl; \
 CHECK_USE_CUDA \
 CHECK_USE_HIP \
 CHECK_USE_LEVEL_ZERO \
@@ -1784,7 +1785,18 @@ void ImageComputeApiExternalMemoryVk::_initialize(
         externalMemoryMipmappedArrayDesc.arrayDesc = arrayDescriptor;
         cuResult = g_cudaDeviceApiFunctionTable.cuExternalMemoryGetMappedMipmappedArray(
                 &cudaMipmappedArray, cudaExternalMemoryBuffer, &externalMemoryMipmappedArrayDesc);
-        checkCUresult(cuResult, "Error in cuExternalMemoryGetMappedMipmappedArray: ");
+        if (cuResult == CUDA_ERROR_INVALID_VALUE) {
+            if (openMessageBoxOnComputeApiError) {
+                sgl::Logfile::get()->writeError(
+                        "Error in ImageComputeApiExternalMemoryVk::_initialize: Unsupported CUDA image type.");
+            } else {
+                sgl::Logfile::get()->write(
+                        "Error in ImageComputeApiExternalMemoryVk::_initialize: Unsupported CUDA image type.", sgl::RED);
+            }
+            throw UnsupportedComputeApiFeatureException("Unsupported CUDA image type");
+        } else {
+            checkCUresult(cuResult, "Error in cuExternalMemoryGetMappedMipmappedArray: ");
+        }
         mipmappedArray = reinterpret_cast<void*>(cudaMipmappedArray);
 #endif
     }
