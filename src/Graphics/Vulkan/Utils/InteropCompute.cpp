@@ -1855,7 +1855,20 @@ void ImageComputeApiExternalMemoryVk::_initialize(
         ze_image_handle_t imageHandle{};
         ze_result_t zeResult = g_levelZeroFunctionTable.zeImageCreate(
                 g_zeContext, g_zeDevice, &zeImageDesc, &imageHandle);
-        checkZeResult(zeResult, "Error in zeMemAllocDevice: ");
+        if (zeResult == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
+            if (openMessageBoxOnComputeApiError) {
+                sgl::Logfile::get()->writeError(
+                        "Error in ImageComputeApiExternalMemoryVk::_initialize: "
+                        "Unsupported Level Zero image memory type.");
+            } else {
+                sgl::Logfile::get()->write(
+                        "Error in ImageComputeApiExternalMemoryVk::_initialize: "
+                        "Unsupported Level Zero image memory type.", sgl::RED);
+            }
+            throw UnsupportedComputeApiFeatureException("Unsupported Level Zero image memory type");
+        } else {
+            checkZeResult(zeResult, "Error in zeImageCreate: ");
+        }
         mipmappedArray = reinterpret_cast<void*>(imageHandle);
 #endif
     }
