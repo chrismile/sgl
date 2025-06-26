@@ -126,6 +126,9 @@ DLL_OBJECT void setGlobalSyclQueue(sycl::queue& syclQueue);
 DLL_OBJECT void setOpenMessageBoxOnSyclError(bool _openMessageBox);
 #endif
 
+/// Reset function for unit tests, as static variables may persist across GoogleTest test cases.
+DLL_OBJECT void resetComputeApiState();
+
 /*
  * Waits for completion of the stream (CUDA, HIP, Level Zero) or event (SYCL, and optionally Level Zero if not nullptr).
  * If using Level Zero, @see setLevelZeroGlobalCommandQueue must have been called.

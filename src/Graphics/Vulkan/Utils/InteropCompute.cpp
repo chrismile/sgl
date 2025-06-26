@@ -68,6 +68,13 @@ static ze_command_queue_handle_t g_zeCommandQueue = {};
 static ze_event_handle_t g_zeSignalEvent = {};
 static uint32_t g_numWaitEvents = 0;
 static ze_event_handle_t* g_zeWaitEvents = {};
+#endif
+
+#ifdef SUPPORT_SYCL_INTEROP
+static sycl::queue* g_syclQueue = nullptr;
+#endif
+
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
 void setLevelZeroGlobalState(ze_device_handle_t zeDevice, ze_context_handle_t zeContext) {
     g_zeDevice = zeDevice;
     g_zeContext = zeContext;
@@ -83,6 +90,10 @@ void setLevelZeroNextCommandEvents(
 }
 #ifdef SUPPORT_SYCL_INTEROP
 void setLevelZeroGlobalStateFromSyclQueue(sycl::queue& syclQueue) {
+#ifdef SUPPORT_SYCL_INTEROP
+    // Reset, as static variables may persist across GoogleTest unit tests.
+    g_syclQueue = {};
+#endif
     g_zeDevice = sycl::get_native<sycl::backend::ext_oneapi_level_zero>(syclQueue.get_device());
     g_zeContext = sycl::get_native<sycl::backend::ext_oneapi_level_zero>(syclQueue.get_context());
 }
@@ -90,8 +101,16 @@ void setLevelZeroGlobalStateFromSyclQueue(sycl::queue& syclQueue) {
 #endif
 
 #ifdef SUPPORT_SYCL_INTEROP
-static sycl::queue* g_syclQueue = nullptr;
 void setGlobalSyclQueue(sycl::queue& syclQueue) {
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+    // Reset, as static variables may persist across GoogleTest unit tests.
+    g_zeDevice = {};
+    g_zeContext = {};
+    g_zeCommandQueue = {};
+    g_zeSignalEvent = {};
+    g_numWaitEvents = 0;
+    g_zeWaitEvents = {};
+#endif
     g_syclQueue = &syclQueue;
 }
 static bool openMessageBoxOnSyclError = true;
@@ -140,6 +159,20 @@ CHECK_USE_HIP \
 CHECK_USE_LEVEL_ZERO \
 CHECK_USE_SYCL
 
+
+void resetComputeApiState() {
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+    g_zeDevice = {};
+    g_zeContext = {};
+    g_zeCommandQueue = {};
+    g_zeSignalEvent = {};
+    g_numWaitEvents = 0;
+    g_zeWaitEvents = {};
+#endif
+#ifdef SUPPORT_SYCL_INTEROP
+    g_syclQueue = {};
+#endif
+}
 
 void waitForCompletion(StreamWrapper stream, void* event) {
     CHECK_COMPUTE_API_SUPPORT;

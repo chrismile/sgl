@@ -638,7 +638,7 @@ bool initializeLevelZeroAndFindMatchingDevice(
         checkZeResult(zeResult, "Error in zeDeviceGet: ");
         auto* deviceHandles = new ze_device_handle_t[deviceCount];
         zeResult = g_levelZeroFunctionTable.zeDeviceGet(
-                driverHandles[driverIdx], &deviceCount, nullptr);
+                driverHandles[driverIdx], &deviceCount, deviceHandles);
         checkZeResult(zeResult, "Error in zeDeviceGet: ");
 
         for (uint32_t deviceIdx = 0; deviceIdx < deviceCount; deviceIdx++) {
