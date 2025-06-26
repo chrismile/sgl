@@ -195,8 +195,8 @@ public:
 
     void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr);
     void copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream, void* eventOut = nullptr);
-    void copyFromHostPtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr);
-    void copyToHostPtrAsync(void* devicePtrDst, StreamWrapper stream, void* eventOut = nullptr);
+    void copyFromHostPtrAsync(void* hostPtrSrc, StreamWrapper stream, void* eventOut = nullptr);
+    void copyToHostPtrAsync(void* hostPtrDst, StreamWrapper stream, void* eventOut = nullptr);
 
 protected:
     sgl::vk::BufferPtr vulkanBuffer;

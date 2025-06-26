@@ -949,7 +949,7 @@ BufferComputeApiExternalMemoryVk::~BufferComputeApiExternalMemoryVk() {
 }
 
 void BufferComputeApiExternalMemoryVk::copyFromDevicePtrAsync(
-    void* devicePtrSrc, StreamWrapper stream, void* eventOut) {
+        void* devicePtrSrc, StreamWrapper stream, void* eventOut) {
     CHECK_COMPUTE_API_SUPPORT;
 
     if (useCuda) {
@@ -984,7 +984,7 @@ void BufferComputeApiExternalMemoryVk::copyFromDevicePtrAsync(
 }
 
 void BufferComputeApiExternalMemoryVk::copyToDevicePtrAsync(
-    void* devicePtrDst, StreamWrapper stream, void* eventOut) {
+        void* devicePtrDst, StreamWrapper stream, void* eventOut) {
     CHECK_COMPUTE_API_SUPPORT;
 
     if (useCuda) {
@@ -1019,33 +1019,33 @@ void BufferComputeApiExternalMemoryVk::copyToDevicePtrAsync(
 }
 
 void BufferComputeApiExternalMemoryVk::copyFromHostPtrAsync(
-    void* devicePtrSrc, StreamWrapper stream, void* eventOut) {
+        void* hostPtrSrc, StreamWrapper stream, void* eventOut) {
     CHECK_COMPUTE_API_SUPPORT;
 
     if (useCuda) {
 #ifdef SUPPORT_CUDA_INTEROP
         CUresult cuResult = g_cudaDeviceApiFunctionTable.cuMemcpyHtoDAsync(
-                this->getCudaDevicePtr(), reinterpret_cast<CUdeviceptr>(devicePtrSrc),
+                this->getCudaDevicePtr(), hostPtrSrc,
                 vulkanBuffer->getSizeInBytes(), stream.cuStream);
         checkCUresult(cuResult, "Error in cuMemcpyHtoDAsync: ");
 #endif
     } else if (useHip) {
 #ifdef SUPPORT_HIP_INTEROP
         hipError_t hipResult = g_hipDeviceApiFunctionTable.hipMemcpyHtoDAsync(
-                this->getHipDevicePtr(), reinterpret_cast<hipDeviceptr_t>(devicePtrSrc),
+                this->getHipDevicePtr(), hostPtrSrc,
                 vulkanBuffer->getSizeInBytes(), stream.hipStream);
         checkHipResult(hipResult, "Error in hipMemcpyHtoDAsync: ");
 #endif
     } else if (useLevelZero) {
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
         ze_result_t zeResult = g_levelZeroFunctionTable.zeCommandListAppendMemoryCopy(
-                stream.zeCommandList, devicePtr, devicePtrSrc, vulkanBuffer->getSizeInBytes(),
+                stream.zeCommandList, devicePtr, hostPtrSrc, vulkanBuffer->getSizeInBytes(),
                 g_zeSignalEvent, g_numWaitEvents, g_zeWaitEvents);
         checkZeResult(zeResult, "Error in zeCommandListAppendMemoryCopy: ");
 #endif
     } else if (useSycl) {
 #ifdef SUPPORT_SYCL_INTEROP
-        auto syclEvent = stream.syclQueuePtr->memcpy(devicePtr, devicePtrSrc, vulkanBuffer->getSizeInBytes());
+        auto syclEvent = stream.syclQueuePtr->memcpy(devicePtr, hostPtrSrc, vulkanBuffer->getSizeInBytes());
         if (eventOut) {
             *reinterpret_cast<sycl::event*>(eventOut) = std::move(syclEvent);
         }
@@ -1054,33 +1054,33 @@ void BufferComputeApiExternalMemoryVk::copyFromHostPtrAsync(
 }
 
 void BufferComputeApiExternalMemoryVk::copyToHostPtrAsync(
-    void* devicePtrDst, StreamWrapper stream, void* eventOut) {
+        void* hostPtrDst, StreamWrapper stream, void* eventOut) {
     CHECK_COMPUTE_API_SUPPORT;
 
     if (useCuda) {
 #ifdef SUPPORT_CUDA_INTEROP
         CUresult cuResult = g_cudaDeviceApiFunctionTable.cuMemcpyDtoHAsync(
-                reinterpret_cast<CUdeviceptr>(devicePtrDst), this->getCudaDevicePtr(),
+                hostPtrDst, this->getCudaDevicePtr(),
                 vulkanBuffer->getSizeInBytes(), stream.cuStream);
         checkCUresult(cuResult, "Error in cuMemcpyDtoHAsync: ");
 #endif
     } else if (useHip) {
 #ifdef SUPPORT_HIP_INTEROP
         hipError_t hipResult = g_hipDeviceApiFunctionTable.hipMemcpyDtoHAsync(
-                reinterpret_cast<hipDeviceptr_t>(devicePtrDst), this->getHipDevicePtr(),
+                hostPtrDst, this->getHipDevicePtr(),
                 vulkanBuffer->getSizeInBytes(), stream.hipStream);
         checkHipResult(hipResult, "Error in hipMemcpyDtoHAsync: ");
 #endif
     } else if (useLevelZero) {
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
         ze_result_t zeResult = g_levelZeroFunctionTable.zeCommandListAppendMemoryCopy(
-                stream.zeCommandList, devicePtrDst, devicePtr, vulkanBuffer->getSizeInBytes(),
+                stream.zeCommandList, hostPtrDst, devicePtr, vulkanBuffer->getSizeInBytes(),
                 g_zeSignalEvent, g_numWaitEvents, g_zeWaitEvents);
         checkZeResult(zeResult, "Error in zeCommandListAppendMemoryCopy: ");
 #endif
     } else if (useSycl) {
 #ifdef SUPPORT_SYCL_INTEROP
-        auto syclEvent = stream.syclQueuePtr->memcpy(devicePtrDst, devicePtr, vulkanBuffer->getSizeInBytes());
+        auto syclEvent = stream.syclQueuePtr->memcpy(hostPtrDst, devicePtr, vulkanBuffer->getSizeInBytes());
         if (eventOut) {
             *reinterpret_cast<sycl::event*>(eventOut) = std::move(syclEvent);
         }
