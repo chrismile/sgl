@@ -62,6 +62,7 @@ typedef struct ihipStream_t* hipStream_t;
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
 typedef struct _ze_device_handle_t* ze_device_handle_t;
 typedef struct _ze_context_handle_t* ze_context_handle_t;
+typedef struct _ze_command_queue_handle_t* ze_command_queue_handle_t;
 typedef struct _ze_command_list_handle_t* ze_command_list_handle_t;
 typedef struct _ze_event_handle_t *ze_event_handle_t;
 #endif
