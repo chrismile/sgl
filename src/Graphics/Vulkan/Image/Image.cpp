@@ -1157,6 +1157,24 @@ Image::Image(Device* device, const ImageSettings& imageSettings) : device(device
             Logfile::get()->throwError("Error in Image::Image: Failed to create an image!");
         }
 
+        /*
+         * Check memory requirements; requiresDedicatedAllocation is set to true on Intel GPUs even though
+         * Device::getNeedsDedicatedAllocationForExternalMemoryImage, or respectively VkExternalMemoryProperties,
+         * does not specify this.
+         */
+        VkImageMemoryRequirementsInfo2 imageMemoryRequirementsInfo2{};
+        VkMemoryRequirements2 memoryRequirements2{};
+        VkMemoryDedicatedRequirementsKHR memoryDedicatedRequirements{};
+        imageMemoryRequirementsInfo2.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2_KHR;
+        imageMemoryRequirementsInfo2.image = image;
+        memoryDedicatedRequirements.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS_KHR;
+        memoryRequirements2.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2_KHR;
+        memoryRequirements2.pNext = &memoryDedicatedRequirements;
+        vkGetImageMemoryRequirements2(device->getVkDevice(), &imageMemoryRequirementsInfo2, &memoryRequirements2);
+        if (memoryDedicatedRequirements.requiresDedicatedAllocation) {
+            needsDedicatedAllocation = true;
+        }
+
         VkMemoryRequirements memoryRequirements;
         vkGetImageMemoryRequirements(device->getVkDevice(), image, &memoryRequirements);
         deviceMemoryAllocationSize = memoryRequirements.size;

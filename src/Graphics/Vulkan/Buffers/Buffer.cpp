@@ -156,6 +156,24 @@ Buffer::Buffer(Device* device, const BufferSettings& bufferSettings)
             Logfile::get()->throwError("Error in Buffer::Buffer: Failed to create a buffer!");
         }
 
+        /*
+         * Check memory requirements; requiresDedicatedAllocation is set to true on Intel GPUs even though
+         * Device::getNeedsDedicatedAllocationForExternalMemoryBuffer, or respectively VkExternalMemoryProperties,
+         * does not specify this.
+         */
+        VkBufferMemoryRequirementsInfo2 bufferMemoryRequirementsInfo2{};
+        VkMemoryRequirements2 memoryRequirements2{};
+        VkMemoryDedicatedRequirementsKHR memoryDedicatedRequirements{};
+        bufferMemoryRequirementsInfo2.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2_KHR;
+        bufferMemoryRequirementsInfo2.buffer = buffer;
+        memoryDedicatedRequirements.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS_KHR;
+        memoryRequirements2.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2_KHR;
+        memoryRequirements2.pNext = &memoryDedicatedRequirements;
+        vkGetBufferMemoryRequirements2(device->getVkDevice(), &bufferMemoryRequirementsInfo2, &memoryRequirements2);
+        if (memoryDedicatedRequirements.requiresDedicatedAllocation) {
+            needsDedicatedAllocation = true;
+        }
+
         VkMemoryRequirements memoryRequirements;
         vkGetBufferMemoryRequirements(device->getVkDevice(), buffer, &memoryRequirements);
         deviceMemoryAllocationSize = memoryRequirements.size;
