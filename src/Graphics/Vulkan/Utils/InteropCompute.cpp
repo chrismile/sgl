@@ -206,7 +206,8 @@ void waitForCompletion(StreamWrapper stream, void* event) {
             zeResult = g_levelZeroFunctionTable.zeEventHostSynchronize(
                     reinterpret_cast<ze_event_handle_t>(event), UINT64_MAX);
             checkZeResult(zeResult, "Error in zeEventHostSynchronize: ");
-        } else {
+        } else if (g_zeCommandQueue) {
+            // We could also use zeCommandQueueSynchronize instead of using a fence.
             ze_fence_desc_t fenceDesc{};
             fenceDesc.stype = ZE_STRUCTURE_TYPE_FENCE_DESC;
             ze_fence_handle_t zeFence{};
@@ -217,7 +218,7 @@ void waitForCompletion(StreamWrapper stream, void* event) {
                     g_zeCommandQueue, 1, &stream.zeCommandList, zeFence);
             checkZeResult(zeResult, "Error in zeCommandQueueExecuteCommandLists: ");
 
-            zeResult = g_levelZeroFunctionTable.zeFenceHostSynchronize(zeFence, UINT32_MAX);
+            zeResult = g_levelZeroFunctionTable.zeFenceHostSynchronize(zeFence, UINT64_MAX);
             checkZeResult(zeResult, "Error in zeFenceHostSynchronize: ");
             zeResult = g_levelZeroFunctionTable.zeFenceReset(zeFence);
             checkZeResult(zeResult, "Error in zeFenceReset: ");
@@ -227,6 +228,10 @@ void waitForCompletion(StreamWrapper stream, void* event) {
 
             zeResult = g_levelZeroFunctionTable.zeCommandListReset(stream.zeCommandList);
             checkZeResult(zeResult, "Error in zeFenceCreate: ");
+        } else {
+            // We assume an immediate command list is used.
+            zeResult = g_levelZeroFunctionTable.zeCommandListHostSynchronize(stream.zeCommandList, UINT64_MAX);
+            checkZeResult(zeResult, "Error in zeCommandListHostSynchronize: ");
         }
     }
 #endif
@@ -498,7 +503,8 @@ SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop(
         ze_external_semaphore_ext_handle_t zeExternalSemaphore{};
         ze_result_t zeResult = g_levelZeroFunctionTable.zeDeviceImportExternalSemaphoreExt(
                 g_zeDevice, &externalSemaphoreExtDesc, &zeExternalSemaphore);
-        if (zeResult == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
+        // The Linux driver seem to return ZE_RESULT_ERROR_UNINITIALIZED when the feature is not supported.
+        if (zeResult == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE || zeResult == ZE_RESULT_ERROR_UNINITIALIZED) {
             if (openMessageBoxOnComputeApiError) {
                 sgl::Logfile::get()->writeError(
                         "Error in ImageComputeApiExternalMemoryVk::_initialize: "
@@ -595,7 +601,21 @@ void SemaphoreVkComputeApiInterop::signalSemaphoreComputeApi(
         ze_result_t zeResult = g_levelZeroFunctionTable.zeCommandListAppendSignalExternalSemaphoreExt(
                 stream.zeCommandList, 1, &zeExternalSemaphore, &externalSemaphoreSignalParamsExt,
                 g_zeSignalEvent, g_numWaitEvents, g_zeWaitEvents);
-        checkZeResult(zeResult, "Error in zeCommandListAppendSignalExternalSemaphoreExt: ");
+        if (zeResult == ZE_RESULT_ERROR_INVALID_ARGUMENT && g_zeCommandQueue) {
+            if (openMessageBoxOnComputeApiError) {
+                sgl::Logfile::get()->writeError(
+                        "Error in SemaphoreVkComputeApiInterop::signalSemaphoreComputeApi: "
+                        "Level Zero requires an immediate command list for this command.");
+            } else {
+                sgl::Logfile::get()->write(
+                        "Error in SemaphoreVkComputeApiInterop::signalSemaphoreComputeApi: "
+                        "Level Zero requires an immediate command list for this command.", sgl::RED);
+            }
+            throw UnsupportedComputeApiFeatureException(
+                    "Level Zero requires an immediate command list for this command");
+        } else {
+            checkZeResult(zeResult, "Error in zeCommandListAppendSignalExternalSemaphoreExt: ");
+        }
 #endif
     } else if (useSycl) {
 #ifdef SUPPORT_SYCL_INTEROP
@@ -644,7 +664,21 @@ void SemaphoreVkComputeApiInterop::waitSemaphoreComputeApi(
         ze_result_t zeResult = g_levelZeroFunctionTable.zeCommandListAppendWaitExternalSemaphoreExt(
                 stream.zeCommandList, 1, &zeExternalSemaphore, &externalSemaphoreWaitParamsExt,
                 g_zeSignalEvent, g_numWaitEvents, g_zeWaitEvents);
-        checkZeResult(zeResult, "Error in zeCommandListAppendWaitExternalSemaphoreExt: ");
+        if (zeResult == ZE_RESULT_ERROR_INVALID_ARGUMENT && g_zeCommandQueue) {
+            if (openMessageBoxOnComputeApiError) {
+                sgl::Logfile::get()->writeError(
+                        "Error in SemaphoreVkComputeApiInterop::waitSemaphoreComputeApi: "
+                        "Level Zero requires an immediate command list for this command.");
+            } else {
+                sgl::Logfile::get()->write(
+                        "Error in SemaphoreVkComputeApiInterop::waitSemaphoreComputeApi: "
+                        "Level Zero requires an immediate command list for this command.", sgl::RED);
+            }
+            throw UnsupportedComputeApiFeatureException(
+                    "Level Zero requires an immediate command list for this command");
+        } else {
+            checkZeResult(zeResult, "Error in zeCommandListAppendWaitExternalSemaphoreExt: ");
+        }
 #endif
     } else if (useSycl) {
 #ifdef SUPPORT_SYCL_INTEROP
