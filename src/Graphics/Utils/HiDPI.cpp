@@ -244,7 +244,7 @@ float getHighDPIScaleFactor() {
         }
 #endif
 #ifdef SDL_PLATFORM_WIN32
-        auto* windowHandle = static_cast<HWND*>(SDL_GetPointerProperty(
+        auto windowHandle = static_cast<HWND>(SDL_GetPointerProperty(
                SDL_GetWindowProperties(sdlWindow), SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr));
         scaleFactorSetManually = getScreenScalingWindows(windowHandle, scaleFactorHiDPI);
 #endif
