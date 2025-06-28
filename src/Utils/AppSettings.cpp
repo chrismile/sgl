@@ -37,6 +37,7 @@
 #include <Input/Keyboard.hpp>
 #include <Input/Gamepad.hpp>
 #include <Graphics/Window.hpp>
+#include <Graphics/Utils/HiDPI.hpp>
 #ifndef DISABLE_IMGUI
 #include <ImGui/ImGuiWrapper.hpp>
 #endif
@@ -113,6 +114,7 @@
 #ifdef _WIN32
 #include <windows.h>
 #include <VersionHelpers.h>
+#include <shellscalingapi.h>
 #ifdef SUPPORT_VULKAN
 #include <vulkan/vulkan_win32.h>
 #endif
@@ -151,26 +153,23 @@ DLL_OBJECT GamepadInterface* Gamepad = nullptr;
 
 #ifdef WIN32
 // Don't upscale window content on Windows with High-DPI settings
-void setDPIAware() {
+void setDPIAware(HMODULE user32Module) {
     bool minWin81 = IsWindows8Point1OrGreater();//IsWindowsVersionOrGreater(HIBYTE(0x0603), LOBYTE(0x0603), 0); // IsWindows8Point1OrGreater
     if (minWin81) {
-        typedef BOOL (__stdcall *SetProcessDpiAwareness_Function)();
-        HMODULE library = LoadLibrary("User32.dll");
-        SetProcessDpiAwareness_Function setProcessDpiAwareness = (SetProcessDpiAwareness_Function)GetProcAddress(
-                library, "SetProcessDpiAwareness");
-        setProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
-        FreeLibrary((HMODULE)library);
-    } else {
-        typedef BOOL (__stdcall *SetProcessDPIAware_Function)();
-        HMODULE library = LoadLibrary("User32.dll");
-        SetProcessDPIAware_Function setProcessDPIAware = (SetProcessDPIAware_Function)GetProcAddress(
-                library, "SetProcessDPIAware");
-        setProcessDPIAware();
-        FreeLibrary((HMODULE)library);
+        typedef HRESULT (__stdcall *SetProcessDpiAwareness_Function)(PROCESS_DPI_AWARENESS value);
+        auto setProcessDpiAwareness = reinterpret_cast<SetProcessDpiAwareness_Function>(GetProcAddress(
+                user32Module, "SetProcessDpiAwareness"));
+        HRESULT res = setProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
+        if (res != S_OK) {
+            minWin81 = false;
+        }
     }
-}
-#else
-void setDPIAware() {
+    if (!minWin81) {
+        typedef BOOL (__stdcall *SetProcessDPIAware_Function)();
+        auto setProcessDPIAware = reinterpret_cast<SetProcessDPIAware_Function>(GetProcAddress(
+                user32Module, "SetProcessDPIAware"));
+        setProcessDPIAware();
+    }
 }
 #endif
 
@@ -329,7 +328,11 @@ Window* AppSettings::createWindow() {
     initializeDataDirectory();
 
     // Disable upscaling on Windows with High-DPI settings
-    setDPIAware();
+#ifdef _WIN32
+    user32Module = LoadLibrary("User32.dll");
+    setDPIAware(user32Module);
+    setWindowsLibraryHandles(user32Module);
+#endif
 
     // There may only be one instance of a window for now!
     static int windowIdx = 0;
@@ -986,6 +989,10 @@ void AppSettings::release() {
         //TTF_Quit();
         SDL_Quit();
     }
+#endif
+
+#ifdef _WIN32
+    FreeLibrary(user32Module);
 #endif
 }
 

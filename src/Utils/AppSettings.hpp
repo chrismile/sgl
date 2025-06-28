@@ -35,6 +35,11 @@ typedef unsigned long DWORD;
 #else
 typedef unsigned int DWORD;
 #endif
+#ifndef _WINDEF_
+struct HINSTANCE__;
+typedef HINSTANCE__* HINSTANCE;
+typedef HINSTANCE HMODULE;
+#endif
 #endif
 
 #include <map>
@@ -303,6 +308,10 @@ private:
 #endif
     Window* mainWindow = nullptr;
     std::string applicationDescription;
+
+#ifdef _WIN32
+    HMODULE user32Module{};
+#endif
 
 #if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN)
     // Handled by sgl::vk::Device in the Vulkan case and AppSettings in the OpenGL case.

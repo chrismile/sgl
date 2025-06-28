@@ -132,23 +132,32 @@ bool getScreenScalingX11(Display* display, float& scalingFactor) {
 }
 #elif defined(_WIN32)
 #include <windows.h>
+#include <winuser.h>
+#include <VersionHelpers.h>
 
 namespace sgl
 {
 
+typedef UINT (__stdcall *PFN_GetDpiForWindow)(HWND hwnd);
+static PFN_GetDpiForWindow getDpiForWindowPtr = {};
+
+void setWindowsLibraryHandles(HMODULE user32Module) {
+    getDpiForWindowPtr = reinterpret_cast<PFN_GetDpiForWindow>(GetProcAddress(user32Module, "GetDpiForWindow"));
+}
+
 bool getScreenScalingWindows(HWND windowHandle, float& scalingFactor) {
     static bool minWin81 = IsWindows8Point1OrGreater();//IsWindowsVersionOrGreater(HIBYTE(0x0603), LOBYTE(0x0603), 0); // IsWindows8Point1OrGreater
     if (minWin81) {
-        int windowDpi = GetDpiForWindow(windowHandle);
+        unsigned windowDpi = getDpiForWindowPtr(windowHandle);
         if (windowDpi == 0) {
             return false;
         }
-        scalingFactor = windowDpi / 96.0f;
+        scalingFactor = static_cast<float>(windowDpi) / 96.0f;
     } else {
         HDC hdcScreen = GetDC(nullptr); // HWND hWnd
         int dpi = GetDeviceCaps(hdcScreen, LOGPIXELSX);
         ReleaseDC(nullptr, hdcScreen);
-        scalingFactor = dpi / 96.0f;
+        scalingFactor = static_cast<float>(dpi) / 96.0f;
     }
     return true;
 }
