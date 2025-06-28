@@ -33,6 +33,7 @@
 #include <Utils/File/Logfile.hpp>
 #include <Utils/Events/EventManager.hpp>
 #include <Utils/Json/ConversionHelpers.hpp>
+#include <Graphics/Utils/HiDPI.hpp>
 #include <Graphics/Texture/Bitmap.hpp>
 #include "Input/GlfwKeyboard.hpp"
 #include "Input/GlfwMouse.hpp"
@@ -621,6 +622,7 @@ void GlfwWindow::onFramebufferSize(int width, int height) {
         }
     }
 #endif
+    updateHighDPIScaleFactor();
 }
 
 void GlfwWindow::onWindowContentScale(float xscale, float yscale) {

@@ -154,15 +154,17 @@ DLL_OBJECT GamepadInterface* Gamepad = nullptr;
 void setDPIAware() {
     bool minWin81 = IsWindows8Point1OrGreater();//IsWindowsVersionOrGreater(HIBYTE(0x0603), LOBYTE(0x0603), 0); // IsWindows8Point1OrGreater
     if (minWin81) {
+        typedef BOOL (__stdcall *SetProcessDpiAwareness_Function)();
         HMODULE library = LoadLibrary("User32.dll");
-        typedef BOOL (__stdcall *SetProcessDPIAware_Function)();
-        SetProcessDPIAware_Function setProcessDPIAware = (SetProcessDPIAware_Function)GetProcAddress(library, "SetProcessDPIAware");
-        setProcessDPIAware();
+        SetProcessDpiAwareness_Function setProcessDpiAwareness = (SetProcessDpiAwareness_Function)GetProcAddress(
+                library, "SetProcessDpiAwareness");
+        setProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
         FreeLibrary((HMODULE)library);
     } else {
         typedef BOOL (__stdcall *SetProcessDPIAware_Function)();
         HMODULE library = LoadLibrary("User32.dll");
-        SetProcessDPIAware_Function setProcessDPIAware = (SetProcessDPIAware_Function)GetProcAddress(library, "SetProcessDPIAware");
+        SetProcessDPIAware_Function setProcessDPIAware = (SetProcessDPIAware_Function)GetProcAddress(
+                library, "SetProcessDPIAware");
         setProcessDPIAware();
         FreeLibrary((HMODULE)library);
     }

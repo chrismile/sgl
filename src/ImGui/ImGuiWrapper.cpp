@@ -29,6 +29,7 @@
 #include <iostream>
 #include <Utils/AppSettings.hpp>
 #include <Utils/File/Logfile.hpp>
+#include <Utils/File/FileLoader.hpp>
 #include <Graphics/Utils/HiDPI.hpp>
 
 #include "imgui.h"
@@ -286,7 +287,6 @@ void ImGuiWrapper::initialize(
     backgroundClearColor = glm::vec4(windowBgColor.x, windowBgColor.y, windowBgColor.z, 1.0f);
 
     // Load fonts with specified range.
-    ImVector<ImWchar> fontRanges;
     ImFontGlyphRangesBuilder builder;
     builder.AddRanges(io.Fonts->GetGlyphRangesDefault());
     //builder.AddRanges(io.Fonts->GetGlyphRangesJapanese());
@@ -302,29 +302,51 @@ void ImGuiWrapper::initialize(
     // For support of more Unicode characters (e.g., also Japanese).
     //std::string fontFilename = sgl::AppSettings::get()->getDataDirectory() + "Fonts/DroidSansFallback.ttf";
     fontSizeNormal = 16.0f * fontScaleFactor;
-    fontNormal = io.Fonts->AddFontFromFileTTF(
-            fontFilename.c_str(), fontSizeNormal, nullptr, fontRanges.Data);
-    if (fontNormal == nullptr) {
+    if (!loadFileFromSource(fontFilename, fontTTFData, fontTTFDataSize, true)) {
         Logfile::get()->throwError(
                 "Error in ImGuiWrapper::initialize: Could not load font from file \"" + fontFilename + "\".");
+    }
+    fontConfig.FontDataOwnedByAtlas = false;
+    addFonts();
+}
+
+void ImGuiWrapper::addFonts() {
+    ImGuiIO &io = ImGui::GetIO();
+    float fontScaleFactor = uiScaleFactor;
+    //io.FontGlobalScale = fontScaleFactor*2.0f;
+
+    fontNormal = io.Fonts->AddFontFromMemoryTTF(
+            fontTTFData, int(fontTTFDataSize), fontSizeNormal, &fontConfig, fontRanges.Data);
+    if (fontNormal == nullptr) {
+        Logfile::get()->throwError("Error in ImGuiWrapper::initialize: Could not load font from memory.");
     }
 
     // Add icon font glyphs from https://github.com/aiekick/ImGuiFileDialog.
     static const ImWchar icons_ranges[] = { ICON_MIN_IGFD, ICON_MAX_IGFD, 0 };
-    ImFontConfig icons_config; icons_config.MergeMode = true; icons_config.PixelSnapH = true;
+    ImFontConfig icons_config;
+    icons_config.MergeMode = true;
+    icons_config.PixelSnapH = true;
     ImGui::GetIO().Fonts->AddFontFromMemoryCompressedBase85TTF(
-            FONT_ICON_BUFFER_NAME_IGFD, 15.0f,
+            FONT_ICON_BUFFER_NAME_IGFD, 15.0f * fontScaleFactor,
             &icons_config, icons_ranges);
 
     fontSizeSmall = 12.0f * fontScaleFactor;
-    fontSmall = io.Fonts->AddFontFromFileTTF(
-            fontFilename.c_str(), fontSizeSmall, nullptr, fontRanges.Data);
+    fontSmall = io.Fonts->AddFontFromMemoryTTF(
+            fontTTFData, int(fontTTFDataSize), fontSizeSmall, &fontConfig, fontRanges.Data);
     if (fontSmall == nullptr) {
-        Logfile::get()->throwError(
-                "Error in ImGuiWrapper::initialize: Could not load font from file \"" + fontFilename + "\".");
+        Logfile::get()->throwError("Error in ImGuiWrapper::initialize: Could not load font from memory.");
     }
 
     io.Fonts->Build();
+}
+
+void ImGuiWrapper::updateMainWindowScaleFactor(float mainWindowScaleFactor) {
+    uiScaleFactor = mainWindowScaleFactor * uiScaleFactor;
+    sizeScale = uiScaleFactor / defaultUiScaleFactor;
+
+    ImGuiIO &io = ImGui::GetIO();
+    io.Fonts->Clear();
+    addFonts();
 }
 
 void ImGuiWrapper::shutdown() {
@@ -376,6 +398,8 @@ void ImGuiWrapper::shutdown() {
 #endif
 
     ImGui::DestroyContext();
+    delete[] fontTTFData;
+    fontTTFData = nullptr;
 }
 
 #ifdef SUPPORT_SDL

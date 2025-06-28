@@ -42,7 +42,11 @@
 #include <Utils/File/Logfile.hpp>
 #include <Graphics/Window.hpp>
 
-#if defined(SUPPORT_SDL)
+#ifndef DISABLE_IMGUI
+#include <ImGui/ImGuiWrapper.hpp>
+#endif
+
+#ifdef SUPPORT_SDL
 #include <SDL/SDLWindow.hpp>
 #endif
 
@@ -132,11 +136,20 @@ bool getScreenScalingX11(Display* display, float& scalingFactor) {
 namespace sgl
 {
 
-bool getScreenScalingWindows(float& scalingFactor) {
-    HDC hdcScreen = GetDC(nullptr); // HWND hWnd
-    int dpi = GetDeviceCaps(hdcScreen, LOGPIXELSX);
-    ReleaseDC(nullptr, hdcScreen);
-    scalingFactor = dpi / 96.0f;
+bool getScreenScalingWindows(HWND windowHandle, float& scalingFactor) {
+    static bool minWin81 = IsWindows8Point1OrGreater();//IsWindowsVersionOrGreater(HIBYTE(0x0603), LOBYTE(0x0603), 0); // IsWindows8Point1OrGreater
+    if (minWin81) {
+        int windowDpi = GetDpiForWindow(windowHandle);
+        if (windowDpi == 0) {
+            return false;
+        }
+        scalingFactor = windowDpi / 96.0f;
+    } else {
+        HDC hdcScreen = GetDC(nullptr); // HWND hWnd
+        int dpi = GetDeviceCaps(hdcScreen, LOGPIXELSX);
+        ReleaseDC(nullptr, hdcScreen);
+        scalingFactor = dpi / 96.0f;
+    }
     return true;
 }
 
@@ -186,7 +199,7 @@ float getHighDPIScaleFactor() {
                     break;
                 case SDL_SYSWM_WINDOWS:
 #if defined(SDL_VIDEO_DRIVER_WINDOWS)
-                    scaleFactorSetManually = getScreenScalingWindows(scaleFactorHiDPI);
+                    scaleFactorSetManually = getScreenScalingWindows(wminfo.info.win.window, scaleFactorHiDPI);
 #endif
                     break;
                 case SDL_SYSWM_WAYLAND:
@@ -215,14 +228,16 @@ float getHighDPIScaleFactor() {
         window->errorCheck();
         SDL_Window* sdlWindow = static_cast<sgl::SDLWindow*>(window)->getSDLWindow();
 #ifdef SDL_PLATFORM_LINUX
-    if (SDL_strcmp(SDL_GetCurrentVideoDriver(), "x11") == 0) {
-        auto* xdisplay = static_cast<Display*>(SDL_GetPointerProperty(
-                SDL_GetWindowProperties(sdlWindow), SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr));
-        scaleFactorSetManually = getScreenScalingX11(xdisplay, scaleFactorHiDPI);
-    }
+        if (SDL_strcmp(SDL_GetCurrentVideoDriver(), "x11") == 0) {
+            auto* xdisplay = static_cast<Display*>(SDL_GetPointerProperty(
+                    SDL_GetWindowProperties(sdlWindow), SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr));
+            scaleFactorSetManually = getScreenScalingX11(xdisplay, scaleFactorHiDPI);
+        }
 #endif
 #ifdef SDL_PLATFORM_WIN32
-        scaleFactorSetManually = getScreenScalingWindows(scaleFactorHiDPI);
+        auto* windowHandle = static_cast<HWND*>(SDL_GetPointerProperty(
+               SDL_GetWindowProperties(sdlWindow), SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr));
+        scaleFactorSetManually = getScreenScalingWindows(windowHandle, scaleFactorHiDPI);
 #endif
 #ifdef __linux__
         isWayland = SDL_strcmp(SDL_GetCurrentVideoDriver(), "wayland") == 0;
@@ -249,7 +264,8 @@ float getHighDPIScaleFactor() {
 #endif
 #ifdef GLFW_EXPOSE_NATIVE_WIN32
         if (glfwPlatform == GLFW_PLATFORM_WIN32) {
-            scaleFactorSetManually = getScreenScalingWindows(scaleFactorHiDPI);
+            HWND windowHandle = glfwGetWin32Window();
+            scaleFactorSetManually = getScreenScalingWindows(windowHandle, scaleFactorHiDPI);
         }
 #endif
 #ifdef GLFW_EXPOSE_NATIVE_WAYLAND
@@ -269,7 +285,8 @@ float getHighDPIScaleFactor() {
         Display* x11_display = glfwGetX11Display();
         scaleFactorSetManually = getScreenScalingX11(x11_display, scaleFactorHiDPI);
 #elif defined(_WIN32)
-        scaleFactorSetManually = getScreenScalingWindows(scaleFactorHiDPI);
+        HWND windowHandle = glfwGetWin32Window();
+        scaleFactorSetManually = getScreenScalingWindows(windowHandle, scaleFactorHiDPI);
 #elif defined(__APPLE__)
         isCocoa = true;
         allowHighDPI = true;
@@ -349,6 +366,20 @@ float getHighDPIScaleFactor() {
 void overwriteHighDPIScaleFactor(float scaleFactor) {
     scaleFactorRetrieved = true;
     scaleFactorHiDPI = scaleFactor;
+}
+
+void updateHighDPIScaleFactor() {
+    float scaleFactorOld = scaleFactorHiDPI;
+    scaleFactorRetrieved = false;
+    float scaleFactor = getHighDPIScaleFactor();
+    if (std::abs(scaleFactorOld - scaleFactor) < 0.01f) {
+        scaleFactorHiDPI = scaleFactorOld;
+    }
+#ifndef DISABLE_IMGUI
+    else {
+        sgl::ImGuiWrapper::get()->updateMainWindowScaleFactor(scaleFactor);
+    }
+#endif
 }
 
 }

@@ -90,6 +90,7 @@ public:
     void initialize(
             const ImWchar* fontRangesData = nullptr, bool useDocking = true, bool useMultiViewport = true,
             float uiScaleFactor = 1.0f);
+    void updateMainWindowScaleFactor(float mainWindowScaleFactor);
     void shutdown(); //< to be called by AppSettings
     [[nodiscard]] inline float getScaleFactor() const { return uiScaleFactor; } //< The UI high DPI scale factor.
     [[nodiscard]] inline float getSizeScale() const { return sizeScale; } //< The normalized UI high DPI scale factor.
@@ -169,10 +170,15 @@ public:
 #endif
 
 private:
-    float uiScaleFactor;
+    float uiScaleFactor = 1.0f;
     float defaultUiScaleFactor = 1.875f;
     float sizeScale = 1.0f;
 
+    void addFonts();
+    ImVector<ImWchar> fontRanges;
+    uint8_t* fontTTFData = nullptr;
+    size_t fontTTFDataSize = 0;
+    ImFontConfig fontConfig{};
     float fontSizeNormal = 0.0f;
     float fontSizeSmall = 0.0f;
     ImFont* fontNormal = nullptr;

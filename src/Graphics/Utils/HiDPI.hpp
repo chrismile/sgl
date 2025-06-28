@@ -47,6 +47,11 @@ DLL_OBJECT float getHighDPIScaleFactor();
  */
 DLL_OBJECT void overwriteHighDPIScaleFactor(float scaleFactor);
 
+/**
+ * Updates the internally used scaling factor.
+ */
+DLL_OBJECT void updateHighDPIScaleFactor();
+
 }
 
 #endif //SGL_HIDPI_HPP

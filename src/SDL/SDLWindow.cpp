@@ -44,6 +44,7 @@
 #include <Utils/File/ResourceBuffer.hpp>
 #include <Utils/File/ResourceManager.hpp>
 #include <Utils/Json/ConversionHelpers.hpp>
+#include <Graphics/Utils/HiDPI.hpp>
 #include <Graphics/Texture/Bitmap.hpp>
 
 #include "Input/SDLMouse.hpp"
@@ -617,7 +618,7 @@ bool SDLWindow::processEvents() {
                         || (renderSystem == RenderSystem::VULKAN && !windowSettings.useDownloadSwapchain)) {
                     SDL_GetWindowSizeInPixels(sdlWindow, &windowSettings.pixelWidth, &windowSettings.pixelHeight);
                 }
-#endif
+#endif // (defined(__APPLE__) || defined(__linux__)) && (defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN))
 #ifdef SUPPORT_WEBGPU
                 if (renderSystem == RenderSystem::WEBGPU) {
                     webgpu::Swapchain* swapchain = AppSettings::get()->getWebGPUSwapchain();
@@ -625,7 +626,7 @@ bool SDLWindow::processEvents() {
                         swapchain->recreateSwapchain();
                     }
                 }
-#endif
+#endif // SUPPORT_WEBGPU
                 if (renderSystem != RenderSystem::VULKAN) {
                     EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
                 }
@@ -636,7 +637,8 @@ bool SDLWindow::processEvents() {
                         swapchain->recreateSwapchain();
                     }
                 }
-#endif
+#endif // SUPPORT_VULKAN
+                updateHighDPIScaleFactor();
             }
             break;
       case SDL_WINDOWEVENT_CLOSE:
@@ -644,7 +646,7 @@ bool SDLWindow::processEvents() {
                running = false;
            }
            break;
-#else
+#else // !defined(SUPPORT_SDL3)
         case SDL_WINDOWEVENT:
             if (event.window.windowID == SDL_GetWindowID(sdlWindow)) {
                 switch (event.window.event) {
@@ -658,13 +660,13 @@ bool SDLWindow::processEvents() {
                         if (renderSystem == RenderSystem::OPENGL) {
                             SDL_GL_GetDrawableSize(sdlWindow, &windowSettings.pixelWidth, &windowSettings.pixelHeight);
                         }
-#endif
+#endif // SUPPORT_OPENGL
 #ifdef SUPPORT_VULKAN
                         if (renderSystem == RenderSystem::VULKAN && !windowSettings.useDownloadSwapchain) {
                             SDL_Vulkan_GetDrawableSize(sdlWindow, &windowSettings.pixelWidth, &windowSettings.pixelHeight);
                         }
-#endif
-#endif
+#endif // SUPPORT_VULKAN
+#endif // defined(__APPLE__) || defined(__linux__)
 #ifdef SUPPORT_WEBGPU
                         if (renderSystem == RenderSystem::WEBGPU) {
                             webgpu::Swapchain* swapchain = AppSettings::get()->getWebGPUSwapchain();
@@ -672,7 +674,7 @@ bool SDLWindow::processEvents() {
                                 swapchain->recreateSwapchain();
                             }
                         }
-#endif
+#endif // SUPPORT_WEBGPU
                         if (renderSystem != RenderSystem::VULKAN) {
                             EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
                         }
@@ -683,7 +685,8 @@ bool SDLWindow::processEvents() {
                                 swapchain->recreateSwapchain();
                             }
                         }
-#endif
+#endif // SUPPORT_VULKAN
+                        updateHighDPIScaleFactor();
                         break;
                     case SDL_WINDOWEVENT_CLOSE:
                         if (event.window.windowID == SDL_GetWindowID(sdlWindow)) {
@@ -693,7 +696,13 @@ bool SDLWindow::processEvents() {
                 }
             }
             break;
-#endif
+
+        case SDL_WINDOWEVENT_DISPLAY_CHANGED:
+            if (!usesX11Backend) {
+                updateHighDPIScaleFactor();
+            }
+            break;
+#endif // SUPPORT_SDL3
 
         case SDL_MOUSEWHEEL:
             sdlMouse->setScrollWheelValue(event.wheel.y);
