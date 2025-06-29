@@ -213,7 +213,6 @@ void AppLogic::runStep() {
 #endif
 
 #ifdef SUPPORT_WEBGPU
-    bool swapchainValid = true;
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::WEBGPU) {
         auto* swapchain = sgl::AppSettings::get()->getWebGPUSwapchain();
         if (swapchain) {

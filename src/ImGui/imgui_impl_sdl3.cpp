@@ -363,6 +363,7 @@ static ImGuiViewport* ImGui_ImplSDL3_GetViewportForWindowID(SDL_WindowID window_
     return ImGui::FindViewportByPlatformHandle((void*)(intptr_t)window_id);
 }
 
+// 2025-06-29 (Christoph Neuhauser): Fixed high DPI scaling.
 static void ImGui_ImplSDL3_GetWindowScaleEXT(SDL_Window* window, ImVec2* scale)
 {
     int w, h;
@@ -413,6 +414,8 @@ bool ImGui_ImplSDL3_ProcessEvent(const SDL_Event* event)
                 mouse_pos.y *= std::ceil(platform_io.Monitors[0].DpiScale);
             }
 #endif*/
+
+            // 2025-06-29 (Christoph Neuhauser): Fixed high DPI scaling.
             ImVec2 scale;
             ImGui_ImplSDL3_GetWindowScaleEXT(bd->Window, &scale);
             mouse_pos.x *= scale.x;
@@ -782,6 +785,8 @@ static void ImGui_ImplSDL3_UpdateMouseData()
                 mouse_y *= int(std::ceil(platform_io.Monitors[0].DpiScale));
             }
 #endif*/
+
+            // 2025-06-29 (Christoph Neuhauser): Fixed high DPI scaling.
             ImVec2 scale;
             ImGui_ImplSDL3_GetWindowScaleEXT(bd->Window, &scale);
             mouse_x *= scale.x;
@@ -999,13 +1004,14 @@ static void ImGui_ImplSDL3_UpdateMonitors()
 
 static void ImGui_ImplSDL3_GetWindowSizeAndFramebufferScale(SDL_Window* window, ImVec2* out_size, ImVec2* out_framebuffer_scale)
 {
+    // 2025-06-29 (Christoph Neuhauser): New code below using native resolution.
     int display_w, display_h;
     SDL_GetWindowSizeInPixels(window, &display_w, &display_h);
     if (out_size != nullptr)
         *out_size = ImVec2((float)display_w, (float)display_h);
     if (out_framebuffer_scale != nullptr)
         *out_framebuffer_scale = ImVec2(1.0f, 1.0f);
-    // TODO: Old code:
+    // 2025-06-29 (Christoph Neuhauser): Old code below.
     /*int w, h;
     int display_w, display_h;
     SDL_GetWindowSize(window, &w, &h);

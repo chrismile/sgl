@@ -477,6 +477,17 @@ void ImGui_ImplGlfw_WindowFocusCallback(GLFWwindow* window, int focused)
     io.AddFocusEvent(focused != 0);
 }
 
+// 2025-06-29 (Christoph Neuhauser): Fixed high DPI scaling.
+static void ImGui_ImplGlfw_GetWindowScaleEXT(GLFWwindow* window, ImVec2* scale)
+{
+    int w, h;
+    int display_w, display_h;
+    glfwGetWindowSize(window, &w, &h);
+    glfwGetFramebufferSize(window, &display_w, &display_h);
+    if (scale != nullptr)
+        *scale = (w > 0 && h > 0) ? ImVec2((float)display_w / w, (float)display_h / h) : ImVec2(1.0f, 1.0f);
+}
+
 void ImGui_ImplGlfw_CursorPosCallback(GLFWwindow* window, double x, double y)
 {
     ImGui_ImplGlfw_Data* bd = ImGui_ImplGlfw_GetBackendData();
@@ -491,6 +502,13 @@ void ImGui_ImplGlfw_CursorPosCallback(GLFWwindow* window, double x, double y)
         x += window_x;
         y += window_y;
     }
+
+    // 2025-06-29 (Christoph Neuhauser): Fixed high DPI scaling.
+    ImVec2 scale;
+    ImGui_ImplGlfw_GetWindowScaleEXT(bd->Window, &scale);
+    x *= scale.x;
+    y *= scale.y;
+
     io.AddMousePosEvent((float)x, (float)y);
     bd->LastValidMousePos = ImVec2((float)x, (float)y);
 }
@@ -820,6 +838,13 @@ static void ImGui_ImplGlfw_UpdateMouseData()
                     mouse_x += window_x;
                     mouse_y += window_y;
                 }
+
+                // 2025-06-29 (Christoph Neuhauser): Fixed high DPI scaling.
+                ImVec2 scale;
+                ImGui_ImplGlfw_GetWindowScaleEXT(bd->Window, &scale);
+                mouse_x *= scale.x;
+                mouse_y *= scale.y;
+
                 bd->LastValidMousePos = ImVec2((float)mouse_x, (float)mouse_y);
                 io.AddMousePosEvent((float)mouse_x, (float)mouse_y);
             }
@@ -976,14 +1001,22 @@ static void ImGui_ImplGlfw_UpdateMonitors()
 
 static void ImGui_ImplGlfw_GetWindowSizeAndFramebufferScale(GLFWwindow* window, ImVec2* out_size, ImVec2* out_framebuffer_scale)
 {
-    int w, h;
+    // 2025-06-29 (Christoph Neuhauser): New code below using native resolution.
+    int display_w, display_h;
+    glfwGetFramebufferSize(window, &display_w, &display_h);
+    if (out_size != nullptr)
+        *out_size = ImVec2((float)display_w, (float)display_h);
+    if (out_framebuffer_scale != nullptr)
+        *out_framebuffer_scale = ImVec2(1.0f, 1.0f);
+    // 2025-06-29 (Christoph Neuhauser): Old code below.
+    /*int w, h;
     int display_w, display_h;
     glfwGetWindowSize(window, &w, &h);
     glfwGetFramebufferSize(window, &display_w, &display_h);
     if (out_size != nullptr)
         *out_size = ImVec2((float)w, (float)h);
     if (out_framebuffer_scale != nullptr)
-        *out_framebuffer_scale = (w > 0 && h > 0) ? ImVec2((float)display_w / (float)w, (float)display_h / (float)h) : ImVec2(1.0f, 1.0f);
+        *out_framebuffer_scale = (w > 0 && h > 0) ? ImVec2((float)display_w / (float)w, (float)display_h / (float)h) : ImVec2(1.0f, 1.0f);*/
 }
 
 void ImGui_ImplGlfw_NewFrame()

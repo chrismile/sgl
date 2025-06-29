@@ -68,11 +68,13 @@
 #endif
 #endif // __EMSCRIPTEN__
 #include <GLFW/glfw3native.h>
+
+#ifdef _WIN32
+#include <GLFW/GlfwWindow.hpp>
+#endif
 #endif // SUPPORT_GLFW
 
 #include "HiDPI.hpp"
-
-#include "GLFW/GlfwWindow.hpp"
 
 #if defined(__linux__)
 #include <X11/Xlib.h>

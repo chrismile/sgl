@@ -341,6 +341,14 @@ void ImGuiWrapper::addFonts() {
 }
 
 void ImGuiWrapper::updateMainWindowScaleFactor(float mainWindowScaleFactor) {
+#ifdef SUPPORT_WEBGPU
+    RenderSystem renderSystem = sgl::AppSettings::get()->getRenderSystem();
+    if (renderSystem == RenderSystem::WEBGPU) {
+        // TODO: ImGui_ImplWGPU_CreateFontsTexture is not exported publicly yet.
+        return;
+    }
+#endif
+
     uiScaleFactor = mainWindowScaleFactor * uiScaleFactorUser;
     sizeScale = uiScaleFactor / defaultUiScaleFactor;
 
@@ -546,8 +554,8 @@ void ImGuiWrapper::renderStart() {
 #ifdef SUPPORT_WEBGPU
     if (renderSystem == RenderSystem::WEBGPU) {
         if (fontsChanged) {
-            // TODO: This function might not correctly destroy old data.
-            ImGui_ImplWGPU_CreateFontsTexture();
+            // TODO: This function might not correctly destroy old data and is not exported publicly.
+            //ImGui_ImplWGPU_CreateFontsTexture();
             fontsChanged = false;
         }
         ImGui_ImplWGPU_NewFrame();
