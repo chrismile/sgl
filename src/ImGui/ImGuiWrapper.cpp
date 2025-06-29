@@ -91,11 +91,11 @@ static void checkImGuiVkResult(VkResult result) {
 
 void ImGuiWrapper::initialize(
         const ImWchar* fontRangesData, bool useDocking, bool useMultiViewport, float uiScaleFactor) {
+    this->uiScaleFactorUser = uiScaleFactor;
     float scaleFactorHiDPI = getHighDPIScaleFactor();
     uiScaleFactor = scaleFactorHiDPI * uiScaleFactor;
     sizeScale = uiScaleFactor / defaultUiScaleFactor;
     this->uiScaleFactor = uiScaleFactor;
-    float fontScaleFactor = uiScaleFactor;
 
     // --- Code from here on partly taken from ImGui usage example ---
     // Setup Dear ImGui binding
@@ -301,7 +301,6 @@ void ImGuiWrapper::initialize(
     std::string fontFilename = sgl::AppSettings::get()->getDataDirectory() + "Fonts/DroidSans.ttf";
     // For support of more Unicode characters (e.g., also Japanese).
     //std::string fontFilename = sgl::AppSettings::get()->getDataDirectory() + "Fonts/DroidSansFallback.ttf";
-    fontSizeNormal = 16.0f * fontScaleFactor;
     if (!loadFileFromSource(fontFilename, fontTTFData, fontTTFDataSize, true)) {
         Logfile::get()->throwError(
                 "Error in ImGuiWrapper::initialize: Could not load font from file \"" + fontFilename + "\".");
@@ -315,6 +314,7 @@ void ImGuiWrapper::addFonts() {
     float fontScaleFactor = uiScaleFactor;
     //io.FontGlobalScale = fontScaleFactor*2.0f;
 
+    fontSizeNormal = 16.0f * fontScaleFactor;
     fontNormal = io.Fonts->AddFontFromMemoryTTF(
             fontTTFData, int(fontTTFDataSize), fontSizeNormal, &fontConfig, fontRanges.Data);
     if (fontNormal == nullptr) {
@@ -341,12 +341,13 @@ void ImGuiWrapper::addFonts() {
 }
 
 void ImGuiWrapper::updateMainWindowScaleFactor(float mainWindowScaleFactor) {
-    uiScaleFactor = mainWindowScaleFactor * uiScaleFactor;
+    uiScaleFactor = mainWindowScaleFactor * uiScaleFactorUser;
     sizeScale = uiScaleFactor / defaultUiScaleFactor;
 
     ImGuiIO &io = ImGui::GetIO();
     io.Fonts->Clear();
     addFonts();
+    fontsChanged = true;
 }
 
 void ImGuiWrapper::shutdown() {
@@ -521,16 +522,34 @@ void ImGuiWrapper::renderStart() {
     // Start the Dear ImGui frame
 #ifdef SUPPORT_OPENGL
     if (renderSystem == RenderSystem::OPENGL) {
+        if (fontsChanged) {
+            // ImGui docs say: "2024-06-28: OpenGL: ImGui_ImplOpenGL3_NewFrame() recreates font texture if it has been
+            // destroyed by ImGui_ImplOpenGL3_DestroyFontsTexture()."
+            ImGui_ImplOpenGL3_DestroyFontsTexture();
+            fontsChanged = false;
+        }
         ImGui_ImplOpenGL3_NewFrame();
     }
 #endif
 #ifdef SUPPORT_VULKAN
     if (renderSystem == RenderSystem::VULKAN) {
+        if (fontsChanged) {
+            /* ImGui docs say:
+             * "You can call ImGui_ImplVulkan_CreateFontsTexture() again to recreate the font atlas texture.
+             * Added ImGui_ImplVulkan_DestroyFontsTexture() but you probably never need to call this." */
+            ImGui_ImplVulkan_CreateFontsTexture();
+            fontsChanged = false;
+        }
         ImGui_ImplVulkan_NewFrame();
     }
 #endif
 #ifdef SUPPORT_WEBGPU
     if (renderSystem == RenderSystem::WEBGPU) {
+        if (fontsChanged) {
+            // TODO: This function might not correctly destroy old data.
+            ImGui_ImplWGPU_CreateFontsTexture();
+            fontsChanged = false;
+        }
         ImGui_ImplWGPU_NewFrame();
     }
 #endif

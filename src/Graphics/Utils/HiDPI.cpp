@@ -72,6 +72,8 @@
 
 #include "HiDPI.hpp"
 
+#include "GLFW/GlfwWindow.hpp"
+
 #if defined(__linux__)
 #include <X11/Xlib.h>
 #include <X11/Xresource.h>
@@ -273,7 +275,7 @@ float getHighDPIScaleFactor() {
 #endif
 #ifdef GLFW_EXPOSE_NATIVE_WIN32
         if (glfwPlatform == GLFW_PLATFORM_WIN32) {
-            HWND windowHandle = glfwGetWin32Window();
+            HWND windowHandle = glfwGetWin32Window(static_cast<sgl::GlfwWindow*>(window)->getGlfwWindow());
             scaleFactorSetManually = getScreenScalingWindows(windowHandle, scaleFactorHiDPI);
         }
 #endif
@@ -294,7 +296,7 @@ float getHighDPIScaleFactor() {
         Display* x11_display = glfwGetX11Display();
         scaleFactorSetManually = getScreenScalingX11(x11_display, scaleFactorHiDPI);
 #elif defined(_WIN32)
-        HWND windowHandle = glfwGetWin32Window();
+        HWND windowHandle = glfwGetWin32Window(static_cast<sgl::GlfwWindow*>(window)->getGlfwWindow());
         scaleFactorSetManually = getScreenScalingWindows(windowHandle, scaleFactorHiDPI);
 #elif defined(__APPLE__)
         isCocoa = true;

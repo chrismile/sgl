@@ -488,7 +488,9 @@ void GlfwWindow::setWindowVirtualSize(int width, int height) {
 
     glfwSetWindowSize(glfwWindow, windowSettings.width, windowSettings.height);
     if (renderSystem != RenderSystem::VULKAN) {
-        EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
+        if (windowSettings.pixelWidth != 0 && windowSettings.pixelHeight != 0) {
+            EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
+        }
     }
 #ifdef SUPPORT_VULKAN
     if (renderSystem == RenderSystem::VULKAN && !windowSettings.useDownloadSwapchain) {
@@ -513,7 +515,9 @@ void GlfwWindow::setWindowPixelSize(int width, int height) {
 
     glfwSetWindowSize(glfwWindow, windowSettings.width, windowSettings.height);
     if (renderSystem != RenderSystem::VULKAN) {
-        EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
+        if (windowSettings.pixelWidth != 0 && windowSettings.pixelHeight != 0) {
+            EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
+        }
     }
 #ifdef SUPPORT_VULKAN
     if (renderSystem == RenderSystem::VULKAN && !windowSettings.useDownloadSwapchain) {
@@ -612,7 +616,9 @@ void GlfwWindow::onFramebufferSize(int width, int height) {
     }
 #endif
     if (renderSystem != RenderSystem::VULKAN) {
-        EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
+        if (windowSettings.pixelWidth != 0 && windowSettings.pixelHeight != 0) {
+            EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
+        }
     }
 #ifdef SUPPORT_VULKAN
     else {
@@ -626,7 +632,7 @@ void GlfwWindow::onFramebufferSize(int width, int height) {
 }
 
 void GlfwWindow::onWindowContentScale(float xscale, float yscale) {
-    // TODO
+    updateHighDPIScaleFactor();
 }
 
 void GlfwWindow::setIsMaximized(bool isMaximized) {

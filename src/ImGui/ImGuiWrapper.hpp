@@ -171,10 +171,12 @@ public:
 
 private:
     float uiScaleFactor = 1.0f;
-    float defaultUiScaleFactor = 1.875f;
-    float sizeScale = 1.0f;
+    float uiScaleFactorUser = 1.0f; // Users may provide a base scale factor.
+    float defaultUiScaleFactor = 1.875f; // Default scale factor used when initially building sgl (legacy).
+    float sizeScale = 1.0f; //
 
     void addFonts();
+    bool fontsChanged = false;
     ImVector<ImWchar> fontRanges;
     uint8_t* fontTTFData = nullptr;
     size_t fontTTFDataSize = 0;

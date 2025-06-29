@@ -311,6 +311,7 @@ private:
 
 #ifdef _WIN32
     HMODULE user32Module{};
+    HMODULE shcoreModule{};
 #endif
 
 #if defined(SUPPORT_OPENGL) || defined(SUPPORT_VULKAN)

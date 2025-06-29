@@ -363,6 +363,18 @@ static ImGuiViewport* ImGui_ImplSDL3_GetViewportForWindowID(SDL_WindowID window_
     return ImGui::FindViewportByPlatformHandle((void*)(intptr_t)window_id);
 }
 
+static void ImGui_ImplSDL3_GetWindowScaleEXT(SDL_Window* window, ImVec2* scale)
+{
+    int w, h;
+    int display_w, display_h;
+    SDL_GetWindowSize(window, &w, &h);
+    if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED)
+        w = h = 0;
+    SDL_GetWindowSizeInPixels(window, &display_w, &display_h);
+    if (scale != nullptr)
+        *scale = (w > 0 && h > 0) ? ImVec2((float)display_w / w, (float)display_h / h) : ImVec2(1.0f, 1.0f);
+}
+
 // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
 // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application, or clear/overwrite your copy of the mouse data.
 // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application, or clear/overwrite your copy of the keyboard data.
@@ -401,6 +413,11 @@ bool ImGui_ImplSDL3_ProcessEvent(const SDL_Event* event)
                 mouse_pos.y *= std::ceil(platform_io.Monitors[0].DpiScale);
             }
 #endif*/
+            ImVec2 scale;
+            ImGui_ImplSDL3_GetWindowScaleEXT(bd->Window, &scale);
+            mouse_pos.x *= scale.x;
+            mouse_pos.y *= scale.y;
+
             io.AddMousePosEvent(mouse_pos.x, mouse_pos.y);
             return true;
         }
@@ -765,6 +782,11 @@ static void ImGui_ImplSDL3_UpdateMouseData()
                 mouse_y *= int(std::ceil(platform_io.Monitors[0].DpiScale));
             }
 #endif*/
+            ImVec2 scale;
+            ImGui_ImplSDL3_GetWindowScaleEXT(bd->Window, &scale);
+            mouse_x *= scale.x;
+            mouse_y *= scale.y;
+
             io.AddMousePosEvent((float)mouse_x, (float)mouse_y);
         }
     }
@@ -977,7 +999,14 @@ static void ImGui_ImplSDL3_UpdateMonitors()
 
 static void ImGui_ImplSDL3_GetWindowSizeAndFramebufferScale(SDL_Window* window, ImVec2* out_size, ImVec2* out_framebuffer_scale)
 {
-    int w, h;
+    int display_w, display_h;
+    SDL_GetWindowSizeInPixels(window, &display_w, &display_h);
+    if (out_size != nullptr)
+        *out_size = ImVec2((float)display_w, (float)display_h);
+    if (out_framebuffer_scale != nullptr)
+        *out_framebuffer_scale = ImVec2(1.0f, 1.0f);
+    // TODO: Old code:
+    /*int w, h;
     int display_w, display_h;
     SDL_GetWindowSize(window, &w, &h);
     if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED)
@@ -986,7 +1015,7 @@ static void ImGui_ImplSDL3_GetWindowSizeAndFramebufferScale(SDL_Window* window, 
     if (out_size != nullptr)
         *out_size = ImVec2((float)w, (float)h);
     if (out_framebuffer_scale != nullptr)
-        *out_framebuffer_scale = (w > 0 && h > 0) ? ImVec2((float)display_w / w, (float)display_h / h) : ImVec2(1.0f, 1.0f);
+        *out_framebuffer_scale = (w > 0 && h > 0) ? ImVec2((float)display_w / w, (float)display_h / h) : ImVec2(1.0f, 1.0f);*/
 }
 
 void ImGui_ImplSDL3_NewFrame()

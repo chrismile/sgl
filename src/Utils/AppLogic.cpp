@@ -202,6 +202,16 @@ void AppLogic::runStep() {
     }
 #endif
 
+    bool swapchainValid = true;
+    (void)swapchainValid;
+
+#ifdef SUPPORT_OPENGL
+    // TODO: We could move this to SciVisApp.
+    if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::OPENGL) {
+        swapchainValid = window->getPixelWidth() > 0 && window->getPixelHeight() > 0;
+    }
+#endif
+
 #ifdef SUPPORT_WEBGPU
     bool swapchainValid = true;
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::WEBGPU) {
@@ -215,13 +225,9 @@ void AppLogic::runStep() {
     }
 #endif
 
-#ifdef SUPPORT_WEBGPU
     if (swapchainValid) {
         render();
     }
-#else
-    render();
-#endif
 
 #ifdef SUPPORT_VULKAN
     if (sgl::AppSettings::get()->getRenderSystem() == RenderSystem::VULKAN) {

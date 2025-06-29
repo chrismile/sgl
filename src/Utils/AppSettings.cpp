@@ -153,18 +153,31 @@ DLL_OBJECT GamepadInterface* Gamepad = nullptr;
 
 #ifdef WIN32
 // Don't upscale window content on Windows with High-DPI settings
-void setDPIAware(HMODULE user32Module) {
-    bool minWin81 = IsWindows8Point1OrGreater();//IsWindowsVersionOrGreater(HIBYTE(0x0603), LOBYTE(0x0603), 0); // IsWindows8Point1OrGreater
-    if (minWin81) {
+void setDPIAware(HMODULE user32Module, HMODULE shcoreModule) {
+    bool minWin10Ver1703 = IsWindows10OrGreater();// IsWindowsVersionOrGreater(HIBYTE(0x0A00), LOBYTE(0x0A00), 0);
+    bool minWin81 = IsWindows8Point1OrGreater(); // == IsWindowsVersionOrGreater(HIBYTE(0x0603), LOBYTE(0x0603), 0);
+    if (minWin10Ver1703) {
+        // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setprocessdpiawarenesscontext
+        // https://learn.microsoft.com/en-us/windows/win32/hidpi/dpi-awareness-context
+        typedef BOOL (__stdcall *SetProcessDpiAwarenessContext_Function)(DPI_AWARENESS_CONTEXT value);
+        auto setProcessDpiAwarenessContext = reinterpret_cast<SetProcessDpiAwarenessContext_Function>(GetProcAddress(
+                user32Module, "SetProcessDpiAwarenessContext"));
+        if (!setProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)) {
+            minWin10Ver1703 = false;
+        }
+    }
+    if (!minWin10Ver1703 && minWin81) {
+        // https://learn.microsoft.com/en-us/windows/win32/api/shellscalingapi/nf-shellscalingapi-setprocessdpiawareness
         typedef HRESULT (__stdcall *SetProcessDpiAwareness_Function)(PROCESS_DPI_AWARENESS value);
         auto setProcessDpiAwareness = reinterpret_cast<SetProcessDpiAwareness_Function>(GetProcAddress(
-                user32Module, "SetProcessDpiAwareness"));
+                shcoreModule, "SetProcessDpiAwareness"));
         HRESULT res = setProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
         if (res != S_OK) {
             minWin81 = false;
         }
     }
-    if (!minWin81) {
+    if (!minWin10Ver1703 && !minWin81) {
+        // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setprocessdpiaware
         typedef BOOL (__stdcall *SetProcessDPIAware_Function)();
         auto setProcessDPIAware = reinterpret_cast<SetProcessDPIAware_Function>(GetProcAddress(
                 user32Module, "SetProcessDPIAware"));
@@ -330,7 +343,8 @@ Window* AppSettings::createWindow() {
     // Disable upscaling on Windows with High-DPI settings
 #ifdef _WIN32
     user32Module = LoadLibrary("User32.dll");
-    setDPIAware(user32Module);
+    shcoreModule = LoadLibrary("Shcore.dll");
+    setDPIAware(user32Module, shcoreModule);
     setWindowsLibraryHandles(user32Module);
 #endif
 
@@ -992,6 +1006,7 @@ void AppSettings::release() {
 #endif
 
 #ifdef _WIN32
+    FreeLibrary(shcoreModule);
     FreeLibrary(user32Module);
 #endif
 }

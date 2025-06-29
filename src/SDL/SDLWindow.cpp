@@ -488,7 +488,9 @@ void SDLWindow::setWindowVirtualSize(int width, int height) {
 #endif
     SDL_SetWindowSize(sdlWindow, windowSettings.width, windowSettings.height);
     if (renderSystem != RenderSystem::VULKAN) {
-        EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
+        if (windowSettings.pixelWidth != 0 && windowSettings.pixelHeight != 0) {
+            EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
+        }
     }
 #ifdef SUPPORT_VULKAN
     if (renderSystem == RenderSystem::VULKAN && !windowSettings.useDownloadSwapchain) {
@@ -535,7 +537,9 @@ void SDLWindow::setWindowPixelSize(int width, int height) {
 #endif
     SDL_SetWindowSize(sdlWindow, windowSettings.width, windowSettings.height);
     if (renderSystem != RenderSystem::VULKAN) {
-        EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
+        if (windowSettings.pixelWidth != 0 && windowSettings.pixelHeight != 0) {
+            EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
+        }
     }
 #ifdef SUPPORT_VULKAN
     if (renderSystem == RenderSystem::VULKAN && !windowSettings.useDownloadSwapchain) {
@@ -628,7 +632,9 @@ bool SDLWindow::processEvents() {
                 }
 #endif // SUPPORT_WEBGPU
                 if (renderSystem != RenderSystem::VULKAN) {
-                    EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
+                    if (windowSettings.pixelWidth != 0 && windowSettings.pixelHeight != 0) {
+                        EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
+                    }
                 }
 #ifdef SUPPORT_VULKAN
                 else {
@@ -641,6 +647,14 @@ bool SDLWindow::processEvents() {
                 updateHighDPIScaleFactor();
             }
             break;
+
+        case SDL_EVENT_WINDOW_DISPLAY_CHANGED:
+            // This seems to unfortunately not be handled by SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED.
+            if (!usesX11Backend) {
+                updateHighDPIScaleFactor();
+            }
+            break;
+
       case SDL_WINDOWEVENT_CLOSE:
            if (event.window.windowID == SDL_GetWindowID(sdlWindow)) {
                running = false;
@@ -676,7 +690,9 @@ bool SDLWindow::processEvents() {
                         }
 #endif // SUPPORT_WEBGPU
                         if (renderSystem != RenderSystem::VULKAN) {
-                            EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
+                            if (windowSettings.pixelWidth != 0 && windowSettings.pixelHeight != 0) {
+                                EventManager::get()->queueEvent(EventPtr(new Event(RESOLUTION_CHANGED_EVENT)));
+                            }
                         }
 #ifdef SUPPORT_VULKAN
                         else {
@@ -688,18 +704,17 @@ bool SDLWindow::processEvents() {
 #endif // SUPPORT_VULKAN
                         updateHighDPIScaleFactor();
                         break;
+                    case SDL_WINDOWEVENT_DISPLAY_CHANGED:
+                        if (!usesX11Backend) {
+                            updateHighDPIScaleFactor();
+                        }
+                        break;
                     case SDL_WINDOWEVENT_CLOSE:
                         if (event.window.windowID == SDL_GetWindowID(sdlWindow)) {
                             running = false;
                         }
                         break;
                 }
-            }
-            break;
-
-        case SDL_WINDOWEVENT_DISPLAY_CHANGED:
-            if (!usesX11Backend) {
-                updateHighDPIScaleFactor();
             }
             break;
 #endif // SUPPORT_SDL3
