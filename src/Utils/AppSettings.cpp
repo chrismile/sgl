@@ -341,7 +341,7 @@ Window* AppSettings::createWindow() {
     initializeDataDirectory();
 
     // Disable upscaling on Windows with High-DPI settings
-#ifdef _WIN32
+#if defined(_WIN32) && (defined(SUPPORT_SDL) || defined(SUPPORT_GLFW) || !defined(DISABLE_IMGUI))
     user32Module = LoadLibrary("User32.dll");
     shcoreModule = LoadLibrary("Shcore.dll");
     setDPIAware(user32Module, shcoreModule);
