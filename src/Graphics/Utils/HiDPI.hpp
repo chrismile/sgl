@@ -53,7 +53,7 @@ DLL_OBJECT void overwriteHighDPIScaleFactor(float scaleFactor);
 DLL_OBJECT void updateHighDPIScaleFactor();
 
 #ifdef _WIN32
-void setWindowsLibraryHandles(HMODULE user32Module);
+DLL_OBJECT void setWindowsLibraryHandles(HMODULE user32Module);
 #endif
 
 }
