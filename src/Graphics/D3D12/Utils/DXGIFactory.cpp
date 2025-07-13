@@ -30,6 +30,7 @@
 
 #ifdef SUPPORT_VULKAN
 #include <algorithm>
+#include <Graphics/Vulkan/Utils/Instance.hpp>
 #include <Graphics/Vulkan/Utils/Device.hpp>
 #endif
 
@@ -135,7 +136,8 @@ sgl::d3d12::DevicePtr DXGIFactory::createMatchingDevice(
             if (!featureLevelSupported) {
                 continue;
             }
-            return std::make_shared<sgl::d3d12::Device>(dxgiAdapter1, featureLevel);
+            return std::make_shared<sgl::d3d12::Device>(
+                    dxgiAdapter1, featureLevel, device->getInstance()->getUseValidationLayer());
         }
 
         sgl::Logfile::get()->writeInfo(

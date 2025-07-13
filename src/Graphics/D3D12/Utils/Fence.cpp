@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2024, Christoph Neuhauser
+ * Copyright (c) 2025, Christoph Neuhauser
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,28 +26,34 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_D3D12_RENDERER_HPP
-#define SGL_D3D12_RENDERER_HPP
-
-#include <array>
-#include "../Utils/d3d12.hpp"
+#include "Device.hpp"
+#include "Fence.hpp"
 
 namespace sgl { namespace d3d12 {
 
-class Device;
+Fence::Fence(Device* device, uint64_t value) {
+    auto* d3d12Device = device->getD3D12Device2Ptr();
+    ThrowIfFailed(d3d12Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)));
+}
 
-class DLL_OBJECT Renderer {
-public:
-    Renderer(Device* device, uint32_t numDescriptors = 1000);
-    ~Renderer();
+Fence::~Fence() {
+    if (fenceEvent) {
+        CloseHandle(fenceEvent);
+        fenceEvent = {};
+    }
+}
 
-private:
-    Device* device;
-
-    // Global descriptor heaps.
-    std::array<ComPtr<ID3D12DescriptorHeap>, size_t(D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES)> descriptorHeaps;
-};
+void Fence::waitOnCpu(uint64_t value) {
+    if (fence->GetCompletedValue() < value) {
+        if (!fenceEvent) {
+            fenceEvent = ::CreateEvent(nullptr, false, false, nullptr);
+            if (!fenceEvent) {
+                sgl::Logfile::get()->throwError("Could not create fence event.");
+            }
+        }
+        ThrowIfFailed(fence->SetEventOnCompletion(value, fenceEvent));
+        ::WaitForSingleObject(fenceEvent, INFINITE);
+    }
+}
 
 }}
-
-#endif //SGL_D3D12_RENDERER_HPP

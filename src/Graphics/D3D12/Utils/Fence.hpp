@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2024, Christoph Neuhauser
+ * Copyright (c) 2025, Christoph Neuhauser
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,35 +26,30 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_D3D12_HPP
-#define SGL_D3D12_HPP
+#ifndef SGL_FENCE_HPP
+#define SGL_FENCE_HPP
 
-#include <memory>
-#include <Utils/File/Logfile.hpp>
+#include "../Utils/d3d12.hpp"
 
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
+namespace sgl { namespace d3d12 {
 
-#if defined(min)
-#undef min
-#endif
+class Device;
 
-#if defined(max)
-#undef max
-#endif
+class DLL_OBJECT Fence {
+public:
+    Fence(Device* device, uint64_t value = 0);
+    ~Fence();
+    void waitOnCpu(uint64_t value);
 
-#include <wrl.h>
-using namespace Microsoft::WRL;
+    inline ID3D12Fence* getD3D12Fence() { return fence.Get(); }
 
-#include <d3d12.h>
-#include <dxgi1_6.h>
-#include <d3dcompiler.h>
-//#include <d3dx12.h>
+private:
+    Device* device;
 
-inline void ThrowIfFailed(HRESULT hr) {
-    if (FAILED(hr)) {
-        sgl::Logfile::get()->throwError("Error: D3D12 called failed.");
-    }
-}
+    ComPtr<ID3D12Fence> fence{};
+    HANDLE fenceEvent{};
+};
 
-#endif //SGL_D3D12_HPP
+}}
+
+#endif //SGL_FENCE_HPP

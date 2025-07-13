@@ -26,37 +26,123 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "../Device.hpp"
+#include "../Utils/Device.hpp"
 #include "Renderer.hpp"
+
+//#include <d3dx12.h>
 
 namespace sgl { namespace d3d12 {
 
 Renderer::Renderer(Device* device, uint32_t numDescriptors) : device(device) {
     auto* d3d12Device = device->getD3D12Device2Ptr();
 
-    D3D12_DESCRIPTOR_HEAP_DESC desc{};
-    desc.NumDescriptors = numDescriptors;
+    D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
+    descriptorHeapDesc.NumDescriptors = numDescriptors;
     for (int heapType = 0; heapType < int(D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES); heapType++) {
-        desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE(heapType);
-        ThrowIfFailed(d3d12Device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&descriptorHeaps[heapType])));
+        descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE(heapType);
+        ThrowIfFailed(d3d12Device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&descriptorHeaps[heapType])));
     }
 
-    /*ComPtr<ID3D12CommandQueue> d3d12CommandQueue;
-
-    D3D12_COMMAND_QUEUE_DESC desc{};
-    desc.Type = type;
-    desc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
-    desc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-    desc.NodeMask = 0;
-
-    ThrowIfFailed(device->CreateCommandQueue(&desc, IID_PPV_ARGS(&d3d12CommandQueue)));
+    ComPtr<ID3D12CommandQueue> commandQueue;
+    D3D12_COMMAND_QUEUE_DESC commandQueueDesc{};
+    commandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+    commandQueueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
+    commandQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE; // D3D12_COMMAND_QUEUE_FLAG_DISABLE_GPU_TIMEOUT
+    commandQueueDesc.NodeMask = 0;
+    ThrowIfFailed(d3d12Device->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&commandQueue)));
 
     ComPtr<ID3D12CommandAllocator> commandAllocator;
     ThrowIfFailed(d3d12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator)));
+    HANDLE fenceEvent;
+    fenceEvent = ::CreateEvent(nullptr, false, false, nullptr);
+    if (!fenceEvent) {
+        sgl::Logfile::get()->throwError("Could not create fence event.");
+    }
 
-    ComPtr<ID3D12CommandAllocator> commandAllocator;
-    ThrowIfFailed(d3d12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY, IID_PPV_ARGS(&commandAllocator)));*/
+    ComPtr<ID3D12GraphicsCommandList> commandList;
+    ThrowIfFailed(d3d12Device->CreateCommandList(
+            0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator.Get(), nullptr, IID_PPV_ARGS(&commandList)));
 
+    float clearColor[] = { 0.4f, 0.6f, 0.9f, 1.0f };
+    auto baseRtv = descriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_RTV]->GetCPUDescriptorHandleForHeapStart();
+    D3D12_CPU_DESCRIPTOR_HANDLE rtv;
+    UINT rtvDescIncrementSize = d3d12Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+    rtv.ptr = baseRtv.ptr + 0 * rtvDescIncrementSize;
+
+    D3D12_RESOURCE_BARRIER resourceBarrier{};
+    resourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    resourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+    resourceBarrier.Transition.pResource = nullptr;
+    resourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
+    resourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    commandList->ResourceBarrier(1, &resourceBarrier);
+    commandList->ClearRenderTargetView(rtv, clearColor, 0, nullptr);
+
+    commandList->Close();
+    ID3D12CommandList* const commandLists[] = {
+            commandList.Get()
+    };
+    commandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
+
+    ComPtr<ID3D12Fence> fence;
+    ThrowIfFailed(d3d12Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)));
+
+    uint64_t newFenceValue = 1;
+    commandQueue->Signal(fence.Get(), newFenceValue);
+
+    if (fence->GetCompletedValue() < 1) {
+        ThrowIfFailed(fence->SetEventOnCompletion(newFenceValue, fenceEvent));
+        ::WaitForSingleObject(fenceEvent, INFINITE);
+    }
+
+
+    commandAllocator->Reset();
+    commandList->Reset(commandAllocator.Get(), nullptr);
+
+
+    ComPtr<ID3D12Resource> destinationResource{};
+    ComPtr<ID3D12Resource> intermediateResource{};
+
+    size_t bufferSize = 1024;
+    auto* bufferData = new float[bufferSize];
+
+    D3D12_HEAP_PROPERTIES heapProperties{};
+    heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+    D3D12_RESOURCE_DESC bufferResourceDesc{};
+    bufferResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+    bufferResourceDesc.Width = bufferSize;
+    ThrowIfFailed(d3d12Device->CreateCommittedResource(
+            &heapProperties,
+            D3D12_HEAP_FLAG_NONE,
+            &bufferResourceDesc,
+            D3D12_RESOURCE_STATE_COMMON,
+            nullptr,
+            IID_PPV_ARGS(&destinationResource)));
+    heapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+    ThrowIfFailed(d3d12Device->CreateCommittedResource(
+            &heapProperties,
+            D3D12_HEAP_FLAG_NONE,
+            &bufferResourceDesc,
+            D3D12_RESOURCE_STATE_GENERIC_READ,
+            nullptr,
+            IID_PPV_ARGS(&intermediateResource)));
+
+    // TODO: https://github.com/microsoft/DirectX-Headers/blob/main/include/directx/d3dx12_resource_helpers.h
+    /*D3D12_SUBRESOURCE_DATA subresourceData = {};
+    subresourceData.pData = bufferData;
+    subresourceData.RowPitch = LONG_PTR(bufferSize);
+    subresourceData.SlicePitch = subresourceData.RowPitch;
+    UpdateSubresources(
+            commandList.Get(),
+            destinationResource.Get(), intermediateResource.Get(),
+            0, 0, 1, &subresourceData);*/
+    delete[] bufferData;
+
+    uint64_t resourceIdx = 0;
+    std::wstring sharedHandleNameString = std::wstring(L"Local\\D3D12ResourceHandle") + std::to_wstring(resourceIdx);
+    HANDLE resourceHandle{};
+    ThrowIfFailed(d3d12Device->CreateSharedHandle(
+            destinationResource.Get(), nullptr, GENERIC_ALL, sharedHandleNameString.data(), &resourceHandle));
 }
 
 Renderer::~Renderer() {

@@ -35,7 +35,7 @@ namespace sgl { namespace d3d12 {
 
 class DLL_OBJECT Device {
 public:
-    Device(const ComPtr<IDXGIAdapter1> &dxgiAdapter1, D3D_FEATURE_LEVEL featureLevel);
+    Device(const ComPtr<IDXGIAdapter1> &dxgiAdapter1, D3D_FEATURE_LEVEL featureLevel, bool useDebugLayer);
     D3D_FEATURE_LEVEL getFeatureLevel();
     bool getSupportsROVs();
     inline ID3D12Device2* getD3D12Device2Ptr() { return d3d12Device2.Get(); }

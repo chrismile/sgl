@@ -26,41 +26,35 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_D3D12_DXGIFACTORY_HPP
-#define SGL_D3D12_DXGIFACTORY_HPP
+#ifndef SGL_D3D12_HPP
+#define SGL_D3D12_HPP
 
-#include "d3d12.hpp"
+#include <memory>
+#include <Utils/File/Logfile.hpp>
 
-#ifdef SUPPORT_VULKAN
-namespace sgl { namespace vk {
-class Device;
-}}
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
+#if defined(min)
+#undef min
 #endif
 
-namespace sgl { namespace d3d12 {
-
-class Device;
-typedef std::shared_ptr<Device> DevicePtr;
-
-class DLL_OBJECT DXGIFactory {
-public:
-    DXGIFactory(bool useDebugInterface);
-    ~DXGIFactory();
-    void enumerateDevices();
-
-#ifdef SUPPORT_VULKAN
-    sgl::d3d12::DevicePtr createMatchingDevice(sgl::vk::Device* device, D3D_FEATURE_LEVEL minFeatureLevel);
-    // Selects the highest supported feature level of the provided set.
-    sgl::d3d12::DevicePtr createMatchingDevice(sgl::vk::Device* device, std::vector<D3D_FEATURE_LEVEL> featureLevels);
+#if defined(max)
+#undef max
 #endif
 
-private:
-    ComPtr<IDXGIFactory4> dxgiFactory;
-    ComPtr<ID3D12Debug> debugInterface;
-};
+#include <wrl.h>
+using namespace Microsoft::WRL;
 
-typedef std::shared_ptr<DXGIFactory> DXGIFactoryPtr;
+#include <d3d12.h>
+#include <dxgi1_6.h>
+#include <d3dcompiler.h>
+//#include <d3dx12.h>
 
-}}
+inline void ThrowIfFailed(HRESULT hr) {
+    if (FAILED(hr)) {
+        sgl::Logfile::get()->throwError("Error: D3D12 call failed.");
+    }
+}
 
-#endif //SGL_D3D12_DXGIFACTORY_HPP
+#endif //SGL_D3D12_HPP

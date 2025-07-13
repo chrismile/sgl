@@ -26,28 +26,41 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_D3D12_RENDERER_HPP
-#define SGL_D3D12_RENDERER_HPP
+#ifndef SGL_D3D12_DXGIFACTORY_HPP
+#define SGL_D3D12_DXGIFACTORY_HPP
 
-#include <array>
-#include "../Utils/d3d12.hpp"
+#include "d3d12.hpp"
+
+#ifdef SUPPORT_VULKAN
+namespace sgl { namespace vk {
+class Device;
+}}
+#endif
 
 namespace sgl { namespace d3d12 {
 
 class Device;
+typedef std::shared_ptr<Device> DevicePtr;
 
-class DLL_OBJECT Renderer {
+class DLL_OBJECT DXGIFactory {
 public:
-    Renderer(Device* device, uint32_t numDescriptors = 1000);
-    ~Renderer();
+    explicit DXGIFactory(bool useDebugInterface);
+    ~DXGIFactory();
+    void enumerateDevices();
+
+#ifdef SUPPORT_VULKAN
+    sgl::d3d12::DevicePtr createMatchingDevice(sgl::vk::Device* device, D3D_FEATURE_LEVEL minFeatureLevel);
+    // Selects the highest supported feature level of the provided set.
+    sgl::d3d12::DevicePtr createMatchingDevice(sgl::vk::Device* device, std::vector<D3D_FEATURE_LEVEL> featureLevels);
+#endif
 
 private:
-    Device* device;
-
-    // Global descriptor heaps.
-    std::array<ComPtr<ID3D12DescriptorHeap>, size_t(D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES)> descriptorHeaps;
+    ComPtr<IDXGIFactory4> dxgiFactory;
+    ComPtr<ID3D12Debug> debugInterface;
 };
+
+typedef std::shared_ptr<DXGIFactory> DXGIFactoryPtr;
 
 }}
 
-#endif //SGL_D3D12_RENDERER_HPP
+#endif //SGL_D3D12_DXGIFACTORY_HPP
