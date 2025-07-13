@@ -926,7 +926,11 @@ std::string convertVkFormatToString(VkFormat format) {
        return "VK_FORMAT_PVRTC2_4BPP_SRGB_BLOCK_IMG";
 #endif
 #ifdef VK_NV_optical_flow
+#if VK_HEADER_VERSION >= 282
     case VK_FORMAT_R16G16_SFIXED5_NV:
+#else
+    case VK_FORMAT_R16G16_S10_5_NV:
+#endif
        return "VK_FORMAT_R16G16_SFIXED5_NV";
 #endif
     default:
