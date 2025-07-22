@@ -1,3 +1,6 @@
 [submodule "submodules/tracy"]
 	path = submodules/tracy
 	url = https://github.com/wolfpld/tracy.git
+[submodule "submodules/DirectX-Headers"]
+	path = submodules/DirectX-Headers
+	url = https://github.com/microsoft/DirectX-Headers.git

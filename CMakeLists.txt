@@ -364,20 +364,22 @@ if (${SUPPORT_D3D12})
     # https://github.com/microsoft/vcpkg/tree/master/ports/directx-headers
     find_package(directx-headers CONFIG QUIET)
     if(NOT directx-headers_FOUND)
-        message(WARNING "DirectX-Headers not found. Disabling D3D12 support.")
-        set(SUPPORT_D3D12 OFF)
+        message(STATUS "DirectX-Headers package not found. Using headers from submodule/DirectX-Headers.")
+        set(USE_D3D_HEADERS_PACKAGE OFF)
     else()
         message(STATUS "Found DirectX-Headers version ${directx-headers_VERSION} at ${directx-headers_DIR}.")
+        set(USE_D3D_HEADERS_PACKAGE ON)
     endif()
     # https://github.com/Microsoft/DirectXShaderCompiler
     # https://github.com/microsoft/vcpkg/tree/master/ports/directx-dxc
     # https://packages.msys2.org/package/mingw-w64-x86_64-directx-headers?repo=mingw64
     find_package(directx-dxc CONFIG QUIET)
     if(NOT directx-dxc_FOUND)
-        message(WARNING "DirectX Shader Compiler not found. Disabling D3D12 support.")
-        set(SUPPORT_D3D12 OFF)
+        message(WARNING "DirectX Shader Compiler not found. Disabling D3D12 shader compilation support.")
+        set(SUPPORT_D3D_COMPILER OFF)
     else()
         message(STATUS "Found DirectX Shader Compiler version at ${directx-dxc_DIR}.")
+        set(SUPPORT_D3D_COMPILER ON)
     endif()
     # TODO: Support DirectX 12 Agility SDK?
     # https://devblogs.microsoft.com/directx/directx12agility/
@@ -1190,9 +1192,16 @@ if (${SUPPORT_D3D12})
             ole32.lib oleaut32.lib
             runtimeobject.lib
     )
-    target_link_libraries(sgl PRIVATE Microsoft::DirectX-Headers Microsoft::DirectX-Guids)
-    target_link_libraries(sgl PRIVATE Microsoft::DirectXShaderCompiler)
     target_compile_definitions(sgl PUBLIC SUPPORT_D3D12)
+    if (${USE_D3D_HEADERS_PACKAGE})
+        target_link_libraries(sgl PRIVATE Microsoft::DirectX-Headers Microsoft::DirectX-Guids)
+    else()
+        target_include_directories(sgl PRIVATE submodules/DirectX-Headers/include)
+    endif()
+    if (${SUPPORT_D3D_COMPILER})
+        target_link_libraries(sgl PRIVATE Microsoft::DirectXShaderCompiler)
+        target_compile_definitions(sgl PUBLIC SUPPORT_D3D_COMPILER)
+    endif()
 endif()
 
 if (DEFINED USE_CUDA)
