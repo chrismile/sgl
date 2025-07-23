@@ -114,6 +114,7 @@ DLL_OBJECT void setLevelZeroGlobalState(ze_device_handle_t zeDevice, ze_context_
 DLL_OBJECT void setLevelZeroGlobalCommandQueue(ze_command_queue_handle_t zeCommandQueue);
 DLL_OBJECT void setLevelZeroNextCommandEvents(
         ze_event_handle_t zeSignalEvent, uint32_t numWaitEvents, ze_event_handle_t* zeWaitEvents);
+DLL_OBJECT void setLevelZeroUseBindlessImagesInterop(bool useBindlessImages);
 #ifdef SUPPORT_SYCL_INTEROP
 DLL_OBJECT void setLevelZeroGlobalStateFromSyclQueue(sycl::queue& syclQueue);
 #endif
@@ -246,6 +247,7 @@ protected:
     VkImageViewType imageViewType;
     void* externalMemoryBuffer{}; // CUexternalMemory or hipExternalMemory_t or SyclExternalMemWrapper (external_mem)
     void* mipmappedArray{}; // CUmipmappedArray or hipMipmappedArray_t or ze_image_handle_t or SyclImageMemHandleWrapper (image_mem_handle)
+    void* devicePtr{}; // void* device pointer; only used by Level Zero bindless images.
 
     // Cache for storing the array for mipmap level 0.
     void* arrayLevel0{}; // CUarray or hipArray_t

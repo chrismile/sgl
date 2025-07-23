@@ -68,6 +68,7 @@ static ze_command_queue_handle_t g_zeCommandQueue = {};
 static ze_event_handle_t g_zeSignalEvent = {};
 static uint32_t g_numWaitEvents = 0;
 static ze_event_handle_t* g_zeWaitEvents = {};
+static bool g_useBindlessImagesInterop = {};
 #endif
 
 #ifdef SUPPORT_SYCL_INTEROP
@@ -87,6 +88,9 @@ void setLevelZeroNextCommandEvents(
     g_zeSignalEvent = zeSignalEvent;
     g_numWaitEvents = numWaitEvents;
     g_zeWaitEvents = zeWaitEvents;
+}
+void setLevelZeroUseBindlessImagesInterop(bool useBindlessImages) {
+    g_useBindlessImagesInterop = useBindlessImages;
 }
 #ifdef SUPPORT_SYCL_INTEROP
 void setLevelZeroGlobalStateFromSyclQueue(sycl::queue& syclQueue) {
@@ -1615,9 +1619,13 @@ void ImageComputeApiExternalMemoryVk::_initialize(
 #endif
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
     ze_image_desc_t zeImageDesc{};
-    zeImageDesc.stype = ZE_STRUCTURE_TYPE_IMAGE_DESC;
+    // Bindless images.
+    ze_device_mem_alloc_desc_t deviceMemAllocDesc{};
+    ze_image_pitched_exp_desc_t imagePitchedExpDesc{};
+    ze_image_bindless_exp_desc_t imageBindlessExpDesc{};
     //deviceMemAllocDesc.ordinal; // TODO: Necessary?
     if (useLevelZero) {
+        zeImageDesc.stype = ZE_STRUCTURE_TYPE_IMAGE_DESC;
         if (!g_zeDevice || !g_zeContext) {
             sgl::Logfile::get()->throwError(
                     "Error in ImageComputeApiExternalMemoryVk::ImageComputeApiExternalMemoryVk: "
@@ -1679,7 +1687,11 @@ void ImageComputeApiExternalMemoryVk::_initialize(
     if (useLevelZero) {
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
         externalMemoryImportWin32Handle.stype = ZE_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMPORT_WIN32;
-        zeImageDesc.pNext = &externalMemoryImportWin32Handle;
+        if (g_useBindlessImagesInterop) {
+            deviceMemAllocDesc.pNext = &externalMemoryImportWin32Handle;
+        } else {
+            zeImageDesc.pNext = &externalMemoryImportWin32Handle;
+        }
         externalMemoryImportWin32Handle.flags = ZE_EXTERNAL_MEMORY_TYPE_FLAG_OPAQUE_WIN32;
         externalMemoryImportWin32Handle.handle = (void*)handle;
 #endif
@@ -1743,7 +1755,11 @@ void ImageComputeApiExternalMemoryVk::_initialize(
     if (useLevelZero) {
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
         externalMemoryImportFd.stype = ZE_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMPORT_FD;
-        zeImageDesc.pNext = &externalMemoryImportFd;
+        if (g_useBindlessImagesInterop) {
+            deviceMemAllocDesc.pNext = &externalMemoryImportFd;
+        } else {
+            zeImageDesc.pNext = &externalMemoryImportFd;
+        }
         externalMemoryImportFd.flags = ZE_EXTERNAL_MEMORY_TYPE_FLAG_OPAQUE_FD;
         externalMemoryImportFd.fd = fileDescriptor;
 #endif
@@ -1898,8 +1914,29 @@ void ImageComputeApiExternalMemoryVk::_initialize(
         }
         // ZE_IMAGE_FLAG_BIAS_UNCACHED currently unused here.
 
+        ze_result_t zeResult;
+        if (g_useBindlessImagesInterop) {
+            auto elementSizeInBytes = uint32_t(sgl::vk::getImageFormatEntryByteSize(imageSettings.format));
+            size_t rowPitch = 0;
+            zeResult = g_levelZeroFunctionTable.zeMemGetPitchFor2dImage(
+                   g_zeContext, g_zeDevice, imageSettings.width, imageSettings.height, elementSizeInBytes, &rowPitch);
+            checkZeResult(zeResult, "Error in zeMemGetPitchFor2dImage: ");
+            size_t memorySize = rowPitch * imageSettings.height;
+            deviceMemAllocDesc.stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC;
+            zeResult = g_levelZeroFunctionTable.zeMemAllocDevice(
+                    g_zeContext, &deviceMemAllocDesc, memorySize, 0, g_zeDevice, &devicePtr);
+            checkZeResult(zeResult, "Error in zeMemAllocDevice: ");
+
+            imagePitchedExpDesc.stype = ZE_STRUCTURE_TYPE_PITCHED_IMAGE_EXP_DESC;
+            imagePitchedExpDesc.ptr = devicePtr;
+            imageBindlessExpDesc.stype = ZE_STRUCTURE_TYPE_BINDLESS_IMAGE_EXP_DESC;
+            imageBindlessExpDesc.flags = ZE_IMAGE_BINDLESS_EXP_FLAG_BINDLESS;
+            imageBindlessExpDesc.pNext = &imagePitchedExpDesc;
+            zeImageDesc.pNext = &imageBindlessExpDesc;
+        }
+
         ze_image_handle_t imageHandle{};
-        ze_result_t zeResult = g_levelZeroFunctionTable.zeImageCreate(
+        zeResult = g_levelZeroFunctionTable.zeImageCreate(
                 g_zeContext, g_zeDevice, &zeImageDesc, &imageHandle);
         if (zeResult == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
             if (openMessageBoxOnComputeApiError) {
@@ -2122,6 +2159,10 @@ ImageComputeApiExternalMemoryVk::~ImageComputeApiExternalMemoryVk() {
         auto imageHandle = reinterpret_cast<ze_image_handle_t>(mipmappedArray);
         ze_result_t zeResult = g_levelZeroFunctionTable.zeImageDestroy(imageHandle);
         checkZeResult(zeResult, "Error in zeImageDestroy: ");
+        if (g_useBindlessImagesInterop) {
+            zeResult = g_levelZeroFunctionTable.zeMemFree(g_zeContext, devicePtr);
+            checkZeResult(zeResult, "Error in zeMemFree: ");
+        }
 #endif
     } else if (useSycl) {
 #ifdef SUPPORT_SYCL_INTEROP

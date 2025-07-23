@@ -362,6 +362,7 @@ endif()
 if (${SUPPORT_D3D12})
     # https://github.com/microsoft/DirectX-Headers
     # https://github.com/microsoft/vcpkg/tree/master/ports/directx-headers
+    # https://packages.msys2.org/packages/mingw-w64-ucrt-x86_64-directx-headers
     find_package(directx-headers CONFIG QUIET)
     if(NOT directx-headers_FOUND)
         message(STATUS "DirectX-Headers package not found. Using headers from submodule/DirectX-Headers.")

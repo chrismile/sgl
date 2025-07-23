@@ -669,6 +669,36 @@ bool initializeLevelZeroAndFindMatchingDevice(
 }
 
 
+bool queryLevelZeroDriverSupportsExtension(ze_driver_handle_t zeDriver, const char* extensionName) {
+    ze_result_t zeResult;
+    uint32_t extensionCount = 0;
+    zeResult = g_levelZeroFunctionTable.zeDriverGetExtensionProperties(
+            zeDriver, &extensionCount, nullptr);
+    checkZeResult(zeResult, "Error in zeDriverGetExtensionProperties: ");
+    auto* extensionPropertiesList = new ze_driver_extension_properties_t[extensionCount];
+    zeResult = g_levelZeroFunctionTable.zeDriverGetExtensionProperties(
+            zeDriver, &extensionCount, extensionPropertiesList);
+    checkZeResult(zeResult, "Error in zeDriverGetExtensionProperties: ");
+    bool foundExtension = false;
+    for (uint32_t extIdx = 0; extIdx < extensionCount; extIdx++) {
+        if (strcmp(extensionPropertiesList[extIdx].name, extensionName) == 0) {
+            foundExtension = true;
+            break;
+        }
+    }
+    delete[] extensionPropertiesList;
+    return foundExtension;
+}
+
+bool queryLevelZeroDriverSupportsExternalSemaphores(ze_driver_handle_t zeDriver) {
+    return queryLevelZeroDriverSupportsExtension(zeDriver, ZE_EXTERNAL_SEMAPHORES_EXTENSION_NAME);
+}
+
+bool queryLevelZeroDriverSupportsBindlessImages(ze_driver_handle_t zeDriver) {
+    return queryLevelZeroDriverSupportsExtension(zeDriver, ZE_BINDLESS_IMAGE_EXP_NAME);
+}
+
+
 static std::map<ze_result_t, std::string> zeErrorMap = {
         { ZE_RESULT_SUCCESS, "SUCCESS" },
         { ZE_RESULT_NOT_READY, "NOT_READY" },

@@ -310,6 +310,9 @@ DLL_OBJECT void freeLevelZeroFunctionTable();
 DLL_OBJECT bool initializeLevelZeroAndFindMatchingDevice(
         sgl::vk::Device* device, ze_driver_handle_t* zeDriver, ze_device_handle_t* zeDevice);
 
+DLL_OBJECT bool queryLevelZeroDriverSupportsExternalSemaphores(ze_driver_handle_t zeDriver);
+DLL_OBJECT bool queryLevelZeroDriverSupportsBindlessImages(ze_driver_handle_t zeDriver);
+
 #ifdef SUPPORT_SYCL_INTEROP
 // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/sycl_ext_oneapi_backend_level_zero.md
 DLL_OBJECT bool syclGetQueueManagesCommandList(sycl::queue& syclQueue);
