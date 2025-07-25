@@ -1076,6 +1076,10 @@ VkPhysicalDevice Device::createPhysicalDeviceBinding(
     return physicalDevice;
 }
 
+void Device::setAppWantsMultithreadedRendering() {
+    appWantsMultithreadedRendering = true;
+}
+
 void Device::createLogicalDeviceAndQueues(
         VkPhysicalDevice physicalDevice, bool useValidationLayer, const std::vector<const char*>& layerNames,
         const std::vector<const char*>& deviceExtensions, const std::set<std::string>& deviceExtensionsSet,
@@ -1120,8 +1124,10 @@ void Device::createLogicalDeviceAndQueues(
     }
 
     if (!computeOnly && queueFamilyProperties.at(graphicsQueueIndex).queueCount < graphicsQueueInfo.queueCount) {
-        sgl::Logfile::get()->writeInfo(
-                "Warning: The used Vulkan driver does not support enough queues for multi-threaded rendering.");
+        if (appWantsMultithreadedRendering) {
+            sgl::Logfile::get()->writeInfo(
+                    "Warning: The used Vulkan driver does not support enough queues for multi-threaded rendering.");
+        }
         graphicsQueueInfo.queueCount = std::min(
                 queueFamilyProperties.at(graphicsQueueIndex).queueCount, graphicsQueueInfo.queueCount);
     }

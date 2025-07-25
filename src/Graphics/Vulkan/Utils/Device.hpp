@@ -378,6 +378,13 @@ public:
     inline void waitGraphicsQueueIdle() { waitQueueIdle(graphicsQueue); }
     inline void waitComputeQueueIdle() { waitQueueIdle(computeQueue); }
     inline void waitWorkerThreadGraphicsQueueIdle() { waitQueueIdle(workerThreadGraphicsQueue); }
+    /*
+     * Some vendors (e.g., Intel) provide only one graphics queue, thus does not support multi-threaded rendering
+     * without adding a lock around the queue. The app can tell sgl if it wants to use multiple queues.
+     * If this is not called, sgl may only allocate a single graphics queue. Using this function does NOT mean that GPUs
+     * with a single graphics queue fail during device creation!
+     */
+    void setAppWantsMultithreadedRendering();
 
     /// Returns whether the device extension is supported.
     bool isDeviceExtensionSupported(const std::string& name);
@@ -883,6 +890,7 @@ private:
     bool isInitializedDeviceShaderCoreProperties2AMD = false;
 
     // Queues for the logical device.
+    bool appWantsMultithreadedRendering = false;
     std::vector<VkQueueFamilyProperties> queueFamilyProperties;
     uint32_t graphicsQueueIndex = 0;
     uint32_t computeQueueIndex = 0;

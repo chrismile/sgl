@@ -63,6 +63,7 @@ public:
 
     // --- For timeline semaphores. ---
     void waitSemaphoreVk(uint64_t timelineValue);
+    bool waitSemaphoreVk(uint64_t timelineValue, uint64_t timeoutNs);
     void signalSemaphoreVk(uint64_t timelineValue);
     uint64_t getSemaphoreCounterValue();
     [[nodiscard]] inline uint64_t getWaitSemaphoreValue() const { return waitSemaphoreValue; }

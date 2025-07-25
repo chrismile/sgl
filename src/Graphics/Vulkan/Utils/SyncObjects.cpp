@@ -98,7 +98,28 @@ void Semaphore::waitSemaphoreVk(uint64_t timelineValue) {
     semaphoreWaitInfo.semaphoreCount = 1;
     semaphoreWaitInfo.pSemaphores = &semaphoreVk;
     semaphoreWaitInfo.pValues = &timelineValue;
-    vkWaitSemaphores(device->getVkDevice(), &semaphoreWaitInfo, 0);
+    VkResult result = vkWaitSemaphores(device->getVkDevice(), &semaphoreWaitInfo, UINT64_MAX);
+    if (result == VK_TIMEOUT) {
+        sgl::Logfile::get()->throwError(
+            "Error in Semaphore::signalSemaphoreVk: vkSignalSemaphore returned timeout for UINT64_MAX!");
+    } else if (result != VK_SUCCESS) {
+        sgl::Logfile::get()->throwError("Error in Semaphore::signalSemaphoreVk: vkSignalSemaphore failed!");
+    }
+}
+
+bool Semaphore::waitSemaphoreVk(uint64_t timelineValue, uint64_t timeoutNs) {
+    VkSemaphoreWaitInfo semaphoreWaitInfo = {};
+    semaphoreWaitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
+    semaphoreWaitInfo.semaphoreCount = 1;
+    semaphoreWaitInfo.pSemaphores = &semaphoreVk;
+    semaphoreWaitInfo.pValues = &timelineValue;
+    VkResult result = vkWaitSemaphores(device->getVkDevice(), &semaphoreWaitInfo, timeoutNs);
+    if (result == VK_TIMEOUT) {
+        return false;
+    } else if (result != VK_SUCCESS) {
+        sgl::Logfile::get()->throwError("Error in Semaphore::signalSemaphoreVk: vkSignalSemaphore failed!");
+    }
+    return true;
 }
 
 void Semaphore::signalSemaphoreVk(uint64_t timelineValue) {
@@ -106,7 +127,10 @@ void Semaphore::signalSemaphoreVk(uint64_t timelineValue) {
     semaphoreSignalInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO;
     semaphoreSignalInfo.semaphore = semaphoreVk;
     semaphoreSignalInfo.value = timelineValue;
-    vkSignalSemaphore(device->getVkDevice(), &semaphoreSignalInfo);
+    VkResult result = vkSignalSemaphore(device->getVkDevice(), &semaphoreSignalInfo);
+    if (result != VK_SUCCESS) {
+        sgl::Logfile::get()->throwError("Error in Semaphore::signalSemaphoreVk: vkSignalSemaphore failed!");
+    }
 }
 
 uint64_t Semaphore::getSemaphoreCounterValue() {
