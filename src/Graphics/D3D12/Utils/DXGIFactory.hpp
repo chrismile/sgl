@@ -29,6 +29,9 @@
 #ifndef SGL_D3D12_DXGIFACTORY_HPP
 #define SGL_D3D12_DXGIFACTORY_HPP
 
+#include <functional>
+#include <cstdint>
+
 #include "d3d12.hpp"
 
 #ifdef SUPPORT_VULKAN
@@ -48,6 +51,28 @@ public:
     ~DXGIFactory();
     void enumerateDevices();
 
+    /**
+     * Creates a device based on the suitability of individual adapters.
+     * The user-provided callback can return one of the following values:
+     * - 0 if the adapter is not suitable.
+     * - A positive value indicating the suitability of the adapter.
+     * @param adapterSuitabilityCallback The user-provided callback returning the suitability of an adapter.
+     * @param useDebugLayer Whether to use the debug layer.
+     * @param featureLevel The feature level to use.
+     * @return A device object created for the most suitable adapter or a null pointer if no suitable adapter was found.
+     */
+    sgl::d3d12::DevicePtr createDeviceMostSuitable(
+            const std::function<uint32_t(const ComPtr<IDXGIAdapter1>& dxgiAdapter1)>& adapterSuitabilityCallback,
+            D3D_FEATURE_LEVEL featureLevel);
+
+    /// Specialization of @see createDeviceMostSuitable returning the first device with the minimum feature level.
+    sgl::d3d12::DevicePtr createDeviceAny(D3D_FEATURE_LEVEL featureLevel);
+    /**
+     * Specialization of @see createDeviceMostSuitable returning the first device with the minimum feature level.
+     * Prefers dedicated devices if possible.
+     */
+    sgl::d3d12::DevicePtr createDevicePreferDedicated(D3D_FEATURE_LEVEL featureLevel);
+
 #ifdef SUPPORT_VULKAN
     sgl::d3d12::DevicePtr createMatchingDevice(sgl::vk::Device* device, D3D_FEATURE_LEVEL minFeatureLevel);
     // Selects the highest supported feature level of the provided set.
@@ -57,6 +82,7 @@ public:
 private:
     ComPtr<IDXGIFactory4> dxgiFactory;
     ComPtr<ID3D12Debug> debugInterface;
+    bool useDebugInterface;
 };
 
 typedef std::shared_ptr<DXGIFactory> DXGIFactoryPtr;

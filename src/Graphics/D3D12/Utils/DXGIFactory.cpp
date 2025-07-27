@@ -26,6 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <algorithm>
+
 #include <Utils/StringUtils.hpp>
 
 #ifdef SUPPORT_VULKAN
@@ -39,7 +41,7 @@
 
 namespace sgl { namespace d3d12 {
 
-DXGIFactory::DXGIFactory(bool useDebugInterface) {
+DXGIFactory::DXGIFactory(bool useDebugInterface) : useDebugInterface(useDebugInterface) {
     UINT createFactoryFlags = 0;
     if (useDebugInterface) {
         ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&debugInterface)));
@@ -92,6 +94,52 @@ void DXGIFactory::enumerateDevices() {
         sgl::Logfile::get()->writeInfo("- D3D_FEATURE_LEVEL_12_2: " + std::to_string(feature12_2));
         sgl::Logfile::get()->writeInfo("");
     }
+}
+
+sgl::d3d12::DevicePtr DXGIFactory::createDeviceMostSuitable(
+        const std::function<uint32_t(const ComPtr<IDXGIAdapter1>& dxgiAdapter1)>& adapterSuitabilityCallback,
+        D3D_FEATURE_LEVEL featureLevel) {
+    typedef std::pair<uint32_t, ComPtr<IDXGIAdapter1>> AdapterEntry;
+    ComPtr<IDXGIAdapter1> dxgiAdapter1;
+    std::vector<AdapterEntry> adapterList;
+    for (UINT adapterIdx = 0; dxgiFactory->EnumAdapters1(adapterIdx, &dxgiAdapter1) != DXGI_ERROR_NOT_FOUND; ++adapterIdx) {
+        bool supportsFeatureLevel = SUCCEEDED(D3D12CreateDevice(dxgiAdapter1.Get(), featureLevel, __uuidof(ID3D12Device), nullptr));
+        if (!supportsFeatureLevel) {
+            continue;
+        }
+        uint32_t adapterSuitability = adapterSuitabilityCallback(dxgiAdapter1);
+        if (adapterSuitability == 0) {
+            continue;
+        }
+        adapterList.emplace_back(adapterSuitability, dxgiAdapter1);
+    }
+    if (adapterList.empty()) {
+        sgl::Logfile::get()->writeInfo(
+                "DXGIFactory::createDeviceMostSuitable: No suitable device found.");
+        return {};
+    }
+    std::stable_sort(adapterList.begin(), adapterList.end(), [](const AdapterEntry& lhs, const AdapterEntry& rhs) {
+        return lhs.first > rhs.first;
+    });
+    dxgiAdapter1 = adapterList.front().second;
+    return std::make_shared<sgl::d3d12::Device>(dxgiAdapter1, featureLevel, useDebugInterface);
+}
+
+sgl::d3d12::DevicePtr DXGIFactory::createDeviceAny(D3D_FEATURE_LEVEL featureLevel) {
+    return createDeviceMostSuitable([](const ComPtr<IDXGIAdapter1>& dxgiAdapter1) -> uint32_t {
+        DXGI_ADAPTER_DESC1 dxgiAdapterDesc1;
+        dxgiAdapter1->GetDesc1(&dxgiAdapterDesc1);
+        if ((dxgiAdapterDesc1.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) != 0) {
+            return 1;
+        }
+        return 2;
+    }, featureLevel);
+}
+
+sgl::d3d12::DevicePtr DXGIFactory::createDevicePreferDedicated(D3D_FEATURE_LEVEL featureLevel) {
+    sgl::Logfile::get()->writeInfo(
+            "DXGIFactory::createDevicePreferDedicated: Not implemented yet. Falling back to createDeviceAny.");
+    return createDeviceAny(featureLevel);
 }
 
 #ifdef SUPPORT_VULKAN

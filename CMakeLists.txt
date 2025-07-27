@@ -1198,9 +1198,17 @@ if (${SUPPORT_D3D12})
     )
     target_compile_definitions(sgl PUBLIC SUPPORT_D3D12)
     if (${USE_D3D_HEADERS_PACKAGE})
-        target_link_libraries(sgl PRIVATE Microsoft::DirectX-Headers Microsoft::DirectX-Guids)
+        target_link_libraries(sgl PUBLIC Microsoft::DirectX-Headers Microsoft::DirectX-Guids)
     else()
-        target_include_directories(sgl PRIVATE submodules/DirectX-Headers/include)
+        target_include_directories(sgl PUBLIC
+                $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/submodules/DirectX-Headers/include>
+                $<INSTALL_INTERFACE:include/sgl> # <prefix>/include/sgl
+        )
+        install(
+                DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/submodules/DirectX-Headers/include/"
+                DESTINATION include/sgl
+                FILES_MATCHING PATTERN "*.h*" PATTERN "*.inl"
+        )
     endif()
     if (${SUPPORT_D3D_COMPILER})
         target_link_libraries(sgl PRIVATE Microsoft::DirectXShaderCompiler)
@@ -1535,14 +1543,22 @@ endif()
 
 # Unit tests.
 if (${USE_GTEST})
+    find_package(GTest REQUIRED)
     include(GoogleTest)
     enable_testing()
     file(GLOB_RECURSE TEST_SOURCES tests/*.cpp tests/*.c tests/*.hpp tests/*.h)
+    if (NOT WIN32 OR NOT ${SUPPORT_D3D12})
+        list(REMOVE_ITEM TEST_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/tests/D3D12/TestD3D12.cpp)
+    endif()
     add_executable(sgl_test ${TEST_SOURCES})
     target_link_libraries(sgl_test PRIVATE gtest gtest_main)
     target_link_libraries(sgl_test PRIVATE sgl)
     target_include_directories(sgl_test PRIVATE ${sgl_INCLUDES})
-    gtest_add_tests(TARGET sgl_test)
+    # https://cmake.org/cmake/help/latest/module/GoogleTest.html
+    # gtest_discover_tests does not need rerunning CMake when changing tests, but does not work in cross-compilation
+    # environments.
+    gtest_discover_tests(sgl_test)
+    #gtest_add_tests(TARGET sgl_test)
 endif()
 
 
