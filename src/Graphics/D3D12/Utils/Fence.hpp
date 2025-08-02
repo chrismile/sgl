@@ -37,9 +37,10 @@ class Device;
 
 class DLL_OBJECT Fence {
 public:
-    Fence(Device* device, uint64_t value = 0);
+    explicit Fence(Device* device, uint64_t value = 0);
     ~Fence();
     void waitOnCpu(uint64_t value);
+    void waitOnCpu(uint64_t value, DWORD timeoutMs);
 
     inline ID3D12Fence* getD3D12Fence() { return fence.Get(); }
 

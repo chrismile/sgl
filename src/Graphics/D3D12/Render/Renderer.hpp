@@ -38,7 +38,7 @@ class Device;
 
 class DLL_OBJECT Renderer {
 public:
-    Renderer(Device* device, uint32_t numDescriptors = 1000);
+    explicit Renderer(Device* device, uint32_t numDescriptors = 1000);
     ~Renderer();
 
 private:

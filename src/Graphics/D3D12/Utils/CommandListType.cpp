@@ -1,5 +1,5 @@
 /*
- * BSD 2-Clause License
+* BSD 2-Clause License
  *
  * Copyright (c) 2025, Christoph Neuhauser
  * All rights reserved.
@@ -26,26 +26,17 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <gtest/gtest.h>
+#include "CommandListType.hpp"
 
-#include <Utils/File/Logfile.hpp>
+namespace sgl { namespace d3d12 {
 
-#include <Graphics/D3D12/Utils/DXGIFactory.hpp>
-#include <Graphics/D3D12/Utils/Device.hpp>
-
-class D3D12Test : public ::testing::Test {
-protected:
-    explicit D3D12Test() {}
-    void SetUp() override {
-        sgl::Logfile::get()->createLogfile("Logfile.html", "D3D12Test");
+D3D12_COMMAND_LIST_TYPE getD3D12CommandListType(CommandListType commandListType) {
+    if (commandListType == CommandListType::DIRECT) {
+        return D3D12_COMMAND_LIST_TYPE_DIRECT;
+    } else if (commandListType == CommandListType::COMPUTE) {
+        return D3D12_COMMAND_LIST_TYPE_COMPUTE;
     }
-
-    void TearDown() override {
-    }
-};
-
-TEST_F(D3D12Test, SimpleTest) {
-    sgl::d3d12::DXGIFactoryPtr dxgiFactory = std::make_shared<sgl::d3d12::DXGIFactory>(true);
-    dxgiFactory->enumerateDevices();
-    sgl::d3d12::DevicePtr d3d12Device = dxgiFactory->createDeviceAny(D3D_FEATURE_LEVEL_12_0);
+    return D3D12_COMMAND_LIST_TYPE_DIRECT;
 }
+
+}}

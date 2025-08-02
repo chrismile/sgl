@@ -26,26 +26,17 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <gtest/gtest.h>
+#include "../Utils/Device.hpp"
+#include "CommandList.hpp"
 
-#include <Utils/File/Logfile.hpp>
+namespace sgl { namespace d3d12 {
 
-#include <Graphics/D3D12/Utils/DXGIFactory.hpp>
-#include <Graphics/D3D12/Utils/Device.hpp>
-
-class D3D12Test : public ::testing::Test {
-protected:
-    explicit D3D12Test() {}
-    void SetUp() override {
-        sgl::Logfile::get()->createLogfile("Logfile.html", "D3D12Test");
-    }
-
-    void TearDown() override {
-    }
-};
-
-TEST_F(D3D12Test, SimpleTest) {
-    sgl::d3d12::DXGIFactoryPtr dxgiFactory = std::make_shared<sgl::d3d12::DXGIFactory>(true);
-    dxgiFactory->enumerateDevices();
-    sgl::d3d12::DevicePtr d3d12Device = dxgiFactory->createDeviceAny(D3D_FEATURE_LEVEL_12_0);
+CommandList::CommandList(Device* device, CommandListType commandListType)
+        : device(device), commandListType(commandListType) {
+    auto* d3d12Device = device->getD3D12Device2Ptr();
+    ThrowIfFailed(d3d12Device->CreateCommandList(
+            0, getD3D12CommandListType(commandListType), device->getD3D12CommandAllocator(commandListType),
+            nullptr, IID_PPV_ARGS(&commandList)));
 }
+
+}}

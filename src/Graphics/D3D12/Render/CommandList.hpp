@@ -1,5 +1,5 @@
 /*
- * BSD 2-Clause License
+* BSD 2-Clause License
  *
  * Copyright (c) 2025, Christoph Neuhauser
  * All rights reserved.
@@ -26,26 +26,28 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <gtest/gtest.h>
+#ifndef COMMANDLIST_HPP
+#define COMMANDLIST_HPP
 
-#include <Utils/File/Logfile.hpp>
+#include "../Utils/d3d12.hpp"
+#include "../Utils/CommandListType.hpp"
 
-#include <Graphics/D3D12/Utils/DXGIFactory.hpp>
-#include <Graphics/D3D12/Utils/Device.hpp>
+namespace sgl { namespace d3d12 {
 
-class D3D12Test : public ::testing::Test {
-protected:
-    explicit D3D12Test() {}
-    void SetUp() override {
-        sgl::Logfile::get()->createLogfile("Logfile.html", "D3D12Test");
-    }
+class Device;
 
-    void TearDown() override {
-    }
+class DLL_OBJECT CommandList {
+public:
+    explicit CommandList(Device* device, CommandListType commandListType = CommandListType::DIRECT);
+
+    inline ID3D12GraphicsCommandList* getD3D12CommandList() { return commandList.Get(); }
+
+private:
+    Device* device;
+    CommandListType commandListType;
+    ComPtr<ID3D12GraphicsCommandList> commandList;
 };
 
-TEST_F(D3D12Test, SimpleTest) {
-    sgl::d3d12::DXGIFactoryPtr dxgiFactory = std::make_shared<sgl::d3d12::DXGIFactory>(true);
-    dxgiFactory->enumerateDevices();
-    sgl::d3d12::DevicePtr d3d12Device = dxgiFactory->createDeviceAny(D3D_FEATURE_LEVEL_12_0);
-}
+}}
+
+#endif //COMMANDLIST_HPP

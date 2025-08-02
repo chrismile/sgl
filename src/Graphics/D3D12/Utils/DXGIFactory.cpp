@@ -61,7 +61,7 @@ void DXGIFactory::enumerateDevices() {
     ComPtr<IDXGIAdapter4> dxgiAdapter4;
     for (UINT adapterIdx = 0; dxgiFactory->EnumAdapters1(adapterIdx, &dxgiAdapter1) != DXGI_ERROR_NOT_FOUND; ++adapterIdx) {
         DXGI_ADAPTER_DESC1 dxgiAdapterDesc1;
-        dxgiAdapter1->GetDesc1(&dxgiAdapterDesc1);
+        ThrowIfFailed(dxgiAdapter1->GetDesc1(&dxgiAdapterDesc1));
         bool isSoftwareRenderer = (dxgiAdapterDesc1.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) != 0;
         bool dxgiAdapter4Compatible = SUCCEEDED(dxgiAdapter1.As(&dxgiAdapter4));
         bool feature11_0 = SUCCEEDED(D3D12CreateDevice(dxgiAdapter1.Get(), D3D_FEATURE_LEVEL_11_0, __uuidof(ID3D12Device), nullptr));
@@ -128,7 +128,7 @@ sgl::d3d12::DevicePtr DXGIFactory::createDeviceMostSuitable(
 sgl::d3d12::DevicePtr DXGIFactory::createDeviceAny(D3D_FEATURE_LEVEL featureLevel) {
     return createDeviceMostSuitable([](const ComPtr<IDXGIAdapter1>& dxgiAdapter1) -> uint32_t {
         DXGI_ADAPTER_DESC1 dxgiAdapterDesc1;
-        dxgiAdapter1->GetDesc1(&dxgiAdapterDesc1);
+        ThrowIfFailed(dxgiAdapter1->GetDesc1(&dxgiAdapterDesc1));
         if ((dxgiAdapterDesc1.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) != 0) {
             return 1;
         }
@@ -163,7 +163,7 @@ sgl::d3d12::DevicePtr DXGIFactory::createMatchingDevice(
     ComPtr<IDXGIAdapter4> dxgiAdapter4;
     for (UINT adapterIdx = 0; dxgiFactory->EnumAdapters1(adapterIdx, &dxgiAdapter1) != DXGI_ERROR_NOT_FOUND; ++adapterIdx) {
         DXGI_ADAPTER_DESC1 dxgiAdapterDesc1;
-        dxgiAdapter1->GetDesc1(&dxgiAdapterDesc1);
+        ThrowIfFailed(dxgiAdapter1->GetDesc1(&dxgiAdapterDesc1));
         uint64_t d3d12Luid =
                 (uint64_t(dxgiAdapterDesc1.AdapterLuid.HighPart) << uint64_t(32))
                 | uint64_t(dxgiAdapterDesc1.AdapterLuid.LowPart);

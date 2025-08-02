@@ -26,26 +26,19 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <gtest/gtest.h>
+#ifndef QUEUETYPE_HPP
+#define QUEUETYPE_HPP
 
-#include <Utils/File/Logfile.hpp>
+#include "d3d12.hpp"
 
-#include <Graphics/D3D12/Utils/DXGIFactory.hpp>
-#include <Graphics/D3D12/Utils/Device.hpp>
+namespace sgl { namespace d3d12 {
 
-class D3D12Test : public ::testing::Test {
-protected:
-    explicit D3D12Test() {}
-    void SetUp() override {
-        sgl::Logfile::get()->createLogfile("Logfile.html", "D3D12Test");
-    }
-
-    void TearDown() override {
-    }
+enum class CommandListType {
+    DIRECT, COMPUTE
 };
 
-TEST_F(D3D12Test, SimpleTest) {
-    sgl::d3d12::DXGIFactoryPtr dxgiFactory = std::make_shared<sgl::d3d12::DXGIFactory>(true);
-    dxgiFactory->enumerateDevices();
-    sgl::d3d12::DevicePtr d3d12Device = dxgiFactory->createDeviceAny(D3D_FEATURE_LEVEL_12_0);
-}
+DLL_OBJECT D3D12_COMMAND_LIST_TYPE getD3D12CommandListType(CommandListType commandListType);
+
+}}
+
+#endif //QUEUETYPE_HPP

@@ -31,7 +31,7 @@
 
 namespace sgl { namespace d3d12 {
 
-Fence::Fence(Device* device, uint64_t value) {
+Fence::Fence(Device* device, uint64_t value) : device(device) {
     auto* d3d12Device = device->getD3D12Device2Ptr();
     ThrowIfFailed(d3d12Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)));
 }
@@ -44,6 +44,10 @@ Fence::~Fence() {
 }
 
 void Fence::waitOnCpu(uint64_t value) {
+    waitOnCpu(value, INFINITE);
+}
+
+void Fence::waitOnCpu(uint64_t value, DWORD timeoutMs) {
     if (fence->GetCompletedValue() < value) {
         if (!fenceEvent) {
             fenceEvent = ::CreateEvent(nullptr, false, false, nullptr);
@@ -52,7 +56,7 @@ void Fence::waitOnCpu(uint64_t value) {
             }
         }
         ThrowIfFailed(fence->SetEventOnCompletion(value, fenceEvent));
-        ::WaitForSingleObject(fenceEvent, INFINITE);
+        ::WaitForSingleObject(fenceEvent, timeoutMs);
     }
 }
 

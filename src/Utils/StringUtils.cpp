@@ -38,6 +38,13 @@
 #include <codecvt>
 #endif
 
+#if !defined(USE_ICU) && defined(_WIN32)
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
+
 // Allow using boost::algorithm, as Boost may be built with ICU support for Unicode.
 #ifdef USE_BOOST_ALGORITHM
 #include <boost/algorithm/string.hpp>
@@ -229,17 +236,28 @@ std::string stringReplaceAllCopy(
 
 std::string wideStringArrayToStdString(const wchar_t* wcharStr) {
 #if defined(USE_ICU)
-#if U_SIZEOF_WCHAR_T == 2
+#  if U_SIZEOF_WCHAR_T == 2
     icu::UnicodeString unicodeStr(wcharStr);
-#elif U_SIZEOF_WCHAR_T == 4
+#  elif U_SIZEOF_WCHAR_T == 4
     auto unicodeStr = icu::UnicodeString::fromUTF32(
             reinterpret_cast<const UChar32*>(wcharStr), int32_t(std::wcslen(wcharStr)));
-#else
+#  else
 #error "Error in wideStringArrayToStdString: Unsupported wchar_t format detected."
-#endif
+#  endif
     std::string outString;
     unicodeStr.toUpper().toUTF8String(outString);
     return outString;
+#elif defined(_WIN32)
+    size_t wideStringLen = std::wcslen(wcharStr);
+    if (wideStringLen == 0) {
+        return {};
+    }
+    const int utf8StringSize = WideCharToMultiByte(
+            CP_UTF8, 0, wcharStr, int(wideStringLen), NULL, 0, NULL, NULL);
+    std::string utf8String(utf8StringSize, 0);
+    WideCharToMultiByte                  (
+            CP_UTF8, 0, wcharStr, int(wideStringLen), utf8String.data(), utf8StringSize, NULL, NULL);
+    return utf8String;
 #else
     std::ostringstream stm;
     while(*wcharStr != L'\0') {
@@ -265,6 +283,14 @@ std::wstring stdStringToWideString(const std::string& stdString) {
     error = U_ZERO_ERROR;
     u_strToWCS(wideString.data(), wstringSize, nullptr, unicodeStr.getBuffer(), unicodeStr.length(), &error);
     return wideString;
+#elif defined(_WIN32)
+    if (stdString.empty()) {
+        return {};
+    }
+    int wstringSize = MultiByteToWideChar(CP_UTF8, 0, stdString.data(), int(stdString.size()), NULL, 0);
+    std::wstring wstrString(wstringSize, 0);
+    MultiByteToWideChar(CP_UTF8, 0, stdString.data(), int(stdString.size()), wstrString.data(), wstringSize);
+    return wstrString;
 #else
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
     return converter.from_bytes(stdString);

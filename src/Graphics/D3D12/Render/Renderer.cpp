@@ -43,17 +43,8 @@ Renderer::Renderer(Device* device, uint32_t numDescriptors) : device(device) {
         ThrowIfFailed(d3d12Device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&descriptorHeaps[heapType])));
     }
 
-    ComPtr<ID3D12CommandQueue> commandQueue;
-    D3D12_COMMAND_QUEUE_DESC commandQueueDesc{};
-    commandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-    commandQueueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
-    commandQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE; // D3D12_COMMAND_QUEUE_FLAG_DISABLE_GPU_TIMEOUT
-    commandQueueDesc.NodeMask = 0;
-    ThrowIfFailed(d3d12Device->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&commandQueue)));
 
-    ComPtr<ID3D12CommandAllocator> commandAllocator;
-    ThrowIfFailed(d3d12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator)));
-    HANDLE fenceEvent;
+    /*HANDLE fenceEvent;
     fenceEvent = ::CreateEvent(nullptr, false, false, nullptr);
     if (!fenceEvent) {
         sgl::Logfile::get()->throwError("Could not create fence event.");
@@ -104,26 +95,26 @@ Renderer::Renderer(Device* device, uint32_t numDescriptors) : device(device) {
     size_t bufferSize = 1024;
     auto* bufferData = new float[bufferSize];
 
-    /*D3D12_HEAP_PROPERTIES heapProperties{};
-    heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
-    D3D12_RESOURCE_DESC bufferResourceDesc{};
-    bufferResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-    bufferResourceDesc.Width = bufferSize;
-    ThrowIfFailed(d3d12Device->CreateCommittedResource(
-            &heapProperties,
-            D3D12_HEAP_FLAG_NONE,
-            &bufferResourceDesc,
-            D3D12_RESOURCE_STATE_COMMON,
-            nullptr,
-            IID_PPV_ARGS(&destinationResource)));
-    heapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
-    ThrowIfFailed(d3d12Device->CreateCommittedResource(
-            &heapProperties,
-            D3D12_HEAP_FLAG_NONE,
-            &bufferResourceDesc,
-            D3D12_RESOURCE_STATE_GENERIC_READ,
-            nullptr,
-            IID_PPV_ARGS(&intermediateResource)));*/
+    //D3D12_HEAP_PROPERTIES heapProperties{};
+    //heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+    //D3D12_RESOURCE_DESC bufferResourceDesc{};
+    //bufferResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+    //bufferResourceDesc.Width = bufferSize;
+    //ThrowIfFailed(d3d12Device->CreateCommittedResource(
+    //        &heapProperties,
+    //        D3D12_HEAP_FLAG_NONE,
+    //        &bufferResourceDesc,
+    //        D3D12_RESOURCE_STATE_COMMON,
+    //        nullptr,
+    //        IID_PPV_ARGS(&destinationResource)));
+    //heapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+    //ThrowIfFailed(d3d12Device->CreateCommittedResource(
+    //        &heapProperties,
+    //        D3D12_HEAP_FLAG_NONE,
+    //        &bufferResourceDesc,
+    //        D3D12_RESOURCE_STATE_GENERIC_READ,
+    //        nullptr,
+    //        IID_PPV_ARGS(&intermediateResource)));
     D3D12_RESOURCE_FLAGS flags{};
     CD3DX12_HEAP_PROPERTIES heapPropertiesDefault(D3D12_HEAP_TYPE_DEFAULT);
     auto bufferResourceDesc = CD3DX12_RESOURCE_DESC::Buffer(bufferSize, flags);
@@ -174,12 +165,12 @@ Renderer::Renderer(Device* device, uint32_t numDescriptors) : device(device) {
             IID_PPV_ARGS(&colorImageResource)
     ));
 
-    /*D3D12_RESOURCE_BARRIER resourceBarrier{};
-    resourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    resourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    resourceBarrier.Transition.pResource = nullptr;
-    resourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
-    resourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;*/
+    //D3D12_RESOURCE_BARRIER resourceBarrier{};
+    //resourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    //resourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+    //resourceBarrier.Transition.pResource = nullptr;
+    //resourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
+    //resourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
     CD3DX12_RESOURCE_BARRIER resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition(
             colorImageResource.Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
     commandList->ResourceBarrier(1, &resourceBarrier);
@@ -200,7 +191,7 @@ Renderer::Renderer(Device* device, uint32_t numDescriptors) : device(device) {
     std::wstring sharedHandleNameString = std::wstring(L"Local\\D3D12ResourceHandle") + std::to_wstring(resourceIdx);
     HANDLE resourceHandle{};
     ThrowIfFailed(d3d12Device->CreateSharedHandle(
-            destinationResource.Get(), nullptr, GENERIC_ALL, sharedHandleNameString.data(), &resourceHandle));
+            destinationResource.Get(), nullptr, GENERIC_ALL, sharedHandleNameString.data(), &resourceHandle));*/
 }
 
 Renderer::~Renderer() {

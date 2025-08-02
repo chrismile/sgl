@@ -26,6 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <Utils/StringUtils.hpp>
+
 #include "Device.hpp"
 
 namespace sgl { namespace d3d12 {
@@ -34,6 +36,14 @@ Device::Device(const ComPtr<IDXGIAdapter1> &dxgiAdapter1, D3D_FEATURE_LEVEL feat
         : dxgiAdapter1(dxgiAdapter1), featureLevel(featureLevel) {
     ThrowIfFailed(dxgiAdapter1.As(&dxgiAdapter4));
     ThrowIfFailed(D3D12CreateDevice(dxgiAdapter4.Get(), featureLevel, IID_PPV_ARGS(&d3d12Device2)));
+
+    DXGI_ADAPTER_DESC1 dxgiAdapterDesc1;
+    ThrowIfFailed(dxgiAdapter1->GetDesc1(&dxgiAdapterDesc1));
+    vendorId = dxgiAdapterDesc1.VendorId;
+    adapterLuid =
+            (uint64_t(dxgiAdapterDesc1.AdapterLuid.HighPart) << uint64_t(32))
+            | uint64_t(dxgiAdapterDesc1.AdapterLuid.LowPart);
+    adapterName = wideStringArrayToStdString(dxgiAdapterDesc1.Description);
 
     ComPtr<ID3D12InfoQueue> pInfoQueue;
     if (useDebugLayer && SUCCEEDED(d3d12Device2.As(&pInfoQueue))) {
@@ -56,13 +66,42 @@ Device::Device(const ComPtr<IDXGIAdapter1> &dxgiAdapter1, D3D_FEATURE_LEVEL feat
         NewFilter.DenyList.pIDList = DenyIds;
         ThrowIfFailed(pInfoQueue->PushStorageFilter(&NewFilter));
     }
+
+    D3D12_COMMAND_QUEUE_DESC commandQueueDesc{};
+    commandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+    commandQueueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
+    commandQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE; // D3D12_COMMAND_QUEUE_FLAG_DISABLE_GPU_TIMEOUT
+    commandQueueDesc.NodeMask = 0;
+    ThrowIfFailed(d3d12Device2->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&commandQueueDirect)));
+
+    ThrowIfFailed(d3d12Device2->CreateCommandAllocator(
+            D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocatorDirect)));
+
+    commandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+    if (!FAILED(d3d12Device2->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&commandQueueCompute)))) {
+        supportsComputeQueue = true;
+        ThrowIfFailed(d3d12Device2->CreateCommandAllocator(
+                D3D12_COMMAND_LIST_TYPE_COMPUTE, IID_PPV_ARGS(&commandAllocatorCompute)));
+    }
 }
 
-D3D_FEATURE_LEVEL Device::getFeatureLevel() {
+D3D_FEATURE_LEVEL Device::getFeatureLevel() const {
     return featureLevel;
 }
 
-bool Device::getSupportsROVs() {
+DeviceVendor Device::getVendor() const {
+    if (vendorId == 0x10DE) {
+        return DeviceVendor::NVIDIA;
+    } else if (vendorId == 0x1002) {
+        return DeviceVendor::AMD;
+    } else if (vendorId == 0x8086) {
+        return DeviceVendor::INTEL;
+    } else {
+        return DeviceVendor::UNKNOWN;
+    }
+}
+
+bool Device::getSupportsROVs() const {
     if (featureLevel >= D3D_FEATURE_LEVEL_12_1) {
         return true;
     }
@@ -70,6 +109,26 @@ bool Device::getSupportsROVs() {
     ThrowIfFailed(d3d12Device2->CheckFeatureSupport(
             D3D12_FEATURE_D3D12_OPTIONS, &featureDataOptions, sizeof(D3D12_FEATURE_DATA_D3D12_OPTIONS)));
     return featureDataOptions.ROVsSupported;
+}
+
+ID3D12CommandQueue* Device::getD3D12CommandQueue(CommandListType commandListType) {
+    if (commandListType == CommandListType::DIRECT) {
+        return commandQueueDirect.Get();
+    } else if (commandListType == CommandListType::COMPUTE) {
+        return commandQueueCompute.Get();
+    }
+    sgl::Logfile::get()->throwError("Error in Device::getD3D12CommandQueue: Using unsupported command list type.");
+    return nullptr;
+}
+
+ID3D12CommandAllocator* Device::getD3D12CommandAllocator(CommandListType commandListType) {
+    if (commandListType == CommandListType::DIRECT) {
+        return commandAllocatorDirect.Get();
+    } else if (commandListType == CommandListType::COMPUTE) {
+        return commandAllocatorCompute.Get();
+    }
+    sgl::Logfile::get()->throwError("Error in Device::getD3D12CommandAllocator: Using unsupported command list type.");
+    return nullptr;
 }
 
 }}

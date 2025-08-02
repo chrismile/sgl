@@ -1543,9 +1543,22 @@ endif()
 
 # Unit tests.
 if (${USE_GTEST})
-    find_package(GTest REQUIRED)
-    include(GoogleTest)
-    enable_testing()
+    find_package(GTest QUIET)
+    if (GTest_FOUND)
+        include(GoogleTest)
+        enable_testing()
+    else()
+        message(STATUS "Could not find GTest package. Fetching GTest from its repository.")
+        include(FetchContent)
+        FetchContent_Declare(
+                googletest
+                URL https://github.com/google/googletest/archive/35b75a2cba6ef72b7ce2b6b94b05c54ca07df866.zip
+        )
+        if (WIN32)
+            set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+        endif()
+        FetchContent_MakeAvailable(googletest)
+    endif()
     file(GLOB_RECURSE TEST_SOURCES tests/*.cpp tests/*.c tests/*.hpp tests/*.h)
     if (NOT WIN32 OR NOT ${SUPPORT_D3D12})
         list(REMOVE_ITEM TEST_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/tests/D3D12/TestD3D12.cpp)
