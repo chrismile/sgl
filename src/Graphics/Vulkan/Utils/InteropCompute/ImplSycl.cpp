@@ -109,7 +109,7 @@ SemaphoreVkSyclInterop::~SemaphoreVkSyclInterop() {
 void SemaphoreVkSyclInterop::signalSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue, void* eventOut) {
     auto* wrapper = reinterpret_cast<SyclExternalSemaphoreWrapper*>(externalSemaphore);
     auto syclEvent = stream.syclQueuePtr->ext_oneapi_signal_external_semaphore(
-        wrapper->syclExternalSemaphore, uint64_t(timelineValue));
+            wrapper->syclExternalSemaphore, uint64_t(timelineValue));
     if (eventOut) {
         *reinterpret_cast<sycl::event*>(eventOut) = std::move(syclEvent);
     }
@@ -119,7 +119,7 @@ void SemaphoreVkSyclInterop::waitSemaphoreComputeApi(
         StreamWrapper stream, unsigned long long timelineValue, void* eventOut) {
     auto* wrapper = reinterpret_cast<SyclExternalSemaphoreWrapper*>(externalSemaphore);
     auto syclEvent = stream.syclQueuePtr->ext_oneapi_wait_external_semaphore(
-        wrapper->syclExternalSemaphore, uint64_t(timelineValue));
+            wrapper->syclExternalSemaphore, uint64_t(timelineValue));
     if (eventOut) {
         *reinterpret_cast<sycl::event*>(eventOut) = std::move(syclEvent);
     }
