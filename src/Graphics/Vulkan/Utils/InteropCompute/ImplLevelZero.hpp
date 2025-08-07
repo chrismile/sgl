@@ -115,9 +115,6 @@ protected:
     void importExternalMemory() override;
     void free() override;
 
-    [[nodiscard]] inline hipMipmappedArray_t getHipMipmappedArray() const { return reinterpret_cast<hipMipmappedArray_t>(mipmappedArray); }
-    hipArray_t getHipMipmappedArrayLevel(uint32_t level = 0);
-
 private:
     ze_image_desc_t zeImageDesc{};
 
@@ -135,9 +132,6 @@ private:
 #endif
 
     void* mipmappedArray{}; // ze_image_handle_t
-
-    // Cache for storing the array for mipmap level 0.
-    void* arrayLevel0{}; // hipArray_t
 };
 
 }}

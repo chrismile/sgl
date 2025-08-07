@@ -27,7 +27,7 @@
  */
 
 #include "ImplCuda.hpp"
-#include "../InteropCUDA.hpp"
+#include "../InteropCuda.hpp"
 
 namespace sgl { namespace vk {
 
