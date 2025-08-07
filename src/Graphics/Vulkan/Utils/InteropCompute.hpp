@@ -217,7 +217,7 @@ protected:
     virtual void setExternalMemoryWin32Handle(HANDLE handle) = 0;
 #endif
 #ifdef __linux__
-    virtual void setExternalMemoryFd(int fd) = 0;
+    virtual void setExternalMemoryFd(int fileDescriptor) = 0;
 #endif
     virtual void importExternalMemory() {}
     virtual void free() = 0;

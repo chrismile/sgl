@@ -49,7 +49,7 @@ protected:
     void setExternalSemaphoreWin32Handle(HANDLE handle) override;
 #endif
 #ifdef __linux__
-    void setExternalSemaphoreFd(int fd) override;
+    void setExternalSemaphoreFd(int fileDescriptor) override;
 #endif
     void importExternalSemaphore() override;
 
@@ -76,7 +76,7 @@ protected:
     void setExternalMemoryWin32Handle(HANDLE handle) override;
 #endif
 #ifdef __linux__
-    void setExternalMemoryFd(int fd) override;
+    void setExternalMemoryFd(int fileDescriptor) override;
 #endif
     void importExternalMemory() override;
     void free() override;
@@ -99,7 +99,7 @@ protected:
     void setExternalMemoryWin32Handle(HANDLE handle) override;
 #endif
 #ifdef __linux__
-    void setExternalMemoryFd(int fd) override;
+    void setExternalMemoryFd(int fileDescriptor) override;
 #endif
     void importExternalMemory() override;
     void free() override;

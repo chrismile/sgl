@@ -51,7 +51,7 @@ void SemaphoreVkCudaInterop::setExternalSemaphoreWin32Handle(HANDLE handle) {
 #endif
 
 #ifdef __linux__
-void SemaphoreVkCudaInterop::setExternalSemaphoreFd(int fd) {
+void SemaphoreVkCudaInterop::setExternalSemaphoreFd(int fileDescriptor) {
     if (isTimelineSemaphore()) {
 #if CUDA_VERSION >= 11020
         externalSemaphoreHandleDesc.type = CU_EXTERNAL_SEMAPHORE_HANDLE_TYPE_TIMELINE_SEMAPHORE_FD;
@@ -117,7 +117,7 @@ void BufferVkCudaInterop::setExternalMemoryWin32Handle(HANDLE handle) {
 #endif
 
 #ifdef __linux__
-void BufferVkCudaInterop::setExternalMemoryFd(int fd) {
+void BufferVkCudaInterop::setExternalMemoryFd(int fileDescriptor) {
     externalMemoryHandleDesc.type = CU_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD;
     externalMemoryHandleDesc.handle.fd = fileDescriptor;
 }
@@ -202,7 +202,7 @@ void ImageVkCudaInterop::setExternalMemoryWin32Handle(HANDLE handle) {
 #endif
 
 #ifdef __linux__
-void ImageVkCudaInterop::setExternalMemoryFd(int fd) {
+void ImageVkCudaInterop::setExternalMemoryFd(int fileDescriptor) {
     externalMemoryHandleDesc.type = CU_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD;
     externalMemoryHandleDesc.handle.fd = fileDescriptor;
 }

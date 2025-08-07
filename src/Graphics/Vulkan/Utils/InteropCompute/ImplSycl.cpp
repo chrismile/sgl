@@ -77,7 +77,7 @@ void SemaphoreVkSyclInterop::setExternalSemaphoreWin32Handle(HANDLE handle) {
 #endif
 
 #ifdef __linux__
-void SemaphoreVkSyclInterop::setExternalSemaphoreFd(int fd) {
+void SemaphoreVkSyclInterop::setExternalSemaphoreFd(int fileDescriptor) {
     // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
     sycl::ext::oneapi::experimental::external_semaphore_handle_type semaphoreHandleType;
     if (isTimelineSemaphore()) {
@@ -140,7 +140,7 @@ void BufferVkSyclInterop::setExternalMemoryWin32Handle(HANDLE handle) {
 #endif
 
 #ifdef __linux__
-void BufferVkSyclInterop::setExternalMemoryFd(int fd) {
+void BufferVkSyclInterop::setExternalMemoryFd(int fileDescriptor) {
     // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
     auto memoryHandleType = sycl::ext::oneapi::experimental::external_mem_handle_type::opaque_fd;
     sycl::ext::oneapi::experimental::external_mem_descriptor<sycl::ext::oneapi::experimental::resource_fd>
@@ -218,7 +218,7 @@ void ImageVkSyclInterop::setExternalMemoryWin32Handle(HANDLE handle) {
 #endif
 
 #ifdef __linux__
-void ImageVkSyclInterop::setExternalMemoryFd(int fd) {
+void ImageVkSyclInterop::setExternalMemoryFd(int fileDescriptor) {
     // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
     auto memoryHandleType = sycl::ext::oneapi::experimental::external_mem_handle_type::opaque_fd;
     sycl::ext::oneapi::experimental::external_mem_descriptor<sycl::ext::oneapi::experimental::resource_fd>

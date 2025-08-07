@@ -101,7 +101,7 @@ void SemaphoreVkLevelZeroInterop::setExternalSemaphoreWin32Handle(HANDLE handle)
 #endif
 
 #ifdef __linux__
-void SemaphoreVkLevelZeroInterop::setExternalSemaphoreFd(int fd) {
+void SemaphoreVkLevelZeroInterop::setExternalSemaphoreFd(int fileDescriptor) {
     externalSemaphoreFdExtDesc = {};
     externalSemaphoreFdExtDesc.stype = ZE_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_FD_EXT_DESC;
     externalSemaphoreExtDesc.pNext = &externalSemaphoreFdExtDesc;
@@ -218,7 +218,7 @@ void BufferVkLevelZeroInterop::setExternalMemoryWin32Handle(HANDLE handle) {
 #endif
 
 #ifdef __linux__
-void BufferVkLevelZeroInterop::setExternalMemoryFd(int fd) {
+void BufferVkLevelZeroInterop::setExternalMemoryFd(int fileDescriptor) {
     externalMemoryImportFd = {};
     externalMemoryImportFd.stype = ZE_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMPORT_FD;
     deviceMemAllocDesc.pNext = &externalMemoryImportFd;
@@ -562,7 +562,7 @@ void ImageVkLevelZeroInterop::setExternalMemoryWin32Handle(HANDLE handle) {
 #endif
 
 #ifdef __linux__
-void ImageVkLevelZeroInterop::setExternalMemoryFd(int fd) {
+void ImageVkLevelZeroInterop::setExternalMemoryFd(int fileDescriptor) {
     externalMemoryImportFd.stype = ZE_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMPORT_FD;
     if (g_useBindlessImagesInterop) {
         deviceMemAllocDesc.pNext = &externalMemoryImportFd;

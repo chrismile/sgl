@@ -42,7 +42,7 @@ void SemaphoreVkHipInterop::setExternalSemaphoreWin32Handle(HANDLE handle) {
 #endif
 
 #ifdef __linux__
-void SemaphoreVkHipInterop::setExternalSemaphoreFd(int fd) {
+void SemaphoreVkHipInterop::setExternalSemaphoreFd(int fileDescriptor) {
     if (isTimelineSemaphore()) {
         externalSemaphoreHandleDescHip.type = hipExternalSemaphoreHandleTypeTimelineSemaphoreFd;
     } else {
@@ -103,7 +103,7 @@ void BufferVkHipInterop::setExternalMemoryWin32Handle(HANDLE handle) {
 #endif
 
 #ifdef __linux__
-void BufferVkHipInterop::setExternalMemoryFd(int fd) {
+void BufferVkHipInterop::setExternalMemoryFd(int fileDescriptor) {
     externalMemoryHandleDescHip.type = hipExternalMemoryHandleTypeOpaqueFd;
     externalMemoryHandleDescHip.handle.fd = fileDescriptor;
 }
@@ -375,7 +375,7 @@ void ImageVkHipInterop::setExternalMemoryWin32Handle(HANDLE handle) {
 #endif
 
 #ifdef __linux__
-void ImageVkHipInterop::setExternalMemoryFd(int fd) {
+void ImageVkHipInterop::setExternalMemoryFd(int fileDescriptor) {
     externalMemoryHandleDescHip.type = hipExternalMemoryHandleTypeOpaqueFd;
     externalMemoryHandleDescHip.handle.fd = fileDescriptor;
 }
