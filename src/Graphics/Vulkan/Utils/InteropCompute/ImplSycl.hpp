@@ -29,20 +29,23 @@
 #ifndef SGL_IMPLSYCL_HPP
 #define SGL_IMPLSYCL_HPP
 
-#include "Common.hpp"
-#include <sycl/sycl.hpp>
+#include "../InteropCompute.hpp"
 
 namespace sgl { namespace vk {
 
-#ifdef SUPPORT_SYCL_INTEROP
 // For more information on SYCL interop:
 // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
 DLL_OBJECT void setGlobalSyclQueue(sycl::queue& syclQueue);
-#endif
 
 class SemaphoreVkSyclInterop : public SemaphoreVkComputeApiInterop {
 public:
     ~SemaphoreVkSyclInterop() override;
+
+    /// Signal semaphore.
+    void signalSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue = 0, void* eventOut = nullptr) override;
+
+    /// Wait on semaphore.
+    void waitSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue = 0, void* eventOut = nullptr) override;
 
 protected:
 #ifdef _WIN32
@@ -53,7 +56,52 @@ protected:
 #endif
 
 private:
-    sycl::ext::oneapi::experimental::external_semaphore syclExternalSemaphore;
+    void* externalSemaphore{};
+};
+
+
+class BufferVkSyclInterop : public BufferVkComputeApiExternalMemory {
+public:
+    ~BufferVkSyclInterop() override;
+
+    void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr) override;
+    void copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream, void* eventOut = nullptr) override;
+    void copyFromHostPtrAsync(void* hostPtrSrc, StreamWrapper stream, void* eventOut = nullptr) override;
+    void copyToHostPtrAsync(void* hostPtrDst, StreamWrapper stream, void* eventOut = nullptr) override;
+
+protected:
+#ifdef _WIN32
+    void setExternalMemoryWin32Handle(HANDLE handle) override;
+#endif
+#ifdef __linux__
+    void setExternalMemoryFd(int fd) override;
+#endif
+    void importExternalMemory() override;
+    void free() override;
+
+private:
+    void* externalMemoryBuffer{}; // SyclExternalMemWrapper
+};
+
+
+class ImageVkSyclInterop : public ImageVkComputeApiExternalMemory {
+public:
+    ~ImageVkSyclInterop() override;
+
+    void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr) override;
+
+protected:
+#ifdef _WIN32
+    void setExternalMemoryWin32Handle(HANDLE handle) override;
+#endif
+#ifdef __linux__
+    void setExternalMemoryFd(int fd) override;
+#endif
+    void importExternalMemory() override;
+    void free() override;
+
+private:
+    void* externalMemoryBuffer{}; // SyclExternalMemWrapper
 };
 
 }}

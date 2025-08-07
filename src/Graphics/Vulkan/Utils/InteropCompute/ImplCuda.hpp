@@ -26,23 +26,23 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #ifndef SGL_IMPLCUDA_HPP
 #define SGL_IMPLCUDA_HPP
 
-#include "Common.hpp"
+#include "../InteropCompute.hpp"
+#include "../InteropCuda.hpp"
 
 namespace sgl { namespace vk {
-
-#ifdef SUPPORT_SYCL_INTEROP
-// For more information on SYCL interop:
-// https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
-DLL_OBJECT void setGlobalSyclQueue(sycl::queue& syclQueue);
-#endif
 
 class SemaphoreVkCudaInterop : public SemaphoreVkComputeApiInterop {
 public:
     ~SemaphoreVkCudaInterop() override;
+
+    /// Signal semaphore.
+    void signalSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue = 0, void* eventOut = nullptr) override;
+
+    /// Wait on semaphore.
+    void waitSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue = 0, void* eventOut = nullptr) override;
 
 protected:
 #ifdef _WIN32
@@ -54,7 +54,65 @@ protected:
     void importExternalSemaphore() override;
 
 private:
-    void* externalSemaphore;
+    CUDA_EXTERNAL_SEMAPHORE_HANDLE_DESC externalSemaphoreHandleDesc{};
+    void* externalSemaphore{};
+};
+
+
+class BufferVkCudaInterop : public BufferVkComputeApiExternalMemory {
+public:
+    ~BufferVkCudaInterop() override;
+
+    [[nodiscard]] inline CUdeviceptr getCudaDevicePtr() const { return reinterpret_cast<CUdeviceptr>(devicePtr); }
+
+    void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr) override;
+    void copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream, void* eventOut = nullptr) override;
+    void copyFromHostPtrAsync(void* hostPtrSrc, StreamWrapper stream, void* eventOut = nullptr) override;
+    void copyToHostPtrAsync(void* hostPtrDst, StreamWrapper stream, void* eventOut = nullptr) override;
+
+protected:
+    void preCheckExternalMemoryImport() override;
+#ifdef _WIN32
+    void setExternalMemoryWin32Handle(HANDLE handle) override;
+#endif
+#ifdef __linux__
+    void setExternalMemoryFd(int fd) override;
+#endif
+    void importExternalMemory() override;
+    void free() override;
+
+private:
+    CUDA_EXTERNAL_MEMORY_HANDLE_DESC externalMemoryHandleDesc{};
+    void* externalMemoryBuffer{}; // CUexternalMemory
+};
+
+
+class ImageVkCudaInterop : public ImageVkComputeApiExternalMemory {
+public:
+    ~ImageVkCudaInterop() override;
+
+    void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr) override;
+
+protected:
+    void preCheckExternalMemoryImport() override;
+#ifdef _WIN32
+    void setExternalMemoryWin32Handle(HANDLE handle) override;
+#endif
+#ifdef __linux__
+    void setExternalMemoryFd(int fd) override;
+#endif
+    void importExternalMemory() override;
+    void free() override;
+
+    [[nodiscard]] inline CUmipmappedArray getCudaMipmappedArray() const { return reinterpret_cast<CUmipmappedArray>(mipmappedArray); }
+    CUarray getCudaMipmappedArrayLevel(uint32_t level = 0);
+
+private:
+    CUDA_EXTERNAL_MEMORY_HANDLE_DESC externalMemoryHandleDesc{};
+    void* externalMemoryBuffer{}; // CUexternalMemory
+
+    // Cache for storing the array for mipmap level 0.
+    void* arrayLevel0{}; // CUarray
 };
 
 }}

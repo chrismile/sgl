@@ -26,8 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_INTEROPCOMPUTE_HPP
-#define SGL_INTEROPCOMPUTE_HPP
+#ifndef SGL_INTEROP_COMPUTE_COMMON_HPP
+#define SGL_INTEROP_COMPUTE_COMMON_HPP
 
 #include <stdexcept>
 #include <utility>
@@ -42,29 +42,29 @@
 extern "C" {
 #ifdef SUPPORT_CUDA_INTEROP
 #if defined(_WIN64) || defined(__LP64__)
-typedef unsigned long long CUdeviceptr_v2;
+    typedef unsigned long long CUdeviceptr_v2;
 #else
-typedef unsigned int CUdeviceptr_v2;
+    typedef unsigned int CUdeviceptr_v2;
 #endif
-typedef CUdeviceptr_v2 CUdeviceptr;
-typedef struct CUmipmappedArray_st *CUmipmappedArray;
-typedef struct CUarray_st *CUarray;
-typedef struct CUstream_st *CUstream;
+    typedef CUdeviceptr_v2 CUdeviceptr;
+    typedef struct CUmipmappedArray_st *CUmipmappedArray;
+    typedef struct CUarray_st *CUarray;
+    typedef struct CUstream_st *CUstream;
 #endif
 
 #ifdef SUPPORT_HIP_INTEROP
-typedef void* hipDeviceptr_t;
-typedef struct hipMipmappedArray* hipMipmappedArray_t;
-typedef struct hipArray* hipArray_t;
-typedef struct ihipStream_t* hipStream_t;
+    typedef void* hipDeviceptr_t;
+    typedef struct hipMipmappedArray* hipMipmappedArray_t;
+    typedef struct hipArray* hipArray_t;
+    typedef struct ihipStream_t* hipStream_t;
 #endif
 
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
-typedef struct _ze_device_handle_t* ze_device_handle_t;
-typedef struct _ze_context_handle_t* ze_context_handle_t;
-typedef struct _ze_command_queue_handle_t* ze_command_queue_handle_t;
-typedef struct _ze_command_list_handle_t* ze_command_list_handle_t;
-typedef struct _ze_event_handle_t *ze_event_handle_t;
+    typedef struct _ze_device_handle_t* ze_device_handle_t;
+    typedef struct _ze_context_handle_t* ze_context_handle_t;
+    typedef struct _ze_command_queue_handle_t* ze_command_queue_handle_t;
+    typedef struct _ze_command_list_handle_t* ze_command_list_handle_t;
+    typedef struct _ze_event_handle_t *ze_event_handle_t;
 #endif
 }
 
@@ -129,6 +129,9 @@ DLL_OBJECT void setGlobalSyclQueue(sycl::queue& syclQueue);
 /// Whether a message box should be shown when a compute API error is generated that is not fatal.
 DLL_OBJECT void setOpenMessageBoxOnComputeApiError(bool _openMessageBox);
 
+/// Decides the compute API usable for the passed device. SYCL has precedence over other APIs if available.
+DLL_OBJECT InteropComputeApi decideInteropComputeApi(Device* device);
+
 /// Reset function for unit tests, as static variables may persist across GoogleTest test cases.
 DLL_OBJECT void resetComputeApiState();
 
@@ -156,52 +159,72 @@ private:
  */
 class DLL_OBJECT SemaphoreVkComputeApiInterop : public vk::Semaphore {
 public:
-    explicit SemaphoreVkComputeApiInterop(
-            Device* device, VkSemaphoreCreateFlags semaphoreCreateFlags = 0,
-            VkSemaphoreType semaphoreType = VK_SEMAPHORE_TYPE_BINARY, uint64_t timelineSemaphoreInitialValue = 0);
-    ~SemaphoreVkComputeApiInterop() override;
+    SemaphoreVkComputeApiInterop() = default;
+    void initialize(
+            Device* device, VkSemaphoreCreateFlags semaphoreCreateFlags,
+            VkSemaphoreType semaphoreType, uint64_t timelineSemaphoreInitialValue);
+    ~SemaphoreVkComputeApiInterop() override = default;
 
     /// Signal semaphore.
-    void signalSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue = 0, void* eventOut = nullptr);
+    virtual void signalSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue = 0, void* eventOut = nullptr) = 0;
 
     /// Wait on semaphore.
-    void waitSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue = 0, void* eventOut = nullptr);
+    virtual void waitSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue = 0, void* eventOut = nullptr) = 0;
 
-private:
-    void* externalSemaphore = {}; // CUexternalSemaphore or hipExternalSemaphore_t
+protected:
+    virtual void preCheckExternalSemaphoreImport() {}
+#ifdef _WIN32
+    virtual void setExternalSemaphoreWin32Handle(HANDLE handle) = 0;
+#endif
+#ifdef __linux__
+    virtual void setExternalSemaphoreFd(int fd) = 0;
+#endif
+    virtual void importExternalSemaphore() {}
 };
 
 typedef std::shared_ptr<SemaphoreVkComputeApiInterop> SemaphoreVkComputeApiInteropPtr;
 
+SemaphoreVkComputeApiInteropPtr createSemaphoreVkComputeApiInterop(
+        Device* device, VkSemaphoreCreateFlags semaphoreCreateFlags = 0,
+        VkSemaphoreType semaphoreType = VK_SEMAPHORE_TYPE_BINARY, uint64_t timelineSemaphoreInitialValue = 0);
+
 
 /**
- * A CUDA driver API CUdeviceptr/HIP driver API hipDeviceptr_t object created from a Vulkan buffer.
+ * A CUDA driver API CUexternalSemaphore/HIP driver API hipExternalSemaphore_t object created from a Vulkan semaphore.
+ * Both binary and timeline semaphores are supported, but timeline semaphores require at least CUDA 11.2.
  */
-class DLL_OBJECT BufferComputeApiExternalMemoryVk
-{
+class DLL_OBJECT BufferVkComputeApiExternalMemory {
 public:
-    explicit BufferComputeApiExternalMemoryVk(vk::BufferPtr& vulkanBuffer);
-    virtual ~BufferComputeApiExternalMemoryVk();
+    BufferVkComputeApiExternalMemory() = default;
+    void initialize(vk::BufferPtr& vulkanBuffer);
+    virtual ~BufferVkComputeApiExternalMemory() = default;
 
     inline const sgl::vk::BufferPtr& getVulkanBuffer() { return vulkanBuffer; }
 
     template<class T>
     [[nodiscard]] inline T* getDevicePtr() const { return reinterpret_cast<T*>(devicePtr); }
-#ifdef SUPPORT_CUDA_INTEROP
-    [[nodiscard]] inline CUdeviceptr getCudaDevicePtr() const { return reinterpret_cast<CUdeviceptr>(devicePtr); }
-#endif
-#ifdef SUPPORT_HIP_INTEROP
-    [[nodiscard]] inline hipDeviceptr_t getHipDevicePtr() const { return reinterpret_cast<hipDeviceptr_t>(devicePtr); }
-#endif
+    template<class T>
+    [[nodiscard]] inline T getDevicePtrReinterpreted() const { return reinterpret_cast<T>(devicePtr); }
 
-    void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr);
-    void copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream, void* eventOut = nullptr);
-    void copyFromHostPtrAsync(void* hostPtrSrc, StreamWrapper stream, void* eventOut = nullptr);
-    void copyToHostPtrAsync(void* hostPtrDst, StreamWrapper stream, void* eventOut = nullptr);
+    virtual void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr) = 0;
+    virtual void copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream, void* eventOut = nullptr) = 0;
+    virtual void copyFromHostPtrAsync(void* hostPtrSrc, StreamWrapper stream, void* eventOut = nullptr) = 0;
+    virtual void copyToHostPtrAsync(void* hostPtrDst, StreamWrapper stream, void* eventOut = nullptr) = 0;
 
 protected:
+    virtual void preCheckExternalMemoryImport() {}
+#ifdef _WIN32
+    virtual void setExternalMemoryWin32Handle(HANDLE handle) = 0;
+#endif
+#ifdef __linux__
+    virtual void setExternalMemoryFd(int fd) = 0;
+#endif
+    virtual void importExternalMemory() {}
+    virtual void free() = 0;
+    void freeHandlesAndFds();
+
     sgl::vk::BufferPtr vulkanBuffer;
-    void* externalMemoryBuffer{}; // CUexternalMemory or hipExternalMemory_t or SyclExternalMemWrapper
+    VkMemoryRequirements memoryRequirements{};
     void* devicePtr{}; // CUdeviceptr or hipDeviceptr_t or void* device pointer
 
 #ifdef _WIN32
@@ -211,46 +234,46 @@ protected:
 #endif
 };
 
-typedef std::shared_ptr<BufferComputeApiExternalMemoryVk> BufferComputeApiExternalMemoryVkPtr;
+typedef std::shared_ptr<BufferVkComputeApiExternalMemory> BufferVkComputeApiExternalMemoryPtr;
+
+BufferVkComputeApiExternalMemoryPtr createBufferVkComputeApiExternalMemory(vk::BufferPtr& vulkanBuffer);
 
 
 /**
- * A CUDA driver API CUmipmappedArray object created from a Vulkan image.
+ * A CUDA driver API CUexternalSemaphore/HIP driver API hipExternalSemaphore_t object created from a Vulkan semaphore.
+ * Both binary and timeline semaphores are supported, but timeline semaphores require at least CUDA 11.2.
  */
-class DLL_OBJECT ImageComputeApiExternalMemoryVk
-{
+class DLL_OBJECT ImageVkComputeApiExternalMemory {
 public:
-    explicit ImageComputeApiExternalMemoryVk(vk::ImagePtr& vulkanImage);
-    ImageComputeApiExternalMemoryVk(
-            vk::ImagePtr& vulkanImage, VkImageViewType imageViewType, bool surfaceLoadStore);
-    virtual ~ImageComputeApiExternalMemoryVk();
+    ImageVkComputeApiExternalMemory() = default;
+    void initialize(vk::ImagePtr& vulkanImage);
+    void initialize(vk::ImagePtr& vulkanImage, VkImageViewType imageViewType, bool surfaceLoadStore);
+    virtual ~ImageVkComputeApiExternalMemory() = default;
 
     inline const sgl::vk::ImagePtr& getVulkanImage() { return vulkanImage; }
-#ifdef SUPPORT_CUDA_INTEROP
-    [[nodiscard]] inline CUmipmappedArray getCudaMipmappedArray() const { return reinterpret_cast<CUmipmappedArray>(mipmappedArray); }
-    CUarray getCudaMipmappedArrayLevel(uint32_t level = 0);
-#endif
-#ifdef SUPPORT_HIP_INTEROP
-    [[nodiscard]] inline hipMipmappedArray_t getHipMipmappedArray() const { return reinterpret_cast<hipMipmappedArray_t>(mipmappedArray); }
-    hipArray_t getHipMipmappedArrayLevel(uint32_t level = 0);
-#endif
 
     /*
      * Asynchronous copy from a device pointer to level 0 mipmap level.
      */
-    void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr);
+    virtual void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr) = 0;
 
 protected:
-    void _initialize(vk::ImagePtr& _vulkanImage, VkImageViewType _imageViewType, bool surfaceLoadStore);
+    virtual void preCheckExternalMemoryImport() {}
+#ifdef _WIN32
+    virtual void setExternalMemoryWin32Handle(HANDLE handle) = 0;
+#endif
+#ifdef __linux__
+    virtual void setExternalMemoryFd(int fd) = 0;
+#endif
+    virtual void importExternalMemory() {}
+    virtual void free() = 0;
+    void freeHandlesAndFds();
 
     sgl::vk::ImagePtr vulkanImage;
-    VkImageViewType imageViewType;
-    void* externalMemoryBuffer{}; // CUexternalMemory or hipExternalMemory_t or SyclExternalMemWrapper (external_mem)
+    VkImageViewType imageViewType = VK_IMAGE_VIEW_TYPE_2D;
+    bool surfaceLoadStore = false;
+    VkMemoryRequirements memoryRequirements{};
     void* mipmappedArray{}; // CUmipmappedArray or hipMipmappedArray_t or ze_image_handle_t or SyclImageMemHandleWrapper (image_mem_handle)
-    void* devicePtr{}; // void* device pointer; only used by Level Zero bindless images.
-
-    // Cache for storing the array for mipmap level 0.
-    void* arrayLevel0{}; // CUarray or hipArray_t
 
 #ifdef _WIN32
     HANDLE handle = nullptr;
@@ -259,8 +282,12 @@ protected:
 #endif
 };
 
-typedef std::shared_ptr<ImageComputeApiExternalMemoryVk> ImageComputeApiExternalMemoryVkPtr;
+typedef std::shared_ptr<ImageVkComputeApiExternalMemory> ImageVkComputeApiExternalMemoryPtr;
+
+ImageVkComputeApiExternalMemoryPtr createImageVkComputeApiExternalMemory(vk::ImagePtr& vulkanImage);
+ImageVkComputeApiExternalMemoryPtr createImageVkComputeApiExternalMemory(
+        vk::ImagePtr& vulkanImage, VkImageViewType imageViewType, bool surfaceLoadStore);
 
 }}
 
-#endif //SGL_INTEROPCOMPUTE_HPP
+#endif //SGL_INTEROP_COMPUTE_COMMON_HPP

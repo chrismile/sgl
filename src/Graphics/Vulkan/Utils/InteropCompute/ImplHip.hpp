@@ -1,5 +1,5 @@
 /*
- * BSD 2-Clause License
+* BSD 2-Clause License
  *
  * Copyright (c) 2025, Christoph Neuhauser
  * All rights reserved.
@@ -26,18 +26,17 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_IMPLLEVELZERO_HPP
-#define SGL_IMPLLEVELZERO_HPP
+#ifndef SGL_IMPLHIP_HPP
+#define SGL_IMPLHIP_HPP
 
 #include "../InteropCompute.hpp"
-#include "../InteropLevelZero.hpp"
+#include "../InteropHIP.hpp"
 
 namespace sgl { namespace vk {
 
-class SemaphoreVkLevelZeroInterop : public SemaphoreVkComputeApiInterop {
+class SemaphoreVkHipInterop : public SemaphoreVkComputeApiInterop {
 public:
-    SemaphoreVkLevelZeroInterop();
-    ~SemaphoreVkLevelZeroInterop() override;
+    ~SemaphoreVkHipInterop() override;
 
     /// Signal semaphore.
     void signalSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue = 0, void* eventOut = nullptr) override;
@@ -55,20 +54,18 @@ protected:
     void importExternalSemaphore() override;
 
 private:
-    ze_external_semaphore_ext_desc_t externalSemaphoreExtDesc{};
-#ifdef _WIN32
-    ze_external_semaphore_win32_ext_desc_t externalSemaphoreWin32ExtDesc{};
-#endif
-#ifdef __linux__
-    ze_external_semaphore_fd_ext_desc_t externalSemaphoreFdExtDesc{};
-#endif
+    hipExternalSemaphoreHandleDesc externalSemaphoreHandleDescHip{};
     void* externalSemaphore{};
 };
 
 
-class BufferVkLevelZeroInterop : public BufferVkComputeApiExternalMemory {
+class BufferVkHipInterop : public BufferVkComputeApiExternalMemory {
 public:
-    ~BufferVkLevelZeroInterop() override;
+    ~BufferVkHipInterop() override;
+
+#ifdef SUPPORT_HIP_INTEROP
+    [[nodiscard]] inline hipDeviceptr_t getHipDevicePtr() const { return reinterpret_cast<hipDeviceptr_t>(devicePtr); }
+#endif
 
     void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr) override;
     void copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream, void* eventOut = nullptr) override;
@@ -87,20 +84,14 @@ protected:
     void free() override;
 
 private:
-    ze_device_mem_alloc_desc_t deviceMemAllocDesc{};
-#ifdef _WIN32
-    ze_external_memory_import_win32_handle_t externalMemoryImportWin32Handle{};
-#endif
-#ifdef __linux__
-    ze_external_memory_import_fd_t externalMemoryImportFd{};
-#endif
+    hipExternalMemoryHandleDesc externalMemoryHandleDescHip{};
     void* externalMemoryBuffer{}; // hipExternalMemory_t
 };
 
 
-class ImageVkLevelZeroInterop : public ImageVkComputeApiExternalMemory {
+class ImageVkHipInterop : public ImageVkComputeApiExternalMemory {
 public:
-    ~ImageVkLevelZeroInterop() override;
+    ~ImageVkHipInterop() override;
 
     void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr) override;
 
@@ -119,22 +110,8 @@ protected:
     hipArray_t getHipMipmappedArrayLevel(uint32_t level = 0);
 
 private:
-    ze_image_desc_t zeImageDesc{};
-
-    // Bindless images.
-    ze_device_mem_alloc_desc_t deviceMemAllocDesc{};
-    ze_image_pitched_exp_desc_t imagePitchedExpDesc{};
-    ze_image_bindless_exp_desc_t imageBindlessExpDesc{};
-    void* devicePtr{}; // void* device pointer; only used by bindless images.
-
-#ifdef _WIN32
-    ze_external_memory_import_win32_handle_t externalMemoryImportWin32Handle{};
-#endif
-#ifdef __linux__
-    ze_external_memory_import_fd_t externalMemoryImportFd{};
-#endif
-
-    void* mipmappedArray{}; // ze_image_handle_t
+    hipExternalMemoryHandleDesc externalMemoryHandleDescHip{};
+    void* externalMemoryBuffer{}; // hipExternalMemory_t
 
     // Cache for storing the array for mipmap level 0.
     void* arrayLevel0{}; // hipArray_t
@@ -142,4 +119,4 @@ private:
 
 }}
 
-#endif //SGL_IMPLLEVELZERO_HPP
+#endif //SGL_IMPLHIP_HPP
