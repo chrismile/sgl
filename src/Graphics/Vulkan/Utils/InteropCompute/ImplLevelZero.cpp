@@ -172,26 +172,26 @@ void SemaphoreVkLevelZeroInterop::signalSemaphoreComputeApi(StreamWrapper stream
 void SemaphoreVkLevelZeroInterop::waitSemaphoreComputeApi(
         StreamWrapper stream, unsigned long long timelineValue, void* eventOut) {
     auto zeExternalSemaphore = reinterpret_cast<ze_external_semaphore_ext_handle_t>(externalSemaphore);
-    ze_external_semaphore_signal_params_ext_t externalSemaphoreSignalParamsExt{};
-    externalSemaphoreSignalParamsExt.stype = ZE_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_SIGNAL_PARAMS_EXT;
-    externalSemaphoreSignalParamsExt.value = uint64_t(timelineValue);
-    ze_result_t zeResult = g_levelZeroFunctionTable.zeCommandListAppendSignalExternalSemaphoreExt(
-            stream.zeCommandList, 1, &zeExternalSemaphore, &externalSemaphoreSignalParamsExt,
+    ze_external_semaphore_wait_params_ext_t externalSemaphoreWaitParamsExt{};
+    externalSemaphoreWaitParamsExt.stype = ZE_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_WAIT_PARAMS_EXT;
+    externalSemaphoreWaitParamsExt.value = uint64_t(timelineValue);
+    ze_result_t zeResult = g_levelZeroFunctionTable.zeCommandListAppendWaitExternalSemaphoreExt(
+            stream.zeCommandList, 1, &zeExternalSemaphore, &externalSemaphoreWaitParamsExt,
             g_zeSignalEvent, g_numWaitEvents, g_zeWaitEvents);
     if (zeResult == ZE_RESULT_ERROR_INVALID_ARGUMENT && g_zeCommandQueue) {
         if (openMessageBoxOnComputeApiError) {
             sgl::Logfile::get()->writeError(
-                    "Error in SemaphoreVkComputeApiInterop::signalSemaphoreComputeApi: "
+                    "Error in SemaphoreVkComputeApiInterop::waitSemaphoreComputeApi: "
                     "Level Zero requires an immediate command list for this command.");
         } else {
             sgl::Logfile::get()->write(
-                    "Error in SemaphoreVkComputeApiInterop::signalSemaphoreComputeApi: "
+                    "Error in SemaphoreVkComputeApiInterop::waitSemaphoreComputeApi: "
                     "Level Zero requires an immediate command list for this command.", sgl::RED);
         }
         throw UnsupportedComputeApiFeatureException(
                 "Level Zero requires an immediate command list for this command");
     } else {
-        checkZeResult(zeResult, "Error in zeCommandListAppendSignalExternalSemaphoreExt: ");
+        checkZeResult(zeResult, "Error in zeCommandListAppendWaitExternalSemaphoreExt: ");
     }
 }
 
