@@ -32,7 +32,7 @@
 
 namespace sgl { namespace vk {
 
-extern bool openMessageBoxOnComputeApiError = true;
+extern bool openMessageBoxOnComputeApiError;
 
 sycl::queue* g_syclQueue = nullptr;
 

@@ -75,7 +75,7 @@ extern bool g_useBindlessImagesInterop;
 #endif
 
 #ifdef SUPPORT_SYCL_INTEROP
-extern sycl::queue* g_syclQueue = nullptr;
+extern sycl::queue* g_syclQueue;
 #endif
 
 bool openMessageBoxOnComputeApiError = true;

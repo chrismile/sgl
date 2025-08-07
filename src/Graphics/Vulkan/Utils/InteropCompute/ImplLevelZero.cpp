@@ -39,7 +39,7 @@ namespace sgl { namespace vk {
 extern bool openMessageBoxOnComputeApiError;
 
 #ifdef SUPPORT_SYCL_INTEROP
-extern sycl::queue* g_syclQueue = nullptr;
+extern sycl::queue* g_syclQueue;
 #endif
 
 ze_device_handle_t g_zeDevice = {};
