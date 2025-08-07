@@ -137,9 +137,11 @@ void SemaphoreVkLevelZeroInterop::importExternalSemaphore() {
 }
 
 SemaphoreVkLevelZeroInterop::~SemaphoreVkLevelZeroInterop() {
-    auto zeExternalSemaphore = reinterpret_cast<ze_external_semaphore_ext_handle_t>(externalSemaphore);
-    ze_result_t zeResult = g_levelZeroFunctionTable.zeDeviceReleaseExternalSemaphoreExt(zeExternalSemaphore);
-    checkZeResult(zeResult, "Error in zeDeviceReleaseExternalSemaphoreExt: ");
+    if (externalSemaphore) {
+        auto zeExternalSemaphore = reinterpret_cast<ze_external_semaphore_ext_handle_t>(externalSemaphore);
+        ze_result_t zeResult = g_levelZeroFunctionTable.zeDeviceReleaseExternalSemaphoreExt(zeExternalSemaphore);
+        checkZeResult(zeResult, "Error in zeDeviceReleaseExternalSemaphoreExt: ");
+    }
 }
 
 void SemaphoreVkLevelZeroInterop::signalSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue, void* eventOut) {
