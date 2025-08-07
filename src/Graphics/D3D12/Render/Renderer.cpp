@@ -125,7 +125,7 @@ Renderer::Renderer(Device* device, uint32_t numDescriptors) : device(device) {
             D3D12_RESOURCE_STATE_COMMON,
             nullptr,
             IID_PPV_ARGS(&destinationResource)));
-    CD3DX12_HEAP_PROPERTIES heapPropertiesUpload(D3D12_HEAP_TYPE_DEFAULT);
+    CD3DX12_HEAP_PROPERTIES heapPropertiesUpload(D3D12_HEAP_TYPE_UPLOAD);
     auto bufferDescUpload = CD3DX12_RESOURCE_DESC::Buffer(bufferSize);
     ThrowIfFailed(d3d12Device->CreateCommittedResource(
             &heapPropertiesUpload,

@@ -29,6 +29,8 @@
 #ifndef SGL_D3D12_DEVICE_HPP
 #define SGL_D3D12_DEVICE_HPP
 
+#include <functional>
+
 #include "d3d12.hpp"
 #include "CommandListType.hpp"
 
@@ -37,6 +39,8 @@ namespace sgl { namespace d3d12 {
 enum class DeviceVendor {
     NVIDIA, AMD, INTEL, UNKNOWN
 };
+
+class CommandList;
 
 class DLL_OBJECT Device {
 public:
@@ -56,6 +60,10 @@ public:
     [[nodiscard]] inline ID3D12CommandAllocator* getD3D12CommandAllocatorDirect() { return commandAllocatorDirect.Get(); }
     [[nodiscard]] inline ID3D12CommandAllocator* getD3D12CommandAllocatorCompute() { return commandAllocatorCompute.Get(); }
     [[nodiscard]] ID3D12CommandAllocator* getD3D12CommandAllocator(CommandListType commandListType);
+
+    void runSingleTimeCommands(
+            const std::function<void(CommandList*)>& workFunctor,
+            CommandListType commandListType = CommandListType::DIRECT);
 
 private:
     ComPtr<IDXGIAdapter1> dxgiAdapter1;

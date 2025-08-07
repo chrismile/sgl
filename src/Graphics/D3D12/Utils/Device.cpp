@@ -28,6 +28,8 @@
 
 #include <Utils/StringUtils.hpp>
 
+#include "../Render/CommandList.hpp"
+#include "Fence.hpp"
 #include "Device.hpp"
 
 namespace sgl { namespace d3d12 {
@@ -129,6 +131,23 @@ ID3D12CommandAllocator* Device::getD3D12CommandAllocator(CommandListType command
     }
     sgl::Logfile::get()->throwError("Error in Device::getD3D12CommandAllocator: Using unsupported command list type.");
     return nullptr;
+}
+
+void Device::runSingleTimeCommands(
+        const std::function<void(CommandList*)>& workFunctor, CommandListType commandListType) {
+    CommandListPtr commandList = std::make_shared<CommandList>(this, commandListType);
+    ID3D12CommandList* d3D12CommandList = commandList->getD3D12CommandListPtr();
+    ID3D12CommandQueue* d3d12CommandQueue = getD3D12CommandQueue(commandListType);
+    ID3D12CommandAllocator* d3d12CommandAllocator = getD3D12CommandAllocator(commandListType);
+    workFunctor(commandList.get());
+
+    FencePtr fence = std::make_shared<Fence>(this);
+    d3d12CommandQueue->Signal(fence->getD3D12Fence(), 1);
+    d3d12CommandQueue->ExecuteCommandLists(1, &d3D12CommandList);
+    fence->waitOnCpu(1);
+    d3d12CommandAllocator->Reset();
+    // Reset can only be called on subclasses; but we likely do not need to reset here.
+    //d3D12CommandList->Reset(d3d12CommandAllocator, nullptr);
 }
 
 }}

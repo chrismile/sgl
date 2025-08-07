@@ -26,47 +26,38 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "Device.hpp"
-#include "Fence.hpp"
+#ifndef SGL_RESOURCE_HPP
+#define SGL_RESOURCE_HPP
+
+#include "../Utils/d3d12.hpp"
 
 namespace sgl { namespace d3d12 {
 
-Fence::Fence(Device* device, uint64_t value) : device(device) {
-    auto* d3d12Device = device->getD3D12Device2Ptr();
-    ThrowIfFailed(d3d12Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)));
-}
+class Device;
 
-Fence::~Fence() {
-    if (fenceEvent) {
-        CloseHandle(fenceEvent);
-        fenceEvent = {};
-    }
-}
+struct ResourceSettings {
 
-void Fence::waitOnCpu(uint64_t value) {
-    waitOnCpu(value, INFINITE);
-}
+};
 
-bool Fence::waitOnCpu(uint64_t value, DWORD timeoutMs) {
-    if (fence->GetCompletedValue() < value) {
-        if (!fenceEvent) {
-            fenceEvent = ::CreateEvent(nullptr, false, false, nullptr);
-            if (!fenceEvent) {
-                sgl::Logfile::get()->throwError("Error in Fence::waitOnCpu: Could not create fence event.");
-            }
-        }
-        ThrowIfFailed(fence->SetEventOnCompletion(value, fenceEvent));
-        DWORD ret = ::WaitForSingleObject(fenceEvent, timeoutMs);
-        if (ret != WAIT_OBJECT_0) {
-            if (ret != WAIT_TIMEOUT) {
-                sgl::Logfile::get()->throwError(
-                        "Error in Fence::waitOnCpu: WaitForSingleObject failed with error code "
-                        + std::to_string(GetLastError()) + ".");
-            }
-            return false;
-        }
-    }
-    return true;
-}
+class DLL_OBJECT Resource {
+public:
+    explicit Resource(Device* device, const ResourceSettings& resourceSettings);
+    ~Resource();
+
+    void uploadData(size_t sizeInBytesData, const void* dataPtr);
+
+    HANDLE getSharedHandle(const std::wstring& handleName);
+    /** A not thread-safe version using a static counter for handle name "Local\\D3D12ResourceHandle{ctr}". */
+    HANDLE getSharedHandle();
+
+    inline ID3D12Resource* getD3D12Resource() { return resource.Get(); }
+
+private:
+    Device* device;
+
+    ComPtr<ID3D12Resource> resource{};
+};
 
 }}
+
+#endif //SGL_RESOURCE_HPP

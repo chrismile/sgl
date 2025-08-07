@@ -40,7 +40,8 @@ public:
     explicit Fence(Device* device, uint64_t value = 0);
     ~Fence();
     void waitOnCpu(uint64_t value);
-    void waitOnCpu(uint64_t value, DWORD timeoutMs);
+    /** Returns whether the wait succeeded (true) or a timeout or error was encountered (false). */
+    bool waitOnCpu(uint64_t value, DWORD timeoutMs);
 
     inline ID3D12Fence* getD3D12Fence() { return fence.Get(); }
 
@@ -50,6 +51,8 @@ private:
     ComPtr<ID3D12Fence> fence{};
     HANDLE fenceEvent{};
 };
+
+typedef std::shared_ptr<Fence> FencePtr;
 
 }}
 

@@ -40,13 +40,21 @@ class DLL_OBJECT CommandList {
 public:
     explicit CommandList(Device* device, CommandListType commandListType = CommandListType::DIRECT);
 
-    inline ID3D12GraphicsCommandList* getD3D12CommandList() { return commandList.Get(); }
+    inline ComPtr<ID3D12GraphicsCommandList>& getD3D12CommandList() { return commandList; }
+    inline ID3D12CommandList* getD3D12CommandListPtr() { return commandList.Get(); }
+    inline ID3D12GraphicsCommandList* getD3D12GraphicsCommandList() {
+        ComPtr<ID3D12GraphicsCommandList> graphicsCommandList;
+        commandList.As(&graphicsCommandList);
+        return graphicsCommandList.Get();
+    }
 
 private:
     Device* device;
     CommandListType commandListType;
     ComPtr<ID3D12GraphicsCommandList> commandList;
 };
+
+typedef std::shared_ptr<CommandList> CommandListPtr;
 
 }}
 
