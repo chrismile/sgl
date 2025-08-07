@@ -128,23 +128,23 @@ InteropComputeApi decideInteropComputeApi(Device* device) {
     return api;
 }
 
-void waitForCompletion(StreamWrapper stream, void* event) {
+void waitForCompletion(InteropComputeApi interopComputeApi, StreamWrapper stream, void* event) {
 #ifdef SUPPORT_CUDA_INTEROP
-    if (stream.cuStream) {
+    if (interopComputeApi == InteropComputeApi::CUDA) {
         CUresult cuResult = g_cudaDeviceApiFunctionTable.cuStreamSynchronize(stream.cuStream);
         checkCUresult(cuResult, "Error in cuStreamSynchronize: ");
     }
 #endif
 
 #ifdef SUPPORT_HIP_INTEROP
-    if (stream.hipStream) {
+    if (interopComputeApi == InteropComputeApi::HIP) {
         hipError_t hipResult = g_hipDeviceApiFunctionTable.hipStreamSynchronize(stream.hipStream);
         checkHipResult(hipResult, "Error in hipStreamSynchronize: ");
     }
 #endif
 
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
-    if (stream.zeCommandList) {
+    if (interopComputeApi == InteropComputeApi::LEVEL_ZERO) {
         ze_result_t zeResult = g_levelZeroFunctionTable.zeCommandListClose(stream.zeCommandList);
         checkZeResult(zeResult, "Error in zeFenceCreate: ");
 
@@ -187,7 +187,7 @@ void waitForCompletion(StreamWrapper stream, void* event) {
 #endif
 
 #ifdef SUPPORT_SYCL_INTEROP
-    if (stream.syclQueuePtr) {
+    if (interopComputeApi == InteropComputeApi::SYCL) {
         if (!event) {
             sgl::Logfile::get()->throwError("sgl::vk::waitForCompletion called with nullptr SYCL event.");
         }
@@ -397,10 +397,11 @@ void SemaphoreVkComputeApiInterop::initialize(
 }
 
 
-void BufferVkComputeApiExternalMemory::initialize(vk::BufferPtr& vulkanBuffer) {
+void BufferVkComputeApiExternalMemory::initialize(vk::BufferPtr& _vulkanBuffer) {
     if (devicePtr) {
         free();
     }
+    vulkanBuffer = _vulkanBuffer;
 
     VkDevice device = vulkanBuffer->getDevice()->getVkDevice();
     VkDeviceMemory deviceMemory = vulkanBuffer->getVkDeviceMemory();

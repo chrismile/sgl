@@ -139,7 +139,7 @@ DLL_OBJECT void resetComputeApiState();
  * Waits for completion of the stream (CUDA, HIP, Level Zero) or event (SYCL, and optionally Level Zero if not nullptr).
  * If using Level Zero, @see setLevelZeroGlobalCommandQueue must have been called.
  */
-DLL_OBJECT void waitForCompletion(StreamWrapper stream, void* event = nullptr);
+DLL_OBJECT void waitForCompletion(InteropComputeApi interopComputeApi, StreamWrapper stream, void* event = nullptr);
 
 /**
  * An exception that can be thrown when the compute API does not support the used feature.

@@ -272,12 +272,15 @@ void ImageVkCudaInterop::importExternalMemory() {
 
 void ImageVkCudaInterop::free() {
     freeHandlesAndFds();
-    if (externalMemoryBuffer) {
+    if (mipmappedArray) {
         CUmipmappedArray cudaMipmappedArray = getCudaMipmappedArray();
         CUresult cuResult = g_cudaDeviceApiFunctionTable.cuMipmappedArrayDestroy(cudaMipmappedArray);
         checkCUresult(cuResult, "Error in cuMipmappedArrayDestroy: ");
+        mipmappedArray = {};
+    }
+    if (externalMemoryBuffer) {
         auto cudaExternalMemoryBuffer = reinterpret_cast<CUexternalMemory>(externalMemoryBuffer);
-        cuResult = g_cudaDeviceApiFunctionTable.cuDestroyExternalMemory(cudaExternalMemoryBuffer);
+        CUresult cuResult = g_cudaDeviceApiFunctionTable.cuDestroyExternalMemory(cudaExternalMemoryBuffer);
         checkCUresult(cuResult, "Error in cuDestroyExternalMemory: ");
         externalMemoryBuffer = {};
     }

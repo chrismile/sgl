@@ -416,12 +416,15 @@ void ImageVkHipInterop::importExternalMemory() {
 
 void ImageVkHipInterop::free() {
     freeHandlesAndFds();
-    if (externalMemoryBuffer) {
+    if (mipmappedArray) {
         hipMipmappedArray_t hipMipmappedArray = getHipMipmappedArray();
-        auto hipResult = g_hipDeviceApiFunctionTable.hipMipmappedArrayDestroy(hipMipmappedArray);
+        hipError_t hipResult = g_hipDeviceApiFunctionTable.hipMipmappedArrayDestroy(hipMipmappedArray);
         checkHipResult(hipResult, "Error in hipMipmappedArrayDestroy: ");
+        mipmappedArray = {};
+    }
+    if (externalMemoryBuffer) {
         auto hipExternalMemory = reinterpret_cast<hipExternalMemory_t>(externalMemoryBuffer);
-        hipResult = g_hipDeviceApiFunctionTable.hipDestroyExternalMemory(hipExternalMemory);
+        hipError_t hipResult = g_hipDeviceApiFunctionTable.hipDestroyExternalMemory(hipExternalMemory);
         checkHipResult(hipResult, "Error in hipDestroyExternalMemory: ");
         externalMemoryBuffer = {};
     }

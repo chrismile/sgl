@@ -387,14 +387,17 @@ void ImageVkSyclInterop::importExternalMemory() {
 
 void ImageVkSyclInterop::free() {
     freeHandlesAndFds();
-    if (externalMemoryBuffer) {
-        auto* wrapperMem = reinterpret_cast<SyclExternalMemWrapper*>(externalMemoryBuffer);
+    if (mipmappedArray) {
         auto* wrapperImg = reinterpret_cast<SyclImageMemHandleWrapper*>(mipmappedArray);
         sycl::ext::oneapi::experimental::free_image_mem(
                 wrapperImg->syclImageMemHandle, wrapperImg->syclImageDescriptor.type, *g_syclQueue);
+        delete wrapperImg;
+        mipmappedArray = {};
+    }
+    if (externalMemoryBuffer) {
+        auto* wrapperMem = reinterpret_cast<SyclExternalMemWrapper*>(externalMemoryBuffer);
         sycl::ext::oneapi::experimental::release_external_memory(wrapperMem->syclExternalMem, *g_syclQueue);
         delete wrapperMem;
-        delete wrapperImg;
         externalMemoryBuffer = {};
     }
 }

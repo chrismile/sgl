@@ -648,11 +648,11 @@ void ImageVkLevelZeroInterop::free() {
         auto imageHandle = reinterpret_cast<ze_image_handle_t>(mipmappedArray);
         ze_result_t zeResult = g_levelZeroFunctionTable.zeImageDestroy(imageHandle);
         checkZeResult(zeResult, "Error in zeImageDestroy: ");
-        if (g_useBindlessImagesInterop) {
-            zeResult = g_levelZeroFunctionTable.zeMemFree(g_zeContext, devicePtr);
-            checkZeResult(zeResult, "Error in zeMemFree: ");
-        }
         mipmappedArray = {};
+    }
+    if (devicePtr && g_useBindlessImagesInterop) {
+        ze_result_t zeResult = g_levelZeroFunctionTable.zeMemFree(g_zeContext, devicePtr);
+        checkZeResult(zeResult, "Error in zeMemFree: ");
     }
 }
 
