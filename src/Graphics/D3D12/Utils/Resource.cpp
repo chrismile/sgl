@@ -32,6 +32,13 @@
 
 namespace sgl { namespace d3d12 {
 
+Resource::Resource(Device* device, const ResourceSettings& resourceSettings)
+        : device(device), resourceSettings(resourceSettings) {
+    ;
+}
+
+Resource::~Resource() = default;
+
 void Resource::uploadData(size_t sizeInBytesData, const void* dataPtr) {
     auto* d3d12Device = device->getD3D12Device2();
     CD3DX12_HEAP_PROPERTIES heapPropertiesUpload(D3D12_HEAP_TYPE_UPLOAD);
@@ -55,12 +62,36 @@ void Resource::uploadData(size_t sizeInBytesData, const void* dataPtr) {
     });
 }
 
+size_t Resource::getAllocationSizeInBytes() const {
+    auto* d3d12Device = device->getD3D12Device2();
+    // TODO: https://asawicki.info/news_1726_secrets_of_direct3d_12_resource_alignment
+#if defined(_MSC_VER) || !defined(_WIN32)
+    D3D12_RESOURCE_ALLOCATION_INFO allocationInfo = d3d12Device->GetResourceAllocationInfo(
+            0, 1, &resourceSettings.resourceDesc);
+#else
+    D3D12_RESOURCE_ALLOCATION_INFO allocationInfo{};
+    d3d12Device->GetResourceAllocationInfo(
+            &allocationInfo, 0, 1, &resourceSettings.resourceDesc);
+#endif
+    return allocationInfo.SizeInBytes;
+}
+
+size_t Resource::getCopiableSizeInBytes() const {
+    auto* d3d12Device = device->getD3D12Device2();
+    UINT64 sizeInBytes = 0;
+    // TODO: Support more subresources?
+    d3d12Device->GetCopyableFootprints(
+            &resourceSettings.resourceDesc, 0, 1, 0,
+            nullptr, nullptr, nullptr, &sizeInBytes);
+    return size_t(sizeInBytes);
+}
+
 HANDLE Resource::getSharedHandle(const std::wstring& handleName) {
     auto* d3d12Device = device->getD3D12Device2();
-    HANDLE resourceHandle{};
+    HANDLE fenceHandle{};
     ThrowIfFailed(d3d12Device->CreateSharedHandle(
-            this, nullptr, GENERIC_ALL, handleName.data(), &resourceHandle));
-    return resourceHandle;
+            resource.Get(), nullptr, GENERIC_ALL, handleName.data(), &fenceHandle));
+    return fenceHandle;
 }
 
 HANDLE Resource::getSharedHandle() {

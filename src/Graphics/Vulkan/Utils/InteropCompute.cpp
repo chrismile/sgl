@@ -98,53 +98,53 @@ void resetComputeApiState() {
 #endif
 }
 
-InteropComputeApi decideInteropComputeApi(Device* device) {
-    InteropComputeApi api = InteropComputeApi::NONE;
+InteropCompute decideInteropComputeApi(Device* device) {
+    InteropCompute api = InteropCompute::NONE;
 #ifdef SUPPORT_CUDA_INTEROP
     if (device->getDeviceDriverId() == VK_DRIVER_ID_NVIDIA_PROPRIETARY
             && getIsCudaDeviceApiFunctionTableInitialized()) {
-        api = InteropComputeApi::CUDA;
+        api = InteropCompute::CUDA;
     }
 #endif
 #ifdef SUPPORT_HIP_INTEROP
     if ((device->getDeviceDriverId() == VK_DRIVER_ID_AMD_PROPRIETARY
             || device->getDeviceDriverId() == VK_DRIVER_ID_AMD_OPEN_SOURCE)
             && getIsHipDeviceApiFunctionTableInitialized()) {
-        api = InteropComputeApi::HIP;
+        api = InteropCompute::HIP;
     }
 #endif
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
     if ((device->getDeviceDriverId() == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS
             || device->getDeviceDriverId() == VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA)
             && getIsLevelZeroFunctionTableInitialized()) {
-        api = InteropComputeApi::LEVEL_ZERO;
+        api = InteropCompute::LEVEL_ZERO;
     }
 #endif
 #ifdef SUPPORT_SYCL_INTEROP
     if (g_syclQueue != nullptr) {
-        api = InteropComputeApi::SYCL;
+        api = InteropCompute::SYCL;
     }
 #endif
     return api;
 }
 
-void waitForCompletion(InteropComputeApi interopComputeApi, StreamWrapper stream, void* event) {
+void waitForCompletion(InteropCompute interopComputeApi, StreamWrapper stream, void* event) {
 #ifdef SUPPORT_CUDA_INTEROP
-    if (interopComputeApi == InteropComputeApi::CUDA) {
+    if (interopComputeApi == InteropCompute::CUDA) {
         CUresult cuResult = g_cudaDeviceApiFunctionTable.cuStreamSynchronize(stream.cuStream);
         checkCUresult(cuResult, "Error in cuStreamSynchronize: ");
     }
 #endif
 
 #ifdef SUPPORT_HIP_INTEROP
-    if (interopComputeApi == InteropComputeApi::HIP) {
+    if (interopComputeApi == InteropCompute::HIP) {
         hipError_t hipResult = g_hipDeviceApiFunctionTable.hipStreamSynchronize(stream.hipStream);
         checkHipResult(hipResult, "Error in hipStreamSynchronize: ");
     }
 #endif
 
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
-    if (interopComputeApi == InteropComputeApi::LEVEL_ZERO) {
+    if (interopComputeApi == InteropCompute::LEVEL_ZERO) {
         ze_result_t zeResult = g_levelZeroFunctionTable.zeCommandListClose(stream.zeCommandList);
         checkZeResult(zeResult, "Error in zeFenceCreate: ");
 
@@ -187,7 +187,7 @@ void waitForCompletion(InteropComputeApi interopComputeApi, StreamWrapper stream
 #endif
 
 #ifdef SUPPORT_SYCL_INTEROP
-    if (interopComputeApi == InteropComputeApi::SYCL) {
+    if (interopComputeApi == InteropCompute::SYCL) {
         if (!event) {
             sgl::Logfile::get()->throwError("sgl::vk::waitForCompletion called with nullptr SYCL event.");
         }
@@ -200,84 +200,96 @@ void waitForCompletion(InteropComputeApi interopComputeApi, StreamWrapper stream
 SemaphoreVkComputeApiInteropPtr createSemaphoreVkComputeApiInterop(
         Device* device, VkSemaphoreCreateFlags semaphoreCreateFlags,
         VkSemaphoreType semaphoreType, uint64_t timelineSemaphoreInitialValue) {
-    InteropComputeApi interopComputeApi = decideInteropComputeApi(device);
+    InteropCompute interopComputeApi = decideInteropComputeApi(device);
     SemaphoreVkComputeApiInteropPtr semaphore;
 #ifdef SUPPORT_CUDA_INTEROP
-    if (interopComputeApi == InteropComputeApi::CUDA) {
+    if (interopComputeApi == InteropCompute::CUDA) {
         semaphore = std::make_shared<SemaphoreVkCudaInterop>();
     }
 #endif
 #ifdef SUPPORT_HIP_INTEROP
-    if (interopComputeApi == InteropComputeApi::HIP) {
+    if (interopComputeApi == InteropCompute::HIP) {
         semaphore = std::make_shared<SemaphoreVkHipInterop>();
     }
 #endif
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
-    if (interopComputeApi == InteropComputeApi::LEVEL_ZERO) {
+    if (interopComputeApi == InteropCompute::LEVEL_ZERO) {
         semaphore = std::make_shared<SemaphoreVkLevelZeroInterop>();
     }
 #endif
 #ifdef SUPPORT_SYCL_INTEROP
-    if (interopComputeApi == InteropComputeApi::SYCL) {
+    if (interopComputeApi == InteropCompute::SYCL) {
         semaphore = std::make_shared<SemaphoreVkSyclInterop>();
     }
 #endif
+    if (!semaphore) {
+        sgl::Logfile::get()->writeError("Error in createSemaphoreVkComputeApiInterop: Unsupported compute API.");
+        return semaphore;
+    }
 
     semaphore->initialize(device, semaphoreCreateFlags, semaphoreType, timelineSemaphoreInitialValue);
     return semaphore;
 }
 
 BufferVkComputeApiExternalMemoryPtr createBufferVkComputeApiExternalMemory(vk::BufferPtr& vulkanBuffer) {
-    InteropComputeApi interopComputeApi = decideInteropComputeApi(vulkanBuffer->getDevice());
+    InteropCompute interopComputeApi = decideInteropComputeApi(vulkanBuffer->getDevice());
     BufferVkComputeApiExternalMemoryPtr bufferExtMem;
 #ifdef SUPPORT_CUDA_INTEROP
-    if (interopComputeApi == InteropComputeApi::CUDA) {
+    if (interopComputeApi == InteropCompute::CUDA) {
         bufferExtMem = std::make_shared<BufferVkCudaInterop>();
     }
 #endif
 #ifdef SUPPORT_HIP_INTEROP
-    if (interopComputeApi == InteropComputeApi::HIP) {
+    if (interopComputeApi == InteropCompute::HIP) {
         bufferExtMem = std::make_shared<BufferVkHipInterop>();
     }
 #endif
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
-    if (interopComputeApi == InteropComputeApi::LEVEL_ZERO) {
+    if (interopComputeApi == InteropCompute::LEVEL_ZERO) {
         bufferExtMem = std::make_shared<BufferVkLevelZeroInterop>();
     }
 #endif
 #ifdef SUPPORT_SYCL_INTEROP
-    if (interopComputeApi == InteropComputeApi::SYCL) {
+    if (interopComputeApi == InteropCompute::SYCL) {
         bufferExtMem = std::make_shared<BufferVkSyclInterop>();
     }
 #endif
+    if (!bufferExtMem) {
+        sgl::Logfile::get()->writeError("Error in createBufferVkComputeApiExternalMemory: Unsupported compute API.");
+        return bufferExtMem;
+    }
 
     bufferExtMem->initialize(vulkanBuffer);
     return bufferExtMem;
 }
 
 ImageVkComputeApiExternalMemoryPtr createImageVkComputeApiExternalMemory(ImagePtr& vulkanImage) {
-    InteropComputeApi interopComputeApi = decideInteropComputeApi(vulkanImage->getDevice());
+    InteropCompute interopComputeApi = decideInteropComputeApi(vulkanImage->getDevice());
     ImageVkComputeApiExternalMemoryPtr imageExtMem;
 #ifdef SUPPORT_CUDA_INTEROP
-    if (interopComputeApi == InteropComputeApi::CUDA) {
+    if (interopComputeApi == InteropCompute::CUDA) {
         imageExtMem = std::make_shared<ImageVkCudaInterop>();
     }
 #endif
 #ifdef SUPPORT_HIP_INTEROP
-    if (interopComputeApi == InteropComputeApi::HIP) {
+    if (interopComputeApi == InteropCompute::HIP) {
         imageExtMem = std::make_shared<ImageVkHipInterop>();
     }
 #endif
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
-    if (interopComputeApi == InteropComputeApi::LEVEL_ZERO) {
+    if (interopComputeApi == InteropCompute::LEVEL_ZERO) {
         imageExtMem = std::make_shared<ImageVkLevelZeroInterop>();
     }
 #endif
 #ifdef SUPPORT_SYCL_INTEROP
-    if (interopComputeApi == InteropComputeApi::SYCL) {
+    if (interopComputeApi == InteropCompute::SYCL) {
         imageExtMem = std::make_shared<ImageVkSyclInterop>();
     }
 #endif
+    if (!imageExtMem) {
+        sgl::Logfile::get()->writeError("Error in createImageVkComputeApiExternalMemory: Unsupported compute API.");
+        return imageExtMem;
+    }
 
     imageExtMem->initialize(vulkanImage);
     return imageExtMem;
@@ -285,28 +297,32 @@ ImageVkComputeApiExternalMemoryPtr createImageVkComputeApiExternalMemory(ImagePt
 
 ImageVkComputeApiExternalMemoryPtr createImageVkComputeApiExternalMemory(
         ImagePtr& vulkanImage, VkImageViewType imageViewType, bool surfaceLoadStore) {
-    InteropComputeApi interopComputeApi = decideInteropComputeApi(vulkanImage->getDevice());
+    InteropCompute interopComputeApi = decideInteropComputeApi(vulkanImage->getDevice());
     ImageVkComputeApiExternalMemoryPtr imageExtMem;
 #ifdef SUPPORT_CUDA_INTEROP
-    if (interopComputeApi == InteropComputeApi::CUDA) {
+    if (interopComputeApi == InteropCompute::CUDA) {
         imageExtMem = std::make_shared<ImageVkCudaInterop>();
     }
 #endif
 #ifdef SUPPORT_HIP_INTEROP
-    if (interopComputeApi == InteropComputeApi::HIP) {
+    if (interopComputeApi == InteropCompute::HIP) {
         imageExtMem = std::make_shared<ImageVkHipInterop>();
     }
 #endif
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
-    if (interopComputeApi == InteropComputeApi::LEVEL_ZERO) {
+    if (interopComputeApi == InteropCompute::LEVEL_ZERO) {
         imageExtMem = std::make_shared<ImageVkLevelZeroInterop>();
     }
 #endif
 #ifdef SUPPORT_SYCL_INTEROP
-    if (interopComputeApi == InteropComputeApi::SYCL) {
+    if (interopComputeApi == InteropCompute::SYCL) {
         imageExtMem = std::make_shared<ImageVkSyclInterop>();
     }
 #endif
+    if (!imageExtMem) {
+        sgl::Logfile::get()->writeError("Error in createImageVkComputeApiExternalMemory: Unsupported compute API.");
+        return imageExtMem;
+    }
 
     imageExtMem->initialize(vulkanImage, imageViewType, surfaceLoadStore);
     return imageExtMem;
@@ -487,7 +503,10 @@ void BufferVkComputeApiExternalMemory::initialize(vk::BufferPtr& _vulkanBuffer) 
 
 void BufferVkComputeApiExternalMemory::freeHandlesAndFds() {
 #ifdef _WIN32
-    CloseHandle(handle);
+    if (handle) {
+        CloseHandle(handle);
+        handle = {};
+    }
 #elif defined(__linux__)
     if (fileDescriptor != -1) {
         close(fileDescriptor);
@@ -605,7 +624,10 @@ void ImageVkComputeApiExternalMemory::initialize(
 
 void ImageVkComputeApiExternalMemory::freeHandlesAndFds() {
 #ifdef _WIN32
-    CloseHandle(handle);
+    if (handle) {
+        CloseHandle(handle);
+        handle = {};
+    }
 #elif defined(__linux__)
     if (fileDescriptor != -1) {
         close(fileDescriptor);

@@ -26,45 +26,48 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_RESOURCE_HPP
-#define SGL_RESOURCE_HPP
+#ifndef SGL_D3D12_IMPLSYCL_HPP
+#define SGL_D3D12_IMPLSYCL_HPP
 
-#include "../Utils/d3d12.hpp"
+#include "../InteropCompute.hpp"
 
 namespace sgl { namespace d3d12 {
 
-class Device;
-
-struct ResourceSettings {
-    D3D12_RESOURCE_DESC resourceDesc;
-};
-
-class DLL_OBJECT Resource {
+class FenceD3D12SyclInterop : public FenceD3D12ComputeApiInterop {
 public:
-    explicit Resource(Device* device, const ResourceSettings& resourceSettings);
-    ~Resource();
+    ~FenceD3D12SyclInterop() override;
 
-    void uploadData(size_t sizeInBytesData, const void* dataPtr);
+    /// Signal fence.
+    void signalFenceComputeApi(StreamWrapper stream, unsigned long long timelineValue = 0, void* eventOut = nullptr) override;
 
-    [[nodiscard]] size_t getAllocationSizeInBytes() const;
-    [[nodiscard]] size_t getCopiableSizeInBytes() const;
+    /// Wait on fence.
+    void waitFenceComputeApi(StreamWrapper stream, unsigned long long timelineValue = 0, void* eventOut = nullptr) override;
 
-    HANDLE getSharedHandle(const std::wstring& handleName);
-    /** A not thread-safe version using a static counter for handle name "Local\\D3D12ResourceHandle{ctr}". */
-    HANDLE getSharedHandle();
-
-    inline Device* getDevice() { return device; }
-    inline ID3D12Resource* getD3D12Resource() { return resource.Get(); }
+protected:
+    void importExternalFenceWin32Handle() override;
 
 private:
-    Device* device;
-
-    ResourceSettings resourceSettings;
-    ComPtr<ID3D12Resource> resource{};
+    void* externalSemaphore{};
 };
 
-typedef std::shared_ptr<Resource> ResourcePtr;
+
+class ResourceD3D12SyclInterop : public ResourceD3D12ComputeApiExternalMemory {
+public:
+    ~ResourceD3D12SyclInterop() override;
+
+    void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr) override;
+    void copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream, void* eventOut = nullptr) override;
+    void copyFromHostPtrAsync(void* hostPtrSrc, StreamWrapper stream, void* eventOut = nullptr) override;
+    void copyToHostPtrAsync(void* hostPtrDst, StreamWrapper stream, void* eventOut = nullptr) override;
+
+protected:
+    void importExternalMemoryWin32Handle() override;
+    void free() override;
+
+private:
+    void* externalMemory{}; // SyclExternalMemWrapper
+};
 
 }}
 
-#endif //SGL_RESOURCE_HPP
+#endif //SGL_D3D12_IMPLSYCL_HPP

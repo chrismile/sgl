@@ -32,6 +32,11 @@
 namespace sgl { namespace d3d12 {
 
 Fence::Fence(Device* device, uint64_t value) : device(device) {
+    _initialize(device, value);
+}
+
+void Fence::_initialize(Device* _device, uint64_t value) {
+    device = _device;
     auto* d3d12Device = device->getD3D12Device2Ptr();
     ThrowIfFailed(d3d12Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)));
 }
@@ -67,6 +72,20 @@ bool Fence::waitOnCpu(uint64_t value, DWORD timeoutMs) {
         }
     }
     return true;
+}
+
+HANDLE Fence::getSharedHandle(const std::wstring& handleName) {
+    auto* d3d12Device = device->getD3D12Device2();
+    HANDLE resourceHandle{};
+    ThrowIfFailed(d3d12Device->CreateSharedHandle(
+            fence.Get(), nullptr, GENERIC_ALL, handleName.data(), &resourceHandle));
+    return resourceHandle;
+}
+
+HANDLE Fence::getSharedHandle() {
+    uint64_t resourceIdx = 0;
+    std::wstring handleName = std::wstring(L"Local\\D3D12FenceHandle") + std::to_wstring(resourceIdx);
+    return getSharedHandle(handleName);
 }
 
 }}

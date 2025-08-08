@@ -26,53 +26,17 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_INTEROP_COMPUTE_COMMON_HPP
-#define SGL_INTEROP_COMPUTE_COMMON_HPP
+#ifndef SGL_VULKAN_INTEROP_COMPUTE_HPP
+#define SGL_VULKAN_INTEROP_COMPUTE_HPP
 
 #include <stdexcept>
 #include <utility>
 
+#include <Graphics/Utils/InteropCompute.hpp>
 #include "../Buffers/Buffer.hpp"
 #include "../Image/Image.hpp"
 #include "SyncObjects.hpp"
 #include "Device.hpp"
-
-// Forward declarations for CUDA, HIP and Level Zero objects.
-
-extern "C" {
-#ifdef SUPPORT_CUDA_INTEROP
-#if defined(_WIN64) || defined(__LP64__)
-    typedef unsigned long long CUdeviceptr_v2;
-#else
-    typedef unsigned int CUdeviceptr_v2;
-#endif
-    typedef CUdeviceptr_v2 CUdeviceptr;
-    typedef struct CUmipmappedArray_st *CUmipmappedArray;
-    typedef struct CUarray_st *CUarray;
-    typedef struct CUstream_st *CUstream;
-#endif
-
-#ifdef SUPPORT_HIP_INTEROP
-    typedef void* hipDeviceptr_t;
-    typedef struct hipMipmappedArray* hipMipmappedArray_t;
-    typedef struct hipArray* hipArray_t;
-    typedef struct ihipStream_t* hipStream_t;
-#endif
-
-#ifdef SUPPORT_LEVEL_ZERO_INTEROP
-    typedef struct _ze_device_handle_t* ze_device_handle_t;
-    typedef struct _ze_context_handle_t* ze_context_handle_t;
-    typedef struct _ze_command_queue_handle_t* ze_command_queue_handle_t;
-    typedef struct _ze_command_list_handle_t* ze_command_list_handle_t;
-    typedef struct _ze_event_handle_t *ze_event_handle_t;
-#endif
-}
-
-#ifdef SUPPORT_SYCL_INTEROP
-namespace sycl { inline namespace _V1 {
-class queue;
-}}
-#endif
 
 /*
  * This file provides wrappers over InteropCuda, InteropHIP and InteropLevelZero.
@@ -84,26 +48,6 @@ class queue;
  */
 
 namespace sgl { namespace vk {
-
-enum class InteropComputeApi {
-    NONE, CUDA, HIP, LEVEL_ZERO, SYCL
-};
-
-union DLL_OBJECT StreamWrapper {
-    void* stream;
-#ifdef SUPPORT_CUDA_INTEROP
-    CUstream cuStream;
-#endif
-#ifdef SUPPORT_HIP_INTEROP
-    hipStream_t hipStream;
-#endif
-#ifdef SUPPORT_LEVEL_ZERO_INTEROP
-    ze_command_list_handle_t zeCommandList;
-#endif
-#ifdef SUPPORT_SYCL_INTEROP
-    sycl::queue* syclQueuePtr;
-#endif
-};
 
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
 /*
@@ -130,7 +74,7 @@ DLL_OBJECT void setGlobalSyclQueue(sycl::queue& syclQueue);
 DLL_OBJECT void setOpenMessageBoxOnComputeApiError(bool _openMessageBox);
 
 /// Decides the compute API usable for the passed device. SYCL has precedence over other APIs if available.
-DLL_OBJECT InteropComputeApi decideInteropComputeApi(Device* device);
+DLL_OBJECT InteropCompute decideInteropComputeApi(Device* device);
 
 /// Reset function for unit tests, as static variables may persist across GoogleTest test cases.
 DLL_OBJECT void resetComputeApiState();
@@ -139,7 +83,7 @@ DLL_OBJECT void resetComputeApiState();
  * Waits for completion of the stream (CUDA, HIP, Level Zero) or event (SYCL, and optionally Level Zero if not nullptr).
  * If using Level Zero, @see setLevelZeroGlobalCommandQueue must have been called.
  */
-DLL_OBJECT void waitForCompletion(InteropComputeApi interopComputeApi, StreamWrapper stream, void* event = nullptr);
+DLL_OBJECT void waitForCompletion(InteropCompute interopComputeApi, StreamWrapper stream, void* event = nullptr);
 
 /**
  * An exception that can be thrown when the compute API does not support the used feature.
@@ -290,4 +234,4 @@ ImageVkComputeApiExternalMemoryPtr createImageVkComputeApiExternalMemory(
 
 }}
 
-#endif //SGL_INTEROP_COMPUTE_COMMON_HPP
+#endif //SGL_VULKAN_INTEROP_COMPUTE_HPP

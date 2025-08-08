@@ -506,6 +506,8 @@ endif()
 if (NOT USE_ONEAPI)
     list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Vulkan/Utils/InteropCompute/ImplSycl.hpp)
     list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Vulkan/Utils/InteropCompute/ImplSycl.cpp)
+    list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/D3D12/Utils/InteropCompute/ImplSycl.hpp)
+    list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/D3D12/Utils/InteropCompute/ImplSycl.cpp)
 endif()
 
 if (NOT (DEFINED USE_CUDA OR DEFINED USE_HIP OR ${SUPPORT_LEVEL_ZERO_INTEROP} OR ${SUPPORT_ONEAPI}))

@@ -38,17 +38,24 @@ class Device;
 class DLL_OBJECT Fence {
 public:
     explicit Fence(Device* device, uint64_t value = 0);
-    ~Fence();
+    virtual ~Fence();
     void waitOnCpu(uint64_t value);
     /** Returns whether the wait succeeded (true) or a timeout or error was encountered (false). */
     bool waitOnCpu(uint64_t value, DWORD timeoutMs);
 
+    HANDLE getSharedHandle(const std::wstring& handleName);
+    /** A not thread-safe version using a static counter for handle name "Local\\D3D12FenceHandle{ctr}". */
+    HANDLE getSharedHandle();
+
     inline ID3D12Fence* getD3D12Fence() { return fence.Get(); }
+
+protected:
+    Fence() = default;
+    void _initialize(Device* device, uint64_t value);
+    ComPtr<ID3D12Fence> fence{};
 
 private:
     Device* device;
-
-    ComPtr<ID3D12Fence> fence{};
     HANDLE fenceEvent{};
 };
 

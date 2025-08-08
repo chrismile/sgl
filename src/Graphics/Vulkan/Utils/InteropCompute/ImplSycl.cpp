@@ -30,11 +30,12 @@
 
 #include <sycl/sycl.hpp>
 
-namespace sgl { namespace vk {
-
+namespace sgl {
 extern bool openMessageBoxOnComputeApiError;
-
 sycl::queue* g_syclQueue = nullptr;
+}
+
+namespace sgl { namespace vk {
 
 void setGlobalSyclQueue(sycl::queue& syclQueue) {
     g_syclQueue = &syclQueue;
@@ -61,7 +62,7 @@ void SemaphoreVkSyclInterop::setExternalSemaphoreWin32Handle(HANDLE handle) {
         semaphoreHandleType = sycl::ext::oneapi::experimental::external_semaphore_handle_type::timeline_win32_nt_handle;
 #else
         sgl::Logfile::get()->throwError(
-                "Error in SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop: "
+                "Error in SemaphoreVkSyclInterop::SemaphoreVkSyclInterop: "
                 "The installed version of SYCL does not support external timeline semaphores.");
 #endif
     } else {
@@ -85,7 +86,7 @@ void SemaphoreVkSyclInterop::setExternalSemaphoreFd(int fileDescriptor) {
         semaphoreHandleType = sycl::ext::oneapi::experimental::external_semaphore_handle_type::timeline_fd;
 #else
         sgl::Logfile::get()->throwError(
-                "Error in SemaphoreVkComputeApiInterop::SemaphoreVkComputeApiInterop: "
+                "Error in SemaphoreVkSyclInterop::SemaphoreVkSyclInterop: "
                 "The installed version of SYCL does not support external timeline semaphores.");
 #endif
     } else {
