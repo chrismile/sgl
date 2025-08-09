@@ -36,16 +36,16 @@ bool getMatchingHipDevice(sgl::vk::Device* device, hipDevice_t* hipDevice) {
     bool foundDevice = false;
 
     int numDevices = 0;
-    hipError_t hipResult = sgl::vk::g_hipDeviceApiFunctionTable.hipGetDeviceCount(&numDevices);
+    hipError_t hipResult = sgl::g_hipDeviceApiFunctionTable.hipGetDeviceCount(&numDevices);
     checkHipResult(hipResult, "Error in hipGetDeviceCount: ");
 
     for (int deviceIdx = 0; deviceIdx < numDevices; deviceIdx++) {
         hipDevice_t currDevice = 0;
-        hipResult = sgl::vk::g_hipDeviceApiFunctionTable.hipDeviceGet(&currDevice, deviceIdx);
+        hipResult = sgl::g_hipDeviceApiFunctionTable.hipDeviceGet(&currDevice, deviceIdx);
         checkHipResult(hipResult, "Error in hipDeviceGet: ");
 
         hipUUID currUuid = {};
-        hipResult = sgl::vk::g_hipDeviceApiFunctionTable.hipDeviceGetUuid(&currUuid, currDevice);
+        hipResult = sgl::g_hipDeviceApiFunctionTable.hipDeviceGetUuid(&currUuid, currDevice);
         checkHipResult(hipResult, "Error in hipDeviceGetUuid: ");
 
         bool isSameUuid = true;

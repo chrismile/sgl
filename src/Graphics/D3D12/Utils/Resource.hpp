@@ -29,6 +29,7 @@
 #ifndef SGL_RESOURCE_HPP
 #define SGL_RESOURCE_HPP
 
+#include <optional>
 #include "../Utils/d3d12.hpp"
 
 namespace sgl { namespace d3d12 {
@@ -36,8 +37,18 @@ namespace sgl { namespace d3d12 {
 class Device;
 
 struct ResourceSettings {
-    D3D12_RESOURCE_DESC resourceDesc;
+    D3D12_RESOURCE_FLAGS resourceFlags = D3D12_RESOURCE_FLAG_NONE;
+    D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
+    D3D12_RESOURCE_STATES resourceStates = D3D12_RESOURCE_STATE_COMMON;
+    D3D12_RESOURCE_DESC resourceDesc{};
+    D3D12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+    std::optional<D3D12_CLEAR_VALUE> optimizedClearValue{};
 };
+
+class CommandList;
+typedef std::shared_ptr<CommandList> CommandListPtr;
+class Resource;
+typedef std::shared_ptr<Resource> ResourcePtr;
 
 class DLL_OBJECT Resource {
 public:
@@ -45,6 +56,9 @@ public:
     ~Resource();
 
     void uploadData(size_t sizeInBytesData, const void* dataPtr);
+    void uploadData(
+            size_t sizeInBytesData, const void* dataPtr,
+            const ResourcePtr& intermediateResource, const CommandListPtr& commandList);
 
     [[nodiscard]] size_t getAllocationSizeInBytes() const;
     [[nodiscard]] size_t getCopiableSizeInBytes() const;
@@ -62,8 +76,6 @@ private:
     ResourceSettings resourceSettings;
     ComPtr<ID3D12Resource> resource{};
 };
-
-typedef std::shared_ptr<Resource> ResourcePtr;
 
 }}
 

@@ -142,22 +142,13 @@ sgl::d3d12::DevicePtr DXGIFactory::createDevicePreferDedicated(D3D_FEATURE_LEVEL
     return createDeviceAny(featureLevel);
 }
 
-#ifdef SUPPORT_VULKAN
-sgl::d3d12::DevicePtr DXGIFactory::createMatchingDevice(sgl::vk::Device* device, D3D_FEATURE_LEVEL minFeatureLevel) {
+sgl::d3d12::DevicePtr DXGIFactory::createMatchingDevice(uint64_t luid, D3D_FEATURE_LEVEL minFeatureLevel) {
     std::vector<D3D_FEATURE_LEVEL> featureLevels;
     featureLevels.push_back(minFeatureLevel);
-    return createMatchingDevice(device, featureLevels);
+    return createMatchingDevice(luid, featureLevels);
 }
 
-sgl::d3d12::DevicePtr DXGIFactory::createMatchingDevice(
-        sgl::vk::Device* device, std::vector<D3D_FEATURE_LEVEL> featureLevels) {
-    const VkPhysicalDeviceIDProperties& deviceIdProperties = device->getDeviceIDProperties();
-    //const uint64_t vulkanLuid = *reinterpret_cast<const uint64_t*>(deviceIdProperties.deviceLUID);
-    uint64_t vulkanLuid = 0;
-    for (uint64_t i = 0; i < uint64_t(VK_LUID_SIZE); i++) {
-        vulkanLuid = vulkanLuid | (deviceIdProperties.deviceLUID[i] << (i * 8));
-    }
-
+sgl::d3d12::DevicePtr DXGIFactory::createMatchingDevice(uint64_t luid, std::vector<D3D_FEATURE_LEVEL> featureLevels) {
     std::sort(featureLevels.begin(), featureLevels.end(), std::greater<>());
     ComPtr<IDXGIAdapter1> dxgiAdapter1;
     ComPtr<IDXGIAdapter4> dxgiAdapter4;
@@ -167,7 +158,7 @@ sgl::d3d12::DevicePtr DXGIFactory::createMatchingDevice(
         uint64_t d3d12Luid =
                 (uint64_t(dxgiAdapterDesc1.AdapterLuid.HighPart) << uint64_t(32))
                 | uint64_t(dxgiAdapterDesc1.AdapterLuid.LowPart);
-        if (vulkanLuid != d3d12Luid) {
+        if (luid != d3d12Luid) {
             continue;
         }
 
@@ -184,8 +175,7 @@ sgl::d3d12::DevicePtr DXGIFactory::createMatchingDevice(
             if (!featureLevelSupported) {
                 continue;
             }
-            return std::make_shared<sgl::d3d12::Device>(
-                    dxgiAdapter1, featureLevel, device->getInstance()->getUseValidationLayer());
+            return std::make_shared<sgl::d3d12::Device>(dxgiAdapter1, featureLevel, useDebugInterface);
         }
 
         sgl::Logfile::get()->writeInfo(
@@ -195,6 +185,25 @@ sgl::d3d12::DevicePtr DXGIFactory::createMatchingDevice(
     sgl::Logfile::get()->writeInfo(
             "DXGIFactory::createMatchingDevice: Couldn't find suitable Direct3D 12 device for passed Vulkan device.");
     return {};
+}
+
+#ifdef SUPPORT_VULKAN
+sgl::d3d12::DevicePtr DXGIFactory::createMatchingDevice(sgl::vk::Device* device, D3D_FEATURE_LEVEL minFeatureLevel) {
+    std::vector<D3D_FEATURE_LEVEL> featureLevels;
+    featureLevels.push_back(minFeatureLevel);
+    return createMatchingDevice(device, featureLevels);
+}
+
+sgl::d3d12::DevicePtr DXGIFactory::createMatchingDevice(
+        sgl::vk::Device* device, std::vector<D3D_FEATURE_LEVEL> featureLevels) {
+    const VkPhysicalDeviceIDProperties& deviceIdProperties = device->getDeviceIDProperties();
+    //const uint64_t vulkanLuid = *reinterpret_cast<const uint64_t*>(deviceIdProperties.deviceLUID);
+    uint64_t vulkanLuid = 0;
+    for (uint64_t i = 0; i < uint64_t(VK_LUID_SIZE); i++) {
+        vulkanLuid = vulkanLuid | (deviceIdProperties.deviceLUID[i] << (i * 8));
+    }
+
+    return createMatchingDevice(vulkanLuid, std::move(featureLevels));
 }
 #endif
 

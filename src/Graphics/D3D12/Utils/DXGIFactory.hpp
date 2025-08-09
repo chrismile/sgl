@@ -73,6 +73,9 @@ public:
      */
     sgl::d3d12::DevicePtr createDevicePreferDedicated(D3D_FEATURE_LEVEL featureLevel);
 
+    sgl::d3d12::DevicePtr createMatchingDevice(uint64_t luid, D3D_FEATURE_LEVEL minFeatureLevel);
+    sgl::d3d12::DevicePtr createMatchingDevice(uint64_t luid, std::vector<D3D_FEATURE_LEVEL> featureLevels);
+
 #ifdef SUPPORT_VULKAN
     sgl::d3d12::DevicePtr createMatchingDevice(sgl::vk::Device* device, D3D_FEATURE_LEVEL minFeatureLevel);
     // Selects the highest supported feature level of the provided set.

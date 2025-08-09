@@ -34,7 +34,19 @@ namespace sgl { namespace d3d12 {
 
 Resource::Resource(Device* device, const ResourceSettings& resourceSettings)
         : device(device), resourceSettings(resourceSettings) {
-    ;
+
+    auto* d3d12Device = device->getD3D12Device2();
+    const D3D12_CLEAR_VALUE* optimizedClearValue = nullptr;
+    if (resourceSettings.optimizedClearValue.has_value()) {
+        optimizedClearValue = &resourceSettings.optimizedClearValue.value();
+    }
+    ThrowIfFailed(d3d12Device->CreateCommittedResource(
+            &resourceSettings.heapProperties,
+            resourceSettings.heapFlags,
+            &resourceSettings.resourceDesc,
+            resourceSettings.resourceStates,
+            optimizedClearValue,
+            IID_PPV_ARGS(&resource)));
 }
 
 Resource::~Resource() = default;
@@ -53,13 +65,24 @@ void Resource::uploadData(size_t sizeInBytesData, const void* dataPtr) {
             IID_PPV_ARGS(&intermediateResource)));
 
     device->runSingleTimeCommands([&](CommandList* commandList){
-        auto* d3d12CommandList = commandList->getD3D12GraphicsCommandList();
+        auto* d3d12CommandList = commandList->getD3D12GraphicsCommandListPtr();
         D3D12_SUBRESOURCE_DATA subresourceData = {};
         subresourceData.pData = dataPtr;
         subresourceData.RowPitch = LONG_PTR(sizeInBytesData);
         subresourceData.SlicePitch = subresourceData.RowPitch;
         UpdateSubresources(d3d12CommandList, getD3D12Resource(), intermediateResource.Get(), 0, 0, 1, &subresourceData);
     });
+}
+
+void Resource::uploadData(
+        size_t sizeInBytesData, const void* dataPtr,
+        const ResourcePtr& intermediateResource, const CommandListPtr& commandList) {
+    auto* d3d12CommandList = commandList->getD3D12GraphicsCommandListPtr();
+    D3D12_SUBRESOURCE_DATA subresourceData = {};
+    subresourceData.pData = dataPtr;
+    subresourceData.RowPitch = LONG_PTR(sizeInBytesData);
+    subresourceData.SlicePitch = subresourceData.RowPitch;
+    UpdateSubresources(d3d12CommandList, getD3D12Resource(), intermediateResource->getD3D12Resource(), 0, 0, 1, &subresourceData);
 }
 
 size_t Resource::getAllocationSizeInBytes() const {

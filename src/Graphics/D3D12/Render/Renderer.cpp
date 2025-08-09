@@ -197,4 +197,8 @@ Renderer::Renderer(Device* device, uint32_t numDescriptors) : device(device) {
 Renderer::~Renderer() {
 }
 
+void Renderer::setCommandList(const CommandListPtr& commandList) {
+    currentCommandList = commandList;
+}
+
 }}

@@ -298,6 +298,7 @@ DLL_OBJECT bool initializeLevelZeroFunctionTable();
 DLL_OBJECT bool getIsLevelZeroFunctionTableInitialized();
 DLL_OBJECT void freeLevelZeroFunctionTable();
 
+DLL_OBJECT bool queryLevelZeroDriverSupportsExtension(ze_driver_handle_t zeDriver, const char* extensionName);
 DLL_OBJECT bool queryLevelZeroDriverSupportsExternalSemaphores(ze_driver_handle_t zeDriver);
 DLL_OBJECT bool queryLevelZeroDriverSupportsBindlessImages(ze_driver_handle_t zeDriver);
 

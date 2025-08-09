@@ -39,19 +39,39 @@ class Device;
 class DLL_OBJECT CommandList {
 public:
     explicit CommandList(Device* device, CommandListType commandListType = CommandListType::DIRECT);
+    CommandList(
+            Device* device, ComPtr<ID3D12CommandAllocator> commandAllocator,
+            CommandListType commandListType = CommandListType::DIRECT);
 
-    inline ComPtr<ID3D12GraphicsCommandList>& getD3D12CommandList() { return commandList; }
+    [[nodiscard]] inline CommandListType getCommandListType() const { return commandListType; }
+    inline ComPtr<ID3D12CommandList>& getD3D12CommandList() { return commandList; }
     inline ID3D12CommandList* getD3D12CommandListPtr() { return commandList.Get(); }
-    inline ID3D12GraphicsCommandList* getD3D12GraphicsCommandList() {
-        ComPtr<ID3D12GraphicsCommandList> graphicsCommandList;
-        commandList.As(&graphicsCommandList);
-        return graphicsCommandList.Get();
+    inline ComPtr<ID3D12GraphicsCommandList>& getD3D12GraphicsCommandList() { return graphicsCommandList; }
+    inline ID3D12GraphicsCommandList* getD3D12GraphicsCommandListPtr() {
+        return hasGraphicsCommandList ? graphicsCommandList.Get() : nullptr;
     }
+    template<class T>
+    inline ComPtr<T> getD3D12CommandListAs() { ComPtr<T> cmdList; commandList.As(&cmdList); return cmdList; }
+    template<class T>
+    inline T* getD3D12CommandListPtrAs() { ComPtr<T> cmdList; commandList.As(&cmdList); return cmdList.Get(); }
+
+    inline ComPtr<ID3D12CommandAllocator>& getD3D12CommandAllocator() { return commandAllocator; }
+    inline ID3D12CommandAllocator* getD3D12CommandAllocatorPtr() { return commandAllocator.Get(); }
+
+    void close();
+    /**
+     * Resets the command list. If the command allocator is owned by this command list, it is also reset.
+     */
+    void reset();
 
 private:
     Device* device;
     CommandListType commandListType;
-    ComPtr<ID3D12GraphicsCommandList> commandList;
+    bool hasGraphicsCommandList = false;
+    bool ownsCommandAllocator = true;
+    ComPtr<ID3D12CommandList> commandList;
+    ComPtr<ID3D12GraphicsCommandList> graphicsCommandList;
+    ComPtr<ID3D12CommandAllocator> commandAllocator;
 };
 
 typedef std::shared_ptr<CommandList> CommandListPtr;

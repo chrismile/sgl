@@ -60,10 +60,18 @@ void FenceD3D12SyclInterop::importExternalFenceWin32Handle() {
     externalSemaphore = reinterpret_cast<void*>(wrapper);
 }
 
+void FenceD3D12SyclInterop::free() {
+    freeHandle();
+    if (externalSemaphore) {
+        auto* wrapper = reinterpret_cast<SyclExternalSemaphoreWrapper*>(externalSemaphore);
+        sycl::ext::oneapi::experimental::release_external_semaphore(wrapper->syclExternalSemaphore, *g_syclQueue);
+        delete wrapper;
+        externalSemaphore = {};
+    }
+}
+
 FenceD3D12SyclInterop::~FenceD3D12SyclInterop() {
-    auto* wrapper = reinterpret_cast<SyclExternalSemaphoreWrapper*>(externalSemaphore);
-    sycl::ext::oneapi::experimental::release_external_semaphore(wrapper->syclExternalSemaphore, *g_syclQueue);
-    delete wrapper;
+    FenceD3D12SyclInterop::free();
 }
 
 void FenceD3D12SyclInterop::signalFenceComputeApi(StreamWrapper stream, unsigned long long timelineValue, void* eventOut) {

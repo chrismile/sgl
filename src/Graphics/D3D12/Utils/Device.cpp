@@ -34,8 +34,19 @@
 
 namespace sgl { namespace d3d12 {
 
+void debugMessageCallbackD3D12(
+        D3D12_MESSAGE_CATEGORY Category,
+        D3D12_MESSAGE_SEVERITY Severity,
+        D3D12_MESSAGE_ID ID,
+        LPCSTR pDescription,
+        void* pContext) {
+    auto* device = static_cast<Device*>(pContext);
+    device->debugMessageCallback(Category, Severity, ID, pDescription);
+}
+
 Device::Device(const ComPtr<IDXGIAdapter1> &dxgiAdapter1, D3D_FEATURE_LEVEL featureLevel, bool useDebugLayer)
-        : dxgiAdapter1(dxgiAdapter1), featureLevel(featureLevel) {
+        : dxgiAdapter1(dxgiAdapter1), featureLevel(featureLevel), useDebugLayer(useDebugLayer) {
+    commandListsSingleTime.resize(int(CommandListType::MAX_VAL), {});
     ThrowIfFailed(dxgiAdapter1.As(&dxgiAdapter4));
     ThrowIfFailed(D3D12CreateDevice(dxgiAdapter4.Get(), featureLevel, IID_PPV_ARGS(&d3d12Device2)));
 
@@ -67,6 +78,12 @@ Device::Device(const ComPtr<IDXGIAdapter1> &dxgiAdapter1, D3D_FEATURE_LEVEL feat
         NewFilter.DenyList.NumIDs = _countof(DenyIds);
         NewFilter.DenyList.pIDList = DenyIds;
         ThrowIfFailed(pInfoQueue->PushStorageFilter(&NewFilter));
+
+        ComPtr<ID3D12InfoQueue1> pInfoQueue1;
+        if (SUCCEEDED(pInfoQueue.As(&pInfoQueue1))) {
+            ThrowIfFailed(pInfoQueue1->RegisterMessageCallback(
+                    debugMessageCallbackD3D12, D3D12_MESSAGE_CALLBACK_FLAG_NONE, this, &callbackCookie));
+        }
     }
 
     D3D12_COMMAND_QUEUE_DESC commandQueueDesc{};
@@ -76,15 +93,27 @@ Device::Device(const ComPtr<IDXGIAdapter1> &dxgiAdapter1, D3D_FEATURE_LEVEL feat
     commandQueueDesc.NodeMask = 0;
     ThrowIfFailed(d3d12Device2->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&commandQueueDirect)));
 
-    ThrowIfFailed(d3d12Device2->CreateCommandAllocator(
-            D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocatorDirect)));
-
     commandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
     if (!FAILED(d3d12Device2->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&commandQueueCompute)))) {
         supportsComputeQueue = true;
-        ThrowIfFailed(d3d12Device2->CreateCommandAllocator(
-                D3D12_COMMAND_LIST_TYPE_COMPUTE, IID_PPV_ARGS(&commandAllocatorCompute)));
     }
+}
+
+Device::~Device() {
+    commandListsSingleTime.clear();
+
+    ComPtr<ID3D12InfoQueue1> pInfoQueue1;
+    if (useDebugLayer && SUCCEEDED(d3d12Device2.As(&pInfoQueue1))) {
+        ThrowIfFailed(pInfoQueue1->UnregisterMessageCallback(callbackCookie));
+    }
+}
+
+void Device::debugMessageCallback(
+        D3D12_MESSAGE_CATEGORY Category,
+        D3D12_MESSAGE_SEVERITY Severity,
+        D3D12_MESSAGE_ID ID,
+        LPCSTR pDescription) {
+    sgl::Logfile::get()->writeError(std::string() + "Debug message: " + pDescription);
 }
 
 D3D_FEATURE_LEVEL Device::getFeatureLevel() const {
@@ -123,31 +152,24 @@ ID3D12CommandQueue* Device::getD3D12CommandQueue(CommandListType commandListType
     return nullptr;
 }
 
-ID3D12CommandAllocator* Device::getD3D12CommandAllocator(CommandListType commandListType) {
-    if (commandListType == CommandListType::DIRECT) {
-        return commandAllocatorDirect.Get();
-    } else if (commandListType == CommandListType::COMPUTE) {
-        return commandAllocatorCompute.Get();
-    }
-    sgl::Logfile::get()->throwError("Error in Device::getD3D12CommandAllocator: Using unsupported command list type.");
-    return nullptr;
-}
-
 void Device::runSingleTimeCommands(
         const std::function<void(CommandList*)>& workFunctor, CommandListType commandListType) {
-    CommandListPtr commandList = std::make_shared<CommandList>(this, commandListType);
-    ID3D12CommandList* d3D12CommandList = commandList->getD3D12CommandListPtr();
+    CommandListPtr commandList = commandListsSingleTime[int(commandListType)];
+    if (!commandList) {
+        commandList = std::make_shared<CommandList>(this, commandListType);
+        commandListsSingleTime[int(commandListType)] = commandList;
+    } else {
+        commandList->reset();
+    }
+    ID3D12CommandList* d3d12CommandList = commandList->getD3D12CommandListPtr();
     ID3D12CommandQueue* d3d12CommandQueue = getD3D12CommandQueue(commandListType);
-    ID3D12CommandAllocator* d3d12CommandAllocator = getD3D12CommandAllocator(commandListType);
     workFunctor(commandList.get());
 
     FencePtr fence = std::make_shared<Fence>(this);
-    d3d12CommandQueue->Signal(fence->getD3D12Fence(), 1);
-    d3d12CommandQueue->ExecuteCommandLists(1, &d3D12CommandList);
+    commandList->close();
+    d3d12CommandQueue->ExecuteCommandLists(1, &d3d12CommandList);
+    ThrowIfFailed(d3d12CommandQueue->Signal(fence->getD3D12Fence(), 1));
     fence->waitOnCpu(1);
-    d3d12CommandAllocator->Reset();
-    // Reset can only be called on subclasses; but we likely do not need to reset here.
-    //d3D12CommandList->Reset(d3d12CommandAllocator, nullptr);
 }
 
 }}

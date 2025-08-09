@@ -57,9 +57,79 @@ void setOpenMessageBoxOnComputeApiError(bool _openMessageBox) {
 }
 
 #ifdef SUPPORT_SYCL_INTEROP
-extern sycl::queue* g_syclQueue;
+sycl::queue* g_syclQueue = nullptr;
 void setGlobalSyclQueue(sycl::queue& syclQueue) {
     g_syclQueue = &syclQueue;
+}
+InteropComputeApi getSyclDeviceComputeApi(const sycl::device& device) {
+#if defined(SUPPORT_LEVEL_ZERO_INTEROP) && defined(SYCL_EXT_ONEAPI_BACKEND_LEVEL_ZERO) && SYCL_EXT_ONEAPI_BACKEND_LEVEL_ZERO
+    if (device.get_backend() == sycl::backend::ext_oneapi_level_zero) {
+        return InteropComputeApi::LEVEL_ZERO;
+    }
+#endif
+#if defined(SUPPORT_CUDA_INTEROP) && defined(SYCL_EXT_ONEAPI_BACKEND_CUDA) && SYCL_EXT_ONEAPI_BACKEND_CUDA
+    if (device.get_backend() == sycl::backend::ext_oneapi_cuda) {
+        return InteropComputeApi::CUDA;
+    }
+#endif
+#if defined(SUPPORT_HIP_INTEROP) && defined(SYCL_EXT_ONEAPI_BACKEND_HIP) && SYCL_EXT_ONEAPI_BACKEND_HIP
+    if (device.get_backend() == sycl::backend::ext_oneapi_hip) {
+        return InteropComputeApi::HIP;
+    }
+#endif
+    return InteropComputeApi::NONE;
+}
+bool getSyclDeviceLuid(const sycl::device& device, uint64_t& deviceLuid) {
+#if defined(SUPPORT_LEVEL_ZERO_INTEROP) && defined(SYCL_EXT_ONEAPI_BACKEND_LEVEL_ZERO) && SYCL_EXT_ONEAPI_BACKEND_LEVEL_ZERO
+    if (device.get_backend() == sycl::backend::ext_oneapi_level_zero
+            && sgl::getIsLevelZeroFunctionTableInitialized()) {
+        ze_device_handle_t zeDevice = sycl::get_native<sycl::backend::ext_oneapi_level_zero>(device);
+        ze_driver_handle_t zeDriver =
+                sycl::get_native<sycl::backend::ext_oneapi_level_zero>(device.get_platform());
+        if (!sgl::queryLevelZeroDriverSupportsExtension(zeDriver, ZE_DEVICE_LUID_EXT_NAME)) {
+            return false;
+        }
+        ze_device_properties_t zeDeviceProperties{};
+        zeDeviceProperties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+        ze_device_luid_ext_properties_t zeDeviceLuidExtProperties{};
+        zeDeviceLuidExtProperties.stype = ZE_STRUCTURE_TYPE_DEVICE_LUID_EXT_PROPERTIES;
+        zeDeviceProperties.pNext = &zeDeviceLuidExtProperties;
+        checkZeResult(g_levelZeroFunctionTable.zeDeviceGetProperties(
+                zeDevice, &zeDeviceProperties), "Error in zeDeviceGetProperties: ");
+        static_assert(ZE_MAX_DEVICE_LUID_SIZE_EXT == 8);
+        deviceLuid = *reinterpret_cast<uint64_t*>(zeDeviceLuidExtProperties.luid.id);
+        return true;
+    }
+#endif
+#if defined(SUPPORT_CUDA_INTEROP) && defined(SYCL_EXT_ONEAPI_BACKEND_CUDA) && SYCL_EXT_ONEAPI_BACKEND_CUDA
+    if (device.get_backend() == sycl::backend::ext_oneapi_cuda
+            && sgl::getIsCudaDeviceApiFunctionTableInitialized()) {
+        CUdevice cuDevice = sycl::get_native<sycl::backend::ext_oneapi_cuda>(device);
+        unsigned int deviceNodeMask = 0;
+        checkCUresult(g_cudaDeviceApiFunctionTable.cuDeviceGetLuid(
+                reinterpret_cast<char*>(&deviceLuid), &deviceNodeMask, cuDevice), "Error in cuDeviceGetLuid: ");
+        return true;
+    }
+#endif
+#if defined(SUPPORT_HIP_INTEROP) && defined(SYCL_EXT_ONEAPI_BACKEND_HIP) && SYCL_EXT_ONEAPI_BACKEND_HIP
+    if (device.get_backend() == sycl::backend::ext_oneapi_hip
+            && sgl::getIsHipDeviceApiFunctionTableInitialized()) {
+        hipDevice_t hipDevice = sycl::get_native<sycl::backend::ext_oneapi_hip>(device);
+        hipDeviceProp_t hipDeviceProp{};
+        checkHipResult(g_hipDeviceApiFunctionTable.hipGetDeviceProperties(
+                &hipDeviceProp, hipDevice), "Error in hipGetDeviceProperties: ");
+        deviceLuid = *reinterpret_cast<uint64_t*>(hipDeviceProp.luid);
+        return true;
+    }
+#endif
+    return false;
+}
+bool getSyclDeviceUuid(const sycl::device& device, uint8_t* deviceUuid) {
+    // Could also go via ze_device_properties_t::uuid, but not necessary due to extension.
+    // TODO: Use device.has_extension()?
+    sycl::detail::uuid_type uuid = device.get_info<sycl::ext::intel::info::device::uuid>();
+    memcpy(deviceUuid, uuid.data(), uuid.size());
+    return true;
 }
 #endif
 
@@ -98,6 +168,57 @@ void setLevelZeroGlobalStateFromSyclQueue(sycl::queue& syclQueue) {
 }
 #endif
 #endif
+
+bool initializeComputeApi(InteropComputeApi computeApi) {
+#ifdef SUPPORT_CUDA_INTEROP
+    if (computeApi == InteropComputeApi::CUDA) {
+        if (sgl::getIsCudaDeviceApiFunctionTableInitialized()) {
+            return true;
+        }
+        return sgl::initializeCudaDeviceApiFunctionTable();
+    }
+#endif
+#ifdef SUPPORT_HIP_INTEROP
+    if (computeApi == InteropComputeApi::HIP) {
+        if (sgl::getIsHipDeviceApiFunctionTableInitialized()) {
+            return true;
+        }
+        return sgl::initializeHipDeviceApiFunctionTable();
+    }
+#endif
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+    if (computeApi == InteropComputeApi::LEVEL_ZERO) {
+        if (sgl::getIsLevelZeroFunctionTableInitialized()) {
+            return true;
+        }
+        return sgl::initializeLevelZeroFunctionTable();
+    }
+#endif
+#ifdef SUPPORT_SYCL_INTEROP
+    if (computeApi == InteropComputeApi::SYCL) {
+        return true;
+    }
+#endif
+    return false;
+}
+
+void freeAllComputeApis() {
+#ifdef SUPPORT_CUDA_INTEROP
+    if (sgl::getIsCudaDeviceApiFunctionTableInitialized()) {
+        sgl::freeCudaDeviceApiFunctionTable();
+    }
+#endif
+#ifdef SUPPORT_HIP_INTEROP
+    if (sgl::getIsHipDeviceApiFunctionTableInitialized()) {
+        sgl::freeHipDeviceApiFunctionTable();
+    }
+#endif
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+    if (sgl::getIsLevelZeroFunctionTableInitialized()) {
+        sgl::freeLevelZeroFunctionTable();
+    }
+#endif
+}
 
 void resetComputeApiState() {
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP

@@ -61,6 +61,7 @@ bool initializeCudaDeviceApiFunctionTable() {
     typedef CUresult ( *PFN_cuDeviceGet )(CUdevice *device, int ordinal);
     typedef CUresult ( *PFN_cuDeviceGetCount )(int *count);
     typedef CUresult ( *PFN_cuDeviceGetUuid )(CUuuid *uuid, CUdevice dev);
+    typedef CUresult ( *PFN_cuDeviceGetLuid )(char *luid, unsigned int *deviceNodeMask, CUdevice dev);
     typedef CUresult ( *PFN_cuDeviceGetAttribute )(int *pi, CUdevice_attribute attrib, CUdevice dev);
     typedef CUresult ( *PFN_cuCtxCreate )( CUcontext *pctx, unsigned int flags, CUdevice dev );
     typedef CUresult ( *PFN_cuCtxDestroy )( CUcontext ctx );
@@ -130,6 +131,7 @@ bool initializeCudaDeviceApiFunctionTable() {
     g_cudaDeviceApiFunctionTable.cuDeviceGet = PFN_cuDeviceGet(dlsym(g_cudaLibraryHandle, TOSTRING(cuDeviceGet)));
     g_cudaDeviceApiFunctionTable.cuDeviceGetCount = PFN_cuDeviceGetCount(dlsym(g_cudaLibraryHandle, TOSTRING(cuDeviceGetCount)));
     g_cudaDeviceApiFunctionTable.cuDeviceGetUuid = PFN_cuDeviceGetUuid(dlsym(g_cudaLibraryHandle, TOSTRING(cuDeviceGetUuid)));
+    g_cudaDeviceApiFunctionTable.cuDeviceGetLuid = PFN_cuDeviceGetLuid(dlsym(g_cudaLibraryHandle, TOSTRING(cuDeviceGetLuid)));
     g_cudaDeviceApiFunctionTable.cuDeviceGetAttribute = PFN_cuDeviceGetAttribute(dlsym(g_cudaLibraryHandle, TOSTRING(cuDeviceGetAttribute)));
     g_cudaDeviceApiFunctionTable.cuCtxCreate = PFN_cuCtxCreate(dlsym(g_cudaLibraryHandle, TOSTRING(cuCtxCreate)));
     g_cudaDeviceApiFunctionTable.cuCtxDestroy = PFN_cuCtxDestroy(dlsym(g_cudaLibraryHandle, TOSTRING(cuCtxDestroy)));
@@ -186,6 +188,9 @@ bool initializeCudaDeviceApiFunctionTable() {
             || !g_cudaDeviceApiFunctionTable.cuDeviceGet
             || !g_cudaDeviceApiFunctionTable.cuDeviceGetCount
             || !g_cudaDeviceApiFunctionTable.cuDeviceGetUuid
+#ifdef _WIN32
+            || !g_cudaDeviceApiFunctionTable.cuDeviceGetLuid
+#endif
             || !g_cudaDeviceApiFunctionTable.cuDeviceGetAttribute
             || !g_cudaDeviceApiFunctionTable.cuCtxCreate
             || !g_cudaDeviceApiFunctionTable.cuCtxDestroy

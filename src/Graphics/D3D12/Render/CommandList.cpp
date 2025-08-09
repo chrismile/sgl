@@ -32,11 +32,46 @@
 namespace sgl { namespace d3d12 {
 
 CommandList::CommandList(Device* device, CommandListType commandListType)
-        : device(device), commandListType(commandListType) {
+        : device(device), commandListType(commandListType), ownsCommandAllocator(true) {
     auto* d3d12Device = device->getD3D12Device2Ptr();
+    auto d3d12CommandListType = getD3D12CommandListType(commandListType);
+    ThrowIfFailed(d3d12Device->CreateCommandAllocator(d3d12CommandListType, IID_PPV_ARGS(&commandAllocator)));
     ThrowIfFailed(d3d12Device->CreateCommandList(
-            0, getD3D12CommandListType(commandListType), device->getD3D12CommandAllocator(commandListType),
-            nullptr, IID_PPV_ARGS(&commandList)));
+            0, d3d12CommandListType, commandAllocator.Get(), nullptr, IID_PPV_ARGS(&commandList)));
+    if (SUCCEEDED(commandList.As(&graphicsCommandList))) {
+        hasGraphicsCommandList = true;
+    }
+}
+
+CommandList::CommandList(
+        Device* device, ComPtr<ID3D12CommandAllocator> commandAllocator, CommandListType commandListType)
+        : device(device), commandListType(commandListType), ownsCommandAllocator(false), commandAllocator(commandAllocator) {
+    auto* d3d12Device = device->getD3D12Device2Ptr();
+    auto d3d12CommandListType = getD3D12CommandListType(commandListType);
+    ThrowIfFailed(d3d12Device->CreateCommandList(
+            0, d3d12CommandListType, commandAllocator.Get(), nullptr, IID_PPV_ARGS(&commandList)));
+    if (SUCCEEDED(commandList.As(&graphicsCommandList))) {
+        hasGraphicsCommandList = true;
+    }
+}
+
+void CommandList::close() {
+    if (hasGraphicsCommandList) {
+        graphicsCommandList->Close();
+    } else {
+        sgl::Logfile::get()->throwError("Error in CommandList::close: Unsupported command list type.");
+    }
+}
+
+void CommandList::reset() {
+    if (hasGraphicsCommandList) {
+        if (ownsCommandAllocator) {
+            ThrowIfFailed(commandAllocator->Reset());
+        }
+        ThrowIfFailed(graphicsCommandList->Reset(commandAllocator.Get(), nullptr));
+    } else {
+        sgl::Logfile::get()->throwError("Error in CommandList::close: Unsupported command list type.");
+    }
 }
 
 }}

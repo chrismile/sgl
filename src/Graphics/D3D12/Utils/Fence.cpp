@@ -31,14 +31,14 @@
 
 namespace sgl { namespace d3d12 {
 
-Fence::Fence(Device* device, uint64_t value) : device(device) {
-    _initialize(device, value);
+Fence::Fence(Device* device, uint64_t value, D3D12_FENCE_FLAGS flags) : device(device) {
+    _initialize(device, value, flags);
 }
 
-void Fence::_initialize(Device* _device, uint64_t value) {
+void Fence::_initialize(Device* _device, uint64_t value, D3D12_FENCE_FLAGS flags) {
     device = _device;
     auto* d3d12Device = device->getD3D12Device2Ptr();
-    ThrowIfFailed(d3d12Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)));
+    ThrowIfFailed(d3d12Device->CreateFence(0, flags, IID_PPV_ARGS(&fence)));
 }
 
 Fence::~Fence() {

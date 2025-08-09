@@ -37,7 +37,7 @@ class Device;
 
 class DLL_OBJECT Fence {
 public:
-    explicit Fence(Device* device, uint64_t value = 0);
+    explicit Fence(Device* device, uint64_t value = 0, D3D12_FENCE_FLAGS flags = D3D12_FENCE_FLAG_NONE);
     virtual ~Fence();
     void waitOnCpu(uint64_t value);
     /** Returns whether the wait succeeded (true) or a timeout or error was encountered (false). */
@@ -51,7 +51,7 @@ public:
 
 protected:
     Fence() = default;
-    void _initialize(Device* device, uint64_t value);
+    void _initialize(Device* device, uint64_t value, D3D12_FENCE_FLAGS flags);
     ComPtr<ID3D12Fence> fence{};
 
 private:

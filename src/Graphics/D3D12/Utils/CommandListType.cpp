@@ -31,12 +31,7 @@
 namespace sgl { namespace d3d12 {
 
 D3D12_COMMAND_LIST_TYPE getD3D12CommandListType(CommandListType commandListType) {
-    if (commandListType == CommandListType::DIRECT) {
-        return D3D12_COMMAND_LIST_TYPE_DIRECT;
-    } else if (commandListType == CommandListType::COMPUTE) {
-        return D3D12_COMMAND_LIST_TYPE_COMPUTE;
-    }
-    return D3D12_COMMAND_LIST_TYPE_DIRECT;
+    return D3D12_COMMAND_LIST_TYPE(commandListType);
 }
 
 }}

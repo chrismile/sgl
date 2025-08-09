@@ -35,6 +35,15 @@ namespace sgl { namespace vk {
 class Device;
 }}
 
+extern "C" {
+#ifdef SUPPORT_CUDA_INTEROP
+typedef int CUdevice;
+#endif
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+typedef struct _ze_device_handle_t* ze_device_handle_t;
+#endif
+}
+
 namespace sgl {
 
 struct DLL_OBJECT DeviceThreadInfo {
@@ -69,8 +78,13 @@ struct DLL_OBJECT DeviceThreadInfo {
 DLL_OBJECT DeviceThreadInfo getDeviceThreadInfo(sgl::vk::Device* device);
 
 #ifdef SUPPORT_CUDA_INTEROP
-typedef int CUdevice;
+DLL_OBJECT void getCudaDeviceThreadInfo(CUdevice cuDevice, DeviceThreadInfo& deviceThreadInfo);
 DLL_OBJECT DeviceThreadInfo getCudaDeviceThreadInfo(CUdevice cuDevice);
+#endif
+
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+DLL_OBJECT void getLevelZeroDeviceThreadInfo(ze_device_handle_t zeDevice, DeviceThreadInfo& deviceThreadInfo);
+DLL_OBJECT DeviceThreadInfo getLevelZeroDeviceThreadInfo(ze_device_handle_t zeDevice);
 #endif
 
 }

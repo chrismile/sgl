@@ -56,6 +56,7 @@ struct HipDeviceApiFunctionTable {
     hipError_t ( *hipGetDeviceCount )( int* count );
     hipError_t ( *hipDeviceGetUuid )( hipUUID* uuid, hipDevice_t dev );
     hipError_t ( *hipDeviceGetAttribute )( int* pi, hipDeviceAttribute_t attrib, hipDevice_t dev );
+    hipError_t ( *hipGetDeviceProperties )( hipDeviceProp_t* prop, int deviceId );
 
     hipError_t ( *hipCtxCreate )( hipCtx_t* pctx, unsigned int flags, hipDevice_t dev );
     hipError_t ( *hipCtxDestroy )( hipCtx_t ctx );

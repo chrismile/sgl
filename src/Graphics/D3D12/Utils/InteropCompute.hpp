@@ -68,6 +68,9 @@ typedef std::shared_ptr<FenceD3D12ComputeApiInterop> FenceD3D12ComputeApiInterop
 FenceD3D12ComputeApiInteropPtr createFenceD3D12ComputeApiInterop(Device* device, uint64_t value = 0);
 
 
+/**
+ * Resource needs to be created with D3D12_HEAP_FLAG_SHARED.
+ */
 class DLL_OBJECT ResourceD3D12ComputeApiExternalMemory {
 public:
     ResourceD3D12ComputeApiExternalMemory() = default;
@@ -97,6 +100,9 @@ protected:
 
 typedef std::shared_ptr<ResourceD3D12ComputeApiExternalMemory> ResourceD3D12ComputeApiExternalMemoryPtr;
 
+/**
+ * Resource needs to be created with D3D12_HEAP_FLAG_SHARED.
+ */
 ResourceD3D12ComputeApiExternalMemoryPtr createResourceD3D12ComputeApiExternalMemory(sgl::d3d12::ResourcePtr& resource);
 
 }}

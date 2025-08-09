@@ -67,6 +67,7 @@ extern "C" {
 #ifdef SUPPORT_SYCL_INTEROP
 namespace sycl { inline namespace _V1 {
 class queue;
+class device;
 }}
 #endif
 
@@ -123,11 +124,19 @@ DLL_OBJECT void setLevelZeroGlobalStateFromSyclQueue(sycl::queue& syclQueue);
 // For more information on SYCL interop:
 // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
 DLL_OBJECT void setGlobalSyclQueue(sycl::queue& syclQueue);
+DLL_OBJECT InteropComputeApi getSyclDeviceComputeApi(const sycl::device& device);
+DLL_OBJECT bool getSyclDeviceLuid(const sycl::device& device, uint64_t& deviceLuid);
+DLL_OBJECT bool getSyclDeviceUuid(const sycl::device& device, uint8_t* deviceUuid);
 #endif
 
 /// Whether a message box should be shown when a compute API error is generated that is not fatal.
 DLL_OBJECT void setOpenMessageBoxOnComputeApiError(bool _openMessageBox);
 
+/// Initializes the suitable compute API for the passed enum value.
+DLL_OBJECT bool initializeComputeApi(InteropComputeApi computeApi);
+
+/// Frees all used compute APIs.
+DLL_OBJECT void freeAllComputeApis();
 
 /// Reset function for unit tests, as static variables may persist across GoogleTest test cases.
 DLL_OBJECT void resetComputeApiState();

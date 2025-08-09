@@ -37,8 +37,15 @@
 #ifdef SUPPORT_OPENCL_INTEROP
 #include <Graphics/Vulkan/Utils/InteropOpenCL.hpp>
 #endif
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+#include <Graphics/Vulkan/Utils/InteropLevelZero.hpp>
+#endif
 
 namespace sgl {
+
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+extern ze_device_handle_t g_zeDevice;
+#endif
 
 static std::map<uint64_t, DeviceThreadInfo> deviceThreadInfoMap;
 
@@ -94,8 +101,16 @@ DeviceThreadInfo getDeviceThreadInfo(sgl::vk::Device* device) {
         bool foundDevice = sgl::vk::getMatchingCudaDevice(device, &cuDevice);
 
         if (foundDevice) {
-            return getCudaDeviceThreadInfo(cuDevice);
+            getCudaDeviceThreadInfo(cuDevice, info);
         }
+    }
+#endif
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+    else if ((device->getDeviceDriverId() == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS
+            || device->getDeviceDriverId() == VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA)
+            && sgl::getIsLevelZeroFunctionTableInitialized()
+            && g_zeDevice) {
+        getLevelZeroDeviceThreadInfo(g_zeDevice, info);
     }
 #endif
 #ifdef SUPPORT_OPENCL_INTEROP
@@ -130,9 +145,7 @@ DeviceThreadInfo getDeviceThreadInfo(sgl::vk::Device* device) {
 }
 
 #ifdef SUPPORT_CUDA_INTEROP
-DeviceThreadInfo getCudaDeviceThreadInfo(CUdevice cuDevice) {
-    DeviceThreadInfo info{};
-
+void getCudaDeviceThreadInfo(CUdevice cuDevice, DeviceThreadInfo& info) {
     /*
      * Only use one thread block per shader multiprocessor (SM) to improve chance of fair scheduling.
      * See, e.g.: https://stackoverflow.com/questions/33150040/doubling-buffering-in-cuda-so-the-cpu-can-operate-on-data-produced-by-a-persiste/33158954#33158954%5B/
@@ -201,7 +214,54 @@ DeviceThreadInfo getCudaDeviceThreadInfo(CUdevice cuDevice) {
     info.numCudaCoresEquivalent = info.numCoresTotal;
     info.optimalWorkgroupSizePT = numCoresPerMultiprocessor;
     info.optimalNumWorkgroupsPT = numMultiprocessors;
+}
+DeviceThreadInfo getCudaDeviceThreadInfo(CUdevice cuDevice) {
+    DeviceThreadInfo info{};
+    getCudaDeviceThreadInfo(cuDevice, info);
+    return info;
+}
+#endif
 
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+void getLevelZeroDeviceThreadInfo(ze_device_handle_t zeDevice, DeviceThreadInfo& info) {
+    ze_device_properties_t zeDeviceProperties{};
+    zeDeviceProperties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+    checkZeResult(g_levelZeroFunctionTable.zeDeviceGetProperties(
+            zeDevice, &zeDeviceProperties), "Error in zeDeviceGetProperties: ");
+    /*
+     * Different values (https://www.intel.com/content/www/us/en/docs/oneapi/optimization-guide-gpu/2024-2/intel-xe-gpu-architecture.html):
+     * - numSlices: Number of slices on the GPU
+     * - numSubslicesPerSlice: Number of subslices per slice
+     * - numEUsPerSubslice: Number of EUs per subslice
+     * - physicalEUSimdWidth: SIMD width of an EU
+     * - numThreadsPerEU: How many threads (aka. warps on CUDA) can simultaneously be scheduled.
+     * Example:
+     * - numThreadsPerEU: 10
+     * - physicalEUSimdWidth: 8
+     * - numSubslicesPerSlice: 4
+     * - numSlices: 1
+     */
+    uint32_t numEUs = zeDeviceProperties.numSlices * zeDeviceProperties.numSubslicesPerSlice * zeDeviceProperties.numEUsPerSubslice;
+
+    // Not overwriting warp size. Theoretically, physicalEUSimdWidth should be the minimum supported.
+    //info.warpSize = zeDeviceProperties.physicalEUSimdWidth;
+    info.optimalNumWorkgroupsPT = numEUs;
+    /*
+     * Should be between physicalEUSimdWidth and physicalEUSimdWidth * numThreadsPerEU.
+     * info.warpSize (set to subgroupSize, which is usually 32 on Intel hardware) might be a good future-proof value.
+     */
+    info.optimalWorkgroupSizePT = info.warpSize;
+
+    info.numMultiprocessors = numEUs;
+    info.numCoresPerMultiprocessor = zeDeviceProperties.physicalEUSimdWidth;
+    info.numCoresTotal = info.numMultiprocessors * info.numCoresPerMultiprocessor;
+
+    // Not sure if we want to map SIMD width 1:1 to CUDA cores...
+    info.numCudaCoresEquivalent = info.numCoresTotal;
+}
+DeviceThreadInfo getLevelZeroDeviceThreadInfo(ze_device_handle_t zeDevice) {
+    DeviceThreadInfo info{};
+    getLevelZeroDeviceThreadInfo(zeDevice, info);
     return info;
 }
 #endif

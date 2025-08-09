@@ -48,6 +48,7 @@ struct CudaDeviceApiFunctionTable {
     CUresult ( *cuDeviceGet )(CUdevice* device, int ordinal);
     CUresult ( *cuDeviceGetCount )(int* count);
     CUresult ( *cuDeviceGetUuid )(CUuuid* uuid, CUdevice dev);
+    CUresult ( *cuDeviceGetLuid )(char *luid, unsigned int *deviceNodeMask, CUdevice dev);
     CUresult ( *cuDeviceGetAttribute )(int* pi, CUdevice_attribute attrib, CUdevice dev);
 
     CUresult ( *cuCtxCreate )( CUcontext* pctx, unsigned int flags, CUdevice dev );

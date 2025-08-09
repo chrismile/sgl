@@ -61,6 +61,11 @@ InteropComputeApi decideInteropComputeApi(Device* device) {
 FenceD3D12ComputeApiInteropPtr createFenceD3D12ComputeApiInterop(Device* device, uint64_t value) {
     InteropComputeApi interopComputeApi = decideInteropComputeApi(device);
     FenceD3D12ComputeApiInteropPtr fence;
+#ifdef SUPPORT_SYCL_INTEROP
+    if (interopComputeApi == InteropComputeApi::SYCL) {
+        fence = std::make_shared<FenceD3D12SyclInterop>();
+    }
+#endif
     if (!fence) {
         sgl::Logfile::get()->writeError("Error in createFenceD3D12ComputeApiInterop: Unsupported compute API.");
         return fence;
@@ -89,7 +94,7 @@ ResourceD3D12ComputeApiExternalMemoryPtr createResourceD3D12ComputeApiExternalMe
 
 
 void FenceD3D12ComputeApiInterop::initialize(Device* device, uint64_t value) {
-    _initialize(device, value);
+    _initialize(device, value, D3D12_FENCE_FLAG_SHARED);
     handle = getSharedHandle();
     importExternalFenceWin32Handle();
 }
@@ -103,6 +108,7 @@ void FenceD3D12ComputeApiInterop::freeHandle() {
 
 
 void ResourceD3D12ComputeApiExternalMemory::initialize(sgl::d3d12::ResourcePtr& _resource) {
+    resource = _resource;
     handle = _resource->getSharedHandle();
     importExternalMemoryWin32Handle();
 }

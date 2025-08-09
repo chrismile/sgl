@@ -62,6 +62,7 @@ bool initializeHipDeviceApiFunctionTable() {
     typedef hipError_t ( *PFN_hipGetDeviceCount )(int *count);
     typedef hipError_t ( *PFN_hipDeviceGetUuid )(hipUUID *uuid, hipDevice_t dev);
     typedef hipError_t ( *PFN_hipDeviceGetAttribute )(int *pi, hipDeviceAttribute_t attrib, hipDevice_t dev);
+    typedef hipError_t ( *PFN_hipGetDeviceProperties )(hipDeviceProp_t* prop, int deviceId);
     typedef hipError_t ( *PFN_hipCtxCreate )( hipCtx_t *pctx, unsigned int flags, hipDevice_t dev );
     typedef hipError_t ( *PFN_hipCtxDestroy )( hipCtx_t ctx );
     typedef hipError_t ( *PFN_hipCtxGetCurrent )( hipCtx_t* pctx );
@@ -133,6 +134,7 @@ bool initializeHipDeviceApiFunctionTable() {
     g_hipDeviceApiFunctionTable.hipGetDeviceCount = PFN_hipGetDeviceCount(dlsym(g_hipLibraryHandle, TOSTRING(hipGetDeviceCount)));
     g_hipDeviceApiFunctionTable.hipDeviceGetUuid = PFN_hipDeviceGetUuid(dlsym(g_hipLibraryHandle, TOSTRING(hipDeviceGetUuid)));
     g_hipDeviceApiFunctionTable.hipDeviceGetAttribute = PFN_hipDeviceGetAttribute(dlsym(g_hipLibraryHandle, TOSTRING(hipDeviceGetAttribute)));
+    g_hipDeviceApiFunctionTable.hipGetDeviceProperties = PFN_hipGetDeviceProperties(dlsym(g_hipLibraryHandle, TOSTRING(hipGetDeviceProperties)));
     g_hipDeviceApiFunctionTable.hipCtxCreate = PFN_hipCtxCreate(dlsym(g_hipLibraryHandle, TOSTRING(hipCtxCreate)));
     g_hipDeviceApiFunctionTable.hipCtxDestroy = PFN_hipCtxDestroy(dlsym(g_hipLibraryHandle, TOSTRING(hipCtxDestroy)));
     g_hipDeviceApiFunctionTable.hipCtxGetCurrent = PFN_hipCtxGetCurrent(dlsym(g_hipLibraryHandle, TOSTRING(hipCtxGetCurrent)));
@@ -191,6 +193,7 @@ bool initializeHipDeviceApiFunctionTable() {
         || !g_hipDeviceApiFunctionTable.hipGetDeviceCount
         || !g_hipDeviceApiFunctionTable.hipDeviceGetUuid
         || !g_hipDeviceApiFunctionTable.hipDeviceGetAttribute
+        || !g_hipDeviceApiFunctionTable.hipGetDeviceProperties
         || !g_hipDeviceApiFunctionTable.hipCtxCreate
         || !g_hipDeviceApiFunctionTable.hipCtxDestroy
         || !g_hipDeviceApiFunctionTable.hipCtxGetCurrent

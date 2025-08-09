@@ -35,17 +35,23 @@
 namespace sgl { namespace d3d12 {
 
 class Device;
+class CommandList;
+typedef std::shared_ptr<CommandList> CommandListPtr;
 
 class DLL_OBJECT Renderer {
 public:
     explicit Renderer(Device* device, uint32_t numDescriptors = 1000);
     ~Renderer();
 
+    void setCommandList(const CommandListPtr& commandList);
+
 private:
     Device* device;
 
     // Global descriptor heaps.
     std::array<ComPtr<ID3D12DescriptorHeap>, size_t(D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES)> descriptorHeaps;
+
+    CommandListPtr currentCommandList;
 };
 
 }}

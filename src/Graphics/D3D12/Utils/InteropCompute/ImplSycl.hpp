@@ -45,6 +45,7 @@ public:
 
 protected:
     void importExternalFenceWin32Handle() override;
+    void free() override;
 
 private:
     void* externalSemaphore{};

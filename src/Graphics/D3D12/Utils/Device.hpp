@@ -29,6 +29,7 @@
 #ifndef SGL_D3D12_DEVICE_HPP
 #define SGL_D3D12_DEVICE_HPP
 
+#include <vector>
 #include <functional>
 
 #include "d3d12.hpp"
@@ -41,10 +42,12 @@ enum class DeviceVendor {
 };
 
 class CommandList;
+typedef std::shared_ptr<CommandList> CommandListPtr;
 
 class DLL_OBJECT Device {
 public:
     Device(const ComPtr<IDXGIAdapter1> &dxgiAdapter1, D3D_FEATURE_LEVEL featureLevel, bool useDebugLayer);
+    ~Device();
     [[nodiscard]] D3D_FEATURE_LEVEL getFeatureLevel() const;
     [[nodiscard]] inline const std::string& getAdapterName() const { return adapterName; }
     [[nodiscard]] inline uint64_t getAdapterLuid() const { return adapterLuid; }
@@ -57,9 +60,12 @@ public:
     [[nodiscard]] inline ID3D12CommandQueue* getD3D12CommandQueueDirect() { return commandQueueDirect.Get(); }
     [[nodiscard]] inline ID3D12CommandQueue* getD3D12CommandQueueCompute() { return commandQueueCompute.Get(); }
     [[nodiscard]] ID3D12CommandQueue* getD3D12CommandQueue(CommandListType commandListType);
-    [[nodiscard]] inline ID3D12CommandAllocator* getD3D12CommandAllocatorDirect() { return commandAllocatorDirect.Get(); }
-    [[nodiscard]] inline ID3D12CommandAllocator* getD3D12CommandAllocatorCompute() { return commandAllocatorCompute.Get(); }
-    [[nodiscard]] ID3D12CommandAllocator* getD3D12CommandAllocator(CommandListType commandListType);
+
+    void debugMessageCallback(
+            D3D12_MESSAGE_CATEGORY Category,
+            D3D12_MESSAGE_SEVERITY Severity,
+            D3D12_MESSAGE_ID ID,
+            LPCSTR pDescription);
 
     void runSingleTimeCommands(
             const std::function<void(CommandList*)>& workFunctor,
@@ -72,9 +78,10 @@ private:
     ComPtr<ID3D12Device2> d3d12Device2;
     ComPtr<ID3D12CommandQueue> commandQueueDirect;
     ComPtr<ID3D12CommandQueue> commandQueueCompute;
-    ComPtr<ID3D12CommandAllocator> commandAllocatorDirect;
-    ComPtr<ID3D12CommandAllocator> commandAllocatorCompute;
+    std::vector<CommandListPtr> commandListsSingleTime;
     bool supportsComputeQueue = false;
+    bool useDebugLayer = false;
+    DWORD callbackCookie{};
 
     // Device information (retrieved from adapter).
     std::string adapterName;
