@@ -32,14 +32,10 @@
 
 namespace sgl {
 extern bool openMessageBoxOnComputeApiError;
-sycl::queue* g_syclQueue = nullptr;
+extern sycl::queue* g_syclQueue;
 }
 
 namespace sgl { namespace vk {
-
-void setGlobalSyclQueue(sycl::queue& syclQueue) {
-    g_syclQueue = &syclQueue;
-}
 
 struct SyclExternalSemaphoreWrapper {
     sycl::ext::oneapi::experimental::external_semaphore syclExternalSemaphore;

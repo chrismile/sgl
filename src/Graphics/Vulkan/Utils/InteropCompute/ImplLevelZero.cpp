@@ -34,48 +34,19 @@
 #include <sycl/ext/oneapi/backend/level_zero.hpp>
 #endif
 
-namespace sgl { namespace vk {
-
+namespace sgl {
 extern bool openMessageBoxOnComputeApiError;
 
-#ifdef SUPPORT_SYCL_INTEROP
-extern sycl::queue* g_syclQueue;
-#endif
+extern ze_device_handle_t g_zeDevice;
+extern ze_context_handle_t g_zeContext;
+extern ze_command_queue_handle_t g_zeCommandQueue;
+extern ze_event_handle_t g_zeSignalEvent;
+extern uint32_t g_numWaitEvents;
+extern ze_event_handle_t* g_zeWaitEvents;
+extern bool g_useBindlessImagesInterop;
+}
 
-ze_device_handle_t g_zeDevice = {};
-ze_context_handle_t g_zeContext = {};
-ze_command_queue_handle_t g_zeCommandQueue = {};
-ze_event_handle_t g_zeSignalEvent = {};
-uint32_t g_numWaitEvents = 0;
-ze_event_handle_t* g_zeWaitEvents = {};
-bool g_useBindlessImagesInterop = {};
-
-void setLevelZeroGlobalState(ze_device_handle_t zeDevice, ze_context_handle_t zeContext) {
-    g_zeDevice = zeDevice;
-    g_zeContext = zeContext;
-}
-void setLevelZeroGlobalCommandQueue(ze_command_queue_handle_t zeCommandQueue) {
-    g_zeCommandQueue = zeCommandQueue;
-}
-void setLevelZeroNextCommandEvents(
-        ze_event_handle_t zeSignalEvent, uint32_t numWaitEvents, ze_event_handle_t* zeWaitEvents) {
-    g_zeSignalEvent = zeSignalEvent;
-    g_numWaitEvents = numWaitEvents;
-    g_zeWaitEvents = zeWaitEvents;
-}
-void setLevelZeroUseBindlessImagesInterop(bool useBindlessImages) {
-    g_useBindlessImagesInterop = useBindlessImages;
-}
-#ifdef SUPPORT_SYCL_INTEROP
-void setLevelZeroGlobalStateFromSyclQueue(sycl::queue& syclQueue) {
-#ifdef SUPPORT_SYCL_INTEROP
-    // Reset, as static variables may persist across GoogleTest unit tests.
-    g_syclQueue = {};
-#endif
-    g_zeDevice = sycl::get_native<sycl::backend::ext_oneapi_level_zero>(syclQueue.get_device());
-    g_zeContext = sycl::get_native<sycl::backend::ext_oneapi_level_zero>(syclQueue.get_context());
-}
-#endif
+namespace sgl { namespace vk {
 
 SemaphoreVkLevelZeroInterop::SemaphoreVkLevelZeroInterop() {
     externalSemaphoreExtDesc.stype = ZE_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_EXT_DESC;

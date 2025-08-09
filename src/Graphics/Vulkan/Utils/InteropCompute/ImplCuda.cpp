@@ -29,9 +29,11 @@
 #include "ImplCuda.hpp"
 #include "../InteropCuda.hpp"
 
-namespace sgl { namespace vk {
-
+namespace sgl {
 extern bool openMessageBoxOnComputeApiError;
+}
+
+namespace sgl { namespace vk {
 
 #ifdef _WIN32
 void SemaphoreVkCudaInterop::setExternalSemaphoreWin32Handle(HANDLE handle) {

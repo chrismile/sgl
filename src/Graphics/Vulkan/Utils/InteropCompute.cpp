@@ -62,41 +62,13 @@
 #include <vulkan/vulkan_win32.h>
 #endif
 
-namespace sgl { namespace vk {
-
-#ifdef SUPPORT_LEVEL_ZERO_INTEROP
-extern ze_device_handle_t g_zeDevice;
-extern ze_context_handle_t g_zeContext;
-extern ze_command_queue_handle_t g_zeCommandQueue;
-extern ze_event_handle_t g_zeSignalEvent;
-extern uint32_t g_numWaitEvents;
-extern ze_event_handle_t* g_zeWaitEvents;
-extern bool g_useBindlessImagesInterop;
-#endif
-
+namespace sgl {
 #ifdef SUPPORT_SYCL_INTEROP
 extern sycl::queue* g_syclQueue;
 #endif
-
-bool openMessageBoxOnComputeApiError = true;
-void setOpenMessageBoxOnComputeApiError(bool _openMessageBox) {
-    openMessageBoxOnComputeApiError = _openMessageBox;
 }
 
-void resetComputeApiState() {
-#ifdef SUPPORT_LEVEL_ZERO_INTEROP
-    g_zeDevice = {};
-    g_zeContext = {};
-    g_zeCommandQueue = {};
-    g_zeSignalEvent = {};
-    g_numWaitEvents = 0;
-    g_zeWaitEvents = {};
-    g_useBindlessImagesInterop = false;
-#endif
-#ifdef SUPPORT_SYCL_INTEROP
-    g_syclQueue = {};
-#endif
-}
+namespace sgl { namespace vk {
 
 InteropCompute decideInteropComputeApi(Device* device) {
     InteropCompute api = InteropCompute::NONE;
@@ -126,75 +98,6 @@ InteropCompute decideInteropComputeApi(Device* device) {
     }
 #endif
     return api;
-}
-
-void waitForCompletion(InteropCompute interopComputeApi, StreamWrapper stream, void* event) {
-#ifdef SUPPORT_CUDA_INTEROP
-    if (interopComputeApi == InteropCompute::CUDA) {
-        CUresult cuResult = g_cudaDeviceApiFunctionTable.cuStreamSynchronize(stream.cuStream);
-        checkCUresult(cuResult, "Error in cuStreamSynchronize: ");
-    }
-#endif
-
-#ifdef SUPPORT_HIP_INTEROP
-    if (interopComputeApi == InteropCompute::HIP) {
-        hipError_t hipResult = g_hipDeviceApiFunctionTable.hipStreamSynchronize(stream.hipStream);
-        checkHipResult(hipResult, "Error in hipStreamSynchronize: ");
-    }
-#endif
-
-#ifdef SUPPORT_LEVEL_ZERO_INTEROP
-    if (interopComputeApi == InteropCompute::LEVEL_ZERO) {
-        ze_result_t zeResult = g_levelZeroFunctionTable.zeCommandListClose(stream.zeCommandList);
-        checkZeResult(zeResult, "Error in zeFenceCreate: ");
-
-        if (event) {
-            zeResult = g_levelZeroFunctionTable.zeCommandQueueExecuteCommandLists(
-                    g_zeCommandQueue, 1, &stream.zeCommandList, nullptr);
-            checkZeResult(zeResult, "Error in zeCommandQueueExecuteCommandLists: ");
-
-            zeResult = g_levelZeroFunctionTable.zeEventHostSynchronize(
-                    reinterpret_cast<ze_event_handle_t>(event), UINT64_MAX);
-            checkZeResult(zeResult, "Error in zeEventHostSynchronize: ");
-        } else if (g_zeCommandQueue) {
-            // We could also use zeCommandQueueSynchronize instead of using a fence.
-            ze_fence_desc_t fenceDesc{};
-            fenceDesc.stype = ZE_STRUCTURE_TYPE_FENCE_DESC;
-            ze_fence_handle_t zeFence{};
-            zeResult = g_levelZeroFunctionTable.zeFenceCreate(g_zeCommandQueue, &fenceDesc, &zeFence);
-            checkZeResult(zeResult, "Error in zeFenceCreate: ");
-
-            zeResult = g_levelZeroFunctionTable.zeCommandQueueExecuteCommandLists(
-                    g_zeCommandQueue, 1, &stream.zeCommandList, zeFence);
-            checkZeResult(zeResult, "Error in zeCommandQueueExecuteCommandLists: ");
-
-            zeResult = g_levelZeroFunctionTable.zeFenceHostSynchronize(zeFence, UINT64_MAX);
-            checkZeResult(zeResult, "Error in zeFenceHostSynchronize: ");
-            zeResult = g_levelZeroFunctionTable.zeFenceReset(zeFence);
-            checkZeResult(zeResult, "Error in zeFenceReset: ");
-
-            zeResult = g_levelZeroFunctionTable.zeFenceDestroy(zeFence);
-            checkZeResult(zeResult, "Error in zeFenceDestroy: ");
-
-            zeResult = g_levelZeroFunctionTable.zeCommandListReset(stream.zeCommandList);
-            checkZeResult(zeResult, "Error in zeFenceCreate: ");
-        } else {
-            // We assume an immediate command list is used.
-            zeResult = g_levelZeroFunctionTable.zeCommandListHostSynchronize(stream.zeCommandList, UINT64_MAX);
-            checkZeResult(zeResult, "Error in zeCommandListHostSynchronize: ");
-        }
-    }
-#endif
-
-#ifdef SUPPORT_SYCL_INTEROP
-    if (interopComputeApi == InteropCompute::SYCL) {
-        if (!event) {
-            sgl::Logfile::get()->throwError("sgl::vk::waitForCompletion called with nullptr SYCL event.");
-        }
-        sycl::event* syclEvent = reinterpret_cast<sycl::event*>(event);
-        syclEvent->wait_and_throw();
-    }
-#endif
 }
 
 SemaphoreVkComputeApiInteropPtr createSemaphoreVkComputeApiInterop(

@@ -61,7 +61,7 @@
 #define CL_DEVICE_BOARD_NAME_AMD 0x4038
 #endif
 
-namespace sgl { namespace vk {
+namespace sgl {
 
 OpenCLFunctionTable g_openclFunctionTable{};
 
@@ -73,65 +73,176 @@ void* g_openclLibraryHandle = nullptr;
 #endif
 
 bool initializeOpenCLFunctionTable() {
-    typedef cl_int ( *PFN_clGetPlatformIDs )( cl_uint num_entries, cl_platform_id* platforms, cl_uint* num_platforms );
-    typedef cl_int ( *PFN_clGetPlatformInfo )( cl_platform_id platform, cl_platform_info param_name, size_t param_value_size, void* param_value, size_t* param_value_size_ret );
-    typedef cl_int ( *PFN_clGetDeviceIDs )( cl_platform_id platform, cl_device_type device_type, cl_uint num_entries, cl_device_id* devices, cl_uint* num_devices );
-    typedef cl_int ( *PFN_clGetDeviceInfo )( cl_device_id device, cl_device_info param_name, size_t param_value_size, void* param_value, size_t* param_value_size_ret );
-    typedef cl_context ( *PFN_clCreateContext )( const cl_context_properties * properties, cl_uint num_devices, const cl_device_id* devices, void (CL_CALLBACK* pfn_notify)(const char* errinfo, const void* private_info, size_t cb, void* user_data), void* user_data, cl_int* errcode_ret );
-    typedef cl_int ( *PFN_clRetainContext )( cl_context context );
-    typedef cl_int ( *PFN_clReleaseContext )( cl_context context );
-    typedef cl_command_queue ( *PFN_clCreateCommandQueue )( cl_context context, cl_device_id device, cl_command_queue_properties properties, cl_int* errcode_ret );
-    typedef cl_int ( *PFN_clRetainCommandQueue )( cl_command_queue command_queue );
-    typedef cl_int ( *PFN_clReleaseCommandQueue )( cl_command_queue command_queue );
-    typedef cl_int ( *PFN_clGetCommandQueueInfo )( cl_command_queue command_queue, cl_command_queue_info param_name, size_t param_value_size, void* param_value, size_t* param_value_size_ret );
-    typedef cl_mem ( *PFN_clCreateBuffer )( cl_context context, cl_mem_flags flags, size_t size, void* host_ptr, cl_int* errcode_ret );
+    typedef cl_int ( *PFN_clGetPlatformIDs )(cl_uint num_entries, cl_platform_id *platforms, cl_uint *num_platforms);
+    typedef cl_int ( *PFN_clGetPlatformInfo )(cl_platform_id platform, cl_platform_info param_name,
+                                              size_t param_value_size, void *param_value, size_t *param_value_size_ret);
+    typedef cl_int ( *PFN_clGetDeviceIDs )(cl_platform_id platform, cl_device_type device_type, cl_uint num_entries,
+                                           cl_device_id *devices, cl_uint *num_devices);
+    typedef cl_int ( *PFN_clGetDeviceInfo )(cl_device_id device, cl_device_info param_name, size_t param_value_size,
+                                            void *param_value, size_t *param_value_size_ret);
+    typedef cl_context ( *PFN_clCreateContext )(const cl_context_properties *properties, cl_uint num_devices,
+                                                const cl_device_id *devices,
+                                                void (CL_CALLBACK *pfn_notify)(const char *errinfo,
+                                                                               const void *private_info, size_t cb,
+                                                                               void *user_data), void *user_data,
+                                                cl_int *errcode_ret);
+    typedef cl_int ( *PFN_clRetainContext )(cl_context context);
+    typedef cl_int ( *PFN_clReleaseContext )(cl_context context);
+    typedef cl_command_queue ( *PFN_clCreateCommandQueue )(cl_context context, cl_device_id device,
+                                                           cl_command_queue_properties properties, cl_int *errcode_ret);
+    typedef cl_int ( *PFN_clRetainCommandQueue )(cl_command_queue command_queue);
+    typedef cl_int ( *PFN_clReleaseCommandQueue )(cl_command_queue command_queue);
+    typedef cl_int ( *PFN_clGetCommandQueueInfo )(cl_command_queue command_queue, cl_command_queue_info param_name,
+                                                  size_t param_value_size, void *param_value,
+                                                  size_t *param_value_size_ret);
+    typedef cl_mem ( *PFN_clCreateBuffer )(cl_context context, cl_mem_flags flags, size_t size, void *host_ptr,
+                                           cl_int *errcode_ret);
     typedef cl_int ( *PFN_clRetainMemObject )(cl_mem memobj);
     typedef cl_int ( *PFN_clReleaseMemObject )(cl_mem memobj);
-    typedef cl_program ( *PFN_clCreateProgramWithSource )( cl_context context, cl_uint count, const char** strings, const size_t* lengths, cl_int *errcode_ret );
-    typedef cl_program ( *PFN_clCreateProgramWithBinary )( cl_context context, cl_uint num_devices, const cl_device_id* device_list, const size_t* lengths, const unsigned char** binaries, cl_int* binary_status, cl_int* errcode_ret );
-    typedef cl_program ( *PFN_clCreateProgramWithBuiltInKernels )( cl_context context, cl_uint num_devices, const cl_device_id* device_list, const char* kernel_names, cl_int* errcode_ret );
-    typedef cl_program ( *PFN_clCreateProgramWithIL )( cl_context context, const void* il, size_t length, cl_int* errcode_ret ); // optional
-    typedef cl_int ( *PFN_clRetainProgram )( cl_program program );
-    typedef cl_int ( *PFN_clReleaseProgram )( cl_program program );
-    typedef cl_int ( *PFN_clBuildProgram )( cl_program program, cl_uint num_devices, const cl_device_id* device_list, const char* options, void (CL_CALLBACK* pfn_notify)(cl_program program, void* user_data), void* user_data );
-    typedef cl_int ( *PFN_clCompileProgram )( cl_program program, cl_uint num_devices, const cl_device_id* device_list, const char* options, cl_uint num_input_headers, const cl_program* input_headers, const char** header_include_names, void (CL_CALLBACK* pfn_notify)(cl_program program, void* user_data), void* user_data );
-    typedef cl_program ( *PFN_clLinkProgram )( cl_context context, cl_uint num_devices, const cl_device_id* device_list, const char* options, cl_uint num_input_programs, const cl_program* input_programs, void (CL_CALLBACK* pfn_notify)(cl_program program, void* user_data), void* user_data, cl_int* errcode_ret );
-    typedef cl_kernel ( *PFN_clCreateKernel )( cl_program program, const char* kernel_name, cl_int* errcode_ret );
-    typedef cl_int ( *PFN_clCreateKernelsInProgram )( cl_program program, cl_uint num_kernels, cl_kernel* kernels, cl_uint* num_kernels_ret );
-    typedef cl_int ( *PFN_clRetainKernel )( cl_kernel kernel );
-    typedef cl_int ( *PFN_clReleaseKernel )( cl_kernel kernel );
-    typedef cl_int ( *PFN_clSetKernelArg )( cl_kernel kernel, cl_uint arg_index, size_t arg_size, const void* arg_value );
-    typedef cl_int ( *PFN_clFlush )( cl_command_queue command_queue );
-    typedef cl_int ( *PFN_clFinish )( cl_command_queue command_queue );
-    typedef cl_int ( *PFN_clEnqueueReadBuffer )( cl_command_queue command_queue, cl_mem buffer, cl_bool blocking_read, size_t offset, size_t size, void* ptr, cl_uint num_events_in_wait_list, const cl_event* event_wait_list, cl_event* event );
-    typedef cl_int ( *PFN_clEnqueueReadBufferRect )( cl_command_queue command_queue, cl_mem buffer, cl_bool blocking_read, const size_t* buffer_offset, const size_t* host_offset, const size_t* region, size_t buffer_row_pitch, size_t buffer_slice_pitch, size_t host_row_pitch, size_t host_slice_pitch, void* ptr, cl_uint num_events_in_wait_list, const cl_event* event_wait_list, cl_event* event);
-    typedef cl_int ( *PFN_clEnqueueWriteBuffer )( cl_command_queue command_queue, cl_mem buffer, cl_bool blocking_write, size_t offset, size_t size, const void* ptr, cl_uint num_events_in_wait_list, const cl_event* event_wait_list, cl_event* event );
-    typedef cl_int ( *PFN_clEnqueueWriteBufferRect )( cl_command_queue command_queue, cl_mem buffer, cl_bool blocking_write, const size_t* buffer_offset, const size_t* host_offset, const size_t* region, size_t buffer_row_pitch, size_t buffer_slice_pitch, size_t host_row_pitch, size_t host_slice_pitch, const void* ptr, cl_uint num_events_in_wait_list, const cl_event* event_wait_list, cl_event* event);
-    typedef cl_int ( *PFN_clEnqueueFillBuffer )( cl_command_queue command_queue, cl_mem buffer, const void* pattern, size_t pattern_size, size_t offset, size_t size, cl_uint num_events_in_wait_list, const cl_event* event_wait_list, cl_event* event );
-    typedef cl_int ( *PFN_clEnqueueCopyBuffer )( cl_command_queue command_queue, cl_mem src_buffer, cl_mem dst_buffer, size_t src_offset, size_t dst_offset, size_t size, cl_uint num_events_in_wait_list, const cl_event* event_wait_list, cl_event* event );
-    typedef cl_int ( *PFN_clEnqueueCopyBufferRect )( cl_command_queue command_queue, cl_mem src_buffer, cl_mem dst_buffer, const size_t* src_origin, const size_t* dst_origin, const size_t* region, size_t src_row_pitch, size_t src_slice_pitch, size_t dst_row_pitch, size_t dst_slice_pitch, cl_uint num_events_in_wait_list, const cl_event* event_wait_list, cl_event* event);
-    typedef cl_int ( *PFN_clEnqueueReadImage )( cl_command_queue command_queue, cl_mem image, cl_bool blocking_read, const size_t* origin, const size_t* region, size_t row_pitch, size_t slice_pitch, void* ptr, cl_uint num_events_in_wait_list, const cl_event* event_wait_list, cl_event* event );
-    typedef cl_int ( *PFN_clEnqueueWriteImage )( cl_command_queue command_queue, cl_mem image, cl_bool blocking_write, const size_t* origin, const size_t* region, size_t input_row_pitch, size_t input_slice_pitch, const void* ptr, cl_uint num_events_in_wait_list, const cl_event* event_wait_list, cl_event* event );
-    typedef cl_int ( *PFN_clEnqueueFillImage )( cl_command_queue command_queue, cl_mem image, const void* fill_color, const size_t* origin, const size_t* region, cl_uint num_events_in_wait_list, const cl_event* event_wait_list, cl_event* event );
-    typedef cl_int ( *PFN_clEnqueueCopyImage )( cl_command_queue command_queue, cl_mem src_image, cl_mem dst_image, const size_t* src_origin, const size_t* dst_origin, const size_t* region, cl_uint num_events_in_wait_list, const cl_event* event_wait_list, cl_event* event );
-    typedef cl_int ( *PFN_clEnqueueCopyImageToBuffer )( cl_command_queue command_queue, cl_mem src_image, cl_mem dst_buffer, const size_t* src_origin, const size_t* region, size_t dst_offset, cl_uint num_events_in_wait_list, const cl_event* event_wait_list, cl_event* event );
-    typedef cl_int ( *PFN_clEnqueueCopyBufferToImage )( cl_command_queue command_queue, cl_mem src_buffer, cl_mem dst_image, size_t src_offset, const size_t* dst_origin, const size_t* region, cl_uint num_events_in_wait_list, const cl_event* event_wait_list, cl_event* event );
-    typedef void* ( *PFN_clEnqueueMapBuffer )( cl_command_queue command_queue, cl_mem buffer, cl_bool blocking_map, cl_map_flags map_flags, size_t offset, size_t size, cl_uint num_events_in_wait_list, const cl_event* event_wait_list, cl_event* event, cl_int* errcode_ret );
-    typedef void* ( *PFN_clEnqueueMapImage )( cl_command_queue command_queue, cl_mem image, cl_bool blocking_map, cl_map_flags map_flags, const size_t* origin, const size_t* region, size_t* image_row_pitch, size_t* image_slice_pitch, cl_uint num_events_in_wait_list, const cl_event* event_wait_list, cl_event* event, cl_int* errcode_ret );
-    typedef cl_int ( *PFN_clEnqueueUnmapMemObject )( cl_command_queue command_queue, cl_mem memobj, void* mapped_ptr, cl_uint num_events_in_wait_list, const cl_event* event_wait_list, cl_event* event );
-    typedef cl_int ( *PFN_clEnqueueMigrateMemObjects )( cl_command_queue command_queue, cl_uint num_mem_objects, const cl_mem* mem_objects, cl_mem_migration_flags flags, cl_uint num_events_in_wait_list, const cl_event* event_wait_list, cl_event* event );
-    typedef cl_int ( *PFN_clEnqueueNDRangeKernel )( cl_command_queue command_queue, cl_kernel kernel, cl_uint work_dim, const size_t* global_work_offset, const size_t* global_work_size, const size_t* local_work_size, cl_uint num_events_in_wait_list, const cl_event* event_wait_list, cl_event* event );
+    typedef cl_program ( *PFN_clCreateProgramWithSource )(cl_context context, cl_uint count, const char **strings,
+                                                          const size_t *lengths, cl_int *errcode_ret);
+    typedef cl_program ( *PFN_clCreateProgramWithBinary )(cl_context context, cl_uint num_devices,
+                                                          const cl_device_id *device_list, const size_t *lengths,
+                                                          const unsigned char **binaries, cl_int *binary_status,
+                                                          cl_int *errcode_ret);
+    typedef cl_program ( *PFN_clCreateProgramWithBuiltInKernels )(cl_context context, cl_uint num_devices,
+                                                                  const cl_device_id *device_list,
+                                                                  const char *kernel_names, cl_int *errcode_ret);
+    typedef cl_program ( *PFN_clCreateProgramWithIL )(cl_context context, const void *il, size_t length,
+                                                      cl_int *errcode_ret); // optional
+    typedef cl_int ( *PFN_clRetainProgram )(cl_program program);
+    typedef cl_int ( *PFN_clReleaseProgram )(cl_program program);
+    typedef cl_int ( *PFN_clBuildProgram )(cl_program program, cl_uint num_devices, const cl_device_id *device_list,
+                                           const char *options,
+                                           void (CL_CALLBACK *pfn_notify)(cl_program program, void *user_data),
+                                           void *user_data);
+    typedef cl_int ( *PFN_clCompileProgram )(cl_program program, cl_uint num_devices, const cl_device_id *device_list,
+                                             const char *options, cl_uint num_input_headers,
+                                             const cl_program *input_headers, const char **header_include_names,
+                                             void (CL_CALLBACK *pfn_notify)(cl_program program, void *user_data),
+                                             void *user_data);
+    typedef cl_program ( *PFN_clLinkProgram )(cl_context context, cl_uint num_devices, const cl_device_id *device_list,
+                                              const char *options, cl_uint num_input_programs,
+                                              const cl_program *input_programs,
+                                              void (CL_CALLBACK *pfn_notify)(cl_program program, void *user_data),
+                                              void *user_data, cl_int *errcode_ret);
+    typedef cl_kernel ( *PFN_clCreateKernel )(cl_program program, const char *kernel_name, cl_int *errcode_ret);
+    typedef cl_int ( *PFN_clCreateKernelsInProgram )(cl_program program, cl_uint num_kernels, cl_kernel *kernels,
+                                                     cl_uint *num_kernels_ret);
+    typedef cl_int ( *PFN_clRetainKernel )(cl_kernel kernel);
+    typedef cl_int ( *PFN_clReleaseKernel )(cl_kernel kernel);
+    typedef cl_int ( *PFN_clSetKernelArg )(cl_kernel kernel, cl_uint arg_index, size_t arg_size, const void *arg_value);
+    typedef cl_int ( *PFN_clFlush )(cl_command_queue command_queue);
+    typedef cl_int ( *PFN_clFinish )(cl_command_queue command_queue);
+    typedef cl_int ( *PFN_clEnqueueReadBuffer )(cl_command_queue command_queue, cl_mem buffer, cl_bool blocking_read,
+                                                size_t offset, size_t size, void *ptr, cl_uint num_events_in_wait_list,
+                                                const cl_event *event_wait_list, cl_event *event);
+    typedef cl_int ( *PFN_clEnqueueReadBufferRect )(cl_command_queue command_queue, cl_mem buffer,
+                                                    cl_bool blocking_read, const size_t *buffer_offset,
+                                                    const size_t *host_offset, const size_t *region,
+                                                    size_t buffer_row_pitch, size_t buffer_slice_pitch,
+                                                    size_t host_row_pitch, size_t host_slice_pitch, void *ptr,
+                                                    cl_uint num_events_in_wait_list, const cl_event *event_wait_list,
+                                                    cl_event *event);
+    typedef cl_int ( *PFN_clEnqueueWriteBuffer )(cl_command_queue command_queue, cl_mem buffer, cl_bool blocking_write,
+                                                 size_t offset, size_t size, const void *ptr,
+                                                 cl_uint num_events_in_wait_list, const cl_event *event_wait_list,
+                                                 cl_event *event);
+    typedef cl_int ( *PFN_clEnqueueWriteBufferRect )(cl_command_queue command_queue, cl_mem buffer,
+                                                     cl_bool blocking_write, const size_t *buffer_offset,
+                                                     const size_t *host_offset, const size_t *region,
+                                                     size_t buffer_row_pitch, size_t buffer_slice_pitch,
+                                                     size_t host_row_pitch, size_t host_slice_pitch, const void *ptr,
+                                                     cl_uint num_events_in_wait_list, const cl_event *event_wait_list,
+                                                     cl_event *event);
+    typedef cl_int ( *PFN_clEnqueueFillBuffer )(cl_command_queue command_queue, cl_mem buffer, const void *pattern,
+                                                size_t pattern_size, size_t offset, size_t size,
+                                                cl_uint num_events_in_wait_list, const cl_event *event_wait_list,
+                                                cl_event *event);
+    typedef cl_int ( *PFN_clEnqueueCopyBuffer )(cl_command_queue command_queue, cl_mem src_buffer, cl_mem dst_buffer,
+                                                size_t src_offset, size_t dst_offset, size_t size,
+                                                cl_uint num_events_in_wait_list, const cl_event *event_wait_list,
+                                                cl_event *event);
+    typedef cl_int ( *PFN_clEnqueueCopyBufferRect )(cl_command_queue command_queue, cl_mem src_buffer,
+                                                    cl_mem dst_buffer, const size_t *src_origin,
+                                                    const size_t *dst_origin, const size_t *region,
+                                                    size_t src_row_pitch, size_t src_slice_pitch, size_t dst_row_pitch,
+                                                    size_t dst_slice_pitch, cl_uint num_events_in_wait_list,
+                                                    const cl_event *event_wait_list, cl_event *event);
+    typedef cl_int ( *PFN_clEnqueueReadImage )(cl_command_queue command_queue, cl_mem image, cl_bool blocking_read,
+                                               const size_t *origin, const size_t *region, size_t row_pitch,
+                                               size_t slice_pitch, void *ptr, cl_uint num_events_in_wait_list,
+                                               const cl_event *event_wait_list, cl_event *event);
+    typedef cl_int ( *PFN_clEnqueueWriteImage )(cl_command_queue command_queue, cl_mem image, cl_bool blocking_write,
+                                                const size_t *origin, const size_t *region, size_t input_row_pitch,
+                                                size_t input_slice_pitch, const void *ptr,
+                                                cl_uint num_events_in_wait_list, const cl_event *event_wait_list,
+                                                cl_event *event);
+    typedef cl_int ( *PFN_clEnqueueFillImage )(cl_command_queue command_queue, cl_mem image, const void *fill_color,
+                                               const size_t *origin, const size_t *region,
+                                               cl_uint num_events_in_wait_list, const cl_event *event_wait_list,
+                                               cl_event *event);
+    typedef cl_int ( *PFN_clEnqueueCopyImage )(cl_command_queue command_queue, cl_mem src_image, cl_mem dst_image,
+                                               const size_t *src_origin, const size_t *dst_origin, const size_t *region,
+                                               cl_uint num_events_in_wait_list, const cl_event *event_wait_list,
+                                               cl_event *event);
+    typedef cl_int ( *PFN_clEnqueueCopyImageToBuffer )(cl_command_queue command_queue, cl_mem src_image,
+                                                       cl_mem dst_buffer, const size_t *src_origin,
+                                                       const size_t *region, size_t dst_offset,
+                                                       cl_uint num_events_in_wait_list, const cl_event *event_wait_list,
+                                                       cl_event *event);
+    typedef cl_int ( *PFN_clEnqueueCopyBufferToImage )(cl_command_queue command_queue, cl_mem src_buffer,
+                                                       cl_mem dst_image, size_t src_offset, const size_t *dst_origin,
+                                                       const size_t *region, cl_uint num_events_in_wait_list,
+                                                       const cl_event *event_wait_list, cl_event *event);
+    typedef void *( *PFN_clEnqueueMapBuffer )(cl_command_queue command_queue, cl_mem buffer, cl_bool blocking_map,
+                                              cl_map_flags map_flags, size_t offset, size_t size,
+                                              cl_uint num_events_in_wait_list, const cl_event *event_wait_list,
+                                              cl_event *event, cl_int *errcode_ret);
+    typedef void *( *PFN_clEnqueueMapImage )(cl_command_queue command_queue, cl_mem image, cl_bool blocking_map,
+                                             cl_map_flags map_flags, const size_t *origin, const size_t *region,
+                                             size_t *image_row_pitch, size_t *image_slice_pitch,
+                                             cl_uint num_events_in_wait_list, const cl_event *event_wait_list,
+                                             cl_event *event, cl_int *errcode_ret);
+    typedef cl_int ( *PFN_clEnqueueUnmapMemObject )(cl_command_queue command_queue, cl_mem memobj, void *mapped_ptr,
+                                                    cl_uint num_events_in_wait_list, const cl_event *event_wait_list,
+                                                    cl_event *event);
+    typedef cl_int ( *PFN_clEnqueueMigrateMemObjects )(cl_command_queue command_queue, cl_uint num_mem_objects,
+                                                       const cl_mem *mem_objects, cl_mem_migration_flags flags,
+                                                       cl_uint num_events_in_wait_list, const cl_event *event_wait_list,
+                                                       cl_event *event);
+    typedef cl_int ( *PFN_clEnqueueNDRangeKernel )(cl_command_queue command_queue, cl_kernel kernel, cl_uint work_dim,
+                                                   const size_t *global_work_offset, const size_t *global_work_size,
+                                                   const size_t *local_work_size, cl_uint num_events_in_wait_list,
+                                                   const cl_event *event_wait_list, cl_event *event);
 #ifdef cl_khr_semaphore
-    typedef cl_semaphore_khr ( *PFN_clCreateSemaphoreWithPropertiesKHR )(cl_context context, const cl_semaphore_properties_khr* sema_props, cl_int* errcode_ret);
-    typedef cl_int ( *PFN_clEnqueueWaitSemaphoresKHR )(cl_command_queue command_queue, cl_uint num_sema_objects, const cl_semaphore_khr* sema_objects, const cl_semaphore_payload_khr* sema_payload_list, cl_uint num_events_in_wait_list, const cl_event* event_wait_list, cl_event* event);
-    typedef cl_int ( *PFN_clEnqueueSignalSemaphoresKHR )(cl_command_queue command_queue, cl_uint num_sema_objects, const cl_semaphore_khr* sema_objects, const cl_semaphore_payload_khr* sema_payload_list, cl_uint num_events_in_wait_list, const cl_event* event_wait_list, cl_event* event);
-    typedef cl_int ( *PFN_clGetSemaphoreInfoKHR )(cl_semaphore_khr sema_object, cl_semaphore_info_khr param_name, size_t param_value_size, void* param_value, size_t* param_value_size_ret);
+    typedef cl_semaphore_khr ( *PFN_clCreateSemaphoreWithPropertiesKHR )(cl_context context,
+                                                                         const cl_semaphore_properties_khr *sema_props,
+                                                                         cl_int *errcode_ret);
+    typedef cl_int ( *PFN_clEnqueueWaitSemaphoresKHR )(cl_command_queue command_queue, cl_uint num_sema_objects,
+                                                       const cl_semaphore_khr *sema_objects,
+                                                       const cl_semaphore_payload_khr *sema_payload_list,
+                                                       cl_uint num_events_in_wait_list, const cl_event *event_wait_list,
+                                                       cl_event *event);
+    typedef cl_int ( *PFN_clEnqueueSignalSemaphoresKHR )(cl_command_queue command_queue, cl_uint num_sema_objects,
+                                                         const cl_semaphore_khr *sema_objects,
+                                                         const cl_semaphore_payload_khr *sema_payload_list,
+                                                         cl_uint num_events_in_wait_list,
+                                                         const cl_event *event_wait_list, cl_event *event);
+    typedef cl_int ( *PFN_clGetSemaphoreInfoKHR )(cl_semaphore_khr sema_object, cl_semaphore_info_khr param_name,
+                                                  size_t param_value_size, void *param_value,
+                                                  size_t *param_value_size_ret);
     typedef cl_int ( *PFN_clReleaseSemaphoreKHR )(cl_semaphore_khr sema_object);
     typedef cl_int ( *PFN_clRetainSemaphoreKHR )(cl_semaphore_khr sema_object);
 #endif
 #if defined(CL_VERSION_3_0) && defined(cl_khr_external_memory_opaque_fd)
-    typedef cl_mem ( *PFN_clCreateBufferWithProperties )(cl_context context, const cl_mem_properties* properties, cl_mem_flags flags, size_t size, void* host_ptr, cl_int* errcode_ret);
-    typedef cl_mem ( *PFN_clCreateImageWithProperties )(cl_context context, const cl_mem_properties* properties, cl_mem_flags flags, const cl_image_format* image_format, const cl_image_desc* image_desc, void* host_ptr, cl_int* errcode_ret);
+    typedef cl_mem ( *PFN_clCreateBufferWithProperties )(cl_context context, const cl_mem_properties *properties,
+                                                         cl_mem_flags flags, size_t size, void *host_ptr,
+                                                         cl_int *errcode_ret);
+    typedef cl_mem ( *PFN_clCreateImageWithProperties )(cl_context context, const cl_mem_properties *properties,
+                                                        cl_mem_flags flags, const cl_image_format *image_format,
+                                                        const cl_image_desc *image_desc, void *host_ptr,
+                                                        cl_int *errcode_ret);
 #endif
 
 #if defined(__linux__)
@@ -153,115 +264,162 @@ bool initializeOpenCLFunctionTable() {
         return false;
     }
 #endif
-    g_openclFunctionTable.clGetPlatformIDs = PFN_clGetPlatformIDs(dlsym(g_openclLibraryHandle, TOSTRING(clGetPlatformIDs)));
-    g_openclFunctionTable.clGetPlatformInfo = PFN_clGetPlatformInfo(dlsym(g_openclLibraryHandle, TOSTRING(clGetPlatformInfo)));
+    g_openclFunctionTable.clGetPlatformIDs = PFN_clGetPlatformIDs(
+            dlsym(g_openclLibraryHandle, TOSTRING(clGetPlatformIDs)));
+    g_openclFunctionTable.clGetPlatformInfo = PFN_clGetPlatformInfo(
+            dlsym(g_openclLibraryHandle, TOSTRING(clGetPlatformInfo)));
     g_openclFunctionTable.clGetDeviceIDs = PFN_clGetDeviceIDs(dlsym(g_openclLibraryHandle, TOSTRING(clGetDeviceIDs)));
-    g_openclFunctionTable.clGetDeviceInfo = PFN_clGetDeviceInfo(dlsym(g_openclLibraryHandle, TOSTRING(clGetDeviceInfo)));
-    g_openclFunctionTable.clCreateContext = PFN_clCreateContext(dlsym(g_openclLibraryHandle, TOSTRING(clCreateContext)));
-    g_openclFunctionTable.clRetainContext = PFN_clRetainContext(dlsym(g_openclLibraryHandle, TOSTRING(clRetainContext)));
-    g_openclFunctionTable.clReleaseContext = PFN_clReleaseContext(dlsym(g_openclLibraryHandle, TOSTRING(clReleaseContext)));
-    g_openclFunctionTable.clCreateCommandQueue = PFN_clCreateCommandQueue(dlsym(g_openclLibraryHandle, TOSTRING(clCreateCommandQueue)));
-    g_openclFunctionTable.clRetainCommandQueue = PFN_clRetainCommandQueue(dlsym(g_openclLibraryHandle, TOSTRING(clRetainCommandQueue)));
-    g_openclFunctionTable.clReleaseCommandQueue = PFN_clReleaseCommandQueue(dlsym(g_openclLibraryHandle, TOSTRING(clReleaseCommandQueue)));
-    g_openclFunctionTable.clGetCommandQueueInfo = PFN_clGetCommandQueueInfo(dlsym(g_openclLibraryHandle, TOSTRING(clGetCommandQueueInfo)));
+    g_openclFunctionTable.clGetDeviceInfo = PFN_clGetDeviceInfo(
+            dlsym(g_openclLibraryHandle, TOSTRING(clGetDeviceInfo)));
+    g_openclFunctionTable.clCreateContext = PFN_clCreateContext(
+            dlsym(g_openclLibraryHandle, TOSTRING(clCreateContext)));
+    g_openclFunctionTable.clRetainContext = PFN_clRetainContext(
+            dlsym(g_openclLibraryHandle, TOSTRING(clRetainContext)));
+    g_openclFunctionTable.clReleaseContext = PFN_clReleaseContext(
+            dlsym(g_openclLibraryHandle, TOSTRING(clReleaseContext)));
+    g_openclFunctionTable.clCreateCommandQueue = PFN_clCreateCommandQueue(
+            dlsym(g_openclLibraryHandle, TOSTRING(clCreateCommandQueue)));
+    g_openclFunctionTable.clRetainCommandQueue = PFN_clRetainCommandQueue(
+            dlsym(g_openclLibraryHandle, TOSTRING(clRetainCommandQueue)));
+    g_openclFunctionTable.clReleaseCommandQueue = PFN_clReleaseCommandQueue(
+            dlsym(g_openclLibraryHandle, TOSTRING(clReleaseCommandQueue)));
+    g_openclFunctionTable.clGetCommandQueueInfo = PFN_clGetCommandQueueInfo(
+            dlsym(g_openclLibraryHandle, TOSTRING(clGetCommandQueueInfo)));
     g_openclFunctionTable.clCreateBuffer = PFN_clCreateBuffer(dlsym(g_openclLibraryHandle, TOSTRING(clCreateBuffer)));
-    g_openclFunctionTable.clRetainMemObject = PFN_clRetainMemObject(dlsym(g_openclLibraryHandle, TOSTRING(clRetainMemObject)));
-    g_openclFunctionTable.clReleaseMemObject = PFN_clReleaseMemObject(dlsym(g_openclLibraryHandle, TOSTRING(clReleaseMemObject)));
-    g_openclFunctionTable.clCreateProgramWithSource = PFN_clCreateProgramWithSource(dlsym(g_openclLibraryHandle, TOSTRING(clCreateProgramWithSource)));
-    g_openclFunctionTable.clCreateProgramWithBinary = PFN_clCreateProgramWithBinary(dlsym(g_openclLibraryHandle, TOSTRING(clCreateProgramWithBinary)));
-    g_openclFunctionTable.clCreateProgramWithBuiltInKernels = PFN_clCreateProgramWithBuiltInKernels(dlsym(g_openclLibraryHandle, TOSTRING(clCreateProgramWithBuiltInKernels)));
-    g_openclFunctionTable.clCreateProgramWithIL = PFN_clCreateProgramWithIL(dlsym(g_openclLibraryHandle, TOSTRING(clCreateProgramWithIL)));
-    g_openclFunctionTable.clRetainProgram = PFN_clRetainProgram(dlsym(g_openclLibraryHandle, TOSTRING(clRetainProgram)));
-    g_openclFunctionTable.clReleaseProgram = PFN_clReleaseProgram(dlsym(g_openclLibraryHandle, TOSTRING(clReleaseProgram)));
+    g_openclFunctionTable.clRetainMemObject = PFN_clRetainMemObject(
+            dlsym(g_openclLibraryHandle, TOSTRING(clRetainMemObject)));
+    g_openclFunctionTable.clReleaseMemObject = PFN_clReleaseMemObject(
+            dlsym(g_openclLibraryHandle, TOSTRING(clReleaseMemObject)));
+    g_openclFunctionTable.clCreateProgramWithSource = PFN_clCreateProgramWithSource(
+            dlsym(g_openclLibraryHandle, TOSTRING(clCreateProgramWithSource)));
+    g_openclFunctionTable.clCreateProgramWithBinary = PFN_clCreateProgramWithBinary(
+            dlsym(g_openclLibraryHandle, TOSTRING(clCreateProgramWithBinary)));
+    g_openclFunctionTable.clCreateProgramWithBuiltInKernels = PFN_clCreateProgramWithBuiltInKernels(
+            dlsym(g_openclLibraryHandle, TOSTRING(clCreateProgramWithBuiltInKernels)));
+    g_openclFunctionTable.clCreateProgramWithIL = PFN_clCreateProgramWithIL(
+            dlsym(g_openclLibraryHandle, TOSTRING(clCreateProgramWithIL)));
+    g_openclFunctionTable.clRetainProgram = PFN_clRetainProgram(
+            dlsym(g_openclLibraryHandle, TOSTRING(clRetainProgram)));
+    g_openclFunctionTable.clReleaseProgram = PFN_clReleaseProgram(
+            dlsym(g_openclLibraryHandle, TOSTRING(clReleaseProgram)));
     g_openclFunctionTable.clBuildProgram = PFN_clBuildProgram(dlsym(g_openclLibraryHandle, TOSTRING(clBuildProgram)));
-    g_openclFunctionTable.clCompileProgram = PFN_clCompileProgram(dlsym(g_openclLibraryHandle, TOSTRING(clCompileProgram)));
+    g_openclFunctionTable.clCompileProgram = PFN_clCompileProgram(
+            dlsym(g_openclLibraryHandle, TOSTRING(clCompileProgram)));
     g_openclFunctionTable.clLinkProgram = PFN_clLinkProgram(dlsym(g_openclLibraryHandle, TOSTRING(clLinkProgram)));
     g_openclFunctionTable.clCreateKernel = PFN_clCreateKernel(dlsym(g_openclLibraryHandle, TOSTRING(clCreateKernel)));
-    g_openclFunctionTable.clCreateKernelsInProgram = PFN_clCreateKernelsInProgram(dlsym(g_openclLibraryHandle, TOSTRING(clCreateKernelsInProgram)));
+    g_openclFunctionTable.clCreateKernelsInProgram = PFN_clCreateKernelsInProgram(
+            dlsym(g_openclLibraryHandle, TOSTRING(clCreateKernelsInProgram)));
     g_openclFunctionTable.clRetainKernel = PFN_clRetainKernel(dlsym(g_openclLibraryHandle, TOSTRING(clRetainKernel)));
-    g_openclFunctionTable.clReleaseKernel = PFN_clReleaseKernel(dlsym(g_openclLibraryHandle, TOSTRING(clReleaseKernel)));
+    g_openclFunctionTable.clReleaseKernel = PFN_clReleaseKernel(
+            dlsym(g_openclLibraryHandle, TOSTRING(clReleaseKernel)));
     g_openclFunctionTable.clSetKernelArg = PFN_clSetKernelArg(dlsym(g_openclLibraryHandle, TOSTRING(clSetKernelArg)));
     g_openclFunctionTable.clFlush = PFN_clFlush(dlsym(g_openclLibraryHandle, TOSTRING(clFlush)));
     g_openclFunctionTable.clFinish = PFN_clFinish(dlsym(g_openclLibraryHandle, TOSTRING(clFinish)));
-    g_openclFunctionTable.clEnqueueReadBuffer = PFN_clEnqueueReadBuffer(dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueReadBuffer)));
-    g_openclFunctionTable.clEnqueueReadBufferRect = PFN_clEnqueueReadBufferRect(dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueReadBufferRect)));
-    g_openclFunctionTable.clEnqueueWriteBuffer = PFN_clEnqueueWriteBuffer(dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueWriteBuffer)));
-    g_openclFunctionTable.clEnqueueWriteBufferRect = PFN_clEnqueueWriteBufferRect(dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueWriteBufferRect)));
-    g_openclFunctionTable.clEnqueueFillBuffer = PFN_clEnqueueFillBuffer(dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueFillBuffer)));
-    g_openclFunctionTable.clEnqueueCopyBuffer = PFN_clEnqueueCopyBuffer(dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueCopyBuffer)));
-    g_openclFunctionTable.clEnqueueCopyBufferRect = PFN_clEnqueueCopyBufferRect(dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueCopyBufferRect)));
-    g_openclFunctionTable.clEnqueueReadImage = PFN_clEnqueueReadImage(dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueReadImage)));
-    g_openclFunctionTable.clEnqueueWriteImage = PFN_clEnqueueWriteImage(dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueWriteImage)));
-    g_openclFunctionTable.clEnqueueFillImage = PFN_clEnqueueFillImage(dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueFillImage)));
-    g_openclFunctionTable.clEnqueueCopyImage = PFN_clEnqueueCopyImage(dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueCopyImage)));
-    g_openclFunctionTable.clEnqueueCopyImageToBuffer = PFN_clEnqueueCopyImageToBuffer(dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueCopyImageToBuffer)));
-    g_openclFunctionTable.clEnqueueCopyBufferToImage = PFN_clEnqueueCopyBufferToImage(dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueCopyBufferToImage)));
-    g_openclFunctionTable.clEnqueueMapBuffer = PFN_clEnqueueMapBuffer(dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueMapBuffer)));
-    g_openclFunctionTable.clEnqueueMapImage = PFN_clEnqueueMapImage(dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueMapImage)));
-    g_openclFunctionTable.clEnqueueUnmapMemObject = PFN_clEnqueueUnmapMemObject(dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueUnmapMemObject)));
-    g_openclFunctionTable.clEnqueueMigrateMemObjects = PFN_clEnqueueMigrateMemObjects(dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueMigrateMemObjects)));
-    g_openclFunctionTable.clEnqueueNDRangeKernel = PFN_clEnqueueNDRangeKernel(dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueNDRangeKernel)));
+    g_openclFunctionTable.clEnqueueReadBuffer = PFN_clEnqueueReadBuffer(
+            dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueReadBuffer)));
+    g_openclFunctionTable.clEnqueueReadBufferRect = PFN_clEnqueueReadBufferRect(
+            dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueReadBufferRect)));
+    g_openclFunctionTable.clEnqueueWriteBuffer = PFN_clEnqueueWriteBuffer(
+            dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueWriteBuffer)));
+    g_openclFunctionTable.clEnqueueWriteBufferRect = PFN_clEnqueueWriteBufferRect(
+            dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueWriteBufferRect)));
+    g_openclFunctionTable.clEnqueueFillBuffer = PFN_clEnqueueFillBuffer(
+            dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueFillBuffer)));
+    g_openclFunctionTable.clEnqueueCopyBuffer = PFN_clEnqueueCopyBuffer(
+            dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueCopyBuffer)));
+    g_openclFunctionTable.clEnqueueCopyBufferRect = PFN_clEnqueueCopyBufferRect(
+            dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueCopyBufferRect)));
+    g_openclFunctionTable.clEnqueueReadImage = PFN_clEnqueueReadImage(
+            dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueReadImage)));
+    g_openclFunctionTable.clEnqueueWriteImage = PFN_clEnqueueWriteImage(
+            dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueWriteImage)));
+    g_openclFunctionTable.clEnqueueFillImage = PFN_clEnqueueFillImage(
+            dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueFillImage)));
+    g_openclFunctionTable.clEnqueueCopyImage = PFN_clEnqueueCopyImage(
+            dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueCopyImage)));
+    g_openclFunctionTable.clEnqueueCopyImageToBuffer = PFN_clEnqueueCopyImageToBuffer(
+            dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueCopyImageToBuffer)));
+    g_openclFunctionTable.clEnqueueCopyBufferToImage = PFN_clEnqueueCopyBufferToImage(
+            dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueCopyBufferToImage)));
+    g_openclFunctionTable.clEnqueueMapBuffer = PFN_clEnqueueMapBuffer(
+            dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueMapBuffer)));
+    g_openclFunctionTable.clEnqueueMapImage = PFN_clEnqueueMapImage(
+            dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueMapImage)));
+    g_openclFunctionTable.clEnqueueUnmapMemObject = PFN_clEnqueueUnmapMemObject(
+            dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueUnmapMemObject)));
+    g_openclFunctionTable.clEnqueueMigrateMemObjects = PFN_clEnqueueMigrateMemObjects(
+            dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueMigrateMemObjects)));
+    g_openclFunctionTable.clEnqueueNDRangeKernel = PFN_clEnqueueNDRangeKernel(
+            dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueNDRangeKernel)));
 #ifdef cl_khr_semaphore
-    g_openclFunctionTable.clCreateSemaphoreWithPropertiesKHR = PFN_clCreateSemaphoreWithPropertiesKHR(dlsym(g_openclLibraryHandle, TOSTRING(clCreateSemaphoreWithPropertiesKHR)));
-    g_openclFunctionTable.clEnqueueWaitSemaphoresKHR = PFN_clEnqueueWaitSemaphoresKHR(dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueWaitSemaphoresKHR)));
-    g_openclFunctionTable.clEnqueueSignalSemaphoresKHR = PFN_clEnqueueSignalSemaphoresKHR(dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueSignalSemaphoresKHR)));
-    g_openclFunctionTable.clGetSemaphoreInfoKHR = PFN_clGetSemaphoreInfoKHR(dlsym(g_openclLibraryHandle, TOSTRING(clGetSemaphoreInfoKHR)));
-    g_openclFunctionTable.clReleaseSemaphoreKHR = PFN_clReleaseSemaphoreKHR(dlsym(g_openclLibraryHandle, TOSTRING(clReleaseSemaphoreKHR)));
-    g_openclFunctionTable.clRetainSemaphoreKHR = PFN_clRetainSemaphoreKHR(dlsym(g_openclLibraryHandle, TOSTRING(clRetainSemaphoreKHR)));
+    g_openclFunctionTable.clCreateSemaphoreWithPropertiesKHR = PFN_clCreateSemaphoreWithPropertiesKHR(
+            dlsym(g_openclLibraryHandle, TOSTRING(clCreateSemaphoreWithPropertiesKHR)));
+    g_openclFunctionTable.clEnqueueWaitSemaphoresKHR = PFN_clEnqueueWaitSemaphoresKHR(
+            dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueWaitSemaphoresKHR)));
+    g_openclFunctionTable.clEnqueueSignalSemaphoresKHR = PFN_clEnqueueSignalSemaphoresKHR(
+            dlsym(g_openclLibraryHandle, TOSTRING(clEnqueueSignalSemaphoresKHR)));
+    g_openclFunctionTable.clGetSemaphoreInfoKHR = PFN_clGetSemaphoreInfoKHR(
+            dlsym(g_openclLibraryHandle, TOSTRING(clGetSemaphoreInfoKHR)));
+    g_openclFunctionTable.clReleaseSemaphoreKHR = PFN_clReleaseSemaphoreKHR(
+            dlsym(g_openclLibraryHandle, TOSTRING(clReleaseSemaphoreKHR)));
+    g_openclFunctionTable.clRetainSemaphoreKHR = PFN_clRetainSemaphoreKHR(
+            dlsym(g_openclLibraryHandle, TOSTRING(clRetainSemaphoreKHR)));
 #endif
 #if defined(CL_VERSION_3_0) && defined(cl_khr_external_memory_opaque_fd)
-    g_openclFunctionTable.clCreateBufferWithProperties = PFN_clCreateBufferWithProperties(dlsym(g_openclLibraryHandle, TOSTRING(clCreateBufferWithProperties)));
-    g_openclFunctionTable.clCreateImageWithProperties = PFN_clCreateImageWithProperties(dlsym(g_openclLibraryHandle, TOSTRING(clCreateImageWithProperties)));
+    g_openclFunctionTable.clCreateBufferWithProperties = PFN_clCreateBufferWithProperties(
+            dlsym(g_openclLibraryHandle, TOSTRING(clCreateBufferWithProperties)));
+    g_openclFunctionTable.clCreateImageWithProperties = PFN_clCreateImageWithProperties(
+            dlsym(g_openclLibraryHandle, TOSTRING(clCreateImageWithProperties)));
 #endif
 
     if (!g_openclFunctionTable.clGetPlatformIDs
-            || !g_openclFunctionTable.clGetPlatformInfo
-            || !g_openclFunctionTable.clGetDeviceIDs
-            || !g_openclFunctionTable.clGetDeviceInfo
-            || !g_openclFunctionTable.clCreateContext
-            || !g_openclFunctionTable.clRetainContext
-            || !g_openclFunctionTable.clReleaseContext
-            || !g_openclFunctionTable.clCreateCommandQueue
-            || !g_openclFunctionTable.clRetainCommandQueue
-            || !g_openclFunctionTable.clReleaseCommandQueue
-            || !g_openclFunctionTable.clGetCommandQueueInfo
-            || !g_openclFunctionTable.clCreateBuffer
-            || !g_openclFunctionTable.clRetainMemObject
-            || !g_openclFunctionTable.clReleaseMemObject
-            || !g_openclFunctionTable.clCreateProgramWithSource
-            || !g_openclFunctionTable.clCreateProgramWithBinary
-            || !g_openclFunctionTable.clCreateProgramWithBuiltInKernels
-            //|| !g_openclFunctionTable.clCreateProgramWithIL // optional, OpenCL 2.1
-            || !g_openclFunctionTable.clRetainProgram
-            || !g_openclFunctionTable.clReleaseProgram
-            || !g_openclFunctionTable.clBuildProgram
-            || !g_openclFunctionTable.clCompileProgram
-            || !g_openclFunctionTable.clLinkProgram
-            || !g_openclFunctionTable.clCreateKernel
-            || !g_openclFunctionTable.clCreateKernelsInProgram
-            || !g_openclFunctionTable.clRetainKernel
-            || !g_openclFunctionTable.clReleaseKernel
-            || !g_openclFunctionTable.clSetKernelArg
-            || !g_openclFunctionTable.clFlush
-            || !g_openclFunctionTable.clFinish
-            || !g_openclFunctionTable.clEnqueueReadBuffer
-            || !g_openclFunctionTable.clEnqueueReadBufferRect
-            || !g_openclFunctionTable.clEnqueueWriteBuffer
-            || !g_openclFunctionTable.clEnqueueWriteBufferRect
-            || !g_openclFunctionTable.clEnqueueFillBuffer
-            || !g_openclFunctionTable.clEnqueueCopyBuffer
-            || !g_openclFunctionTable.clEnqueueCopyBufferRect
-            || !g_openclFunctionTable.clEnqueueReadImage
-            || !g_openclFunctionTable.clEnqueueWriteImage
-            || !g_openclFunctionTable.clEnqueueFillImage
-            || !g_openclFunctionTable.clEnqueueCopyImage
-            || !g_openclFunctionTable.clEnqueueCopyImageToBuffer
-            || !g_openclFunctionTable.clEnqueueCopyBufferToImage
-            || !g_openclFunctionTable.clEnqueueMapBuffer
-            || !g_openclFunctionTable.clEnqueueMapImage
-            || !g_openclFunctionTable.clEnqueueUnmapMemObject
-            || !g_openclFunctionTable.clEnqueueMigrateMemObjects
-            || !g_openclFunctionTable.clEnqueueNDRangeKernel) {
+        || !g_openclFunctionTable.clGetPlatformInfo
+        || !g_openclFunctionTable.clGetDeviceIDs
+        || !g_openclFunctionTable.clGetDeviceInfo
+        || !g_openclFunctionTable.clCreateContext
+        || !g_openclFunctionTable.clRetainContext
+        || !g_openclFunctionTable.clReleaseContext
+        || !g_openclFunctionTable.clCreateCommandQueue
+        || !g_openclFunctionTable.clRetainCommandQueue
+        || !g_openclFunctionTable.clReleaseCommandQueue
+        || !g_openclFunctionTable.clGetCommandQueueInfo
+        || !g_openclFunctionTable.clCreateBuffer
+        || !g_openclFunctionTable.clRetainMemObject
+        || !g_openclFunctionTable.clReleaseMemObject
+        || !g_openclFunctionTable.clCreateProgramWithSource
+        || !g_openclFunctionTable.clCreateProgramWithBinary
+        || !g_openclFunctionTable.clCreateProgramWithBuiltInKernels
+        //|| !g_openclFunctionTable.clCreateProgramWithIL // optional, OpenCL 2.1
+        || !g_openclFunctionTable.clRetainProgram
+        || !g_openclFunctionTable.clReleaseProgram
+        || !g_openclFunctionTable.clBuildProgram
+        || !g_openclFunctionTable.clCompileProgram
+        || !g_openclFunctionTable.clLinkProgram
+        || !g_openclFunctionTable.clCreateKernel
+        || !g_openclFunctionTable.clCreateKernelsInProgram
+        || !g_openclFunctionTable.clRetainKernel
+        || !g_openclFunctionTable.clReleaseKernel
+        || !g_openclFunctionTable.clSetKernelArg
+        || !g_openclFunctionTable.clFlush
+        || !g_openclFunctionTable.clFinish
+        || !g_openclFunctionTable.clEnqueueReadBuffer
+        || !g_openclFunctionTable.clEnqueueReadBufferRect
+        || !g_openclFunctionTable.clEnqueueWriteBuffer
+        || !g_openclFunctionTable.clEnqueueWriteBufferRect
+        || !g_openclFunctionTable.clEnqueueFillBuffer
+        || !g_openclFunctionTable.clEnqueueCopyBuffer
+        || !g_openclFunctionTable.clEnqueueCopyBufferRect
+        || !g_openclFunctionTable.clEnqueueReadImage
+        || !g_openclFunctionTable.clEnqueueWriteImage
+        || !g_openclFunctionTable.clEnqueueFillImage
+        || !g_openclFunctionTable.clEnqueueCopyImage
+        || !g_openclFunctionTable.clEnqueueCopyImageToBuffer
+        || !g_openclFunctionTable.clEnqueueCopyBufferToImage
+        || !g_openclFunctionTable.clEnqueueMapBuffer
+        || !g_openclFunctionTable.clEnqueueMapImage
+        || !g_openclFunctionTable.clEnqueueUnmapMemObject
+        || !g_openclFunctionTable.clEnqueueMigrateMemObjects
+        || !g_openclFunctionTable.clEnqueueNDRangeKernel) {
         sgl::Logfile::get()->throwError(
                 "Error in initializeOpenCLFunctionTable: "
                 "At least one function pointer could not be loaded.");
@@ -293,11 +451,11 @@ template<>
 std::string getOpenCLDeviceInfo<std::string>(cl_device_id device, cl_device_info info) {
     size_t deviceExtensionStringSize = 0;
     cl_int res;
-    res = sgl::vk::g_openclFunctionTable.clGetDeviceInfo(device, info, 0, nullptr, &deviceExtensionStringSize);
-    sgl::vk::checkResultCL(res, "Error in clGetDeviceInfo: ");
-    char* strObj = new char[deviceExtensionStringSize + 1];
-    res = sgl::vk::g_openclFunctionTable.clGetDeviceInfo(device, info, deviceExtensionStringSize, strObj, nullptr);
-    sgl::vk::checkResultCL(res, "Error in clGetDeviceInfo: ");
+    res = sgl::g_openclFunctionTable.clGetDeviceInfo(device, info, 0, nullptr, &deviceExtensionStringSize);
+    sgl::checkResultCL(res, "Error in clGetDeviceInfo: ");
+    char *strObj = new char[deviceExtensionStringSize + 1];
+    res = sgl::g_openclFunctionTable.clGetDeviceInfo(device, info, deviceExtensionStringSize, strObj, nullptr);
+    sgl::checkResultCL(res, "Error in clGetDeviceInfo: ");
     strObj[deviceExtensionStringSize] = '\0';
     return strObj;
 }
@@ -305,11 +463,11 @@ std::string getOpenCLDeviceInfo<std::string>(cl_device_id device, cl_device_info
 std::string getOpenCLDeviceInfoString(cl_device_id device, cl_device_info info) {
     size_t deviceExtensionStringSize = 0;
     cl_int res;
-    res = sgl::vk::g_openclFunctionTable.clGetDeviceInfo(device, info, 0, nullptr, &deviceExtensionStringSize);
-    sgl::vk::checkResultCL(res, "Error in clGetDeviceInfo: ");
-    char* strObj = new char[deviceExtensionStringSize + 1];
-    res = sgl::vk::g_openclFunctionTable.clGetDeviceInfo(device, info, deviceExtensionStringSize, strObj, nullptr);
-    sgl::vk::checkResultCL(res, "Error in clGetDeviceInfo: ");
+    res = sgl::g_openclFunctionTable.clGetDeviceInfo(device, info, 0, nullptr, &deviceExtensionStringSize);
+    sgl::checkResultCL(res, "Error in clGetDeviceInfo: ");
+    char *strObj = new char[deviceExtensionStringSize + 1];
+    res = sgl::g_openclFunctionTable.clGetDeviceInfo(device, info, deviceExtensionStringSize, strObj, nullptr);
+    sgl::checkResultCL(res, "Error in clGetDeviceInfo: ");
     strObj[deviceExtensionStringSize] = '\0';
     return strObj;
 }
@@ -319,153 +477,6 @@ std::unordered_set<std::string> getOpenCLDeviceExtensionsSet(cl_device_id device
     std::string extensionsString = getOpenCLDeviceInfoString(device, CL_DEVICE_EXTENSIONS);
     splitStringWhitespace(extensionsString, extensionsList);
     return std::unordered_set<std::string>(extensionsList.begin(), extensionsList.end());
-}
-
-cl_device_id getMatchingOpenCLDevice(sgl::vk::Device* device) {
-    cl_int res;
-    cl_uint numPlatforms = 0;
-    res = sgl::vk::g_openclFunctionTable.clGetPlatformIDs(0, nullptr, &numPlatforms);
-#ifdef cl_khr_icd
-    if (res == CL_PLATFORM_NOT_FOUND_KHR) {
-        return nullptr;
-    }
-#endif
-    sgl::vk::checkResultCL(res, "Error in clGetPlatformIDs: ");
-    auto* platforms = new cl_platform_id[numPlatforms];
-    res = sgl::vk::g_openclFunctionTable.clGetPlatformIDs(numPlatforms, platforms, nullptr);
-    sgl::vk::checkResultCL(res, "Error in clGetPlatformIDs: ");
-
-#ifdef cl_khr_device_uuid
-    const VkPhysicalDeviceIDProperties& deviceIdProperties = device->getDeviceIDProperties();
-#endif
-    cl_device_id clDevice = nullptr;
-    for (cl_uint platIdx = 0; platIdx < numPlatforms; platIdx++) {
-        // Enumerate the devices.
-        cl_uint numDevices = 0;
-        res = sgl::vk::g_openclFunctionTable.clGetDeviceIDs(
-                platforms[platIdx], CL_DEVICE_TYPE_ALL, 0, nullptr, &numDevices);
-        if (res == CL_DEVICE_NOT_FOUND || numDevices == 0) {
-            continue;
-        }
-        sgl::vk::checkResultCL(res, "Error in clGetDeviceIDs: ");
-
-        auto* clDevices = new cl_device_id[numDevices];
-        res = sgl::vk::g_openclFunctionTable.clGetDeviceIDs(
-                platforms[platIdx], CL_DEVICE_TYPE_ALL, numDevices, clDevices, nullptr);
-        sgl::vk::checkResultCL(res, "Error in clGetDeviceIDs: ");
-
-        // First, check the device UUIDs (if available).
-#ifdef cl_khr_device_uuid
-        for (cl_uint deviceIdx = 0; deviceIdx < numDevices; deviceIdx++) {
-            cl_device_id clCurrDevice = clDevices[deviceIdx];
-
-            std::unordered_set<std::string> deviceExtensions = sgl::vk::getOpenCLDeviceExtensionsSet(
-                    clCurrDevice);
-
-            if (deviceExtensions.find("cl_khr_device_uuid") != deviceExtensions.end()) {
-                uint8_t clUuid[16];
-                res = sgl::vk::g_openclFunctionTable.clGetDeviceInfo(
-                        clCurrDevice, CL_DEVICE_UUID_KHR, CL_UUID_SIZE_KHR, &clUuid, nullptr);
-                sgl::vk::checkResultCL(res, "Error in clGetDeviceInfo[CL_DEVICE_UUID_KHR]: ");
-
-                bool isSameUuid = true;
-                for (int i = 0; i < 16; i++) {
-                    if (deviceIdProperties.deviceUUID[i] != clUuid[i]) {
-                        isSameUuid = false;
-                        break;
-                    }
-                }
-                if (isSameUuid) {
-                    clDevice = clCurrDevice;
-                    break;
-                }
-            }
-        }
-#endif
-
-        // If no match for the device UUIDs was found, check the device names.
-        for (cl_uint deviceIdx = 0; deviceIdx < numDevices; deviceIdx++) {
-            cl_device_id clCurrDevice = clDevices[deviceIdx];
-
-            /*
-             * Use heuristics for finding correct device if cl_khr_device_uuid is not supported.
-             * Comparing the device name turned out to be sufficient for an NVIDIA RTX 3090 and the AMD APP SDK.
-             * However, on the Steam Deck, the name of the OpenCL Clover driver uses the code name
-             * "AMD Custom GPU 0405 (vangogh, ...)" compared to the Vulkan device name "AMD RADV VANGOGH".
-             */
-            auto deviceNameString = sgl::vk::getOpenCLDeviceInfoString(
-                    clCurrDevice, CL_DEVICE_NAME);
-            if (deviceNameString == device->getDeviceName()) {
-                clDevice = clCurrDevice;
-                break;
-            }
-
-            /*
-             * Make sure that the vendor ID matches. Otherwise, when in the next step checking sub-strings of the
-             * device name, we might get incorrect matches when an APU is used.
-             * E.g., POCL puts the CPU name into the device name, and the APU name might be identical.
-             */
-            auto clDeviceVendorId = sgl::vk::getOpenCLDeviceInfo<uint32_t>(
-                    clCurrDevice, CL_DEVICE_VENDOR_ID);
-            if (clDeviceVendorId != device->getVendorId()) {
-                continue;
-            }
-
-            /**
-             * We assume matching devices if at least half of the Vulkan device name can be found in the OpenCL
-             * device name. Example for the Steam Deck: "AMD RADV VANGOGH" has two matches ("amd", "vangogh") in
-             * the OpenCL device name "AMD Custom GPU 0405 (vangogh, ...)".
-             */
-            std::string deviceNameStringCl = sgl::toLowerCopy(deviceNameString);
-            std::string deviceNameStringVk = sgl::toLowerCopy(std::string(device->getDeviceName()));
-            std::vector<std::string> deviceNameStringVkParts;
-            sgl::splitStringWhitespace(deviceNameStringVk, deviceNameStringVkParts);
-            int numStringPartsFound = 0;
-            for (const std::string& deviceNameStringVkPart : deviceNameStringVkParts) {
-                if (deviceNameStringCl.find(deviceNameStringVkPart) != std::string::npos) {
-                    numStringPartsFound++;
-                }
-            }
-            if (numStringPartsFound >= sgl::iceil(int(deviceNameStringVkParts.size()), 2)) {
-                clDevice = clCurrDevice;
-                break;
-            }
-
-            /*
-             * On ROCm, the device name is a codename like "gfx1030", which is different from the "real" device name
-             * (aka. board name). AMD offers an extension to get the board name, matching the name of the Vulkan
-             * device (e.g., "AMD Radeon RX 6900 XT").
-             */
-            std::unordered_set<std::string> deviceExtensions = sgl::vk::getOpenCLDeviceExtensionsSet(
-                    clCurrDevice);
-            if (deviceExtensions.find("cl_amd_device_attribute_query") != deviceExtensions.end()) {
-                auto boardNameAmd = sgl::vk::getOpenCLDeviceInfoString(
-                        clCurrDevice, CL_DEVICE_BOARD_NAME_AMD);
-                if (boardNameAmd == device->getDeviceName()) {
-                    clDevice = clCurrDevice;
-                    break;
-                }
-
-                std::string boardNameStringCl = sgl::toLowerCopy(boardNameAmd);
-                numStringPartsFound = 0;
-                for (const std::string& deviceNameStringVkPart : deviceNameStringVkParts) {
-                    if (boardNameStringCl.find(deviceNameStringVkPart) != std::string::npos) {
-                        numStringPartsFound++;
-                    }
-                }
-                if (numStringPartsFound >= sgl::iceil(int(deviceNameStringVkParts.size()), 2)) {
-                    clDevice = clCurrDevice;
-                    break;
-                }
-            }
-        }
-
-        delete[] clDevices;
-    }
-
-    delete[] platforms;
-
-    return clDevice;
 }
 
 
@@ -553,6 +564,157 @@ void _checkResultCL(cl_int res, const char* text, const char* locationText) {
     }
 }
 
+}
+
+
+namespace sgl { namespace vk {
+
+cl_device_id getMatchingOpenCLDevice(sgl::vk::Device* device) {
+    cl_int res;
+    cl_uint numPlatforms = 0;
+    res = sgl::g_openclFunctionTable.clGetPlatformIDs(0, nullptr, &numPlatforms);
+#ifdef cl_khr_icd
+    if (res == CL_PLATFORM_NOT_FOUND_KHR) {
+        return nullptr;
+    }
+#endif
+    sgl::checkResultCL(res, "Error in clGetPlatformIDs: ");
+    auto* platforms = new cl_platform_id[numPlatforms];
+    res = sgl::g_openclFunctionTable.clGetPlatformIDs(numPlatforms, platforms, nullptr);
+    sgl::checkResultCL(res, "Error in clGetPlatformIDs: ");
+
+#ifdef cl_khr_device_uuid
+    const VkPhysicalDeviceIDProperties& deviceIdProperties = device->getDeviceIDProperties();
+#endif
+    cl_device_id clDevice = nullptr;
+    for (cl_uint platIdx = 0; platIdx < numPlatforms; platIdx++) {
+        // Enumerate the devices.
+        cl_uint numDevices = 0;
+        res = sgl::g_openclFunctionTable.clGetDeviceIDs(
+                platforms[platIdx], CL_DEVICE_TYPE_ALL, 0, nullptr, &numDevices);
+        if (res == CL_DEVICE_NOT_FOUND || numDevices == 0) {
+            continue;
+        }
+        sgl::checkResultCL(res, "Error in clGetDeviceIDs: ");
+
+        auto* clDevices = new cl_device_id[numDevices];
+        res = sgl::g_openclFunctionTable.clGetDeviceIDs(
+                platforms[platIdx], CL_DEVICE_TYPE_ALL, numDevices, clDevices, nullptr);
+        sgl::checkResultCL(res, "Error in clGetDeviceIDs: ");
+
+        // First, check the device UUIDs (if available).
+#ifdef cl_khr_device_uuid
+        for (cl_uint deviceIdx = 0; deviceIdx < numDevices; deviceIdx++) {
+            cl_device_id clCurrDevice = clDevices[deviceIdx];
+
+            std::unordered_set<std::string> deviceExtensions = sgl::getOpenCLDeviceExtensionsSet(
+                    clCurrDevice);
+
+            if (deviceExtensions.find("cl_khr_device_uuid") != deviceExtensions.end()) {
+                uint8_t clUuid[16];
+                res = sgl::g_openclFunctionTable.clGetDeviceInfo(
+                        clCurrDevice, CL_DEVICE_UUID_KHR, CL_UUID_SIZE_KHR, &clUuid, nullptr);
+                sgl::checkResultCL(res, "Error in clGetDeviceInfo[CL_DEVICE_UUID_KHR]: ");
+
+                bool isSameUuid = true;
+                for (int i = 0; i < 16; i++) {
+                    if (deviceIdProperties.deviceUUID[i] != clUuid[i]) {
+                        isSameUuid = false;
+                        break;
+                    }
+                }
+                if (isSameUuid) {
+                    clDevice = clCurrDevice;
+                    break;
+                }
+            }
+        }
+#endif
+
+        // If no match for the device UUIDs was found, check the device names.
+        for (cl_uint deviceIdx = 0; deviceIdx < numDevices; deviceIdx++) {
+            cl_device_id clCurrDevice = clDevices[deviceIdx];
+
+            /*
+             * Use heuristics for finding correct device if cl_khr_device_uuid is not supported.
+             * Comparing the device name turned out to be sufficient for an NVIDIA RTX 3090 and the AMD APP SDK.
+             * However, on the Steam Deck, the name of the OpenCL Clover driver uses the code name
+             * "AMD Custom GPU 0405 (vangogh, ...)" compared to the Vulkan device name "AMD RADV VANGOGH".
+             */
+            auto deviceNameString = sgl::getOpenCLDeviceInfoString(
+                    clCurrDevice, CL_DEVICE_NAME);
+            if (deviceNameString == device->getDeviceName()) {
+                clDevice = clCurrDevice;
+                break;
+            }
+
+            /*
+             * Make sure that the vendor ID matches. Otherwise, when in the next step checking sub-strings of the
+             * device name, we might get incorrect matches when an APU is used.
+             * E.g., POCL puts the CPU name into the device name, and the APU name might be identical.
+             */
+            auto clDeviceVendorId = sgl::getOpenCLDeviceInfo<uint32_t>(
+                    clCurrDevice, CL_DEVICE_VENDOR_ID);
+            if (clDeviceVendorId != device->getVendorId()) {
+                continue;
+            }
+
+            /**
+             * We assume matching devices if at least half of the Vulkan device name can be found in the OpenCL
+             * device name. Example for the Steam Deck: "AMD RADV VANGOGH" has two matches ("amd", "vangogh") in
+             * the OpenCL device name "AMD Custom GPU 0405 (vangogh, ...)".
+             */
+            std::string deviceNameStringCl = sgl::toLowerCopy(deviceNameString);
+            std::string deviceNameStringVk = sgl::toLowerCopy(std::string(device->getDeviceName()));
+            std::vector<std::string> deviceNameStringVkParts;
+            sgl::splitStringWhitespace(deviceNameStringVk, deviceNameStringVkParts);
+            int numStringPartsFound = 0;
+            for (const std::string& deviceNameStringVkPart : deviceNameStringVkParts) {
+                if (deviceNameStringCl.find(deviceNameStringVkPart) != std::string::npos) {
+                    numStringPartsFound++;
+                }
+            }
+            if (numStringPartsFound >= sgl::iceil(int(deviceNameStringVkParts.size()), 2)) {
+                clDevice = clCurrDevice;
+                break;
+            }
+
+            /*
+             * On ROCm, the device name is a codename like "gfx1030", which is different from the "real" device name
+             * (aka. board name). AMD offers an extension to get the board name, matching the name of the Vulkan
+             * device (e.g., "AMD Radeon RX 6900 XT").
+             */
+            std::unordered_set<std::string> deviceExtensions = sgl::getOpenCLDeviceExtensionsSet(
+                    clCurrDevice);
+            if (deviceExtensions.find("cl_amd_device_attribute_query") != deviceExtensions.end()) {
+                auto boardNameAmd = sgl::getOpenCLDeviceInfoString(
+                        clCurrDevice, CL_DEVICE_BOARD_NAME_AMD);
+                if (boardNameAmd == device->getDeviceName()) {
+                    clDevice = clCurrDevice;
+                    break;
+                }
+
+                std::string boardNameStringCl = sgl::toLowerCopy(boardNameAmd);
+                numStringPartsFound = 0;
+                for (const std::string& deviceNameStringVkPart : deviceNameStringVkParts) {
+                    if (boardNameStringCl.find(deviceNameStringVkPart) != std::string::npos) {
+                        numStringPartsFound++;
+                    }
+                }
+                if (numStringPartsFound >= sgl::iceil(int(deviceNameStringVkParts.size()), 2)) {
+                    clDevice = clCurrDevice;
+                    break;
+                }
+            }
+        }
+
+        delete[] clDevices;
+    }
+
+    delete[] platforms;
+
+    return clDevice;
+}
 
 
 #ifdef cl_khr_semaphore
@@ -645,7 +807,7 @@ SemaphoreVkOpenCLInterop::SemaphoreVkOpenCLInterop(
     cl_int errorCode = VK_SUCCESS;
     clSemaphore = g_openclFunctionTable.clCreateSemaphoreWithPropertiesKHR(
             context, semaphoreProperties, &errorCode);
-    sgl::vk::checkResultCL(errorCode, "Error in clCreateSemaphoreWithPropertiesKHR: ");
+    sgl::checkResultCL(errorCode, "Error in clCreateSemaphoreWithPropertiesKHR: ");
 
     /*
      * Assume ownership is transferred just like for CUDA. TODO: validate.
@@ -657,21 +819,21 @@ SemaphoreVkOpenCLInterop::SemaphoreVkOpenCLInterop(
 
 SemaphoreVkOpenCLInterop::~SemaphoreVkOpenCLInterop() {
     cl_int res = g_openclFunctionTable.clReleaseSemaphoreKHR(clSemaphore);
-    sgl::vk::checkResultCL(res, "Error in clReleaseSemaphoreKHR: ");
+    sgl::checkResultCL(res, "Error in clReleaseSemaphoreKHR: ");
 }
 
 void SemaphoreVkOpenCLInterop::enqueueSignalSemaphoreCL(cl_command_queue commandQueueCL) {
     cl_int res = g_openclFunctionTable.clEnqueueSignalSemaphoresKHR(
             commandQueueCL, 1, &clSemaphore, nullptr,
             0, nullptr, nullptr);
-    sgl::vk::checkResultCL(res, "Error in clEnqueueSignalSemaphoresKHR: ");
+    sgl::checkResultCL(res, "Error in clEnqueueSignalSemaphoresKHR: ");
 }
 
 void SemaphoreVkOpenCLInterop::enqueueWaitSemaphoreCL(cl_command_queue commandQueueCL) {
     cl_int res = g_openclFunctionTable.clEnqueueWaitSemaphoresKHR(
             commandQueueCL, 1, &clSemaphore, nullptr,
             0, nullptr, nullptr);
-    sgl::vk::checkResultCL(res, "Error in clEnqueueWaitSemaphoresKHR: ");
+    sgl::checkResultCL(res, "Error in clEnqueueWaitSemaphoresKHR: ");
 }
 #endif
 
@@ -747,7 +909,7 @@ BufferOpenCLExternalMemoryVk::BufferOpenCLExternalMemoryVk(cl_context context, v
     cl_int errorCode = VK_SUCCESS;
     extMemoryBuffer = g_openclFunctionTable.clCreateBufferWithProperties(
             context, memoryProperties, 0, vulkanBuffer->getSizeInBytes(), nullptr, &errorCode);
-    sgl::vk::checkResultCL(errorCode, "Error in clCreateBufferWithProperties: ");
+    sgl::checkResultCL(errorCode, "Error in clCreateBufferWithProperties: ");
 
     /*
      * Assume ownership is transferred just like for CUDA. TODO: validate.
@@ -768,7 +930,7 @@ BufferOpenCLExternalMemoryVk::~BufferOpenCLExternalMemoryVk() {
 #endif
     if (extMemoryBuffer) {
         cl_int res = g_openclFunctionTable.clReleaseMemObject(extMemoryBuffer);
-        sgl::vk::checkResultCL(res, "Error in clReleaseMemObject: ");
+        sgl::checkResultCL(res, "Error in clReleaseMemObject: ");
     }
 }
 #endif
@@ -1044,7 +1206,7 @@ ImageOpenCLExternalMemoryVk::ImageOpenCLExternalMemoryVk(cl_context context, vk:
     cl_int errorCode = VK_SUCCESS;
     extMemoryBuffer = g_openclFunctionTable.clCreateImageWithProperties(
             context, memoryProperties, 0, &clImageFormat, &clImageDesc, nullptr, &errorCode);
-    sgl::vk::checkResultCL(errorCode, "Error in clCreateImageWithProperties: ");
+    sgl::checkResultCL(errorCode, "Error in clCreateImageWithProperties: ");
 
     /*
      * Assume ownership is transferred just like for CUDA. TODO: validate.
@@ -1068,7 +1230,7 @@ ImageOpenCLExternalMemoryVk::~ImageOpenCLExternalMemoryVk() {
 #endif
     if (extMemoryBuffer) {
         cl_int res = g_openclFunctionTable.clReleaseMemObject(extMemoryBuffer);
-        sgl::vk::checkResultCL(res, "Error in clReleaseMemObject: ");
+        sgl::checkResultCL(res, "Error in clReleaseMemObject: ");
     }
 }
 #endif

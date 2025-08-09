@@ -89,7 +89,7 @@ DeviceThreadInfo getDeviceThreadInfo(sgl::vk::Device* device) {
     }
 #ifdef SUPPORT_CUDA_INTEROP
     else if (device->getDeviceDriverId() == VK_DRIVER_ID_NVIDIA_PROPRIETARY
-            && sgl::vk::getIsCudaDeviceApiFunctionTableInitialized()) {
+            && sgl::getIsCudaDeviceApiFunctionTableInitialized()) {
         CUdevice cuDevice = 0;
         bool foundDevice = sgl::vk::getMatchingCudaDevice(device, &cuDevice);
 
@@ -99,14 +99,14 @@ DeviceThreadInfo getDeviceThreadInfo(sgl::vk::Device* device) {
     }
 #endif
 #ifdef SUPPORT_OPENCL_INTEROP
-    else if (sgl::vk::getIsOpenCLFunctionTableInitialized()) {
+    else if (sgl::getIsOpenCLFunctionTableInitialized()) {
         cl_int res;
         cl_device_id clDevice = getMatchingOpenCLDevice(device);
         if (clDevice != nullptr) {
             cl_uint maxComputeUnits = 0;
-            res = sgl::vk::g_openclFunctionTable.clGetDeviceInfo(
+            res = sgl::g_openclFunctionTable.clGetDeviceInfo(
                     clDevice, CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(cl_uint), &maxComputeUnits, nullptr);
-            sgl::vk::checkResultCL(res, "Error in clGetDeviceInfo[CL_DEVICE_MAX_COMPUTE_UNITS]: ");
+            sgl::checkResultCL(res, "Error in clGetDeviceInfo[CL_DEVICE_MAX_COMPUTE_UNITS]: ");
             info.numMultiprocessors = maxComputeUnits;
             // On AMD for example, the core count is the number of CUs times the warp size. We will assume this is true.
             info.numCoresTotal = info.numMultiprocessors * info.numCoresPerMultiprocessor;
@@ -139,9 +139,9 @@ DeviceThreadInfo getCudaDeviceThreadInfo(CUdevice cuDevice) {
      */
     CUresult cuResult;
     int numMultiprocessors = 16;
-    cuResult = sgl::vk::g_cudaDeviceApiFunctionTable.cuDeviceGetAttribute(
+    cuResult = sgl::g_cudaDeviceApiFunctionTable.cuDeviceGetAttribute(
             &numMultiprocessors, CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, cuDevice);
-    sgl::vk::checkCUresult(cuResult, "Error in cuDeviceGetAttribute: ");
+    sgl::checkCUresult(cuResult, "Error in cuDeviceGetAttribute: ");
     info.numMultiprocessors = uint32_t(numMultiprocessors);
 
     /*
@@ -152,19 +152,19 @@ DeviceThreadInfo getCudaDeviceThreadInfo(CUdevice cuDevice) {
      * https://developer.nvidia.com/blog/inside-pascal/
      */
     int warpSize = 32;
-    cuResult = sgl::vk::g_cudaDeviceApiFunctionTable.cuDeviceGetAttribute(
+    cuResult = sgl::g_cudaDeviceApiFunctionTable.cuDeviceGetAttribute(
             &warpSize, CU_DEVICE_ATTRIBUTE_WARP_SIZE, cuDevice);
-    sgl::vk::checkCUresult(cuResult, "Error in cuDeviceGetAttribute: ");
+    sgl::checkCUresult(cuResult, "Error in cuDeviceGetAttribute: ");
     info.warpSize = uint32_t(warpSize);
 
     int major = 0;
-    cuResult = sgl::vk::g_cudaDeviceApiFunctionTable.cuDeviceGetAttribute(
+    cuResult = sgl::g_cudaDeviceApiFunctionTable.cuDeviceGetAttribute(
             &major, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR, cuDevice);
-    sgl::vk::checkCUresult(cuResult, "Error in cuDeviceGetAttribute: ");
+    sgl::checkCUresult(cuResult, "Error in cuDeviceGetAttribute: ");
     int minor = 0;
-    cuResult = sgl::vk::g_cudaDeviceApiFunctionTable.cuDeviceGetAttribute(
+    cuResult = sgl::g_cudaDeviceApiFunctionTable.cuDeviceGetAttribute(
             &minor, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR, cuDevice);
-    sgl::vk::checkCUresult(cuResult, "Error in cuDeviceGetAttribute: ");
+    sgl::checkCUresult(cuResult, "Error in cuDeviceGetAttribute: ");
 
     // Use warp size * 4 as fallback for unknown architectures.
     int numCoresPerMultiprocessor = warpSize * 4;

@@ -29,6 +29,10 @@
 #ifndef SGL_INTEROPCOMPUTEAPI_HPP
 #define SGL_INTEROPCOMPUTEAPI_HPP
 
+#include <string>
+#include <stdexcept>
+#include <cstdint>
+
 // Forward declarations for CUDA, HIP and Level Zero objects.
 
 extern "C" {
@@ -87,6 +91,52 @@ union DLL_OBJECT StreamWrapper {
     sycl::queue* syclQueuePtr;
 #endif
 };
+
+/**
+ * An exception that can be thrown when the compute API does not support the used feature.
+ */
+class UnsupportedComputeApiFeatureException : public std::exception {
+public:
+    explicit UnsupportedComputeApiFeatureException(std::string msg) : message(std::move(msg)) {}
+    [[nodiscard]] char const* what() const noexcept override { return message.c_str(); }
+
+private:
+    std::string message;
+};
+
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+/*
+ * Internally, Level Zero interop needs more information (device, context, ...) than CUDA or HIP interop.
+ * The functions below can be used for setting the state globally.
+ */
+DLL_OBJECT void setLevelZeroGlobalState(ze_device_handle_t zeDevice, ze_context_handle_t zeContext);
+DLL_OBJECT void setLevelZeroGlobalCommandQueue(ze_command_queue_handle_t zeCommandQueue);
+DLL_OBJECT void setLevelZeroNextCommandEvents(
+        ze_event_handle_t zeSignalEvent, uint32_t numWaitEvents, ze_event_handle_t* zeWaitEvents);
+DLL_OBJECT void setLevelZeroUseBindlessImagesInterop(bool useBindlessImages);
+#ifdef SUPPORT_SYCL_INTEROP
+DLL_OBJECT void setLevelZeroGlobalStateFromSyclQueue(sycl::queue& syclQueue);
+#endif
+#endif
+
+#ifdef SUPPORT_SYCL_INTEROP
+// For more information on SYCL interop:
+// https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
+DLL_OBJECT void setGlobalSyclQueue(sycl::queue& syclQueue);
+#endif
+
+/// Whether a message box should be shown when a compute API error is generated that is not fatal.
+DLL_OBJECT void setOpenMessageBoxOnComputeApiError(bool _openMessageBox);
+
+
+/// Reset function for unit tests, as static variables may persist across GoogleTest test cases.
+DLL_OBJECT void resetComputeApiState();
+
+/**
+ * Waits for completion of the stream (CUDA, HIP, Level Zero) or event (SYCL, and optionally Level Zero if not nullptr).
+ * If using Level Zero, @see setLevelZeroGlobalCommandQueue must have been called.
+ */
+DLL_OBJECT void waitForCompletion(InteropCompute interopComputeApi, StreamWrapper stream, void* event = nullptr);
 
 }
 
