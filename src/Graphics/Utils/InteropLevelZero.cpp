@@ -27,6 +27,7 @@
  */
 
 #include <map>
+#include <cstring>
 
 #include <Utils/File/FileUtils.hpp>
 #include <Utils/File/Logfile.hpp>
