@@ -99,7 +99,8 @@ TEST_F(D3D12Test, SyclInterop) {
     }
     sgl::d3d12::Renderer* renderer = new sgl::d3d12::Renderer(d3d12Device.get());
 
-    {
+    const int NUM_ITERATIONS = 100;
+    for (int i = 0; i < NUM_ITERATIONS; i++) {
         sgl::d3d12::CommandListPtr commandList = std::make_shared<sgl::d3d12::CommandList>(
                 d3d12Device.get(), sgl::d3d12::CommandListType::DIRECT);
         uint64_t timelineValue = 0;
@@ -150,6 +151,7 @@ TEST_F(D3D12Test, SyclInterop) {
         }
         sycl::free(hostPtr, syclQueue);
     }
+
     delete renderer;
     sgl::freeAllComputeApis();
 }
