@@ -41,7 +41,7 @@ class Resource;
 typedef std::shared_ptr<Resource> ResourcePtr;
 
 /// Decides the compute API usable for the passed device. SYCL has precedence over other APIs if available.
-DLL_OBJECT InteropCompute decideInteropComputeApi(Device* device);
+DLL_OBJECT InteropComputeApi decideInteropComputeApi(Device* device);
 
 class DLL_OBJECT FenceD3D12ComputeApiInterop : public d3d12::Fence {
 public:

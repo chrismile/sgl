@@ -48,18 +48,18 @@ extern sycl::queue* g_syclQueue;
 
 namespace sgl { namespace d3d12 {
 
-InteropCompute decideInteropComputeApi(Device* device) {
-    InteropCompute api = InteropCompute::NONE;
+InteropComputeApi decideInteropComputeApi(Device* device) {
+    InteropComputeApi api = InteropComputeApi::NONE;
 #ifdef SUPPORT_SYCL_INTEROP
     if (g_syclQueue != nullptr) {
-        api = InteropCompute::SYCL;
+        api = InteropComputeApi::SYCL;
     }
 #endif
     return api;
 }
 
 FenceD3D12ComputeApiInteropPtr createFenceD3D12ComputeApiInterop(Device* device, uint64_t value) {
-    InteropCompute interopComputeApi = decideInteropComputeApi(device);
+    InteropComputeApi interopComputeApi = decideInteropComputeApi(device);
     FenceD3D12ComputeApiInteropPtr fence;
     if (!fence) {
         sgl::Logfile::get()->writeError("Error in createFenceD3D12ComputeApiInterop: Unsupported compute API.");
@@ -71,10 +71,10 @@ FenceD3D12ComputeApiInteropPtr createFenceD3D12ComputeApiInterop(Device* device,
 }
 
 ResourceD3D12ComputeApiExternalMemoryPtr createResourceD3D12ComputeApiExternalMemory(sgl::d3d12::ResourcePtr& resource) {
-    InteropCompute interopComputeApi = decideInteropComputeApi(resource->getDevice());
+    InteropComputeApi interopComputeApi = decideInteropComputeApi(resource->getDevice());
     ResourceD3D12ComputeApiExternalMemoryPtr resourceExtMem;
 #ifdef SUPPORT_SYCL_INTEROP
-    if (interopComputeApi == InteropCompute::SYCL) {
+    if (interopComputeApi == InteropComputeApi::SYCL) {
         resourceExtMem = std::make_shared<ResourceD3D12SyclInterop>();
     }
 #endif

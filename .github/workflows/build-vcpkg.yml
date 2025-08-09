@@ -179,7 +179,12 @@ jobs:
           elif [ "$RUNNER_OS" == "macOS" ]; then
             source "$HOME/VulkanSDK/$(ls $HOME/VulkanSDK)/setup-env.sh"
           fi
-          cmake -B "${{github.workspace}}/build" -DCMAKE_TOOLCHAIN_FILE="${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DVCPKG_TARGET_TRIPLET=${{env.VCPKG_DEFAULT_TRIPLET}}
+          MISC_CMAKE_ARGS=()
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            MISC_CMAKE_ARGS+=(-DSUPPORT_D3D12=ON)
+          fi
+          cmake -B "${{github.workspace}}/build" -DCMAKE_TOOLCHAIN_FILE="${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake" \
+          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DVCPKG_TARGET_TRIPLET=${{env.VCPKG_DEFAULT_TRIPLET}} ${MISC_CMAKE_ARGS[@]+"${MISC_CMAKE_ARGS[@]}"}
 
       - name: Build
         run: cmake --build "${{github.workspace}}/build" --config ${{env.BUILD_TYPE}} --parallel 4

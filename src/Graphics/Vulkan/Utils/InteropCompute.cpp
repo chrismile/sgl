@@ -70,31 +70,31 @@ extern sycl::queue* g_syclQueue;
 
 namespace sgl { namespace vk {
 
-InteropCompute decideInteropComputeApi(Device* device) {
-    InteropCompute api = InteropCompute::NONE;
+InteropComputeApi decideInteropComputeApi(Device* device) {
+    InteropComputeApi api = InteropComputeApi::NONE;
 #ifdef SUPPORT_CUDA_INTEROP
     if (device->getDeviceDriverId() == VK_DRIVER_ID_NVIDIA_PROPRIETARY
             && getIsCudaDeviceApiFunctionTableInitialized()) {
-        api = InteropCompute::CUDA;
+        api = InteropComputeApi::CUDA;
     }
 #endif
 #ifdef SUPPORT_HIP_INTEROP
     if ((device->getDeviceDriverId() == VK_DRIVER_ID_AMD_PROPRIETARY
             || device->getDeviceDriverId() == VK_DRIVER_ID_AMD_OPEN_SOURCE)
             && getIsHipDeviceApiFunctionTableInitialized()) {
-        api = InteropCompute::HIP;
+        api = InteropComputeApi::HIP;
     }
 #endif
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
     if ((device->getDeviceDriverId() == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS
             || device->getDeviceDriverId() == VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA)
             && getIsLevelZeroFunctionTableInitialized()) {
-        api = InteropCompute::LEVEL_ZERO;
+        api = InteropComputeApi::LEVEL_ZERO;
     }
 #endif
 #ifdef SUPPORT_SYCL_INTEROP
     if (g_syclQueue != nullptr) {
-        api = InteropCompute::SYCL;
+        api = InteropComputeApi::SYCL;
     }
 #endif
     return api;
@@ -103,25 +103,25 @@ InteropCompute decideInteropComputeApi(Device* device) {
 SemaphoreVkComputeApiInteropPtr createSemaphoreVkComputeApiInterop(
         Device* device, VkSemaphoreCreateFlags semaphoreCreateFlags,
         VkSemaphoreType semaphoreType, uint64_t timelineSemaphoreInitialValue) {
-    InteropCompute interopComputeApi = decideInteropComputeApi(device);
+    InteropComputeApi interopComputeApi = decideInteropComputeApi(device);
     SemaphoreVkComputeApiInteropPtr semaphore;
 #ifdef SUPPORT_CUDA_INTEROP
-    if (interopComputeApi == InteropCompute::CUDA) {
+    if (interopComputeApi == InteropComputeApi::CUDA) {
         semaphore = std::make_shared<SemaphoreVkCudaInterop>();
     }
 #endif
 #ifdef SUPPORT_HIP_INTEROP
-    if (interopComputeApi == InteropCompute::HIP) {
+    if (interopComputeApi == InteropComputeApi::HIP) {
         semaphore = std::make_shared<SemaphoreVkHipInterop>();
     }
 #endif
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
-    if (interopComputeApi == InteropCompute::LEVEL_ZERO) {
+    if (interopComputeApi == InteropComputeApi::LEVEL_ZERO) {
         semaphore = std::make_shared<SemaphoreVkLevelZeroInterop>();
     }
 #endif
 #ifdef SUPPORT_SYCL_INTEROP
-    if (interopComputeApi == InteropCompute::SYCL) {
+    if (interopComputeApi == InteropComputeApi::SYCL) {
         semaphore = std::make_shared<SemaphoreVkSyclInterop>();
     }
 #endif
@@ -135,25 +135,25 @@ SemaphoreVkComputeApiInteropPtr createSemaphoreVkComputeApiInterop(
 }
 
 BufferVkComputeApiExternalMemoryPtr createBufferVkComputeApiExternalMemory(vk::BufferPtr& vulkanBuffer) {
-    InteropCompute interopComputeApi = decideInteropComputeApi(vulkanBuffer->getDevice());
+    InteropComputeApi interopComputeApi = decideInteropComputeApi(vulkanBuffer->getDevice());
     BufferVkComputeApiExternalMemoryPtr bufferExtMem;
 #ifdef SUPPORT_CUDA_INTEROP
-    if (interopComputeApi == InteropCompute::CUDA) {
+    if (interopComputeApi == InteropComputeApi::CUDA) {
         bufferExtMem = std::make_shared<BufferVkCudaInterop>();
     }
 #endif
 #ifdef SUPPORT_HIP_INTEROP
-    if (interopComputeApi == InteropCompute::HIP) {
+    if (interopComputeApi == InteropComputeApi::HIP) {
         bufferExtMem = std::make_shared<BufferVkHipInterop>();
     }
 #endif
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
-    if (interopComputeApi == InteropCompute::LEVEL_ZERO) {
+    if (interopComputeApi == InteropComputeApi::LEVEL_ZERO) {
         bufferExtMem = std::make_shared<BufferVkLevelZeroInterop>();
     }
 #endif
 #ifdef SUPPORT_SYCL_INTEROP
-    if (interopComputeApi == InteropCompute::SYCL) {
+    if (interopComputeApi == InteropComputeApi::SYCL) {
         bufferExtMem = std::make_shared<BufferVkSyclInterop>();
     }
 #endif
@@ -167,25 +167,25 @@ BufferVkComputeApiExternalMemoryPtr createBufferVkComputeApiExternalMemory(vk::B
 }
 
 ImageVkComputeApiExternalMemoryPtr createImageVkComputeApiExternalMemory(ImagePtr& vulkanImage) {
-    InteropCompute interopComputeApi = decideInteropComputeApi(vulkanImage->getDevice());
+    InteropComputeApi interopComputeApi = decideInteropComputeApi(vulkanImage->getDevice());
     ImageVkComputeApiExternalMemoryPtr imageExtMem;
 #ifdef SUPPORT_CUDA_INTEROP
-    if (interopComputeApi == InteropCompute::CUDA) {
+    if (interopComputeApi == InteropComputeApi::CUDA) {
         imageExtMem = std::make_shared<ImageVkCudaInterop>();
     }
 #endif
 #ifdef SUPPORT_HIP_INTEROP
-    if (interopComputeApi == InteropCompute::HIP) {
+    if (interopComputeApi == InteropComputeApi::HIP) {
         imageExtMem = std::make_shared<ImageVkHipInterop>();
     }
 #endif
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
-    if (interopComputeApi == InteropCompute::LEVEL_ZERO) {
+    if (interopComputeApi == InteropComputeApi::LEVEL_ZERO) {
         imageExtMem = std::make_shared<ImageVkLevelZeroInterop>();
     }
 #endif
 #ifdef SUPPORT_SYCL_INTEROP
-    if (interopComputeApi == InteropCompute::SYCL) {
+    if (interopComputeApi == InteropComputeApi::SYCL) {
         imageExtMem = std::make_shared<ImageVkSyclInterop>();
     }
 #endif
@@ -200,25 +200,25 @@ ImageVkComputeApiExternalMemoryPtr createImageVkComputeApiExternalMemory(ImagePt
 
 ImageVkComputeApiExternalMemoryPtr createImageVkComputeApiExternalMemory(
         ImagePtr& vulkanImage, VkImageViewType imageViewType, bool surfaceLoadStore) {
-    InteropCompute interopComputeApi = decideInteropComputeApi(vulkanImage->getDevice());
+    InteropComputeApi interopComputeApi = decideInteropComputeApi(vulkanImage->getDevice());
     ImageVkComputeApiExternalMemoryPtr imageExtMem;
 #ifdef SUPPORT_CUDA_INTEROP
-    if (interopComputeApi == InteropCompute::CUDA) {
+    if (interopComputeApi == InteropComputeApi::CUDA) {
         imageExtMem = std::make_shared<ImageVkCudaInterop>();
     }
 #endif
 #ifdef SUPPORT_HIP_INTEROP
-    if (interopComputeApi == InteropCompute::HIP) {
+    if (interopComputeApi == InteropComputeApi::HIP) {
         imageExtMem = std::make_shared<ImageVkHipInterop>();
     }
 #endif
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
-    if (interopComputeApi == InteropCompute::LEVEL_ZERO) {
+    if (interopComputeApi == InteropComputeApi::LEVEL_ZERO) {
         imageExtMem = std::make_shared<ImageVkLevelZeroInterop>();
     }
 #endif
 #ifdef SUPPORT_SYCL_INTEROP
-    if (interopComputeApi == InteropCompute::SYCL) {
+    if (interopComputeApi == InteropComputeApi::SYCL) {
         imageExtMem = std::make_shared<ImageVkSyclInterop>();
     }
 #endif

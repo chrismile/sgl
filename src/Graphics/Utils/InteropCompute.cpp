@@ -114,23 +114,23 @@ void resetComputeApiState() {
 #endif
 }
 
-void waitForCompletion(InteropCompute interopComputeApi, StreamWrapper stream, void* event) {
+void waitForCompletion(InteropComputeApi interopComputeApi, StreamWrapper stream, void* event) {
 #ifdef SUPPORT_CUDA_INTEROP
-    if (interopComputeApi == InteropCompute::CUDA) {
+    if (interopComputeApi == InteropComputeApi::CUDA) {
         CUresult cuResult = g_cudaDeviceApiFunctionTable.cuStreamSynchronize(stream.cuStream);
         checkCUresult(cuResult, "Error in cuStreamSynchronize: ");
     }
 #endif
 
 #ifdef SUPPORT_HIP_INTEROP
-    if (interopComputeApi == InteropCompute::HIP) {
+    if (interopComputeApi == InteropComputeApi::HIP) {
         hipError_t hipResult = g_hipDeviceApiFunctionTable.hipStreamSynchronize(stream.hipStream);
         checkHipResult(hipResult, "Error in hipStreamSynchronize: ");
     }
 #endif
 
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
-    if (interopComputeApi == InteropCompute::LEVEL_ZERO) {
+    if (interopComputeApi == InteropComputeApi::LEVEL_ZERO) {
         ze_result_t zeResult = g_levelZeroFunctionTable.zeCommandListClose(stream.zeCommandList);
         checkZeResult(zeResult, "Error in zeFenceCreate: ");
 
@@ -173,7 +173,7 @@ void waitForCompletion(InteropCompute interopComputeApi, StreamWrapper stream, v
 #endif
 
 #ifdef SUPPORT_SYCL_INTEROP
-    if (interopComputeApi == InteropCompute::SYCL) {
+    if (interopComputeApi == InteropComputeApi::SYCL) {
         if (!event) {
             sgl::Logfile::get()->throwError("sgl::vk::waitForCompletion called with nullptr SYCL event.");
         }

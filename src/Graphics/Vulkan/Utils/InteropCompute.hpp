@@ -49,7 +49,7 @@
 namespace sgl { namespace vk {
 
 /// Decides the compute API usable for the passed device. SYCL has precedence over other APIs if available.
-DLL_OBJECT InteropCompute decideInteropComputeApi(Device* device);
+DLL_OBJECT InteropComputeApi decideInteropComputeApi(Device* device);
 
 /**
  * A CUDA driver API CUexternalSemaphore/HIP driver API hipExternalSemaphore_t object created from a Vulkan semaphore.

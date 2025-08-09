@@ -72,7 +72,7 @@ class queue;
 
 namespace sgl {
 
-enum class InteropCompute {
+enum class InteropComputeApi {
     NONE, CUDA, HIP, LEVEL_ZERO, SYCL
 };
 
@@ -136,7 +136,7 @@ DLL_OBJECT void resetComputeApiState();
  * Waits for completion of the stream (CUDA, HIP, Level Zero) or event (SYCL, and optionally Level Zero if not nullptr).
  * If using Level Zero, @see setLevelZeroGlobalCommandQueue must have been called.
  */
-DLL_OBJECT void waitForCompletion(InteropCompute interopComputeApi, StreamWrapper stream, void* event = nullptr);
+DLL_OBJECT void waitForCompletion(InteropComputeApi interopComputeApi, StreamWrapper stream, void* event = nullptr);
 
 }
 
