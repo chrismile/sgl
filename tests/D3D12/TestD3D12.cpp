@@ -58,7 +58,7 @@ TEST_F(D3D12Test, SimpleTest) {
     sgl::d3d12::DevicePtr d3d12Device = dxgiFactory->createDeviceAny(D3D_FEATURE_LEVEL_12_0);
 }
 
-TEST_F(D3D12Test, SimpleTestResource) {
+TEST_F(D3D12Test, SimpleTestBuffer) {
     sgl::d3d12::DXGIFactoryPtr dxgiFactory = std::make_shared<sgl::d3d12::DXGIFactory>(true);
     sgl::d3d12::DevicePtr d3d12Device = dxgiFactory->createDeviceAny(D3D_FEATURE_LEVEL_12_0);
 
@@ -68,6 +68,28 @@ TEST_F(D3D12Test, SimpleTestResource) {
     bufferSettings.resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(float), flags);
     sgl::d3d12::ResourcePtr bufferD3D12 = std::make_shared<sgl::d3d12::Resource>(d3d12Device.get(), bufferSettings);
     bufferD3D12->uploadData(sizeof(float), &dataToUpload);
+}
+
+TEST_F(D3D12Test, SimpleTestTexture) {
+    sgl::d3d12::DXGIFactoryPtr dxgiFactory = std::make_shared<sgl::d3d12::DXGIFactory>(true);
+    sgl::d3d12::DevicePtr d3d12Device = dxgiFactory->createDeviceAny(D3D_FEATURE_LEVEL_12_0);
+
+    uint32_t width = 1024;
+    uint32_t height = 1024;
+    size_t numEntries = width * height * 4;
+    auto* hostPtr = new float[numEntries];
+    for (size_t i = 0; i < numEntries; i++) {
+        hostPtr[i] = float(i);
+    }
+
+    sgl::d3d12::ResourceSettings bufferSettings{};
+    D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+    bufferSettings.resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(
+            DXGI_FORMAT_R32G32B32A32_FLOAT, width, height, 1, 0, 1, 0, flags, D3D12_TEXTURE_LAYOUT_UNKNOWN);
+    sgl::d3d12::ResourcePtr bufferD3D12 = std::make_shared<sgl::d3d12::Resource>(d3d12Device.get(), bufferSettings);
+    bufferD3D12->uploadData(sizeof(float) * numEntries, hostPtr);
+
+    delete[] hostPtr;
 }
 
 #ifdef SUPPORT_SYCL_INTEROP

@@ -56,6 +56,9 @@ void Resource::uploadData(size_t sizeInBytesData, const void* dataPtr) {
     CD3DX12_HEAP_PROPERTIES heapPropertiesUpload(D3D12_HEAP_TYPE_UPLOAD);
     auto bufferDescUpload = CD3DX12_RESOURCE_DESC::Buffer(sizeInBytesData);
     ComPtr<ID3D12Resource> intermediateResource{};
+    // https://learn.microsoft.com/en-us/windows/win32/direct3d12/using-resource-barriers-to-synchronize-resource-states-in-direct3d-12
+    // "Upload heaps must start out in the state D3D12_RESOURCE_STATE_GENERIC_READ"
+    // "Readback heaps must start out in the D3D12_RESOURCE_STATE_COPY_DEST state"
     ThrowIfFailed(d3d12Device->CreateCommittedResource(
             &heapPropertiesUpload,
             D3D12_HEAP_FLAG_NONE,
@@ -65,24 +68,70 @@ void Resource::uploadData(size_t sizeInBytesData, const void* dataPtr) {
             IID_PPV_ARGS(&intermediateResource)));
 
     device->runSingleTimeCommands([&](CommandList* commandList){
-        auto* d3d12CommandList = commandList->getD3D12GraphicsCommandListPtr();
-        D3D12_SUBRESOURCE_DATA subresourceData = {};
-        subresourceData.pData = dataPtr;
-        subresourceData.RowPitch = LONG_PTR(sizeInBytesData);
-        subresourceData.SlicePitch = subresourceData.RowPitch;
-        UpdateSubresources(d3d12CommandList, getD3D12Resource(), intermediateResource.Get(), 0, 0, 1, &subresourceData);
+        uploadDataInternal(sizeInBytesData, dataPtr, intermediateResource.Get(), commandList);
     });
 }
 
 void Resource::uploadData(
         size_t sizeInBytesData, const void* dataPtr,
         const ResourcePtr& intermediateResource, const CommandListPtr& commandList) {
+    uploadDataInternal(sizeInBytesData, dataPtr, intermediateResource->getD3D12Resource(), commandList.get());
+}
+
+void Resource::uploadDataInternal(
+        size_t sizeInBytesData, const void* dataPtr,
+        ID3D12Resource* intermediateResource, CommandList* commandList) {
     auto* d3d12CommandList = commandList->getD3D12GraphicsCommandListPtr();
     D3D12_SUBRESOURCE_DATA subresourceData = {};
     subresourceData.pData = dataPtr;
-    subresourceData.RowPitch = LONG_PTR(sizeInBytesData);
-    subresourceData.SlicePitch = subresourceData.RowPitch;
-    UpdateSubresources(d3d12CommandList, getD3D12Resource(), intermediateResource->getD3D12Resource(), 0, 0, 1, &subresourceData);
+    if (resourceSettings.resourceDesc.Height <= 1 && resourceSettings.resourceDesc.DepthOrArraySize <= 1) {
+        // 1D data (no pitches necessary).
+        subresourceData.RowPitch = LONG_PTR(sizeInBytesData);
+        subresourceData.SlicePitch = subresourceData.RowPitch;
+    } else if (resourceSettings.resourceDesc.DepthOrArraySize <= 1) {
+        // 2D data (no slice pitch necessary).
+        subresourceData.RowPitch = LONG_PTR(resourceSettings.resourceDesc.Width);
+        subresourceData.SlicePitch = LONG_PTR(sizeInBytesData);
+    } else {
+        // 3D Data.
+        subresourceData.RowPitch = LONG_PTR(resourceSettings.resourceDesc.Width);
+        subresourceData.SlicePitch = LONG_PTR(resourceSettings.resourceDesc.Width * resourceSettings.resourceDesc.Height);
+    }
+    UpdateSubresources(d3d12CommandList, getD3D12Resource(), intermediateResource, 0, 0, 1, &subresourceData);
+}
+
+void Resource::transition(
+        D3D12_RESOURCE_STATES stateAfter, const CommandListPtr& commandList) {
+    transition(resourceSettings.resourceStates, stateAfter, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES, commandList);
+}
+
+void Resource::transition(
+        D3D12_RESOURCE_STATES stateBefore, D3D12_RESOURCE_STATES stateAfter, const CommandListPtr& commandList) {
+    transition(stateBefore, stateAfter, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES, commandList);
+}
+
+void Resource::transition(
+        D3D12_RESOURCE_STATES stateBefore, D3D12_RESOURCE_STATES stateAfter, uint32_t subresourcce,
+        const CommandListPtr& commandList) {
+    ID3D12GraphicsCommandList* d3d12GraphicsCommandList = commandList->getD3D12GraphicsCommandListPtr();
+    D3D12_RESOURCE_BARRIER resourceBarrier{};
+    resourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    resourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+    resourceBarrier.Transition.pResource = resource.Get();
+    resourceBarrier.Transition.Subresource = subresourcce;
+    resourceBarrier.Transition.StateBefore = stateBefore;
+    resourceBarrier.Transition.StateAfter = stateAfter;
+    d3d12GraphicsCommandList->ResourceBarrier(1, &resourceBarrier);
+    resourceSettings.resourceStates = stateAfter;
+}
+
+void Resource::barrierUAV(const CommandListPtr& commandList) {
+    ID3D12GraphicsCommandList* d3d12GraphicsCommandList = commandList->getD3D12GraphicsCommandListPtr();
+    D3D12_RESOURCE_BARRIER resourceBarrier{};
+    resourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+    resourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+    resourceBarrier.UAV.pResource = resource.Get();
+    d3d12GraphicsCommandList->ResourceBarrier(1, &resourceBarrier);
 }
 
 size_t Resource::getAllocationSizeInBytes() const {

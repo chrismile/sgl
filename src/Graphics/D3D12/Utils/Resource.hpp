@@ -60,6 +60,11 @@ public:
             size_t sizeInBytesData, const void* dataPtr,
             const ResourcePtr& intermediateResource, const CommandListPtr& commandList);
 
+    void transition(D3D12_RESOURCE_STATES stateNew, const CommandListPtr& commandList);
+    void transition(D3D12_RESOURCE_STATES stateOld, D3D12_RESOURCE_STATES stateNew, const CommandListPtr& commandList);
+    void transition(D3D12_RESOURCE_STATES stateOld, D3D12_RESOURCE_STATES stateNew, uint32_t subresourcce, const CommandListPtr& commandList);
+    void barrierUAV(const CommandListPtr& commandList);
+
     [[nodiscard]] size_t getAllocationSizeInBytes() const;
     [[nodiscard]] size_t getCopiableSizeInBytes() const;
 
@@ -75,6 +80,10 @@ private:
 
     ResourceSettings resourceSettings;
     ComPtr<ID3D12Resource> resource{};
+
+    void uploadDataInternal(
+            size_t sizeInBytesData, const void* dataPtr,
+            ID3D12Resource* intermediateResource, CommandList* commandList);
 };
 
 }}
