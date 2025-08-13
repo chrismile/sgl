@@ -47,6 +47,14 @@
 
 #ifdef SUPPORT_SYCL_INTEROP
 #include <sycl/sycl.hpp>
+/*
+ * For some reason, the define for CUDA is in the default header sycl/include/sycl/backend.hpp, but for HIP it is in
+ * sycl/ext/oneapi/backend/hip.hpp. Thus, we need to include the header for HIP so that
+ * sycl::get_native<sycl::backend::ext_oneapi_hip>(sycl::device) works without a compilation error.
+ */
+#ifdef SUPPORT_HIP_INTEROP
+#include <sycl/ext/oneapi/backend/hip.hpp>
+#endif
 #endif
 
 namespace sgl {
@@ -114,7 +122,7 @@ bool getSyclDeviceLuid(const sycl::device& device, uint64_t& deviceLuid) {
 #if defined(SUPPORT_HIP_INTEROP) && defined(SYCL_EXT_ONEAPI_BACKEND_HIP) && SYCL_EXT_ONEAPI_BACKEND_HIP
     if (device.get_backend() == sycl::backend::ext_oneapi_hip
             && sgl::getIsHipDeviceApiFunctionTableInitialized()) {
-        hipDevice_t hipDevice = sycl::get_native<sycl::backend::ext_oneapi_hip>(device);
+        hipDevice_t hipDevice = hipDevice_t(sycl::get_native<sycl::backend::ext_oneapi_hip>(device));
         hipDeviceProp_t hipDeviceProp{};
         checkHipResult(g_hipDeviceApiFunctionTable.hipGetDeviceProperties(
                 &hipDeviceProp, hipDevice), "Error in hipGetDeviceProperties: ");
