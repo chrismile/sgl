@@ -1304,26 +1304,39 @@ if (USE_ONEAPI)
     endif()
 
     # https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
-    # Support for SYCL external timeline semaphores was not added yet in Intel DPC++ 2025.1.
-    set(SYCL_BINDLESS_IMAGES_INTEROP_HEADER_PATH "${ONEAPI_INCLUDE_DIR}/sycl/ext/oneapi/bindless_images_interop.hpp")
-    if (EXISTS "${SYCL_BINDLESS_IMAGES_INTEROP_HEADER_PATH}")
-        file(READ "${SYCL_BINDLESS_IMAGES_INTEROP_HEADER_PATH}" SYCL_BINDLESS_IMAGES_INTEROP_HEADER_CONTENT)
-        string(FIND "${SYCL_BINDLESS_IMAGES_INTEROP_HEADER_CONTENT}" "timeline_fd" SYCL_TIMELINE_MATCH_RES)
-        if(${SYCL_TIMELINE_MATCH_RES} EQUAL -1)
-            message(WARNING "The installed SYCL version does not support external timeline semaphores.")
-            target_compile_definitions(sgl PUBLIC SYCL_NO_EXTERNAL_TIMELINE_SEMAPHORE_SUPPORT)
-        endif ()
+    include(CheckCXXSourceCompiles)
+    set(CMAKE_TRY_COMPILE_CONFIGURATION "Release")
+    set(CMAKE_REQUIRED_INCLUDES "${ONEAPI_INCLUDE_DIR}")
+    set(CMAKE_REQUIRED_LINK_DIRECTORIES "${ONEAPI_PATH}/lib")
+    if (WIN32)
+        set(CMAKE_REQUIRED_LIBRARIES "sycl8.lib")
+        set(SYCL_SEMAPHORE_HANDLE_TYPE "sycl::ext::oneapi::experimental::external_semaphore_handle_type::timeline_win32_nt_handle")
+    else()
+        set(CMAKE_REQUIRED_LIBRARIES "sycl")
+        set(SYCL_SEMAPHORE_HANDLE_TYPE "sycl::ext::oneapi::experimental::external_semaphore_handle_type::timeline_fd")
     endif()
-
-    # Importing linear memory into SYCL is broken until (and including) Intel DPC++ 2025.1.
-    # A fix was added with this PR: https://github.com/intel/llvm/pull/18353
-    set(SYCL_BINDLESS_IMAGES_HEADER_PATH "${ONEAPI_INCLUDE_DIR}/sycl/ext/oneapi/bindless_images.hpp")
-    if (EXISTS "${SYCL_BINDLESS_IMAGES_HEADER_PATH}")
-        file(READ "${SYCL_BINDLESS_IMAGES_HEADER_PATH}" SYCL_BINDLESS_IMAGES_HEADER_CONTENT)
-        string(FIND "${SYCL_BINDLESS_IMAGES_HEADER_CONTENT}" "unmap_external_linear_memory" SYCL_UNMAP_LINEAR_MEMORY_MATCH_RES)
-        if(${SYCL_UNMAP_LINEAR_MEMORY_MATCH_RES} EQUAL -1)
-            message(FATAL_ERROR "The installed SYCL version does not support unmap_external_linear_memory. Upgrade to oneAPI >= 2025.2 or SYCL >= 6.2.")
-        endif ()
+    check_cxx_source_compiles("
+        #include <sycl/ext/oneapi/bindless_images_interop.hpp>
+        int main()
+        {
+            sycl::ext::oneapi::experimental::external_semaphore_handle_type semaphoreHandleType;
+            semaphoreHandleType = ${SYCL_SEMAPHORE_HANDLE_TYPE};
+        }
+    " SYCL_EXTERNAL_TIMELINE_SEMAPHORES_SUPPORTED)
+    check_cxx_source_compiles("
+        #include <sycl/ext/oneapi/bindless_images.hpp>
+        int main()
+        {
+            sycl::queue sycl_queue{sycl::gpu_selector_v};
+            sycl::ext::oneapi::experimental::unmap_external_linear_memory(nullptr, sycl_queue);
+        }
+    " SYCL_UNMAP_LINEAR_MEMORY_SUPPORTED)
+    if (NOT SYCL_EXTERNAL_TIMELINE_SEMAPHORES_SUPPORTED)
+        message(WARNING "The installed SYCL version does not support external timeline semaphores.")
+        target_compile_definitions(sgl PUBLIC SYCL_NO_EXTERNAL_TIMELINE_SEMAPHORE_SUPPORT)
+    endif()
+    if (NOT SYCL_UNMAP_LINEAR_MEMORY_SUPPORTED)
+        message(FATAL_ERROR "The installed SYCL version does not support unmap_external_linear_memory. Upgrade to oneAPI >= 2025.2 or SYCL >= 6.2.")
     endif()
 endif()
 

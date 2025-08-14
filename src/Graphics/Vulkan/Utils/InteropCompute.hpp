@@ -151,9 +151,10 @@ public:
     inline const sgl::vk::ImagePtr& getVulkanImage() { return vulkanImage; }
 
     /*
-     * Asynchronous copy from a device pointer to level 0 mipmap level.
+     * Asynchronous copy from/to a device pointer to level 0 mipmap level.
      */
     virtual void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr) = 0;
+    virtual void copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream, void* eventOut = nullptr) = 0;
 
 protected:
     virtual void preCheckExternalMemoryImport() {}

@@ -483,4 +483,38 @@ void ImageVkHipInterop::copyFromDevicePtrAsync(
     }
 }
 
+void ImageVkHipInterop::copyToDevicePtrAsync(
+        void* devicePtrDst, StreamWrapper stream, void* eventOut) {
+    const sgl::vk::ImageSettings& imageSettings = vulkanImage->getImageSettings();
+    size_t entryByteSize = getImageFormatEntryByteSize(imageSettings.format);
+    if (imageViewType == VK_IMAGE_VIEW_TYPE_2D) {
+        //( *hipMemcpy2DFromArrayAsync )( void* dst, size_t dpitch, hipArray_const_t src, size_t wOffset, size_t hOffset, size_t width, size_t height, hipMemcpyKind kind, hipStream_t stream );
+        hipError_t hipResult = g_hipDeviceApiFunctionTable.hipMemcpy2DFromArrayAsync(
+                devicePtrDst, imageSettings.width * entryByteSize,
+                getHipMipmappedArrayLevel(0), 0, 0, imageSettings.width, imageSettings.height,
+                hipMemcpyDeviceToDevice, stream.hipStream);
+        checkHipResult(hipResult, "Error in hipMemcpy2DToArrayAsync: ");
+    } else if (imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
+        HIP_MEMCPY3D memcpySettings{};
+        memcpySettings.srcMemoryType = hipMemoryTypeArray;
+        memcpySettings.srcArray = getHipMipmappedArrayLevel(0);
+
+        memcpySettings.dstMemoryType = hipMemoryTypeDevice;
+        memcpySettings.dstDevice = reinterpret_cast<hipDeviceptr_t>(devicePtrDst);
+        memcpySettings.dstPitch = imageSettings.width * entryByteSize;
+        memcpySettings.dstHeight = imageSettings.height;
+
+        memcpySettings.WidthInBytes = imageSettings.width * entryByteSize;
+        memcpySettings.Height = imageSettings.height;
+        memcpySettings.Depth = imageSettings.depth;
+
+        hipError_t hipResult = g_hipDeviceApiFunctionTable.hipDrvMemcpy3DAsync(&memcpySettings, stream.hipStream);
+        checkHipResult(hipResult, "Error in hipDrvMemcpy3DAsync: ");
+    } else {
+        Logfile::get()->throwError(
+                "Error in ImageComputeApiExternalMemoryVk::copyFromDevicePtrAsync: "
+                "Unsupported image view type.");
+    }
+}
+
 }}

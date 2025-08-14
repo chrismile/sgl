@@ -50,6 +50,8 @@ typedef std::shared_ptr<CommandList> CommandListPtr;
 class Resource;
 typedef std::shared_ptr<Resource> ResourcePtr;
 
+DLL_OBJECT size_t getDXGIFormatNumChannels(DXGI_FORMAT format);
+
 class DLL_OBJECT Resource {
 public:
     explicit Resource(Device* device, const ResourceSettings& resourceSettings);
@@ -74,6 +76,8 @@ public:
 
     inline Device* getDevice() { return device; }
     inline ID3D12Resource* getD3D12Resource() { return resource.Get(); }
+    inline const ResourceSettings& getResourceSettings() const { return resourceSettings; }
+    inline const D3D12_RESOURCE_DESC& getD3D12ResourceDesc() const { return resourceSettings.resourceDesc; }
 
 private:
     Device* device;

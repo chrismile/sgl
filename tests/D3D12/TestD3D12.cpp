@@ -86,8 +86,8 @@ TEST_F(D3D12Test, SimpleTestTexture) {
     D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     bufferSettings.resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(
             DXGI_FORMAT_R32G32B32A32_FLOAT, width, height, 1, 0, 1, 0, flags, D3D12_TEXTURE_LAYOUT_UNKNOWN);
-    sgl::d3d12::ResourcePtr bufferD3D12 = std::make_shared<sgl::d3d12::Resource>(d3d12Device.get(), bufferSettings);
-    bufferD3D12->uploadData(sizeof(float) * numEntries, hostPtr);
+    sgl::d3d12::ResourcePtr imageD3D12 = std::make_shared<sgl::d3d12::Resource>(d3d12Device.get(), bufferSettings);
+    imageD3D12->uploadData(sizeof(float) * numEntries, hostPtr);
 
     delete[] hostPtr;
 }
@@ -143,7 +143,7 @@ TEST_F(D3D12Test, SyclInterop) {
         bufferSettingsIntermediate.resourceStates = D3D12_RESOURCE_STATE_COPY_SOURCE;
         sgl::d3d12::ResourcePtr bufferIntermediate = std::make_shared<sgl::d3d12::Resource>(d3d12Device.get(), bufferSettingsIntermediate);
 
-        auto bufferSycl = sgl::d3d12::createResourceD3D12ComputeApiExternalMemory(bufferD3D12);
+        auto bufferSycl = sgl::d3d12::createBufferD3D12ComputeApiExternalMemory(bufferD3D12);
         auto* devicePtr = bufferSycl->getDevicePtr<float>();
         auto* hostPtr = sycl::malloc_host<float>(1, syclQueue);
 

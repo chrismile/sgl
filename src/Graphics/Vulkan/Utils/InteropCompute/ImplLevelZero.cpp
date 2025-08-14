@@ -650,4 +650,21 @@ void ImageVkLevelZeroInterop::copyFromDevicePtrAsync(
     checkZeResult(zeResult, "Error in zeCommandListAppendImageCopyFromMemory: ");
 }
 
+void ImageVkLevelZeroInterop::copyToDevicePtrAsync(
+        void* devicePtrDst, StreamWrapper stream, void* eventOut) {
+    const sgl::vk::ImageSettings& imageSettings = vulkanImage->getImageSettings();
+    auto imageHandle = reinterpret_cast<ze_image_handle_t>(mipmappedArray);
+    ze_image_region_t srcRegion{};
+    srcRegion.originX = 0;
+    srcRegion.originY = 0;
+    srcRegion.originZ = 0;
+    srcRegion.width = imageSettings.width;
+    srcRegion.height = imageSettings.height;
+    srcRegion.depth = imageSettings.depth;
+    ze_result_t zeResult = g_levelZeroFunctionTable.zeCommandListAppendImageCopyToMemory(
+            stream.zeCommandList, devicePtrDst, imageHandle, &srcRegion,
+            g_zeSignalEvent, g_numWaitEvents, g_zeWaitEvents);
+    checkZeResult(zeResult, "Error in zeCommandListAppendImageCopyFromMemory: ");
+}
+
 }}

@@ -350,4 +350,45 @@ void ImageVkCudaInterop::copyFromDevicePtrAsync(
     }
 }
 
+void ImageVkCudaInterop::copyToDevicePtrAsync(
+        void* devicePtrDst, StreamWrapper stream, void* eventOut) {
+    const sgl::vk::ImageSettings& imageSettings = vulkanImage->getImageSettings();
+    size_t entryByteSize = getImageFormatEntryByteSize(imageSettings.format);
+    if (imageViewType == VK_IMAGE_VIEW_TYPE_2D) {
+        CUDA_MEMCPY2D memcpySettings{};
+        memcpySettings.srcMemoryType = CU_MEMORYTYPE_ARRAY;
+        memcpySettings.srcArray = getCudaMipmappedArrayLevel(0);
+
+        memcpySettings.dstMemoryType = CU_MEMORYTYPE_DEVICE;
+        memcpySettings.dstDevice = reinterpret_cast<CUdeviceptr>(devicePtrDst);
+        memcpySettings.dstPitch = imageSettings.width * entryByteSize;
+
+        memcpySettings.WidthInBytes = imageSettings.width * entryByteSize;
+        memcpySettings.Height = imageSettings.height;
+
+        CUresult cuResult = g_cudaDeviceApiFunctionTable.cuMemcpy2DAsync(&memcpySettings, stream.cuStream);
+        checkCUresult(cuResult, "Error in cuMemcpy2DAsync: ");
+    } else if (imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
+        CUDA_MEMCPY3D memcpySettings{};
+        memcpySettings.srcMemoryType = CU_MEMORYTYPE_ARRAY;
+        memcpySettings.srcArray = getCudaMipmappedArrayLevel(0);
+
+        memcpySettings.dstMemoryType = CU_MEMORYTYPE_DEVICE;
+        memcpySettings.dstDevice = reinterpret_cast<CUdeviceptr>(devicePtrDst);
+        memcpySettings.dstPitch = imageSettings.width * entryByteSize;
+        memcpySettings.dstHeight = imageSettings.height;
+
+        memcpySettings.WidthInBytes = imageSettings.width * entryByteSize;
+        memcpySettings.Height = imageSettings.height;
+        memcpySettings.Depth = imageSettings.depth;
+
+        CUresult cuResult = g_cudaDeviceApiFunctionTable.cuMemcpy3DAsync(&memcpySettings, stream.cuStream);
+        checkCUresult(cuResult, "Error in cuMemcpy3DAsync: ");
+    } else {
+        Logfile::get()->throwError(
+                "Error in ImageComputeApiExternalMemoryVk::copyToDevicePtrAsync: "
+                "Unsupported image view type.");
+    }
+}
+
 }}

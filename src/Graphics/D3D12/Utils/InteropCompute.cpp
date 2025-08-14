@@ -60,6 +60,7 @@ InteropComputeApi decideInteropComputeApi(Device* device) {
 
 FenceD3D12ComputeApiInteropPtr createFenceD3D12ComputeApiInterop(Device* device, uint64_t value) {
     InteropComputeApi interopComputeApi = decideInteropComputeApi(device);
+    (void)interopComputeApi;
     FenceD3D12ComputeApiInteropPtr fence;
 #ifdef SUPPORT_SYCL_INTEROP
     if (interopComputeApi == InteropComputeApi::SYCL) {
@@ -75,20 +76,58 @@ FenceD3D12ComputeApiInteropPtr createFenceD3D12ComputeApiInterop(Device* device,
     return fence;
 }
 
-ResourceD3D12ComputeApiExternalMemoryPtr createResourceD3D12ComputeApiExternalMemory(sgl::d3d12::ResourcePtr& resource) {
+BufferD3D12ComputeApiExternalMemoryPtr createBufferD3D12ComputeApiExternalMemory(sgl::d3d12::ResourcePtr& resource) {
     InteropComputeApi interopComputeApi = decideInteropComputeApi(resource->getDevice());
-    ResourceD3D12ComputeApiExternalMemoryPtr resourceExtMem;
+    (void)interopComputeApi;
+    BufferD3D12ComputeApiExternalMemoryPtr resourceExtMem;
 #ifdef SUPPORT_SYCL_INTEROP
     if (interopComputeApi == InteropComputeApi::SYCL) {
-        resourceExtMem = std::make_shared<ResourceD3D12SyclInterop>();
+        resourceExtMem = std::make_shared<BufferD3D12SyclInterop>();
     }
 #endif
     if (!resourceExtMem) {
-        sgl::Logfile::get()->writeError("Error in createResourceD3D12ComputeApiExternalMemory: Unsupported compute API.");
+        sgl::Logfile::get()->writeError("Error in createBufferD3D12ComputeApiExternalMemory: Unsupported compute API.");
         return resourceExtMem;
     }
 
     resourceExtMem->initialize(resource);
+    return resourceExtMem;
+}
+
+ImageD3D12ComputeApiExternalMemoryPtr createImageD3D12ComputeApiExternalMemory(sgl::d3d12::ResourcePtr& resource) {
+    InteropComputeApi interopComputeApi = decideInteropComputeApi(resource->getDevice());
+    (void)interopComputeApi;
+    ImageD3D12ComputeApiExternalMemoryPtr resourceExtMem;
+#ifdef SUPPORT_SYCL_INTEROP
+    if (interopComputeApi == InteropComputeApi::SYCL) {
+        resourceExtMem = std::make_shared<ImageD3D12SyclInterop>();
+    }
+#endif
+    if (!resourceExtMem) {
+        sgl::Logfile::get()->writeError("Error in createImageD3D12ComputeApiExternalMemory: Unsupported compute API.");
+        return resourceExtMem;
+    }
+
+    resourceExtMem->initialize(resource);
+    return resourceExtMem;
+}
+
+ImageD3D12ComputeApiExternalMemoryPtr createImageD3D12ComputeApiExternalMemory(
+        sgl::d3d12::ResourcePtr& resource, bool surfaceLoadStore) {
+    InteropComputeApi interopComputeApi = decideInteropComputeApi(resource->getDevice());
+    (void)interopComputeApi;
+    ImageD3D12ComputeApiExternalMemoryPtr resourceExtMem;
+#ifdef SUPPORT_SYCL_INTEROP
+    if (interopComputeApi == InteropComputeApi::SYCL) {
+        resourceExtMem = std::make_shared<ImageD3D12SyclInterop>();
+    }
+#endif
+    if (!resourceExtMem) {
+        sgl::Logfile::get()->writeError("Error in createImageD3D12ComputeApiExternalMemory: Unsupported compute API.");
+        return resourceExtMem;
+    }
+
+    resourceExtMem->initialize(resource, surfaceLoadStore);
     return resourceExtMem;
 }
 
@@ -107,13 +146,45 @@ void FenceD3D12ComputeApiInterop::freeHandle() {
 }
 
 
-void ResourceD3D12ComputeApiExternalMemory::initialize(sgl::d3d12::ResourcePtr& _resource) {
+void BufferD3D12ComputeApiExternalMemory::initialize(sgl::d3d12::ResourcePtr& _resource) {
+    if (devicePtr) {
+        free();
+    }
+
     resource = _resource;
     handle = _resource->getSharedHandle();
     importExternalMemoryWin32Handle();
 }
 
-void ResourceD3D12ComputeApiExternalMemory::freeHandle() {
+void BufferD3D12ComputeApiExternalMemory::freeHandle() {
+    if (handle) {
+        CloseHandle(handle);
+        handle = {};
+    }
+}
+
+void ImageD3D12ComputeApiExternalMemory::initialize(sgl::d3d12::ResourcePtr& _resource) {
+    if (mipmappedArray) {
+        free();
+    }
+
+    resource = _resource;
+    handle = _resource->getSharedHandle();
+    importExternalMemoryWin32Handle();
+}
+
+void ImageD3D12ComputeApiExternalMemory::initialize(sgl::d3d12::ResourcePtr& _resource, bool _surfaceLoadStore) {
+    if (mipmappedArray) {
+        free();
+    }
+
+    resource = _resource;
+    surfaceLoadStore = _surfaceLoadStore;
+    handle = _resource->getSharedHandle();
+    importExternalMemoryWin32Handle();
+}
+
+void ImageD3D12ComputeApiExternalMemory::freeHandle() {
     if (handle) {
         CloseHandle(handle);
         handle = {};

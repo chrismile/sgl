@@ -103,6 +103,7 @@ public:
     ~ImageVkLevelZeroInterop() override;
 
     void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr) override;
+    void copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream, void* eventOut = nullptr) override;
 
 protected:
     void preCheckExternalMemoryImport() override;

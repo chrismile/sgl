@@ -52,14 +52,30 @@ private:
 };
 
 
-class ResourceD3D12SyclInterop : public ResourceD3D12ComputeApiExternalMemory {
+class BufferD3D12SyclInterop : public BufferD3D12ComputeApiExternalMemory {
 public:
-    ~ResourceD3D12SyclInterop() override;
+    ~BufferD3D12SyclInterop() override;
 
     void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr) override;
     void copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream, void* eventOut = nullptr) override;
     void copyFromHostPtrAsync(void* hostPtrSrc, StreamWrapper stream, void* eventOut = nullptr) override;
     void copyToHostPtrAsync(void* hostPtrDst, StreamWrapper stream, void* eventOut = nullptr) override;
+
+protected:
+    void importExternalMemoryWin32Handle() override;
+    void free() override;
+
+private:
+    void* externalMemory{}; // SyclExternalMemWrapper
+};
+
+
+class ImageD3D12SyclInterop : public ImageD3D12ComputeApiExternalMemory {
+public:
+    ~ImageD3D12SyclInterop() override;
+
+    void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr) override;
+    void copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream, void* eventOut = nullptr) override;
 
 protected:
     void importExternalMemoryWin32Handle() override;

@@ -257,7 +257,7 @@ void ImageVkSyclInterop::importExternalMemory() {
         }
     } else {
         Logfile::get()->throwError(
-                "Error in ImageComputeApiExternalMemoryVk::_initialize: "
+                "Error in ImageVkSyclInterop::_initialize: "
                 "Unsupported image view type for SYCL.");
     }
     switch (imageSettings.format) {
@@ -344,7 +344,7 @@ void ImageVkSyclInterop::importExternalMemory() {
         break;
     default:
         sgl::Logfile::get()->throwError(
-                "Error in ImageComputeApiExternalMemoryVk::_initialize: "
+                "Error in ImageVkSyclInterop::_initialize: "
                 "Unsupported channel type for SYCL.");
         return;
     }
@@ -367,11 +367,11 @@ void ImageVkSyclInterop::importExternalMemory() {
         externalMemoryBuffer = nullptr;
         if (openMessageBoxOnComputeApiError) {
             sgl::Logfile::get()->writeError(
-                    "Error in ImageComputeApiExternalMemoryVk::_initialize: "
+                    "Error in ImageVkSyclInterop::_initialize: "
                     "Unsupported SYCL image memory type.");
         } else {
             sgl::Logfile::get()->write(
-                    "Error in ImageComputeApiExternalMemoryVk::_initialize: "
+                    "Error in ImageVkSyclInterop::_initialize: "
                     "Unsupported SYCL image memory type.", sgl::RED);
         }
         throw UnsupportedComputeApiFeatureException("Unsupported SYCL image memory type");
@@ -405,10 +405,19 @@ ImageVkSyclInterop::~ImageVkSyclInterop() {
 
 void ImageVkSyclInterop::copyFromDevicePtrAsync(
         void* devicePtrSrc, StreamWrapper stream, void* eventOut) {
-    const sgl::vk::ImageSettings& imageSettings = vulkanImage->getImageSettings();
     auto* wrapperImg = reinterpret_cast<SyclImageMemHandleWrapper*>(mipmappedArray);
     auto syclEvent = stream.syclQueuePtr->ext_oneapi_copy(
-        devicePtrSrc, wrapperImg->syclImageMemHandle, wrapperImg->syclImageDescriptor);
+            devicePtrSrc, wrapperImg->syclImageMemHandle, wrapperImg->syclImageDescriptor);
+    if (eventOut) {
+        *reinterpret_cast<sycl::event*>(eventOut) = std::move(syclEvent);
+    }
+}
+
+void ImageVkSyclInterop::copyToDevicePtrAsync(
+        void* devicePtrDst, StreamWrapper stream, void* eventOut) {
+    auto* wrapperImg = reinterpret_cast<SyclImageMemHandleWrapper*>(mipmappedArray);
+    auto syclEvent = stream.syclQueuePtr->ext_oneapi_copy(
+            wrapperImg->syclImageMemHandle, devicePtrDst, wrapperImg->syclImageDescriptor);
     if (eventOut) {
         *reinterpret_cast<sycl::event*>(eventOut) = std::move(syclEvent);
     }
