@@ -30,6 +30,8 @@
 #include "Device.hpp"
 #include "Resource.hpp"
 
+#include "Math/Math.hpp"
+
 namespace sgl { namespace d3d12 {
 
 size_t getDXGIFormatNumChannels(DXGI_FORMAT format) {
@@ -212,6 +214,33 @@ size_t Resource::getCopiableSizeInBytes() const {
             nullptr, nullptr, nullptr, &sizeInBytes);
     return size_t(sizeInBytes);
 }
+
+size_t Resource::getNumRows() const {
+    auto* d3d12Device = device->getD3D12Device2();
+    UINT numRows = 0;
+    d3d12Device->GetCopyableFootprints(
+            &resourceSettings.resourceDesc, 0, 1, 0,
+            nullptr, &numRows, nullptr, nullptr);
+    return size_t(numRows);
+}
+
+size_t Resource::getRowSizeInBytes() const {
+    auto* d3d12Device = device->getD3D12Device2();
+    UINT64 rowSizeInBytes = 0;
+    d3d12Device->GetCopyableFootprints(
+            &resourceSettings.resourceDesc, 0, 1, 0,
+            nullptr, nullptr, &rowSizeInBytes, nullptr);
+    return size_t(rowSizeInBytes);
+}
+
+size_t Resource::getRowPitchInBytes() const {
+    size_t rowSizeInBytes = getRowSizeInBytes();
+    if (rowSizeInBytes % D3D12_TEXTURE_DATA_PITCH_ALIGNMENT == 0) {
+        return rowSizeInBytes;
+    }
+    return sgl::sizeceil(rowSizeInBytes, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT) * D3D12_TEXTURE_DATA_PITCH_ALIGNMENT;
+}
+
 
 HANDLE Resource::getSharedHandle(const std::wstring& handleName) {
     auto* d3d12Device = device->getD3D12Device2();

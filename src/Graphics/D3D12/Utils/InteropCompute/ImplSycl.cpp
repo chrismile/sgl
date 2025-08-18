@@ -96,7 +96,7 @@ void FenceD3D12SyclInterop::waitFenceComputeApi(
 
 
 void BufferD3D12SyclInterop::importExternalMemoryWin32Handle() {
-    size_t sizeInBytes = resource->getAllocationSizeInBytes();
+    size_t sizeInBytes = resource->getCopiableSizeInBytes();
 
     // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
     auto memoryHandleType = sycl::ext::oneapi::experimental::external_mem_handle_type::win32_nt_handle;
@@ -158,7 +158,7 @@ void BufferD3D12SyclInterop::copyToHostPtrAsync(void* hostPtrDst, StreamWrapper 
 
 
 void ImageD3D12SyclInterop::importExternalMemoryWin32Handle() {
-    size_t sizeInBytes = resource->getAllocationSizeInBytes();
+    size_t sizeInBytes = resource->getCopiableSizeInBytes();
 
     // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
     auto memoryHandleType = sycl::ext::oneapi::experimental::external_mem_handle_type::win32_nt_handle;

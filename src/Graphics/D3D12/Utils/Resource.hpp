@@ -69,6 +69,9 @@ public:
 
     [[nodiscard]] size_t getAllocationSizeInBytes() const;
     [[nodiscard]] size_t getCopiableSizeInBytes() const;
+    [[nodiscard]] size_t getNumRows() const;
+    [[nodiscard]] size_t getRowSizeInBytes() const;
+    [[nodiscard]] size_t getRowPitchInBytes() const;
 
     HANDLE getSharedHandle(const std::wstring& handleName);
     /** A not thread-safe version using a static counter for handle name "Local\\D3D12ResourceHandle{ctr}". */
@@ -76,8 +79,8 @@ public:
 
     inline Device* getDevice() { return device; }
     inline ID3D12Resource* getD3D12Resource() { return resource.Get(); }
-    inline const ResourceSettings& getResourceSettings() const { return resourceSettings; }
-    inline const D3D12_RESOURCE_DESC& getD3D12ResourceDesc() const { return resourceSettings.resourceDesc; }
+    [[nodiscard]] inline const ResourceSettings& getResourceSettings() const { return resourceSettings; }
+    [[nodiscard]] inline const D3D12_RESOURCE_DESC& getD3D12ResourceDesc() const { return resourceSettings.resourceDesc; }
 
 private:
     Device* device;
