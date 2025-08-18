@@ -1346,14 +1346,17 @@ endif()
 
 # Windows needs Boost::Interprocess for the singleton class.
 if ((WIN32 AND NOT ${BUILD_STATIC_LIBRARY}) OR ${USE_BOOST})
+    # In version 1.69, boost-system was made a header-only library. Up to version 1.88, a linkable stub and
+    # boost_system-config.cmake were provided to remain backwards compatible. For more details see:
+    # https://github.com/boostorg/system/issues/132
     if (EMSCRIPTEN)
         # Necessary for Boost::Spirit WGSL parser.
         set(EMSCRIPTEN_SGL_FLAGS "${EMSCRIPTEN_SGL_FLAGS}" "-sUSE_BOOST_HEADERS=1")
     elseif (${USE_BOOST_LOCALE})
         target_compile_definitions(sgl PRIVATE USE_BOOST_LOCALE)
-        find_package(Boost COMPONENTS system filesystem locale REQUIRED)
+        find_package(Boost 1.69.0 COMPONENTS locale REQUIRED)
     else()
-        find_package(Boost COMPONENTS system filesystem REQUIRED)
+        find_package(Boost 1.69.0 REQUIRED)
     endif()
     if (NOT EMSCRIPTEN)
         target_link_libraries(sgl PRIVATE ${Boost_LIBRARIES})
