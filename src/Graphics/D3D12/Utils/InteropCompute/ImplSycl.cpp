@@ -181,7 +181,7 @@ void ImageD3D12SyclInterop::importExternalMemoryWin32Handle() {
     }
     if (resourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D
             || resourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D) {
-        syclImageDescriptor.width = resourceDesc.Height;
+        syclImageDescriptor.height = resourceDesc.Height;
     }
     if (resourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D) {
         // TODO: When syclImageDescriptor.array_size?
