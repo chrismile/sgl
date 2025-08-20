@@ -54,6 +54,7 @@ DXGIFactory::DXGIFactory(bool useDebugInterface) : useDebugInterface(useDebugInt
 }
 
 DXGIFactory::~DXGIFactory() {
+    dxgiFactory = nullptr; //< To silence "DXGI WARNING: Live IDXGIFactory".
     ComPtr<IDXGIDebug1> debugInterface1;
     if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debugInterface1)))) {
         debugInterface1->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_SUMMARY);
