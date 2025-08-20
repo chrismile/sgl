@@ -45,6 +45,10 @@ namespace sgl { namespace d3d12 {
 class Device;
 typedef std::shared_ptr<Device> DevicePtr;
 
+/**
+ * A DXGI factory for creating sgl::d3d12::Device objects.
+ * A DXGIFactory object should stay alive until all devices are destroyed, as the destructor uses "ReportLiveObjects".
+ */
 class DLL_OBJECT DXGIFactory {
 public:
     explicit DXGIFactory(bool useDebugInterface);

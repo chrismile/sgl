@@ -39,6 +39,8 @@
 #include "Device.hpp"
 #include "DXGIFactory.hpp"
 
+#include <dxgidebug.h>
+
 namespace sgl { namespace d3d12 {
 
 DXGIFactory::DXGIFactory(bool useDebugInterface) : useDebugInterface(useDebugInterface) {
@@ -52,6 +54,10 @@ DXGIFactory::DXGIFactory(bool useDebugInterface) : useDebugInterface(useDebugInt
 }
 
 DXGIFactory::~DXGIFactory() {
+    ComPtr<IDXGIDebug1> debugInterface1;
+    if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debugInterface1)))) {
+        debugInterface1->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_SUMMARY);
+    }
 }
 
 void DXGIFactory::enumerateDevices() {
