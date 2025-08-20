@@ -167,9 +167,10 @@ TEST_F(D3D12Test, SyclInterop) {
         cpyEvent.wait_and_throw();
         fence->waitOnCpu(timelineValue);
 
-        // Test whether a race condition occured.
+        // Test whether a race condition occurred.
         if (*hostPtr != 11) {
-            FAIL() << "Race condition occured.";
+            delete renderer;
+            FAIL() << "Race condition occurred.";
         }
         sycl::free(hostPtr, syclQueue);
     }
