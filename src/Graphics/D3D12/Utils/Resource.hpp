@@ -57,21 +57,29 @@ public:
     explicit Resource(Device* device, const ResourceSettings& resourceSettings);
     ~Resource();
 
-    void uploadData(size_t sizeInBytesData, const void* dataPtr);
-    void uploadData(
+    /*
+     * The functions below upload/read back data for subresource 0.
+     */
+    void uploadDataLinear(size_t sizeInBytesData, const void* dataPtr);
+    void uploadDataLinear(
             size_t sizeInBytesData, const void* dataPtr,
             const ResourcePtr& intermediateResource, const CommandListPtr& commandList);
+    void readBackDataLinear(size_t sizeInBytesData, void* dataPtr);
 
     void transition(D3D12_RESOURCE_STATES stateNew, const CommandListPtr& commandList);
+    void transition(D3D12_RESOURCE_STATES stateNew, CommandList* commandList);
     void transition(D3D12_RESOURCE_STATES stateOld, D3D12_RESOURCE_STATES stateNew, const CommandListPtr& commandList);
+    void transition(D3D12_RESOURCE_STATES stateOld, D3D12_RESOURCE_STATES stateNew, CommandList* commandList);
     void transition(D3D12_RESOURCE_STATES stateOld, D3D12_RESOURCE_STATES stateNew, uint32_t subresourcce, const CommandListPtr& commandList);
+    void transition(D3D12_RESOURCE_STATES stateOld, D3D12_RESOURCE_STATES stateNew, uint32_t subresourcce, CommandList* commandList);
     void barrierUAV(const CommandListPtr& commandList);
+    void barrierUAV(CommandList* commandList);
 
-    [[nodiscard]] size_t getAllocationSizeInBytes() const;
-    [[nodiscard]] size_t getCopiableSizeInBytes() const;
-    [[nodiscard]] size_t getNumRows() const;
-    [[nodiscard]] size_t getRowSizeInBytes() const;
-    [[nodiscard]] size_t getRowPitchInBytes() const;
+    [[nodiscard]] size_t getAllocationSizeInBytes();
+    [[nodiscard]] size_t getCopiableSizeInBytes();
+    [[nodiscard]] size_t getNumRows();
+    [[nodiscard]] size_t getRowSizeInBytes();
+    [[nodiscard]] size_t getRowPitchInBytes();
 
     HANDLE getSharedHandle(const std::wstring& handleName);
     /** A not thread-safe version using a static counter for handle name "Local\\D3D12ResourceHandle{ctr}". */
@@ -86,9 +94,16 @@ private:
     Device* device;
 
     ResourceSettings resourceSettings;
+    uint32_t numSubresources = 0;
     ComPtr<ID3D12Resource> resource{};
 
-    void uploadDataInternal(
+    void queryCopiableFootprints();
+    std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> subresourceLayoutArray;
+    std::vector<UINT> subresourceNumRowsArray;
+    std::vector<UINT64> subresourceRowSizeInBytesArray;
+    std::vector<UINT64> subresourceTotalBytesArray;
+
+    void uploadDataLinearInternal(
             size_t sizeInBytesData, const void* dataPtr,
             ID3D12Resource* intermediateResource, CommandList* commandList);
 };

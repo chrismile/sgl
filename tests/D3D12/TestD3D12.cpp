@@ -67,29 +67,47 @@ TEST_F(D3D12Test, SimpleTestBuffer) {
     D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     bufferSettings.resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(float), flags);
     sgl::d3d12::ResourcePtr bufferD3D12 = std::make_shared<sgl::d3d12::Resource>(d3d12Device.get(), bufferSettings);
-    bufferD3D12->uploadData(sizeof(float), &dataToUpload);
+    bufferD3D12->uploadDataLinear(sizeof(float), &dataToUpload);
 }
 
 TEST_F(D3D12Test, SimpleTestTexture) {
     sgl::d3d12::DXGIFactoryPtr dxgiFactory = std::make_shared<sgl::d3d12::DXGIFactory>(true);
     sgl::d3d12::DevicePtr d3d12Device = dxgiFactory->createDeviceAny(D3D_FEATURE_LEVEL_12_0);
 
-    uint32_t width = 1024;
-    uint32_t height = 1024;
-    size_t numEntries = width * height * 4;
-    auto* hostPtr = new float[numEntries];
-    for (size_t i = 0; i < numEntries; i++) {
-        hostPtr[i] = float(i);
+    for (uint32_t res = 1; res <= 1024; res *= 2) {
+        uint32_t width = res;
+        uint32_t height = res;
+        size_t numEntries = width * height * 4;
+        size_t sizeInBytes = sizeof(float) * numEntries;
+        auto* hostPtr = new float[numEntries];
+        for (size_t i = 0; i < numEntries; i++) {
+            hostPtr[i] = float(i);
+        }
+
+        sgl::d3d12::ResourceSettings bufferSettings{};
+        D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+        bufferSettings.resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(
+                DXGI_FORMAT_R32G32B32A32_FLOAT, width, height, 1, 0, 1, 0, flags, D3D12_TEXTURE_LAYOUT_UNKNOWN);
+        sgl::d3d12::ResourcePtr imageD3D12 = std::make_shared<sgl::d3d12::Resource>(d3d12Device.get(), bufferSettings);
+        imageD3D12->uploadDataLinear(sizeInBytes, hostPtr);
+        memset(hostPtr, 0, sizeInBytes);
+        imageD3D12->readBackDataLinear(sizeInBytes, hostPtr);
+
+        // Check equality.
+        for (size_t i = 0; i < numEntries; i++) {
+            if (hostPtr[i] != float(i)) {
+                size_t channelIdx = i % 4;
+                size_t x = (i / 4) % width;
+                size_t y = (i / 4) / width;
+                std::string errorMessage =
+                        "Image content mismatch at res=" + std::to_string(res) + ", x=" + std::to_string(x) + ", y="
+                        + std::to_string(y) + ", c=" + std::to_string(channelIdx);
+                ASSERT_TRUE(false) << errorMessage;
+            }
+        }
+
+        delete[] hostPtr;
     }
-
-    sgl::d3d12::ResourceSettings bufferSettings{};
-    D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-    bufferSettings.resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(
-            DXGI_FORMAT_R32G32B32A32_FLOAT, width, height, 1, 0, 1, 0, flags, D3D12_TEXTURE_LAYOUT_UNKNOWN);
-    sgl::d3d12::ResourcePtr imageD3D12 = std::make_shared<sgl::d3d12::Resource>(d3d12Device.get(), bufferSettings);
-    imageD3D12->uploadData(sizeof(float) * numEntries, hostPtr);
-
-    delete[] hostPtr;
 }
 
 #ifdef SUPPORT_SYCL_INTEROP
@@ -135,7 +153,7 @@ TEST_F(D3D12Test, SyclInterop) {
         bufferSettings.resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(float), flags);
         bufferSettings.heapFlags = D3D12_HEAP_FLAG_SHARED;
         sgl::d3d12::ResourcePtr bufferD3D12 = std::make_shared<sgl::d3d12::Resource>(d3d12Device.get(), bufferSettings);
-        bufferD3D12->uploadData(sizeof(float), &sharedData);
+        bufferD3D12->uploadDataLinear(sizeof(float), &sharedData);
 
         sgl::d3d12::ResourceSettings bufferSettingsIntermediate{};
         bufferSettingsIntermediate.resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(float), D3D12_RESOURCE_FLAG_NONE);
@@ -151,7 +169,7 @@ TEST_F(D3D12Test, SyclInterop) {
         ID3D12CommandQueue* d3d12CommandQueue = d3d12Device->getD3D12CommandQueue(commandList->getCommandListType());
         renderer->setCommandList(commandList);
         float newData = 11.0f;
-        bufferD3D12->uploadData(sizeof(float), &newData, bufferIntermediate, commandList);
+        bufferD3D12->uploadDataLinear(sizeof(float), &newData, bufferIntermediate, commandList);
         commandList->close();
         auto* d3d12CommandList = commandList->getD3D12CommandListPtr();
         d3d12CommandQueue->ExecuteCommandLists(1, &d3d12CommandList);

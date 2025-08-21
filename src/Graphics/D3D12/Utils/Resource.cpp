@@ -104,14 +104,42 @@ Resource::Resource(Device* device, const ResourceSettings& resourceSettings)
             resourceSettings.resourceStates,
             optimizedClearValue,
             IID_PPV_ARGS(&resource)));
+
+    uint32_t arraySize;
+    if (resourceSettings.resourceDesc.Dimension != D3D12_RESOURCE_DIMENSION_TEXTURE3D) {
+        arraySize = resourceSettings.resourceDesc.DepthOrArraySize;
+    } else {
+        arraySize = 1;
+    }
+    auto formatPlaneCount = uint32_t(D3D12GetFormatPlaneCount(d3d12Device, resourceSettings.resourceDesc.Format));
+    numSubresources = uint32_t(resourceSettings.resourceDesc.MipLevels) * arraySize * formatPlaneCount;
 }
 
 Resource::~Resource() = default;
 
-void Resource::uploadData(size_t sizeInBytesData, const void* dataPtr) {
+
+void Resource::uploadDataLinear(size_t sizeInBytesData, const void* dataPtr) {
+    size_t intermediateSizeInBytes;
+    if (resourceSettings.resourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER) {
+        intermediateSizeInBytes = sizeInBytesData;
+        if (sizeInBytesData > getCopiableSizeInBytes()) {
+            sgl::Logfile::get()->throwError(
+                    "Error in Resource::uploadDataLinear: "
+                    "The copy source is larger than the destination buffer.");
+        }
+    } else {
+        intermediateSizeInBytes = getCopiableSizeInBytes();
+        if (sizeInBytesData > getRowSizeInBytes() * resourceSettings.resourceDesc.Height * resourceSettings.resourceDesc.DepthOrArraySize) {
+            sgl::Logfile::get()->throwError(
+                    "Error in Resource::readBackDataInternal: "
+                    "The copy source is larger than the destination texture.");
+        }
+    }
+
+    queryCopiableFootprints();
     auto* d3d12Device = device->getD3D12Device2();
     CD3DX12_HEAP_PROPERTIES heapPropertiesUpload(D3D12_HEAP_TYPE_UPLOAD);
-    auto bufferDescUpload = CD3DX12_RESOURCE_DESC::Buffer(sizeInBytesData);
+    auto bufferDescUpload = CD3DX12_RESOURCE_DESC::Buffer(intermediateSizeInBytes);
     ComPtr<ID3D12Resource> intermediateResource{};
     // https://learn.microsoft.com/en-us/windows/win32/direct3d12/using-resource-barriers-to-synchronize-resource-states-in-direct3d-12
     // "Upload heaps must start out in the state D3D12_RESOURCE_STATE_GENERIC_READ"
@@ -125,17 +153,18 @@ void Resource::uploadData(size_t sizeInBytesData, const void* dataPtr) {
             IID_PPV_ARGS(&intermediateResource)));
 
     device->runSingleTimeCommands([&](CommandList* commandList){
-        uploadDataInternal(sizeInBytesData, dataPtr, intermediateResource.Get(), commandList);
+        this->transition(D3D12_RESOURCE_STATE_COPY_DEST, commandList);
+        uploadDataLinearInternal(sizeInBytesData, dataPtr, intermediateResource.Get(), commandList);
     });
 }
 
-void Resource::uploadData(
+void Resource::uploadDataLinear(
         size_t sizeInBytesData, const void* dataPtr,
         const ResourcePtr& intermediateResource, const CommandListPtr& commandList) {
-    uploadDataInternal(sizeInBytesData, dataPtr, intermediateResource->getD3D12Resource(), commandList.get());
+    uploadDataLinearInternal(sizeInBytesData, dataPtr, intermediateResource->getD3D12Resource(), commandList.get());
 }
 
-void Resource::uploadDataInternal(
+void Resource::uploadDataLinearInternal(
         size_t sizeInBytesData, const void* dataPtr,
         ID3D12Resource* intermediateResource, CommandList* commandList) {
     auto* d3d12CommandList = commandList->getD3D12GraphicsCommandListPtr();
@@ -147,18 +176,140 @@ void Resource::uploadDataInternal(
         subresourceData.SlicePitch = subresourceData.RowPitch;
     } else if (resourceSettings.resourceDesc.DepthOrArraySize <= 1) {
         // 2D data (no slice pitch necessary).
-        subresourceData.RowPitch = LONG_PTR(resourceSettings.resourceDesc.Width);
-        subresourceData.SlicePitch = LONG_PTR(sizeInBytesData);
+        subresourceData.RowPitch = LONG_PTR(getRowSizeInBytes());
+        subresourceData.SlicePitch = subresourceData.RowPitch * LONG_PTR(resourceSettings.resourceDesc.Width);
     } else {
         // 3D Data.
-        subresourceData.RowPitch = LONG_PTR(resourceSettings.resourceDesc.Width);
-        subresourceData.SlicePitch = LONG_PTR(resourceSettings.resourceDesc.Width * resourceSettings.resourceDesc.Height);
+        subresourceData.RowPitch = LONG_PTR(getRowSizeInBytes());
+        subresourceData.SlicePitch = subresourceData.RowPitch * LONG_PTR(resourceSettings.resourceDesc.Width * resourceSettings.resourceDesc.Height);
     }
-    UpdateSubresources(d3d12CommandList, getD3D12Resource(), intermediateResource, 0, 0, 1, &subresourceData);
+
+    queryCopiableFootprints();
+    D3D12_PLACED_SUBRESOURCE_FOOTPRINT& layout = subresourceLayoutArray.at(0);
+    UINT64 rowSizeInBytes = subresourceRowSizeInBytesArray.at(0);
+    UINT numRows = subresourceNumRowsArray.at(0);
+    UINT64 totalSize = subresourceTotalBytesArray.at(0);
+    UpdateSubresources(
+            d3d12CommandList, getD3D12Resource(), intermediateResource, 0, 1,
+            totalSize, &layout, &numRows, &rowSizeInBytes, &subresourceData);
 }
+
+void Resource::readBackDataLinear(size_t sizeInBytesData, void* dataPtr) {
+    if (numSubresources > 1) {
+        sgl::Logfile::get()->throwError(
+                "Error in Resource::readBackDataInternal: "
+                "The function only supports for resources with one single subresource.");
+    }
+    if (resourceSettings.resourceDesc.SampleDesc.Count > 1) {
+        sgl::Logfile::get()->throwError(
+                "Error in Resource::readBackDataInternal: "
+                "The function does not support multi-sampled resources.");
+    }
+
+    size_t rowSizeInBytes = 0;
+    size_t srcRowPitch;
+    size_t intermediateSizeInBytes;
+    if (resourceSettings.resourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER) {
+        srcRowPitch = sizeInBytesData;
+        intermediateSizeInBytes = srcRowPitch;
+        if (sizeInBytesData > getCopiableSizeInBytes()) {
+            sgl::Logfile::get()->throwError(
+                    "Error in Resource::readBackDataInternal: "
+                    "The copy destination is larger than the source buffer.");
+        }
+    } else {
+        rowSizeInBytes = getRowSizeInBytes();
+        srcRowPitch = getRowPitchInBytes();
+        intermediateSizeInBytes = srcRowPitch;
+        if (resourceSettings.resourceDesc.Height > 1) {
+            intermediateSizeInBytes *= resourceSettings.resourceDesc.Height;
+        }
+        if (resourceSettings.resourceDesc.DepthOrArraySize > 1) {
+            intermediateSizeInBytes *= resourceSettings.resourceDesc.DepthOrArraySize;
+        }
+        if (sizeInBytesData > rowSizeInBytes * resourceSettings.resourceDesc.Height * resourceSettings.resourceDesc.DepthOrArraySize) {
+            sgl::Logfile::get()->throwError(
+                    "Error in Resource::readBackDataInternal: "
+                    "The copy destination is larger than the source texture.");
+        }
+    }
+
+    auto* d3d12Device = device->getD3D12Device2();
+    CD3DX12_HEAP_PROPERTIES heapPropertiesReadBack(D3D12_HEAP_TYPE_READBACK);
+    auto bufferDescReadBack = CD3DX12_RESOURCE_DESC::Buffer(intermediateSizeInBytes);
+    ComPtr<ID3D12Resource> intermediateResource{};
+    ThrowIfFailed(d3d12Device->CreateCommittedResource(
+            &heapPropertiesReadBack,
+            D3D12_HEAP_FLAG_NONE,
+            &bufferDescReadBack,
+            D3D12_RESOURCE_STATE_COPY_DEST,
+            nullptr,
+            IID_PPV_ARGS(&intermediateResource)));
+
+    device->runSingleTimeCommands([&](CommandList* commandList){
+        auto* d3d12CommandList = commandList->getD3D12GraphicsCommandListPtr();
+        if (resourceSettings.resourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER) {
+            d3d12CommandList->CopyBufferRegion(
+                    intermediateResource.Get(), 0, resource.Get(), 0, sizeInBytesData);
+        } else {
+            D3D12_PLACED_SUBRESOURCE_FOOTPRINT bufferFootprint = {};
+            bufferFootprint.Footprint.Width = static_cast<UINT>(resourceSettings.resourceDesc.Width);
+            bufferFootprint.Footprint.Height = resourceSettings.resourceDesc.Height;
+            bufferFootprint.Footprint.Depth = resourceSettings.resourceDesc.DepthOrArraySize;
+            bufferFootprint.Footprint.RowPitch = static_cast<UINT>(srcRowPitch);
+            bufferFootprint.Footprint.Format = resourceSettings.resourceDesc.Format;
+
+            const CD3DX12_TEXTURE_COPY_LOCATION Dst(intermediateResource.Get(), bufferFootprint);
+            const CD3DX12_TEXTURE_COPY_LOCATION Src(resource.Get(), 0);
+            this->transition(D3D12_RESOURCE_STATE_COPY_SOURCE, commandList);
+            d3d12CommandList->CopyTextureRegion(&Dst, 0, 0, 0, &Src, nullptr);
+        }
+    });
+
+    uint8_t* intermediateDataPtr;
+    D3D12_RANGE readRange = { 0, sizeInBytesData };
+    D3D12_RANGE writeRange = { 0, 0 };
+    if (FAILED(intermediateResource->Map(0, &readRange, reinterpret_cast<void**>(&intermediateDataPtr)))) {
+        sgl::Logfile::get()->throwError(
+                "Error: Resource::readBackDataInternal: ID3D12Resource::Map failed.");
+    }
+    D3D12_MEMCPY_DEST memcpyDest{};
+    memcpyDest.pData = dataPtr;
+    D3D12_SUBRESOURCE_DATA subresourceSrc{};
+    subresourceSrc.pData = intermediateDataPtr;
+    if (resourceSettings.resourceDesc.Height <= 1 && resourceSettings.resourceDesc.DepthOrArraySize <= 1) {
+        // 1D data (no pitches necessary).
+        memcpyDest.RowPitch = SIZE_T(sizeInBytesData);
+        memcpyDest.SlicePitch = memcpyDest.RowPitch;
+        subresourceSrc.RowPitch = LONG_PTR(sizeInBytesData);
+        subresourceSrc.SlicePitch = subresourceSrc.RowPitch;
+    } else if (resourceSettings.resourceDesc.DepthOrArraySize <= 1) {
+        // 2D data (no slice pitch necessary).
+        memcpyDest.RowPitch = SIZE_T(rowSizeInBytes);
+        memcpyDest.SlicePitch = memcpyDest.RowPitch * SIZE_T(resourceSettings.resourceDesc.Width);
+        subresourceSrc.RowPitch = LONG_PTR(srcRowPitch);
+        subresourceSrc.SlicePitch = subresourceSrc.RowPitch * LONG_PTR(resourceSettings.resourceDesc.Width);
+    } else {
+        // 3D Data.
+        memcpyDest.RowPitch = SIZE_T(rowSizeInBytes);
+        memcpyDest.SlicePitch = memcpyDest.RowPitch * SIZE_T(resourceSettings.resourceDesc.Width * resourceSettings.resourceDesc.Height);
+        subresourceSrc.RowPitch = LONG_PTR(srcRowPitch);
+        memcpyDest.SlicePitch = subresourceSrc.RowPitch * LONG_PTR(resourceSettings.resourceDesc.Width * resourceSettings.resourceDesc.Height);
+    }
+    MemcpySubresource(
+            &memcpyDest, &subresourceSrc, memcpyDest.RowPitch, resourceSettings.resourceDesc.Height,
+            resourceSettings.resourceDesc.DepthOrArraySize);
+    intermediateResource->Unmap(0, &writeRange);
+}
+
 
 void Resource::transition(
         D3D12_RESOURCE_STATES stateAfter, const CommandListPtr& commandList) {
+    transition(resourceSettings.resourceStates, stateAfter, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES, commandList);
+}
+
+void Resource::transition(
+        D3D12_RESOURCE_STATES stateAfter, CommandList* commandList) {
     transition(resourceSettings.resourceStates, stateAfter, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES, commandList);
 }
 
@@ -168,8 +319,19 @@ void Resource::transition(
 }
 
 void Resource::transition(
+        D3D12_RESOURCE_STATES stateBefore, D3D12_RESOURCE_STATES stateAfter, CommandList* commandList) {
+    transition(stateBefore, stateAfter, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES, commandList);
+}
+
+void Resource::transition(
         D3D12_RESOURCE_STATES stateBefore, D3D12_RESOURCE_STATES stateAfter, uint32_t subresourcce,
         const CommandListPtr& commandList) {
+    transition(stateBefore, stateAfter, subresourcce, commandList.get());
+}
+
+void Resource::transition(
+        D3D12_RESOURCE_STATES stateBefore, D3D12_RESOURCE_STATES stateAfter, uint32_t subresourcce,
+        CommandList* commandList) {
     ID3D12GraphicsCommandList* d3d12GraphicsCommandList = commandList->getD3D12GraphicsCommandListPtr();
     D3D12_RESOURCE_BARRIER resourceBarrier{};
     resourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -183,6 +345,10 @@ void Resource::transition(
 }
 
 void Resource::barrierUAV(const CommandListPtr& commandList) {
+    barrierUAV(commandList.get());
+}
+
+void Resource::barrierUAV(CommandList* commandList) {
     ID3D12GraphicsCommandList* d3d12GraphicsCommandList = commandList->getD3D12GraphicsCommandListPtr();
     D3D12_RESOURCE_BARRIER resourceBarrier{};
     resourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
@@ -191,9 +357,9 @@ void Resource::barrierUAV(const CommandListPtr& commandList) {
     d3d12GraphicsCommandList->ResourceBarrier(1, &resourceBarrier);
 }
 
-size_t Resource::getAllocationSizeInBytes() const {
+
+size_t Resource::getAllocationSizeInBytes() {
     auto* d3d12Device = device->getD3D12Device2();
-    // TODO: https://asawicki.info/news_1726_secrets_of_direct3d_12_resource_alignment
 #if defined(_MSC_VER) || !defined(_WIN32)
     D3D12_RESOURCE_ALLOCATION_INFO allocationInfo = d3d12Device->GetResourceAllocationInfo(
             0, 1, &resourceSettings.resourceDesc);
@@ -205,35 +371,39 @@ size_t Resource::getAllocationSizeInBytes() const {
     return allocationInfo.SizeInBytes;
 }
 
-size_t Resource::getCopiableSizeInBytes() const {
+void Resource::queryCopiableFootprints() {
+    if (!subresourceLayoutArray.empty()) {
+        return;
+    }
     auto* d3d12Device = device->getD3D12Device2();
-    UINT64 sizeInBytes = 0;
-    // TODO: Support more subresources?
+    uint32_t numEntries = std::max(numSubresources, uint32_t(1));
+    subresourceLayoutArray.resize(numEntries);
+    subresourceNumRowsArray.resize(numEntries);
+    subresourceRowSizeInBytesArray.resize(numEntries);
+    subresourceTotalBytesArray.resize(numEntries);
     d3d12Device->GetCopyableFootprints(
-            &resourceSettings.resourceDesc, 0, 1, 0,
-            nullptr, nullptr, nullptr, &sizeInBytes);
-    return size_t(sizeInBytes);
+           &resourceSettings.resourceDesc, 0, numEntries, 0,
+           subresourceLayoutArray.data(), subresourceNumRowsArray.data(),
+           subresourceRowSizeInBytesArray.data(), subresourceTotalBytesArray.data());
 }
 
-size_t Resource::getNumRows() const {
-    auto* d3d12Device = device->getD3D12Device2();
-    UINT numRows = 0;
-    d3d12Device->GetCopyableFootprints(
-            &resourceSettings.resourceDesc, 0, 1, 0,
-            nullptr, &numRows, nullptr, nullptr);
-    return size_t(numRows);
+size_t Resource::getCopiableSizeInBytes() {
+    queryCopiableFootprints();
+    return size_t(subresourceTotalBytesArray.at(0));
 }
 
-size_t Resource::getRowSizeInBytes() const {
-    auto* d3d12Device = device->getD3D12Device2();
-    UINT64 rowSizeInBytes = 0;
-    d3d12Device->GetCopyableFootprints(
-            &resourceSettings.resourceDesc, 0, 1, 0,
-            nullptr, nullptr, &rowSizeInBytes, nullptr);
-    return size_t(rowSizeInBytes);
+size_t Resource::getNumRows() {
+    queryCopiableFootprints();
+    return size_t(subresourceNumRowsArray.at(0));
 }
 
-size_t Resource::getRowPitchInBytes() const {
+size_t Resource::getRowSizeInBytes() {
+    queryCopiableFootprints();
+    return size_t(subresourceRowSizeInBytesArray.at(0));
+}
+
+size_t Resource::getRowPitchInBytes() {
+    queryCopiableFootprints();
     size_t rowSizeInBytes = getRowSizeInBytes();
     if (rowSizeInBytes % D3D12_TEXTURE_DATA_PITCH_ALIGNMENT == 0) {
         return rowSizeInBytes;
