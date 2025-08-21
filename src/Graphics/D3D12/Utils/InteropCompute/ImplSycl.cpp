@@ -99,7 +99,7 @@ void BufferD3D12SyclInterop::importExternalMemoryWin32Handle() {
     size_t sizeInBytes = resource->getCopiableSizeInBytes();
 
     // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
-    auto memoryHandleType = sycl::ext::oneapi::experimental::external_mem_handle_type::win32_nt_handle;
+    auto memoryHandleType = sycl::ext::oneapi::experimental::external_mem_handle_type::win32_nt_dx12_resource;
     sycl::ext::oneapi::experimental::external_mem_descriptor<sycl::ext::oneapi::experimental::resource_win32_handle>
             syclExternalMemDescriptor{(void*)handle, memoryHandleType, sizeInBytes};
     auto* wrapper = new SyclExternalMemWrapper;
@@ -161,7 +161,7 @@ void ImageD3D12SyclInterop::importExternalMemoryWin32Handle() {
     size_t sizeInBytes = resource->getCopiableSizeInBytes();
 
     // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
-    auto memoryHandleType = sycl::ext::oneapi::experimental::external_mem_handle_type::win32_nt_handle;
+    auto memoryHandleType = sycl::ext::oneapi::experimental::external_mem_handle_type::win32_nt_dx12_resource;
     sycl::ext::oneapi::experimental::external_mem_descriptor<sycl::ext::oneapi::experimental::resource_win32_handle>
             syclExternalMemDescriptor{(void*)handle, memoryHandleType, sizeInBytes};
     auto* wrapper = new SyclExternalMemWrapper;
