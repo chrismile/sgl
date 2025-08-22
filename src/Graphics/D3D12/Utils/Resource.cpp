@@ -422,6 +422,7 @@ HANDLE Resource::getSharedHandle(const std::wstring& handleName) {
 
 HANDLE Resource::getSharedHandle() {
     uint64_t resourceIdx = 0;
+    // TODO: Apparently, the handle name may be "nullptr".
     std::wstring handleName = std::wstring(L"Local\\D3D12ResourceHandle") + std::to_wstring(resourceIdx);
     return getSharedHandle(handleName);
 }
