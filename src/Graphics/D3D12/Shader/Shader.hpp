@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2024, Christoph Neuhauser
+ * Copyright (c) 2025, Christoph Neuhauser
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,41 +26,45 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_D3D12_RENDERER_HPP
-#define SGL_D3D12_RENDERER_HPP
+#ifndef SGL_D3D12_SHADER_HPP
+#define SGL_D3D12_SHADER_HPP
 
-#include <array>
 #include "../Utils/d3d12.hpp"
+#include "ShaderModuleType.hpp"
 
 namespace sgl { namespace d3d12 {
 
 class Device;
-class CommandList;
-typedef std::shared_ptr<CommandList> CommandListPtr;
-class DescriptorAllocator;
-class ComputeData;
-typedef std::shared_ptr<ComputeData> ComputeDataPtr;
 
-class DLL_OBJECT Renderer {
+class DLL_OBJECT ShaderModule {
 public:
-    explicit Renderer(Device* device, uint32_t numDescriptors = 1024);
-    ~Renderer();
-
-    inline Device* getDevice() { return device; }
-    void setCommandList(const CommandListPtr& commandList);
-
-    void dispatch(const ComputeDataPtr& computeData, uint32_t groupCountX);
-    void dispatch(const ComputeDataPtr& computeData, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
+    ShaderModule(ShaderModuleType shaderModuleType, ComPtr<ID3DBlob> shaderBlob);
+    inline ID3DBlob* getBlobPtr() { return shaderBlob.Get(); }
+    inline uint32_t getThreadGroupSizeX() { return threadGroupSizeX; }
+    inline uint32_t getThreadGroupSizeY() { return threadGroupSizeY; }
+    inline uint32_t getThreadGroupSizeZ() { return threadGroupSizeZ; }
 
 private:
-    Device* device;
+    ShaderModuleType shaderModuleType;
+    ComPtr<ID3DBlob> shaderBlob;
 
-    // Global descriptor heaps.
-    std::array<DescriptorAllocator*, size_t(D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES)> descriptorHeaps;
-
-    CommandListPtr currentCommandList;
+    union {
+        // Vertex/fragment shader data.
+        struct {
+            uint32_t numInputs;
+            uint32_t numOutputs;
+        };
+        // Compute shader data.
+        struct {
+            uint32_t threadGroupSizeX;
+            uint32_t threadGroupSizeY;
+            uint32_t threadGroupSizeZ;
+        };
+    };
 };
+
+typedef std::shared_ptr<ShaderModule> ShaderModulePtr;
 
 }}
 
-#endif //SGL_D3D12_RENDERER_HPP
+#endif //SGL_D3D12_SHADER_HPP

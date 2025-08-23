@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2024, Christoph Neuhauser
+ * Copyright (c) 2025, Christoph Neuhauser
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,41 +26,19 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_D3D12_RENDERER_HPP
-#define SGL_D3D12_RENDERER_HPP
-
-#include <array>
-#include "../Utils/d3d12.hpp"
+#ifndef SGL_D3D12_SHADERMODULETYPE_HPP
+#define SGL_D3D12_SHADERMODULETYPE_HPP
 
 namespace sgl { namespace d3d12 {
 
-class Device;
-class CommandList;
-typedef std::shared_ptr<CommandList> CommandListPtr;
-class DescriptorAllocator;
-class ComputeData;
-typedef std::shared_ptr<ComputeData> ComputeDataPtr;
-
-class DLL_OBJECT Renderer {
-public:
-    explicit Renderer(Device* device, uint32_t numDescriptors = 1024);
-    ~Renderer();
-
-    inline Device* getDevice() { return device; }
-    void setCommandList(const CommandListPtr& commandList);
-
-    void dispatch(const ComputeDataPtr& computeData, uint32_t groupCountX);
-    void dispatch(const ComputeDataPtr& computeData, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
-
-private:
-    Device* device;
-
-    // Global descriptor heaps.
-    std::array<DescriptorAllocator*, size_t(D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES)> descriptorHeaps;
-
-    CommandListPtr currentCommandList;
+enum class ShaderModuleType {
+    UNKNOWN = 0,
+    VERTEX = 1,
+    GEOMETRY = 2,
+    PIXEL = 3,
+    COMPUTE = 4,
 };
 
 }}
 
-#endif //SGL_D3D12_RENDERER_HPP
+#endif //SGL_D3D12_SHADERMODULETYPE_HPP

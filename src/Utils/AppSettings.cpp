@@ -89,6 +89,10 @@
 #include <Graphics/WebGPU/Shader/ShaderManager.hpp>
 #endif
 
+#ifdef SUPPORT_D3D12
+#include <Graphics/D3D12/Shader/ShaderManager.hpp>
+#endif
+
 #ifdef SUPPORT_SDL
 #include <SDL/SDLWindow.hpp>
 #include <SDL/Input/SDLMouse.hpp>
@@ -140,6 +144,13 @@ namespace vk {
 DLL_OBJECT ShaderManagerVk* ShaderManager = nullptr;
 }
 #endif
+
+#ifdef SUPPORT_VULKAN
+namespace d3d12 {
+DLL_OBJECT ShaderManagerD3D12* ShaderManager = nullptr;
+}
+#endif
+
 
 #ifdef SUPPORT_WEBGPU
 namespace webgpu {
@@ -837,6 +848,11 @@ void AppSettings::initializeSubsystems() {
     if (primaryDevice) {
         vk::ShaderManager = new vk::ShaderManagerVk(primaryDevice);
     }
+#ifdef SUPPORT_D3D12
+    if (renderSystem == RenderSystem::DIRECT3D_12) {
+        d3d12::ShaderManager = new d3d12::ShaderManagerD3D12();
+    }
+#endif
 #ifndef DISABLE_DEVICE_SELECTION_SUPPORT
     if (renderSystem == RenderSystem::VULKAN && primaryDevice) {
         deviceSelector = primaryDevice->getDeviceSelector();

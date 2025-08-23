@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2024, Christoph Neuhauser
+ * Copyright (c) 2025, Christoph Neuhauser
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,41 +26,41 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_D3D12_RENDERER_HPP
-#define SGL_D3D12_RENDERER_HPP
+#ifndef SGL_D3D12_SHADERMANAGER_HPP
+#define SGL_D3D12_SHADERMANAGER_HPP
 
-#include <array>
+#include <map>
+
 #include "../Utils/d3d12.hpp"
+#include "ShaderModuleType.hpp"
 
 namespace sgl { namespace d3d12 {
 
 class Device;
-class CommandList;
-typedef std::shared_ptr<CommandList> CommandListPtr;
-class DescriptorAllocator;
-class ComputeData;
-typedef std::shared_ptr<ComputeData> ComputeDataPtr;
+class ShaderModule;
+typedef std::shared_ptr<ShaderModule> ShaderModulePtr;
 
-class DLL_OBJECT Renderer {
+//struct ShaderModuleSettings {
+//    std::string entryName = "main";
+//};
+
+class DLL_OBJECT ShaderManagerD3D12 {
 public:
-    explicit Renderer(Device* device, uint32_t numDescriptors = 1024);
-    ~Renderer();
-
-    inline Device* getDevice() { return device; }
-    void setCommandList(const CommandListPtr& commandList);
-
-    void dispatch(const ComputeDataPtr& computeData, uint32_t groupCountX);
-    void dispatch(const ComputeDataPtr& computeData, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
-
-private:
-    Device* device;
-
-    // Global descriptor heaps.
-    std::array<DescriptorAllocator*, size_t(D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES)> descriptorHeaps;
-
-    CommandListPtr currentCommandList;
+    ShaderModulePtr loadShaderFromBlobFile(const std::string& shaderPath, ShaderModuleType shaderModuleType);
+    ShaderModulePtr loadShaderFromHlslFile(
+            const std::string& shaderPath, ShaderModuleType shaderModuleType, const std::string& entrypoint,
+            const std::map<std::string, std::string>& preprocessorDefines = {});
+    ShaderModulePtr loadShaderFromHlslString(
+            const std::string& shaderString, ShaderModuleType shaderModuleType, const std::string& entrypoint,
+            const std::map<std::string, std::string>& preprocessorDefines = {});
+    //    ShaderStagesPtr getShaderStagesWithSettings(
+    //            const std::vector<std::string>& shaderIds,
+    //            const std::map<std::string, std::string>& customPreprocessorDefines,
+    //            const std::vector<ShaderStageSettings>& settings, bool dumpTextDebug = false);
 };
+
+DLL_OBJECT extern ShaderManagerD3D12* ShaderManager;
 
 }}
 
-#endif //SGL_D3D12_RENDERER_HPP
+#endif //SGL_D3D12_SHADERMANAGER_HPP

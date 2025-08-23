@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2024, Christoph Neuhauser
+ * Copyright (c) 2025, Christoph Neuhauser
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,41 +26,36 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_D3D12_RENDERER_HPP
-#define SGL_D3D12_RENDERER_HPP
+#include "Shader.hpp"
 
-#include <array>
-#include "../Utils/d3d12.hpp"
+#include <utility>
+
+#ifdef SUPPORT_D3D_COMPILER
+#include <d3dcompiler.h>
+#endif
 
 namespace sgl { namespace d3d12 {
 
-class Device;
-class CommandList;
-typedef std::shared_ptr<CommandList> CommandListPtr;
-class DescriptorAllocator;
-class ComputeData;
-typedef std::shared_ptr<ComputeData> ComputeDataPtr;
+ShaderModule::ShaderModule(ShaderModuleType shaderModuleType, ComPtr<ID3DBlob> shaderBlob)
+        : shaderModuleType(shaderModuleType), shaderBlob(std::move(shaderBlob)) {
+#ifdef SUPPORT_D3D_COMPILER
+    ComPtr<ID3D12ShaderReflection> reflection;
+    HRESULT hr = D3DReflect(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), IID_PPV_ARGS(&reflection));
+    if (FAILED(hr)) {
+        sgl::Logfile::get()->throwError("Error in ShaderModule::ShaderModule: D3DReflect failed.");
+    }
 
-class DLL_OBJECT Renderer {
-public:
-    explicit Renderer(Device* device, uint32_t numDescriptors = 1024);
-    ~Renderer();
+    if (shaderModuleType == ShaderModuleType::COMPUTE) {
+        reflection->GetThreadGroupSize(&threadGroupSizeX, &threadGroupSizeY, &threadGroupSizeZ);
+    }
 
-    inline Device* getDevice() { return device; }
-    void setCommandList(const CommandListPtr& commandList);
-
-    void dispatch(const ComputeDataPtr& computeData, uint32_t groupCountX);
-    void dispatch(const ComputeDataPtr& computeData, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
-
-private:
-    Device* device;
-
-    // Global descriptor heaps.
-    std::array<DescriptorAllocator*, size_t(D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES)> descriptorHeaps;
-
-    CommandListPtr currentCommandList;
-};
+    // TODO
+    /*D3D12_SHADER_DESC desc{};
+    reflection->GetDesc(&desc);
+    desc.ConstantBuffers;*/
+#else
+    sgl::Logfile::get()->throwError("Error in ShaderModule::ShaderModule: D3D shader compiler not supported.");
+#endif
+}
 
 }}
-
-#endif //SGL_D3D12_RENDERER_HPP

@@ -28,13 +28,19 @@
 
 #include <gtest/gtest.h>
 
+#include <Math/Math.hpp>
 #include <Utils/File/Logfile.hpp>
 
 #include <Graphics/D3D12/Utils/DXGIFactory.hpp>
 #include <Graphics/D3D12/Utils/Device.hpp>
 #include <Graphics/D3D12/Utils/Resource.hpp>
+#include <Graphics/D3D12/Shader/Shader.hpp>
+#include <Graphics/D3D12/Shader/ShaderManager.hpp>
 #include <Graphics/D3D12/Render/CommandList.hpp>
+#include <Graphics/D3D12/Render/Data.hpp>
 #include <Graphics/D3D12/Render/Renderer.hpp>
+
+#include "Graphics/D3D12/Shader/ShaderModuleType.hpp"
 
 #ifdef SUPPORT_SYCL_INTEROP
 #include <Graphics/D3D12/Utils/InteropCompute.hpp>
@@ -109,6 +115,73 @@ TEST_F(D3D12Test, SimpleTestTexture) {
         delete[] hostPtr;
     }
 }
+
+// TODO: Finish implementation.
+/*TEST_F(D3D12Test, ComputeShader) {
+#ifndef SUPPORT_D3D_COMPILER
+    //GTEST_SKIP() << "D3D12 shader compiler is not enabled.";
+#endif
+
+    sgl::d3d12::DXGIFactoryPtr dxgiFactory = std::make_shared<sgl::d3d12::DXGIFactory>(true);
+    sgl::d3d12::DevicePtr d3d12Device = dxgiFactory->createDeviceAny(D3D_FEATURE_LEVEL_12_0);
+
+    size_t bufferNumEntries = 2000;
+    size_t bufferSizeInBytes = sizeof(float) * bufferNumEntries;
+    sgl::d3d12::ResourceSettings bufferSettings{};
+    D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+    bufferSettings.resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(bufferSizeInBytes, flags);
+    sgl::d3d12::ResourcePtr bufferD3D12 = std::make_shared<sgl::d3d12::Resource>(d3d12Device.get(), bufferSettings);
+
+    auto* shaderManager = new sgl::d3d12::ShaderManagerD3D12();
+    auto* renderer = new sgl::d3d12::Renderer(d3d12Device.get());
+
+    auto computeShader = shaderManager->loadShaderFromHlslString(R"(
+    cbuffer globalSettingsCB : register(b0) {
+        uint numEntries;
+    }
+    RWStructuredBuffer<float> dstBuffer : register(u0);
+    [numthreads(256, 1, 1)]
+    void CSMain(
+            uint3 groupID : SV_GroupID, uint3 dispatchThreadID : SV_DispatchThreadID,
+            uint3 groupThreadID : SV_GroupThreadID, uint groupIndex : SV_GroupIndex) {
+        const uint idx = dispatchThreadID.x;
+        if (idx <= numEntries) {
+            dstBuffer[idx] = float(idx);
+        }
+    }
+    )", sgl::d3d12::ShaderModuleType::COMPUTE, "CSMain", {});
+
+    auto rootParameters = std::make_shared<sgl::d3d12::RootParameters>(computeShader);
+    //rootParameters->pushConstants(1, 0);
+    rootParameters->pushConstants("globalSettingsCB");
+    //rootParameters->pushUnorderedAccessView(0);
+    rootParameters->pushUnorderedAccessView("dstBuffer");
+
+    auto computeData = std::make_shared<sgl::d3d12::ComputeData>(renderer, rootParameters);
+    // TODO
+    //computeData->setConstant(0, bufferNumEntries);
+    //computeData->setUnorderedAccessView(1, bufferD3D12);
+
+    auto commandList = std::make_shared<sgl::d3d12::CommandList>(d3d12Device.get(), sgl::d3d12::CommandListType::COMPUTE);
+    renderer->setCommandList(commandList);
+    auto threadGroupCount = sgl::uiceil(bufferNumEntries, computeShader->getThreadGroupSizeX());
+    renderer->dispatch(computeData, threadGroupCount);
+
+    auto* hostPtr = new float[bufferNumEntries];
+    bufferD3D12->readBackDataLinear(bufferSizeInBytes, hostPtr);
+
+    // Check equality.
+    for (size_t i = 0; i < bufferNumEntries; i++) {
+        if (hostPtr[i] != float(i)) {
+            std::string errorMessage = "Buffer content mismatch at i=" + std::to_string(i);
+            ASSERT_TRUE(false) << errorMessage;
+        }
+    }
+
+    delete[] hostPtr;
+    delete shaderManager;
+    delete renderer;
+}*/
 
 #ifdef SUPPORT_SYCL_INTEROP
 TEST_F(D3D12Test, SyclInterop) {
