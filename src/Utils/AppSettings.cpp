@@ -145,7 +145,7 @@ DLL_OBJECT ShaderManagerVk* ShaderManager = nullptr;
 }
 #endif
 
-#ifdef SUPPORT_VULKAN
+#ifdef SUPPORT_D3D12
 namespace d3d12 {
 DLL_OBJECT ShaderManagerD3D12* ShaderManager = nullptr;
 }
