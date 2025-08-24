@@ -89,6 +89,7 @@ SIZE_T ShaderModule::getBlobBufferSize() {
 
 #endif
 
+#if defined(SUPPORT_D3D_COMPILER) || defined(USE_LEGACY_D3DCOMPILER)
 void ShaderModule::queryReflectionData(const ComPtr<ID3D12ShaderReflection>& reflection) {
     if (shaderModuleType == ShaderModuleType::COMPUTE) {
         reflection->GetThreadGroupSize(&threadGroupSizeX, &threadGroupSizeY, &threadGroupSizeZ);
@@ -139,6 +140,7 @@ void ShaderModule::queryReflectionData(const ComPtr<ID3D12ShaderReflection>& ref
     }
     const D3D12_ROOT_SIGNATURE_DESC *rootSignatureDesc = deserializer->GetRootSignatureDesc();*/
 }
+#endif
 
 bool ShaderModule::hasBindingName(const std::string& name) {
     return bindingNameToInfoMap.find(name) != bindingNameToInfoMap.end();

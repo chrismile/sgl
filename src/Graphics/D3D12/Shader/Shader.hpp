@@ -80,7 +80,9 @@ public:
     const ShaderVarInfo& getVarInfoByName(const std::string& name);
 
 private:
+#if defined(SUPPORT_D3D_COMPILER) || defined(USE_LEGACY_D3DCOMPILER)
     void queryReflectionData(const ComPtr<ID3D12ShaderReflection>& reflection);
+#endif
     ShaderModuleType shaderModuleType;
 #ifdef SUPPORT_D3D_COMPILER
     ComPtr<IDxcBlob> shaderBlob;
