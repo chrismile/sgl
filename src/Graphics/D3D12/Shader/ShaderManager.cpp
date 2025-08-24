@@ -90,6 +90,7 @@ inline std::vector<D3D_SHADER_MACRO> getShaderMacros(const std::map<std::string,
 #endif
 
 ShaderManagerD3D12::ShaderManagerD3D12() {
+#ifdef SUPPORT_D3D_COMPILER
     HRESULT hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&utils));
     if (FAILED(hr)) {
         sgl::Logfile::get()->throwError(
@@ -100,6 +101,7 @@ ShaderManagerD3D12::ShaderManagerD3D12() {
         sgl::Logfile::get()->throwError(
                 "Error in ShaderManagerD3D12::ShaderManagerD3D12: Could not create DxcCompiler object.");
     }
+#endif
 }
 
 ShaderManagerD3D12::~ShaderManagerD3D12() = default;

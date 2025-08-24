@@ -37,11 +37,16 @@
 namespace sgl { namespace d3d12 {
 
 RootParameters::RootParameters() {
-    ;
 }
 
-RootParameters::RootParameters(ShaderModulePtr shaderModule) : shaderModule(shaderModule) {
-    ;
+RootParameters::RootParameters(const ShaderModulePtr& shaderModule) : shaderModule(shaderModule) {
+    shaderStages = std::make_shared<ShaderStages>(std::vector<ShaderModulePtr>{ shaderModule });
+}
+
+RootParameters::RootParameters(const ShaderStagesPtr& shaderStages) : shaderStages(shaderStages) {
+    if (shaderStages->getShaderModules().size() == 1) {
+        shaderModule = shaderStages->getShaderModules().front();
+    }
 }
 
 UINT RootParameters::pushConstants(
@@ -59,12 +64,12 @@ UINT RootParameters::pushConstants(
         D3D12_SHADER_VISIBILITY visibility) {
     checkPush();
     checkShaderModule();
-    if (!shaderModule->hasBindingName(bindingName)) {
+    if (!shaderStages->hasBindingName(bindingName)) {
         sgl::Logfile::get()->throwError(
                 "Error in RootParameters::pushShaderResourceView: No binding called '" + bindingName + "'.");
         return std::numeric_limits<UINT>::max();
     }
-    const auto& bindingInfo = shaderModule->getBindingInfoByName(bindingName);
+    const auto& bindingInfo = shaderStages->getBindingInfoByName(bindingName);
     CD3DX12_ROOT_PARAMETER1 rootParameter;
     rootParameter.InitAsConstants(
             bindingInfo.size / sizeof(uint32_t), bindingInfo.binding, bindingInfo.space, visibility);
@@ -89,12 +94,12 @@ UINT RootParameters::pushConstantBufferView(
         D3D12_SHADER_VISIBILITY visibility) {
     checkPush();
     checkShaderModule();
-    if (!shaderModule->hasBindingName(bindingName)) {
+    if (!shaderStages->hasBindingName(bindingName)) {
         sgl::Logfile::get()->throwError(
                 "Error in RootParameters::pushShaderResourceView: No binding called '" + bindingName + "'.");
         return std::numeric_limits<UINT>::max();
     }
-    const auto& bindingInfo = shaderModule->getBindingInfoByName(bindingName);
+    const auto& bindingInfo = shaderStages->getBindingInfoByName(bindingName);
     CD3DX12_ROOT_PARAMETER1 rootParameter;
     rootParameter.InitAsConstantBufferView(bindingInfo.binding, bindingInfo.space, flags, visibility);
     rootParameters.emplace_back(rootParameter);
@@ -118,12 +123,12 @@ UINT RootParameters::pushShaderResourceView(
         D3D12_SHADER_VISIBILITY visibility) {
     checkPush();
     checkShaderModule();
-    if (!shaderModule->hasBindingName(bindingName)) {
+    if (!shaderStages->hasBindingName(bindingName)) {
         sgl::Logfile::get()->throwError(
                 "Error in RootParameters::pushShaderResourceView: No binding called '" + bindingName + "'.");
         return std::numeric_limits<UINT>::max();
     }
-    const auto& bindingInfo = shaderModule->getBindingInfoByName(bindingName);
+    const auto& bindingInfo = shaderStages->getBindingInfoByName(bindingName);
     CD3DX12_ROOT_PARAMETER1 rootParameter;
     rootParameter.InitAsShaderResourceView(bindingInfo.binding, bindingInfo.space, flags, visibility);
     rootParameters.emplace_back(rootParameter);
@@ -147,12 +152,12 @@ UINT RootParameters::pushUnorderedAccessView(
         D3D12_SHADER_VISIBILITY visibility) {
     checkPush();
     checkShaderModule();
-    if (!shaderModule->hasBindingName(bindingName)) {
+    if (!shaderStages->hasBindingName(bindingName)) {
         sgl::Logfile::get()->throwError(
                 "Error in RootParameters::pushShaderResourceView: No binding called '" + bindingName + "'.");
         return std::numeric_limits<UINT>::max();
     }
-    const auto& bindingInfo = shaderModule->getBindingInfoByName(bindingName);
+    const auto& bindingInfo = shaderStages->getBindingInfoByName(bindingName);
     CD3DX12_ROOT_PARAMETER1 rootParameter;
     rootParameter.InitAsUnorderedAccessView(bindingInfo.binding, bindingInfo.space, flags, visibility);
     rootParameters.emplace_back(rootParameter);

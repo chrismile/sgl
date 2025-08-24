@@ -168,4 +168,56 @@ const ShaderVarInfo& ShaderModule::getVarInfoByName(const std::string& name) {
     return it->second;
 }
 
+
+template<class T0, class T1>
+void mergeMaps(std::unordered_map<T0, T1>& dstMap, const std::unordered_map<T0, T1>& srcMap) {
+    for (const auto& entry : srcMap) {
+        auto it = dstMap.find(entry.first);
+        if (it == dstMap.end()) {
+            dstMap.insert(entry);
+        } else if (entry.second != it->second) {
+            sgl::Logfile::get()->throwError(
+                    "Error in ShaderStages::mergeMaps: Mismatching entries for \"" + sgl::toString(entry.first) + "\".");
+        }
+    }
+}
+
+ShaderStages::ShaderStages(const std::vector<ShaderModulePtr>& shaderModules) : shaderModules(shaderModules) {
+    if (shaderModules.size() == 1) {
+        bindingNameToInfoMap = shaderModules.front()->bindingNameToInfoMap;
+        variableNameToInfoMap = shaderModules.front()->variableNameToInfoMap;
+    } else {
+        for (auto& shaderModule : shaderModules) {
+            mergeMaps(bindingNameToInfoMap, shaderModule->bindingNameToInfoMap);
+            mergeMaps(variableNameToInfoMap, shaderModule->variableNameToInfoMap);
+        }
+    }
+}
+
+bool ShaderStages::hasBindingName(const std::string& name) {
+    return bindingNameToInfoMap.find(name) != bindingNameToInfoMap.end();
+}
+
+const ShaderBindingInfo& ShaderStages::getBindingInfoByName(const std::string& name) {
+    const auto it = bindingNameToInfoMap.find(name);
+    if (it == bindingNameToInfoMap.end()) {
+        sgl::Logfile::get()->throwError(
+                "Error in ShaderModule::getBindingInfoByName: No binding with name '" + name + "'.");
+    }
+    return it->second;
+}
+
+bool ShaderStages::hasVarName(const std::string& name) {
+    return variableNameToInfoMap.find(name) != variableNameToInfoMap.end();
+}
+
+const ShaderVarInfo& ShaderStages::getVarInfoByName(const std::string& name) {
+    const auto it = variableNameToInfoMap.find(name);
+    if (it == variableNameToInfoMap.end()) {
+        sgl::Logfile::get()->throwError(
+                "Error in ShaderModule::getVarInfoByName: No variable with name '" + name + "'.");
+    }
+    return it->second;
+}
+
 }}

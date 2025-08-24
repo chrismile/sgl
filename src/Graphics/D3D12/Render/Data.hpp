@@ -38,6 +38,8 @@ class Resource;
 class DescriptorAllocation;
 class ShaderModule;
 typedef std::shared_ptr<ShaderModule> ShaderModulePtr;
+class ShaderStages;
+typedef std::shared_ptr<ShaderStages> ShaderStagesPtr;
 class Renderer;
 
 enum class RootParameterType {
@@ -48,7 +50,8 @@ class DLL_OBJECT RootParameters {
 public:
     RootParameters();
     // Passing the shader module allows for doing shader reflection.
-    explicit RootParameters(ShaderModulePtr shaderModule);
+    explicit RootParameters(const ShaderModulePtr& shaderModule);
+    explicit RootParameters(const ShaderStagesPtr& shaderStages);
 
     UINT pushConstants(
             UINT num32BitValues, UINT shaderRegister, UINT registerSpace = 0,
@@ -89,6 +92,7 @@ public:
     void build(Device* device);
 
     [[nodiscard]] const ShaderModulePtr& getShaderModule() const { return shaderModule; }
+    [[nodiscard]] const ShaderStagesPtr& getShaderStages() const { return shaderStages; }
     [[nodiscard]] const std::vector<CD3DX12_ROOT_PARAMETER1>& getRootParameters() const { return rootParameters; }
     [[nodiscard]] const std::vector<D3D12_STATIC_SAMPLER_DESC>& getStaticSamplers() const { return staticSamplers; }
     ID3D12PipelineState* getD3D12PipelineStatePtr() { return pipelineState.Get(); }
@@ -96,6 +100,7 @@ public:
 
 protected:
     ShaderModulePtr shaderModule;
+    ShaderStagesPtr shaderStages;
     void checkPush();
     void checkShaderModule();
     std::vector<CD3DX12_ROOT_PARAMETER1> rootParameters;

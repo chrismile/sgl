@@ -42,20 +42,34 @@ struct IDxcBlob;
 namespace sgl { namespace d3d12 {
 
 class Device;
+class ShaderStages;
 
 struct DLL_OBJECT ShaderBindingInfo {
     uint32_t space;
     uint32_t binding;
     uint32_t size; // optional
+    bool operator==(const ShaderBindingInfo& rhs) const {
+        return space == rhs.space && binding == rhs.binding && size == rhs.size;
+    }
+    bool operator!=(const ShaderBindingInfo& rhs) const {
+        return space != rhs.space || binding != rhs.binding || size != rhs.size;
+    }
 };
 struct DLL_OBJECT ShaderVarInfo {
     uint32_t space;
     uint32_t binding;
     uint32_t offset;
     uint32_t size;
+    bool operator==(const ShaderVarInfo& rhs) const {
+        return space == rhs.space && binding == rhs.binding && offset == rhs.offset && size == rhs.size;
+    }
+    bool operator!=(const ShaderVarInfo& rhs) const {
+        return space != rhs.space || binding != rhs.binding || offset != rhs.offset || size != rhs.size;
+    }
 };
 
 class DLL_OBJECT ShaderModule {
+    friend class ShaderStages;
 public:
 #ifdef SUPPORT_D3D_COMPILER
     ShaderModule(
@@ -109,6 +123,30 @@ private:
 };
 
 typedef std::shared_ptr<ShaderModule> ShaderModulePtr;
+
+
+class DLL_OBJECT ShaderStages {
+public:
+    ShaderStages(const std::vector<ShaderModulePtr>& shaderModules);
+
+    [[nodiscard]] inline bool getHasVertexShader() const { return vertexShaderModule.get() != nullptr; }
+    inline std::vector<ShaderModulePtr>& getShaderModules() { return shaderModules; }
+    [[nodiscard]] inline const std::vector<ShaderModulePtr>& getShaderModules() const { return shaderModules; }
+
+    bool hasBindingName(const std::string& name);
+    const ShaderBindingInfo& getBindingInfoByName(const std::string& name);
+    bool hasVarName(const std::string& name);
+    const ShaderVarInfo& getVarInfoByName(const std::string& name);
+
+private:
+    std::vector<ShaderModulePtr> shaderModules;
+    ShaderModulePtr vertexShaderModule; // Optional
+
+    std::unordered_map<std::string, ShaderBindingInfo> bindingNameToInfoMap;
+    std::unordered_map<std::string, ShaderVarInfo> variableNameToInfoMap;
+};
+
+typedef std::shared_ptr<ShaderStages> ShaderStagesPtr;
 
 }}
 
