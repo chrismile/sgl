@@ -47,6 +47,7 @@ public:
     ~Renderer();
 
     inline Device* getDevice() { return device; }
+    inline DescriptorAllocator* getDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE heapType) { return descriptorHeaps[int(heapType)]; }
     void setCommandList(const CommandListPtr& commandList);
     void submit();
     void submitAndWait();

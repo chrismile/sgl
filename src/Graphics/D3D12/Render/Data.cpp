@@ -215,6 +215,15 @@ void RootParameters::build(Device* device) {
         d3d12StaticSamplers = staticSamplers.data();
     }
 
+    /*
+     * TODO: Allow more flags:
+     * D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
+     * D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS
+     * D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS
+     * D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS
+     * D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS
+     * D3D12_ROOT_SIGNATURE_FLAG_ALLOW_STREAM_OUTPUT
+     */
     D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags = D3D12_ROOT_SIGNATURE_FLAG_NONE;
     CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDescription;
     rootSignatureDescription.Init_1_1(
@@ -229,18 +238,53 @@ void RootParameters::build(Device* device) {
             rootSignatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
 
     // Create the pipeline state object.
-    struct ComputePipelineStateStream {
-        CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE pRootSignature;
-        CD3DX12_PIPELINE_STATE_STREAM_CS CS;
-    } pipelineStateStream;
-    pipelineStateStream.pRootSignature = rootSignature.Get();
-    pipelineStateStream.CS = {
-        shaderModule->getBlobBufferPointer(), shaderModule->getBlobBufferSize()
-    };
-    D3D12_PIPELINE_STATE_STREAM_DESC pipelineStateStreamDesc = {
+    if (shaderStages->getShaderModules().size() == 1 && shaderModule->getType() == ShaderModuleType::COMPUTE) {
+        // Compute pipeline.
+        struct ComputePipelineStateStream {
+            CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE rootSignature;
+            CD3DX12_PIPELINE_STATE_STREAM_CS CS;
+        } pipelineStateStream;
+        pipelineStateStream.rootSignature = rootSignature.Get();
+        pipelineStateStream.CS = {
+            shaderModule->getBlobBufferPointer(), shaderModule->getBlobBufferSize()
+        };
+        D3D12_PIPELINE_STATE_STREAM_DESC pipelineStateStreamDesc = {
             sizeof(ComputePipelineStateStream), &pipelineStateStream
-    };
-    ThrowIfFailed(d3d12Device->CreatePipelineState(&pipelineStateStreamDesc, IID_PPV_ARGS(&pipelineState)));
+        };
+        ThrowIfFailed(d3d12Device->CreatePipelineState(&pipelineStateStreamDesc, IID_PPV_ARGS(&pipelineState)));
+    } else {
+        // Graphics pipeline.
+        D3D12_INPUT_ELEMENT_DESC inputLayout[] = {
+            { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+            { "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        };
+
+        D3D12_RT_FORMAT_ARRAY rtvFormats{};
+        rtvFormats.NumRenderTargets = 1;
+        rtvFormats.RTFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+        struct GraphicsPipelineStateStream {
+            CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE rootSignature;
+            CD3DX12_PIPELINE_STATE_STREAM_INPUT_LAYOUT inputLayout;
+            CD3DX12_PIPELINE_STATE_STREAM_PRIMITIVE_TOPOLOGY primitiveTopology;
+            CD3DX12_PIPELINE_STATE_STREAM_VS VS;
+            CD3DX12_PIPELINE_STATE_STREAM_PS PS;
+            CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT dsvFormat;
+            CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS rtvFormats;
+        } pipelineStateStream;
+        pipelineStateStream.rootSignature = rootSignature.Get();
+        pipelineStateStream.inputLayout = { inputLayout, _countof(inputLayout) };
+        pipelineStateStream.primitiveTopology = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+        pipelineStateStream.VS = {
+            shaderModule->getBlobBufferPointer(), shaderModule->getBlobBufferSize()
+        };
+        pipelineStateStream.dsvFormat = DXGI_FORMAT_D32_FLOAT;
+        pipelineStateStream.rtvFormats = rtvFormats;
+        D3D12_PIPELINE_STATE_STREAM_DESC pipelineStateStreamDesc = {
+            sizeof(GraphicsPipelineStateStream), &pipelineStateStream
+        };
+        ThrowIfFailed(d3d12Device->CreatePipelineState(&pipelineStateStreamDesc, IID_PPV_ARGS(&pipelineState)));
+    }
 }
 
 
@@ -430,5 +474,50 @@ void ComputeData::setRootState(ID3D12GraphicsCommandList* d3d12CommandList) {
         }
     }
 }
+
+// TODO
+/*void createRasterData() {
+    ResourcePtr vertexBuffer, indexBuffer;
+    ResourcePtr rtvImage, dsvImage;
+
+    D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
+    vertexBufferView.BufferLocation = vertexBuffer->getGPUVirtualAddress();
+    vertexBufferView.SizeInBytes = vertexBuffer->getD3D12ResourceDesc().Width;
+    vertexBufferView.StrideInBytes = sizeof(float) * 3;
+
+    D3D12_INDEX_BUFFER_VIEW indexBufferView{};
+    indexBufferView.BufferLocation = indexBuffer->getGPUVirtualAddress();
+    indexBufferView.Format = DXGI_FORMAT_R32_UINT;
+    indexBufferView.SizeInBytes = indexBuffer->getD3D12ResourceDesc().Width;
+
+    Renderer* renderer = nullptr;
+    auto* descriptorAllocatorRtv = renderer->getDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+    auto* descriptorAllocatorDsv = renderer->getDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+    auto descriptorAllocationRtv = descriptorAllocatorRtv->allocate(1);
+    auto descriptorAllocationDsv = descriptorAllocatorDsv->allocate(1);
+    auto descriptorHandleRtv = descriptorAllocationRtv->getCPUDescriptorHandle();
+    auto descriptorHandleDsv = descriptorAllocationDsv->getCPUDescriptorHandle();
+
+    ID3D12GraphicsCommandList* d3d12CommandList = nullptr;
+    d3d12CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    d3d12CommandList->IASetVertexBuffers(0, 1, &vertexBufferView);
+    d3d12CommandList->IASetIndexBuffer(&indexBufferView);
+
+    D3D12_VIEWPORT viewport{};
+    viewport.Width = rtvImage->getD3D12ResourceDesc().Width;
+    viewport.Height = rtvImage->getD3D12ResourceDesc().Height;
+    viewport.MinDepth = 0.0f;
+    viewport.MaxDepth = 1.0f;
+    viewport.TopLeftX = 0.0f;
+    viewport.TopLeftY = 0.0f;
+    D3D12_RECT scissorRect{};
+    scissorRect.left = 0;
+    scissorRect.top = 0;
+    scissorRect.right = viewport.Width - 1;
+    scissorRect.bottom = viewport.Height - 1;
+    d3d12CommandList->RSSetViewports(1, &viewport);
+    d3d12CommandList->RSSetScissorRects(1, &scissorRect);
+    d3d12CommandList->OMSetRenderTargets(1, &descriptorHandleRtv, false, &descriptorHandleDsv);
+}*/
 
 }}

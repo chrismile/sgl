@@ -87,6 +87,7 @@ public:
     [[nodiscard]] inline uint32_t getThreadGroupSizeX() const { return threadGroupSizeX; }
     [[nodiscard]] inline uint32_t getThreadGroupSizeY() const { return threadGroupSizeY; }
     [[nodiscard]] inline uint32_t getThreadGroupSizeZ() const { return threadGroupSizeZ; }
+    [[nodiscard]] inline ShaderModuleType getType() const { return shaderModuleType; }
 
     bool hasBindingName(const std::string& name);
     const ShaderBindingInfo& getBindingInfoByName(const std::string& name);
