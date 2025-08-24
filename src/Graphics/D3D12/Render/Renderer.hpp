@@ -48,6 +48,8 @@ public:
 
     inline Device* getDevice() { return device; }
     void setCommandList(const CommandListPtr& commandList);
+    void submit();
+    void submitAndWait();
 
     void dispatch(const ComputeDataPtr& computeData, uint32_t groupCountX);
     void dispatch(const ComputeDataPtr& computeData, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);

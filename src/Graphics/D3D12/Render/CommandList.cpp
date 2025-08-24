@@ -58,6 +58,7 @@ CommandList::CommandList(
 void CommandList::close() {
     if (hasGraphicsCommandList) {
         graphicsCommandList->Close();
+        isClosed = true;
     } else {
         sgl::Logfile::get()->throwError("Error in CommandList::close: Unsupported command list type.");
     }

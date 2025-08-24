@@ -53,7 +53,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE DescriptorAllocation::getCPUDescriptorHandle(uint32_
                 " too large for number of descriptors ", numDescriptors, ".");
     }
     return CD3DX12_CPU_DESCRIPTOR_HANDLE(
-                descriptorAllocator->descriptorHandleHeapStartCpu, int(allocationOffset) + offset,
+                descriptorAllocator->descriptorHandleHeapStartCpu, int(allocationOffset) + int(offset),
                 descriptorAllocator->descriptorHandleIncrementSize);
 }
 
@@ -64,23 +64,27 @@ D3D12_GPU_DESCRIPTOR_HANDLE DescriptorAllocation::getGPUDescriptorHandle(uint32_
                 " too large for number of descriptors ", numDescriptors, ".");
     }
     return CD3DX12_GPU_DESCRIPTOR_HANDLE(
-                descriptorAllocator->descriptorHandleHeapStartGpu, int(allocationOffset) + offset,
+                descriptorAllocator->descriptorHandleHeapStartGpu, int(allocationOffset) + int(offset),
                 descriptorAllocator->descriptorHandleIncrementSize);
 }
 
 
 DescriptorAllocator::DescriptorAllocator(
-        Device* device, D3D12_DESCRIPTOR_HEAP_TYPE descriptorHeapType, uint32_t numDescriptors)
+        Device* device, D3D12_DESCRIPTOR_HEAP_TYPE descriptorHeapType, D3D12_DESCRIPTOR_HEAP_FLAGS flags,
+        uint32_t numDescriptors)
         : descriptorHeapType(descriptorHeapType) {
     auto* d3d12Device = device->getD3D12Device2Ptr();
     D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
     descriptorHeapDesc.NumDescriptors = numDescriptors;
     descriptorHeapDesc.Type = descriptorHeapType;
+    descriptorHeapDesc.Flags = flags;
     ThrowIfFailed(d3d12Device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&descriptorHeap)));
 
 #if defined(_MSC_VER) || !defined(_WIN32)
     descriptorHandleHeapStartCpu = descriptorHeap->GetCPUDescriptorHandleForHeapStart();
-    descriptorHandleHeapStartGpu = descriptorHeap->GetGPUDescriptorHandleForHeapStart();
+    if ((flags & D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE) != 0) {
+        descriptorHandleHeapStartGpu = descriptorHeap->GetGPUDescriptorHandleForHeapStart();
+    }
 #else
     descriptorHeap->GetCPUDescriptorHandleForHeapStart(&descriptorHandleHeapStartCpu);
     descriptorHeap->GetGPUDescriptorHandleForHeapStart(&descriptorHandleHeapStartGpu);
@@ -100,7 +104,7 @@ DescriptorAllocationPtr DescriptorAllocator::allocate(size_t numDescriptors) {
     D3D12MA::VIRTUAL_ALLOCATION_DESC allocDesc{};
     allocDesc.Size = numDescriptors;
     allocDesc.Alignment = 1;
-    D3D12MA::VirtualAllocation alloc;
+    D3D12MA::VirtualAllocation alloc{};
     UINT64 allocOffset;
     HRESULT hr = block->Allocate(&allocDesc, &alloc, &allocOffset);
     if (FAILED(hr)) {

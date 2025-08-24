@@ -161,7 +161,7 @@ void Resource::uploadDataLinear(size_t sizeInBytesData, const void* dataPtr) {
 void Resource::uploadDataLinear(
         size_t sizeInBytesData, const void* dataPtr,
         const ResourcePtr& intermediateResource, const CommandListPtr& commandList) {
-    uploadDataLinearInternal(sizeInBytesData, dataPtr, intermediateResource->getD3D12Resource(), commandList.get());
+    uploadDataLinearInternal(sizeInBytesData, dataPtr, intermediateResource->getD3D12ResourcePtr(), commandList.get());
 }
 
 void Resource::uploadDataLinearInternal(
@@ -190,7 +190,7 @@ void Resource::uploadDataLinearInternal(
     UINT numRows = subresourceNumRowsArray.at(0);
     UINT64 totalSize = subresourceTotalBytesArray.at(0);
     UpdateSubresources(
-            d3d12CommandList, getD3D12Resource(), intermediateResource, 0, 1,
+            d3d12CommandList, getD3D12ResourcePtr(), intermediateResource, 0, 1,
             totalSize, &layout, &numRows, &rowSizeInBytes, &subresourceData);
 }
 
@@ -409,6 +409,10 @@ size_t Resource::getRowPitchInBytes() {
         return rowSizeInBytes;
     }
     return sgl::sizeceil(rowSizeInBytes, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT) * D3D12_TEXTURE_DATA_PITCH_ALIGNMENT;
+}
+
+D3D12_GPU_VIRTUAL_ADDRESS Resource::getGPUVirtualAddress() {
+    return resource->GetGPUVirtualAddress();
 }
 
 

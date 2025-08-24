@@ -26,36 +26,144 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "Shader.hpp"
-
+#include <iostream>
 #include <utility>
 
+#include "Shader.hpp"
+
 #ifdef SUPPORT_D3D_COMPILER
+#include <dxcapi.h>
+#elif USE_LEGACY_D3DCOMPILER
 #include <d3dcompiler.h>
 #endif
 
 namespace sgl { namespace d3d12 {
 
-ShaderModule::ShaderModule(ShaderModuleType shaderModuleType, ComPtr<ID3DBlob> shaderBlob)
-        : shaderModuleType(shaderModuleType), shaderBlob(std::move(shaderBlob)) {
 #ifdef SUPPORT_D3D_COMPILER
-    ComPtr<ID3D12ShaderReflection> reflection;
-    HRESULT hr = D3DReflect(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), IID_PPV_ARGS(&reflection));
-    if (FAILED(hr)) {
-        sgl::Logfile::get()->throwError("Error in ShaderModule::ShaderModule: D3DReflect failed.");
-    }
 
+ShaderModule::ShaderModule(
+        ShaderModuleType shaderModuleType, ComPtr<IDxcBlob> shaderBlob,
+        const ComPtr<ID3D12ShaderReflection>& reflection)
+        : shaderModuleType(shaderModuleType), shaderBlob(std::move(shaderBlob)) {
+    queryReflectionData(reflection);
+}
+
+LPVOID ShaderModule::getBlobBufferPointer() {
+    return shaderBlob->GetBufferPointer();
+}
+
+SIZE_T ShaderModule::getBlobBufferSize() {
+    return shaderBlob->GetBufferSize();
+}
+
+#elif USE_LEGACY_D3DCOMPILER
+
+ShaderModule::ShaderModule(
+        ShaderModuleType shaderModuleType, ComPtr<ID3DBlob> shaderBlob,
+        const ComPtr<ID3D12ShaderReflection>& reflection)
+        : shaderModuleType(shaderModuleType), shaderBlob(std::move(shaderBlob)) {
+    queryReflectionData(reflection);
+}
+
+LPVOID ShaderModule::getBlobBufferPointer() {
+    return shaderBlob->GetBufferPointer();
+}
+
+SIZE_T ShaderModule::getBlobBufferSize() {
+    return shaderBlob->GetBufferSize();
+}
+
+#else
+
+LPVOID ShaderModule::getBlobBufferPointer() {
+    sgl::Logfile::get()->throwError(
+            "Error in ShaderModule::getBlobBufferPointer: D3D compiler was not enabled during the build.");
+    return nullptr;
+}
+
+SIZE_T ShaderModule::getBlobBufferSize() {
+    sgl::Logfile::get()->throwError(
+            "Error in ShaderModule::getBlobBufferSize: D3D compiler was not enabled during the build.");
+    return 0;
+}
+
+#endif
+
+void ShaderModule::queryReflectionData(const ComPtr<ID3D12ShaderReflection>& reflection) {
     if (shaderModuleType == ShaderModuleType::COMPUTE) {
         reflection->GetThreadGroupSize(&threadGroupSizeX, &threadGroupSizeY, &threadGroupSizeZ);
     }
 
-    // TODO
-    /*D3D12_SHADER_DESC desc{};
+    D3D12_SHADER_DESC desc{};
     reflection->GetDesc(&desc);
-    desc.ConstantBuffers;*/
-#else
-    sgl::Logfile::get()->throwError("Error in ShaderModule::ShaderModule: D3D shader compiler not supported.");
-#endif
+
+    D3D12_SHADER_INPUT_BIND_DESC bindDesc{};
+    for (UINT resIdx = 0; resIdx < desc.BoundResources; resIdx++) {
+        reflection->GetResourceBindingDesc(resIdx, &bindDesc);
+        ShaderBindingInfo bindingInfo{};
+        bindingInfo.space = bindDesc.Space;
+        bindingInfo.binding = bindDesc.BindPoint;
+        bindingNameToInfoMap.insert(std::make_pair(std::string(bindDesc.Name), bindingInfo));
+    }
+
+    D3D12_SHADER_BUFFER_DESC bufferDesc{};
+    D3D12_SHADER_VARIABLE_DESC varDesc{};
+    for (UINT cbIdx = 0; cbIdx < desc.ConstantBuffers; cbIdx++) {
+        ID3D12ShaderReflectionConstantBuffer* cb = reflection->GetConstantBufferByIndex(cbIdx);
+        cb->GetDesc(&bufferDesc);
+        auto it = bindingNameToInfoMap.find(bufferDesc.Name);
+        if (it == bindingNameToInfoMap.end()) {
+            continue;
+        }
+        it->second.size = bufferDesc.Size;
+        for (UINT varIdx = 0; varIdx < bufferDesc.Variables; varIdx++) {
+            ID3D12ShaderReflectionVariable* var = cb->GetVariableByIndex(varIdx);
+            var->GetDesc(&varDesc);
+            ShaderVarInfo varInfo{};
+            varInfo.space = it->second.space;
+            varInfo.binding = it->second.binding;
+            varInfo.offset = varDesc.StartOffset;
+            varInfo.size = varDesc.Size;
+            variableNameToInfoMap.insert(std::make_pair(std::string(varDesc.Name), varInfo));
+        }
+    }
+
+    //D3D12CreateVersionedRootSignatureDeserializer // formerly D3D12CreateRootSignatureDeserializer
+    /*ComPtr<ID3D12RootSignatureDeserializer> deserializer;
+    HRESULT hr = D3D12CreateRootSignatureDeserializer(
+            getBlobBufferPointer(), getBlobBufferSize(), IID_PPV_ARGS(&deserializer));
+    if (hr == E_INVALIDARG) {
+        ;
+    } else if (FAILED(hr)) {
+        ;
+    }
+    const D3D12_ROOT_SIGNATURE_DESC *rootSignatureDesc = deserializer->GetRootSignatureDesc();*/
+}
+
+bool ShaderModule::hasBindingName(const std::string& name) {
+    return bindingNameToInfoMap.find(name) != bindingNameToInfoMap.end();
+}
+
+const ShaderBindingInfo& ShaderModule::getBindingInfoByName(const std::string& name) {
+    const auto it = bindingNameToInfoMap.find(name);
+    if (it == bindingNameToInfoMap.end()) {
+        sgl::Logfile::get()->throwError(
+                "Error in ShaderModule::getBindingInfoByName: No binding with name '" + name + "'.");
+    }
+    return it->second;
+}
+
+bool ShaderModule::hasVarName(const std::string& name) {
+    return variableNameToInfoMap.find(name) != variableNameToInfoMap.end();
+}
+
+const ShaderVarInfo& ShaderModule::getVarInfoByName(const std::string& name) {
+    const auto it = variableNameToInfoMap.find(name);
+    if (it == variableNameToInfoMap.end()) {
+        sgl::Logfile::get()->throwError(
+                "Error in ShaderModule::getVarInfoByName: No variable with name '" + name + "'.");
+    }
+    return it->second;
 }
 
 }}

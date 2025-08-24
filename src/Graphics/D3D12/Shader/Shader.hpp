@@ -29,24 +29,64 @@
 #ifndef SGL_D3D12_SHADER_HPP
 #define SGL_D3D12_SHADER_HPP
 
+#include <unordered_map>
+
 #include "../Utils/d3d12.hpp"
 #include "ShaderModuleType.hpp"
+
+#ifdef SUPPORT_D3D_COMPILER
+#endif
+
+struct IDxcBlob;
 
 namespace sgl { namespace d3d12 {
 
 class Device;
 
+struct DLL_OBJECT ShaderBindingInfo {
+    uint32_t space;
+    uint32_t binding;
+    uint32_t size; // optional
+};
+struct DLL_OBJECT ShaderVarInfo {
+    uint32_t space;
+    uint32_t binding;
+    uint32_t offset;
+    uint32_t size;
+};
+
 class DLL_OBJECT ShaderModule {
 public:
-    ShaderModule(ShaderModuleType shaderModuleType, ComPtr<ID3DBlob> shaderBlob);
+#ifdef SUPPORT_D3D_COMPILER
+    ShaderModule(
+            ShaderModuleType shaderModuleType, ComPtr<IDxcBlob> shaderBlob,
+            const ComPtr<ID3D12ShaderReflection>& reflection);
+    inline IDxcBlob* getBlobPtr() { return shaderBlob.Get(); }
+#elif USE_LEGACY_D3DCOMPILER
+    ShaderModule(
+            ShaderModuleType shaderModuleType, ComPtr<ID3DBlob> shaderBlob,
+            const ComPtr<ID3D12ShaderReflection>& reflection);
     inline ID3DBlob* getBlobPtr() { return shaderBlob.Get(); }
-    inline uint32_t getThreadGroupSizeX() { return threadGroupSizeX; }
-    inline uint32_t getThreadGroupSizeY() { return threadGroupSizeY; }
-    inline uint32_t getThreadGroupSizeZ() { return threadGroupSizeZ; }
+#endif
+    LPVOID getBlobBufferPointer();
+    SIZE_T getBlobBufferSize();
+    [[nodiscard]] inline uint32_t getThreadGroupSizeX() const { return threadGroupSizeX; }
+    [[nodiscard]] inline uint32_t getThreadGroupSizeY() const { return threadGroupSizeY; }
+    [[nodiscard]] inline uint32_t getThreadGroupSizeZ() const { return threadGroupSizeZ; }
+
+    bool hasBindingName(const std::string& name);
+    const ShaderBindingInfo& getBindingInfoByName(const std::string& name);
+    bool hasVarName(const std::string& name);
+    const ShaderVarInfo& getVarInfoByName(const std::string& name);
 
 private:
+    void queryReflectionData(const ComPtr<ID3D12ShaderReflection>& reflection);
     ShaderModuleType shaderModuleType;
+#ifdef SUPPORT_D3D_COMPILER
+    ComPtr<IDxcBlob> shaderBlob;
+#elif USE_LEGACY_D3DCOMPILER
     ComPtr<ID3DBlob> shaderBlob;
+#endif
 
     union {
         // Vertex/fragment shader data.
@@ -61,6 +101,9 @@ private:
             uint32_t threadGroupSizeZ;
         };
     };
+
+    std::unordered_map<std::string, ShaderBindingInfo> bindingNameToInfoMap;
+    std::unordered_map<std::string, ShaderVarInfo> variableNameToInfoMap;
 };
 
 typedef std::shared_ptr<ShaderModule> ShaderModulePtr;

@@ -93,7 +93,7 @@ Device::Device(const ComPtr<IDXGIAdapter1> &dxgiAdapter1, D3D_FEATURE_LEVEL feat
     commandQueueDesc.NodeMask = 0;
     ThrowIfFailed(d3d12Device2->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&commandQueueDirect)));
 
-    commandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+    commandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
     if (!FAILED(d3d12Device2->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&commandQueueCompute)))) {
         supportsComputeQueue = true;
     }

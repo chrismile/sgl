@@ -34,6 +34,11 @@
 #include "../Utils/d3d12.hpp"
 #include "ShaderModuleType.hpp"
 
+struct IDxcUtils;
+struct IDxcCompiler;
+struct IDxcBlob;
+struct IDxcBlobEncoding;
+
 namespace sgl { namespace d3d12 {
 
 class Device;
@@ -46,17 +51,33 @@ typedef std::shared_ptr<ShaderModule> ShaderModulePtr;
 
 class DLL_OBJECT ShaderManagerD3D12 {
 public:
+    ShaderManagerD3D12();
+    ~ShaderManagerD3D12();
     ShaderModulePtr loadShaderFromBlobFile(const std::string& shaderPath, ShaderModuleType shaderModuleType);
     ShaderModulePtr loadShaderFromHlslFile(
             const std::string& shaderPath, ShaderModuleType shaderModuleType, const std::string& entrypoint,
             const std::map<std::string, std::string>& preprocessorDefines = {});
     ShaderModulePtr loadShaderFromHlslString(
-            const std::string& shaderString, ShaderModuleType shaderModuleType, const std::string& entrypoint,
+            const std::string& shaderString, const std::string& shaderName,
+            ShaderModuleType shaderModuleType, const std::string& entrypoint,
             const std::map<std::string, std::string>& preprocessorDefines = {});
     //    ShaderStagesPtr getShaderStagesWithSettings(
     //            const std::vector<std::string>& shaderIds,
     //            const std::map<std::string, std::string>& customPreprocessorDefines,
     //            const std::vector<ShaderStageSettings>& settings, bool dumpTextDebug = false);
+
+private:
+#ifdef SUPPORT_D3D_COMPILER
+    ShaderModulePtr loadShaderFromSourceBlob(
+            const ComPtr<IDxcBlobEncoding>& sourceBlob, const std::string& shaderName,
+            ShaderModuleType shaderModuleType, const std::string& entrypoint,
+            const std::map<std::string, std::string>& preprocessorDefines = {});
+    ComPtr<ID3D12ShaderReflection> createReflectionData(const ComPtr<IDxcBlob>& shaderBlob);
+    ComPtr<IDxcUtils> utils;
+    ComPtr<IDxcCompiler> compiler;
+#elif USE_LEGACY_D3DCOMPILER
+    ComPtr<ID3D12ShaderReflection> createReflectionData(const ComPtr<ID3DBlob>& shaderBlob);
+#endif
 };
 
 DLL_OBJECT extern ShaderManagerD3D12* ShaderManager;

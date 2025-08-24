@@ -81,12 +81,14 @@ public:
     [[nodiscard]] size_t getRowSizeInBytes();
     [[nodiscard]] size_t getRowPitchInBytes();
 
+    [[nodiscard]] D3D12_GPU_VIRTUAL_ADDRESS getGPUVirtualAddress();
+
     HANDLE getSharedHandle(const std::wstring& handleName);
     /** A not thread-safe version using a static counter for handle name "Local\\D3D12ResourceHandle{ctr}". */
     HANDLE getSharedHandle();
 
     inline Device* getDevice() { return device; }
-    inline ID3D12Resource* getD3D12Resource() { return resource.Get(); }
+    inline ID3D12Resource* getD3D12ResourcePtr() { return resource.Get(); }
     [[nodiscard]] inline const ResourceSettings& getResourceSettings() const { return resourceSettings; }
     [[nodiscard]] inline const D3D12_RESOURCE_DESC& getD3D12ResourceDesc() const { return resourceSettings.resourceDesc; }
 

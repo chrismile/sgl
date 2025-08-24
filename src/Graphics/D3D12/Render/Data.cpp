@@ -30,7 +30,9 @@
 #include "Renderer.hpp"
 #include "Data.hpp"
 
+#include "DescriptorAllocator.hpp"
 #include "Graphics/D3D12/Shader/Shader.hpp"
+#include "Graphics/D3D12/Utils/Resource.hpp"
 
 namespace sgl { namespace d3d12 {
 
@@ -42,76 +44,147 @@ RootParameters::RootParameters(ShaderModulePtr shaderModule) : shaderModule(shad
     ;
 }
 
-void RootParameters::pushConstants(
+UINT RootParameters::pushConstants(
         UINT num32BitValues, UINT shaderRegister, UINT registerSpace,
         D3D12_SHADER_VISIBILITY visibility) {
     checkPush();
+    CD3DX12_ROOT_PARAMETER1 rootParameter;
+    rootParameter.InitAsConstants(num32BitValues, shaderRegister, registerSpace, visibility);
+    rootParameters.emplace_back(rootParameter);
+    return UINT(rootParameters.size() - 1);
 }
 
-void RootParameters::pushConstants(
-        const std::string& varName,
+UINT RootParameters::pushConstants(
+        const std::string& bindingName,
         D3D12_SHADER_VISIBILITY visibility) {
     checkPush();
+    checkShaderModule();
+    if (!shaderModule->hasBindingName(bindingName)) {
+        sgl::Logfile::get()->throwError(
+                "Error in RootParameters::pushShaderResourceView: No binding called '" + bindingName + "'.");
+        return std::numeric_limits<UINT>::max();
+    }
+    const auto& bindingInfo = shaderModule->getBindingInfoByName(bindingName);
+    CD3DX12_ROOT_PARAMETER1 rootParameter;
+    rootParameter.InitAsConstants(
+            bindingInfo.size / sizeof(uint32_t), bindingInfo.binding, bindingInfo.space, visibility);
+    rootParameters.emplace_back(rootParameter);
+    return UINT(rootParameters.size() - 1);
 }
 
-void RootParameters::pushConstantBufferView(
+UINT RootParameters::pushConstantBufferView(
         UINT shaderRegister, UINT registerSpace,
         D3D12_ROOT_DESCRIPTOR_FLAGS flags,
         D3D12_SHADER_VISIBILITY visibility) {
     checkPush();
+    CD3DX12_ROOT_PARAMETER1 rootParameter;
+    rootParameter.InitAsConstantBufferView(shaderRegister, registerSpace, flags, visibility);
+    rootParameters.emplace_back(rootParameter);
+    return UINT(rootParameters.size() - 1);
 }
 
-void RootParameters::pushConstantBufferView(
-        const std::string& varName,
+UINT RootParameters::pushConstantBufferView(
+        const std::string& bindingName,
         D3D12_ROOT_DESCRIPTOR_FLAGS flags,
         D3D12_SHADER_VISIBILITY visibility) {
     checkPush();
+    checkShaderModule();
+    if (!shaderModule->hasBindingName(bindingName)) {
+        sgl::Logfile::get()->throwError(
+                "Error in RootParameters::pushShaderResourceView: No binding called '" + bindingName + "'.");
+        return std::numeric_limits<UINT>::max();
+    }
+    const auto& bindingInfo = shaderModule->getBindingInfoByName(bindingName);
+    CD3DX12_ROOT_PARAMETER1 rootParameter;
+    rootParameter.InitAsConstantBufferView(bindingInfo.binding, bindingInfo.space, flags, visibility);
+    rootParameters.emplace_back(rootParameter);
+    return UINT(rootParameters.size() - 1);
 }
 
-void RootParameters::pushShaderResourceView(
+UINT RootParameters::pushShaderResourceView(
         UINT shaderRegister, UINT registerSpace,
         D3D12_ROOT_DESCRIPTOR_FLAGS flags,
         D3D12_SHADER_VISIBILITY visibility) {
     checkPush();
+    CD3DX12_ROOT_PARAMETER1 rootParameter;
+    rootParameter.InitAsShaderResourceView(shaderRegister, registerSpace, flags, visibility);
+    rootParameters.emplace_back(rootParameter);
+    return UINT(rootParameters.size() - 1);
 }
 
-void RootParameters::pushShaderResourceView(
-        const std::string& varName,
+UINT RootParameters::pushShaderResourceView(
+        const std::string& bindingName,
         D3D12_ROOT_DESCRIPTOR_FLAGS flags,
         D3D12_SHADER_VISIBILITY visibility) {
     checkPush();
+    checkShaderModule();
+    if (!shaderModule->hasBindingName(bindingName)) {
+        sgl::Logfile::get()->throwError(
+                "Error in RootParameters::pushShaderResourceView: No binding called '" + bindingName + "'.");
+        return std::numeric_limits<UINT>::max();
+    }
+    const auto& bindingInfo = shaderModule->getBindingInfoByName(bindingName);
+    CD3DX12_ROOT_PARAMETER1 rootParameter;
+    rootParameter.InitAsShaderResourceView(bindingInfo.binding, bindingInfo.space, flags, visibility);
+    rootParameters.emplace_back(rootParameter);
+    return UINT(rootParameters.size() - 1);
 }
 
-void RootParameters::pushUnorderedAccessView(
+UINT RootParameters::pushUnorderedAccessView(
         UINT shaderRegister, UINT registerSpace,
         D3D12_ROOT_DESCRIPTOR_FLAGS flags,
         D3D12_SHADER_VISIBILITY visibility) {
     checkPush();
+    CD3DX12_ROOT_PARAMETER1 rootParameter;
+    rootParameter.InitAsUnorderedAccessView(shaderRegister, registerSpace, flags, visibility);
+    rootParameters.emplace_back(rootParameter);
+    return UINT(rootParameters.size() - 1);
 }
 
-void RootParameters::pushUnorderedAccessView(
-        const std::string& varName,
+UINT RootParameters::pushUnorderedAccessView(
+        const std::string& bindingName,
         D3D12_ROOT_DESCRIPTOR_FLAGS flags,
         D3D12_SHADER_VISIBILITY visibility) {
     checkPush();
+    checkShaderModule();
+    if (!shaderModule->hasBindingName(bindingName)) {
+        sgl::Logfile::get()->throwError(
+                "Error in RootParameters::pushShaderResourceView: No binding called '" + bindingName + "'.");
+        return std::numeric_limits<UINT>::max();
+    }
+    const auto& bindingInfo = shaderModule->getBindingInfoByName(bindingName);
+    CD3DX12_ROOT_PARAMETER1 rootParameter;
+    rootParameter.InitAsUnorderedAccessView(bindingInfo.binding, bindingInfo.space, flags, visibility);
+    rootParameters.emplace_back(rootParameter);
+    return UINT(rootParameters.size() - 1);
 }
 
-void RootParameters::pushDescriptorTable(
-        UINT numDescriptorRanges, const D3D12_DESCRIPTOR_RANGE1* pDescriptorRanges,
+UINT RootParameters::pushDescriptorTable(
+        UINT numDescriptorRanges, const D3D12_DESCRIPTOR_RANGE1* descriptorRanges,
         D3D12_SHADER_VISIBILITY visibility) {
     checkPush();
+    CD3DX12_ROOT_PARAMETER1 rootParameter;
+    rootParameter.InitAsDescriptorTable(numDescriptorRanges, descriptorRanges, visibility);
+    rootParameters.emplace_back(rootParameter);
+    return UINT(rootParameters.size() - 1);
 }
 
-void RootParameters::pushDescriptorTable(
-        const std::string& varName,
-        D3D12_SHADER_VISIBILITY visibility) {
+void RootParameters::pushStaticSampler(const D3D12_STATIC_SAMPLER_DESC& staticSamplerDesc) {
     checkPush();
+    staticSamplers.push_back(staticSamplerDesc);
 }
 
 void RootParameters::checkPush() {
     if (rootSignature) {
         sgl::Logfile::get()->throwError(
                 "Error: RootParameters::push* can only be called before RootParameters::build.");
+    }
+}
+
+void RootParameters::checkShaderModule() {
+    if (!shaderModule) {
+        sgl::Logfile::get()->throwError(
+                "Error: RootParameters::push* taking variable names need to be created with a shader module.");
     }
 }
 
@@ -140,8 +213,8 @@ void RootParameters::build(Device* device) {
     D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags = D3D12_ROOT_SIGNATURE_FLAG_NONE;
     CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDescription;
     rootSignatureDescription.Init_1_1(
-            rootParameters.size(), d3d12RootParameters,
-            staticSamplers.size(), d3d12StaticSamplers, rootSignatureFlags);
+            uint32_t(rootParameters.size()), d3d12RootParameters,
+            uint32_t(staticSamplers.size()), d3d12StaticSamplers, rootSignatureFlags);
 
     ComPtr<ID3DBlob> rootSignatureBlob;
     ComPtr<ID3DBlob> errorBlob;
@@ -156,8 +229,9 @@ void RootParameters::build(Device* device) {
         CD3DX12_PIPELINE_STATE_STREAM_CS CS;
     } pipelineStateStream;
     pipelineStateStream.pRootSignature = rootSignature.Get();
-    auto* shaderBlob = shaderModule->getBlobPtr();
-    pipelineStateStream.CS = { shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize() };
+    pipelineStateStream.CS = {
+        shaderModule->getBlobBufferPointer(), shaderModule->getBlobBufferSize()
+    };
     D3D12_PIPELINE_STATE_STREAM_DESC pipelineStateStreamDesc = {
             sizeof(ComputePipelineStateStream), &pipelineStateStream
     };
@@ -166,17 +240,190 @@ void RootParameters::build(Device* device) {
 
 
 ComputeData::ComputeData(Renderer* renderer, const RootParametersPtr& rootParameters)
-        : renderer(renderer), rootParameters(rootParameters) {
+        : renderer(renderer), shaderModule(rootParameters->getShaderModule()), rootParameters(rootParameters) {
     rootParameters->build(renderer->getDevice());
 }
+
+ComputeData::ComputeData(Renderer* renderer, const ShaderModulePtr& shaderModule, const RootParametersPtr& rootParameters)
+        : renderer(renderer), shaderModule(shaderModule), rootParameters(rootParameters) {
+    rootParameters->build(renderer->getDevice());
+}
+
+ComputeData::~ComputeData() {
+    for (const auto& rpValue : rootParameterValues) {
+        if (rpValue.type == RootParameterType::CONSTANTS_COPY) {
+            delete[] static_cast<const uint32_t*>(rpValue.dataPointer);
+        }
+    }
+}
+
+void ComputeData::setRootConstantValue(UINT rpIdx, uint32_t value, UINT offsetIn32BitValues) {
+    if (UINT(rootParameterValues.size()) <= rpIdx) {
+        rootParameterValues.resize(rpIdx + 1);
+    }
+    RootParameterValue rpValue{};
+    rpValue.rpIdx = rpIdx;
+    rpValue.type = RootParameterType::CONSTANTS_VALUE;
+    rpValue.value = value;
+    rpValue.num32BitValues = 1;
+    rpValue.offsetIn32BitValues = offsetIn32BitValues;
+    rootParameterValues.at(rpIdx) = rpValue;
+}
+
+void ComputeData::setRootConstantValue(UINT rpIdx, const std::string& varName, uint32_t value) {
+    if (!shaderModule->hasVarName(varName)) {
+        sgl::Logfile::get()->throwError(
+                "Error in RootParameters::setRootConstantValue: No variable called '" + varName + "'.");
+        return;
+    }
+    const auto& varInfo = shaderModule->getVarInfoByName(varName);
+    if (varInfo.size != sizeof(uint32_t)) {
+        sgl::Logfile::get()->throwError(
+                "Error in RootParameters::setRootConstantValue: Size mismatch for variable '" + varName + "'.");
+        return;
+    }
+    setRootConstantValue(rpIdx, value, varInfo.offset / sizeof(uint32_t));
+}
+
+void ComputeData::setRootConstants(UINT rpIdx, const uint32_t* values, UINT num32BitValues, UINT offsetIn32BitValues) {
+    if (UINT(rootParameterValues.size()) <= rpIdx) {
+        rootParameterValues.resize(rpIdx + 1);
+    }
+    RootParameterValue rpValue{};
+    rpValue.rpIdx = rpIdx;
+    rpValue.type = RootParameterType::CONSTANTS_PTR;
+    rpValue.dataPointer = values;
+    rpValue.num32BitValues = num32BitValues;
+    rpValue.offsetIn32BitValues = offsetIn32BitValues;
+    rootParameterValues.at(rpIdx) = rpValue;
+}
+
+void ComputeData::setRootConstants(UINT rpIdx, const std::string& varName, const uint32_t* values, UINT num32BitValues) {
+    if (!shaderModule->hasVarName(varName)) {
+        sgl::Logfile::get()->throwError(
+                "Error in RootParameters::setRootConstants: No variable called '" + varName + "'.");
+        return;
+    }
+    const auto& varInfo = shaderModule->getVarInfoByName(varName);
+    if (varInfo.size != sizeof(uint32_t) * num32BitValues) {
+        sgl::Logfile::get()->throwError(
+                "Error in RootParameters::setRootConstants: Size mismatch for variable '" + varName + "'.");
+        return;
+    }
+    setRootConstants(rpIdx, values, num32BitValues, varInfo.offset / sizeof(uint32_t));
+}
+
+void ComputeData::setRootConstantsCopy(UINT rpIdx, const uint32_t* values, UINT num32BitValues, UINT offsetIn32BitValues) {
+    if (UINT(rootParameterValues.size()) <= rpIdx) {
+        rootParameterValues.resize(rpIdx + 1);
+    }
+    if (rootParameterValues.at(rpIdx).type == RootParameterType::CONSTANTS_COPY) {
+        delete[] static_cast<const uint32_t*>(rootParameterValues.at(rpIdx).dataPointer);
+    }
+    auto* valuesCopy = new uint32_t[num32BitValues];
+    memcpy(valuesCopy, values, num32BitValues * sizeof(uint32_t));
+    RootParameterValue rpValue{};
+    rpValue.rpIdx = rpIdx;
+    rpValue.type = RootParameterType::CONSTANTS_COPY;
+    rpValue.dataPointer = valuesCopy;
+    rpValue.num32BitValues = num32BitValues;
+    rpValue.offsetIn32BitValues = offsetIn32BitValues;
+    rootParameterValues.at(rpIdx) = rpValue;
+}
+
+void ComputeData::setRootConstantsCopy(UINT rpIdx, const std::string& varName, const uint32_t* values, UINT num32BitValues) {
+    if (!shaderModule->hasVarName(varName)) {
+        sgl::Logfile::get()->throwError(
+                "Error in RootParameters::setRootConstantsCopy: No variable called '" + varName + "'.");
+        return;
+    }
+    const auto& varInfo = shaderModule->getVarInfoByName(varName);
+    if (varInfo.size != sizeof(uint32_t) * num32BitValues) {
+        sgl::Logfile::get()->throwError(
+                "Error in RootParameters::setRootConstantsCopy: Size mismatch for variable '" + varName + "'.");
+        return;
+    }
+    setRootConstantsCopy(rpIdx, values, num32BitValues, varInfo.offset / sizeof(uint32_t));
+}
+
+void ComputeData::setConstantBufferView(UINT rpIdx, Resource* resource) {
+    if (UINT(rootParameterValues.size()) <= rpIdx) {
+        rootParameterValues.resize(rpIdx + 1);
+    }
+    RootParameterValue rpValue{};
+    rpValue.rpIdx = rpIdx;
+    rpValue.type = RootParameterType::CBV;
+    rpValue.resource = resource;
+    rootParameterValues.at(rpIdx) = rpValue;
+}
+
+void ComputeData::setShaderResourceView(UINT rpIdx, Resource* resource) {
+    if (UINT(rootParameterValues.size()) <= rpIdx) {
+        rootParameterValues.resize(rpIdx + 1);
+    }
+    RootParameterValue rpValue{};
+    rpValue.rpIdx = rpIdx;
+    rpValue.type = RootParameterType::SRV;
+    rpValue.resource = resource;
+    rootParameterValues.at(rpIdx) = rpValue;
+}
+
+void ComputeData::setUnorderedAccessView(UINT rpIdx, Resource* resource) {
+    if (UINT(rootParameterValues.size()) <= rpIdx) {
+        rootParameterValues.resize(rpIdx + 1);
+    }
+    RootParameterValue rpValue{};
+    rpValue.rpIdx = rpIdx;
+    rpValue.type = RootParameterType::UAV;
+    rpValue.resource = resource;
+    rootParameterValues.at(rpIdx) = rpValue;
+}
+
+void ComputeData::setDescriptorTable(UINT rpIdx, DescriptorAllocation* descriptorAllocation) {
+    if (UINT(rootParameterValues.size()) <= rpIdx) {
+        rootParameterValues.resize(rpIdx + 1);
+    }
+    RootParameterValue rpValue{};
+    rpValue.rpIdx = rpIdx;
+    rpValue.type = RootParameterType::DESCRIPTOR_TABLE;
+    rpValue.descriptorAllocation = descriptorAllocation;
+    rootParameterValues.at(rpIdx) = rpValue;
+}
+
 
 void ComputeData::setRootState(ID3D12GraphicsCommandList* d3d12CommandList) {
     d3d12CommandList->SetPipelineState(rootParameters->getD3D12PipelineStatePtr());
     d3d12CommandList->SetComputeRootSignature(rootParameters->getD3D12RootSignaturePtr());
 
-    /*d3d12CommandList->SetComputeRoot32BitConstant();
-    d3d12CommandList->SetComputeRootUnorderedAccessView(idx, bufferAddress);
-    d3d12CommandList->SetComputeRootDescriptorTable(idx, baseDescriptor);*/
+    for (const auto& rpValue : rootParameterValues) {
+        if (rpValue.type == RootParameterType::CONSTANTS_PTR
+                || rpValue.type == RootParameterType::CONSTANTS_COPY) {
+            if (rpValue.num32BitValues == 1) {
+                d3d12CommandList->SetComputeRoot32BitConstant(
+                        rpValue.rpIdx, *static_cast<const uint32_t*>(rpValue.dataPointer), rpValue.offsetIn32BitValues);
+            } else {
+                d3d12CommandList->SetComputeRoot32BitConstants(
+                        rpValue.rpIdx, rpValue.num32BitValues, rpValue.dataPointer, rpValue.offsetIn32BitValues);
+            }
+        } else if (rpValue.type == RootParameterType::CONSTANTS_VALUE) {
+            d3d12CommandList->SetComputeRoot32BitConstant(rpValue.rpIdx, rpValue.value, rpValue.offsetIn32BitValues);
+        } else if (rpValue.type == RootParameterType::CBV) {
+            d3d12CommandList->SetComputeRootConstantBufferView(
+                    rpValue.rpIdx, rpValue.resource->getGPUVirtualAddress());
+        } else if (rpValue.type == RootParameterType::SRV) {
+            d3d12CommandList->SetComputeRootShaderResourceView(
+                    rpValue.rpIdx, rpValue.resource->getGPUVirtualAddress());
+        } else if (rpValue.type == RootParameterType::UAV) {
+            d3d12CommandList->SetComputeRootUnorderedAccessView(
+                    rpValue.rpIdx, rpValue.resource->getGPUVirtualAddress());
+        } else if (rpValue.type == RootParameterType::DESCRIPTOR_TABLE) {
+            d3d12CommandList->SetComputeRootDescriptorTable(
+                    rpValue.rpIdx, rpValue.descriptorAllocation->getGPUDescriptorHandle());
+        } else {
+            sgl::Logfile::get()->throwErrorVar(
+                    "Error in ComputeData::setRootState: Root parameter '", rpValue.rpIdx, "' not set.");
+        }
+    }
 }
 
 }}

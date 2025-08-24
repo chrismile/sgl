@@ -62,7 +62,9 @@ typedef std::shared_ptr<DescriptorAllocation> DescriptorAllocationPtr;
 class DLL_OBJECT DescriptorAllocator {
     friend class DescriptorAllocation;
 public:
-    DescriptorAllocator(Device* device, D3D12_DESCRIPTOR_HEAP_TYPE descriptorHeapType, uint32_t numDescriptors);
+    DescriptorAllocator(
+            Device* device, D3D12_DESCRIPTOR_HEAP_TYPE descriptorHeapType, D3D12_DESCRIPTOR_HEAP_FLAGS flags,
+            uint32_t numDescriptors);
     ~DescriptorAllocator();
     DescriptorAllocationPtr allocate(size_t numDescriptors = 1);
 

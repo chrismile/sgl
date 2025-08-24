@@ -116,10 +116,9 @@ TEST_F(D3D12Test, SimpleTestTexture) {
     }
 }
 
-// TODO: Finish implementation.
-/*TEST_F(D3D12Test, ComputeShader) {
+TEST_F(D3D12Test, ComputeShader) {
 #ifndef SUPPORT_D3D_COMPILER
-    //GTEST_SKIP() << "D3D12 shader compiler is not enabled.";
+    GTEST_SKIP() << "D3D12 shader compiler is not enabled.";
 #endif
 
     sgl::d3d12::DXGIFactoryPtr dxgiFactory = std::make_shared<sgl::d3d12::DXGIFactory>(true);
@@ -149,23 +148,23 @@ TEST_F(D3D12Test, SimpleTestTexture) {
             dstBuffer[idx] = float(idx);
         }
     }
-    )", sgl::d3d12::ShaderModuleType::COMPUTE, "CSMain", {});
+    )", "WriteBufferShader.hlsl", sgl::d3d12::ShaderModuleType::COMPUTE, "CSMain", {});
 
     auto rootParameters = std::make_shared<sgl::d3d12::RootParameters>(computeShader);
     //rootParameters->pushConstants(1, 0);
-    rootParameters->pushConstants("globalSettingsCB");
+    auto rpiGlobalSettingsCB = rootParameters->pushConstants("globalSettingsCB");
     //rootParameters->pushUnorderedAccessView(0);
-    rootParameters->pushUnorderedAccessView("dstBuffer");
+    auto rpiDstBuffer = rootParameters->pushUnorderedAccessView("dstBuffer");
 
     auto computeData = std::make_shared<sgl::d3d12::ComputeData>(renderer, rootParameters);
-    // TODO
-    //computeData->setConstant(0, bufferNumEntries);
-    //computeData->setUnorderedAccessView(1, bufferD3D12);
+    computeData->setRootConstantValue(rpiGlobalSettingsCB, uint32_t(bufferNumEntries));
+    computeData->setUnorderedAccessView(rpiDstBuffer, bufferD3D12.get());
 
     auto commandList = std::make_shared<sgl::d3d12::CommandList>(d3d12Device.get(), sgl::d3d12::CommandListType::COMPUTE);
     renderer->setCommandList(commandList);
-    auto threadGroupCount = sgl::uiceil(bufferNumEntries, computeShader->getThreadGroupSizeX());
+    auto threadGroupCount = sgl::uiceil(uint32_t(bufferNumEntries), computeShader->getThreadGroupSizeX());
     renderer->dispatch(computeData, threadGroupCount);
+    renderer->submitAndWait();
 
     auto* hostPtr = new float[bufferNumEntries];
     bufferD3D12->readBackDataLinear(bufferSizeInBytes, hostPtr);
@@ -181,7 +180,7 @@ TEST_F(D3D12Test, SimpleTestTexture) {
     delete[] hostPtr;
     delete shaderManager;
     delete renderer;
-}*/
+}
 
 #ifdef SUPPORT_SYCL_INTEROP
 TEST_F(D3D12Test, SyclInterop) {

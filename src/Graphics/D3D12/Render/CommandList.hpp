@@ -57,6 +57,7 @@ public:
 
     inline ComPtr<ID3D12CommandAllocator>& getD3D12CommandAllocator() { return commandAllocator; }
     inline ID3D12CommandAllocator* getD3D12CommandAllocatorPtr() { return commandAllocator.Get(); }
+    [[nodiscard]] inline bool getIsClosed() const { return isClosed; }
 
     void close();
     /**
@@ -69,6 +70,7 @@ private:
     CommandListType commandListType;
     bool hasGraphicsCommandList = false;
     bool ownsCommandAllocator = true;
+    bool isClosed = false;
     ComPtr<ID3D12CommandList> commandList;
     ComPtr<ID3D12GraphicsCommandList> graphicsCommandList;
     ComPtr<ID3D12CommandAllocator> commandAllocator;
