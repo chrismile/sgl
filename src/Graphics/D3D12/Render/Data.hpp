@@ -35,7 +35,9 @@
 namespace sgl { namespace d3d12 {
 
 class Resource;
+typedef std::shared_ptr<Resource> ResourcePtr;
 class DescriptorAllocation;
+typedef std::shared_ptr<DescriptorAllocation> DescriptorAllocationPtr;
 class ShaderModule;
 typedef std::shared_ptr<ShaderModule> ShaderModulePtr;
 class ShaderStages;
@@ -95,7 +97,6 @@ public:
     [[nodiscard]] const ShaderStagesPtr& getShaderStages() const { return shaderStages; }
     [[nodiscard]] const std::vector<CD3DX12_ROOT_PARAMETER1>& getRootParameters() const { return rootParameters; }
     [[nodiscard]] const std::vector<D3D12_STATIC_SAMPLER_DESC>& getStaticSamplers() const { return staticSamplers; }
-    ID3D12PipelineState* getD3D12PipelineStatePtr() { return pipelineState.Get(); }
     ID3D12RootSignature* getD3D12RootSignaturePtr() { return rootSignature.Get(); }
 
 protected:
@@ -105,7 +106,6 @@ protected:
     void checkShaderModule();
     std::vector<CD3DX12_ROOT_PARAMETER1> rootParameters;
     std::vector<D3D12_STATIC_SAMPLER_DESC> staticSamplers;
-    ComPtr<ID3D12PipelineState> pipelineState;
     ComPtr<ID3D12RootSignature> rootSignature;
 };
 
@@ -128,11 +128,12 @@ struct DLL_OBJECT RootParameterValue {
     };
 };
 
-class DLL_OBJECT ComputeData {
+class DLL_OBJECT Data {
 public:
-    ComputeData(Renderer* renderer, const RootParametersPtr& rootParameters);
-    ComputeData(Renderer* renderer, const ShaderModulePtr& shaderModule, const RootParametersPtr& rootParameters);
-    ~ComputeData();
+    Data(Device* device, const RootParametersPtr& rootParameters, const ShaderStagesPtr& shaderStages);
+    virtual ~Data();
+
+    RootParametersPtr getRootParameters() { return rootParameters; }
 
     // Copies a single 32-bit entry.
     void setRootConstantValue(UINT rpIdx, uint32_t value, UINT offsetIn32BitValues = 0);
@@ -185,13 +186,139 @@ public:
     void setUnorderedAccessView(UINT rpIdx, Resource* resource);
     void setDescriptorTable(UINT rpIdx, DescriptorAllocation* descriptorAllocation);
 
-    void setRootState(ID3D12GraphicsCommandList* d3d12CommandList);
+    virtual void setRootState(ID3D12GraphicsCommandList* d3d12CommandList)=0;
+
+protected:
+    Device* device;
+    RootParametersPtr rootParameters;
+    ShaderStagesPtr shaderStages;
+    std::vector<RootParameterValue> rootParameterValues;
+};
+
+class DLL_OBJECT ComputePipelineState {
+public:
+    explicit ComputePipelineState(const RootParametersPtr& rootParameters);
+    ComputePipelineState(const RootParametersPtr& rootParameters, const ShaderModulePtr& shaderModule);
+    RootParametersPtr getRootParameters() { return rootParameters; }
+    ShaderModulePtr getShaderModule() { return shaderModule; }
+    ID3D12PipelineState* getD3D12PipelineStatePtr() { return pipelineState.Get(); }
+    void build(Device* device);
+
+private:
+    RootParametersPtr rootParameters;
+    ShaderModulePtr shaderModule;
+    ComPtr<ID3D12PipelineState> pipelineState;
+};
+
+typedef std::shared_ptr<ComputePipelineState> ComputePipelineStatePtr;
+
+class DLL_OBJECT ComputeData : public Data {
+public:
+    ComputeData(Device* device, const ComputePipelineStatePtr& computePipelineState);
+    ComputeData(Device* device, const RootParametersPtr& rootParameters);
+    ComputeData(Device* device, const RootParametersPtr& rootParameters, const ShaderModulePtr& shaderModule);
+    ~ComputeData() override;
+    void setRootState(ID3D12GraphicsCommandList* d3d12CommandList) override;
+
+private:
+    ComputePipelineStatePtr computePipelineState;
+};
+
+typedef std::shared_ptr<ComputeData> ComputeDataPtr;
+
+
+class DLL_OBJECT RasterPipelineState {
+public:
+    explicit RasterPipelineState(const RootParametersPtr& rootParameters);
+    RasterPipelineState(const RootParametersPtr& rootParameters, const ShaderStagesPtr& shaderStages);
+
+    RootParametersPtr getRootParameters() { return rootParameters; }
+    ShaderStagesPtr getShaderStages() { return shaderStages; }
+    ID3D12PipelineState* getD3D12PipelineStatePtr() { return pipelineState.Get(); }
+    [[nodiscard]] D3D12_PRIMITIVE_TOPOLOGY getPrimitiveTopology() const { return primitiveTopology; }
+    [[nodiscard]] uint32_t getNumRenderTargets() const { return rtFormats.NumRenderTargets; }
+    [[nodiscard]] bool getHasDepthStencil() const { return hasDepthStencil; }
+    [[nodiscard]] DXGI_FORMAT getDepthStencilFormat() const { return dsFormat; }
+
+    void pushInputElementDesc(
+            const std::string& semanticName, UINT semanticIndex, DXGI_FORMAT format, UINT inputSlot,
+            UINT alignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT,
+            D3D12_INPUT_CLASSIFICATION inputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
+            UINT instanceDataStepRate = 0);
+
+    void setPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY _primitiveTopology);
+
+    void setRenderTargetFormat(DXGI_FORMAT format, UINT index = 0);
+    void setDepthStencilFormat(DXGI_FORMAT format);
+
+    void build(Device* device);
+
+private:
+    RootParametersPtr rootParameters;
+    ShaderStagesPtr shaderStages;
+    ComPtr<ID3D12PipelineState> pipelineState;
+    std::vector<std::string> inputElementSemanticNames;
+    std::vector<D3D12_INPUT_ELEMENT_DESC> inputElementDescs;
+    D3D12_PRIMITIVE_TOPOLOGY primitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+    D3D12_PRIMITIVE_TOPOLOGY_TYPE primitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+    D3D12_RT_FORMAT_ARRAY rtFormats{};
+    bool hasDepthStencil = false;
+    DXGI_FORMAT dsFormat = DXGI_FORMAT_D32_FLOAT;
+};
+
+typedef std::shared_ptr<RasterPipelineState> RasterPipelineStatePtr;
+
+class DLL_OBJECT RasterData : public Data {
+public:
+    RasterData(Renderer* renderer, const RasterPipelineStatePtr& computePipelineState);
+    ~RasterData() override;
+
+    void setVertexBuffer(const ResourcePtr& buffer, UINT slot, size_t strideInBytes);
+    void setIndexBuffer(const ResourcePtr& buffer, DXGI_FORMAT format);
+    void setNumInstances(uint32_t _numInstances) { numInstances = _numInstances; }
+    [[nodiscard]] bool getHasIndexBuffer() const { return indexBuffer.get() != nullptr; }
+    [[nodiscard]] size_t getNumIndices() const { return numIndices; }
+    [[nodiscard]] size_t getNumVertices() const { return numVertices; }
+    [[nodiscard]] uint32_t getNumInstances() const { return numInstances; }
+
+    void setDepthStencilView(const ResourcePtr& image, D3D12_DSV_FLAGS flags = D3D12_DSV_FLAG_NONE);
+    void setRenderTargetView(const ResourcePtr& image, UINT index = 0);
+    void setClearColor(const glm::vec4& colorVal, UINT index = std::numeric_limits<UINT>::max());
+    void setClearDepthStencil(float depthVal = 1.0f, uint8_t stencilVal = 0);
+    void disableClearColor(UINT index = std::numeric_limits<UINT>::max());
+    void disableClearDepthStencil();
+
+    void setRootState(ID3D12GraphicsCommandList* d3d12CommandList) override;
 
 private:
     Renderer* renderer;
-    ShaderModulePtr shaderModule;
-    RootParametersPtr rootParameters;
-    std::vector<RootParameterValue> rootParameterValues;
+    RasterPipelineStatePtr rasterPipelineState;
+
+    // Index and vertex data.
+    ResourcePtr indexBuffer;
+    D3D12_INDEX_BUFFER_VIEW indexBufferView{};
+    DXGI_FORMAT indexFormat = DXGI_FORMAT_R32_UINT;
+    size_t numIndices = 0;
+    std::vector<ResourcePtr> vertexBuffers;
+    std::vector<D3D12_VERTEX_BUFFER_VIEW> vertexBufferViews;
+    size_t numVertices = 0;
+    uint32_t numInstances = 1;
+
+    // RTV and DSV data.
+    std::vector<ResourcePtr> renderTargetImages;
+    DescriptorAllocationPtr descriptorAllocationRtv;
+    std::vector<bool> shallClearColors;
+    std::vector<glm::vec4> colorClearValues;
+    bool shallClearColorDefault = false;
+    glm::vec4 colorClearValueDefault = glm::vec4(0.0f);
+    ResourcePtr depthStencilImage;
+    DescriptorAllocationPtr descriptorAllocationDsv;
+    bool shallClearDepthStencil = false;
+    float depthClearValue = 1.0f;
+    uint8_t stencilClearValue = 0;
+    uint32_t renderTargetWidth = 0, renderTargetHeight = 0;
+    D3D12_VIEWPORT viewport{};
+    D3D12_RECT scissorRect{};
 };
 
 typedef std::shared_ptr<ComputeData> ComputeDataPtr;

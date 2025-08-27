@@ -89,13 +89,75 @@ size_t getDXGIFormatNumChannels(DXGI_FORMAT format) {
     }
 }
 
+size_t getDXGIFormatSizeInBytes(DXGI_FORMAT format) {
+    switch (format) {
+        case DXGI_FORMAT_R8_UNORM:
+        case DXGI_FORMAT_R8_SNORM:
+        case DXGI_FORMAT_R8_UINT:
+        case DXGI_FORMAT_R8_SINT:
+        case DXGI_FORMAT_D16_UNORM:
+            return 1;
+        case DXGI_FORMAT_R16_UNORM:
+        case DXGI_FORMAT_R16_SNORM:
+        case DXGI_FORMAT_R16_UINT:
+        case DXGI_FORMAT_R16_SINT:
+        case DXGI_FORMAT_R16_FLOAT:
+        case DXGI_FORMAT_R8G8_UNORM:
+        case DXGI_FORMAT_R8G8_SNORM:
+        case DXGI_FORMAT_R8G8_UINT:
+        case DXGI_FORMAT_R8G8_SINT:
+            return 2;
+        case DXGI_FORMAT_R32_UINT:
+        case DXGI_FORMAT_R32_SINT:
+        case DXGI_FORMAT_R32_FLOAT:
+        case DXGI_FORMAT_D32_FLOAT:
+        case DXGI_FORMAT_R16G16_UNORM:
+        case DXGI_FORMAT_R16G16_SNORM:
+        case DXGI_FORMAT_R16G16_UINT:
+        case DXGI_FORMAT_R16G16_SINT:
+        case DXGI_FORMAT_R16G16_FLOAT:
+        case DXGI_FORMAT_D24_UNORM_S8_UINT:
+        case DXGI_FORMAT_R8G8B8A8_UNORM:
+        case DXGI_FORMAT_R8G8B8A8_SNORM:
+        case DXGI_FORMAT_R8G8B8A8_UINT:
+        case DXGI_FORMAT_R8G8B8A8_SINT:
+        case DXGI_FORMAT_B8G8R8A8_UNORM:
+        case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
+            return 4;
+        case DXGI_FORMAT_R32G32_UINT:
+        case DXGI_FORMAT_R32G32_SINT:
+        case DXGI_FORMAT_R32G32_FLOAT:
+        case DXGI_FORMAT_R16G16B16A16_UNORM:
+        case DXGI_FORMAT_R16G16B16A16_SNORM:
+        case DXGI_FORMAT_R16G16B16A16_UINT:
+        case DXGI_FORMAT_R16G16B16A16_SINT:
+        case DXGI_FORMAT_R16G16B16A16_FLOAT:
+            return 8;
+        case DXGI_FORMAT_R32G32B32_UINT:
+        case DXGI_FORMAT_R32G32B32_SINT:
+        case DXGI_FORMAT_R32G32B32_FLOAT:
+            return 12;
+        case DXGI_FORMAT_R32G32B32A32_UINT:
+        case DXGI_FORMAT_R32G32B32A32_SINT:
+        case DXGI_FORMAT_R32G32B32A32_FLOAT:
+            return 16;
+        default:
+            return 0;
+    }
+}
+
 Resource::Resource(Device* device, const ResourceSettings& resourceSettings)
         : device(device), resourceSettings(resourceSettings) {
 
     auto* d3d12Device = device->getD3D12Device2();
+    D3D12_CLEAR_VALUE clearValue{};
     const D3D12_CLEAR_VALUE* optimizedClearValue = nullptr;
     if (resourceSettings.optimizedClearValue.has_value()) {
-        optimizedClearValue = &resourceSettings.optimizedClearValue.value();
+        memcpy(&clearValue, &resourceSettings.optimizedClearValue.value(), sizeof(D3D12_CLEAR_VALUE));
+        if (clearValue.Format == DXGI_FORMAT_UNKNOWN) {
+            clearValue.Format = resourceSettings.resourceDesc.Format;
+        }
+        optimizedClearValue = &clearValue;
     }
     ThrowIfFailed(d3d12Device->CreateCommittedResource(
             &resourceSettings.heapProperties,

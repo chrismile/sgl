@@ -40,6 +40,8 @@ typedef std::shared_ptr<CommandList> CommandListPtr;
 class DescriptorAllocator;
 class ComputeData;
 typedef std::shared_ptr<ComputeData> ComputeDataPtr;
+class RasterData;
+typedef std::shared_ptr<RasterData> RasterDataPtr;
 
 class DLL_OBJECT Renderer {
 public:
@@ -54,6 +56,7 @@ public:
 
     void dispatch(const ComputeDataPtr& computeData, uint32_t groupCountX);
     void dispatch(const ComputeDataPtr& computeData, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
+    void render(const RasterDataPtr& rasterData);
 
 private:
     Device* device;

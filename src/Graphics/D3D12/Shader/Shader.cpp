@@ -194,6 +194,24 @@ ShaderStages::ShaderStages(const std::vector<ShaderModulePtr>& shaderModules) : 
     }
 }
 
+bool ShaderStages::hasShaderModuleType(ShaderModuleType shaderModuleType) const {
+    for (const auto& shaderModule : shaderModules) {
+        if (shaderModule->getType() == shaderModuleType) {
+            return true;
+        }
+    }
+    return false;
+}
+
+ShaderModulePtr ShaderStages::getShaderModule(ShaderModuleType shaderModuleType) const {
+    for (const auto& shaderModule : shaderModules) {
+        if (shaderModule->getType() == shaderModuleType) {
+            return shaderModule;
+        }
+    }
+    return {};
+}
+
 bool ShaderStages::hasBindingName(const std::string& name) {
     return bindingNameToInfoMap.find(name) != bindingNameToInfoMap.end();
 }

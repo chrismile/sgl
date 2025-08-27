@@ -128,11 +128,12 @@ typedef std::shared_ptr<ShaderModule> ShaderModulePtr;
 
 class DLL_OBJECT ShaderStages {
 public:
-    ShaderStages(const std::vector<ShaderModulePtr>& shaderModules);
+    explicit ShaderStages(const std::vector<ShaderModulePtr>& shaderModules);
 
-    [[nodiscard]] inline bool getHasVertexShader() const { return vertexShaderModule.get() != nullptr; }
     inline std::vector<ShaderModulePtr>& getShaderModules() { return shaderModules; }
     [[nodiscard]] inline const std::vector<ShaderModulePtr>& getShaderModules() const { return shaderModules; }
+    bool hasShaderModuleType(ShaderModuleType shaderModuleType) const;
+    ShaderModulePtr getShaderModule(ShaderModuleType shaderModuleType) const;
 
     bool hasBindingName(const std::string& name);
     const ShaderBindingInfo& getBindingInfoByName(const std::string& name);
@@ -141,7 +142,6 @@ public:
 
 private:
     std::vector<ShaderModulePtr> shaderModules;
-    ShaderModulePtr vertexShaderModule; // Optional
 
     std::unordered_map<std::string, ShaderBindingInfo> bindingNameToInfoMap;
     std::unordered_map<std::string, ShaderVarInfo> variableNameToInfoMap;

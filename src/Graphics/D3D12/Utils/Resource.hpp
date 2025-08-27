@@ -36,13 +36,21 @@ namespace sgl { namespace d3d12 {
 
 class Device;
 
+struct ClearValue {
+    DXGI_FORMAT format;
+    union {
+        glm::vec4 color;
+        D3D12_DEPTH_STENCIL_VALUE depthStencilValue;
+    };
+};
+
 struct ResourceSettings {
     D3D12_RESOURCE_FLAGS resourceFlags = D3D12_RESOURCE_FLAG_NONE;
     D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
     D3D12_RESOURCE_STATES resourceStates = D3D12_RESOURCE_STATE_COMMON;
     D3D12_RESOURCE_DESC resourceDesc{};
     D3D12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-    std::optional<D3D12_CLEAR_VALUE> optimizedClearValue{};
+    std::optional<ClearValue> optimizedClearValue{};
 };
 
 class CommandList;
@@ -51,6 +59,7 @@ class Resource;
 typedef std::shared_ptr<Resource> ResourcePtr;
 
 DLL_OBJECT size_t getDXGIFormatNumChannels(DXGI_FORMAT format);
+DLL_OBJECT size_t getDXGIFormatSizeInBytes(DXGI_FORMAT format);
 
 class DLL_OBJECT Resource {
 public:

@@ -89,4 +89,19 @@ void Renderer::dispatch(
     d3d12CommandList->Dispatch(groupCountX, groupCountY, groupCountZ);
 }
 
+void Renderer::render(const RasterDataPtr& rasterData) {
+    if (currentCommandList->getIsClosed()) {
+        currentCommandList->reset();
+    }
+    auto* d3d12CommandList = currentCommandList->getD3D12GraphicsCommandListPtr();
+    rasterData->setRootState(d3d12CommandList);
+    if (rasterData->getHasIndexBuffer()) {
+        d3d12CommandList->DrawIndexedInstanced(
+                uint32_t(rasterData->getNumIndices()), rasterData->getNumInstances(), 0, 0, 0);
+    } else {
+        d3d12CommandList->DrawInstanced(
+                uint32_t(rasterData->getNumVertices()), rasterData->getNumInstances(), 0, 0);
+    }
+}
+
 }}
