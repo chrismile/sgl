@@ -216,9 +216,9 @@ TEST_F(D3D12Test, RasterPass) {
         glm::vec3 color;
     };
     std::vector<VertexPosAndColor> vertexData = {
-        { {  0.0f, -0.5f }, { 1.0f, 0.5f, 0.0f } },
-        { {  0.5f,  0.5f }, { 1.0f, 0.5f, 0.0f } },
         { { -0.5f,  0.5f }, { 1.0f, 0.5f, 0.0f } },
+        { {  0.5f,  0.5f }, { 1.0f, 0.5f, 0.0f } },
+        { {  0.0f, -0.5f }, { 1.0f, 0.5f, 0.0f } },
     };
     size_t vertexBufferSize = sizeof(VertexPosAndColor) * vertexData.size();
     std::vector<uint32_t> triangleIndexData = { 0, 1, 2 };
