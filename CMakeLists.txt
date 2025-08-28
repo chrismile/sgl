@@ -1312,7 +1312,7 @@ if (USE_ONEAPI)
         target_compile_definitions(sgl PUBLIC SYCL_NO_EXTERNAL_TIMELINE_SEMAPHORE_SUPPORT)
     endif()
     if (NOT SYCL_UNMAP_LINEAR_MEMORY_SUPPORTED)
-        message(FATAL_ERROR "The installed SYCL version does not support unmap_external_linear_memory. Upgrade to oneAPI >= 2025.2 or SYCL >= 6.2.")
+        message(FATAL_ERROR "The installed SYCL version does not support unmap_external_linear_memory. Upgrade to oneAPI >= 2025.3 or SYCL >= 6.2.")
     endif()
 endif()
 
