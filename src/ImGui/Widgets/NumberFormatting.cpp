@@ -26,6 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <limits>
 #include <algorithm>
 #include <Utils/Convert.hpp>
 #include "NumberFormatting.hpp"
