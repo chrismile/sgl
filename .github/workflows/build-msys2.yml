@@ -37,24 +37,24 @@ jobs:
             git
             curl
             wget
-            ${{ matrix.prefix }}-cmake
-            ${{ matrix.prefix }}-toolchain
-            ${{ matrix.prefix }}-glm
-            ${{ matrix.prefix }}-libpng
-            ${{ matrix.prefix }}-tinyxml2
-            ${{ matrix.prefix }}-boost
-            ${{ matrix.prefix }}-libarchive
-            ${{ matrix.prefix }}-SDL2
-            ${{ matrix.prefix }}-SDL2_image
-            ${{ matrix.prefix }}-glew
-            ${{ matrix.prefix }}-glfw
-            ${{ matrix.prefix }}-vulkan-headers
-            ${{ matrix.prefix }}-vulkan-loader
-            ${{ matrix.prefix }}-vulkan-validation-layers
-            ${{ matrix.prefix }}-shaderc
-            ${{ matrix.prefix }}-directx-headers
-            ${{ matrix.prefix }}-opencl-headers
-            ${{ matrix.prefix }}-opencl-icd
+            ${{ matrix.pkg_prefix }}-cmake
+            ${{ matrix.pkg_prefix }}-toolchain
+            ${{ matrix.pkg_prefix }}-glm
+            ${{ matrix.pkg_prefix }}-libpng
+            ${{ matrix.pkg_prefix }}-tinyxml2
+            ${{ matrix.pkg_prefix }}-boost
+            ${{ matrix.pkg_prefix }}-libarchive
+            ${{ matrix.pkg_prefix }}-SDL2
+            ${{ matrix.pkg_prefix }}-SDL2_image
+            ${{ matrix.pkg_prefix }}-glew
+            ${{ matrix.pkg_prefix }}-glfw
+            ${{ matrix.pkg_prefix }}-vulkan-headers
+            ${{ matrix.pkg_prefix }}-vulkan-loader
+            ${{ matrix.pkg_prefix }}-vulkan-validation-layers
+            ${{ matrix.pkg_prefix }}-shaderc
+            ${{ matrix.pkg_prefix }}-directx-headers
+            ${{ matrix.pkg_prefix }}-opencl-headers
+            ${{ matrix.pkg_prefix }}-opencl-icd
 
       - uses: actions/checkout@v2
         with:
