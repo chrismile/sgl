@@ -31,22 +31,38 @@ if(NOT DEFINED ONEAPI_PATH)
         set(ONEAPI_PATH "C:/Program Files (x86)/Intel/oneAPI/compiler/latest" CACHE PATH "Path containing the oneAPI SDK")
     elseif(NOT DEFINED WIN32 AND EXISTS "/opt/intel/oneapi/compiler/latest")
         set(ONEAPI_PATH "/opt/intel/oneapi/compiler/latest" CACHE PATH "Path containing the oneAPI SDK")
+    elseif(DEFINED ONEAPI_COMPILER)
+        cmake_path(GET ONEAPI_COMPILER PARENT_PATH BIN_DIR)
+        cmake_path(GET BIN_DIR PARENT_PATH ONEAPI_PATH)
+        set(ONEAPI_PATH "${ONEAPI_PATH}" CACHE PATH "Path containing the oneAPI SDK")
     endif()
+else()
+    set(ONEAPI_PATH "${ONEAPI_PATH}" CACHE PATH "Path containing the oneAPI SDK")
 endif()
 
 # Check if the compiler is icpx or clang++.
 find_program(ONEAPI_COMPILER NAMES "icpx" "clang++" HINTS "${ONEAPI_PATH}/bin")
 #find_path(ONEAPI_INCLUDE_DIR NAMES sycl.hpp HINTS "${ONEAPI_PATH}/include/sycl")
 #cmake_path(GET ONEAPI_INCLUDE_DIR PARENT_PATH ONEAPI_INCLUDE_DIR)
-mark_as_advanced(ONEAPI_COMPILER ONEAPI_PATH)
+# spir64_gen not added to targets, as currently only using JIT compilation is supported.
+if (CUDA_FOUND OR CUDAToolkit_FOUND)
+    set(ONEAPI_SYCL_TARGETS spir64 nvptx64-nvidia-cuda CACHE STRING "oneAPI SYCL targets")
+else()
+    set(ONEAPI_SYCL_TARGETS spir64 CACHE STRING "oneAPI SYCL targets")
+endif()
+mark_as_advanced(ONEAPI_COMPILER ONEAPI_PATH ONEAPI_SYCL_TARGETS)
 set(ONEAPI_INCLUDE_DIR "${ONEAPI_PATH}/include")
 
-if(ONEAPI_COMPILER)
+if(DEFINED ONEAPI_PATH AND ONEAPI_COMPILER)
     set(SYCL_FOUND "YES")
     message(STATUS "Found SYCL compiler at ${ONEAPI_COMPILER}")
 else()
     set(SYCL_FOUND "NO")
-    message(STATUS "Failed to find SYCL compiler")
+    if (${SYCL_FIND_REQUIRED})
+        message(FATAL_ERROR "Failed to find SYCL compiler")
+    else()
+        message(STATUS "Failed to find SYCL compiler")
+    endif()
 endif()
 
 # For libraries/applications linking to SYCL without compiling device kernels.
@@ -103,24 +119,44 @@ if (SYCL_FOUND)
     endif()
 endif()
 
-# Compile kernels to .dll/.so file (SyclKernels) and link target_name with it.
-function(compile_sycl_kernels target_name sources compiler_flags linker_flags)
+# https://support.codeplay.com/t/ptxas-fatal-optimized-debugging-not-supported-when-building-cmake-on-windows/747
+list(JOIN ONEAPI_SYCL_TARGETS "," ONEAPI_SYCL_TARGETS_STRING)
+list(APPEND ONEAPI_COMPILER_FLAGS "-fsycl-targets=${ONEAPI_SYCL_TARGETS_STRING}")
+list(APPEND ONEAPI_LINKER_FLAGS "-fsycl-targets=${ONEAPI_SYCL_TARGETS_STRING}")
+foreach(target ${ONEAPI_SYCL_TARGETS})
+    if (DEFINED ONEAPI_SYCL_OPTIONS_${target})
+        list(APPEND ONEAPI_COMPILER_FLAGS -Xsycl-target-backend=${target} "${ONEAPI_SYCL_OPTIONS_${target}}")
+        list(APPEND ONEAPI_LINKER_FLAGS -Xsycl-target-backend=${target} "${ONEAPI_SYCL_OPTIONS_${target}}")
+    endif()
+    if ("${target}" STREQUAL "nvptx64-nvidia-cuda")
+        # https://support.codeplay.com/t/ptxas-fatal-optimized-debugging-not-supported-when-building-cmake-on-windows/747/3
+        list(APPEND ONEAPI_LINKER_FLAGS
+                $<$<CONFIG:Debug>:-Xcuda-ptxas>
+                $<$<CONFIG:Debug>:-suppress-debug-info>
+                $<$<CONFIG:Debug>:-g>)
+    endif()
+endforeach()
+
+# Internal function (for single vs multi config generators).
+function(compile_sycl_kernels_single ONEAPI_KERNEL_OUTPUT_DIR sources compiler_flags linker_flags)
+    # Commands for compiling source files into object files.
     foreach(ONEAPI_DEVICE_SOURCE IN LISTS sources)
         set(SOURCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/${ONEAPI_DEVICE_SOURCE}")
-        set(OBJECT_FILE "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/${target_name}.dir/${ONEAPI_DEVICE_SOURCE}${CMAKE_CXX_OUTPUT_EXTENSION}")
+        set(OBJECT_FILE "${ONEAPI_KERNEL_OUTPUT_DIR}/${ONEAPI_DEVICE_SOURCE}${CMAKE_CXX_OUTPUT_EXTENSION}")
         add_custom_command(
                 COMMAND ${ONEAPI_COMPILER} ${compiler_flags} -c "${SOURCE_FILE}" -o "${OBJECT_FILE}"
                 MAIN_DEPENDENCY "${SOURCE_FILE}"
                 OUTPUT "${OBJECT_FILE}"
                 VERBATIM
         )
-        list(APPEND ONEAPI_SOURCE_FILES "${SOURCE_FILE}")
         list(APPEND ONEAPI_OBJECT_FILES "${OBJECT_FILE}")
     endforeach()
-    set(ONEAPI_KERNEL_DLL_PATH "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/${target_name}.dir/${CMAKE_SHARED_LIBRARY_PREFIX}SyclKernels${CMAKE_SHARED_LIBRARY_SUFFIX}")
+
+    # Command for linking object files into a shared library.
+    set(ONEAPI_KERNEL_DLL_PATH "${ONEAPI_KERNEL_OUTPUT_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}SyclKernels${CMAKE_SHARED_LIBRARY_SUFFIX}")
     if (CMAKE_LINK_LIBRARY_SUFFIX)
         # On Windows, link libraries have the suffix .lib (same as import libraries and static libraries).
-        set(ONEAPI_KERNEL_LIB_PATH "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/${target_name}.dir/SyclKernels${CMAKE_IMPORT_LIBRARY_SUFFIX}")
+        set(ONEAPI_KERNEL_LIB_PATH "${ONEAPI_KERNEL_OUTPUT_DIR}/SyclKernels${CMAKE_IMPORT_LIBRARY_SUFFIX}")
     else()
         # This platform has no import library. Just link with the .so object.
         set(ONEAPI_KERNEL_LIB_PATH "${ONEAPI_KERNEL_DLL_PATH}")
@@ -131,11 +167,42 @@ function(compile_sycl_kernels target_name sources compiler_flags linker_flags)
             OUTPUT "${ONEAPI_KERNEL_LIB_PATH}"
             VERBATIM
     )
-    add_custom_command(TARGET ${target_name}
-            POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${ONEAPI_KERNEL_DLL_PATH}" "$<TARGET_FILE_DIR:${target_name}>")
-    add_custom_target(SyclKernels ALL DEPENDS ${ONEAPI_KERNEL_LIB_PATH})
+    set(ONEAPI_KERNEL_DLL_PATH "${ONEAPI_KERNEL_DLL_PATH}" PARENT_SCOPE)
+    set(ONEAPI_KERNEL_LIB_PATH "${ONEAPI_KERNEL_LIB_PATH}" PARENT_SCOPE)
+endfunction()
+
+# Compile kernels to .dll/.so file (SyclKernels) and link target_name with it.
+function(compile_sycl_kernels target_name sources compiler_flags linker_flags)
+    get_property(IS_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+    if (${IS_MULTI_CONFIG})
+        foreach (CONFIG ${CMAKE_CONFIGURATION_TYPES})
+            set(ONEAPI_KERNEL_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/${target_name}.dir/${CONFIG}")
+            compile_sycl_kernels_single("${ONEAPI_KERNEL_OUTPUT_DIR}" "${sources}" "${compiler_flags}" "${linker_flags}")
+            list(APPEND SYCL_CONFIG_DLL_LIST "$<$<CONFIG:${CONFIG}>:${ONEAPI_KERNEL_DLL_PATH}>")
+            list(APPEND SYCL_CONFIG_LIB_LIST "$<$<CONFIG:${CONFIG}>:${ONEAPI_KERNEL_LIB_PATH}>")
+        endforeach()
+
+        # Copy shared library to binary directory.
+        add_custom_command(TARGET ${target_name}
+                POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ${SYCL_CONFIG_DLL_LIST} "$<TARGET_FILE_DIR:${target_name}>")
+
+        # Add the custom target for the kernel library.
+        add_custom_target(SyclKernels ALL DEPENDS ${SYCL_CONFIG_LIB_LIST})
+        target_link_libraries(${target_name} PRIVATE ${SYCL_CONFIG_LIB_LIST})
+    else()
+        set(ONEAPI_KERNEL_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/${target_name}.dir")
+        compile_sycl_kernels_single("${ONEAPI_KERNEL_OUTPUT_DIR}" "${sources}" "${compiler_flags}" "${linker_flags}")
+
+        # Copy shared library to binary directory.
+        add_custom_command(TARGET ${target_name}
+                POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${ONEAPI_KERNEL_DLL_PATH}" "$<TARGET_FILE_DIR:${target_name}>")
+
+        # Add the custom target for the kernel library.
+        add_custom_target(SyclKernels ALL DEPENDS ${ONEAPI_KERNEL_LIB_PATH})
+        target_link_libraries(${target_name} PRIVATE "${ONEAPI_KERNEL_LIB_PATH}")
+    endif()
+
     add_dependencies(${target_name} SyclKernels)
-    target_link_libraries(${target_name} PRIVATE "${ONEAPI_KERNEL_LIB_PATH}")
     if (WIN32)
         set(DLLIMPORT "__declspec(dllimport)")
         target_compile_definitions(${target_name} PRIVATE DLL_OBJECT_SYCL=${DLLIMPORT})
@@ -150,7 +217,7 @@ endfunction()
 function(setup_check_cxx_sycl)
     set(CMAKE_TRY_COMPILE_CONFIGURATION "Release" PARENT_SCOPE)
     set(CMAKE_REQUIRED_INCLUDES "${ONEAPI_INCLUDE_DIR}" PARENT_SCOPE)
-    if(CMAKE_VERSION GREATER_EQUAL 3.31)
+    if (CMAKE_VERSION GREATER_EQUAL 3.31)
         set(CMAKE_REQUIRED_LINK_DIRECTORIES "${ONEAPI_PATH}/lib" PARENT_SCOPE)
         if (WIN32)
             set(CMAKE_REQUIRED_LIBRARIES "sycl8.lib" PARENT_SCOPE)
