@@ -45,7 +45,7 @@ find_program(ONEAPI_COMPILER NAMES "icpx" "clang++" HINTS "${ONEAPI_PATH}/bin")
 #find_path(ONEAPI_INCLUDE_DIR NAMES sycl.hpp HINTS "${ONEAPI_PATH}/include/sycl")
 #cmake_path(GET ONEAPI_INCLUDE_DIR PARENT_PATH ONEAPI_INCLUDE_DIR)
 # spir64_gen not added to targets, as currently only using JIT compilation is supported.
-if (CUDA_FOUND OR CUDAToolkit_FOUND)
+if ((CUDA_FOUND OR CUDAToolkit_FOUND) AND NOT DEFINED SUPPORT_ONEAPI_CUDA)
     set(ONEAPI_SYCL_TARGETS spir64 nvptx64-nvidia-cuda CACHE STRING "oneAPI SYCL targets")
 else()
     set(ONEAPI_SYCL_TARGETS spir64 CACHE STRING "oneAPI SYCL targets")
