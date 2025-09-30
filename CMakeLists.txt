@@ -1607,6 +1607,7 @@ if (${USE_GTEST})
     # environments. We disable it for oneAPI tests due to SYCL DLLs not being placed next to the test app.
     if (USE_ONEAPI)
         gtest_add_tests(TARGET sgl_test)
+        copy_sycl_libs_to_target(sgl_test)
     else()
         gtest_discover_tests(sgl_test)
     endif()

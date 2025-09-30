@@ -112,7 +112,9 @@ protected:
     }
 
     void TearDown() override {
-        device->waitIdle();
+        if (device) {
+            device->waitIdle();
+        }
         delete device;
         delete instance;
         delete syclQueue;
