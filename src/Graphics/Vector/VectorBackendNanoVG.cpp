@@ -489,6 +489,7 @@ void VectorBackendNanoVG::renderEnd() {
             interopSyncVkGl->getRenderFinishedSemaphore()->signalSemaphoreGl(textures, dstLayouts);
         }
 
+#ifndef DISABLE_MESA_INTEROP_WORKAROUND
         /*
          * GL_EXT_semaphore is broken in all Mesa drivers as of 2025-05-31.
          * - https://gitlab.freedesktop.org/mesa/mesa/-/issues/12650
@@ -501,6 +502,7 @@ void VectorBackendNanoVG::renderEnd() {
                 && device->getIsDriverVersionLessThan(vk::DriverVersion{ 26, 0, 0, 0 })) {
             glFinish();
         }
+#endif
 
         sgl::vk::CommandBufferPtr commandBufferPost =
                 commandBuffersPost.at(swapchain ? swapchain->getCurrentFrame() : 0);

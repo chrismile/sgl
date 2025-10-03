@@ -85,6 +85,10 @@ option(USE_TBB "Build with TBB threading support instead of using OpenMP." ${DEF
 option(TRACY_ENABLE "Build with Tracy Profiler support." OFF)
 option(EMSCRIPTEN_DEBUG "Build with Emscripten debug symbols." OFF)
 
+# For debugging purposes; may be removed in the future.
+# OpenGL-Vulkan semaphore sharing broken in Mesa drivers: https://gitlab.freedesktop.org/mesa/mesa/-/issues/12650
+option(DISABLE_MESA_INTEROP_WORKAROUND "Disable the Mesa driver OpenGL-Vulkan semaphore sharing workaround." OFF)
+
 if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     # Build as static library if used as a submodule.
     set(BUILD_STATIC_LIBRARY ON)
@@ -572,6 +576,10 @@ if (${BUILD_STATIC_LIBRARY})
     target_compile_definitions(sgl INTERFACE SGL_STATIC_LIBRARY)
 else()
     add_library(sgl SHARED ${SOURCES})
+endif()
+
+if (${DISABLE_MESA_INTEROP_WORKAROUND})
+    target_compile_definitions(sgl PRIVATE DISABLE_MESA_INTEROP_WORKAROUND)
 endif()
 
 if (UNIX AND NOT APPLE)
