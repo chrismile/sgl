@@ -45,7 +45,7 @@ find_program(ONEAPI_COMPILER NAMES "icpx" "clang++" HINTS "${ONEAPI_PATH}/bin")
 #find_path(ONEAPI_INCLUDE_DIR NAMES sycl.hpp HINTS "${ONEAPI_PATH}/include/sycl")
 #cmake_path(GET ONEAPI_INCLUDE_DIR PARENT_PATH ONEAPI_INCLUDE_DIR)
 # spir64_gen not added to targets, as currently only using JIT compilation is supported.
-if ((CUDA_FOUND OR CUDAToolkit_FOUND) AND NOT DEFINED SUPPORT_ONEAPI_CUDA)
+if ((CUDA_FOUND OR CUDAToolkit_FOUND) AND (NOT DEFINED SUPPORT_ONEAPI_CUDA OR SUPPORT_ONEAPI_CUDA))
     set(ONEAPI_SYCL_TARGETS spir64 nvptx64-nvidia-cuda CACHE STRING "oneAPI SYCL targets")
 else()
     set(ONEAPI_SYCL_TARGETS spir64 CACHE STRING "oneAPI SYCL targets")
@@ -143,6 +143,8 @@ function(compile_sycl_kernels_single ONEAPI_KERNEL_OUTPUT_DIR sources compiler_f
     foreach(ONEAPI_DEVICE_SOURCE IN LISTS sources)
         set(SOURCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/${ONEAPI_DEVICE_SOURCE}")
         set(OBJECT_FILE "${ONEAPI_KERNEL_OUTPUT_DIR}/${ONEAPI_DEVICE_SOURCE}${CMAKE_CXX_OUTPUT_EXTENSION}")
+        get_filename_component(OUTPUT_DIR "${OBJECT_FILE}" DIRECTORY)
+        file(MAKE_DIRECTORY "${OUTPUT_DIR}")
         add_custom_command(
                 COMMAND ${ONEAPI_COMPILER} ${compiler_flags} -c "${SOURCE_FILE}" -o "${OBJECT_FILE}"
                 MAIN_DEPENDENCY "${SOURCE_FILE}"
@@ -215,6 +217,9 @@ endfunction()
 
 function(helper_sycl_copy_lib target_name pattern)
     if (WIN32)
+        if (NOT EXISTS "${pattern}.dll")
+            return()
+        endif()
         # ".dll" (release) or "d.dll" (debug) need to be prepended on Windows.
         get_property(IS_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
         if (${IS_MULTI_CONFIG})

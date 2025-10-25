@@ -860,7 +860,7 @@ void RasterData::setRootState(ID3D12GraphicsCommandList* d3d12CommandList) {
     for (size_t i = 0; i < renderTargetImages.size(); i++) {
         if (shallClearColors.at(i)) {
             d3d12CommandList->ClearRenderTargetView(
-                    descriptorAllocationRtv->getCPUDescriptorHandle(i),
+                    descriptorAllocationRtv->getCPUDescriptorHandle(uint32_t(i)),
                     &colorClearValues.at(i).x, 1, &scissorRect);
         }
     }
