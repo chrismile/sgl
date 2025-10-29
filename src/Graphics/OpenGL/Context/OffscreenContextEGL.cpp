@@ -278,7 +278,16 @@ bool OffscreenContextEGL::initialize() {
                 sgl::Logfile::get()->writeError(
                         "Error in OffscreenContextEGL::initialize: eglQueryDeviceBinaryEXT failed (error code: "
                         + std::to_string(errorCode) + ").", false);
-                return false;
+                /*
+                 * Mesa can expose devices governed by the proprietary NVIDIA driver, see:
+                 * https://gitlab.freedesktop.org/mesa/mesa/-/issues/14206
+                 * We should not exit when eglQueryDeviceBinaryEXT fails with EGL_BAD_DEVICE_EXT, but just skip the device.
+                 */
+                if (errorCode == EGL_BAD_DEVICE_EXT) {
+                    continue;
+                } else {
+                    return false;
+                }
             }
             if (f->eglQueryDeviceBinaryEXT && strncmp(
                     (const char*)deviceUuid, (const char*)physicalDeviceIdProperties.deviceUUID, UUID_SIZE) == 0) {
