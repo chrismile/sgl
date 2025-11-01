@@ -1336,6 +1336,10 @@ void Device::createLogicalDeviceAndQueues(
 
         // SPIR-V 1.6 needs VkPhysicalDeviceVulkan13Features::maintenance4.
         requestedDeviceFeatures.requestedVulkan13Features.maintenance4 = VK_TRUE;
+#if GLSLANG_VERSION_MAJOR > 15 || (GLSLANG_VERSION_MAJOR == 15 && GLSLANG_VERSION_MINOR >= 4)
+        // See https://github.com/KhronosGroup/glslang/blob/main/CHANGES.md#1540-2025-06-26
+        requestedDeviceFeatures.requestedVulkan13Features.shaderDemoteToHelperInvocation = VK_TRUE;
+#endif
         hasRequestedVulkan13Features = true;
     }
 #endif
