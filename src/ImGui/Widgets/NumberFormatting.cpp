@@ -132,11 +132,15 @@ std::string getNiceMemoryStringFloor(uint64_t numBytes, int digits) {
     return getNiceNumberStringFloor(memoryInUnits, digits) + UNIT_NAME_MAP[unit];
 }
 
+bool isExactlyRepresentable(uint64_t numBytes, int digits) {
+    return getNiceMemoryStringFloor(numBytes, digits) == getNiceMemoryStringFloor(numBytes, digits + 1);
+}
+
 std::string getNiceMemoryStringDifference(uint64_t numBytes, int digits, bool floor) {
     auto numBytesBitCeil = sgl::bit_ceil(numBytes);
     auto remainder = numBytesBitCeil - numBytes;
     auto numBitsSetRemainder = sgl::popcount(remainder);
-    if (numBitsSetRemainder == 1) {
+    if (numBitsSetRemainder == 1 && !isExactlyRepresentable(numBytes, digits)) {
         return getNiceMemoryString(numBytesBitCeil, digits) + " - " + getNiceMemoryString(remainder, digits);
     } else if (floor) {
         return getNiceMemoryStringFloor(numBytes, digits);

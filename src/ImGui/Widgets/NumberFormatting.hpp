@@ -47,11 +47,12 @@ DLL_OBJECT std::string getNiceMemoryStringFloor(uint64_t numBytes, int digits);
 
 /**
  * Same as the functions above, but tries to express memory amounts as differences of two power-of-two values if
- * possible. Examples:
+ * possible (and the numbers would otherwise not be exactly representable at the selected digits). Examples:
  * - 4294967296 -> 4GiB
  * - 4294967296 -> 4GiB - 1B
  * - 4292870144 -> 4GiB - 2MiB
  * - 4292870120 -> 4GiB (no floor) or 3.99GiB (floor) for digits = 2
+ * - 25769803776 -> 24GiB
  * @param numBytes The memory amount (in bytes) to convert to a nicely formatted string.
  * @param digits The number of digits to use for the individual values.
  * @param floor Whether to use @see getNiceMemoryStringFloor or @see getNiceMemoryString if a difference expression
