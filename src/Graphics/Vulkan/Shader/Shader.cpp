@@ -180,7 +180,7 @@ void ShaderModule::createReflectData(const std::vector<uint32_t>& spirvCode) {
     for (uint32_t entryPointIdx = 0; entryPointIdx < module.entry_point_count; entryPointIdx++) {
         const auto& entryPoint = module.entry_points[entryPointIdx];
         EntryPointInfo entryPointInfo{};
-        for (uint32_t execModeIdx = 0; execModeIdx < module.spirv_execution_model; execModeIdx++) {
+        for (uint32_t execModeIdx = 0; execModeIdx < entryPoint.execution_mode_count; execModeIdx++) {
             if (entryPoint.execution_modes[execModeIdx] == SpvExecutionModeShader64BitIndexingEXT) {
                 entryPointInfo.use64BitIndexing = true;
             }
