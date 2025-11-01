@@ -2873,7 +2873,7 @@ uint32_t Device::findMemoryTypeIndex(uint32_t memoryTypeBits, VkMemoryPropertyFl
     return std::numeric_limits<uint32_t>::max();
 }
 
-VkDeviceSize Device::findMemoryHeapIndex(VkMemoryHeapFlagBits heapFlags) {
+uint32_t Device::findMemoryHeapIndex(VkMemoryHeapFlagBits heapFlags) {
     for (uint32_t heapIdx = 0; heapIdx < physicalDeviceMemoryProperties.memoryHeapCount; heapIdx++) {
         if ((physicalDeviceMemoryProperties.memoryHeaps[heapIdx].flags & heapFlags) == heapFlags) {
             return heapIdx;
@@ -2889,10 +2889,10 @@ VkDeviceSize Device::getMemoryHeapBudget(uint32_t memoryHeapIndex) {
         sgl::Logfile::get()->throwError("Error in Device::getMemoryHeapBudget: Memory heap index out of bounds.");
     }
 
-    VkPhysicalDeviceMemoryBudgetPropertiesEXT memoryBudgetProperties = {};
+    VkPhysicalDeviceMemoryBudgetPropertiesEXT memoryBudgetProperties{};
     memoryBudgetProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT;
 
-    VkPhysicalDeviceMemoryProperties2 memoryProperties2 = {};
+    VkPhysicalDeviceMemoryProperties2 memoryProperties2{};
     memoryProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2;
     memoryProperties2.pNext = &memoryBudgetProperties;
     vkGetPhysicalDeviceMemoryProperties2(physicalDevice, &memoryProperties2);

@@ -172,7 +172,7 @@ inline uint64_t popcount(uint64_t number) {
     number = number - ((number >> 1) & 0x5555555555555555);
     number = (number & 0x3333333333333333) + ((number >> 2) & 0x3333333333333333);
     number = (number + (number >> 4)) & 0x0F0F0F0F0F0F0F0F;
-    auto value = (number * 0x0101010101010101) >> 56;
+    return (number * 0x0101010101010101) >> 56;
 #endif
 }
 

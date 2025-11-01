@@ -53,7 +53,8 @@ public:
     virtual float getYFractional() { return float(getY()); }
     virtual std::pair<float, float> mouseMovementFractional() { auto pt = mouseMovement(); return { float(pt.x), float(pt.y) }; }
     virtual bool mouseMoved()=0;
-    virtual void warp(const Point2 &windowPosition)=0;
+    virtual void warp(const Point2& windowPosition)=0;
+    virtual void warpFractional(const std::pair<float, float>& windowPosition) { warp({int(windowPosition.first), int(windowPosition.second)}); }
 
     /// Mouse buttons
     virtual bool isButtonDown(int button)=0;

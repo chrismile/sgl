@@ -75,7 +75,10 @@ public:
     std::pair<float, float> mouseMovementFractional() override;
 #endif
     bool mouseMoved() override;
-    void warp(const Point2 &windowPosition) override;
+    void warp(const Point2& windowPosition) override;
+#ifdef SUPPORT_SDL3
+    void warpFractional(const std::pair<float, float>& windowPosition) override;
+#endif
 
     /// Mouse buttons
     bool isButtonDown(int button) override;

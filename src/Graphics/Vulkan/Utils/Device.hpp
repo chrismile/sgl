@@ -429,6 +429,7 @@ public:
     inline uint32_t getMaxStorageBufferRange() const { return physicalDeviceProperties.limits.maxStorageBufferRange; }
     inline VkDeviceSize getMaxMemoryAllocationSize() const { return physicalDeviceVulkan11Properties.maxMemoryAllocationSize; }
     inline const VkPhysicalDeviceSparseProperties& getSparseProperties() const { return physicalDeviceProperties.sparseProperties; }
+    inline const VkPhysicalDeviceMemoryProperties& getMemoryProperties() const { return physicalDeviceMemoryProperties; }
     inline const VkPhysicalDeviceFeatures& getPhysicalDeviceFeatures() { return physicalDeviceFeatures; }
 #ifdef VK_VERSION_1_1
     const VkPhysicalDeviceVulkan11Features& getPhysicalDeviceVulkan11Features() const { return physicalDeviceVulkan11Features; }
@@ -601,7 +602,7 @@ public:
      * @param heapFlags The heap flags.
      * @return The index of the first memory heap with the requested flags.
      */
-    VkDeviceSize findMemoryHeapIndex(VkMemoryHeapFlagBits heapFlags);
+    uint32_t findMemoryHeapIndex(VkMemoryHeapFlagBits heapFlags);
 
     /**
      * Returns the amount of available heap memory.

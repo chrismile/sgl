@@ -101,13 +101,23 @@ bool SDLMouse::mouseMoved() {
     return state.pos.x - oldState.pos.x != 0 || state.pos.y - oldState.pos.y != 0;
 }
 
-void SDLMouse::warp(const Point2 &windowPosition) {
-    SDLWindow *mainWindow = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
-    SDL_WarpMouseInWindow(mainWindow->getSDLWindow(), windowPosition.x, windowPosition.y);
+void SDLMouse::warp(const Point2& windowPosition) {
+    auto* mainWindow = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
+    SDL_WarpMouseInWindow(mainWindow->getSDLWindow(), SCROLL_TYPE(windowPosition.x), SCROLL_TYPE(windowPosition.y));
     state.pos.x = SCROLL_TYPE(windowPosition.x);
     state.pos.y = SCROLL_TYPE(windowPosition.y);
     //EventManager::get()->queueEvent(EventDataPtr(new EventData(MOUSE_MOVED_EVENT)));
 }
+
+#ifdef SUPPORT_SDL3
+void SDLMouse::warpFractional(const std::pair<float, float>& windowPosition) {
+    auto* mainWindow = static_cast<SDLWindow*>(AppSettings::get()->getMainWindow());
+    SDL_WarpMouseInWindow(mainWindow->getSDLWindow(), windowPosition.first, windowPosition.second);
+    state.pos.x = SCROLL_TYPE(windowPosition.first);
+    state.pos.y = SCROLL_TYPE(windowPosition.second);
+    //EventManager::get()->queueEvent(EventDataPtr(new EventData(MOUSE_MOVED_EVENT)));
+}
+#endif
 
 
 // Mouse buttons

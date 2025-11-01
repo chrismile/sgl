@@ -121,6 +121,14 @@ void GlfwMouse::warp(const Point2 &windowPosition) {
     //EventManager::get()->queueEvent(EventDataPtr(new EventData(MOUSE_MOVED_EVENT)));
 }
 
+void GlfwMouse::warpFractional(const std::pair<float, float>& windowPosition) {
+    auto* mainWindow = static_cast<GlfwWindow*>(AppSettings::get()->getMainWindow());
+    glfwSetCursorPos(mainWindow->getGlfwWindow(), double(windowPosition.first), double(windowPosition.second));
+    state.posX = double(windowPosition.first);
+    state.posY = double(windowPosition.second);
+    //EventManager::get()->queueEvent(EventDataPtr(new EventData(MOUSE_MOVED_EVENT)));
+}
+
 
 // Mouse buttons
 bool GlfwMouse::isButtonDown(int button) {
