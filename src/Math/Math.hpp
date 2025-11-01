@@ -31,7 +31,7 @@
 
 #include <cmath>
 #include <cstdint>
-#if _cplusplus >= 201907L
+#if __cplusplus >= 201907L
 #include <bit>
 #endif
 
@@ -147,8 +147,8 @@ inline int ceilDiv(int a, int b) {
  * For more details see:
  * https://stackoverflow.com/questions/109023/how-to-count-the-number-of-set-bits-in-a-32-bit-integer
  */
-inline uint32_t getNumberOfBitsSet(uint32_t number) {
-#if _cplusplus >= 201907L
+inline uint32_t popcount(uint32_t number) {
+#if __cplusplus >= 201907L
     return std::popcount(number);
 #elif defined(__GNUC__)
     return __builtin_popcount(number);
@@ -157,6 +157,48 @@ inline uint32_t getNumberOfBitsSet(uint32_t number) {
     number = (number & 0x33333333) + ((number >> 2) & 0x33333333);
     number = (number + (number >> 4)) & 0x0F0F0F0F;
     return (number * 0x01010101) >> 24;
+#endif
+}
+inline uint32_t getNumberOfBitsSet(uint32_t number) {
+    return popcount(number);
+}
+
+inline uint64_t popcount(uint64_t number) {
+#if __cplusplus >= 201907L
+    return std::popcount(number);
+#elif defined(__GNUC__)
+    return __builtin_popcountll(number);
+#else
+    number = number - ((number >> 1) & 0x5555555555555555);
+    number = (number & 0x3333333333333333) + ((number >> 2) & 0x3333333333333333);
+    number = (number + (number >> 4)) & 0x0F0F0F0F0F0F0F0F;
+    auto value = (number * 0x0101010101010101) >> 56;
+#endif
+}
+
+// See: https://en.cppreference.com/w/cpp/numeric/bit_ceil.html
+inline uint64_t bit_width(uint64_t number) {
+#if __cplusplus >= 202002L
+    return std::bit_width(number);
+#elif defined(__GNUC__)
+    return number == 0 ? 0 : 64 - __builtin_clzll(number);
+#else
+    uint32_t bits;
+    for (bits = 0u; number != 0ull; bits++) {
+        number >>= 1ull;
+    }
+    return bits;
+#endif
+}
+
+// See: https://en.cppreference.com/w/cpp/numeric/bit_ceil.html
+inline uint64_t bit_ceil(uint64_t number) {
+#if __cplusplus >= 202002L
+    return std::bit_ceil(number);
+#elif defined(__GNUC__)
+    return number <= 1 ? 1 : 1ull << (64 - __builtin_clzll(number - 1));
+#else
+    return number <= 1 ? 1 : 1ull << bit_width(number - 1);
 #endif
 }
 

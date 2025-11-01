@@ -28,6 +28,7 @@
 
 #include <limits>
 #include <algorithm>
+#include <Math/Math.hpp>
 #include <Utils/Convert.hpp>
 #include "NumberFormatting.hpp"
 
@@ -85,6 +86,63 @@ std::string getNiceMemoryString(uint64_t numBytes, int digits) {
     }
     auto memoryInUnits = float(double(numBytes) / double(unitSize));
     return getNiceNumberString(memoryInUnits, digits) + UNIT_NAME_MAP[unit];
+}
+
+
+/* New functions with more functionality. */
+
+/// Removes decimal points if more than maxDigits digits are used.
+std::string getNiceNumberStringFloor(double number, int digits) {
+    int maxDigits = digits + 2; // Add 2 digits for '.' and one digit afterwards.
+    std::ostringstream ostr;
+    ostr.precision(std::numeric_limits<double>::digits10);
+    ostr << std::fixed;
+    ostr << number;
+    std::string outString = removeTrailingZeros(ostr.str());
+
+    // Can we remove digits after the decimal point?
+    size_t dotPos = outString.find('.');
+    if (int(outString.size()) > maxDigits && dotPos != std::string::npos) {
+        size_t substrSize = dotPos;
+        if (int(dotPos) < maxDigits - 1) {
+            substrSize = maxDigits;
+        }
+        outString = outString.substr(0, substrSize);
+    }
+
+    // Still too large?
+    if (int(outString.size()) > maxDigits || (outString == "0" && number > std::numeric_limits<float>::epsilon())) {
+        outString = sgl::toString(number, std::max(digits - 2, 1), false, false, true);
+    }
+    return outString;
+}
+
+std::string getNiceMemoryStringFloor(uint64_t numBytes, int digits) {
+    const char* UNIT_NAME_MAP[5] = {
+            "B", "KiB", "MiB", "GiB", "TiB"
+    };
+    constexpr uint64_t oneMaxUnit = 1024ull * 1024ull * 1024ull * 1024ull;
+    int unit = 4;
+    uint64_t unitSize = oneMaxUnit;
+    while (numBytes * 10 < unitSize && unit != 0) {
+        unitSize /= 1024ull;
+        unit--;
+    }
+    auto memoryInUnits = double(numBytes) / double(unitSize);
+    return getNiceNumberStringFloor(memoryInUnits, digits) + UNIT_NAME_MAP[unit];
+}
+
+std::string getNiceMemoryStringDifference(uint64_t numBytes, int digits, bool floor) {
+    auto numBytesBitCeil = sgl::bit_ceil(numBytes);
+    auto remainder = numBytesBitCeil - numBytes;
+    auto numBitsSetRemainder = sgl::popcount(remainder);
+    if (numBitsSetRemainder == 1) {
+        return getNiceMemoryString(numBytesBitCeil, digits) + " - " + getNiceMemoryString(remainder, digits);
+    } else if (floor) {
+        return getNiceMemoryStringFloor(numBytes, digits);
+    } else {
+        return getNiceMemoryString(numBytes, digits);
+    }
 }
 
 }

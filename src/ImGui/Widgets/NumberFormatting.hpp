@@ -42,6 +42,24 @@ DLL_OBJECT std::string getNiceNumberString(float number, int digits);
 /// Same as above, but uses the best unit out of {B, KiB, MiB, GiB, TiB}.
 DLL_OBJECT std::string getNiceMemoryString(uint64_t numBytes, int digits);
 
+/// Same as above, but always rounds down in case results are not exact.
+DLL_OBJECT std::string getNiceMemoryStringFloor(uint64_t numBytes, int digits);
+
+/**
+ * Same as the functions above, but tries to express memory amounts as differences of two power-of-two values if
+ * possible. Examples:
+ * - 4294967296 -> 4GiB
+ * - 4294967296 -> 4GiB - 1B
+ * - 4292870144 -> 4GiB - 2MiB
+ * - 4292870120 -> 4GiB (no floor) or 3.99GiB (floor) for digits = 2
+ * @param numBytes The memory amount (in bytes) to convert to a nicely formatted string.
+ * @param digits The number of digits to use for the individual values.
+ * @param floor Whether to use @see getNiceMemoryStringFloor or @see getNiceMemoryString if a difference expression
+ * is not possible.
+ * @return A nicely formatted memory amount string.
+ */
+DLL_OBJECT std::string getNiceMemoryStringDifference(uint64_t numBytes, int digits, bool floor);
+
 }
 
 #endif //SGL_NUMBERFORMATTING_HPP
