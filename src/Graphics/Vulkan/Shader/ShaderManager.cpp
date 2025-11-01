@@ -49,6 +49,7 @@
 #ifdef SUPPORT_GLSLANG_BACKEND
 #include <glslang/Public/ShaderLang.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
+#include <glslang/build_info.h>
 
 static void initializeBuiltInResourceGlslang(TBuiltInResource &defaultTBuiltInResource) {
     defaultTBuiltInResource = {};
@@ -567,7 +568,11 @@ ShaderModulePtr ShaderManagerVk::loadAssetShaderc(
 #if defined(VK_VERSION_1_3) && VK_HEADER_VERSION >= 204 && !defined(SHADERC_NO_VULKAN_1_3_SUPPORT)
     else if (device->getInstance()->getInstanceVulkanVersion() < VK_MAKE_API_VERSION(0, 1, 3, 0)
              || device->getApiVersion() < VK_MAKE_API_VERSION(0, 1, 3, 0)
-             || device->getInstance()->getApplicationInfo().apiVersion < VK_MAKE_API_VERSION(0, 1, 3, 0)) {
+             || device->getInstance()->getApplicationInfo().apiVersion < VK_MAKE_API_VERSION(0, 1, 3, 0)
+#if defined(SUPPORT_GLSLANG_BACKEND) && (GLSLANG_VERSION_MAJOR > 15 || (GLSLANG_VERSION_MAJOR == 15 && GLSLANG_VERSION_MINOR >= 4))
+             || !device->getPhysicalDeviceVulkan13Features().shaderDemoteToHelperInvocation
+#endif
+             ) {
         compileOptions.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_2);
         compileOptions.SetTargetSpirv(shaderc_spirv_version_1_5);
     } else {
@@ -670,7 +675,11 @@ ShaderModulePtr ShaderManagerVk::loadAssetGlslang(
 #if defined(VK_VERSION_1_3) && VK_HEADER_VERSION >= 204 && !defined(GLSLANG_NO_VULKAN_1_3_SUPPORT)
     else if (device->getInstance()->getInstanceVulkanVersion() < VK_MAKE_API_VERSION(0, 1, 3, 0)
              || device->getApiVersion() < VK_MAKE_API_VERSION(0, 1, 3, 0)
-             || device->getInstance()->getApplicationInfo().apiVersion < VK_MAKE_API_VERSION(0, 1, 3, 0)) {
+             || device->getInstance()->getApplicationInfo().apiVersion < VK_MAKE_API_VERSION(0, 1, 3, 0)
+#if GLSLANG_VERSION_MAJOR > 15 || (GLSLANG_VERSION_MAJOR == 15 && GLSLANG_VERSION_MINOR >= 4)
+             || !device->getPhysicalDeviceVulkan13Features().shaderDemoteToHelperInvocation
+#endif
+             ) {
         targetClientVersion = glslang::EShTargetVulkan_1_2;
         targetLanguageVersion = glslang::EShTargetSpv_1_5;
     } else {
