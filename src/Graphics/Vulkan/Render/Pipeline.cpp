@@ -33,6 +33,15 @@
 
 namespace sgl { namespace vk {
 
+Pipeline::Pipeline(Device* device, ShaderStagesPtr shaderStages) : device(device), shaderStages(std::move(shaderStages)) {
+#ifdef VK_EXT_shader_64bit_indexing
+    if (shaderStages->getUse64BitIndexing()) {
+        pipelineCreateFlags2CreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CREATE_FLAGS_2_CREATE_INFO;
+        pipelineCreateFlags2CreateInfo.flags = VK_PIPELINE_CREATE_2_64_BIT_INDEXING_BIT_EXT;
+    }
+#endif
+}
+
 void Pipeline::createPipelineLayout() {
     const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts = shaderStages->getVkDescriptorSetLayouts();
     const std::vector<VkPushConstantRange>& pushConstantRanges = shaderStages->getVkPushConstantRanges();
@@ -49,6 +58,14 @@ void Pipeline::createPipelineLayout() {
         Logfile::get()->throwError(
                 "Error in Pipeline::createPipelineLayout: Could not create the pipeline layout.");
     }
+}
+
+void Pipeline::setPipelineCreateInfoPNextInternal(const void*& pNext) {
+#ifdef VK_EXT_shader_64bit_indexing
+    if (shaderStages->getUse64BitIndexing()) {
+        pNext = &pipelineCreateFlags2CreateInfo;
+    }
+#endif
 }
 
 Pipeline::~Pipeline() {

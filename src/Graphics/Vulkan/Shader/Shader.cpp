@@ -170,6 +170,25 @@ void ShaderModule::createReflectData(const std::vector<uint32_t>& spirvCode) {
     }
 
 
+    // Get reflection data on SPIR-V capabilities.
+    for (uint32_t capabilityIdx = 0; capabilityIdx < module.capability_count; capabilityIdx++) {
+        if (module.capabilities[capabilityIdx].value == SpvCapabilityShader64BitIndexingEXT) {
+            use64BitIndexing = true;
+            break;
+        }
+    }
+    for (uint32_t entryPointIdx = 0; entryPointIdx < module.entry_point_count; entryPointIdx++) {
+        const auto& entryPoint = module.entry_points[entryPointIdx];
+        EntryPointInfo entryPointInfo{};
+        for (uint32_t execModeIdx = 0; execModeIdx < module.spirv_execution_model; execModeIdx++) {
+            if (entryPoint.execution_modes[execModeIdx] == SpvExecutionModeShader64BitIndexingEXT) {
+                entryPointInfo.use64BitIndexing = true;
+            }
+        }
+        entryPointInfos.insert(std::make_pair(entryPoint.name, entryPointInfo));
+    }
+
+
     spvReflectDestroyShaderModule(&module);
 }
 
@@ -179,6 +198,14 @@ const std::vector<InterfaceVariableDescriptor>& ShaderModule::getInputVariableDe
 
 const std::map<uint32_t, std::vector<DescriptorInfo>>& ShaderModule::getDescriptorSetsInfo() const {
     return descriptorSetsInfo;
+}
+
+const EntryPointInfo* ShaderModule::getEntryPointInfo(const std::string& name) const {
+    const auto it = entryPointInfos.find(name);
+    if (it == entryPointInfos.end()) {
+        return nullptr;
+    }
+    return &it->second;
 }
 
 
@@ -194,6 +221,12 @@ ShaderStages::ShaderStages(
         shaderStageCreateInfo.pName = "main";
         shaderStageCreateInfo.pSpecializationInfo = nullptr;
         vkShaderStages.push_back(shaderStageCreateInfo);
+        if (shaderModule->getUse64BitIndexing()) {
+            auto entryPointInfo = shaderModule->getEntryPointInfo("main");
+            if (entryPointInfo && entryPointInfo->use64BitIndexing) {
+                use64BitIndexing = true;
+            }
+        }
 
         if (shaderModule->getShaderModuleType() == ShaderModuleType::VERTEX) {
             vertexShaderModule = shaderModule;
@@ -252,6 +285,12 @@ ShaderStages::ShaderStages(
         }
 #endif
         vkShaderStages.push_back(shaderStageCreateInfo);
+        if (shaderModule->getUse64BitIndexing()) {
+            auto entryPointInfo = shaderModule->getEntryPointInfo("main");
+            if (entryPointInfo && entryPointInfo->use64BitIndexing) {
+                use64BitIndexing = true;
+            }
+        }
 
         if (shaderModule->getShaderModuleType() == ShaderModuleType::VERTEX) {
             vertexShaderModule = shaderModule;

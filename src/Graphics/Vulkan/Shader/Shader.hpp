@@ -82,6 +82,10 @@ struct DLL_OBJECT DescriptorInfo {
 //    std::vector<DescriptorInfo> descriptorInfo;
 //};
 
+struct DLL_OBJECT EntryPointInfo {
+    bool use64BitIndexing;
+};
+
 class Device;
 
 class DLL_OBJECT ShaderModule {
@@ -107,11 +111,14 @@ public:
 
     [[nodiscard]] inline const std::vector<VkPushConstantRange>& getVkPushConstantRanges() const { return pushConstantRanges; }
 
+    [[nodiscard]] const EntryPointInfo* getEntryPointInfo(const std::string& name) const;
+
     [[nodiscard]] inline const std::string& getShaderModuleId() const { return shaderModuleId; }
     [[nodiscard]] inline ShaderModuleType getShaderModuleType() const { return shaderModuleType; }
     [[nodiscard]] inline VkShaderStageFlags getVkShaderStageFlags() const {
         return VkShaderStageFlags(uint32_t(shaderModuleType) & 0x0FFFFFFF);
     }
+    [[nodiscard]] inline bool getUse64BitIndexing() const { return use64BitIndexing; }
 
     // Get Vulkan data.
     inline VkShaderModule getVkShaderModule() { return vkShaderModule; }
@@ -132,6 +139,8 @@ private:
     std::vector<InterfaceVariableDescriptor> inputVariableDescriptors;
     std::map<uint32_t, std::vector<DescriptorInfo>> descriptorSetsInfo; ///< set index -> descriptor set info
     std::vector<VkPushConstantRange> pushConstantRanges;
+    bool use64BitIndexing = false;
+    std::map<std::string, EntryPointInfo> entryPointInfos;
 };
 
 typedef std::shared_ptr<ShaderModule> ShaderModulePtr;
@@ -196,6 +205,7 @@ public:
     [[nodiscard]] inline const std::vector<VkPushConstantRange>& getVkPushConstantRanges() const {
         return pushConstantRanges;
     }
+    [[nodiscard]] inline bool getUse64BitIndexing() const { return use64BitIndexing; }
 
 private:
     void mergeDescriptorSetsInfo(const std::map<uint32_t, std::vector<DescriptorInfo>>& newDescriptorSetsInfo);
@@ -216,6 +226,7 @@ private:
     uint32_t numDescriptorSets = 0;
     std::vector<VkPipelineShaderStageCreateInfo> vkShaderStages;
     std::vector<ShaderStageSettings> shaderStagesSettings;
+    bool use64BitIndexing = false;
 
 #ifdef VK_VERSION_1_3
     std::vector<VkPipelineShaderStageRequiredSubgroupSizeCreateInfo> requiredSubgroupSizeCreateInfos{};

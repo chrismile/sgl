@@ -468,6 +468,7 @@ GraphicsPipeline::GraphicsPipeline(Device* device, const GraphicsPipelineInfo& p
     pipelineCreateInfo.subpass = subpassIndex;
     pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
     pipelineCreateInfo.basePipelineIndex = -1;
+    setPipelineCreateInfoPNextInternal(pipelineCreateInfo.pNext);
 
     if (vkCreateGraphicsPipelines(
             device->getVkDevice(), VK_NULL_HANDLE, 1, &pipelineCreateInfo,

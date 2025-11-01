@@ -59,6 +59,7 @@ ComputePipeline::ComputePipeline(Device* device, const ComputePipelineInfo& pipe
     pipelineCreateInfo.layout = pipelineLayout;
     pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
     pipelineCreateInfo.basePipelineIndex = -1;
+    setPipelineCreateInfoPNextInternal(pipelineCreateInfo.pNext);
 
     if (vkCreateComputePipelines(
             device->getVkDevice(), VK_NULL_HANDLE, 1, &pipelineCreateInfo,

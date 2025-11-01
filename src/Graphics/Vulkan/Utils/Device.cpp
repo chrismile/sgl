@@ -697,6 +697,15 @@ bool DeviceFeatures::setExtensionFeaturesFromPNextEntry(
         }
     }
 #endif
+#ifdef VK_EXT_shader_64bit_indexing
+    else if (structureType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_64_BIT_INDEXING_FEATURES_EXT) {
+        this->shader64BitIndexingFeaturesEXT =
+                *reinterpret_cast<const VkPhysicalDeviceShader64BitIndexingFeaturesEXT*>(pNext);
+        if (this->shader64BitIndexingFeaturesEXT.shader64BitIndexing) {
+            deviceExtensions.push_back(VK_EXT_SHADER_64BIT_INDEXING_EXTENSION_NAME);
+        }
+    }
+#endif
     else {
         return false;
     }
@@ -1727,6 +1736,19 @@ void Device::createLogicalDeviceAndQueues(
         }
     }
 #endif
+#ifdef VK_EXT_shader_64bit_indexing
+    if (deviceExtensionsSet.find(VK_EXT_SHADER_64BIT_INDEXING_EXTENSION_NAME) != deviceExtensionsSet.end()) {
+        shader64BitIndexingFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_64_BIT_INDEXING_FEATURES_EXT;
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &shader64BitIndexingFeaturesEXT;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        if (requestedDeviceFeatures.shader64BitIndexingFeaturesEXT.shader64BitIndexing == VK_FALSE) {
+            requestedDeviceFeatures.shader64BitIndexingFeaturesEXT = shader64BitIndexingFeaturesEXT;
+        }
+    }
+#endif
 
 
     VkDeviceCreateInfo deviceInfo{};
@@ -1866,6 +1888,12 @@ void Device::createLogicalDeviceAndQueues(
     if (requestedDeviceFeatures.cooperativeVectorFeaturesNV.cooperativeVector) {
         *pNextPtr = &requestedDeviceFeatures.cooperativeVectorFeaturesNV;
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.cooperativeVectorFeaturesNV.pNext);
+    }
+#endif
+#ifdef VK_EXT_shader_64bit_indexing
+    if (requestedDeviceFeatures.shader64BitIndexingFeaturesEXT.shader64BitIndexing) {
+        *pNextPtr = &requestedDeviceFeatures.shader64BitIndexingFeaturesEXT;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.shader64BitIndexingFeaturesEXT.pNext);
     }
 #endif
 #ifdef VK_VERSION_1_1

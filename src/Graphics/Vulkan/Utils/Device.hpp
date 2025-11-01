@@ -231,6 +231,11 @@ struct DLL_OBJECT DeviceFeatures {
 #else
     VkPhysicalDeviceCooperativeVectorFeaturesNV_Compat cooperativeVectorFeaturesNV{};
 #endif
+#ifdef VK_EXT_shader_64bit_indexing
+    VkPhysicalDeviceShader64BitIndexingFeaturesEXT shader64BitIndexingFeaturesEXT{};
+#else
+    VkPhysicalDeviceShader64BitIndexingFeaturesEXT_Compat shader64BitIndexingFeaturesEXT{};
+#endif
     // The following features have no extensions, thus use
     bool optionalEnableShaderDrawParametersFeatures = false;
     // Vulkan 1.x features are only enabled when at least one value in the struct is set to true.
@@ -554,6 +559,11 @@ public:
 #endif
     const VkPhysicalDeviceShaderCorePropertiesAMD& getDeviceShaderCorePropertiesAMD();
     const VkPhysicalDeviceShaderCoreProperties2AMD& getDeviceShaderCoreProperties2AMD();
+#ifdef VK_EXT_shader_64bit_indexing
+    inline const VkPhysicalDeviceShader64BitIndexingFeaturesEXT& getShader64BitIndexingFeaturesEXT() const {
+        return shader64BitIndexingFeaturesEXT;
+    }
+#endif
 
     VkSampleCountFlagBits getMaxUsableSampleCount() const;
 
@@ -875,6 +885,11 @@ private:
     bool isInitializedSupportedCooperativeMatrixPropertiesKHR = false;
     bool isInitializedSupportedCooperativeMatrixFlexibleDimensionsPropertiesNV = false;
     bool isInitializedSupportedCooperativeVectorPropertiesNV = false;
+#ifdef VK_EXT_shader_64bit_indexing
+    VkPhysicalDeviceShader64BitIndexingFeaturesEXT shader64BitIndexingFeaturesEXT{};
+#else
+    VkPhysicalDeviceShader64BitIndexingFeaturesEXT_Compat shader64BitIndexingFeaturesEXT{};
+#endif
 
     // Driver version string (mapped from VkPhysicalDeviceProperties::driverVersion).
     DriverVersion driverVersion{};

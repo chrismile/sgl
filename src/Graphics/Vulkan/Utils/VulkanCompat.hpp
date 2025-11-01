@@ -476,4 +476,10 @@ typedef struct VkPhysicalDeviceShaderBfloat16FeaturesKHR_Compat {
     VkBool32           shaderBFloat16CooperativeMatrix;
 } VkPhysicalDeviceShaderBfloat16FeaturesKHR_Compat;
 
+typedef struct VkPhysicalDeviceShader64BitIndexingFeaturesEXT_Compat {
+    VkStructureType    sType;
+    void*              pNext;
+    VkBool32           shader64BitIndexing;
+} VkPhysicalDeviceShader64BitIndexingFeaturesEXT_Compat;
+
 #endif //SGL_VULKANCOMPAT_HPP

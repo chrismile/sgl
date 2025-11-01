@@ -487,6 +487,7 @@ RayTracingPipeline::RayTracingPipeline(Device* device, const RayTracingPipelineI
     pipelineCreateInfo.layout = pipelineLayout;
     pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
     pipelineCreateInfo.basePipelineIndex = -1;
+    setPipelineCreateInfoPNextInternal(pipelineCreateInfo.pNext);
 
     if (vkCreateRayTracingPipelinesKHR(
             device->getVkDevice(), VK_NULL_HANDLE, VK_NULL_HANDLE,

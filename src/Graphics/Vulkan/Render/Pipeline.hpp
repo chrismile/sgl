@@ -41,7 +41,7 @@ typedef std::shared_ptr<ShaderStages> ShaderStagesPtr;
 
 class DLL_OBJECT Pipeline {
 public:
-    Pipeline(Device* device, ShaderStagesPtr shaderStages) : device(device), shaderStages(std::move(shaderStages)) {}
+    Pipeline(Device* device, ShaderStagesPtr shaderStages);
     virtual ~Pipeline();
 
     inline Device* getDevice() { return device; }
@@ -53,9 +53,11 @@ public:
 
 protected:
     void createPipelineLayout();
+    void setPipelineCreateInfoPNextInternal(const void*& pNext);
 
     Device* device;
     ShaderStagesPtr shaderStages;
+    VkPipelineCreateFlags2CreateInfo pipelineCreateFlags2CreateInfo{};
 
     VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
     VkPipeline pipeline = VK_NULL_HANDLE;
