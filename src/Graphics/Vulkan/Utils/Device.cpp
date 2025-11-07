@@ -2308,11 +2308,20 @@ void Device::_getDeviceInformation() {
             hasDriverVersionPatch = false;
         }
         driverVersionString = std::to_string(driverVersion.major);
-        if (hasDriverVersionMinor) {
-            driverVersionString += "." + std::to_string(driverVersion.minor);
-        }
-        if (hasDriverVersionSubminor) {
-            driverVersionString += "." + std::to_string(driverVersion.subminor);
+        if (physicalDeviceDriverProperties.driverID == VK_DRIVER_ID_NVIDIA_PROPRIETARY) {
+            if (hasDriverVersionMinor) {
+                driverVersionString += "." + sgl::toStringLeadingZeros(driverVersion.minor, 2);
+            }
+            if (hasDriverVersionSubminor) {
+                driverVersionString += "." + sgl::toStringLeadingZeros(driverVersion.subminor, 2);
+            }
+        } else {
+            if (hasDriverVersionMinor) {
+                driverVersionString += "." + std::to_string(driverVersion.minor);
+            }
+            if (hasDriverVersionSubminor) {
+                driverVersionString += "." + std::to_string(driverVersion.subminor);
+            }
         }
         if (hasDriverVersionPatch) {
             driverVersionString += "." + std::to_string(driverVersion.patch);

@@ -32,6 +32,7 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <iomanip>
 #include <cstdint>
 
 #ifdef USE_GLM
@@ -86,6 +87,13 @@ template <class T>
 std::string toHexString(T obj) {
     std::ostringstream ostr;
     ostr << std::hex << obj;
+    return ostr.str();
+}
+
+template <class T>
+std::string toStringLeadingZeros(T obj, int numChars) {
+    std::ostringstream ostr;
+    ostr << std::setw(numChars) << std::setfill('0') << obj;
     return ostr.str();
 }
 
