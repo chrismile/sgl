@@ -2284,7 +2284,7 @@ void Device::_getDeviceInformation() {
             hasDriverVersionPatch = driverVersion.patch != 0u;
         } else if (physicalDeviceDriverProperties.driverID == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS) {
             driverVersion.major = physicalDeviceProperties.driverVersion >> 14u;
-            driverVersion.minor = physicalDeviceProperties.driverVersion & 0x3ffu;
+            driverVersion.minor = physicalDeviceProperties.driverVersion & 0x3fffu;
             driverVersion.subminor = 0u;
             driverVersion.patch = 0u;
             hasDriverVersionSubminor = hasDriverVersionPatch = false;
