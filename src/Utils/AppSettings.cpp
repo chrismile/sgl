@@ -816,14 +816,10 @@ void AppSettings::initializeOffscreenContextFunctionPointers() {
 #endif
 
 void AppSettings::initializeSubsystems() {
-    /*if (TTF_Init() == -1) {
-        Logfile::get()->writeError("ERROR: SDLWindow::initializeAudio: Couldn't initialize SDL_ttf!");
-        Logfile::get()->writeError(std::string() + "SDL_ttf initialization error: " + TTF_GetError());
-    }*/
-
     // Create the subsystem implementations
-    Timer = new TimerInterface;
-    //AudioManager = new SDLMixerAudioManager;
+    if (!Timer) {
+        Timer = new TimerInterface;
+    }
 
 #ifdef SUPPORT_OPENGL
     if (offscreenContext) {
@@ -955,8 +951,10 @@ void AppSettings::release() {
     }
 #endif
 
-    //delete AudioManager;
-    delete Timer;
+    if (Timer) {
+        delete Timer;
+        Timer = nullptr;
+    }
 
 #if defined(SUPPORT_VULKAN) && !defined(DISABLE_VULKAN_SWAPCHAIN_SUPPORT)
     if (renderSystem == RenderSystem::VULKAN) {
@@ -1015,17 +1013,40 @@ void AppSettings::release() {
 
 #ifdef SUPPORT_SDL
     if (getIsSdlWindowBackend(windowBackend)) {
-        //Mix_CloseAudio();
-        //TTF_Quit();
         SDL_Quit();
     }
 #endif
 
 #ifdef _WIN32
-    FreeLibrary(shcoreModule);
-    FreeLibrary(user32Module);
+    if (shcoreModule) {
+        FreeLibrary(shcoreModule);
+        shcoreModule = {};
+    }
+    if (user32Module) {
+        FreeLibrary(user32Module);
+        user32Module = {};
+    }
 #endif
 }
+
+#ifdef SUPPORT_VULKAN
+/// Only releases the Vulkan device (and everything associated with it).
+void AppSettings::releaseDeviceHeadless() {
+    if (mainWindow || useGUI) {
+        sgl::Logfile::get()->throwError(
+                "Error in releaseDeviceHeadless: Not headless (window or UI functionality loaded).");
+    }
+    if (primaryDevice) {
+        primaryDevice->waitIdle();
+        if (vk::ShaderManager) {
+            delete vk::ShaderManager;
+            vk::ShaderManager = nullptr;
+        }
+        delete primaryDevice;
+        primaryDevice = nullptr;
+    }
+}
+#endif
 
 void AppSettings::setLoadGUI(
         const unsigned short* fontRangeData, bool useDocking, bool useMultiViewport, float uiScaleFactor) {

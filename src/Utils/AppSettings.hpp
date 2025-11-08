@@ -267,6 +267,10 @@ public:
     inline sgl::DeviceSelector* getDeviceSelector() { return deviceSelector; }
 #endif
     void release();
+#ifdef SUPPORT_VULKAN
+    /// Only releases the Vulkan device (and everything associated with it).
+    void releaseDeviceHeadless();
+#endif
 
     /// Called in main if GUI should be loaded.
     void setLoadGUI(
