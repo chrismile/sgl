@@ -456,7 +456,13 @@ RayTracingPipelineInfo::RayTracingPipelineInfo(const ShaderBindingTable& table)
 
 void RayTracingPipelineInfo::reset() {
     maxPipelineRayRecursionDepth = 1;
+    useShader64BitIndexing = false;
 }
+
+void RayTracingPipelineInfo::setUse64BitIndexing(bool _useShader64BitIndexing) {
+    useShader64BitIndexing = _useShader64BitIndexing;
+}
+
 
 RayTracingPipeline::RayTracingPipeline(Device* device, const RayTracingPipelineInfo& pipelineInfo)
         : Pipeline(device, pipelineInfo.shaderStages), sbt(pipelineInfo.sbt) {
@@ -487,7 +493,7 @@ RayTracingPipeline::RayTracingPipeline(Device* device, const RayTracingPipelineI
     pipelineCreateInfo.layout = pipelineLayout;
     pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
     pipelineCreateInfo.basePipelineIndex = -1;
-    setPipelineCreateInfoPNextInternal(pipelineCreateInfo.pNext);
+    setPipelineCreateInfoPNextInternal(pipelineCreateInfo.pNext, pipelineInfo.useShader64BitIndexing);
 
     if (vkCreateRayTracingPipelinesKHR(
             device->getVkDevice(), VK_NULL_HANDLE, VK_NULL_HANDLE,

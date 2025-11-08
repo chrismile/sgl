@@ -208,10 +208,16 @@ public:
     /// Sets the maximum ray recursion depth. A value of one means no recursion.
     inline void setMaxRayRecursionDepth(uint32_t depth) { maxPipelineRayRecursionDepth = depth; }
 
+    /// Can be used to enable 64-bit indexing if device extension VK_EXT_shader_64bit_indexing is enabled.
+    void setUse64BitIndexing(bool _useShader64BitIndexing);
+
 protected:
     ShaderBindingTable sbt;
     ShaderStagesPtr shaderStages;
     uint32_t maxPipelineRayRecursionDepth = 1;
+
+    // Extensions.
+    bool useShader64BitIndexing = false;
 };
 
 class DLL_OBJECT RayTracingPipeline : public Pipeline {

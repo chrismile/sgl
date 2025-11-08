@@ -173,6 +173,9 @@ public:
     // Getters for VkPipeline*StateCreateInfo data.
     VkPipelineViewportStateCreateInfo& getViewportStateCreateInfo() { return viewportStateInfo; }
 
+    /// Can be used to enable 64-bit indexing if device extension VK_EXT_shader_64bit_indexing is enabled.
+    void setUse64BitIndexing(bool _useShader64BitIndexing);
+
 protected:
     void _resizeColorAttachments(size_t newCount);
 
@@ -204,6 +207,9 @@ protected:
     VkPipelineDepthStencilStateCreateInfo depthStencilInfo = {};
     std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments = {};
     VkPipelineColorBlendStateCreateInfo colorBlendInfo = {};
+
+    // Extensions.
+    bool useShader64BitIndexing = false;
 };
 
 class DLL_OBJECT GraphicsPipeline : public Pipeline {

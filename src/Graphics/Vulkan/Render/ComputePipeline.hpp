@@ -39,8 +39,16 @@ class DLL_OBJECT ComputePipelineInfo {
 public:
     explicit ComputePipelineInfo(const ShaderStagesPtr& shaderStages);
 
+    void reset();
+
+    /// Can be used to enable 64-bit indexing if device extension VK_EXT_shader_64bit_indexing is enabled.
+    void setUse64BitIndexing(bool _useShader64BitIndexing);
+
 protected:
     ShaderStagesPtr shaderStages;
+
+    // Extensions.
+    bool useShader64BitIndexing = false;
 };
 
 class DLL_OBJECT ComputePipeline : public Pipeline {

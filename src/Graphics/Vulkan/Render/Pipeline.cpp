@@ -60,9 +60,9 @@ void Pipeline::createPipelineLayout() {
     }
 }
 
-void Pipeline::setPipelineCreateInfoPNextInternal(const void*& pNext) {
+void Pipeline::setPipelineCreateInfoPNextInternal(const void*& pNext, bool useShader64BitIndexing) {
 #ifdef VK_EXT_shader_64bit_indexing
-    if (shaderStages->getUse64BitIndexing()) {
+    if (!shaderStages->getUse64BitIndexing() && useShader64BitIndexing) {
         pNext = &pipelineCreateFlags2CreateInfo;
     }
 #endif

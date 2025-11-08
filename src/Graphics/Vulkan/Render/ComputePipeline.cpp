@@ -40,6 +40,15 @@ ComputePipelineInfo::ComputePipelineInfo(const ShaderStagesPtr& shaderStages) : 
     }
 }
 
+void ComputePipelineInfo::reset() {
+    useShader64BitIndexing = false;
+}
+
+void ComputePipelineInfo::setUse64BitIndexing(bool _useShader64BitIndexing) {
+    useShader64BitIndexing = _useShader64BitIndexing;
+}
+
+
 ComputePipeline::ComputePipeline(Device* device, const ComputePipelineInfo& pipelineInfo)
         : Pipeline(device, pipelineInfo.shaderStages) {
     createPipelineLayout();
@@ -59,7 +68,7 @@ ComputePipeline::ComputePipeline(Device* device, const ComputePipelineInfo& pipe
     pipelineCreateInfo.layout = pipelineLayout;
     pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
     pipelineCreateInfo.basePipelineIndex = -1;
-    setPipelineCreateInfoPNextInternal(pipelineCreateInfo.pNext);
+    setPipelineCreateInfoPNextInternal(pipelineCreateInfo.pNext, pipelineInfo.useShader64BitIndexing);
 
     if (vkCreateComputePipelines(
             device->getVkDevice(), VK_NULL_HANDLE, 1, &pipelineCreateInfo,

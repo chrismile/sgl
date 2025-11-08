@@ -53,7 +53,7 @@ public:
 
 protected:
     void createPipelineLayout();
-    void setPipelineCreateInfoPNextInternal(const void*& pNext);
+    void setPipelineCreateInfoPNextInternal(const void*& pNext, bool useShader64BitIndexing);
 
     Device* device;
     ShaderStagesPtr shaderStages;

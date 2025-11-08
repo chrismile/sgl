@@ -104,6 +104,8 @@ void GraphicsPipelineInfo::reset() {
     depthStencilInfo.stencilTestEnable = VK_FALSE;
     depthStencilInfo.front = {};
     depthStencilInfo.back = {};
+
+    useShader64BitIndexing = false;
 }
 
 void GraphicsPipelineInfo::_resizeColorAttachments(size_t newCount) {
@@ -437,6 +439,10 @@ void GraphicsPipelineInfo::setVertexBufferBindingByLocationIndexOptional(
     }
 }
 
+void GraphicsPipelineInfo::setUse64BitIndexing(bool _useShader64BitIndexing) {
+    useShader64BitIndexing = _useShader64BitIndexing;
+}
+
 
 
 GraphicsPipeline::GraphicsPipeline(Device* device, const GraphicsPipelineInfo& pipelineInfo)
@@ -468,7 +474,7 @@ GraphicsPipeline::GraphicsPipeline(Device* device, const GraphicsPipelineInfo& p
     pipelineCreateInfo.subpass = subpassIndex;
     pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
     pipelineCreateInfo.basePipelineIndex = -1;
-    setPipelineCreateInfoPNextInternal(pipelineCreateInfo.pNext);
+    setPipelineCreateInfoPNextInternal(pipelineCreateInfo.pNext, pipelineInfo.useShader64BitIndexing);
 
     if (vkCreateGraphicsPipelines(
             device->getVkDevice(), VK_NULL_HANDLE, 1, &pipelineCreateInfo,
