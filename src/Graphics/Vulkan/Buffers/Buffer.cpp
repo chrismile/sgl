@@ -425,10 +425,11 @@ void Buffer::uploadDataChunked(size_t sizeInBytesData, size_t chunkSize, const v
 
         size_t sizeLeft = sizeInBytesData;
         size_t writeOffset = 0;
+        const auto* sourcePtr = static_cast<const uint8_t*>(dataPtr);
         void* mappedData = stagingBuffer->mapMemory();
         while (sizeLeft > 0) {
             size_t copySize = std::min(chunkSizeReal, sizeLeft);
-            memcpy(mappedData, dataPtr, copySize);
+            memcpy(mappedData, sourcePtr, copySize);
 
             VkCommandBuffer commandBuffer = device->beginSingleTimeCommands();
             VkBufferCopy bufferCopy{};
@@ -445,6 +446,7 @@ void Buffer::uploadDataChunked(size_t sizeInBytesData, size_t chunkSize, const v
                 sizeLeft -= chunkSizeReal;
             }
             writeOffset += chunkSizeReal;
+            sourcePtr += chunkSizeReal;
         }
         stagingBuffer->unmapMemory();
     }
