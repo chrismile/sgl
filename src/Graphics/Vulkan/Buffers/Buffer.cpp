@@ -328,7 +328,16 @@ void Buffer::createFromD3D12SharedResourceHandle(
     memoryAllocateInfo.allocationSize = memoryRequirements.size;
     memoryAllocateInfo.memoryTypeIndex = device->findMemoryTypeIndex(
             memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    memoryAllocateInfo.pNext = &importMemoryWin32HandleInfo;
+
+    VkMemoryAllocateFlagsInfo memoryAllocateFlagsInfo{};
+    if ((bufferUsageFlags & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) != 0) {
+        memoryAllocateFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
+        memoryAllocateFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+        memoryAllocateFlagsInfo.pNext = &importMemoryWin32HandleInfo;
+        memoryAllocateInfo.pNext = &memoryAllocateFlagsInfo;
+    } else {
+        memoryAllocateInfo.pNext = &importMemoryWin32HandleInfo;
+    }
 
     if (memoryAllocateInfo.memoryTypeIndex == std::numeric_limits<uint32_t>::max()) {
         Logfile::get()->throwError(
@@ -824,16 +833,23 @@ void Buffer::createFromHostPointer(
         memoryAllocateInfo.memoryTypeIndex = device->findMemoryTypeIndex(
                 memoryHostPointerProperties.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     }
-    memoryAllocateInfo.pNext = &importMemoryHostPointerInfo;
+
+    VkMemoryAllocateFlagsInfo memoryAllocateFlagsInfo{};
+    if ((bufferUsageFlags & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) != 0) {
+        memoryAllocateFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
+        memoryAllocateFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+        memoryAllocateFlagsInfo.pNext = &importMemoryHostPointerInfo;
+        memoryAllocateInfo.pNext = &memoryAllocateFlagsInfo;
+    } else {
+        memoryAllocateInfo.pNext = &importMemoryHostPointerInfo;
+    }
 
     if (memoryAllocateInfo.memoryTypeIndex == std::numeric_limits<uint32_t>::max()) {
-        Logfile::get()->throwError(
-                "Error in Buffer::createFromD3D12SharedResourceHandle: No suitable memory type index found!");
+        Logfile::get()->throwError("Error in Buffer::createFromHostPointer: No suitable memory type index found!");
     }
 
     if (vkAllocateMemory(device->getVkDevice(), &memoryAllocateInfo, nullptr, &deviceMemory) != VK_SUCCESS) {
-        Logfile::get()->throwError(
-                "Error in Buffer::createFromD3D12SharedResourceHandle: Could not allocate memory!");
+        Logfile::get()->throwError("Error in Buffer::createFromHostPointer: Could not allocate memory!");
     }
 
     vkBindBufferMemory(device->getVkDevice(), buffer, deviceMemory, 0);
@@ -851,6 +867,9 @@ void* Buffer::allocateFromNewHostPointer(
     }
     auto alignedSizeInBytes = sgl::sizeceil(sizeInBytesData, alignment) * alignment;
     hostPointer = sgl::aligned_alloc(alignment, alignedSizeInBytes);
+    if (!hostPointer) {
+        Logfile::get()->throwError("Error in Buffer::allocateFromNewHostPointer: Could not allocate host pointer!");
+    }
     ownsImportedHostPointer = true;
     createFromHostPointer(hostPointer, alignedSizeInBytes, usage, preferHostCached);
     return hostPointer;
