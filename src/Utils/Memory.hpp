@@ -41,7 +41,7 @@ namespace sgl {
 
 #ifdef _WIN32
 inline void* aligned_alloc(std::size_t alignment, std::size_t size) {
-    return _aligned_malloc(alignment, size);
+    return _aligned_malloc(size, alignment);
 }
 inline void aligned_free(void* ptr) {
     _aligned_free(ptr);
