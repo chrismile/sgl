@@ -36,6 +36,8 @@
 #include <vulkan/vulkan_metal.h>
 #endif
 
+#include <Math/Math.hpp>
+#include <Utils/Memory.hpp>
 #include <Utils/File/Logfile.hpp>
 #include "../Utils/Device.hpp"
 #include "../Utils/Interop.hpp"
@@ -237,6 +239,11 @@ Buffer::~Buffer() {
     } else if (deviceMemory) {
         vkDestroyBuffer(device->getVkDevice(), buffer, nullptr);
         vkFreeMemory(device->getVkDevice(), deviceMemory, nullptr);
+    }
+    if (ownsImportedHostPointer && hostPointer) {
+        sgl::aligned_free(hostPointer);
+        hostPointer = nullptr;
+        ownsImportedHostPointer = false;
     }
 #ifdef _WIN32
     if (handle != nullptr) {
@@ -741,6 +748,112 @@ VkDeviceAddress Buffer::getVkDeviceAddress() {
     VkDeviceAddress bufferDeviceAddress = vkGetBufferDeviceAddress(
             device->getVkDevice(), &bufferDeviceAddressInfo);
     return bufferDeviceAddress;
+}
+
+void Buffer::createFromHostPointer(
+            void* hostPtr, size_t sizeInBytesData, VkBufferUsageFlags usage, PreferHostCached preferHostCached,
+            bool isHostMappedForeign) {
+    exportMemory = true;
+    sizeInBytes = sizeInBytesData;
+    bufferUsageFlags = usage;
+    hostPointer = hostPtr;
+
+    VkBufferCreateInfo bufferCreateInfo{};
+    bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferCreateInfo.size = sizeInBytes;
+    bufferCreateInfo.usage = usage;
+    bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VkExternalMemoryBufferCreateInfo externalMemoryBufferCreateInfo{};
+    externalMemoryBufferCreateInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO;
+    if (isHostMappedForeign) {
+        externalMemoryBufferCreateInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_MAPPED_FOREIGN_MEMORY_BIT_EXT;
+    } else {
+        externalMemoryBufferCreateInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT;
+    }
+    bufferCreateInfo.pNext = &externalMemoryBufferCreateInfo;
+
+    if (vkCreateBuffer(device->getVkDevice(), &bufferCreateInfo, nullptr, &buffer) != VK_SUCCESS) {
+        Logfile::get()->throwError("Error in Buffer::createFromHostPointer: Failed to create a buffer!");
+    }
+
+    VkMemoryHostPointerPropertiesEXT memoryHostPointerProperties{};
+    memoryHostPointerProperties.sType = VK_STRUCTURE_TYPE_MEMORY_HOST_POINTER_PROPERTIES_EXT;
+    vkGetMemoryHostPointerPropertiesEXT(
+            device->getVkDevice(), VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT, hostPtr,
+            &memoryHostPointerProperties);
+
+    VkImportMemoryHostPointerInfoEXT importMemoryHostPointerInfo{};
+    importMemoryHostPointerInfo.sType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_HOST_POINTER_INFO_EXT;
+    importMemoryHostPointerInfo.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT;
+    importMemoryHostPointerInfo.pHostPointer = hostPtr;
+
+    VkMemoryAllocateInfo memoryAllocateInfo{};
+    memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    memoryAllocateInfo.allocationSize = sizeInBytesData;
+    if (preferHostCached == PreferHostCached::YES_OBLIGATORY) {
+        memoryAllocateInfo.memoryTypeIndex = device->findMemoryTypeIndex(
+                memoryHostPointerProperties.memoryTypeBits,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT);
+    } else if (preferHostCached == PreferHostCached::YES_OPTIONAL) {
+        auto idx = device->findMemoryTypeIndexOptional(
+                memoryHostPointerProperties.memoryTypeBits,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT);
+        if (idx.has_value()) {
+            memoryAllocateInfo.memoryTypeIndex = idx.value();
+        } else {
+            memoryAllocateInfo.memoryTypeIndex = device->findMemoryTypeIndex(
+                    memoryHostPointerProperties.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+        }
+    } else if (preferHostCached == PreferHostCached::NO_OBLIGATORY) {
+        memoryAllocateInfo.memoryTypeIndex = device->findMemoryTypeIndexWithoutFlags(
+                memoryHostPointerProperties.memoryTypeBits,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_MEMORY_PROPERTY_HOST_CACHED_BIT);
+    } else if (preferHostCached == PreferHostCached::NO_OPTIONAL) {
+        auto idx = device->findMemoryTypeIndexWithoutFlagsOptional(
+                memoryHostPointerProperties.memoryTypeBits,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_MEMORY_PROPERTY_HOST_CACHED_BIT);
+        if (idx.has_value()) {
+            memoryAllocateInfo.memoryTypeIndex = idx.value();
+        } else {
+            memoryAllocateInfo.memoryTypeIndex = device->findMemoryTypeIndex(
+                    memoryHostPointerProperties.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+        }
+    } else {
+        // preferHostCached == PreferHostCached::DONT_CARE
+        memoryAllocateInfo.memoryTypeIndex = device->findMemoryTypeIndex(
+                memoryHostPointerProperties.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    }
+    memoryAllocateInfo.pNext = &importMemoryHostPointerInfo;
+
+    if (memoryAllocateInfo.memoryTypeIndex == std::numeric_limits<uint32_t>::max()) {
+        Logfile::get()->throwError(
+                "Error in Buffer::createFromD3D12SharedResourceHandle: No suitable memory type index found!");
+    }
+
+    if (vkAllocateMemory(device->getVkDevice(), &memoryAllocateInfo, nullptr, &deviceMemory) != VK_SUCCESS) {
+        Logfile::get()->throwError(
+                "Error in Buffer::createFromD3D12SharedResourceHandle: Could not allocate memory!");
+    }
+
+    vkBindBufferMemory(device->getVkDevice(), buffer, deviceMemory, 0);
+}
+
+void* Buffer::allocateFromNewHostPointer(
+        size_t sizeInBytesData, VkBufferUsageFlags usage, PreferHostCached preferHostCached) {
+    if (bufferAllocation || deviceMemory) {
+        sgl::Logfile::get()->throwError("Error in Buffer::allocateFromNewHostPointer: Memory already allocated.");
+    }
+    auto alignment = device->getMinImportedHostPointerAlignment();
+    if (alignment == 0) {
+        sgl::Logfile::get()->throwError(
+                "Error in Buffer::allocateFromNewHostPointer: VK_EXT_external_memory_host not supported.");
+    }
+    auto alignedSizeInBytes = sgl::sizeceil(sizeInBytesData, alignment) * alignment;
+    hostPointer = sgl::aligned_alloc(alignment, alignedSizeInBytes);
+    ownsImportedHostPointer = true;
+    createFromHostPointer(hostPointer, alignedSizeInBytes, usage, preferHostCached);
+    return hostPointer;
 }
 
 #if defined(SUPPORT_OPENGL) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)

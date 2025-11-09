@@ -2351,6 +2351,16 @@ void Device::_getDeviceInformation() {
         vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
     }
 
+    if (isDeviceExtensionSupported(VK_EXT_EXTERNAL_MEMORY_HOST_EXTENSION_NAME)) {
+        physicalDeviceExternalMemoryHostPropertiesEXT = {};
+        physicalDeviceExternalMemoryHostPropertiesEXT.sType =
+                VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_HOST_PROPERTIES_EXT;
+        VkPhysicalDeviceProperties2 deviceProperties2 = {};
+        deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        deviceProperties2.pNext = &physicalDeviceExternalMemoryHostPropertiesEXT;
+        vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
+    }
+
     if (isDeviceExtensionSupported(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)) {
         accelerationStructureProperties = {};
         accelerationStructureProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
@@ -2880,14 +2890,52 @@ bool Device::checkPhysicalDeviceFeatures12Supported(
 
 uint32_t Device::findMemoryTypeIndex(uint32_t memoryTypeBits, VkMemoryPropertyFlags memoryPropertyFlags) {
     for (uint32_t memoryTypeIndex = 0; memoryTypeIndex < physicalDeviceMemoryProperties.memoryTypeCount; memoryTypeIndex++) {
-        if (((physicalDeviceMemoryProperties.memoryTypes[memoryTypeIndex].propertyFlags & memoryPropertyFlags) == memoryPropertyFlags
-                && memoryTypeBits & (1 << memoryTypeIndex))) {
+        if ((physicalDeviceMemoryProperties.memoryTypes[memoryTypeIndex].propertyFlags & memoryPropertyFlags) == memoryPropertyFlags
+                && memoryTypeBits & (1 << memoryTypeIndex)) {
             return memoryTypeIndex;
         }
     }
 
     Logfile::get()->throwError("Error in Device::findMemoryTypeIndex: Could not find suitable memory!");
     return std::numeric_limits<uint32_t>::max();
+}
+
+std::optional<uint32_t> Device::findMemoryTypeIndexOptional(uint32_t memoryTypeBits, VkMemoryPropertyFlags memoryPropertyFlags) {
+    for (uint32_t memoryTypeIndex = 0; memoryTypeIndex < physicalDeviceMemoryProperties.memoryTypeCount; memoryTypeIndex++) {
+        if ((physicalDeviceMemoryProperties.memoryTypes[memoryTypeIndex].propertyFlags & memoryPropertyFlags) == memoryPropertyFlags
+                && memoryTypeBits & (1 << memoryTypeIndex)) {
+            return memoryTypeIndex;
+        }
+    }
+    return {};
+}
+
+uint32_t Device::findMemoryTypeIndexWithoutFlags(
+            uint32_t memoryTypeBits, VkMemoryPropertyFlags memoryPropertyFlags,
+            VkMemoryPropertyFlags blockedMemoryPropertyFlags) {
+    for (uint32_t memoryTypeIndex = 0; memoryTypeIndex < physicalDeviceMemoryProperties.memoryTypeCount; memoryTypeIndex++) {
+        if ((physicalDeviceMemoryProperties.memoryTypes[memoryTypeIndex].propertyFlags & memoryPropertyFlags) == memoryPropertyFlags
+                && memoryTypeBits & (1 << memoryTypeIndex)
+                && (memoryTypeBits & (1 << blockedMemoryPropertyFlags)) == 0) {
+            return memoryTypeIndex;
+        }
+    }
+
+    Logfile::get()->throwError("Error in Device::findMemoryTypeIndex: Could not find suitable memory!");
+    return std::numeric_limits<uint32_t>::max();
+}
+
+std::optional<uint32_t> Device::findMemoryTypeIndexWithoutFlagsOptional(
+            uint32_t memoryTypeBits, VkMemoryPropertyFlags memoryPropertyFlags,
+            VkMemoryPropertyFlags blockedMemoryPropertyFlags) {
+    for (uint32_t memoryTypeIndex = 0; memoryTypeIndex < physicalDeviceMemoryProperties.memoryTypeCount; memoryTypeIndex++) {
+        if ((physicalDeviceMemoryProperties.memoryTypes[memoryTypeIndex].propertyFlags & memoryPropertyFlags) == memoryPropertyFlags
+                && memoryTypeBits & (1 << memoryTypeIndex)
+                && (memoryTypeBits & (1 << blockedMemoryPropertyFlags)) == 0) {
+            return memoryTypeIndex;
+        }
+    }
+    return {};
 }
 
 uint32_t Device::findMemoryHeapIndex(VkMemoryHeapFlagBits heapFlags) {

@@ -64,6 +64,10 @@ typedef std::shared_ptr<Buffer> BufferPtr;
 class BufferView;
 typedef std::shared_ptr<BufferView> BufferViewPtr;
 
+enum class PreferHostCached {
+    DONT_CARE, YES_OPTIONAL, NO_OPTIONAL, YES_OBLIGATORY, NO_OBLIGATORY
+};
+
 struct DLL_OBJECT BufferSettings {
     size_t sizeInBytes = 0;
     VkBufferUsageFlags usage = VkBufferUsageFlagBits(0);
@@ -304,6 +308,32 @@ public:
     [[nodiscard]] inline VkDeviceSize getDeviceMemorySize() const { return deviceMemorySize; }
     [[nodiscard]] inline VkDeviceSize getDeviceMemoryAllocationSize() const { return deviceMemoryAllocationSize; }
 
+    /**
+     * https://docs.vulkan.org/refpages/latest/refpages/source/VkImportMemoryHostPointerInfoEXT.html
+     * "Memory contents for the host memory becomes undefined on import, and is left undefined after the VkDeviceMemory has been destroyed."
+     * @param hostPtr The host pointer. Needs to be aligned by
+     * VkPhysicalDeviceExternalMemoryHostPropertiesEXT::minImportedHostPointerAlignment. The alignment can be queried
+     * via sgl::vk::Device::getMinImportedHostPointerAlignment().
+     * @param sizeInBytesData The size of the host pointer data. Needs to be a multiple of the minimum alignment.
+     * @param usage The Vulkan buffer usage flags.
+     * @param preferHostCached Whether to prefer memory types with flag MEMORY_PROPERTY_HOST_CACHED_BIT.
+     * @param isHostMappedForeign Whether the memory is a normal host pointer (false) or host-mapped foreign memory.
+     */
+    void createFromHostPointer(
+            void* hostPtr, size_t sizeInBytesData, VkBufferUsageFlags usage,
+            PreferHostCached preferHostCached = PreferHostCached::DONT_CARE, bool isHostMappedForeign = false);
+    /**
+     * Same as @see createFromHostPointer, but directly allocates the pointer. The pointer is freed when the buffer
+     * object is destroyed.
+     * @param sizeInBytesData The size of the host pointer data. Does not need to be a multiple of the minimum alignment.
+     * @param usage The Vulkan buffer usage flags.
+     * @param preferHostCached Whether to prefer memory types with flag MEMORY_PROPERTY_HOST_CACHED_BIT.
+     * @return The newly allocated host pointer.
+     */
+    void* allocateFromNewHostPointer(
+            size_t sizeInBytesData, VkBufferUsageFlags usage,
+            PreferHostCached preferHostCached = PreferHostCached::DONT_CARE);
+
 #if defined(SUPPORT_OPENGL) && defined(GLEW_SUPPORTS_EXTERNAL_OBJECTS_EXT)
     /**
      * Creates an OpenGL memory object from the external Vulkan memory.
@@ -339,6 +369,7 @@ private:
     Device* device = nullptr;
     size_t sizeInBytes = 0;
     VkBuffer buffer = VK_NULL_HANDLE;
+    void* hostPointer = nullptr; // is using imported host pointer.
 
     // Memory not exported, used only in Vulkan.
     VmaAllocation bufferAllocation = VK_NULL_HANDLE;
@@ -350,6 +381,7 @@ private:
     VkDeviceSize deviceMemorySize = 0;
     VkDeviceSize deviceMemoryAllocationSize = 0;
     bool isDedicatedAllocation = false;
+    bool ownsImportedHostPointer = false;
 
     VkBufferUsageFlags bufferUsageFlags = 0;
     VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;

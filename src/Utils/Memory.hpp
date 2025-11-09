@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2021, Christoph Neuhauser
+ * Copyright (c) 2025, Christoph Neuhauser
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,24 +26,35 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_VULKAN_MEMORY_HPP
-#define SGL_VULKAN_MEMORY_HPP
+#ifndef SGL_MEMORY_HPP
+#define SGL_MEMORY_HPP
 
-#include "../libs/volk/volk.h"
-#include "../libs/VMA/vk_mem_alloc.h"
+#include <cstdlib>
 
-namespace sgl { namespace vk {
+namespace sgl {
 
 /**
- * Converts VmaMemoryUsage to VkMemoryPropertyFlags.
- * For now, all CPU-visible modes use VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT.
- * As this code is only used for exporting memory for external use, e.g., in OpenGL, most memory will probably be
- * allocated using VMA_MEMORY_USAGE_GPU_ONLY anyways.
- * @param memoryUsage The VMA memory usage enum.
- * @return A VkMemoryPropertyFlags bit mask.
+ * https://en.cppreference.com/w/cpp/memory/c/aligned_alloc says regarding std::aligned_alloc:
+ * "This function is not supported in Microsoft C Runtime library because its implementation of std::free is unable to
+ * handle aligned allocations of any kind. Instead, MS CRT provides _aligned_malloc (to be freed with _aligned_free)."
  */
-DLL_OBJECT VkMemoryPropertyFlags convertVmaMemoryUsageToVkMemoryPropertyFlags(VmaMemoryUsage memoryUsage);
 
-}}
+#ifdef _WIN32
+inline void* aligned_alloc(std::size_t alignment, std::size_t size) {
+    return _aligned_malloc(alignment, size);
+}
+inline void aligned_free(void* ptr) {
+    _aligned_free(ptr);
+}
+#else
+inline void* aligned_alloc(std::size_t alignment, std::size_t size) {
+    return std::aligned_alloc(alignment, size);
+}
+inline void aligned_free(void* ptr) {
+    std::free(ptr);
+}
+#endif
 
-#endif //SGL_VULKAN_MEMORY_HPP
+}
+
+#endif //SGL_MEMORY_HPP

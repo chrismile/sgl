@@ -35,6 +35,7 @@
 #include <set>
 #include <map>
 #include <unordered_map>
+#include <optional>
 #include <functional>
 #include <memory>
 #include <thread>
@@ -364,25 +365,25 @@ public:
      *     return true; // false if physical device is not suitable.
      * }
      */
-    inline void setPhysicalDeviceCheckCallback(PhysicalDeviceCheckCallback callback) {
+    void setPhysicalDeviceCheckCallback(PhysicalDeviceCheckCallback callback) {
         physicalDeviceCheckCallback = std::move(callback);
     }
 
     /**
      * Enables the use of DeviceSelectorVulkan, which lets the user decide on the device to use in the UI.
      */
-    inline void setUseAppDeviceSelector() {
+    void setUseAppDeviceSelector() {
         useAppDeviceSelector = true;
     }
-    [[nodiscard]] inline DeviceSelectorVulkan* getDeviceSelector() { return deviceSelector; }
+    [[nodiscard]] DeviceSelectorVulkan* getDeviceSelector() { return deviceSelector; }
 
     /// Waits for the device to become idle.
     void waitIdle();
     /// Waits for the passed queue to become idle.
     void waitQueueIdle(VkQueue queue);
-    inline void waitGraphicsQueueIdle() { waitQueueIdle(graphicsQueue); }
-    inline void waitComputeQueueIdle() { waitQueueIdle(computeQueue); }
-    inline void waitWorkerThreadGraphicsQueueIdle() { waitQueueIdle(workerThreadGraphicsQueue); }
+    void waitGraphicsQueueIdle() { waitQueueIdle(graphicsQueue); }
+    void waitComputeQueueIdle() { waitQueueIdle(computeQueue); }
+    void waitWorkerThreadGraphicsQueueIdle() { waitQueueIdle(workerThreadGraphicsQueue); }
     /*
      * Some vendors (e.g., Intel) provide only one graphics queue, thus does not support multi-threaded rendering
      * without adding a lock around the queue. The app can tell sgl if it wants to use multiple queues.
@@ -397,196 +398,199 @@ public:
         return enabledDeviceExtensionNames;
     }
 
-    inline VkPhysicalDevice getVkPhysicalDevice() { return physicalDevice; }
-    inline VkDevice getVkDevice() { return device; }
-    inline VmaAllocator getAllocator() { return allocator; }
-    inline VkQueue getGraphicsQueue() { return graphicsQueue; }
-    inline VkQueue getComputeQueue() { return computeQueue; }
-    inline VkQueue getWorkerThreadGraphicsQueue() { return workerThreadGraphicsQueue; } ///< For use in another thread.
-    inline uint32_t getGraphicsQueueIndex() const { return graphicsQueueIndex; }
-    inline uint32_t getComputeQueueIndex() const { return computeQueueIndex; }
-    inline uint32_t getWorkerThreadGraphicsQueueIndex() const { return workerThreadGraphicsQueueIndex; }
+    [[nodiscard]] VkPhysicalDevice getVkPhysicalDevice() { return physicalDevice; }
+    [[nodiscard]] VkDevice getVkDevice() { return device; }
+    [[nodiscard]] VmaAllocator getAllocator() { return allocator; }
+    [[nodiscard]] VkQueue getGraphicsQueue() { return graphicsQueue; }
+    [[nodiscard]] VkQueue getComputeQueue() { return computeQueue; }
+    [[nodiscard]] VkQueue getWorkerThreadGraphicsQueue() { return workerThreadGraphicsQueue; } ///< For use in another thread.
+    [[nodiscard]] uint32_t getGraphicsQueueIndex() const { return graphicsQueueIndex; }
+    [[nodiscard]] uint32_t getComputeQueueIndex() const { return computeQueueIndex; }
+    [[nodiscard]] uint32_t getWorkerThreadGraphicsQueueIndex() const { return workerThreadGraphicsQueueIndex; }
 
-    inline bool getIsMainThread() const { return mainThreadId == std::this_thread::get_id(); }
+    [[nodiscard]] bool getIsMainThread() const { return mainThreadId == std::this_thread::get_id(); }
 
     // Helpers for querying physical device properties and features.
-    inline const VkPhysicalDeviceProperties& getPhysicalDeviceProperties() const { return physicalDeviceProperties; }
-    inline uint32_t getApiVersion() const { return physicalDeviceProperties.apiVersion; }
-    inline uint32_t getDriverVersion() const { return physicalDeviceProperties.driverVersion; }
-    inline const std::string& getDriverVersionString() const { return driverVersionString; }
-    bool getIsDriverVersionGreaterOrEqual(const DriverVersion& driverVersionComp) const;
-    inline bool getIsDriverVersionLessThan(const DriverVersion& driverVersionComp) const { return !getIsDriverVersionGreaterOrEqual(driverVersionComp); }
-    inline uint32_t getVendorId() const { return physicalDeviceProperties.vendorID; }
-    inline uint32_t getDeviceId() const { return physicalDeviceProperties.deviceID; }
-    inline VkPhysicalDeviceType getDeviceType() const { return physicalDeviceProperties.deviceType; }
-    inline const char* getDeviceName() const { return physicalDeviceProperties.deviceName; }
-    inline VkDriverId getDeviceDriverId() const { return physicalDeviceDriverProperties.driverID; }
-    inline const char* getDeviceDriverName() const { return physicalDeviceDriverProperties.driverName; }
-    inline const char* getDeviceDriverInfo() const { return physicalDeviceDriverProperties.driverInfo; }
-    inline const VkPhysicalDeviceIDProperties& getDeviceIDProperties() const { return physicalDeviceIDProperties; }
-    inline const uint8_t* getPipelineCacheUuid() const { return physicalDeviceProperties.pipelineCacheUUID; }
-    inline const VkPhysicalDeviceLimits& getLimits() const { return physicalDeviceProperties.limits; }
-    inline uint32_t getMaxStorageBufferRange() const { return physicalDeviceProperties.limits.maxStorageBufferRange; }
-    inline VkDeviceSize getMaxMemoryAllocationSize() const { return physicalDeviceVulkan11Properties.maxMemoryAllocationSize; }
-    inline const VkPhysicalDeviceSparseProperties& getSparseProperties() const { return physicalDeviceProperties.sparseProperties; }
-    inline const VkPhysicalDeviceMemoryProperties& getMemoryProperties() const { return physicalDeviceMemoryProperties; }
-    inline const VkPhysicalDeviceFeatures& getPhysicalDeviceFeatures() { return physicalDeviceFeatures; }
+    [[nodiscard]] const VkPhysicalDeviceProperties& getPhysicalDeviceProperties() const { return physicalDeviceProperties; }
+    [[nodiscard]] uint32_t getApiVersion() const { return physicalDeviceProperties.apiVersion; }
+    [[nodiscard]] uint32_t getDriverVersion() const { return physicalDeviceProperties.driverVersion; }
+    [[nodiscard]] const std::string& getDriverVersionString() const { return driverVersionString; }
+    [[nodiscard]] bool getIsDriverVersionGreaterOrEqual(const DriverVersion& driverVersionComp) const;
+    [[nodiscard]] bool getIsDriverVersionLessThan(const DriverVersion& driverVersionComp) const { return !getIsDriverVersionGreaterOrEqual(driverVersionComp); }
+    [[nodiscard]] uint32_t getVendorId() const { return physicalDeviceProperties.vendorID; }
+    [[nodiscard]] uint32_t getDeviceId() const { return physicalDeviceProperties.deviceID; }
+    [[nodiscard]] VkPhysicalDeviceType getDeviceType() const { return physicalDeviceProperties.deviceType; }
+    [[nodiscard]] const char* getDeviceName() const { return physicalDeviceProperties.deviceName; }
+    [[nodiscard]] VkDriverId getDeviceDriverId() const { return physicalDeviceDriverProperties.driverID; }
+    [[nodiscard]] const char* getDeviceDriverName() const { return physicalDeviceDriverProperties.driverName; }
+    [[nodiscard]] const char* getDeviceDriverInfo() const { return physicalDeviceDriverProperties.driverInfo; }
+    [[nodiscard]] const VkPhysicalDeviceIDProperties& getDeviceIDProperties() const { return physicalDeviceIDProperties; }
+    [[nodiscard]] const uint8_t* getPipelineCacheUuid() const { return physicalDeviceProperties.pipelineCacheUUID; }
+    [[nodiscard]] const VkPhysicalDeviceLimits& getLimits() const { return physicalDeviceProperties.limits; }
+    [[nodiscard]] uint32_t getMaxStorageBufferRange() const { return physicalDeviceProperties.limits.maxStorageBufferRange; }
+    [[nodiscard]] VkDeviceSize getMaxMemoryAllocationSize() const { return physicalDeviceVulkan11Properties.maxMemoryAllocationSize; }
+    [[nodiscard]] const VkPhysicalDeviceSparseProperties& getSparseProperties() const { return physicalDeviceProperties.sparseProperties; }
+    [[nodiscard]] const VkPhysicalDeviceMemoryProperties& getMemoryProperties() const { return physicalDeviceMemoryProperties; }
+    [[nodiscard]] const VkPhysicalDeviceFeatures& getPhysicalDeviceFeatures() const { return physicalDeviceFeatures; }
 #ifdef VK_VERSION_1_1
-    const VkPhysicalDeviceVulkan11Features& getPhysicalDeviceVulkan11Features() const { return physicalDeviceVulkan11Features; }
-    const VkPhysicalDeviceVulkan11Properties& getPhysicalDeviceVulkan11Properties() const { return physicalDeviceVulkan11Properties; }
+    [[nodiscard]] const VkPhysicalDeviceVulkan11Features& getPhysicalDeviceVulkan11Features() const { return physicalDeviceVulkan11Features; }
+    [[nodiscard]] const VkPhysicalDeviceVulkan11Properties& getPhysicalDeviceVulkan11Properties() const { return physicalDeviceVulkan11Properties; }
 #else
-    const VkPhysicalDeviceVulkan11Features_Compat& getPhysicalDeviceVulkan11Features() const { return physicalDeviceVulkan11Features; }
-    const VkPhysicalDeviceVulkan11Properties_Compat& getPhysicalDeviceVulkan11Properties() const { return physicalDeviceVulkan11Properties; }
+    [[nodiscard]] const VkPhysicalDeviceVulkan11Features_Compat& getPhysicalDeviceVulkan11Features() const { return physicalDeviceVulkan11Features; }
+    [[nodiscard]] const VkPhysicalDeviceVulkan11Properties_Compat& getPhysicalDeviceVulkan11Properties() const { return physicalDeviceVulkan11Properties; }
 #endif
 #ifdef VK_VERSION_1_2
-    const VkPhysicalDeviceVulkan12Features& getPhysicalDeviceVulkan12Features() const { return physicalDeviceVulkan12Features; }
+    [[nodiscard]] const VkPhysicalDeviceVulkan12Features& getPhysicalDeviceVulkan12Features() const { return physicalDeviceVulkan12Features; }
 #else
-    const VkPhysicalDeviceVulkan12Features_Compat& getPhysicalDeviceVulkan12Features() const { return physicalDeviceVulkan12Features; }
+    [[nodiscard]] const VkPhysicalDeviceVulkan12Features_Compat& getPhysicalDeviceVulkan12Features() const { return physicalDeviceVulkan12Features; }
 #endif
 #ifdef VK_VERSION_1_3
-    const VkPhysicalDeviceVulkan13Features& getPhysicalDeviceVulkan13Features() const { return physicalDeviceVulkan13Features; }
-    const VkPhysicalDeviceVulkan13Properties& getPhysicalDeviceVulkan13Properties() const { return physicalDeviceVulkan13Properties; }
+    [[nodiscard]] const VkPhysicalDeviceVulkan13Features& getPhysicalDeviceVulkan13Features() const { return physicalDeviceVulkan13Features; }
+    [[nodiscard]] const VkPhysicalDeviceVulkan13Properties& getPhysicalDeviceVulkan13Properties() const { return physicalDeviceVulkan13Properties; }
 #else
-    const VkPhysicalDeviceVulkan13Features_Compat& getPhysicalDeviceVulkan13Features() const { return physicalDeviceVulkan13Features; }
-    const VkPhysicalDeviceVulkan13Properties_Compat& getPhysicalDeviceVulkan13Properties() const { return physicalDeviceVulkan13Properties; }
+    [[nodiscard]] const VkPhysicalDeviceVulkan13Features_Compat& getPhysicalDeviceVulkan13Features() const { return physicalDeviceVulkan13Features; }
+    [[nodiscard]] const VkPhysicalDeviceVulkan13Properties_Compat& getPhysicalDeviceVulkan13Properties() const { return physicalDeviceVulkan13Properties; }
 #endif
 #ifdef VK_VERSION_1_4
-    const VkPhysicalDeviceVulkan14Features& getPhysicalDeviceVulkan14Features() const { return physicalDeviceVulkan14Features; }
-    const VkPhysicalDeviceVulkan14Properties& getPhysicalDeviceVulkan14Properties() const { return physicalDeviceVulkan14Properties; }
+    [[nodiscard]] const VkPhysicalDeviceVulkan14Features& getPhysicalDeviceVulkan14Features() const { return physicalDeviceVulkan14Features; }
+    [[nodiscard]] const VkPhysicalDeviceVulkan14Properties& getPhysicalDeviceVulkan14Properties() const { return physicalDeviceVulkan14Properties; }
 #else
-    const VkPhysicalDeviceVulkan14Features_Compat& getPhysicalDeviceVulkan14Features() const { return physicalDeviceVulkan14Features; }
-    const VkPhysicalDeviceVulkan14Properties_Compat& getPhysicalDeviceVulkan14Properties() const { return physicalDeviceVulkan14Properties; }
+    [[nodiscard]] const VkPhysicalDeviceVulkan14Features_Compat& getPhysicalDeviceVulkan14Features() const { return physicalDeviceVulkan14Features; }
+    [[nodiscard]] const VkPhysicalDeviceVulkan14Properties_Compat& getPhysicalDeviceVulkan14Properties() const { return physicalDeviceVulkan14Properties; }
 #endif
-    inline const VkPhysicalDeviceShaderFloat16Int8Features& getPhysicalDeviceShaderFloat16Int8Features() const {
+    [[nodiscard]] const VkPhysicalDeviceShaderFloat16Int8Features& getPhysicalDeviceShaderFloat16Int8Features() const {
         return shaderFloat16Int8Features;
     }
-    inline const VkPhysicalDevice16BitStorageFeatures& getPhysicalDevice16BitStorageFeatures() const {
+    [[nodiscard]] const VkPhysicalDevice16BitStorageFeatures& getPhysicalDevice16BitStorageFeatures() const {
         return device16BitStorageFeatures;
     }
-    inline const VkPhysicalDevice8BitStorageFeatures& getPhysicalDevice8BitStorageFeatures() const {
+    [[nodiscard]] const VkPhysicalDevice8BitStorageFeatures& getPhysicalDevice8BitStorageFeatures() const {
         return device8BitStorageFeatures;
     }
-    inline const VkPhysicalDeviceShaderAtomicInt64FeaturesKHR& getPhysicalDeviceShaderAtomicInt64Features() const {
+    [[nodiscard]] const VkPhysicalDeviceShaderAtomicInt64FeaturesKHR& getPhysicalDeviceShaderAtomicInt64Features() const {
         return shaderAtomicInt64Features;
     }
-    inline const VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT& getPhysicalDeviceShaderImageAtomicInt64Features() const {
+    [[nodiscard]] const VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT& getPhysicalDeviceShaderImageAtomicInt64Features() const {
         return shaderImageAtomicInt64Features;
     }
-    inline const VkPhysicalDeviceShaderAtomicFloatFeaturesEXT& getPhysicalDeviceShaderAtomicFloatFeatures() const {
+    [[nodiscard]] const VkPhysicalDeviceShaderAtomicFloatFeaturesEXT& getPhysicalDeviceShaderAtomicFloatFeatures() const {
         return shaderAtomicFloatFeatures;
     }
 #ifdef VK_EXT_mutable_descriptor_type
-    inline const VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT& getVkPhysicalDeviceMutableDescriptorTypeFeatures() const {
+    [[nodiscard]] const VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT& getVkPhysicalDeviceMutableDescriptorTypeFeatures() const {
         return mutableDescriptorTypeFeatures;
     }
 #endif
 #ifdef VK_EXT_shader_atomic_float2
-    inline const VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT& getPhysicalDeviceShaderAtomicFloat2Features() const {
+    [[nodiscard]] const VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT& getPhysicalDeviceShaderAtomicFloat2Features() const {
         return shaderAtomicFloat2Features;
     }
 #endif
 #ifdef VK_KHR_shader_bfloat16
-    inline const VkPhysicalDeviceShaderBfloat16FeaturesKHR& getPhysicalDeviceShaderBfloat16Features() const {
+    [[nodiscard]] const VkPhysicalDeviceShaderBfloat16FeaturesKHR& getPhysicalDeviceShaderBfloat16Features() const {
         return shaderBfloat16Features;
     }
 #endif
-    inline const VkPhysicalDeviceShaderDrawParametersFeatures& getPhysicalDeviceShaderDrawParametersFeatures() const {
+    [[nodiscard]] const VkPhysicalDeviceShaderDrawParametersFeatures& getPhysicalDeviceShaderDrawParametersFeatures() const {
         return shaderDrawParametersFeatures;
     }
-    inline const VkPhysicalDeviceSubgroupProperties& getPhysicalDeviceSubgroupProperties() const {
+    [[nodiscard]] const VkPhysicalDeviceSubgroupProperties& getPhysicalDeviceSubgroupProperties() const {
         return subgroupProperties;
     }
-    inline const VkPhysicalDeviceAccelerationStructurePropertiesKHR& getPhysicalDeviceAccelerationStructureProperties() const {
+    [[nodiscard]] VkDeviceSize getMinImportedHostPointerAlignment() const {
+        return physicalDeviceExternalMemoryHostPropertiesEXT.minImportedHostPointerAlignment;
+    }
+    [[nodiscard]] const VkPhysicalDeviceAccelerationStructurePropertiesKHR& getPhysicalDeviceAccelerationStructureProperties() const {
         return accelerationStructureProperties;
     }
-    inline const VkPhysicalDeviceAccelerationStructureFeaturesKHR& getPhysicalDeviceAccelerationStructureFeatures() const {
+    [[nodiscard]] const VkPhysicalDeviceAccelerationStructureFeaturesKHR& getPhysicalDeviceAccelerationStructureFeatures() const {
         return accelerationStructureFeatures;
     }
-    inline const VkPhysicalDeviceRayTracingPipelinePropertiesKHR& getPhysicalDeviceRayTracingPipelineProperties() const {
+    [[nodiscard]] const VkPhysicalDeviceRayTracingPipelinePropertiesKHR& getPhysicalDeviceRayTracingPipelineProperties() const {
         return rayTracingPipelineProperties;
     }
-    inline bool getRayQueriesSupported() const { return rayQueryFeatures.rayQuery == VK_TRUE; }
-    inline bool getRayTracingPipelineSupported() const { return rayTracingPipelineFeatures.rayTracingPipeline == VK_TRUE; }
-    inline const VkPhysicalDeviceMeshShaderPropertiesNV& getPhysicalDeviceMeshShaderPropertiesNV() const {
+    [[nodiscard]] bool getRayQueriesSupported() const { return rayQueryFeatures.rayQuery == VK_TRUE; }
+    [[nodiscard]] bool getRayTracingPipelineSupported() const { return rayTracingPipelineFeatures.rayTracingPipeline == VK_TRUE; }
+    [[nodiscard]] const VkPhysicalDeviceMeshShaderPropertiesNV& getPhysicalDeviceMeshShaderPropertiesNV() const {
         return meshShaderPropertiesNV;
     }
-    inline const VkPhysicalDeviceMeshShaderFeaturesNV& getPhysicalDeviceMeshShaderFeaturesNV() const {
+    [[nodiscard]] const VkPhysicalDeviceMeshShaderFeaturesNV& getPhysicalDeviceMeshShaderFeaturesNV() const {
         return meshShaderFeaturesNV;
     }
 #ifdef VK_EXT_mesh_shader
-    inline const VkPhysicalDeviceMeshShaderPropertiesEXT& getPhysicalDeviceMeshShaderPropertiesEXT() const {
+    [[nodiscard]] const VkPhysicalDeviceMeshShaderPropertiesEXT& getPhysicalDeviceMeshShaderPropertiesEXT() const {
         return meshShaderPropertiesEXT;
     }
-    inline const VkPhysicalDeviceMeshShaderFeaturesEXT& getPhysicalDeviceMeshShaderFeaturesEXT() const {
+    [[nodiscard]] const VkPhysicalDeviceMeshShaderFeaturesEXT& getPhysicalDeviceMeshShaderFeaturesEXT() const {
         return meshShaderFeaturesEXT;
     }
 #endif
 #ifdef VK_NV_cooperative_matrix
-    inline const VkPhysicalDeviceCooperativeMatrixFeaturesNV& getCooperativeMatrixFeaturesNV() const {
+    [[nodiscard]] const VkPhysicalDeviceCooperativeMatrixFeaturesNV& getCooperativeMatrixFeaturesNV() const {
         return cooperativeMatrixFeaturesNV;
     }
-    inline const VkPhysicalDeviceCooperativeMatrixPropertiesNV& getCooperativeMatrixPropertiesNV() const {
+    [[nodiscard]] const VkPhysicalDeviceCooperativeMatrixPropertiesNV& getCooperativeMatrixPropertiesNV() const {
         return cooperativeMatrixPropertiesNV;
     }
-    const std::vector<VkCooperativeMatrixPropertiesNV>& getSupportedCooperativeMatrixPropertiesNV();
+    [[nodiscard]] const std::vector<VkCooperativeMatrixPropertiesNV>& getSupportedCooperativeMatrixPropertiesNV();
 #endif
 #ifdef VK_KHR_cooperative_matrix
-    inline const VkPhysicalDeviceCooperativeMatrixFeaturesKHR& getCooperativeMatrixFeaturesKHR() const {
+    [[nodiscard]] const VkPhysicalDeviceCooperativeMatrixFeaturesKHR& getCooperativeMatrixFeaturesKHR() const {
         return cooperativeMatrixFeaturesKHR;
     }
-    inline const VkPhysicalDeviceCooperativeMatrixPropertiesKHR& getCooperativeMatrixPropertiesKHR() const {
+    [[nodiscard]] const VkPhysicalDeviceCooperativeMatrixPropertiesKHR& getCooperativeMatrixPropertiesKHR() const {
         return cooperativeMatrixPropertiesKHR;
     }
-    const std::vector<VkCooperativeMatrixPropertiesKHR>& getSupportedCooperativeMatrixPropertiesKHR();
+    [[nodiscard]] const std::vector<VkCooperativeMatrixPropertiesKHR>& getSupportedCooperativeMatrixPropertiesKHR();
 #endif
 #ifdef VK_NV_cooperative_matrix2
-    inline const VkPhysicalDeviceCooperativeMatrix2FeaturesNV& getCooperativeMatrix2FeaturesNV() const {
+    [[nodiscard]] const VkPhysicalDeviceCooperativeMatrix2FeaturesNV& getCooperativeMatrix2FeaturesNV() const {
         return cooperativeMatrix2FeaturesNV;
     }
-    inline const VkPhysicalDeviceCooperativeMatrix2PropertiesNV& getCooperativeMatrix2PropertiesNV() const {
+    [[nodiscard]] const VkPhysicalDeviceCooperativeMatrix2PropertiesNV& getCooperativeMatrix2PropertiesNV() const {
         return cooperativeMatrix2PropertiesNV;
     }
-    const std::vector<VkCooperativeMatrixFlexibleDimensionsPropertiesNV>& getSupportedCooperativeMatrixFlexibleDimensionsPropertiesNV();
+    [[nodiscard]] const std::vector<VkCooperativeMatrixFlexibleDimensionsPropertiesNV>& getSupportedCooperativeMatrixFlexibleDimensionsPropertiesNV();
 #endif
 #ifdef VK_NV_cooperative_vector
-    inline const VkPhysicalDeviceCooperativeVectorFeaturesNV& getCooperativeVectorFeaturesNV() const {
+    [[nodiscard]] const VkPhysicalDeviceCooperativeVectorFeaturesNV& getCooperativeVectorFeaturesNV() const {
         return cooperativeVectorFeaturesNV;
     }
-    inline const VkPhysicalDeviceCooperativeVectorPropertiesNV& getCooperativeVectorPropertiesNV() const {
+    [[nodiscard]] const VkPhysicalDeviceCooperativeVectorPropertiesNV& getCooperativeVectorPropertiesNV() const {
         return cooperativeVectorPropertiesNV;
     }
-    const std::vector<VkCooperativeVectorPropertiesNV>& getSupportedCooperativeVectorPropertiesNV();
+    [[nodiscard]] const std::vector<VkCooperativeVectorPropertiesNV>& getSupportedCooperativeVectorPropertiesNV();
     void convertCooperativeVectorMatrixNV(const VkConvertCooperativeVectorMatrixInfoNV& convertCoopVecMatInfo);
 #endif
-    const VkPhysicalDeviceShaderCorePropertiesAMD& getDeviceShaderCorePropertiesAMD();
-    const VkPhysicalDeviceShaderCoreProperties2AMD& getDeviceShaderCoreProperties2AMD();
+    [[nodiscard]] const VkPhysicalDeviceShaderCorePropertiesAMD& getDeviceShaderCorePropertiesAMD();
+    [[nodiscard]] const VkPhysicalDeviceShaderCoreProperties2AMD& getDeviceShaderCoreProperties2AMD();
 #ifdef VK_EXT_shader_64bit_indexing
-    inline const VkPhysicalDeviceShader64BitIndexingFeaturesEXT& getShader64BitIndexingFeaturesEXT() const {
+    [[nodiscard]] const VkPhysicalDeviceShader64BitIndexingFeaturesEXT& getShader64BitIndexingFeaturesEXT() const {
         return shader64BitIndexingFeaturesEXT;
     }
 #endif
 
-    VkSampleCountFlagBits getMaxUsableSampleCount() const;
+    [[nodiscard]] VkSampleCountFlagBits getMaxUsableSampleCount() const;
 
-    VkFormat getSupportedDepthFormat(
+    [[nodiscard]] VkFormat getSupportedDepthFormat(
             VkFormat hint = VK_FORMAT_D32_SFLOAT, VkImageTiling imageTiling = VK_IMAGE_TILING_OPTIMAL);
-    std::vector<VkFormat> getSupportedDepthFormats(VkImageTiling imageTiling = VK_IMAGE_TILING_OPTIMAL);
-    VkFormat getSupportedDepthStencilFormat(
+    [[nodiscard]] std::vector<VkFormat> getSupportedDepthFormats(VkImageTiling imageTiling = VK_IMAGE_TILING_OPTIMAL);
+    [[nodiscard]] VkFormat getSupportedDepthStencilFormat(
             VkFormat hint = VK_FORMAT_D24_UNORM_S8_UINT, VkImageTiling imageTiling = VK_IMAGE_TILING_OPTIMAL);
-    std::vector<VkFormat> getSupportedDepthStencilFormats(VkImageTiling imageTiling = VK_IMAGE_TILING_OPTIMAL);
-    bool getSupportsFormat(VkFormat format, VkImageTiling imageTiling = VK_IMAGE_TILING_OPTIMAL);
+    [[nodiscard]] std::vector<VkFormat> getSupportedDepthStencilFormats(VkImageTiling imageTiling = VK_IMAGE_TILING_OPTIMAL);
+    [[nodiscard]] bool getSupportsFormat(VkFormat format, VkImageTiling imageTiling = VK_IMAGE_TILING_OPTIMAL);
     void getPhysicalDeviceFormatProperties2(VkFormat format, VkFormatProperties2& formatProperties);
 
-    bool checkPhysicalDeviceFeaturesSupported(const VkPhysicalDeviceFeatures& featuresRequired);
+    [[nodiscard]] bool checkPhysicalDeviceFeaturesSupported(const VkPhysicalDeviceFeatures& featuresRequired);
 #ifdef VK_VERSION_1_1
-    bool checkPhysicalDeviceFeatures11Supported(const VkPhysicalDeviceVulkan11Features& featuresRequired);
+    [[nodiscard]] bool checkPhysicalDeviceFeatures11Supported(const VkPhysicalDeviceVulkan11Features& featuresRequired);
 #else
-    bool checkPhysicalDeviceFeatures11Supported(const VkPhysicalDeviceVulkan11Features_Compat& featuresRequired);
+    [[nodiscard]] bool checkPhysicalDeviceFeatures11Supported(const VkPhysicalDeviceVulkan11Features_Compat& featuresRequired);
 #endif
 #ifdef VK_VERSION_1_2
-    bool checkPhysicalDeviceFeatures12Supported(const VkPhysicalDeviceVulkan12Features& featuresRequired);
+    [[nodiscard]] bool checkPhysicalDeviceFeatures12Supported(const VkPhysicalDeviceVulkan12Features& featuresRequired);
 #else
-    bool checkPhysicalDeviceFeatures12Supported(const VkPhysicalDeviceVulkan12Features_Compat& featuresRequired);
+    [[nodiscard]] bool checkPhysicalDeviceFeatures12Supported(const VkPhysicalDeviceVulkan12Features_Compat& featuresRequired);
 #endif
 
     /**
@@ -595,14 +599,39 @@ public:
      * @param memoryPropertyFlags The requested memory property flags.
      * @return The index of the first suitable memory type.
      */
-    uint32_t findMemoryTypeIndex(uint32_t memoryTypeBits, VkMemoryPropertyFlags memoryPropertyFlags);
+    [[nodiscard]] uint32_t findMemoryTypeIndex(uint32_t memoryTypeBits, VkMemoryPropertyFlags memoryPropertyFlags);
+
+    /**
+     * Same as @see findMemoryTypeIndex, but does not throw an exception when no matching memory type can be found.
+     */
+    [[nodiscard]] std::optional<uint32_t> findMemoryTypeIndexOptional(
+            uint32_t memoryTypeBits, VkMemoryPropertyFlags memoryPropertyFlags);
+
+    /**
+     * Returns the index of the memory type with the corresponding bits and property flags.
+     * @param memoryTypeBits The memory type bits as returned by, e.g., VkMemoryRequirements::memoryTypeBits.
+     * @param memoryPropertyFlags The requested memory property flags.
+     * @param blockedMemoryPropertyFlags The memory property flags that may NOT be set.
+     * @return The index of the first suitable memory type.
+     */
+    [[nodiscard]] uint32_t findMemoryTypeIndexWithoutFlags(
+            uint32_t memoryTypeBits, VkMemoryPropertyFlags memoryPropertyFlags,
+            VkMemoryPropertyFlags blockedMemoryPropertyFlags);
+
+    /**
+     * Same as @see findMemoryTypeIndexWithoutFlags, but does not throw an exception when no matching memory type can be
+     * found.
+     */
+    [[nodiscard]] std::optional<uint32_t> findMemoryTypeIndexWithoutFlagsOptional(
+            uint32_t memoryTypeBits, VkMemoryPropertyFlags memoryPropertyFlags,
+            VkMemoryPropertyFlags blockedMemoryPropertyFlags);
 
     /**
      * Returns the index of the first memory heap with the requested flags.
      * @param heapFlags The heap flags.
      * @return The index of the first memory heap with the requested flags.
      */
-    uint32_t findMemoryHeapIndex(VkMemoryHeapFlagBits heapFlags);
+    [[nodiscard]] uint32_t findMemoryHeapIndex(VkMemoryHeapFlagBits heapFlags);
 
     /**
      * Returns the amount of available heap memory.
@@ -610,7 +639,7 @@ public:
      * @param memoryHeapIndex The index of the memory heap. NOTE: This is NOT equal to the memory type index!
      * @return The memory budget for the heap in bytes.
      */
-    VkDeviceSize getMemoryHeapBudget(uint32_t memoryHeapIndex);
+    [[nodiscard]] VkDeviceSize getMemoryHeapBudget(uint32_t memoryHeapIndex);
 
     /**
      * Returns the amount of available heap memory. Compared to @see getMemoryHeapBudget, VMA has some fallbacks if
@@ -618,7 +647,7 @@ public:
      * @param memoryHeapIndex The index of the memory heap. NOTE: This is NOT equal to the memory type index!
      * @return The memory budget for the heap in bytes.
      */
-    VkDeviceSize getMemoryHeapBudgetVma(uint32_t memoryHeapIndex);
+    [[nodiscard]] VkDeviceSize getMemoryHeapBudgetVma(uint32_t memoryHeapIndex);
 
     // Create command buffers. Remember to call vkFreeCommandBuffers (specifying the pool is necessary for this).
     VkCommandBuffer allocateCommandBuffer(
@@ -631,25 +660,25 @@ public:
     void freeCommandBuffers(VkCommandPool commandPool, const std::vector<VkCommandBuffer>& commandBuffers);
 
     // Query memory pools (automatically created).
-    VmaPool getExternalMemoryHandlePool(uint32_t memoryTypeIndex, bool isBuffer);
+    [[nodiscard]] VmaPool getExternalMemoryHandlePool(uint32_t memoryTypeIndex, bool isBuffer);
 
     // Queries device memory size of device memory allocated by VMA.
-    VkDeviceSize getVmaDeviceMemoryAllocationSize(VkDeviceMemory deviceMemory);
+    [[nodiscard]] VkDeviceSize getVmaDeviceMemoryAllocationSize(VkDeviceMemory deviceMemory);
 
     // Query information about external memory support of the device driver.
-    bool getNeedsDedicatedAllocationForExternalMemoryImage(
+    [[nodiscard]] bool getNeedsDedicatedAllocationForExternalMemoryImage(
             VkFormat format, VkImageType type, VkImageTiling tiling, VkImageUsageFlags usage, VkImageCreateFlags flags,
             VkExternalMemoryHandleTypeFlagBits handleType);
-    bool getNeedsDedicatedAllocationForExternalMemoryBuffer(
+    [[nodiscard]] bool getNeedsDedicatedAllocationForExternalMemoryBuffer(
             VkBufferUsageFlags usage, VkBufferCreateFlags flags, VkExternalMemoryHandleTypeFlagBits handleType);
 
     // Create a transient command buffer ready to execute commands (0xFFFFFFFF encodes graphics queue).
-    VkCommandBuffer beginSingleTimeCommands(uint32_t queueIndex = 0xFFFFFFFF, bool beginCommandBuffer = true);
+    [[nodiscard]] VkCommandBuffer beginSingleTimeCommands(uint32_t queueIndex = 0xFFFFFFFF, bool beginCommandBuffer = true);
     void endSingleTimeCommands(
             VkCommandBuffer commandBuffer, uint32_t queueIndex = 0xFFFFFFFF, bool endCommandBuffer = true);
 
     // Create multiple transient command buffers ready to execute commands (0xFFFFFFFF encodes graphics queue).
-    std::vector<VkCommandBuffer> beginSingleTimeMultipleCommands(
+    [[nodiscard]] std::vector<VkCommandBuffer> beginSingleTimeMultipleCommands(
             uint32_t numCommandBuffers, uint32_t queueIndex = 0xFFFFFFFF, bool beginCommandBuffer = true);
     void endSingleTimeMultipleCommands(
             const std::vector<VkCommandBuffer>& commandBuffers, uint32_t queueIndex = 0xFFFFFFFF,
@@ -666,10 +695,10 @@ public:
             uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex,
             const BufferPtr& buffer, VkCommandBuffer commandBuffer);
 
-    inline Instance* getInstance() { return instance; }
+    [[nodiscard]] Instance* getInstance() { return instance; }
 
     // Get the standard descriptor pool.
-    VkDescriptorPool getDefaultVkDescriptorPool() { return descriptorPool; }
+    [[nodiscard]] VkDescriptorPool getDefaultVkDescriptorPool() { return descriptorPool; }
 
 #ifdef SUPPORT_OPENGL
     /// This function must be called before the device is created.
@@ -800,6 +829,7 @@ private:
     MAYBE_UNUSED_MEMBER VkPhysicalDeviceVulkan14Properties_Compat physicalDeviceVulkan14Properties{};
 #endif
     VkPhysicalDeviceSubgroupProperties subgroupProperties{};
+    VkPhysicalDeviceExternalMemoryHostPropertiesEXT physicalDeviceExternalMemoryHostPropertiesEXT{};
     VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties{};
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties{};
     VkPhysicalDeviceMeshShaderPropertiesNV meshShaderPropertiesNV{};
