@@ -88,8 +88,7 @@ SemaphoreVkComputeApiInteropPtr createSemaphoreVkComputeApiInterop(
 
 
 /**
- * A CUDA driver API CUexternalSemaphore/HIP driver API hipExternalSemaphore_t object created from a Vulkan semaphore.
- * Both binary and timeline semaphores are supported, but timeline semaphores require at least CUDA 11.2.
+ * A CUDA driver API CUexternalMemory/hipExternalMemory_t object created from a Vulkan buffer.
  */
 class DLL_OBJECT BufferVkComputeApiExternalMemory {
 public:
@@ -138,8 +137,7 @@ BufferVkComputeApiExternalMemoryPtr createBufferVkComputeApiExternalMemory(vk::B
 
 
 /**
- * A CUDA driver API CUexternalSemaphore/HIP driver API hipExternalSemaphore_t object created from a Vulkan semaphore.
- * Both binary and timeline semaphores are supported, but timeline semaphores require at least CUDA 11.2.
+ * A CUDA driver API CUexternalMemory + CUarray/hipExternalMemory_t + hipArray_t object created from a Vulkan image.
  */
 class DLL_OBJECT ImageVkComputeApiExternalMemory {
 public:
@@ -186,6 +184,39 @@ typedef std::shared_ptr<ImageVkComputeApiExternalMemory> ImageVkComputeApiExtern
 ImageVkComputeApiExternalMemoryPtr createImageVkComputeApiExternalMemory(vk::ImagePtr& vulkanImage);
 ImageVkComputeApiExternalMemoryPtr createImageVkComputeApiExternalMemory(
         vk::ImagePtr& vulkanImage, VkImageViewType imageViewType, bool surfaceLoadStore);
+
+/**
+ * An unsampled image.
+ */
+class DLL_OBJECT UnsampledImageVkComputeApiExternalMemory {
+public:
+    UnsampledImageVkComputeApiExternalMemory() = default;
+    virtual void initialize(const ImageVkComputeApiExternalMemoryPtr& _image) = 0;
+    virtual ~UnsampledImageVkComputeApiExternalMemory() = default;
+
+    inline const sgl::vk::ImagePtr& getVulkanImage() { return image->getVulkanImage(); }
+
+    /*
+     * Asynchronous copy from/to a device pointer to level 0 mipmap level.
+     */
+    void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr) {
+        image->copyFromDevicePtrAsync(devicePtrSrc, stream, eventOut);
+    }
+    void copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream, void* eventOut = nullptr) {
+        image->copyToDevicePtrAsync(devicePtrDst, stream, eventOut);
+    }
+
+protected:
+    ImageVkComputeApiExternalMemoryPtr image;
+};
+
+typedef std::shared_ptr<UnsampledImageVkComputeApiExternalMemory> UnsampledImageVkComputeApiExternalMemoryPtr;
+
+UnsampledImageVkComputeApiExternalMemoryPtr createUnsampledImageVkComputeApiExternalMemory(vk::ImagePtr& vulkanImage);
+UnsampledImageVkComputeApiExternalMemoryPtr createUnsampledImageVkComputeApiExternalMemory(
+        vk::ImagePtr& vulkanImage, VkImageViewType imageViewType);
+UnsampledImageVkComputeApiExternalMemoryPtr createUnsampledImageVkComputeApiExternalMemory(
+        const ImageVkComputeApiExternalMemoryPtr& image);
 
 }}
 

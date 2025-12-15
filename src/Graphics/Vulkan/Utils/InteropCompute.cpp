@@ -539,4 +539,80 @@ void ImageVkComputeApiExternalMemory::freeHandlesAndFds() {
 #endif
 }
 
+
+UnsampledImageVkComputeApiExternalMemoryPtr createUnsampledImageVkComputeApiExternalMemory(
+        vk::ImagePtr& vulkanImage) {
+    InteropComputeApi interopComputeApi = decideInteropComputeApi(vulkanImage->getDevice());
+    UnsampledImageVkComputeApiExternalMemoryPtr unsampledImageExtMem;
+    ImageVkComputeApiExternalMemoryPtr imageExtMem = createImageVkComputeApiExternalMemory(vulkanImage);
+#ifdef SUPPORT_CUDA_INTEROP
+    if (interopComputeApi == InteropComputeApi::CUDA) {
+        unsampledImageExtMem = std::make_shared<UnsampledImageVkCudaInterop>();
+    }
+#endif
+#ifdef SUPPORT_SYCL_INTEROP
+    if (interopComputeApi == InteropComputeApi::SYCL) {
+        unsampledImageExtMem = std::make_shared<UnsampledImageVkSyclInterop>();
+    }
+#endif
+    if (!unsampledImageExtMem) {
+        sgl::Logfile::get()->writeError(
+                "Error in createUnsampledImageVkComputeApiExternalMemory: Unsupported compute API.");
+        return unsampledImageExtMem;
+    }
+
+    unsampledImageExtMem->initialize(imageExtMem);
+    return unsampledImageExtMem;
+}
+
+UnsampledImageVkComputeApiExternalMemoryPtr createUnsampledImageVkComputeApiExternalMemory(
+        ImagePtr& vulkanImage, VkImageViewType imageViewType) {
+    InteropComputeApi interopComputeApi = decideInteropComputeApi(vulkanImage->getDevice());
+    UnsampledImageVkComputeApiExternalMemoryPtr unsampledImageExtMem;
+    ImageVkComputeApiExternalMemoryPtr imageExtMem = createImageVkComputeApiExternalMemory(
+            vulkanImage, imageViewType, true);
+#ifdef SUPPORT_CUDA_INTEROP
+    if (interopComputeApi == InteropComputeApi::CUDA) {
+        unsampledImageExtMem = std::make_shared<UnsampledImageVkCudaInterop>();
+    }
+#endif
+#ifdef SUPPORT_SYCL_INTEROP
+    if (interopComputeApi == InteropComputeApi::SYCL) {
+        unsampledImageExtMem = std::make_shared<UnsampledImageVkSyclInterop>();
+    }
+#endif
+    if (!unsampledImageExtMem) {
+        sgl::Logfile::get()->writeError(
+                "Error in createUnsampledImageVkComputeApiExternalMemory: Unsupported compute API.");
+        return unsampledImageExtMem;
+    }
+
+    unsampledImageExtMem->initialize(imageExtMem);
+    return unsampledImageExtMem;
+}
+
+UnsampledImageVkComputeApiExternalMemoryPtr createUnsampledImageVkComputeApiExternalMemory(
+        const ImageVkComputeApiExternalMemoryPtr& imageExtMem) {
+    InteropComputeApi interopComputeApi = decideInteropComputeApi(imageExtMem->getVulkanImage()->getDevice());
+    UnsampledImageVkComputeApiExternalMemoryPtr unsampledImageExtMem;
+#ifdef SUPPORT_CUDA_INTEROP
+    if (interopComputeApi == InteropComputeApi::CUDA) {
+        unsampledImageExtMem = std::make_shared<UnsampledImageVkCudaInterop>();
+    }
+#endif
+#ifdef SUPPORT_SYCL_INTEROP
+    if (interopComputeApi == InteropComputeApi::SYCL) {
+        unsampledImageExtMem = std::make_shared<UnsampledImageVkSyclInterop>();
+    }
+#endif
+    if (!unsampledImageExtMem) {
+        sgl::Logfile::get()->writeError(
+                "Error in createUnsampledImageVkComputeApiExternalMemory: Unsupported compute API.");
+        return unsampledImageExtMem;
+    }
+
+    unsampledImageExtMem->initialize(imageExtMem);
+    return unsampledImageExtMem;
+}
+
 }}

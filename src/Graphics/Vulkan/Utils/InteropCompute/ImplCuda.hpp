@@ -94,6 +94,9 @@ public:
     void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr) override;
     void copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream, void* eventOut = nullptr) override;
 
+    [[nodiscard]] inline CUmipmappedArray getCudaMipmappedArray() const { return reinterpret_cast<CUmipmappedArray>(mipmappedArray); }
+    CUarray getCudaMipmappedArrayLevel(uint32_t level = 0);
+
 protected:
     void preCheckExternalMemoryImport() override;
 #ifdef _WIN32
@@ -105,15 +108,28 @@ protected:
     void importExternalMemory() override;
     void free() override;
 
-    [[nodiscard]] inline CUmipmappedArray getCudaMipmappedArray() const { return reinterpret_cast<CUmipmappedArray>(mipmappedArray); }
-    CUarray getCudaMipmappedArrayLevel(uint32_t level = 0);
-
 private:
     CUDA_EXTERNAL_MEMORY_HANDLE_DESC externalMemoryHandleDesc{};
     void* externalMemoryBuffer{}; // CUexternalMemory
 
     // Cache for storing the array for mipmap level 0.
     void* arrayLevel0{}; // CUarray
+};
+
+
+class DLL_OBJECT UnsampledImageVkCudaInterop : public UnsampledImageVkComputeApiExternalMemory {
+public:
+    UnsampledImageVkCudaInterop() = default;
+    void initialize(const ImageVkComputeApiExternalMemoryPtr& _image) override;
+    ~UnsampledImageVkCudaInterop() override;
+
+    [[nodiscard]] inline CUmipmappedArray getCudaMipmappedArray() const { return std::static_pointer_cast<ImageVkCudaInterop>(image)->getCudaMipmappedArray(); }
+    CUarray getCudaMipmappedArrayLevel(uint32_t level = 0) { return std::static_pointer_cast<ImageVkCudaInterop>(image)->getCudaMipmappedArrayLevel(level); }
+
+    CUsurfObject getCudaSurfaceObject() { return cudaSurfaceObject; }
+
+protected:
+    CUsurfObject cudaSurfaceObject{};
 };
 
 }}

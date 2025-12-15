@@ -391,4 +391,24 @@ void ImageVkCudaInterop::copyToDevicePtrAsync(
     }
 }
 
+
+void UnsampledImageVkCudaInterop::initialize(const ImageVkComputeApiExternalMemoryPtr& _image) {
+    image = _image;
+
+    CUDA_RESOURCE_DESC cudaResourceDesc{};
+    cudaResourceDesc.resType = CU_RESOURCE_TYPE_MIPMAPPED_ARRAY;
+    cudaResourceDesc.res.mipmap.hMipmappedArray = getCudaMipmappedArray();
+
+    CUresult cuResult = g_cudaDeviceApiFunctionTable.cuSurfObjectCreate(&cudaSurfaceObject, &cudaResourceDesc);
+    checkCUresult(cuResult, "Error in cuSurfObjectDestroy: ");
+}
+
+UnsampledImageVkCudaInterop::~UnsampledImageVkCudaInterop() {
+    if (cudaSurfaceObject) {
+        CUresult cuResult = g_cudaDeviceApiFunctionTable.cuSurfObjectDestroy(cudaSurfaceObject);
+        checkCUresult(cuResult, "Error in cuSurfObjectDestroy: ");
+        cudaSurfaceObject = {};
+    }
+}
+
 }}

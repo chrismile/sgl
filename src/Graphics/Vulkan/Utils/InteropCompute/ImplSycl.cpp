@@ -423,4 +423,43 @@ void ImageVkSyclInterop::copyToDevicePtrAsync(
     }
 }
 
+
+void UnsampledImageVkSyclInterop::initialize(const ImageVkComputeApiExternalMemoryPtr& _image) {
+    static_assert(sizeof(sycl::ext::oneapi::experimental::unsampled_image_handle) == sizeof(rawImageHandle));
+    this->image = _image;
+    auto imageVkSycl = std::static_pointer_cast<ImageVkSyclInterop>(image);
+    auto* wrapperImg = reinterpret_cast<SyclImageMemHandleWrapper*>(imageVkSycl->mipmappedArray);
+
+    if (!sycl::ext::oneapi::experimental::is_image_handle_supported<sycl::ext::oneapi::experimental::unsampled_image_handle>(
+            wrapperImg->syclImageDescriptor, sycl::ext::oneapi::experimental::image_memory_handle_type::opaque_handle,
+            *g_syclQueue)) {
+        if (openMessageBoxOnComputeApiError) {
+            sgl::Logfile::get()->writeError(
+                    "Error in UnsampledImageVkSyclInterop::_initialize: "
+                    "Unsupported SYCL image handle type.");
+        } else {
+            sgl::Logfile::get()->write(
+                    "Error in UnsampledImageVkSyclInterop::_initialize: "
+                    "Unsupported SYCL image handle type.", sgl::RED);
+        }
+        throw UnsupportedComputeApiFeatureException("Unsupported SYCL image handle type");
+    }
+
+    auto handle = sycl::ext::oneapi::experimental::create_image(
+            wrapperImg->syclImageMemHandle, wrapperImg->syclImageDescriptor, *g_syclQueue);
+    rawImageHandle = handle.raw_handle;
+}
+
+UnsampledImageVkSyclInterop::~UnsampledImageVkSyclInterop() {
+    if (rawImageHandle) {
+        sycl::ext::oneapi::experimental::unsampled_image_handle handle{rawImageHandle};
+        sycl::ext::oneapi::experimental::destroy_image_handle(handle, *g_syclQueue);
+        rawImageHandle = {};
+    }
+}
+
+uint64_t UnsampledImageVkSyclInterop::getRawHandle() {
+    return rawImageHandle;
+}
+
 }}
