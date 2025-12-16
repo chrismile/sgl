@@ -548,28 +548,30 @@ void ImageVkLevelZeroInterop::setExternalMemoryFd(int fileDescriptor) {
 void ImageVkLevelZeroInterop::importExternalMemory() {
     const sgl::vk::ImageSettings& imageSettings = vulkanImage->getImageSettings();
     zeImageDesc.width = imageSettings.width;
-    if (imageViewType == VK_IMAGE_VIEW_TYPE_2D || imageViewType == VK_IMAGE_VIEW_TYPE_3D
-            || imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
+    if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_2D
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_3D
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
         zeImageDesc.height = imageSettings.height;
     }
-    if (imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
+    if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
         zeImageDesc.depth = imageSettings.depth;
-    } else if (imageViewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY || imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
+    } else if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
         zeImageDesc.arraylevels = imageSettings.arrayLayers;
     }
-    if (imageViewType == VK_IMAGE_VIEW_TYPE_1D) {
+    if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_1D) {
         zeImageDesc.type = ZE_IMAGE_TYPE_1D;
-    } else if (imageViewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY) {
+    } else if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY) {
         zeImageDesc.type = ZE_IMAGE_TYPE_1DARRAY;
-    } else if (imageViewType == VK_IMAGE_VIEW_TYPE_2D) {
+    } else if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_2D) {
         zeImageDesc.type = ZE_IMAGE_TYPE_2D;
-    } else if (imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
+    } else if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
         zeImageDesc.type = ZE_IMAGE_TYPE_2DARRAY;
-    } else if (imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
+    } else if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
         zeImageDesc.type = ZE_IMAGE_TYPE_3D;
     }
     getZeImageFormatFromVkFormat(imageSettings.format, zeImageDesc.format);
-    if (surfaceLoadStore) {
+    if (imageComputeApiInfo.surfaceLoadStore) {
         zeImageDesc.flags |= ZE_IMAGE_FLAG_KERNEL_WRITE;
     }
     // ZE_IMAGE_FLAG_BIAS_UNCACHED currently unused here.
@@ -592,6 +594,28 @@ void ImageVkLevelZeroInterop::importExternalMemory() {
         imageBindlessExpDesc.stype = ZE_STRUCTURE_TYPE_BINDLESS_IMAGE_EXP_DESC;
         imageBindlessExpDesc.flags = ZE_IMAGE_BINDLESS_EXP_FLAG_BINDLESS;
         imageBindlessExpDesc.pNext = &imagePitchedExpDesc;
+        if (imageComputeApiInfo.useSampledImage) {
+            samplerDesc.stype = ZE_STRUCTURE_TYPE_SAMPLER_DESC;
+            if (imageComputeApiInfo.imageSamplerSettings.minFilter == VK_FILTER_NEAREST
+                    && imageComputeApiInfo.imageSamplerSettings.magFilter == VK_FILTER_NEAREST) {
+                samplerDesc.filterMode = ZE_SAMPLER_FILTER_MODE_NEAREST;
+            } else {
+                samplerDesc.filterMode = ZE_SAMPLER_FILTER_MODE_LINEAR;
+            }
+            if (imageComputeApiInfo.imageSamplerSettings.addressModeU == VK_SAMPLER_ADDRESS_MODE_REPEAT) {
+                samplerDesc.addressMode = ZE_SAMPLER_ADDRESS_MODE_REPEAT;
+            } else if (imageComputeApiInfo.imageSamplerSettings.addressModeU == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) {
+                samplerDesc.addressMode = ZE_SAMPLER_ADDRESS_MODE_CLAMP;
+            } else if (imageComputeApiInfo.imageSamplerSettings.addressModeU == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER) {
+                samplerDesc.addressMode = ZE_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+            } else if (imageComputeApiInfo.imageSamplerSettings.addressModeU == VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT) {
+                samplerDesc.addressMode = ZE_SAMPLER_ADDRESS_MODE_MIRROR;
+            } else {
+                samplerDesc.addressMode = ZE_SAMPLER_ADDRESS_MODE_NONE;
+            }
+            samplerDesc.isNormalized = imageComputeApiInfo.textureExternalMemorySettings.useNormalizedCoordinates;
+            imagePitchedExpDesc.pNext = &samplerDesc;
+        }
         zeImageDesc.pNext = &imageBindlessExpDesc;
     }
 

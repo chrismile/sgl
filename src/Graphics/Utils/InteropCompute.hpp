@@ -96,13 +96,25 @@ union DLL_OBJECT StreamWrapper {
 /**
  * An exception that can be thrown when the compute API does not support the used feature.
  */
-class UnsupportedComputeApiFeatureException : public std::exception {
+class DLL_OBJECT UnsupportedComputeApiFeatureException : public std::exception {
 public:
     explicit UnsupportedComputeApiFeatureException(std::string msg) : message(std::move(msg)) {}
     [[nodiscard]] char const* what() const noexcept override { return message.c_str(); }
 
 private:
     std::string message;
+};
+
+struct DLL_OBJECT TextureExternalMemorySettings {
+    // Use CUDA mipmapped array or CUDA array at level 0.
+    bool useMipmappedArray = false;
+    // Whether to use normalized coordinates in the range [0, 1) or integer coordinates in the range [0, dim).
+    // NOTE: For CUDA mipmapped arrays, this value has to be set to true!
+    bool useNormalizedCoordinates = false;
+    // Whether to allow bilinear filtering in case it can closely approximate trilinear filtering.
+    bool useTrilinearOptimization = true;
+    // Whether to transform integer values to the range [0, 1] or not.
+    bool readAsInteger = false;
 };
 
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP

@@ -132,6 +132,23 @@ protected:
     CUsurfObject cudaSurfaceObject{};
 };
 
+class DLL_OBJECT SampledImageVkCudaInterop : public SampledImageVkComputeApiExternalMemory {
+public:
+    SampledImageVkCudaInterop() = default;
+    void initialize(
+            const ImageVkComputeApiExternalMemoryPtr& _image,
+            const TextureExternalMemorySettings& textureExternalMemorySettings) override;
+    ~SampledImageVkCudaInterop() override;
+
+    [[nodiscard]] inline CUmipmappedArray getCudaMipmappedArray() const { return std::static_pointer_cast<ImageVkCudaInterop>(image)->getCudaMipmappedArray(); }
+    CUarray getCudaMipmappedArrayLevel(uint32_t level = 0) { return std::static_pointer_cast<ImageVkCudaInterop>(image)->getCudaMipmappedArrayLevel(level); }
+
+    [[nodiscard]] inline CUtexObject getCudaTextureObject() const { return cudaTextureObject; }
+
+protected:
+    CUtexObject cudaTextureObject{};
+};
+
 }}
 
 #endif //SGL_IMPLCUDA_HPP

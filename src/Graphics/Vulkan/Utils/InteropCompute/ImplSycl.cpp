@@ -232,24 +232,28 @@ void ImageVkSyclInterop::importExternalMemory() {
     auto* wrapperImg = new SyclImageMemHandleWrapper;
     sycl::ext::oneapi::experimental::image_descriptor& syclImageDescriptor = wrapperImg->syclImageDescriptor;
     syclImageDescriptor.width = imageSettings.width;
-    if (imageViewType == VK_IMAGE_VIEW_TYPE_2D || imageViewType == VK_IMAGE_VIEW_TYPE_3D
-            || imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
+    if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_2D
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_3D
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
         syclImageDescriptor.height = imageSettings.height;
     }
-    if (imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
+    if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
         syclImageDescriptor.depth = imageSettings.depth;
-    } else if (imageViewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY || imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
+    } else if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
         syclImageDescriptor.array_size = imageSettings.arrayLayers;
     }
     syclImageDescriptor.num_levels = imageSettings.mipLevels;
 
     syclImageDescriptor.num_channels = unsigned(getImageFormatNumChannels(imageSettings.format));
-    if (imageViewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY || imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
+    if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
         syclImageDescriptor.type = sycl::ext::oneapi::experimental::image_type::array;
-    } else if (imageViewType == VK_IMAGE_VIEW_TYPE_CUBE) {
+    } else if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_CUBE) {
         syclImageDescriptor.type = sycl::ext::oneapi::experimental::image_type::cubemap;
-    } else if (imageViewType == VK_IMAGE_VIEW_TYPE_1D || imageViewType == VK_IMAGE_VIEW_TYPE_2D
-            || imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
+    } else if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_1D
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_2D
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
         if (syclImageDescriptor.num_levels > 1) {
             syclImageDescriptor.type = sycl::ext::oneapi::experimental::image_type::mipmap;
         } else {
@@ -459,6 +463,84 @@ UnsampledImageVkSyclInterop::~UnsampledImageVkSyclInterop() {
 }
 
 uint64_t UnsampledImageVkSyclInterop::getRawHandle() {
+    return rawImageHandle;
+}
+
+
+static sycl::addressing_mode getSyclSamplerAddressModeVk(VkSamplerAddressMode samplerAddressModeVk) {
+    switch (samplerAddressModeVk) {
+    case VK_SAMPLER_ADDRESS_MODE_REPEAT:
+        return sycl::addressing_mode::repeat;
+    case VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT:
+        return sycl::addressing_mode::mirrored_repeat;
+    case VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE:
+        return sycl::addressing_mode::clamp_to_edge;
+    case VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER:
+        return sycl::addressing_mode::clamp;
+    default:
+        return sycl::addressing_mode::none;
+    }
+}
+
+void SampledImageVkSyclInterop::initialize(
+            const ImageVkComputeApiExternalMemoryPtr& _image,
+            const TextureExternalMemorySettings& textureExternalMemorySettings) {
+    static_assert(sizeof(sycl::ext::oneapi::experimental::sampled_image_handle) == sizeof(rawImageHandle));
+    this->image = _image;
+    const auto& imageComputeApiInfo = image->getImageComputeApiInfo();
+    const auto& samplerSettings = imageComputeApiInfo.imageSamplerSettings;
+
+    auto imageVkSycl = std::static_pointer_cast<ImageVkSyclInterop>(image);
+    auto* wrapperImg = reinterpret_cast<SyclImageMemHandleWrapper*>(imageVkSycl->mipmappedArray);
+
+    if (!sycl::ext::oneapi::experimental::is_image_handle_supported<sycl::ext::oneapi::experimental::sampled_image_handle>(
+            wrapperImg->syclImageDescriptor, sycl::ext::oneapi::experimental::image_memory_handle_type::opaque_handle,
+            *g_syclQueue)) {
+        if (openMessageBoxOnComputeApiError) {
+            sgl::Logfile::get()->writeError(
+                    "Error in SampledImageVkSyclInterop::_initialize: "
+                    "Unsupported SYCL image handle type.");
+        } else {
+            sgl::Logfile::get()->write(
+                    "Error in SampledImageVkSyclInterop::_initialize: "
+                    "Unsupported SYCL image handle type.", sgl::RED);
+        }
+        throw UnsupportedComputeApiFeatureException("Unsupported SYCL image handle type");
+    }
+
+    sycl::ext::oneapi::experimental::bindless_image_sampler syclSampler{};
+    syclSampler.addressing[0] = getSyclSamplerAddressModeVk(samplerSettings.addressModeU);
+    syclSampler.addressing[1] = getSyclSamplerAddressModeVk(samplerSettings.addressModeV);
+    syclSampler.addressing[2] = getSyclSamplerAddressModeVk(samplerSettings.addressModeW);
+    syclSampler.coordinate =
+            textureExternalMemorySettings.useNormalizedCoordinates
+            ? sycl::coordinate_normalization_mode::normalized
+            : sycl::coordinate_normalization_mode::unnormalized;
+    syclSampler.filtering =
+            samplerSettings.minFilter == VK_FILTER_NEAREST
+            ? sycl::filtering_mode::nearest : sycl::filtering_mode::linear;
+    syclSampler.mipmap_filtering =
+            samplerSettings.mipmapMode == VK_SAMPLER_MIPMAP_MODE_NEAREST
+            ? sycl::filtering_mode::nearest : sycl::filtering_mode::linear;
+    syclSampler.cubemap_filtering = sycl::ext::oneapi::experimental::cubemap_filtering_mode::disjointed;
+    syclSampler.min_mipmap_level_clamp = samplerSettings.minLod;
+    syclSampler.max_mipmap_level_clamp = samplerSettings.maxLod;
+    syclSampler.max_anisotropy = samplerSettings.maxAnisotropy;
+
+    auto handle = sycl::ext::oneapi::experimental::create_image(
+            wrapperImg->syclImageMemHandle, wrapperImg->syclImageDescriptor, *g_syclQueue);
+    rawImageHandle = handle.raw_handle;
+}
+
+SampledImageVkSyclInterop::~SampledImageVkSyclInterop() {
+    if (rawImageHandle) {
+        sycl::ext::oneapi::experimental::sampled_image_handle handle{rawImageHandle};
+        sycl::ext::oneapi::experimental::destroy_image_handle(handle, *g_syclQueue);
+        rawImageHandle = {};
+    }
+}
+
+uint64_t SampledImageVkSyclInterop::getRawHandle() {
     return rawImageHandle;
 }
 

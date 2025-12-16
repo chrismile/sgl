@@ -71,6 +71,8 @@ private:
 
 
 class ImageD3D12SyclInterop : public ImageD3D12ComputeApiExternalMemory {
+    friend class UnsampledImageD3D12SyclInterop;
+    friend class SampledImageD3D12SyclInterop;
 public:
     ~ImageD3D12SyclInterop() override;
 
@@ -83,6 +85,34 @@ protected:
 
 private:
     void* externalMemory{}; // SyclExternalMemWrapper
+};
+
+
+class DLL_OBJECT UnsampledImageD3D12SyclInterop : public UnsampledImageD3D12ComputeApiExternalMemory {
+public:
+    UnsampledImageD3D12SyclInterop() = default;
+    void initialize(const ImageD3D12ComputeApiExternalMemoryPtr& _image) override;
+    ~UnsampledImageD3D12SyclInterop() override;
+
+    uint64_t getRawHandle();
+
+protected:
+    uint64_t rawImageHandle = 0;
+};
+
+
+class DLL_OBJECT SampledImageD3D12SyclInterop : public SampledImageD3D12ComputeApiExternalMemory {
+public:
+    SampledImageD3D12SyclInterop() = default;
+    void initialize(
+            const ImageD3D12ComputeApiExternalMemoryPtr& _image,
+            const TextureExternalMemorySettings& textureExternalMemorySettings) override;
+    ~SampledImageD3D12SyclInterop() override;
+
+    uint64_t getRawHandle();
+
+protected:
+    uint64_t rawImageHandle = 0;
 };
 
 }}

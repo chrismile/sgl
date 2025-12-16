@@ -65,7 +65,7 @@ protected:
 
 typedef std::shared_ptr<FenceD3D12ComputeApiInterop> FenceD3D12ComputeApiInteropPtr;
 
-FenceD3D12ComputeApiInteropPtr createFenceD3D12ComputeApiInterop(Device* device, uint64_t value = 0);
+DLL_OBJECT FenceD3D12ComputeApiInteropPtr createFenceD3D12ComputeApiInterop(Device* device, uint64_t value = 0);
 
 
 /**
@@ -103,8 +103,19 @@ typedef std::shared_ptr<BufferD3D12ComputeApiExternalMemory> BufferD3D12ComputeA
 /**
  * Resource needs to be created with D3D12_HEAP_FLAG_SHARED.
  */
-BufferD3D12ComputeApiExternalMemoryPtr createBufferD3D12ComputeApiExternalMemory(sgl::d3d12::ResourcePtr& resource);
+DLL_OBJECT BufferD3D12ComputeApiExternalMemoryPtr createBufferD3D12ComputeApiExternalMemory(
+        sgl::d3d12::ResourcePtr& resource);
 
+
+struct DLL_OBJECT ImageD3D12ComputeApiInfo {
+    // Only needed for CUDA.
+    bool surfaceLoadStore = false;
+
+    // Only needed for sampled images.
+    bool useSampledImage = false;
+    D3D12_SAMPLER_DESC samplerDesc{};
+    TextureExternalMemorySettings textureExternalMemorySettings{};
+};
 
 /**
  * Resource needs to be created with D3D12_HEAP_FLAG_SHARED.
@@ -113,10 +124,11 @@ class DLL_OBJECT ImageD3D12ComputeApiExternalMemory {
 public:
     ImageD3D12ComputeApiExternalMemory() = default;
     void initialize(sgl::d3d12::ResourcePtr& _resource);
-    void initialize(sgl::d3d12::ResourcePtr& _resource, bool _surfaceLoadStore);
+    void initialize(sgl::d3d12::ResourcePtr& _resource, const ImageD3D12ComputeApiInfo& _imageComputeApiInfo);
     virtual ~ImageD3D12ComputeApiExternalMemory() = default;
 
-    inline const sgl::d3d12::ResourcePtr& getResource() { return resource; }
+    const sgl::d3d12::ResourcePtr& getResource() { return resource; }
+    inline const ImageD3D12ComputeApiInfo& getImageComputeApiInfo() { return imageComputeApiInfo; }
 
     /*
      * Asynchronous copy from/to a device pointer to level 0 mipmap level.
@@ -130,7 +142,7 @@ protected:
     void freeHandle();
 
     sgl::d3d12::ResourcePtr resource;
-    bool surfaceLoadStore = false;
+    ImageD3D12ComputeApiInfo imageComputeApiInfo{};
     void* mipmappedArray{}; // CUmipmappedArray or hipMipmappedArray_t or ze_image_handle_t or SyclImageMemHandleWrapper (image_mem_handle)
 
     HANDLE handle = nullptr;
@@ -141,8 +153,87 @@ typedef std::shared_ptr<ImageD3D12ComputeApiExternalMemory> ImageD3D12ComputeApi
 /**
  * Resource needs to be created with D3D12_HEAP_FLAG_SHARED.
  */
-ImageD3D12ComputeApiExternalMemoryPtr createImageD3D12ComputeApiExternalMemory(sgl::d3d12::ResourcePtr& resource);
-ImageD3D12ComputeApiExternalMemoryPtr createImageD3D12ComputeApiExternalMemory(sgl::d3d12::ResourcePtr& resource, bool surfaceLoadStore);
+DLL_OBJECT ImageD3D12ComputeApiExternalMemoryPtr createImageD3D12ComputeApiExternalMemory(
+        sgl::d3d12::ResourcePtr& resource);
+DLL_OBJECT ImageD3D12ComputeApiExternalMemoryPtr createImageD3D12ComputeApiExternalMemory(
+        sgl::d3d12::ResourcePtr& resource, const ImageD3D12ComputeApiInfo& imageComputeApiInfo);
+
+
+/**
+ * An unsampled image.
+ */
+class DLL_OBJECT UnsampledImageD3D12ComputeApiExternalMemory {
+public:
+    UnsampledImageD3D12ComputeApiExternalMemory() = default;
+    virtual void initialize(const ImageD3D12ComputeApiExternalMemoryPtr& _image) = 0;
+    virtual ~UnsampledImageD3D12ComputeApiExternalMemory() = default;
+
+    const sgl::d3d12::ResourcePtr& getResource() { return image->getResource(); }
+
+    /*
+     * Asynchronous copy from/to a device pointer to level 0 mipmap level.
+     */
+    void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr) {
+        image->copyFromDevicePtrAsync(devicePtrSrc, stream, eventOut);
+    }
+    void copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream, void* eventOut = nullptr) {
+        image->copyToDevicePtrAsync(devicePtrDst, stream, eventOut);
+    }
+
+protected:
+    ImageD3D12ComputeApiExternalMemoryPtr image;
+};
+
+typedef std::shared_ptr<UnsampledImageD3D12ComputeApiExternalMemory> UnsampledImageD3D12ComputeApiExternalMemoryPtr;
+
+/**
+ * Resource needs to be created with D3D12_HEAP_FLAG_SHARED.
+ */
+DLL_OBJECT UnsampledImageD3D12ComputeApiExternalMemoryPtr createUnsampledImageD3D12ComputeApiExternalMemory(
+        sgl::d3d12::ResourcePtr& resource);
+DLL_OBJECT UnsampledImageD3D12ComputeApiExternalMemoryPtr createUnsampledImageD3D12ComputeApiExternalMemory(
+        sgl::d3d12::ResourcePtr& resource, const ImageD3D12ComputeApiInfo& imageComputeApiInfo);
+DLL_OBJECT UnsampledImageD3D12ComputeApiExternalMemoryPtr createUnsampledImageD3D12ComputeApiExternalMemory(
+        const ImageD3D12ComputeApiExternalMemoryPtr& image);
+
+
+/**
+ * An sampled image.
+ */
+class DLL_OBJECT SampledImageD3D12ComputeApiExternalMemory {
+public:
+    SampledImageD3D12ComputeApiExternalMemory() {}
+    virtual void initialize(
+            const ImageD3D12ComputeApiExternalMemoryPtr& _image,
+            const TextureExternalMemorySettings& textureExternalMemorySettings) = 0;
+    virtual ~SampledImageD3D12ComputeApiExternalMemory() = default;
+
+    const sgl::d3d12::ResourcePtr& getResource() { return image->getResource(); }
+
+    /*
+     * Asynchronous copy from/to a device pointer to level 0 mipmap level.
+     */
+    void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr) {
+        image->copyFromDevicePtrAsync(devicePtrSrc, stream, eventOut);
+    }
+    void copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream, void* eventOut = nullptr) {
+        image->copyToDevicePtrAsync(devicePtrDst, stream, eventOut);
+    }
+
+protected:
+    ImageD3D12ComputeApiExternalMemoryPtr image;
+};
+
+typedef std::shared_ptr<SampledImageD3D12ComputeApiExternalMemory> SampledImageD3D12ComputeApiExternalMemoryPtr;
+
+/**
+ * Resource needs to be created with D3D12_HEAP_FLAG_SHARED.
+ */
+DLL_OBJECT SampledImageD3D12ComputeApiExternalMemoryPtr createSampledImageD3D12ComputeApiExternalMemory(
+        sgl::d3d12::ResourcePtr& resource, const ImageD3D12ComputeApiInfo& imageComputeApiInfo);
+DLL_OBJECT SampledImageD3D12ComputeApiExternalMemoryPtr createSampledImageD3D12ComputeApiExternalMemory(
+        sgl::d3d12::ResourcePtr& resource, const D3D12_SAMPLER_DESC& samplerDesc,
+        const TextureExternalMemorySettings& textureExternalMemorySettings);
 
 }}
 

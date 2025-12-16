@@ -391,15 +391,19 @@ void ImageVkHipInterop::importExternalMemory() {
 
     hipExternalMemoryMipmappedArrayDesc externalMemoryMipmappedArrayDesc{};
     externalMemoryMipmappedArrayDesc.extent.width = imageSettings.width;
-    if (imageViewType == VK_IMAGE_VIEW_TYPE_2D || imageViewType == VK_IMAGE_VIEW_TYPE_3D
-            || imageViewType == VK_IMAGE_VIEW_TYPE_CUBE || imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY
-            || imageViewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
+    if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_2D
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_3D
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_CUBE
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
         externalMemoryMipmappedArrayDesc.extent.height = imageSettings.height;
     }
-    if (imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
+    if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
         externalMemoryMipmappedArrayDesc.extent.depth = imageSettings.depth;
-    } else if (imageViewType == VK_IMAGE_VIEW_TYPE_CUBE || imageViewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY
-            || imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY || imageViewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
+    } else if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_CUBE
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
         externalMemoryMipmappedArrayDesc.extent.depth = imageSettings.arrayLayers;
     }
     externalMemoryMipmappedArrayDesc.offset = vulkanImage->getDeviceMemoryOffset();
@@ -455,12 +459,12 @@ void ImageVkHipInterop::copyFromDevicePtrAsync(
         void* devicePtrSrc, StreamWrapper stream, void* eventOut) {
     const sgl::vk::ImageSettings& imageSettings = vulkanImage->getImageSettings();
     size_t entryByteSize = getImageFormatEntryByteSize(imageSettings.format);
-    if (imageViewType == VK_IMAGE_VIEW_TYPE_2D) {
+    if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_2D) {
         hipError_t hipResult = g_hipDeviceApiFunctionTable.hipMemcpy2DToArrayAsync(
                 getHipMipmappedArrayLevel(0), 0, 0, devicePtrSrc, imageSettings.width * entryByteSize,
                 imageSettings.width, imageSettings.height, hipMemcpyDeviceToDevice, stream.hipStream);
         checkHipResult(hipResult, "Error in hipMemcpy2DToArrayAsync: ");
-    } else if (imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
+    } else if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
         HIP_MEMCPY3D memcpySettings{};
         memcpySettings.srcMemoryType = hipMemoryTypeDevice;
         memcpySettings.srcDevice = reinterpret_cast<hipDeviceptr_t>(devicePtrSrc);
@@ -487,14 +491,14 @@ void ImageVkHipInterop::copyToDevicePtrAsync(
         void* devicePtrDst, StreamWrapper stream, void* eventOut) {
     const sgl::vk::ImageSettings& imageSettings = vulkanImage->getImageSettings();
     size_t entryByteSize = getImageFormatEntryByteSize(imageSettings.format);
-    if (imageViewType == VK_IMAGE_VIEW_TYPE_2D) {
+    if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_2D) {
         //( *hipMemcpy2DFromArrayAsync )( void* dst, size_t dpitch, hipArray_const_t src, size_t wOffset, size_t hOffset, size_t width, size_t height, hipMemcpyKind kind, hipStream_t stream );
         hipError_t hipResult = g_hipDeviceApiFunctionTable.hipMemcpy2DFromArrayAsync(
                 devicePtrDst, imageSettings.width * entryByteSize,
                 getHipMipmappedArrayLevel(0), 0, 0, imageSettings.width, imageSettings.height,
                 hipMemcpyDeviceToDevice, stream.hipStream);
         checkHipResult(hipResult, "Error in hipMemcpy2DToArrayAsync: ");
-    } else if (imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
+    } else if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
         HIP_MEMCPY3D memcpySettings{};
         memcpySettings.srcMemoryType = hipMemoryTypeArray;
         memcpySettings.srcArray = getHipMipmappedArrayLevel(0);
@@ -514,6 +518,26 @@ void ImageVkHipInterop::copyToDevicePtrAsync(
         Logfile::get()->throwError(
                 "Error in ImageComputeApiExternalMemoryVk::copyFromDevicePtrAsync: "
                 "Unsupported image view type.");
+    }
+}
+
+
+void UnsampledImageVkHipInterop::initialize(const ImageVkComputeApiExternalMemoryPtr& _image) {
+    image = _image;
+
+    hipResourceDesc hipResourceDesc{};
+    hipResourceDesc.resType = hipResourceTypeMipmappedArray;
+    hipResourceDesc.res.mipmap.mipmap = getHipMipmappedArray();
+
+    hipError_t hipResult = g_hipDeviceApiFunctionTable.hipCreateSurfaceObject(&hipSurfaceObject, &hipResourceDesc);
+    checkHipResult(hipResult, "Error in hipSurfObjectDestroy: ");
+}
+
+UnsampledImageVkHipInterop::~UnsampledImageVkHipInterop() {
+    if (hipSurfaceObject) {
+        hipError_t hipResult = g_hipDeviceApiFunctionTable.hipDestroySurfaceObject(hipSurfaceObject);
+        checkHipResult(hipResult, "Error in hipSurfObjectDestroy: ");
+        hipSurfaceObject = {};
     }
 }
 

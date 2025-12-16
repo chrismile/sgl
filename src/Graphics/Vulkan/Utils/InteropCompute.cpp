@@ -199,7 +199,7 @@ ImageVkComputeApiExternalMemoryPtr createImageVkComputeApiExternalMemory(ImagePt
 }
 
 ImageVkComputeApiExternalMemoryPtr createImageVkComputeApiExternalMemory(
-        ImagePtr& vulkanImage, VkImageViewType imageViewType, bool surfaceLoadStore) {
+        ImagePtr& vulkanImage, const ImageVkComputeApiInfo& imageComputeApiInfo) {
     InteropComputeApi interopComputeApi = decideInteropComputeApi(vulkanImage->getDevice());
     ImageVkComputeApiExternalMemoryPtr imageExtMem;
 #ifdef SUPPORT_CUDA_INTEROP
@@ -227,7 +227,7 @@ ImageVkComputeApiExternalMemoryPtr createImageVkComputeApiExternalMemory(
         return imageExtMem;
     }
 
-    imageExtMem->initialize(vulkanImage, imageViewType, surfaceLoadStore);
+    imageExtMem->initialize(vulkanImage, imageComputeApiInfo);
     return imageExtMem;
 }
 
@@ -420,28 +420,28 @@ void BufferVkComputeApiExternalMemory::freeHandlesAndFds() {
 
 
 void ImageVkComputeApiExternalMemory::initialize(vk::ImagePtr& vulkanImage) {
-    VkImageViewType imageViewType = VK_IMAGE_VIEW_TYPE_2D;
+    ImageVkComputeApiInfo _imageComputeApiInfo{};
+    _imageComputeApiInfo.imageViewType = VK_IMAGE_VIEW_TYPE_2D;
     const auto& imageSettings = vulkanImage->getImageSettings();
     if (imageSettings.imageType == VK_IMAGE_TYPE_1D) {
-        imageViewType = VK_IMAGE_VIEW_TYPE_1D;
+        _imageComputeApiInfo.imageViewType = VK_IMAGE_VIEW_TYPE_1D;
     } else if (imageSettings.imageType == VK_IMAGE_TYPE_2D) {
-        imageViewType = VK_IMAGE_VIEW_TYPE_2D;
+        _imageComputeApiInfo.imageViewType = VK_IMAGE_VIEW_TYPE_2D;
     } else if (imageSettings.imageType == VK_IMAGE_TYPE_3D) {
-        imageViewType = VK_IMAGE_VIEW_TYPE_3D;
+        _imageComputeApiInfo.imageViewType = VK_IMAGE_VIEW_TYPE_3D;
     }
-    bool surfaceLoadStore = (imageSettings.usage & VK_IMAGE_USAGE_STORAGE_BIT) != 0;
-    initialize(vulkanImage, imageViewType, surfaceLoadStore);
+    _imageComputeApiInfo.surfaceLoadStore = (imageSettings.usage & VK_IMAGE_USAGE_STORAGE_BIT) != 0;
+    initialize(vulkanImage, _imageComputeApiInfo);
 }
 
 void ImageVkComputeApiExternalMemory::initialize(
-        vk::ImagePtr& _vulkanImage, VkImageViewType _imageViewType, bool _surfaceLoadStore) {
+        vk::ImagePtr& _vulkanImage, const ImageVkComputeApiInfo& _imageComputeApiInfo) {
     if (mipmappedArray) {
         free();
     }
 
     vulkanImage = _vulkanImage;
-    imageViewType = _imageViewType;
-    surfaceLoadStore = _surfaceLoadStore;
+    imageComputeApiInfo = _imageComputeApiInfo;
 
     VkDevice device = vulkanImage->getDevice()->getVkDevice();
     VkDeviceMemory deviceMemory = vulkanImage->getVkDeviceMemory();
@@ -550,6 +550,16 @@ UnsampledImageVkComputeApiExternalMemoryPtr createUnsampledImageVkComputeApiExte
         unsampledImageExtMem = std::make_shared<UnsampledImageVkCudaInterop>();
     }
 #endif
+#ifdef SUPPORT_HIP_INTEROP
+    if (interopComputeApi == InteropComputeApi::HIP) {
+        unsampledImageExtMem = std::make_shared<UnsampledImageVkHipInterop>();
+    }
+#endif
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+    if (interopComputeApi == InteropComputeApi::LEVEL_ZERO) {
+        unsampledImageExtMem = std::make_shared<UnsampledImageVkLevelZeroInterop>();
+    }
+#endif
 #ifdef SUPPORT_SYCL_INTEROP
     if (interopComputeApi == InteropComputeApi::SYCL) {
         unsampledImageExtMem = std::make_shared<UnsampledImageVkSyclInterop>();
@@ -566,14 +576,29 @@ UnsampledImageVkComputeApiExternalMemoryPtr createUnsampledImageVkComputeApiExte
 }
 
 UnsampledImageVkComputeApiExternalMemoryPtr createUnsampledImageVkComputeApiExternalMemory(
-        ImagePtr& vulkanImage, VkImageViewType imageViewType) {
+        ImagePtr& vulkanImage, const ImageVkComputeApiInfo& imageComputeApiInfo) {
+    if (imageComputeApiInfo.useSampledImage) {
+        Logfile::get()->throwError(
+                    "Error in createUnsampledImageVkComputeApiExternalMemory: "
+                    "ImageVkComputeApiInfo::useSampledImage may not be set to true.");
+    }
     InteropComputeApi interopComputeApi = decideInteropComputeApi(vulkanImage->getDevice());
     UnsampledImageVkComputeApiExternalMemoryPtr unsampledImageExtMem;
     ImageVkComputeApiExternalMemoryPtr imageExtMem = createImageVkComputeApiExternalMemory(
-            vulkanImage, imageViewType, true);
+            vulkanImage, imageComputeApiInfo);
 #ifdef SUPPORT_CUDA_INTEROP
     if (interopComputeApi == InteropComputeApi::CUDA) {
         unsampledImageExtMem = std::make_shared<UnsampledImageVkCudaInterop>();
+    }
+#endif
+#ifdef SUPPORT_HIP_INTEROP
+    if (interopComputeApi == InteropComputeApi::HIP) {
+        unsampledImageExtMem = std::make_shared<UnsampledImageVkHipInterop>();
+    }
+#endif
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+    if (interopComputeApi == InteropComputeApi::LEVEL_ZERO) {
+        unsampledImageExtMem = std::make_shared<UnsampledImageVkLevelZeroInterop>();
     }
 #endif
 #ifdef SUPPORT_SYCL_INTEROP
@@ -600,6 +625,16 @@ UnsampledImageVkComputeApiExternalMemoryPtr createUnsampledImageVkComputeApiExte
         unsampledImageExtMem = std::make_shared<UnsampledImageVkCudaInterop>();
     }
 #endif
+#ifdef SUPPORT_HIP_INTEROP
+    if (interopComputeApi == InteropComputeApi::HIP) {
+        unsampledImageExtMem = std::make_shared<UnsampledImageVkHipInterop>();
+    }
+#endif
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+    if (interopComputeApi == InteropComputeApi::LEVEL_ZERO) {
+        unsampledImageExtMem = std::make_shared<UnsampledImageVkLevelZeroInterop>();
+    }
+#endif
 #ifdef SUPPORT_SYCL_INTEROP
     if (interopComputeApi == InteropComputeApi::SYCL) {
         unsampledImageExtMem = std::make_shared<UnsampledImageVkSyclInterop>();
@@ -613,6 +648,72 @@ UnsampledImageVkComputeApiExternalMemoryPtr createUnsampledImageVkComputeApiExte
 
     unsampledImageExtMem->initialize(imageExtMem);
     return unsampledImageExtMem;
+}
+
+
+SampledImageVkComputeApiExternalMemoryPtr createSampledImageVkComputeApiExternalMemory(
+        vk::ImagePtr& vulkanImage, const ImageVkComputeApiInfo& imageComputeApiInfo) {
+    InteropComputeApi interopComputeApi = decideInteropComputeApi(vulkanImage->getDevice());
+    SampledImageVkComputeApiExternalMemoryPtr sampledImageExtMem;
+    ImageVkComputeApiExternalMemoryPtr imageExtMem = createImageVkComputeApiExternalMemory(
+            vulkanImage, imageComputeApiInfo);
+#ifdef SUPPORT_CUDA_INTEROP
+    if (interopComputeApi == InteropComputeApi::CUDA) {
+        sampledImageExtMem = std::make_shared<SampledImageVkCudaInterop>();
+    }
+#endif
+#ifdef SUPPORT_HIP_INTEROP
+    if (interopComputeApi == InteropComputeApi::HIP) {
+        // TODO, unimplemented
+        //sampledImageExtMem = std::make_shared<SampledImageVkHipInterop>();
+    }
+#endif
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+    if (interopComputeApi == InteropComputeApi::LEVEL_ZERO) {
+        sampledImageExtMem = std::make_shared<SampledImageVkLevelZeroInterop>();
+    }
+#endif
+#ifdef SUPPORT_SYCL_INTEROP
+    if (interopComputeApi == InteropComputeApi::SYCL) {
+        sampledImageExtMem = std::make_shared<SampledImageVkSyclInterop>();
+    }
+#endif
+    if (!sampledImageExtMem) {
+        sgl::Logfile::get()->writeError(
+                "Error in createSampledImageVkComputeApiExternalMemory: Unsupported compute API.");
+        return sampledImageExtMem;
+    }
+
+    sampledImageExtMem->initialize(imageExtMem, imageComputeApiInfo.textureExternalMemorySettings);
+    return sampledImageExtMem;
+}
+
+SampledImageVkComputeApiExternalMemoryPtr createSampledImageVkComputeApiExternalMemory(
+        vk::TexturePtr& vulkanTexture, const TextureExternalMemorySettings& textureExternalMemorySettings) {
+    const auto& imageSettings = vulkanTexture->getImage()->getImageSettings();
+    ImageVkComputeApiInfo imageComputeApiInfo{};
+    imageComputeApiInfo.imageViewType = vulkanTexture->getImageView()->getVkImageViewType();
+    imageComputeApiInfo.imageSubresourceRange = vulkanTexture->getImageView()->getVkImageSubresourceRange();
+    imageComputeApiInfo.surfaceLoadStore = (imageSettings.usage & VK_IMAGE_USAGE_STORAGE_BIT) != 0;
+    imageComputeApiInfo.useSampledImage = true;
+    imageComputeApiInfo.imageSamplerSettings = vulkanTexture->getImageSampler()->getImageSamplerSettings();
+    imageComputeApiInfo.textureExternalMemorySettings = textureExternalMemorySettings;
+    return createSampledImageVkComputeApiExternalMemory(vulkanTexture->getImage(), imageComputeApiInfo);
+}
+
+SampledImageVkComputeApiExternalMemoryPtr createSampledImageVkComputeApiExternalMemory(
+        vk::ImagePtr& vulkanImage, const vk::ImageViewSettings& imageViewSettings,
+        const vk::ImageSamplerSettings& imageSamplerSettings,
+        const TextureExternalMemorySettings& textureExternalMemorySettings) {
+    const auto& imageSettings = vulkanImage->getImageSettings();
+    ImageVkComputeApiInfo imageComputeApiInfo{};
+    imageComputeApiInfo.imageViewType = imageViewSettings.imageViewType;
+    imageComputeApiInfo.imageSubresourceRange = imageViewSettings.imageSubresourceRange;
+    imageComputeApiInfo.surfaceLoadStore = (imageSettings.usage & VK_IMAGE_USAGE_STORAGE_BIT) != 0;
+    imageComputeApiInfo.useSampledImage = true;
+    imageComputeApiInfo.imageSamplerSettings = imageSamplerSettings;
+    imageComputeApiInfo.textureExternalMemorySettings = textureExternalMemorySettings;
+    return createSampledImageVkComputeApiExternalMemory(vulkanImage, imageComputeApiInfo);
 }
 
 }}

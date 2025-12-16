@@ -105,6 +105,8 @@ public:
     void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr) override;
     void copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream, void* eventOut = nullptr) override;
 
+    ze_image_handle_t getImageHandle() { return static_cast<ze_image_handle_t>(mipmappedArray); }
+
 protected:
     void preCheckExternalMemoryImport() override;
 #ifdef _WIN32
@@ -123,6 +125,7 @@ private:
     ze_device_mem_alloc_desc_t deviceMemAllocDesc{};
     ze_image_pitched_exp_desc_t imagePitchedExpDesc{};
     ze_image_bindless_exp_desc_t imageBindlessExpDesc{};
+    ze_sampler_desc_t samplerDesc{};
     void* devicePtr{}; // void* device pointer; only used by bindless images.
 
 #ifdef _WIN32
@@ -133,6 +136,28 @@ private:
 #endif
 
     void* mipmappedArray{}; // ze_image_handle_t
+};
+
+
+class DLL_OBJECT UnsampledImageVkLevelZeroInterop : public UnsampledImageVkComputeApiExternalMemory {
+public:
+    UnsampledImageVkLevelZeroInterop() = default;
+    void initialize(const ImageVkComputeApiExternalMemoryPtr& _image) override { image = _image; }
+    ~UnsampledImageVkLevelZeroInterop() {}
+
+    [[nodiscard]] ze_image_handle_t getImageHandle() const { return std::static_pointer_cast<ImageVkLevelZeroInterop>(image)->getImageHandle(); }
+};
+
+
+class DLL_OBJECT SampledImageVkLevelZeroInterop : public SampledImageVkComputeApiExternalMemory {
+public:
+    SampledImageVkLevelZeroInterop() = default;
+    void initialize(
+            const ImageVkComputeApiExternalMemoryPtr& _image,
+            const TextureExternalMemorySettings& textureExternalMemorySettings) override { image = _image; }
+    ~SampledImageVkLevelZeroInterop() {}
+
+    [[nodiscard]] ze_image_handle_t getImageHandle() const { return std::static_pointer_cast<ImageVkLevelZeroInterop>(image)->getImageHandle(); }
 };
 
 }}

@@ -90,6 +90,7 @@ private:
 
 
 class ImageVkHipInterop : public ImageVkComputeApiExternalMemory {
+    friend class UnsampledImageVkHipInterop;
 public:
     ~ImageVkHipInterop() override;
 
@@ -116,6 +117,22 @@ private:
 
     // Cache for storing the array for mipmap level 0.
     void* arrayLevel0{}; // hipArray_t
+};
+
+
+class DLL_OBJECT UnsampledImageVkHipInterop : public UnsampledImageVkComputeApiExternalMemory {
+public:
+    UnsampledImageVkHipInterop() = default;
+    void initialize(const ImageVkComputeApiExternalMemoryPtr& _image) override;
+    ~UnsampledImageVkHipInterop() override;
+
+    [[nodiscard]] inline hipMipmappedArray_t getHipMipmappedArray() const { return std::static_pointer_cast<ImageVkHipInterop>(image)->getHipMipmappedArray(); }
+    hipArray_t getHipMipmappedArrayLevel(uint32_t level = 0) { return std::static_pointer_cast<ImageVkHipInterop>(image)->getHipMipmappedArrayLevel(level); }
+
+    hipSurfaceObject_t getCudaSurfaceObject() { return hipSurfaceObject; }
+
+protected:
+    hipSurfaceObject_t hipSurfaceObject{};
 };
 
 }}

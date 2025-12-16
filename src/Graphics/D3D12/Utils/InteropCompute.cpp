@@ -113,7 +113,7 @@ ImageD3D12ComputeApiExternalMemoryPtr createImageD3D12ComputeApiExternalMemory(s
 }
 
 ImageD3D12ComputeApiExternalMemoryPtr createImageD3D12ComputeApiExternalMemory(
-        sgl::d3d12::ResourcePtr& resource, bool surfaceLoadStore) {
+        sgl::d3d12::ResourcePtr& resource, const ImageD3D12ComputeApiInfo& imageComputeApiInfo) {
     InteropComputeApi interopComputeApi = decideInteropComputeApi(resource->getDevice());
     (void)interopComputeApi;
     ImageD3D12ComputeApiExternalMemoryPtr resourceExtMem;
@@ -127,7 +127,7 @@ ImageD3D12ComputeApiExternalMemoryPtr createImageD3D12ComputeApiExternalMemory(
         return resourceExtMem;
     }
 
-    resourceExtMem->initialize(resource, surfaceLoadStore);
+    resourceExtMem->initialize(resource, imageComputeApiInfo);
     return resourceExtMem;
 }
 
@@ -173,13 +173,14 @@ void ImageD3D12ComputeApiExternalMemory::initialize(sgl::d3d12::ResourcePtr& _re
     importExternalMemoryWin32Handle();
 }
 
-void ImageD3D12ComputeApiExternalMemory::initialize(sgl::d3d12::ResourcePtr& _resource, bool _surfaceLoadStore) {
+void ImageD3D12ComputeApiExternalMemory::initialize(
+            sgl::d3d12::ResourcePtr& _resource, const ImageD3D12ComputeApiInfo& _imageComputeApiInfo) {
     if (mipmappedArray) {
         free();
     }
 
     resource = _resource;
-    surfaceLoadStore = _surfaceLoadStore;
+    imageComputeApiInfo = _imageComputeApiInfo;
     handle = _resource->getSharedHandle();
     importExternalMemoryWin32Handle();
 }
@@ -189,6 +190,106 @@ void ImageD3D12ComputeApiExternalMemory::freeHandle() {
         CloseHandle(handle);
         handle = {};
     }
+}
+
+
+UnsampledImageD3D12ComputeApiExternalMemoryPtr createUnsampledImageD3D12ComputeApiExternalMemory(
+        sgl::d3d12::ResourcePtr& resource) {
+    [[maybe_unused]] InteropComputeApi interopComputeApi = decideInteropComputeApi(resource->getDevice());
+    UnsampledImageD3D12ComputeApiExternalMemoryPtr unsampledImageExtMem;
+    ImageD3D12ComputeApiExternalMemoryPtr imageExtMem = createImageD3D12ComputeApiExternalMemory(resource);
+#ifdef SUPPORT_SYCL_INTEROP
+    if (interopComputeApi == InteropComputeApi::SYCL) {
+        unsampledImageExtMem = std::make_shared<UnsampledImageD3D12SyclInterop>();
+    }
+#endif
+    if (!unsampledImageExtMem) {
+        sgl::Logfile::get()->writeError(
+                "Error in createUnsampledImageD3D12ComputeApiExternalMemory: Unsupported compute API.");
+        return unsampledImageExtMem;
+    }
+
+    unsampledImageExtMem->initialize(imageExtMem);
+    return unsampledImageExtMem;
+}
+
+UnsampledImageD3D12ComputeApiExternalMemoryPtr createUnsampledImageD3D12ComputeApiExternalMemory(
+        sgl::d3d12::ResourcePtr& resource, const ImageD3D12ComputeApiInfo& imageComputeApiInfo) {
+    if (imageComputeApiInfo.useSampledImage) {
+        Logfile::get()->throwError(
+                    "Error in createUnsampledImageD3D12ComputeApiExternalMemory: "
+                    "ImageD3D12ComputeApiInfo::useSampledImage may not be set to true.");
+    }
+    [[maybe_unused]] InteropComputeApi interopComputeApi = decideInteropComputeApi(resource->getDevice());
+    UnsampledImageD3D12ComputeApiExternalMemoryPtr unsampledImageExtMem;
+    ImageD3D12ComputeApiExternalMemoryPtr imageExtMem = createImageD3D12ComputeApiExternalMemory(
+            resource, imageComputeApiInfo);
+#ifdef SUPPORT_SYCL_INTEROP
+    if (interopComputeApi == InteropComputeApi::SYCL) {
+        unsampledImageExtMem = std::make_shared<UnsampledImageD3D12SyclInterop>();
+    }
+#endif
+    if (!unsampledImageExtMem) {
+        sgl::Logfile::get()->writeError(
+                "Error in createUnsampledImageD3D12ComputeApiExternalMemory: Unsupported compute API.");
+        return unsampledImageExtMem;
+    }
+
+    unsampledImageExtMem->initialize(imageExtMem);
+    return unsampledImageExtMem;
+}
+
+UnsampledImageD3D12ComputeApiExternalMemoryPtr createUnsampledImageD3D12ComputeApiExternalMemory(
+        const ImageD3D12ComputeApiExternalMemoryPtr& imageExtMem) {
+    [[maybe_unused]] InteropComputeApi interopComputeApi = decideInteropComputeApi(imageExtMem->getResource()->getDevice());
+    UnsampledImageD3D12ComputeApiExternalMemoryPtr unsampledImageExtMem;
+#ifdef SUPPORT_SYCL_INTEROP
+    if (interopComputeApi == InteropComputeApi::SYCL) {
+        unsampledImageExtMem = std::make_shared<UnsampledImageD3D12SyclInterop>();
+    }
+#endif
+    if (!unsampledImageExtMem) {
+        sgl::Logfile::get()->writeError(
+                "Error in createUnsampledImageD3D12ComputeApiExternalMemory: Unsupported compute API.");
+        return unsampledImageExtMem;
+    }
+
+    unsampledImageExtMem->initialize(imageExtMem);
+    return unsampledImageExtMem;
+}
+
+
+SampledImageD3D12ComputeApiExternalMemoryPtr createSampledImageD3D12ComputeApiExternalMemory(
+        sgl::d3d12::ResourcePtr& resource, const ImageD3D12ComputeApiInfo& imageComputeApiInfo) {
+    [[maybe_unused]] InteropComputeApi interopComputeApi = decideInteropComputeApi(resource->getDevice());
+    SampledImageD3D12ComputeApiExternalMemoryPtr sampledImageExtMem;
+    ImageD3D12ComputeApiExternalMemoryPtr imageExtMem = createImageD3D12ComputeApiExternalMemory(
+            resource, imageComputeApiInfo);
+#ifdef SUPPORT_SYCL_INTEROP
+    if (interopComputeApi == InteropComputeApi::SYCL) {
+        sampledImageExtMem = std::make_shared<SampledImageD3D12SyclInterop>();
+    }
+#endif
+    if (!sampledImageExtMem) {
+        sgl::Logfile::get()->writeError(
+                "Error in createSampledImageD3D12ComputeApiExternalMemory: Unsupported compute API.");
+        return sampledImageExtMem;
+    }
+
+    sampledImageExtMem->initialize(imageExtMem, imageComputeApiInfo.textureExternalMemorySettings);
+    return sampledImageExtMem;
+}
+
+SampledImageD3D12ComputeApiExternalMemoryPtr createSampledImageD3D12ComputeApiExternalMemory(
+        sgl::d3d12::ResourcePtr& resource, const D3D12_SAMPLER_DESC& samplerDesc,
+        const TextureExternalMemorySettings& textureExternalMemorySettings) {
+    ImageD3D12ComputeApiInfo imageComputeApiInfo{};
+    imageComputeApiInfo.surfaceLoadStore =
+            (resource->getResourceSettings().resourceFlags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) != 0;
+    imageComputeApiInfo.useSampledImage = true;
+    imageComputeApiInfo.samplerDesc = samplerDesc;
+    imageComputeApiInfo.textureExternalMemorySettings = textureExternalMemorySettings;
+    return createSampledImageD3D12ComputeApiExternalMemory(resource, imageComputeApiInfo);
 }
 
 }}

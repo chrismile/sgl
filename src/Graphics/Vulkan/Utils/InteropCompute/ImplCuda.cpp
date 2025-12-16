@@ -220,15 +220,19 @@ void ImageVkCudaInterop::importExternalMemory() {
 
     CUDA_ARRAY3D_DESCRIPTOR arrayDescriptor{};
     arrayDescriptor.Width = imageSettings.width;
-    if (imageViewType == VK_IMAGE_VIEW_TYPE_2D || imageViewType == VK_IMAGE_VIEW_TYPE_3D
-            || imageViewType == VK_IMAGE_VIEW_TYPE_CUBE || imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY
-            || imageViewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
+    if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_2D
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_3D
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_CUBE
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
         arrayDescriptor.Height = imageSettings.height;
     }
-    if (imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
+    if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
         arrayDescriptor.Depth = imageSettings.depth;
-    } else if (imageViewType == VK_IMAGE_VIEW_TYPE_CUBE || imageViewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY
-            || imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY || imageViewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
+    } else if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_CUBE
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
         arrayDescriptor.Depth = imageSettings.arrayLayers;
     }
     arrayDescriptor.Format = getCudaArrayFormatFromVkFormat(imageSettings.format);
@@ -236,17 +240,19 @@ void ImageVkCudaInterop::importExternalMemory() {
     if (imageSettings.usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
         arrayDescriptor.Flags |= CUDA_ARRAY3D_COLOR_ATTACHMENT;
     }
-    if (surfaceLoadStore) {
+    if (imageComputeApiInfo.surfaceLoadStore) {
         arrayDescriptor.Flags |= CUDA_ARRAY3D_SURFACE_LDST;
     }
     if (isDepthStencilFormat(imageSettings.format)) {
         arrayDescriptor.Flags |= CUDA_ARRAY3D_DEPTH_TEXTURE;
     }
-    if (imageViewType == VK_IMAGE_VIEW_TYPE_CUBE || imageViewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
+    if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_CUBE
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
         arrayDescriptor.Flags |= CUDA_ARRAY3D_CUBEMAP;
     }
-    if (imageViewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY || imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY
-            || imageViewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
+    if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
         arrayDescriptor.Flags |= CUDA_ARRAY3D_LAYERED;
     }
 
@@ -313,7 +319,7 @@ void ImageVkCudaInterop::copyFromDevicePtrAsync(
         void* devicePtrSrc, StreamWrapper stream, void* eventOut) {
     const sgl::vk::ImageSettings& imageSettings = vulkanImage->getImageSettings();
     size_t entryByteSize = getImageFormatEntryByteSize(imageSettings.format);
-    if (imageViewType == VK_IMAGE_VIEW_TYPE_2D) {
+    if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_2D) {
         CUDA_MEMCPY2D memcpySettings{};
         memcpySettings.srcMemoryType = CU_MEMORYTYPE_DEVICE;
         memcpySettings.srcDevice = reinterpret_cast<CUdeviceptr>(devicePtrSrc);
@@ -327,7 +333,7 @@ void ImageVkCudaInterop::copyFromDevicePtrAsync(
 
         CUresult cuResult = g_cudaDeviceApiFunctionTable.cuMemcpy2DAsync(&memcpySettings, stream.cuStream);
         checkCUresult(cuResult, "Error in cuMemcpy2DAsync: ");
-    } else if (imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
+    } else if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
         CUDA_MEMCPY3D memcpySettings{};
         memcpySettings.srcMemoryType = CU_MEMORYTYPE_DEVICE;
         memcpySettings.srcDevice = reinterpret_cast<CUdeviceptr>(devicePtrSrc);
@@ -354,7 +360,7 @@ void ImageVkCudaInterop::copyToDevicePtrAsync(
         void* devicePtrDst, StreamWrapper stream, void* eventOut) {
     const sgl::vk::ImageSettings& imageSettings = vulkanImage->getImageSettings();
     size_t entryByteSize = getImageFormatEntryByteSize(imageSettings.format);
-    if (imageViewType == VK_IMAGE_VIEW_TYPE_2D) {
+    if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_2D) {
         CUDA_MEMCPY2D memcpySettings{};
         memcpySettings.srcMemoryType = CU_MEMORYTYPE_ARRAY;
         memcpySettings.srcArray = getCudaMipmappedArrayLevel(0);
@@ -368,7 +374,7 @@ void ImageVkCudaInterop::copyToDevicePtrAsync(
 
         CUresult cuResult = g_cudaDeviceApiFunctionTable.cuMemcpy2DAsync(&memcpySettings, stream.cuStream);
         checkCUresult(cuResult, "Error in cuMemcpy2DAsync: ");
-    } else if (imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
+    } else if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
         CUDA_MEMCPY3D memcpySettings{};
         memcpySettings.srcMemoryType = CU_MEMORYTYPE_ARRAY;
         memcpySettings.srcArray = getCudaMipmappedArrayLevel(0);
@@ -408,6 +414,94 @@ UnsampledImageVkCudaInterop::~UnsampledImageVkCudaInterop() {
         CUresult cuResult = g_cudaDeviceApiFunctionTable.cuSurfObjectDestroy(cudaSurfaceObject);
         checkCUresult(cuResult, "Error in cuSurfObjectDestroy: ");
         cudaSurfaceObject = {};
+    }
+}
+
+
+void SampledImageVkCudaInterop::initialize(
+        const ImageVkComputeApiExternalMemoryPtr& _image,
+        const TextureExternalMemorySettings& textureExternalMemorySettings) {
+    image = _image;
+    const auto& imageComputeApiInfo = image->getImageComputeApiInfo();
+    const auto& samplerSettings = imageComputeApiInfo.imageSamplerSettings;
+    const auto& vulkanImage = image->getVulkanImage();
+    const auto& imageSettings = vulkanImage->getImageSettings();
+
+    CUDA_RESOURCE_DESC cudaResourceDesc{};
+    if (textureExternalMemorySettings.useMipmappedArray) {
+        cudaResourceDesc.resType = CU_RESOURCE_TYPE_MIPMAPPED_ARRAY;
+        cudaResourceDesc.res.mipmap.hMipmappedArray = getCudaMipmappedArray();
+    } else {
+        cudaResourceDesc.resType = CU_RESOURCE_TYPE_ARRAY;
+        cudaResourceDesc.res.array.hArray = getCudaMipmappedArrayLevel(0);
+    }
+
+    CUDA_TEXTURE_DESC cudaTextureDesc{};
+    cudaTextureDesc.addressMode[0] = getCudaSamplerAddressModeVk(samplerSettings.addressModeU);
+    cudaTextureDesc.addressMode[1] = getCudaSamplerAddressModeVk(samplerSettings.addressModeV);
+    cudaTextureDesc.addressMode[2] = getCudaSamplerAddressModeVk(samplerSettings.addressModeW);
+    cudaTextureDesc.filterMode = getCudaFilterFormatVk(samplerSettings.minFilter);
+    cudaTextureDesc.mipmapFilterMode = getCudaMipmapFilterFormatVk(samplerSettings.mipmapMode);
+    cudaTextureDesc.mipmapLevelBias = samplerSettings.mipLodBias;
+    uint32_t maxAnisotropy = 0;
+    if (samplerSettings.anisotropyEnable) {
+        if (samplerSettings.maxAnisotropy < 0.0f) {
+            auto* device = vulkanImage->getDevice();
+            maxAnisotropy = uint32_t(device->getPhysicalDeviceProperties().limits.maxSamplerAnisotropy);
+        } else {
+            maxAnisotropy = uint32_t(samplerSettings.maxAnisotropy);
+        }
+    }
+    cudaTextureDesc.maxAnisotropy = maxAnisotropy;
+    cudaTextureDesc.minMipmapLevelClamp = imageSettings.mipLevels <= 1 ? 0.0f : samplerSettings.minLod;
+    cudaTextureDesc.maxMipmapLevelClamp = imageSettings.mipLevels <= 1 ? 0.0f : samplerSettings.maxLod;
+    std::array<float, 4> borderColor = getCudaBorderColorVk(samplerSettings.borderColor);
+    memcpy(cudaTextureDesc.borderColor, borderColor.data(), sizeof(float) * 4);
+    if (textureExternalMemorySettings.useNormalizedCoordinates || textureExternalMemorySettings.useMipmappedArray) {
+        cudaTextureDesc.flags |= CU_TRSF_NORMALIZED_COORDINATES;
+    }
+    if (!textureExternalMemorySettings.useTrilinearOptimization) {
+        cudaTextureDesc.flags |= CU_TRSF_DISABLE_TRILINEAR_OPTIMIZATION;
+    }
+    if (textureExternalMemorySettings.readAsInteger) {
+        cudaTextureDesc.flags |= CU_TRSF_READ_AS_INTEGER;
+    }
+
+    CUDA_RESOURCE_VIEW_DESC cudaResourceViewDesc{};
+    cudaResourceViewDesc.format = getCudaResourceViewFormatVk(imageSettings.format);
+    cudaResourceViewDesc.width = imageSettings.width;
+    if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_2D
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_3D
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_CUBE
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
+        cudaResourceViewDesc.height = imageSettings.height;
+    }
+    if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
+        cudaResourceViewDesc.depth = imageSettings.depth;
+    } else if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_CUBE
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY
+            || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
+        cudaResourceViewDesc.depth = imageSettings.arrayLayers;
+    }
+    cudaResourceViewDesc.firstMipmapLevel = imageComputeApiInfo.imageSubresourceRange.baseMipLevel;
+    cudaResourceViewDesc.lastMipmapLevel =
+            imageSettings.mipLevels <= 1 ? 0 : imageComputeApiInfo.imageSubresourceRange.levelCount;
+    cudaResourceViewDesc.firstLayer = imageComputeApiInfo.imageSubresourceRange.baseArrayLayer;
+    cudaResourceViewDesc.lastLayer =
+            imageSettings.arrayLayers <= 1 ? 0 : imageComputeApiInfo.imageSubresourceRange.layerCount;
+
+    CUresult cuResult = g_cudaDeviceApiFunctionTable.cuTexObjectCreate(
+            &cudaTextureObject, &cudaResourceDesc, &cudaTextureDesc, &cudaResourceViewDesc);
+    checkCUresult(cuResult, "Error in cuTexObjectCreate: ");
+}
+
+SampledImageVkCudaInterop::~SampledImageVkCudaInterop() {
+    if (cudaTextureObject) {
+        CUresult cuResult = g_cudaDeviceApiFunctionTable.cuTexObjectDestroy(cudaTextureObject);
+        checkCUresult(cuResult, "Error in cuTexObjectDestroy: ");
+        cudaTextureObject = {};
     }
 }
 

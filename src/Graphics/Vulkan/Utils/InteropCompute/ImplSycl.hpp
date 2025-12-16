@@ -86,6 +86,7 @@ private:
 
 class ImageVkSyclInterop : public ImageVkComputeApiExternalMemory {
     friend class UnsampledImageVkSyclInterop;
+    friend class SampledImageVkSyclInterop;
 public:
     ~ImageVkSyclInterop() override;
 
@@ -112,6 +113,21 @@ public:
     UnsampledImageVkSyclInterop() = default;
     void initialize(const ImageVkComputeApiExternalMemoryPtr& _image) override;
     ~UnsampledImageVkSyclInterop() override;
+
+    uint64_t getRawHandle();
+
+protected:
+    uint64_t rawImageHandle = 0;
+};
+
+
+class DLL_OBJECT SampledImageVkSyclInterop : public SampledImageVkComputeApiExternalMemory {
+public:
+    SampledImageVkSyclInterop() = default;
+    void initialize(
+            const ImageVkComputeApiExternalMemoryPtr& _image,
+            const TextureExternalMemorySettings& textureExternalMemorySettings) override;
+    ~SampledImageVkSyclInterop() override;
 
     uint64_t getRawHandle();
 

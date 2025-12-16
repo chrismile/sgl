@@ -627,7 +627,7 @@ void ImageCudaExternalMemoryVk::memcpyCudaDtoA3DAsync(CUdeviceptr devicePtr, CUs
     checkCUresult(cuResult, "Error in cuMemcpy3DAsync: ");
 }
 
-static CUresourceViewFormat getCudaResourceViewFormat(VkFormat format) {
+CUresourceViewFormat getCudaResourceViewFormatVk(VkFormat format) {
     switch (format) {
         case VK_FORMAT_R8_UINT:
         case VK_FORMAT_S8_UINT:
@@ -716,12 +716,12 @@ static CUresourceViewFormat getCudaResourceViewFormat(VkFormat format) {
         case VK_FORMAT_R32G32B32A32_SFLOAT:
             return CU_RES_VIEW_FORMAT_FLOAT_4X32;
         default:
-            sgl::Logfile::get()->throwError("Error in getCudaResourceViewFormat: Unsupported format.");
+            sgl::Logfile::get()->throwError("Error in getCudaResourceViewFormatVk: Unsupported format.");
             return CU_RES_VIEW_FORMAT_NONE;
     }
 }
 
-static CUaddress_mode getCudaSamplerAddressMode(VkSamplerAddressMode samplerAddressModeVk) {
+CUaddress_mode getCudaSamplerAddressModeVk(VkSamplerAddressMode samplerAddressModeVk) {
     switch (samplerAddressModeVk) {
         case VK_SAMPLER_ADDRESS_MODE_REPEAT:
             return CU_TR_ADDRESS_MODE_WRAP;
@@ -732,36 +732,36 @@ static CUaddress_mode getCudaSamplerAddressMode(VkSamplerAddressMode samplerAddr
         case VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER:
             return CU_TR_ADDRESS_MODE_BORDER;
         default:
-            sgl::Logfile::get()->throwError("Error in getCudaSamplerAddressMode: Unsupported format.");
+            sgl::Logfile::get()->throwError("Error in getCudaSamplerAddressModeVk: Unsupported format.");
             return CU_TR_ADDRESS_MODE_WRAP;
     }
 }
 
-static CUfilter_mode getCudaFilterFormat(VkFilter filterVk) {
+CUfilter_mode getCudaFilterFormatVk(VkFilter filterVk) {
     switch (filterVk) {
         case VK_FILTER_NEAREST:
             return CU_TR_FILTER_MODE_POINT;
         case VK_FILTER_LINEAR:
             return CU_TR_FILTER_MODE_LINEAR;
         default:
-            sgl::Logfile::get()->throwError("Error in getCudaFilterFormat: Unsupported filter format.");
+            sgl::Logfile::get()->throwError("Error in getCudaFilterFormatVk: Unsupported filter format.");
             return CU_TR_FILTER_MODE_POINT;
     }
 }
 
-static CUfilter_mode getCudaMipmapFilterFormat(VkSamplerMipmapMode samplerMipmapMode) {
+CUfilter_mode getCudaMipmapFilterFormatVk(VkSamplerMipmapMode samplerMipmapMode) {
     switch (samplerMipmapMode) {
         case VK_SAMPLER_MIPMAP_MODE_NEAREST:
             return CU_TR_FILTER_MODE_POINT;
         case VK_SAMPLER_MIPMAP_MODE_LINEAR:
             return CU_TR_FILTER_MODE_LINEAR;
         default:
-            sgl::Logfile::get()->throwError("Error in getCudaMipmapFilterFormat: Unsupported filter format.");
+            sgl::Logfile::get()->throwError("Error in getCudaMipmapFilterFormatVk: Unsupported filter format.");
             return CU_TR_FILTER_MODE_POINT;
     }
 }
 
-static std::array<float, 4> getCudaBorderColor(VkBorderColor borderColor) {
+std::array<float, 4> getCudaBorderColorVk(VkBorderColor borderColor) {
     switch (borderColor) {
         case VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK:
         case VK_BORDER_COLOR_INT_TRANSPARENT_BLACK:
@@ -773,7 +773,7 @@ static std::array<float, 4> getCudaBorderColor(VkBorderColor borderColor) {
         case VK_BORDER_COLOR_INT_OPAQUE_WHITE:
             return { 1.0f, 1.0f, 1.0f, 1.0f };
         default:
-            sgl::Logfile::get()->throwError("Error in getCudaBorderColor: Unsupported border color.");
+            sgl::Logfile::get()->throwError("Error in getCudaBorderColorVk: Unsupported border color.");
             return { 0.0f, 0.0f, 0.0f, 0.0f };
     }
 }
@@ -826,11 +826,11 @@ TextureCudaExternalMemoryVk::TextureCudaExternalMemoryVk(
     }
 
     CUDA_TEXTURE_DESC cudaTextureDesc{};
-    cudaTextureDesc.addressMode[0] = getCudaSamplerAddressMode(samplerSettings.addressModeU);
-    cudaTextureDesc.addressMode[1] = getCudaSamplerAddressMode(samplerSettings.addressModeV);
-    cudaTextureDesc.addressMode[2] = getCudaSamplerAddressMode(samplerSettings.addressModeW);
-    cudaTextureDesc.filterMode = getCudaFilterFormat(samplerSettings.minFilter);
-    cudaTextureDesc.mipmapFilterMode = getCudaMipmapFilterFormat(samplerSettings.mipmapMode);
+    cudaTextureDesc.addressMode[0] = getCudaSamplerAddressModeVk(samplerSettings.addressModeU);
+    cudaTextureDesc.addressMode[1] = getCudaSamplerAddressModeVk(samplerSettings.addressModeV);
+    cudaTextureDesc.addressMode[2] = getCudaSamplerAddressModeVk(samplerSettings.addressModeW);
+    cudaTextureDesc.filterMode = getCudaFilterFormatVk(samplerSettings.minFilter);
+    cudaTextureDesc.mipmapFilterMode = getCudaMipmapFilterFormatVk(samplerSettings.mipmapMode);
     cudaTextureDesc.mipmapLevelBias = samplerSettings.mipLodBias;
     uint32_t maxAnisotropy = 0;
     if (samplerSettings.anisotropyEnable) {
@@ -844,7 +844,7 @@ TextureCudaExternalMemoryVk::TextureCudaExternalMemoryVk(
     cudaTextureDesc.maxAnisotropy = maxAnisotropy;
     cudaTextureDesc.minMipmapLevelClamp = imageSettings.mipLevels <= 1 ? 0.0f : samplerSettings.minLod;
     cudaTextureDesc.maxMipmapLevelClamp = imageSettings.mipLevels <= 1 ? 0.0f : samplerSettings.maxLod;
-    std::array<float, 4> borderColor = getCudaBorderColor(samplerSettings.borderColor);
+    std::array<float, 4> borderColor = getCudaBorderColorVk(samplerSettings.borderColor);
     memcpy(cudaTextureDesc.borderColor, borderColor.data(), sizeof(float) * 4);
     if (texCudaSettings.useNormalizedCoordinates || texCudaSettings.useMipmappedArray) {
         cudaTextureDesc.flags |= CU_TRSF_NORMALIZED_COORDINATES;
@@ -857,7 +857,7 @@ TextureCudaExternalMemoryVk::TextureCudaExternalMemoryVk(
     }
 
     CUDA_RESOURCE_VIEW_DESC cudaResourceViewDesc{};
-    cudaResourceViewDesc.format = getCudaResourceViewFormat(imageSettings.format);
+    cudaResourceViewDesc.format = getCudaResourceViewFormatVk(imageSettings.format);
     cudaResourceViewDesc.width = imageSettings.width;
     if (imageViewType == VK_IMAGE_VIEW_TYPE_2D || imageViewType == VK_IMAGE_VIEW_TYPE_3D
             || imageViewType == VK_IMAGE_VIEW_TYPE_CUBE || imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY

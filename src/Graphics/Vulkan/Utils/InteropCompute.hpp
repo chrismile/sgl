@@ -82,7 +82,7 @@ protected:
 
 typedef std::shared_ptr<SemaphoreVkComputeApiInterop> SemaphoreVkComputeApiInteropPtr;
 
-SemaphoreVkComputeApiInteropPtr createSemaphoreVkComputeApiInterop(
+DLL_OBJECT SemaphoreVkComputeApiInteropPtr createSemaphoreVkComputeApiInterop(
         Device* device, VkSemaphoreCreateFlags semaphoreCreateFlags = 0,
         VkSemaphoreType semaphoreType = VK_SEMAPHORE_TYPE_BINARY, uint64_t timelineSemaphoreInitialValue = 0);
 
@@ -133,8 +133,21 @@ protected:
 
 typedef std::shared_ptr<BufferVkComputeApiExternalMemory> BufferVkComputeApiExternalMemoryPtr;
 
-BufferVkComputeApiExternalMemoryPtr createBufferVkComputeApiExternalMemory(vk::BufferPtr& vulkanBuffer);
+DLL_OBJECT BufferVkComputeApiExternalMemoryPtr createBufferVkComputeApiExternalMemory(vk::BufferPtr& vulkanBuffer);
 
+
+struct DLL_OBJECT ImageVkComputeApiInfo {
+    VkImageViewType imageViewType = VK_IMAGE_VIEW_TYPE_2D;
+    VkImageSubresourceRange imageSubresourceRange{};
+
+    // Only needed for CUDA.
+    bool surfaceLoadStore = false;
+
+    // Only needed for Level Zero.
+    bool useSampledImage = false;
+    sgl::vk::ImageSamplerSettings imageSamplerSettings{};
+    TextureExternalMemorySettings textureExternalMemorySettings{};
+};
 
 /**
  * A CUDA driver API CUexternalMemory + CUarray/hipExternalMemory_t + hipArray_t object created from a Vulkan image.
@@ -143,10 +156,11 @@ class DLL_OBJECT ImageVkComputeApiExternalMemory {
 public:
     ImageVkComputeApiExternalMemory() = default;
     void initialize(vk::ImagePtr& vulkanImage);
-    void initialize(vk::ImagePtr& vulkanImage, VkImageViewType imageViewType, bool surfaceLoadStore);
+    void initialize(vk::ImagePtr& vulkanImage, const ImageVkComputeApiInfo& _imageComputeApiInfo);
     virtual ~ImageVkComputeApiExternalMemory() = default;
 
     inline const sgl::vk::ImagePtr& getVulkanImage() { return vulkanImage; }
+    inline const ImageVkComputeApiInfo& getImageComputeApiInfo() { return imageComputeApiInfo; }
 
     /*
      * Asynchronous copy from/to a device pointer to level 0 mipmap level.
@@ -167,8 +181,7 @@ protected:
     void freeHandlesAndFds();
 
     sgl::vk::ImagePtr vulkanImage;
-    VkImageViewType imageViewType = VK_IMAGE_VIEW_TYPE_2D;
-    bool surfaceLoadStore = false;
+    ImageVkComputeApiInfo imageComputeApiInfo{};
     VkMemoryRequirements memoryRequirements{};
     void* mipmappedArray{}; // CUmipmappedArray or hipMipmappedArray_t or ze_image_handle_t or SyclImageMemHandleWrapper (image_mem_handle)
 
@@ -181,9 +194,10 @@ protected:
 
 typedef std::shared_ptr<ImageVkComputeApiExternalMemory> ImageVkComputeApiExternalMemoryPtr;
 
-ImageVkComputeApiExternalMemoryPtr createImageVkComputeApiExternalMemory(vk::ImagePtr& vulkanImage);
-ImageVkComputeApiExternalMemoryPtr createImageVkComputeApiExternalMemory(
-        vk::ImagePtr& vulkanImage, VkImageViewType imageViewType, bool surfaceLoadStore);
+DLL_OBJECT ImageVkComputeApiExternalMemoryPtr createImageVkComputeApiExternalMemory(vk::ImagePtr& vulkanImage);
+DLL_OBJECT ImageVkComputeApiExternalMemoryPtr createImageVkComputeApiExternalMemory(
+        vk::ImagePtr& vulkanImage, const ImageVkComputeApiInfo& imageComputeApiInfo);
+
 
 /**
  * An unsampled image.
@@ -212,11 +226,51 @@ protected:
 
 typedef std::shared_ptr<UnsampledImageVkComputeApiExternalMemory> UnsampledImageVkComputeApiExternalMemoryPtr;
 
-UnsampledImageVkComputeApiExternalMemoryPtr createUnsampledImageVkComputeApiExternalMemory(vk::ImagePtr& vulkanImage);
-UnsampledImageVkComputeApiExternalMemoryPtr createUnsampledImageVkComputeApiExternalMemory(
-        vk::ImagePtr& vulkanImage, VkImageViewType imageViewType);
-UnsampledImageVkComputeApiExternalMemoryPtr createUnsampledImageVkComputeApiExternalMemory(
+DLL_OBJECT UnsampledImageVkComputeApiExternalMemoryPtr createUnsampledImageVkComputeApiExternalMemory(
+        vk::ImagePtr& vulkanImage);
+DLL_OBJECT UnsampledImageVkComputeApiExternalMemoryPtr createUnsampledImageVkComputeApiExternalMemory(
+        vk::ImagePtr& vulkanImage, const ImageVkComputeApiInfo& imageComputeApiInfo);
+DLL_OBJECT UnsampledImageVkComputeApiExternalMemoryPtr createUnsampledImageVkComputeApiExternalMemory(
         const ImageVkComputeApiExternalMemoryPtr& image);
+
+
+/**
+ * An sampled image.
+ */
+class DLL_OBJECT SampledImageVkComputeApiExternalMemory {
+public:
+    SampledImageVkComputeApiExternalMemory() {}
+    virtual void initialize(
+            const ImageVkComputeApiExternalMemoryPtr& _image,
+            const TextureExternalMemorySettings& textureExternalMemorySettings) = 0;
+    virtual ~SampledImageVkComputeApiExternalMemory() = default;
+
+    inline const sgl::vk::ImagePtr& getVulkanImage() { return image->getVulkanImage(); }
+
+    /*
+     * Asynchronous copy from/to a device pointer to level 0 mipmap level.
+     */
+    void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr) {
+        image->copyFromDevicePtrAsync(devicePtrSrc, stream, eventOut);
+    }
+    void copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream, void* eventOut = nullptr) {
+        image->copyToDevicePtrAsync(devicePtrDst, stream, eventOut);
+    }
+
+protected:
+    ImageVkComputeApiExternalMemoryPtr image;
+};
+
+typedef std::shared_ptr<SampledImageVkComputeApiExternalMemory> SampledImageVkComputeApiExternalMemoryPtr;
+
+DLL_OBJECT SampledImageVkComputeApiExternalMemoryPtr createSampledImageVkComputeApiExternalMemory(
+        vk::TexturePtr& vulkanTexture, const TextureExternalMemorySettings& textureExternalMemorySettings);
+DLL_OBJECT SampledImageVkComputeApiExternalMemoryPtr createSampledImageVkComputeApiExternalMemory(
+        vk::ImagePtr& vulkanImage, const ImageVkComputeApiInfo& imageComputeApiInfo);
+DLL_OBJECT SampledImageVkComputeApiExternalMemoryPtr createSampledImageVkComputeApiExternalMemory(
+        vk::ImagePtr& vulkanImage, const vk::ImageViewSettings& imageViewSettings,
+        const vk::ImageSamplerSettings& imageSamplerSettings,
+        const TextureExternalMemorySettings& textureExternalMemorySettings);
 
 }}
 

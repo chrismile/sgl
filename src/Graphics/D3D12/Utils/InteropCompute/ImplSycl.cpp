@@ -344,4 +344,127 @@ void ImageD3D12SyclInterop::copyToDevicePtrAsync(
     }
 }
 
+
+void UnsampledImageD3D12SyclInterop::initialize(const ImageD3D12ComputeApiExternalMemoryPtr& _image) {
+    static_assert(sizeof(sycl::ext::oneapi::experimental::unsampled_image_handle) == sizeof(rawImageHandle));
+    this->image = _image;
+    auto imageVkSycl = std::static_pointer_cast<ImageD3D12SyclInterop>(image);
+    auto* wrapperImg = reinterpret_cast<SyclImageMemHandleWrapper*>(imageVkSycl->mipmappedArray);
+
+    if (!sycl::ext::oneapi::experimental::is_image_handle_supported<sycl::ext::oneapi::experimental::unsampled_image_handle>(
+            wrapperImg->syclImageDescriptor, sycl::ext::oneapi::experimental::image_memory_handle_type::opaque_handle,
+            *g_syclQueue)) {
+        if (openMessageBoxOnComputeApiError) {
+            sgl::Logfile::get()->writeError(
+                    "Error in UnsampledImageD3D12SyclInterop::_initialize: "
+                    "Unsupported SYCL image handle type.");
+        } else {
+            sgl::Logfile::get()->write(
+                    "Error in UnsampledImageD3D12SyclInterop::_initialize: "
+                    "Unsupported SYCL image handle type.", sgl::RED);
+        }
+        throw UnsupportedComputeApiFeatureException("Unsupported SYCL image handle type");
+    }
+
+    auto handle = sycl::ext::oneapi::experimental::create_image(
+            wrapperImg->syclImageMemHandle, wrapperImg->syclImageDescriptor, *g_syclQueue);
+    rawImageHandle = handle.raw_handle;
+}
+
+UnsampledImageD3D12SyclInterop::~UnsampledImageD3D12SyclInterop() {
+    if (rawImageHandle) {
+        sycl::ext::oneapi::experimental::unsampled_image_handle handle{rawImageHandle};
+        sycl::ext::oneapi::experimental::destroy_image_handle(handle, *g_syclQueue);
+        rawImageHandle = {};
+    }
+}
+
+uint64_t UnsampledImageD3D12SyclInterop::getRawHandle() {
+    return rawImageHandle;
+}
+
+
+static sycl::addressing_mode getSyclSamplerAddressModeD3D12(D3D12_TEXTURE_ADDRESS_MODE samplerAddressModeD3D12) {
+    switch (samplerAddressModeD3D12) {
+    case D3D12_TEXTURE_ADDRESS_MODE_WRAP:
+        return sycl::addressing_mode::repeat;
+    case D3D12_TEXTURE_ADDRESS_MODE_MIRROR:
+    case D3D12_TEXTURE_ADDRESS_MODE_MIRROR_ONCE:
+        return sycl::addressing_mode::mirrored_repeat;
+    case D3D12_TEXTURE_ADDRESS_MODE_CLAMP:
+        return sycl::addressing_mode::clamp_to_edge;
+    case D3D12_TEXTURE_ADDRESS_MODE_BORDER:
+        return sycl::addressing_mode::clamp;
+    default:
+        return sycl::addressing_mode::none;
+    }
+}
+
+void SampledImageD3D12SyclInterop::initialize(
+            const ImageD3D12ComputeApiExternalMemoryPtr& _image,
+            const TextureExternalMemorySettings& textureExternalMemorySettings) {
+    static_assert(sizeof(sycl::ext::oneapi::experimental::sampled_image_handle) == sizeof(rawImageHandle));
+    this->image = _image;
+    const auto& imageComputeApiInfo = image->getImageComputeApiInfo();
+    const auto& samplerDesc = imageComputeApiInfo.samplerDesc;
+
+    auto imageVkSycl = std::static_pointer_cast<ImageD3D12SyclInterop>(image);
+    auto* wrapperImg = reinterpret_cast<SyclImageMemHandleWrapper*>(imageVkSycl->mipmappedArray);
+
+    if (!sycl::ext::oneapi::experimental::is_image_handle_supported<sycl::ext::oneapi::experimental::sampled_image_handle>(
+            wrapperImg->syclImageDescriptor, sycl::ext::oneapi::experimental::image_memory_handle_type::opaque_handle,
+            *g_syclQueue)) {
+        if (openMessageBoxOnComputeApiError) {
+            sgl::Logfile::get()->writeError(
+                    "Error in SampledImageD3D12SyclInterop::_initialize: "
+                    "Unsupported SYCL image handle type.");
+        } else {
+            sgl::Logfile::get()->write(
+                    "Error in SampledImageD3D12SyclInterop::_initialize: "
+                    "Unsupported SYCL image handle type.", sgl::RED);
+        }
+        throw UnsupportedComputeApiFeatureException("Unsupported SYCL image handle type");
+    }
+
+    sycl::ext::oneapi::experimental::bindless_image_sampler syclSampler{};
+    syclSampler.addressing[0] = getSyclSamplerAddressModeD3D12(samplerDesc.AddressU);
+    syclSampler.addressing[1] = getSyclSamplerAddressModeD3D12(samplerDesc.AddressV);
+    syclSampler.addressing[2] = getSyclSamplerAddressModeD3D12(samplerDesc.AddressW);
+    syclSampler.coordinate =
+            textureExternalMemorySettings.useNormalizedCoordinates
+            ? sycl::coordinate_normalization_mode::normalized
+            : sycl::coordinate_normalization_mode::unnormalized;
+    syclSampler.filtering =
+            samplerDesc.Filter == D3D12_FILTER_MIN_MAG_MIP_POINT
+            || samplerDesc.Filter == D3D12_FILTER_MIN_MAG_POINT_MIP_LINEAR
+            ? sycl::filtering_mode::nearest : sycl::filtering_mode::linear;
+    syclSampler.mipmap_filtering =
+            samplerDesc.Filter == D3D12_FILTER_MIN_MAG_MIP_POINT
+            || samplerDesc.Filter == D3D12_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT
+            || samplerDesc.Filter == D3D12_FILTER_MIN_LINEAR_MAG_MIP_POINT
+            || samplerDesc.Filter == D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT
+            || samplerDesc.Filter == D3D12_FILTER_MIN_MAG_ANISOTROPIC_MIP_POINT
+            ? sycl::filtering_mode::nearest : sycl::filtering_mode::linear;
+    syclSampler.cubemap_filtering = sycl::ext::oneapi::experimental::cubemap_filtering_mode::disjointed;
+    syclSampler.min_mipmap_level_clamp = samplerDesc.MinLOD;
+    syclSampler.max_mipmap_level_clamp = samplerDesc.MaxLOD;
+    syclSampler.max_anisotropy = samplerDesc.MaxAnisotropy;
+
+    auto handle = sycl::ext::oneapi::experimental::create_image(
+            wrapperImg->syclImageMemHandle, wrapperImg->syclImageDescriptor, *g_syclQueue);
+    rawImageHandle = handle.raw_handle;
+}
+
+SampledImageD3D12SyclInterop::~SampledImageD3D12SyclInterop() {
+    if (rawImageHandle) {
+        sycl::ext::oneapi::experimental::sampled_image_handle handle{rawImageHandle};
+        sycl::ext::oneapi::experimental::destroy_image_handle(handle, *g_syclQueue);
+        rawImageHandle = {};
+    }
+}
+
+uint64_t SampledImageD3D12SyclInterop::getRawHandle() {
+    return rawImageHandle;
+}
+
 }}

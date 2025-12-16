@@ -29,6 +29,8 @@
 #ifndef SGL_VULKAN_INTEROPCUDA_HPP
 #define SGL_VULKAN_INTEROPCUDA_HPP
 
+#include <array>
+
 #include "../Buffers/Buffer.hpp"
 #include "../Image/Image.hpp"
 #include "SyncObjects.hpp"
@@ -157,6 +159,12 @@ struct DLL_OBJECT TextureCudaExternalMemorySettings {
     // Whether to transform integer values to the range [0, 1] or not.
     bool readAsInteger = false;
 };
+
+DLL_OBJECT CUresourceViewFormat getCudaResourceViewFormatVk(VkFormat format);
+DLL_OBJECT CUaddress_mode getCudaSamplerAddressModeVk(VkSamplerAddressMode samplerAddressModeVk);
+DLL_OBJECT CUfilter_mode getCudaFilterFormatVk(VkFilter filterVk);
+DLL_OBJECT CUfilter_mode getCudaMipmapFilterFormatVk(VkSamplerMipmapMode samplerMipmapMode);
+DLL_OBJECT std::array<float, 4> getCudaBorderColorVk(VkBorderColor borderColor);
 
 class DLL_OBJECT TextureCudaExternalMemoryVk {
 public:
