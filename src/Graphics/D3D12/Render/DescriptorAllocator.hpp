@@ -68,6 +68,9 @@ public:
     ~DescriptorAllocator();
     DescriptorAllocationPtr allocate(size_t numDescriptors = 1);
 
+    [[nodiscard]] ComPtr<ID3D12DescriptorHeap>& getD3D12DescriptorHeap() { return descriptorHeap; }
+    [[nodiscard]] ID3D12DescriptorHeap* getD3D12DescriptorHeapPtr() { return descriptorHeap.Get(); }
+
 private:
     D3D12_DESCRIPTOR_HEAP_TYPE descriptorHeapType;
     ComPtr<ID3D12DescriptorHeap> descriptorHeap;

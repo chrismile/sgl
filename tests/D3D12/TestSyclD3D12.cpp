@@ -42,6 +42,7 @@
 #include <Graphics/D3D12/Render/Data.hpp>
 #include <Graphics/D3D12/Render/Renderer.hpp>
 #include <Graphics/D3D12/Render/CommandList.hpp>
+#include <Graphics/D3D12/Render/DescriptorAllocator.hpp>
 
 #include "../SYCL/SyclDeviceCode.hpp"
 
@@ -340,7 +341,16 @@ TEST_F(InteropTestSyclD3D12, ImageD3D12WriteSyclReadTest) {
     }
     )", "WriteBufferShader.hlsl", sgl::d3d12::ShaderModuleType::COMPUTE, "CSMain", {});
     auto rootParameters = std::make_shared<sgl::d3d12::RootParameters>(computeShader);
-    auto rpiDstBuffer = rootParameters->pushUnorderedAccessView("destImage");
+    D3D12_DESCRIPTOR_RANGE1 descriptorRange{};
+    descriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+    descriptorRange.NumDescriptors = 1;
+    auto rpiDescriptorTable = rootParameters->pushDescriptorTable(1, &descriptorRange);
+    sgl::d3d12::DescriptorAllocator* descriptorAllocatorUAV =
+            renderer->getDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    auto descriptorAllocationUAV = descriptorAllocatorUAV->allocate(1);
+    D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc{};
+    uavDesc.Format = DXGI_FORMAT_R32_FLOAT;
+    uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
 
     uint32_t width = 1024;
     uint32_t height = 1024;
@@ -367,8 +377,12 @@ TEST_F(InteropTestSyclD3D12, ImageD3D12WriteSyclReadTest) {
         }
         auto imageInteropSycl = std::static_pointer_cast<sgl::d3d12::UnsampledImageD3D12SyclInterop>(imageInterop);
 
+        d3d12Device->getD3D12Device2()->CreateUnorderedAccessView(
+                imageD3D12->getD3D12ResourcePtr(), nullptr, &uavDesc,
+                descriptorAllocationUAV->getCPUDescriptorHandle());
+
         auto computeData = std::make_shared<sgl::d3d12::ComputeData>(d3d12Device.get(), rootParameters);
-        computeData->setUnorderedAccessView(rpiDstBuffer, imageD3D12.get());
+        computeData->setDescriptorTable(rpiDescriptorTable, descriptorAllocationUAV.get());
 
         // Upload data to image.
         size_t numEntries = width * height;
@@ -383,6 +397,8 @@ TEST_F(InteropTestSyclD3D12, ImageD3D12WriteSyclReadTest) {
         // Write new data with D3D12.
         ID3D12CommandQueue* d3d12CommandQueue = d3d12Device->getD3D12CommandQueue(commandList->getCommandListType());
         renderer->setCommandList(commandList);
+        auto* descriptorHeap = descriptorAllocatorUAV->getD3D12DescriptorHeapPtr();
+        commandList->getD3D12GraphicsCommandListPtr()->SetDescriptorHeaps(1, &descriptorHeap);
         renderer->dispatch(computeData, sgl::uiceil(width, 16u), sgl::uiceil(height, 16u), 1);
         commandList->close();
         auto* d3d12CommandList = commandList->getD3D12CommandListPtr();

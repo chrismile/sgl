@@ -492,7 +492,7 @@ void InteropTestSyclVk::runTestsImageVulkanWriteSyclRead(VkFormat format, bool u
         float value = float(idx.x + idx.y * destImageSize.x);
         imageStore(destImage, idx, vec4(value));
     }
-    ")";
+    )";
     auto* shaderManager = new sgl::vk::ShaderManagerVk(device);
     auto shaderStages = shaderManager->compileComputeShaderFromStringCached(
             "WriteImage.Compute", SHADER_STRING_WRITE_IMAGE_COMPUTE);
@@ -551,6 +551,7 @@ void InteropTestSyclVk::runTestsImageVulkanWriteSyclRead(VkFormat format, bool u
     }
 
     device->waitIdle(); // Should not be necessary.
+    computeData = {};
     delete renderer;
 
     // Free data.
@@ -560,7 +561,6 @@ void InteropTestSyclVk::runTestsImageVulkanWriteSyclRead(VkFormat format, bool u
     imageInteropSycl = {};
     imageViewVulkan = {};
     shaderStages = {};
-    computeData = {};
     delete shaderManager;
 }
 
