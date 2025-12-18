@@ -455,6 +455,11 @@ TEST_F(InteropTestSyclD3D12, ImageSyclWriteD3D12ReadTest) {
         GTEST_SKIP() << "ext_oneapi_bindless_images not supported.";
     }
 
+    uint32_t width = 1024;
+    uint32_t height = 1024;
+    size_t numEntries = width * height;
+    size_t sizeInBytes = numEntries * sizeof(float);
+
     auto* shaderManager = new sgl::d3d12::ShaderManagerD3D12();
     auto* renderer = new sgl::d3d12::Renderer(d3d12Device.get());
 
@@ -477,7 +482,7 @@ TEST_F(InteropTestSyclD3D12, ImageSyclWriteD3D12ReadTest) {
     auto rootParameters = std::make_shared<sgl::d3d12::RootParameters>(computeShader);
     D3D12_DESCRIPTOR_RANGE1 descriptorRange{};
     descriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
-    descriptorRange.NumDescriptors = 1;
+    descriptorRange.NumDescriptors = 2;
     auto rpiDescriptorTable = rootParameters->pushDescriptorTable(1, &descriptorRange);
     sgl::d3d12::DescriptorAllocator* descriptorAllocator =
             renderer->getDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -486,11 +491,10 @@ TEST_F(InteropTestSyclD3D12, ImageSyclWriteD3D12ReadTest) {
     sourceImgUavDesc.Format = DXGI_FORMAT_R32_FLOAT;
     sourceImgUavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
     D3D12_UNORDERED_ACCESS_VIEW_DESC destBufferUavDesc{};
-    destBufferUavDesc.Format = DXGI_FORMAT_R32_FLOAT;
+    destBufferUavDesc.Format = DXGI_FORMAT_UNKNOWN;
     destBufferUavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-
-    uint32_t width = 1024;
-    uint32_t height = 1024;
+    destBufferUavDesc.Buffer.NumElements = numEntries;
+    destBufferUavDesc.Buffer.StructureByteStride = sizeof(float);
 
     const int NUM_ITERATIONS = 1000;
     for (int i = 0; i < NUM_ITERATIONS; i++) {
@@ -499,9 +503,6 @@ TEST_F(InteropTestSyclD3D12, ImageSyclWriteD3D12ReadTest) {
         uint64_t timelineValue = 0;
         sgl::d3d12::FenceD3D12ComputeApiInteropPtr fence =
                 sgl::d3d12::createFenceD3D12ComputeApiInterop(d3d12Device.get(), timelineValue);
-
-        size_t numEntries = width * height;
-        size_t sizeInBytes = numEntries * sizeof(float);
 
         sgl::d3d12::ResourceSettings imageSettings{};
         D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
@@ -518,15 +519,20 @@ TEST_F(InteropTestSyclD3D12, ImageSyclWriteD3D12ReadTest) {
         auto imageInteropSycl = std::static_pointer_cast<sgl::d3d12::UnsampledImageD3D12SyclInterop>(imageInterop);
 
         sgl::d3d12::ResourceSettings bufferSettings{};
-        imageSettings.resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeInBytes, flags);
+        bufferSettings.resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeInBytes, flags);
+        sgl::d3d12::ResourcePtr bufferD3D12 = std::make_shared<sgl::d3d12::Resource>(d3d12Device.get(), bufferSettings);
+        /*bufferSettings.resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeInBytes, D3D12_RESOURCE_FLAG_NONE);
         bufferSettings.heapProperties.Type = D3D12_HEAP_TYPE_READBACK;
-        sgl::d3d12::ResourcePtr stagingBufferD3D12 = std::make_shared<sgl::d3d12::Resource>(d3d12Device.get(), imageSettings);
+        bufferSettings.resourceStates = D3D12_RESOURCE_STATE_COPY_DEST;
+        sgl::d3d12::ResourcePtr stagingBufferD3D12 = std::make_shared<sgl::d3d12::Resource>(d3d12Device.get(), bufferSettings);*/
+
+        auto* hostPtr = new float[numEntries];
 
         d3d12Device->getD3D12Device2()->CreateUnorderedAccessView(
                 imageD3D12->getD3D12ResourcePtr(), nullptr, &sourceImgUavDesc,
                 descriptorAllocation->getCPUDescriptorHandle(0));
         d3d12Device->getD3D12Device2()->CreateUnorderedAccessView(
-                stagingBufferD3D12->getD3D12ResourcePtr(), nullptr, &destBufferUavDesc,
+                bufferD3D12->getD3D12ResourcePtr(), nullptr, &destBufferUavDesc,
                 descriptorAllocation->getCPUDescriptorHandle(1));
 
         auto computeData = std::make_shared<sgl::d3d12::ComputeData>(d3d12Device.get(), rootParameters);
@@ -554,13 +560,15 @@ TEST_F(InteropTestSyclD3D12, ImageSyclWriteD3D12ReadTest) {
         commandList->close();
         auto* d3d12CommandList = commandList->getD3D12CommandListPtr();
         d3d12CommandQueue->ExecuteCommandLists(1, &d3d12CommandList);
+        timelineValue++;
+        d3d12CommandQueue->Signal(fence->getD3D12Fence(), timelineValue);
 
         // Wait on CPU.
-        timelineValue++;
         fence->waitOnCpu(timelineValue);
 
         // Check equality.
-        const auto* hostPtr = static_cast<float*>(stagingBufferD3D12->map());
+        //const auto* hostPtr = static_cast<float*>(stagingBufferD3D12->map());
+        bufferD3D12->readBackDataLinear(sizeInBytes, hostPtr);
         for (size_t i = 0; i < numEntries; i++) {
             if (hostPtr[i] != float(i)) {
                 size_t x = i % width;
@@ -573,7 +581,7 @@ TEST_F(InteropTestSyclD3D12, ImageSyclWriteD3D12ReadTest) {
                 ASSERT_TRUE(false) << errorMessage;
             }
         }
-        stagingBufferD3D12->unmap();
+        //stagingBufferD3D12->unmap();
 
         // Free data.
         delete[] hostPtr;
