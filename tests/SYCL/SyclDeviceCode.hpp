@@ -32,5 +32,8 @@
 #include <sycl/sycl.hpp>
 
 DLL_OBJECT_SYCL sycl::event writeSyclBufferData(sycl::queue& queue, size_t numEntries, float* devicePtr);
+DLL_OBJECT_SYCL sycl::event copySyclBindlessImageToBuffer(
+        sycl::queue& queue, sycl::ext::oneapi::experimental::unsampled_image_handle img, size_t width, size_t height,
+        float* devicePtr, const sycl::event& depEvent);
 
 #endif //SGL_TESTS_SYCLDEVICECODE_HPP

@@ -67,7 +67,7 @@ UINT RootParameters::pushConstants(
     checkShaderModule();
     if (!shaderStages->hasBindingName(bindingName)) {
         sgl::Logfile::get()->throwError(
-                "Error in RootParameters::pushShaderResourceView: No binding called '" + bindingName + "'.");
+                "Error in RootParameters::pushConstants: No binding called '" + bindingName + "'.");
         return std::numeric_limits<UINT>::max();
     }
     const auto& bindingInfo = shaderStages->getBindingInfoByName(bindingName);
@@ -97,7 +97,7 @@ UINT RootParameters::pushConstantBufferView(
     checkShaderModule();
     if (!shaderStages->hasBindingName(bindingName)) {
         sgl::Logfile::get()->throwError(
-                "Error in RootParameters::pushShaderResourceView: No binding called '" + bindingName + "'.");
+                "Error in RootParameters::pushConstantBufferView: No binding called '" + bindingName + "'.");
         return std::numeric_limits<UINT>::max();
     }
     const auto& bindingInfo = shaderStages->getBindingInfoByName(bindingName);
@@ -155,7 +155,7 @@ UINT RootParameters::pushUnorderedAccessView(
     checkShaderModule();
     if (!shaderStages->hasBindingName(bindingName)) {
         sgl::Logfile::get()->throwError(
-                "Error in RootParameters::pushShaderResourceView: No binding called '" + bindingName + "'.");
+                "Error in RootParameters::pushUnorderedAccessView: No binding called '" + bindingName + "'.");
         return std::numeric_limits<UINT>::max();
     }
     const auto& bindingInfo = shaderStages->getBindingInfoByName(bindingName);

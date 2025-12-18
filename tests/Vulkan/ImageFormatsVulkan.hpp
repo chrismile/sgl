@@ -45,4 +45,25 @@ const auto testedImageFormats = testing::Values(
         //{VK_FORMAT_R64_UINT, false}
 );
 
+const auto testedImageFormatsCopy = testing::Values(
+        // bool entry shows if this format is required (true) or optional (false).
+        std::pair<VkFormat, bool>{VK_FORMAT_R32_SFLOAT, true},
+        std::pair<VkFormat, bool>{VK_FORMAT_R32G32_SFLOAT, true},
+        std::pair<VkFormat, bool>{VK_FORMAT_R32G32B32A32_SFLOAT, true},
+        std::pair<VkFormat, bool>{VK_FORMAT_D32_SFLOAT, false}
+);
+
+const auto testedImageFormatsReadWriteAsync = testing::Values(
+        // second bool entry shows if semaphores should be used
+        // third bool entry shows if this format is required (true) or optional (false).
+        std::tuple<VkFormat, bool, bool>{VK_FORMAT_R32_SFLOAT, true, true},
+        std::tuple<VkFormat, bool, bool>{VK_FORMAT_D32_SFLOAT, true, false}
+);
+const auto testedImageFormatsReadWriteSync = testing::Values(
+        // second bool entry shows if semaphores should be used
+        // third bool entry shows if this format is required (true) or optional (false).
+        std::tuple<VkFormat, bool, bool>{VK_FORMAT_R32_SFLOAT, false, true},
+        std::tuple<VkFormat, bool, bool>{VK_FORMAT_D32_SFLOAT, false, false}
+);
+
 #endif //SGL_TESTS_IMAGEFORMATS_HPP

@@ -37,3 +37,19 @@ sycl::event writeSyclBufferData(sycl::queue& queue, size_t numEntries, float* de
     });
     return event;
 }
+
+sycl::event copySyclBindlessImageToBuffer(
+        sycl::queue& queue, sycl::ext::oneapi::experimental::unsampled_image_handle img, size_t width, size_t height,
+        float* devicePtr, const sycl::event& depEvent) {
+    auto event = queue.submit([&](sycl::handler& cgh) {
+        cgh.depends_on(depEvent);
+        cgh.parallel_for<class CopyBindlessImageToBufferKernel>(sycl::range<2>{width, height}, [=](sycl::id<2> it) {
+            const auto x = it[0];
+            const auto y = it[1];
+            const auto index = x + y * width;
+            auto data = sycl::ext::oneapi::experimental::fetch_image<float>(img, sycl::int2{x, y});
+            devicePtr[index] = data;
+        });
+    });
+    return event;
+}

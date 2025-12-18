@@ -609,7 +609,7 @@ void InteropTestLowLevelVk::runTestsBufferCopySemaphore() {
 #endif
 }
 
-const int NUM_BUFFER_COPY_RUNS = 100;
+const int NUM_BUFFER_COPY_RUNS = 1000;
 
 TEST_F(InteropTestLowLevelVk, BufferCopySemaphoreTest) {
     for (int i = 0; i < NUM_BUFFER_COPY_RUNS; i++) {
