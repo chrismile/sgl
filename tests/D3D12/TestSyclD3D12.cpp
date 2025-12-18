@@ -557,7 +557,7 @@ TEST_F(InteropTestSyclD3D12, ImageSyclWriteD3D12ReadTest) {
 
         // Wait on CPU.
         timelineValue++;
-        fence->waitOnCpu(1);
+        fence->waitOnCpu(timelineValue);
 
         // Check equality.
         const auto* hostPtr = static_cast<float*>(stagingBufferD3D12->map());
