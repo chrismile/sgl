@@ -425,6 +425,9 @@ TEST_F(InteropTestSyclD3D12, ImageD3D12WriteSyclReadTest) {
                 size_t y = i / width;
                 std::string errorMessage =
                         "Image content mismatch at x=" + std::to_string(x) + ", y=" + std::to_string(y);
+                descriptorAllocationUAV = {};
+                delete shaderManager;
+                delete renderer;
                 ASSERT_TRUE(false) << errorMessage;
             }
         }
