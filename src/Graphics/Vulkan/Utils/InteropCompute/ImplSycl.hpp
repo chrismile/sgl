@@ -42,10 +42,10 @@ public:
     ~SemaphoreVkSyclInterop() override;
 
     /// Signal semaphore.
-    void signalSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue = 0, void* eventOut = nullptr) override;
+    void signalSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue, void* eventIn, void* eventOut) override;
 
     /// Wait on semaphore.
-    void waitSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue = 0, void* eventOut = nullptr) override;
+    void waitSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue, void* eventIn, void* eventOut) override;
 
 protected:
 #ifdef _WIN32

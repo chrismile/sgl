@@ -53,3 +53,16 @@ sycl::event copySyclBindlessImageToBuffer(
     });
     return event;
 }
+
+sycl::event writeSyclBindlessImageIncreasingIndices(
+        sycl::queue& queue, sycl::ext::oneapi::experimental::unsampled_image_handle img, size_t width, size_t height) {
+    auto event = queue.submit([&](sycl::handler& cgh) {
+        cgh.parallel_for<class WriteBindlessIncreasingIndicesKernel>(sycl::range<2>{width, height}, [=](sycl::id<2> it) {
+            const auto x = it[0];
+            const auto y = it[1];
+            const auto index = x + y * width;
+            sycl::ext::oneapi::experimental::write_image<float>(img, sycl::int2{x, y}, float(index));
+        });
+    });
+    return event;
+}

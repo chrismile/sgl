@@ -66,7 +66,8 @@ SemaphoreVkHipInterop::~SemaphoreVkHipInterop() {
     checkHipResult(hipResult, "Error in hipDestroyExternalSemaphore: ");
 }
 
-void SemaphoreVkHipInterop::signalSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue, void* eventOut) {
+void SemaphoreVkHipInterop::signalSemaphoreComputeApi(
+        StreamWrapper stream, unsigned long long timelineValue, void* eventIn, void* eventOut) {
     auto hipExternalSemaphore = reinterpret_cast<hipExternalSemaphore_t>(externalSemaphore);
     hipExternalSemaphoreSignalParams signalParams{};
     if (isTimelineSemaphore()) {
@@ -78,7 +79,7 @@ void SemaphoreVkHipInterop::signalSemaphoreComputeApi(StreamWrapper stream, unsi
 }
 
 void SemaphoreVkHipInterop::waitSemaphoreComputeApi(
-        StreamWrapper stream, unsigned long long timelineValue, void* eventOut) {
+        StreamWrapper stream, unsigned long long timelineValue, void* eventIn, void* eventOut) {
     auto hipExternalSemaphore = reinterpret_cast<hipExternalSemaphore_t>(externalSemaphore);
     hipExternalSemaphoreWaitParams waitParams{};
     if (isTimelineSemaphore()) {

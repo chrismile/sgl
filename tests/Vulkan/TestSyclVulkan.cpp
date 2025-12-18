@@ -512,6 +512,13 @@ void InteropTestSyclVk::runTestsImageVulkanWriteSyclRead(VkFormat format, bool u
     renderer->dispatch(computeData, sgl::uiceil(imageSettings.width, 16u), sgl::uiceil(imageSettings.height, 16u), 1);
 
     if (useSemaphore) {
+        renderer->insertImageMemoryBarrier(
+                imageViewVulkan->getImage(),
+                VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
+                renderer->getDevice()->getGraphicsQueueIndex(), VK_QUEUE_FAMILY_EXTERNAL);
+
         timelineValue++;
         semaphoreVulkan->setSignalSemaphoreValue(timelineValue);
         commandBuffer->pushSignalSemaphore(semaphoreVulkan);

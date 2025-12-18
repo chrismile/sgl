@@ -115,7 +115,8 @@ SemaphoreVkLevelZeroInterop::~SemaphoreVkLevelZeroInterop() {
     }
 }
 
-void SemaphoreVkLevelZeroInterop::signalSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue, void* eventOut) {
+void SemaphoreVkLevelZeroInterop::signalSemaphoreComputeApi(
+        StreamWrapper stream, unsigned long long timelineValue, void* eventIn, void* eventOut) {
     auto zeExternalSemaphore = reinterpret_cast<ze_external_semaphore_ext_handle_t>(externalSemaphore);
     ze_external_semaphore_signal_params_ext_t externalSemaphoreSignalParamsExt{};
     externalSemaphoreSignalParamsExt.stype = ZE_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_SIGNAL_PARAMS_EXT;
@@ -141,7 +142,7 @@ void SemaphoreVkLevelZeroInterop::signalSemaphoreComputeApi(StreamWrapper stream
 }
 
 void SemaphoreVkLevelZeroInterop::waitSemaphoreComputeApi(
-        StreamWrapper stream, unsigned long long timelineValue, void* eventOut) {
+        StreamWrapper stream, unsigned long long timelineValue, void* eventIn, void* eventOut) {
     auto zeExternalSemaphore = reinterpret_cast<ze_external_semaphore_ext_handle_t>(externalSemaphore);
     ze_external_semaphore_wait_params_ext_t externalSemaphoreWaitParamsExt{};
     externalSemaphoreWaitParamsExt.stype = ZE_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_WAIT_PARAMS_EXT;

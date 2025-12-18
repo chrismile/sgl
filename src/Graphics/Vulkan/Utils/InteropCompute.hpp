@@ -64,10 +64,28 @@ public:
     ~SemaphoreVkComputeApiInterop() override = default;
 
     /// Signal semaphore.
-    virtual void signalSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue = 0, void* eventOut = nullptr) = 0;
+    void signalSemaphoreComputeApi(StreamWrapper stream) {
+        signalSemaphoreComputeApi(stream, 0, nullptr, nullptr);
+    }
+    void signalSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue) {
+        signalSemaphoreComputeApi(stream, timelineValue, nullptr, nullptr);
+    }
+    void signalSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue, void* eventOut) {
+        signalSemaphoreComputeApi(stream, timelineValue, nullptr, eventOut);
+    }
+    virtual void signalSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue, void* eventIn, void* eventOut) = 0;
 
     /// Wait on semaphore.
-    virtual void waitSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue = 0, void* eventOut = nullptr) = 0;
+    void waitSemaphoreComputeApi(StreamWrapper stream) {
+        waitSemaphoreComputeApi(stream, 0, nullptr, nullptr);
+    }
+    void waitSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue) {
+        waitSemaphoreComputeApi(stream, timelineValue, nullptr, nullptr);
+    }
+    void waitSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue, void* eventOut) {
+        waitSemaphoreComputeApi(stream, timelineValue, nullptr, eventOut);
+    }
+    virtual void waitSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue, void* eventIn, void* eventOut) = 0;
 
 protected:
     virtual void preCheckExternalSemaphoreImport() {}

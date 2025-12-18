@@ -103,20 +103,33 @@ SemaphoreVkSyclInterop::~SemaphoreVkSyclInterop() {
     delete wrapper;
 }
 
-void SemaphoreVkSyclInterop::signalSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue, void* eventOut) {
+void SemaphoreVkSyclInterop::signalSemaphoreComputeApi(
+        StreamWrapper stream, unsigned long long timelineValue, void* eventIn, void* eventOut) {
     auto* wrapper = reinterpret_cast<SyclExternalSemaphoreWrapper*>(externalSemaphore);
-    auto syclEvent = stream.syclQueuePtr->ext_oneapi_signal_external_semaphore(
-            wrapper->syclExternalSemaphore, uint64_t(timelineValue));
+    sycl::event syclEvent;
+    if (eventIn) {
+        syclEvent = stream.syclQueuePtr->ext_oneapi_signal_external_semaphore(
+                wrapper->syclExternalSemaphore, uint64_t(timelineValue), *static_cast<sycl::event*>(eventIn));
+    } else {
+        syclEvent = stream.syclQueuePtr->ext_oneapi_signal_external_semaphore(
+                wrapper->syclExternalSemaphore, uint64_t(timelineValue));
+    }
     if (eventOut) {
         *reinterpret_cast<sycl::event*>(eventOut) = std::move(syclEvent);
     }
 }
 
 void SemaphoreVkSyclInterop::waitSemaphoreComputeApi(
-        StreamWrapper stream, unsigned long long timelineValue, void* eventOut) {
+        StreamWrapper stream, unsigned long long timelineValue, void* eventIn, void* eventOut) {
     auto* wrapper = reinterpret_cast<SyclExternalSemaphoreWrapper*>(externalSemaphore);
-    auto syclEvent = stream.syclQueuePtr->ext_oneapi_wait_external_semaphore(
-            wrapper->syclExternalSemaphore, uint64_t(timelineValue));
+    sycl::event syclEvent;
+    if (eventIn) {
+        syclEvent = stream.syclQueuePtr->ext_oneapi_wait_external_semaphore(
+                wrapper->syclExternalSemaphore, uint64_t(timelineValue), *static_cast<sycl::event*>(eventIn));
+    } else {
+        syclEvent = stream.syclQueuePtr->ext_oneapi_wait_external_semaphore(
+                wrapper->syclExternalSemaphore, uint64_t(timelineValue));
+    }
     if (eventOut) {
         *reinterpret_cast<sycl::event*>(eventOut) = std::move(syclEvent);
     }

@@ -440,3 +440,146 @@ TEST_F(InteropTestSyclD3D12, ImageD3D12WriteSyclReadTest) {
     delete shaderManager;
     delete renderer;
 }
+
+TEST_F(InteropTestSyclD3D12, ImageSyclWriteD3D12ReadTest) {
+#ifndef SUPPORT_D3D_COMPILER
+    GTEST_SKIP() << "D3D12 shader compiler is not enabled.";
+#endif
+    if (!syclQueue->get_device().has(sycl::aspect::ext_oneapi_external_memory_import)) {
+        GTEST_SKIP() << "ext_oneapi_external_memory_import not supported.";
+    }
+    if (!syclQueue->get_device().has(sycl::aspect::ext_oneapi_external_semaphore_import)) {
+        GTEST_SKIP() << "ext_oneapi_external_semaphore_import not supported.";
+    }
+    if (!syclQueue->get_device().has(sycl::aspect::ext_oneapi_bindless_images)) {
+        GTEST_SKIP() << "ext_oneapi_bindless_images not supported.";
+    }
+
+    auto* shaderManager = new sgl::d3d12::ShaderManagerD3D12();
+    auto* renderer = new sgl::d3d12::Renderer(d3d12Device.get());
+
+    auto computeShader = shaderManager->loadShaderFromHlslString(R"(
+    RWTexture2D<float> srcImage : register(u0);
+    RWStructuredBuffer<float> destBuffer : register(u1);
+    [numthreads(16, 16, 1)]
+    void CSMain(
+            uint3 groupID : SV_GroupID, uint3 dispatchThreadID : SV_DispatchThreadID,
+            uint3 groupThreadID : SV_GroupThreadID, uint groupIndex : SV_GroupIndex) {
+        uint width, height;
+        srcImage.GetDimensions(width, height);
+        const uint2 idx = dispatchThreadID.xy;
+        if (idx.x >= width || idx.y >= height) {
+            return;
+        }
+        destBuffer[idx.x + idx.y * width] = srcImage[idx];
+    }
+    )", "CopyImageToBufferShader.hlsl", sgl::d3d12::ShaderModuleType::COMPUTE, "CSMain", {});
+    auto rootParameters = std::make_shared<sgl::d3d12::RootParameters>(computeShader);
+    D3D12_DESCRIPTOR_RANGE1 descriptorRange{};
+    descriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+    descriptorRange.NumDescriptors = 1;
+    auto rpiDescriptorTable = rootParameters->pushDescriptorTable(1, &descriptorRange);
+    sgl::d3d12::DescriptorAllocator* descriptorAllocator =
+            renderer->getDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    auto descriptorAllocation = descriptorAllocator->allocate(2);
+    D3D12_UNORDERED_ACCESS_VIEW_DESC sourceImgUavDesc{};
+    sourceImgUavDesc.Format = DXGI_FORMAT_R32_FLOAT;
+    sourceImgUavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+    D3D12_UNORDERED_ACCESS_VIEW_DESC destBufferUavDesc{};
+    destBufferUavDesc.Format = DXGI_FORMAT_R32_FLOAT;
+    destBufferUavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+
+    uint32_t width = 1024;
+    uint32_t height = 1024;
+
+    const int NUM_ITERATIONS = 1000;
+    for (int i = 0; i < NUM_ITERATIONS; i++) {
+        sgl::d3d12::CommandListPtr commandList = std::make_shared<sgl::d3d12::CommandList>(
+                d3d12Device.get(), sgl::d3d12::CommandListType::DIRECT);
+        uint64_t timelineValue = 0;
+        sgl::d3d12::FenceD3D12ComputeApiInteropPtr fence =
+                sgl::d3d12::createFenceD3D12ComputeApiInterop(d3d12Device.get(), timelineValue);
+
+        size_t numEntries = width * height;
+        size_t sizeInBytes = numEntries * sizeof(float);
+
+        sgl::d3d12::ResourceSettings imageSettings{};
+        D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+        imageSettings.resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(
+                DXGI_FORMAT_R32_FLOAT, width, height, 1, 0, 1, 0, flags, D3D12_TEXTURE_LAYOUT_UNKNOWN);
+        imageSettings.heapFlags = D3D12_HEAP_FLAG_SHARED;
+        sgl::d3d12::ResourcePtr imageD3D12 = std::make_shared<sgl::d3d12::Resource>(d3d12Device.get(), imageSettings);
+        sgl::d3d12::UnsampledImageD3D12ComputeApiExternalMemoryPtr imageInterop;
+        try {
+            imageInterop = sgl::d3d12::createUnsampledImageD3D12ComputeApiExternalMemory(imageD3D12);
+        } catch (sycl::exception const& e) {
+            FAIL() << e.what();
+        }
+        auto imageInteropSycl = std::static_pointer_cast<sgl::d3d12::UnsampledImageD3D12SyclInterop>(imageInterop);
+
+        sgl::d3d12::ResourceSettings bufferSettings{};
+        imageSettings.resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeInBytes, flags);
+        bufferSettings.heapProperties.Type = D3D12_HEAP_TYPE_READBACK;
+        sgl::d3d12::ResourcePtr stagingBufferD3D12 = std::make_shared<sgl::d3d12::Resource>(d3d12Device.get(), imageSettings);
+
+        d3d12Device->getD3D12Device2()->CreateUnorderedAccessView(
+                imageD3D12->getD3D12ResourcePtr(), nullptr, &sourceImgUavDesc,
+                descriptorAllocation->getCPUDescriptorHandle(0));
+        d3d12Device->getD3D12Device2()->CreateUnorderedAccessView(
+                stagingBufferD3D12->getD3D12ResourcePtr(), nullptr, &destBufferUavDesc,
+                descriptorAllocation->getCPUDescriptorHandle(1));
+
+        auto computeData = std::make_shared<sgl::d3d12::ComputeData>(d3d12Device.get(), rootParameters);
+        computeData->setDescriptorTable(rpiDescriptorTable, descriptorAllocation.get());
+
+        // Write data with SYCL.
+        sgl::StreamWrapper stream{};
+        stream.syclQueuePtr = syclQueue;
+        sycl::ext::oneapi::experimental::unsampled_image_handle imageSyclHandle{};
+        imageSyclHandle.raw_handle = imageInteropSycl->getRawHandle();
+        sycl::event writeImgEvent = writeSyclBindlessImageIncreasingIndices(
+                *syclQueue, imageSyclHandle, width, height);
+        auto barrierEvent = syclQueue->ext_oneapi_submit_barrier({ writeImgEvent });
+        sycl::event signalSemaphoreEvent{};
+        timelineValue++;
+        fence->signalFenceComputeApi(stream, timelineValue, &barrierEvent, &signalSemaphoreEvent);
+
+        // Copy image data to buffer with D3D12.
+        ID3D12CommandQueue* d3d12CommandQueue = d3d12Device->getD3D12CommandQueue(commandList->getCommandListType());
+        d3d12CommandQueue->Wait(fence->getD3D12Fence(), timelineValue);
+        renderer->setCommandList(commandList);
+        auto* descriptorHeap = descriptorAllocator->getD3D12DescriptorHeapPtr();
+        commandList->getD3D12GraphicsCommandListPtr()->SetDescriptorHeaps(1, &descriptorHeap);
+        renderer->dispatch(computeData, sgl::uiceil(width, 16u), sgl::uiceil(height, 16u), 1);
+        commandList->close();
+        auto* d3d12CommandList = commandList->getD3D12CommandListPtr();
+        d3d12CommandQueue->ExecuteCommandLists(1, &d3d12CommandList);
+
+        // Wait on CPU.
+        timelineValue++;
+        fence->waitOnCpu(1);
+
+        // Check equality.
+        const auto* hostPtr = static_cast<float*>(stagingBufferD3D12->map());
+        for (size_t i = 0; i < numEntries; i++) {
+            if (hostPtr[i] != float(i)) {
+                size_t x = i % width;
+                size_t y = i / width;
+                std::string errorMessage =
+                        "Image content mismatch at x=" + std::to_string(x) + ", y=" + std::to_string(y);
+                descriptorAllocation = {};
+                delete shaderManager;
+                delete renderer;
+                ASSERT_TRUE(false) << errorMessage;
+            }
+        }
+        stagingBufferD3D12->unmap();
+
+        // Free data.
+        delete[] hostPtr;
+    }
+
+    descriptorAllocation = {};
+    delete shaderManager;
+    delete renderer;
+}

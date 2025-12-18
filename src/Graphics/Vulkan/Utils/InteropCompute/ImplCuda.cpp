@@ -83,7 +83,8 @@ SemaphoreVkCudaInterop::~SemaphoreVkCudaInterop() {
     checkCUresult(cuResult, "Error in cuDestroyExternalSemaphore: ");
 }
 
-void SemaphoreVkCudaInterop::signalSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue, void* eventOut) {
+void SemaphoreVkCudaInterop::signalSemaphoreComputeApi(
+        StreamWrapper stream, unsigned long long timelineValue, void* eventIn, void* eventOut) {
     auto cuExternalSemaphore = reinterpret_cast<CUexternalSemaphore>(externalSemaphore);
     CUDA_EXTERNAL_SEMAPHORE_SIGNAL_PARAMS signalParams{};
     if (isTimelineSemaphore()) {
@@ -95,7 +96,7 @@ void SemaphoreVkCudaInterop::signalSemaphoreComputeApi(StreamWrapper stream, uns
 }
 
 void SemaphoreVkCudaInterop::waitSemaphoreComputeApi(
-        StreamWrapper stream, unsigned long long timelineValue, void* eventOut) {
+        StreamWrapper stream, unsigned long long timelineValue, void* eventIn, void* eventOut) {
     auto cuExternalSemaphore = reinterpret_cast<CUexternalSemaphore>(externalSemaphore);
     CUDA_EXTERNAL_SEMAPHORE_WAIT_PARAMS waitParams{};
     if (isTimelineSemaphore()) {

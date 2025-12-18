@@ -180,6 +180,29 @@ Resource::Resource(Device* device, const ResourceSettings& resourceSettings)
 Resource::~Resource() = default;
 
 
+void* Resource::map() {
+    return map(0, getCopiableSizeInBytes());
+}
+
+void* Resource::map(size_t readRangeBegin, size_t readRangeEnd) {
+    D3D12_RANGE readRange = { readRangeBegin, readRangeEnd };
+    void* dataPtr = nullptr;
+    if (FAILED(resource->Map(0, &readRange, &dataPtr))) {
+        sgl::Logfile::get()->throwError("Error in Resource::map: CPU mapping of resource failed.");
+    }
+    return dataPtr;
+}
+
+void Resource::unmap() {
+    D3D12_RANGE writtenRange = { 0, 0 };
+    resource->Unmap(0, &writtenRange);
+}
+
+void Resource::unmap(size_t writtenRangeBegin, size_t writtenRangeEnd) {
+    D3D12_RANGE writtenRange = { writtenRangeBegin, writtenRangeEnd };
+    resource->Unmap(0, &writtenRange);
+}
+
 void Resource::uploadDataLinear(size_t sizeInBytesData, const void* dataPtr) {
     size_t intermediateSizeInBytes;
     if (resourceSettings.resourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER) {
@@ -330,7 +353,7 @@ void Resource::readBackDataLinear(size_t sizeInBytesData, void* dataPtr) {
 
     uint8_t* intermediateDataPtr;
     D3D12_RANGE readRange = { 0, sizeInBytesData };
-    D3D12_RANGE writeRange = { 0, 0 };
+    D3D12_RANGE writtenRange = { 0, 0 };
     if (FAILED(intermediateResource->Map(0, &readRange, reinterpret_cast<void**>(&intermediateDataPtr)))) {
         sgl::Logfile::get()->throwError(
                 "Error: Resource::readBackDataInternal: ID3D12Resource::Map failed.");
@@ -361,7 +384,7 @@ void Resource::readBackDataLinear(size_t sizeInBytesData, void* dataPtr) {
     MemcpySubresource(
             &memcpyDest, &subresourceSrc, memcpyDest.RowPitch, resourceSettings.resourceDesc.Height,
             resourceSettings.resourceDesc.DepthOrArraySize);
-    intermediateResource->Unmap(0, &writeRange);
+    intermediateResource->Unmap(0, &writtenRange);
 }
 
 

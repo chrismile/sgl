@@ -84,6 +84,11 @@ public:
     void barrierUAV(const CommandListPtr& commandList);
     void barrierUAV(CommandList* commandList);
 
+    void* map();
+    void* map(size_t readRangeBegin, size_t readRangeEnd);
+    void unmap();
+    void unmap(size_t writtenRangeBegin, size_t writtenRangeEnd);
+
     [[nodiscard]] size_t getAllocationSizeInBytes();
     [[nodiscard]] size_t getCopiableSizeInBytes();
     [[nodiscard]] size_t getNumRows();

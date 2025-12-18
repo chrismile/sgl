@@ -38,10 +38,10 @@ public:
     ~FenceD3D12SyclInterop() override;
 
     /// Signal fence.
-    void signalFenceComputeApi(StreamWrapper stream, unsigned long long timelineValue = 0, void* eventOut = nullptr) override;
+    void signalFenceComputeApi(StreamWrapper stream, unsigned long long timelineValue, void* eventIn, void* eventOut) override;
 
     /// Wait on fence.
-    void waitFenceComputeApi(StreamWrapper stream, unsigned long long timelineValue = 0, void* eventOut = nullptr) override;
+    void waitFenceComputeApi(StreamWrapper stream, unsigned long long timelineValue, void* eventIn, void* eventOut) override;
 
 protected:
     void importExternalFenceWin32Handle() override;

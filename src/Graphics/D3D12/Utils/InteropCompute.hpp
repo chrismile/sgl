@@ -50,10 +50,28 @@ public:
     ~FenceD3D12ComputeApiInterop() override = default;
 
     /// Signal fence.
-    virtual void signalFenceComputeApi(StreamWrapper stream, unsigned long long timelineValue = 0, void* eventOut = nullptr) = 0;
+    void signalFenceComputeApi(StreamWrapper stream) {
+        signalFenceComputeApi(stream, 0, nullptr, nullptr);
+    }
+    void signalFenceComputeApi(StreamWrapper stream, unsigned long long timelineValue) {
+        signalFenceComputeApi(stream, timelineValue, nullptr, nullptr);
+    }
+    void signalFenceComputeApi(StreamWrapper stream, unsigned long long timelineValue, void* eventOut) {
+        signalFenceComputeApi(stream, timelineValue, nullptr, eventOut);
+    }
+    virtual void signalFenceComputeApi(StreamWrapper stream, unsigned long long timelineValue, void* eventIn, void* eventOut) = 0;
 
     /// Wait on fence.
-    virtual void waitFenceComputeApi(StreamWrapper stream, unsigned long long timelineValue = 0, void* eventOut = nullptr) = 0;
+    void waitFenceComputeApi(StreamWrapper stream) {
+        waitFenceComputeApi(stream, 0, nullptr, nullptr);
+    }
+    void waitFenceComputeApi(StreamWrapper stream, unsigned long long timelineValue) {
+        waitFenceComputeApi(stream, timelineValue, nullptr, nullptr);
+    }
+    void waitFenceComputeApi(StreamWrapper stream, unsigned long long timelineValue, void* eventOut) {
+        waitFenceComputeApi(stream, timelineValue, nullptr, eventOut);
+    }
+    virtual void waitFenceComputeApi(StreamWrapper stream, unsigned long long timelineValue, void* eventIn, void* eventOut) = 0;
 
 protected:
     virtual void importExternalFenceWin32Handle() = 0;
