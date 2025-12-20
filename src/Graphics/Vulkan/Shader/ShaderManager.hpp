@@ -97,6 +97,9 @@ public:
 
     /// Cached compilation of compute shaders.
     ShaderStagesPtr compileComputeShaderFromStringCached(const std::string& shaderId, const std::string& shaderString);
+    ShaderStagesPtr compileComputeShaderFromStringCached(
+            const std::string& shaderId, const std::string& shaderString,
+            const std::map<std::string, std::string>& customPreprocessorDefines);
 
     //virtual ShaderAttributesPtr createShaderAttributes(ShaderStagesPtr& shader)=0;
 

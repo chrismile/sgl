@@ -366,6 +366,15 @@ ShaderStagesPtr ShaderManagerVk::compileComputeShaderFromStringCached(
     return shaderProgram;
 }
 
+ShaderStagesPtr ShaderManagerVk::compileComputeShaderFromStringCached(
+        const std::string& shaderId, const std::string& shaderString,
+        const std::map<std::string, std::string>& customPreprocessorDefines) {
+    preprocessor->setTempPreprocessorDefines(customPreprocessorDefines);
+    ShaderStagesPtr shaderStages = compileComputeShaderFromStringCached(shaderId, shaderString);
+    preprocessor->clearTempPreprocessorDefines();
+    return shaderStages;
+}
+
 
 ShaderModuleType getShaderModuleTypeFromString(const std::string& shaderId) {
     std::string shaderIdLower = sgl::toLowerCopy(shaderId);
