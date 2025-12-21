@@ -387,7 +387,7 @@ void Buffer::uploadData(size_t sizeInBytesData, const void* dataPtr) {
     }
 
     if (memoryUsage == VMA_MEMORY_USAGE_CPU_ONLY || memoryUsage == VMA_MEMORY_USAGE_CPU_TO_GPU
-        || memoryUsage == VMA_MEMORY_USAGE_CPU_COPY) {
+            || memoryUsage == VMA_MEMORY_USAGE_CPU_COPY) {
         void* mappedData = mapMemory();
         memcpy(mappedData, dataPtr, sizeInBytesData);
         unmapMemory();
@@ -660,8 +660,9 @@ void Buffer::fill(VkDeviceSize offset, VkDeviceSize size, uint32_t data, VkComma
 
 
 void* Buffer::mapMemory() {
-    if (memoryUsage != VMA_MEMORY_USAGE_CPU_ONLY && memoryUsage != VMA_MEMORY_USAGE_CPU_TO_GPU
-            && memoryUsage != VMA_MEMORY_USAGE_GPU_TO_CPU && memoryUsage != VMA_MEMORY_USAGE_CPU_COPY) {
+    const VkPhysicalDeviceMemoryProperties& physicalDeviceMemoryProperties = device->getMemoryProperties();
+    if ((physicalDeviceMemoryProperties.memoryTypes[bufferAllocationInfo.memoryType].propertyFlags
+            & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == 0) {
         sgl::Logfile::get()->throwError(
                 "Error in Buffer::mapMemory: The memory is not mappable to a host-accessible address!");
         return nullptr;
