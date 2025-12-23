@@ -355,7 +355,12 @@ std::string PreprocessorGlsl::getImportedShaderString(
     auto itPrepend = effectSourcesPrepend.find(absoluteModuleName);
     if (itRaw != effectSourcesRaw.end() || itPrepend != effectSourcesPrepend.end()) {
         moduleContentString = itRaw->second;
-        prependContent += itPrepend->second;
+        if (sgl::startsWith(itPrepend->second, "#version")) {
+            auto newLinePos = std::min(itPrepend->second.find("\n") + 1, itPrepend->second.size());
+            prependContent = itPrepend->second.substr(0, newLinePos) + prependContent + itPrepend->second.substr(newLinePos, itPrepend->second.size());
+        } else {
+            prependContent += itPrepend->second;
+        }
     } else {
         sgl::Logfile::get()->throwError(
                 "Error in PreprocessorGlsl::getImportedShaderString: The module \"" + absoluteModuleName
