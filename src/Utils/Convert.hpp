@@ -30,6 +30,7 @@
 #define SRC_UTILS_CONVERT_HPP_
 
 #include <string>
+#include <locale>
 #include <vector>
 #include <sstream>
 #include <iomanip>
@@ -101,6 +102,15 @@ std::string toStringLeadingZeros(T obj, int numChars) {
 template<class T>
 void appendVector(std::vector<T> &vector1, std::vector<T> &vector2) {
     vector1.insert(vector1.end(), vector2.begin(), vector2.end());
+}
+
+/// Uses the C locale. Should be used, e.g., to avoid system-dependent decimal separator dot "." / comma ",".
+template <class T>
+std::string toStringLocaleC(T obj) {
+    std::ostringstream ostr;
+    ostr.imbue(std::locale("C"));
+    ostr << obj;
+    return ostr.str();
 }
 
 /// Special string conversion functions
