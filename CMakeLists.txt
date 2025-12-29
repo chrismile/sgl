@@ -454,18 +454,28 @@ endif()
 
 if(NOT DEFINED HIP_PATH)
     if(DEFINED ENV{HIP_PATH})
-        set(HIP_PATH $ENV{HIP_PATH} CACHE PATH "Path containing the HIP SDK")
+        set(HIP_PATH "$ENV{HIP_PATH}" CACHE PATH "Path containing the HIP SDK")
     endif()
 endif()
 if (${SUPPORT_HIP})
-    find_path(HIP_INCLUDE_DIR
-            NAMES hip_runtime.h
-            HINTS "${HIP_PATH}/include/hip"
-    )
-    if(HIP_INCLUDE_DIR)
-        cmake_path(GET HIP_INCLUDE_DIR PARENT_PATH HIP_INCLUDE_DIR)
-        MESSAGE(STATUS "Found HIP SDK. Using includes from: ${HIP_INCLUDE_DIR}.")
+    if(DEFINED HIP_PATH)
+        find_path(HIP_INCLUDE_DIR
+                NAMES hip_runtime.h
+                HINTS "${HIP_PATH}/include/hip"
+        )
+        if(HIP_INCLUDE_DIR)
+            cmake_path(GET HIP_INCLUDE_DIR PARENT_PATH HIP_INCLUDE_DIR)
+            set(USE_HIP ON)
+        endif()
+        set(HIP_INCLUDE_DIR_BUILD "${HIP_INCLUDE_DIR}")
+        set(HIP_INCLUDE_DIR_INSTALL "${HIP_INCLUDE_DIR}")
+    else()
+        set(HIP_INCLUDE_DIR_BUILD "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Vulkan/libs/hip/include")
+        set(HIP_INCLUDE_DIR_INSTALL "include/sgl/Graphics/Vulkan/libs/hip/include")
         set(USE_HIP ON)
+    endif()
+    if (USE_HIP)
+        MESSAGE(STATUS "Found HIP SDK. Using includes from: ${HIP_INCLUDE_DIR_BUILD}.")
     endif()
 endif()
 if (NOT USE_HIP)
@@ -1274,7 +1284,10 @@ endif()
 
 if (USE_HIP)
     target_compile_definitions(sgl PUBLIC SUPPORT_HIP_INTEROP)
-    target_include_directories(sgl PUBLIC "${HIP_INCLUDE_DIR}")
+    target_include_directories(sgl PUBLIC
+            $<BUILD_INTERFACE:${HIP_INCLUDE_DIR_BUILD}>
+            $<INSTALL_INTERFACE:${HIP_INCLUDE_DIR_INSTALL}>
+    )
 endif()
 
 if (${SUPPORT_LEVEL_ZERO_INTEROP})

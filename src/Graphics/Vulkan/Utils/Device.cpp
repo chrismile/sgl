@@ -564,6 +564,13 @@ bool DeviceFeatures::setExtensionFeaturesFromPNextEntry(
             optionalEnableShaderDrawParametersFeatures = true;
         }
     }
+    else if (structureType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_FEATURES) {
+        this->subgroupSizeControlFeatures =
+                *reinterpret_cast<const VkPhysicalDeviceSubgroupSizeControlFeatures*>(pNext);
+        if (this->subgroupSizeControlFeatures.subgroupSizeControl) {
+            deviceExtensions.push_back(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
+        }
+    }
     else if (structureType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR) {
         this->accelerationStructureFeatures =
                 *reinterpret_cast<const VkPhysicalDeviceAccelerationStructureFeaturesKHR*>(pNext);
@@ -1528,6 +1535,22 @@ void Device::createLogicalDeviceAndQueues(
             requestedDeviceFeatures.shaderDrawParametersFeatures.shaderDrawParameters = VK_FALSE;
         }
     }
+    if (deviceExtensionsSet.find(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME) != deviceExtensionsSet.end()) {
+        subgroupSizeControlFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES;
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &subgroupSizeControlFeatures;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        if (requestedDeviceFeatures.subgroupSizeControlFeatures.subgroupSizeControl == VK_FALSE) {
+            requestedDeviceFeatures.subgroupSizeControlFeatures = subgroupSizeControlFeatures;
+        }
+        if (hasRequestedVulkan13Features) {
+            requestedDeviceFeatures.requestedVulkan13Features.subgroupSizeControl =
+                    requestedDeviceFeatures.subgroupSizeControlFeatures.subgroupSizeControl;
+            requestedDeviceFeatures.subgroupSizeControlFeatures.subgroupSizeControl = VK_FALSE;
+        }
+    }
     if (deviceExtensionsSet.find(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) != deviceExtensionsSet.end()) {
         accelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
         VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
@@ -1811,6 +1834,10 @@ void Device::createLogicalDeviceAndQueues(
     if (requestedDeviceFeatures.shaderDrawParametersFeatures.shaderDrawParameters) {
         *pNextPtr = &requestedDeviceFeatures.shaderDrawParametersFeatures;
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.shaderDrawParametersFeatures.pNext);
+    }
+    if (requestedDeviceFeatures.subgroupSizeControlFeatures.subgroupSizeControl) {
+        *pNextPtr = &requestedDeviceFeatures.subgroupSizeControlFeatures;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.subgroupSizeControlFeatures.pNext);
     }
     if (requestedDeviceFeatures.accelerationStructureFeatures.accelerationStructure) {
         *pNextPtr = &requestedDeviceFeatures.accelerationStructureFeatures;

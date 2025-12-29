@@ -34,11 +34,13 @@
 #if defined(__linux__)
 #include <dlfcn.h>
 #include <unistd.h>
+#include <link.h>  //< for iterating loaded shared libraries.
 #elif defined(_WIN32)
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
 #include <windows.h>
+#include <Psapi.h>  //< for iterating loaded DLLs.
 #endif
 
 namespace sgl {
@@ -54,6 +56,81 @@ HMODULE g_hiprtcLibraryHandle = nullptr;
 void* g_hipLibraryHandle = nullptr;
 void* g_hiprtcLibraryHandle = nullptr;
 #endif
+
+static std::vector<std::string> getLoadedDynamicLibraries() {
+    std::vector<std::string> loadedLibraries;
+
+#ifdef _WIN32
+    DWORD procId = GetCurrentProcessId();
+
+    // TODO
+
+#elif defined(__linux__)
+    link_map* map{};
+    auto* handle = dlopen(nullptr, RTLD_NOW);
+    if (dlinfo(handle, RTLD_DI_LINKMAP, &map) == -1) {
+        dlclose(handle);
+        return {};
+    }
+    while (map) {
+        loadedLibraries.emplace_back(map->l_name);
+        map = map->l_next;
+    }
+    dlclose(handle);
+#endif
+
+    return loadedLibraries;
+}
+
+static std::string findHipLibraryPath() {
+    std::string hipLibraryPath;
+
+#if defined(__linux__)
+    hipLibraryPath = "libamdhip64.so";
+#elif defined(_WIN32)
+    hipLibraryPath = "amdhip64.dll";
+#endif
+
+    auto loadedLibraries = getLoadedDynamicLibraries();
+#if defined(__linux__)
+    // "libamdhip64.so" is provided by dev packages (such as https://packages.debian.org/sid/amd64/libamdhip64-dev/filelist).
+    // The runtime packages (e.g., https://packages.debian.org/sid/libamdhip64-6) provide "libamdhip64.so.<VER>".
+
+    // First, iterate over all loaded DLLs and see if "libamdhip64.so*" is already loaded (useful, e.g., for PyTorch modules).
+    for (auto& loadedLibraryPath : loadedLibraries) {
+        auto libraryName = sgl::FileUtils::get()->getPureFilename(loadedLibraryPath);
+        if (sgl::startsWith(libraryName, "libamdhip64.so")) {
+            hipLibraryPath = libraryName;
+            return hipLibraryPath;
+        }
+    }
+
+    // If we have not been successful, search PATH for "amdhip64*.dll".
+    // TODO
+#elif defined(_WIN32)
+    // ROCm version 6.1.2 renamed the .dll/.so name from "amdhip64.dll" to "amdhip64_<VER>.dll"
+    // (https://rocm.docs.amd.com/projects/install-on-windows/en/latest/#hip-sdk-changes).
+
+    // First, iterate over all loaded DLLs and see if "amdhip*.dll" is already loaded (useful, e.g., for PyTorch modules).
+    for (auto& loadedLibraryPath : loadedLibraries) {
+        auto loadedLibraryPathLower = sgl::toLowerCopy(loadedLibraryPath);
+        if (sgl::FileUtils::get()->getFileExtension(loadedLibraryPathLower) != "dll") {
+            continue;
+        }
+        auto libraryName = sgl::FileUtils::get()->removeExtension(
+                sgl::FileUtils::get()->getPureFilename(loadedLibraryPathLower));
+        if (sgl::startsWith(libraryName, "amdhip64")) {
+            hipLibraryPath = libraryName;
+            return hipLibraryPath;
+        }
+    }
+
+    // If we have not been successful, search PATH for "amdhip64*.dll".
+    // TODO
+#endif
+
+    return hipLibraryPath;
+}
 
 bool initializeHipDeviceApiFunctionTable() {
     typedef hipError_t ( *PFN_hipInit )( unsigned int Flags );
@@ -115,16 +192,17 @@ bool initializeHipDeviceApiFunctionTable() {
     typedef hipError_t ( *PFN_hipLaunchKernel )( hipFunction_t f, unsigned int gridDimX, unsigned int gridDimY, unsigned int gridDimZ, unsigned int blockDimX, unsigned int blockDimY, unsigned int blockDimZ, unsigned int sharedMemBytes, hipStream_t hStream, void** kernelParams, void** extra );
     typedef hipError_t ( *PFN_hipOccupancyMaxPotentialBlockSize )( int *minGridSize, int *blockSize, hipFunction_t func, const void* blockSizeToDynamicSMemSize, size_t dynamicSMemSize, int blockSizeLimit );
 
+    std::string hipLibraryPath = findHipLibraryPath();
 #if defined(__linux__)
-    g_hipLibraryHandle = dlopen("libamdhip64.so", RTLD_NOW | RTLD_LOCAL);
+    g_hipLibraryHandle = dlopen(hipLibraryPath.c_str(), RTLD_NOW | RTLD_LOCAL);
     if (!g_hipLibraryHandle) {
         sgl::Logfile::get()->writeInfo("initializeHipDeviceApiFunctionTable: Could not load libamdhip64.so.");
         return false;
     }
 #elif defined(_WIN32)
-    g_hipLibraryHandle = LoadLibraryA("amdhip64.dll");
+    g_hipLibraryHandle = LoadLibraryA(hipLibraryPath.c_str());
     if (!g_hipLibraryHandle) {
-        sgl::Logfile::get()->writeInfo("initializeHipDeviceApiFunctionTable: Could not load amdhip64.dll.");
+        sgl::Logfile::get()->writeInfo("initializeHipDeviceApiFunctionTable: Could not load HIP DLL.");
         return false;
     }
 #endif

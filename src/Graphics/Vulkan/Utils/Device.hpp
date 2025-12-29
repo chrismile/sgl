@@ -124,6 +124,7 @@ struct DLL_OBJECT DeviceFeatures {
         device16BitStorageFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES;
         device8BitStorageFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES;
         shaderDrawParametersFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES;
+        subgroupSizeControlFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_FEATURES;
         accelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
         rayTracingPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
         rayQueryFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
@@ -183,6 +184,7 @@ struct DLL_OBJECT DeviceFeatures {
     VkPhysicalDevice16BitStorageFeatures device16BitStorageFeatures{};
     VkPhysicalDevice8BitStorageFeatures device8BitStorageFeatures{};
     VkPhysicalDeviceShaderDrawParametersFeatures shaderDrawParametersFeatures{};
+    VkPhysicalDeviceSubgroupSizeControlFeatures subgroupSizeControlFeatures{};
     VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures{};
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures{};
     VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures{};
@@ -496,6 +498,9 @@ public:
     }
     [[nodiscard]] const VkPhysicalDeviceSubgroupProperties& getPhysicalDeviceSubgroupProperties() const {
         return subgroupProperties;
+    }
+    [[nodiscard]] const VkPhysicalDeviceSubgroupSizeControlFeatures& getPhysicalDeviceSubgroupSizeControlFeatures() const {
+        return subgroupSizeControlFeatures;
     }
     [[nodiscard]] VkDeviceSize getMinImportedHostPointerAlignment() const {
         return physicalDeviceExternalMemoryHostPropertiesEXT.minImportedHostPointerAlignment;
@@ -847,6 +852,7 @@ private:
     VkPhysicalDevice16BitStorageFeatures device16BitStorageFeatures{};
     VkPhysicalDevice8BitStorageFeatures device8BitStorageFeatures{};
     VkPhysicalDeviceShaderDrawParametersFeatures shaderDrawParametersFeatures{};
+    VkPhysicalDeviceSubgroupSizeControlFeatures subgroupSizeControlFeatures{};
     VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures{};
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures{};
     VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures{};
