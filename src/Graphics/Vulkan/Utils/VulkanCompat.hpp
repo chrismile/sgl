@@ -482,4 +482,10 @@ typedef struct VkPhysicalDeviceShader64BitIndexingFeaturesEXT_Compat {
     VkBool32           shader64BitIndexing;
 } VkPhysicalDeviceShader64BitIndexingFeaturesEXT_Compat;
 
+typedef struct VkPipelineCreateFlags2CreateInfo_Compat {
+    VkStructureType    sType;
+    const void*        pNext;
+    VkFlags64          flags; //< is actually VkPipelineCreateFlags2
+} VkPipelineCreateFlags2CreateInfo_Compat;
+
 #endif //SGL_VULKANCOMPAT_HPP

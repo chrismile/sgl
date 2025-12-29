@@ -33,6 +33,10 @@
 #include <utility>
 #include "../libs/volk/volk.h"
 
+#ifndef VK_VERSION_1_4
+#include "../Utils/VulkanCompat.hpp"
+#endif
+
 namespace sgl { namespace vk {
 
 class Device;
@@ -57,7 +61,11 @@ protected:
 
     Device* device;
     ShaderStagesPtr shaderStages;
+#ifdef VK_VERSION_1_4
     VkPipelineCreateFlags2CreateInfo pipelineCreateFlags2CreateInfo{};
+#else
+    VkPipelineCreateFlags2CreateInfo_Compat pipelineCreateFlags2CreateInfo{};
+#endif
 
     VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
     VkPipeline pipeline = VK_NULL_HANDLE;

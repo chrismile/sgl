@@ -34,7 +34,7 @@
 namespace sgl { namespace vk {
 
 Pipeline::Pipeline(Device* device, ShaderStagesPtr shaderStages) : device(device), shaderStages(std::move(shaderStages)) {
-#ifdef VK_EXT_shader_64bit_indexing
+#if defined(VK_VERSION_1_4) && defined(VK_EXT_shader_64bit_indexing)
     if (this->shaderStages && this->shaderStages->getUse64BitIndexing()) {
         pipelineCreateFlags2CreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CREATE_FLAGS_2_CREATE_INFO;
         pipelineCreateFlags2CreateInfo.flags = VK_PIPELINE_CREATE_2_64_BIT_INDEXING_BIT_EXT;
@@ -61,7 +61,7 @@ void Pipeline::createPipelineLayout() {
 }
 
 void Pipeline::setPipelineCreateInfoPNextInternal(const void*& pNext, bool useShader64BitIndexing) {
-#ifdef VK_EXT_shader_64bit_indexing
+#if defined(VK_VERSION_1_4) && defined(VK_EXT_shader_64bit_indexing)
     if (!shaderStages->getUse64BitIndexing() && useShader64BitIndexing) {
         pNext = &pipelineCreateFlags2CreateInfo;
     }

@@ -61,10 +61,37 @@ static std::vector<std::string> getLoadedDynamicLibraries() {
     std::vector<std::string> loadedLibraries;
 
 #ifdef _WIN32
-    DWORD procId = GetCurrentProcessId();
+    HANDLE hProcess = GetCurrentProcess();
 
-    // TODO
+    // The code below seems to generate duplicate entries and does not use drive letters (like "C:") in paths.
+    /*SYSTEM_INFO systemInfo{};
+    GetSystemInfo(&systemInfo);
+    PVOID baseAddress = nullptr;
+    LPCVOID maxAddress = systemInfo.lpMaximumApplicationAddress;
+    MEMORY_BASIC_INFORMATION memoryBasicInformation;
+    WCHAR mappedFileName[MAX_PATH];
+    while (VirtualQueryEx(hProcess, baseAddress, &memoryBasicInformation, sizeof(MEMORY_BASIC_INFORMATION))) {
+        if (baseAddress > maxAddress) {
+            break;
+        }
+        if (GetMappedFileNameW(hProcess, baseAddress, mappedFileName, sizeof(mappedFileName))) {
+            loadedLibraries.push_back(wideStringArrayToStdString(mappedFileName));
+        }
+        baseAddress = static_cast<PCHAR>(baseAddress) + memoryBasicInformation.RegionSize;
+    }*/
 
+    HMODULE hModules[1024];
+    TCHAR szModuleName[MAX_PATH];
+    DWORD cbNeeded{};
+    if (!EnumProcessModules(hProcess, hModules, sizeof(hModules), &cbNeeded)) {
+        return loadedLibraries;
+    }
+    const auto numModules = static_cast<uint32_t>(cbNeeded / sizeof(HMODULE));
+    for (uint32_t i = 0; i < numModules; i++) {
+        if (GetModuleFileNameEx(hProcess, hModules[i], szModuleName, sizeof(szModuleName) / sizeof(TCHAR))) {
+            loadedLibraries.emplace_back(szModuleName);
+        }
+    }
 #elif defined(__linux__)
     link_map* map{};
     auto* handle = dlopen(nullptr, RTLD_NOW);
@@ -81,6 +108,28 @@ static std::vector<std::string> getLoadedDynamicLibraries() {
 
     return loadedLibraries;
 }
+
+#ifdef _WIN32
+static void appendPathListFromEnvVar(const char* envVarName, std::vector<std::string>& pathList) {
+#ifdef _MSC_VER
+    char* pathEnvVar = nullptr;
+    size_t stringSize = 0;
+    if (_dupenv_s(&pathEnvVar, &stringSize, envVarName) != 0) {
+        pathEnvVar = nullptr;
+    }
+    if (pathEnvVar) {
+        sgl::splitString(pathEnvVar, ';', pathList);
+        free(pathEnvVar);
+    }
+    pathEnvVar = nullptr;
+#else
+    const char* pathEnvVar = getenv(envVarName);
+    if (pathEnvVar) {
+        sgl::splitString(pathEnvVar, ';', pathList);
+    }
+#endif
+}
+#endif
 
 static std::string findHipLibraryPath() {
     std::string hipLibraryPath;
@@ -105,7 +154,7 @@ static std::string findHipLibraryPath() {
         }
     }
 
-    // If we have not been successful, search PATH for "amdhip64*.dll".
+    // If we have not been successful, search PATH for "libamdhip64.so*".
     // TODO
 #elif defined(_WIN32)
     // ROCm version 6.1.2 renamed the .dll/.so name from "amdhip64.dll" to "amdhip64_<VER>.dll"
@@ -125,8 +174,25 @@ static std::string findHipLibraryPath() {
         }
     }
 
-    // If we have not been successful, search PATH for "amdhip64*.dll".
-    // TODO
+    // If we have not been successful, search HIP_PATH & PATH for "amdhip64*.dll".
+    std::vector<std::string> pathList;
+    appendPathListFromEnvVar("HIP_PATH", pathList);
+    for (std::string& pathDir : pathList) {
+        pathDir += "/bin";
+    }
+    appendPathListFromEnvVar("PATH", pathList);
+    for (const std::string& binDir : pathList) {
+        if (!sgl::FileUtils::get()->isDirectory(binDir)) {
+            continue;
+        }
+        std::vector<std::string> filesInDir = sgl::FileUtils::get()->getFilesInDirectoryVector(binDir);
+        for (const std::string& fileInDir : filesInDir) {
+            std::string fileName = sgl::FileUtils::get()->getPureFilename(fileInDir);
+            if (sgl::startsWith(fileName, "amdhip64") && sgl::endsWith(fileName, ".dll")) {
+                hipLibraryPath = binDir + "/" + fileName;
+            }
+        }
+    }
 #endif
 
     return hipLibraryPath;
@@ -349,27 +415,13 @@ bool initializeHiprtcFunctionTable() {
     }
 #elif defined(_WIN32)
     std::vector<std::string> pathList;
-#ifdef _MSC_VER
-    char* pathEnvVar = nullptr;
-    size_t stringSize = 0;
-    if (_dupenv_s(&pathEnvVar, &stringSize, "HIP_PATH") != 0) {
-        pathEnvVar = nullptr;
+    appendPathListFromEnvVar("HIP_PATH", pathList);
+    for (std::string& pathDir : pathList) {
+        pathDir += "/bin";
     }
-    if (pathEnvVar) {
-        sgl::splitString(pathEnvVar, ';', pathList);
-        free(pathEnvVar);
-    }
-    pathEnvVar = nullptr;
-#else
-    const char* pathEnvVar = getenv("HIP_PATH");
-    if (pathEnvVar) {
-        sgl::splitString(pathEnvVar, ';', pathList);
-    }
-#endif
-
+    appendPathListFromEnvVar("PATH", pathList);
     std::string hiprtcDllFileName;
-    for (const std::string& pathDir : pathList) {
-        std::string binDir = pathDir + "/bin";
+    for (const std::string& binDir : pathList) {
         if (!sgl::FileUtils::get()->isDirectory(binDir)) {
             continue;
         }
