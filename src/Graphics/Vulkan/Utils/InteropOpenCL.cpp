@@ -45,7 +45,7 @@
 /*
  * CL_DEPTH_STENCIL was moved from cl.h to cl_gl.h.
  * https://github.com/KhronosGroup/OpenCL-Headers/commit/10aaadf55d582934661ca9d66956696cf1d836dc
- * First occurence: 2023-12-23, mingw-w64-ucrt-x86_64-opencl-headers, 2~2023.12.14-1
+ * First occurrence: 2023-12-23, mingw-w64-ucrt-x86_64-opencl-headers, 2~2023.12.14-1
 */
 #ifdef __APPLE__
 #include <OpenCL/cl_gl.h>
@@ -59,6 +59,12 @@
 
 #ifndef CL_DEVICE_BOARD_NAME_AMD
 #define CL_DEVICE_BOARD_NAME_AMD 0x4038
+#endif
+#ifndef CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR
+#define CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR 0x2055
+#endif
+#ifndef CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KHR
+#define CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KHR 0x2056
 #endif
 
 namespace sgl {

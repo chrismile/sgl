@@ -457,7 +457,7 @@ if(NOT DEFINED HIP_PATH)
         set(HIP_PATH "$ENV{HIP_PATH}" CACHE PATH "Path containing the HIP SDK")
     endif()
 endif()
-if (${SUPPORT_HIP})
+if (${SUPPORT_HIP} AND NOT APPLE)
     if(DEFINED HIP_PATH)
         find_path(HIP_INCLUDE_DIR
                 NAMES hip_runtime.h
