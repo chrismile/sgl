@@ -41,6 +41,20 @@
 #error "HIP headers could not be found."
 #endif
 
+/*
+ * Unlike CUDA, HIP does not provide a host compiler define for "__inline__".
+ * This is an issue for some code translated with hipify (such as Torch), so we will fix it here.
+ */
+#if !defined(__CUDACC__) && !defined(__HIPCC__)
+#ifndef __inline__
+#ifdef _MSC_VER
+#define __inline__ __inline
+#else
+#define __inline__
+#endif
+#endif
+#endif
+
 namespace sgl {
 
 class Device;
