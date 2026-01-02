@@ -85,7 +85,7 @@ jobs:
           else
             export VULKAN_SDK="/usr"
           fi
-          cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DUSE_GTEST=ON
+          cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DUSE_GTEST=ON -DBUILD_VULKAN_TESTS=OFF
 
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --parallel 4

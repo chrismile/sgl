@@ -201,11 +201,12 @@ static std::string findHipLibraryPath() {
 bool initializeHipDeviceApiFunctionTable() {
     typedef hipError_t ( *PFN_hipInit )( unsigned int Flags );
     typedef hipError_t ( *PFN_hipDrvGetErrorString)( hipError_t error, const char **pStr );
-    typedef hipError_t ( *PFN_hipDeviceGet )(hipDevice_t *device, int ordinal);
-    typedef hipError_t ( *PFN_hipGetDeviceCount )(int *count);
-    typedef hipError_t ( *PFN_hipDeviceGetUuid )(hipUUID *uuid, hipDevice_t dev);
-    typedef hipError_t ( *PFN_hipDeviceGetAttribute )(int *pi, hipDeviceAttribute_t attrib, hipDevice_t dev);
-    typedef hipError_t ( *PFN_hipGetDeviceProperties )(hipDeviceProp_t* prop, int deviceId);
+    typedef hipError_t ( *PFN_hipDeviceGet )( hipDevice_t *device, int ordinal );
+    typedef hipError_t ( *PFN_hipGetDeviceCount )( int *count );
+    typedef hipError_t ( *PFN_hipDeviceGetName )( char* name, int len, hipDevice_t device );
+    typedef hipError_t ( *PFN_hipDeviceGetUuid )( hipUUID *uuid, hipDevice_t dev );
+    typedef hipError_t ( *PFN_hipDeviceGetAttribute )(int *pi, hipDeviceAttribute_t attrib, hipDevice_t dev );
+    typedef hipError_t ( *PFN_hipGetDeviceProperties )(hipDeviceProp_t* prop, int deviceId );
     typedef hipError_t ( *PFN_hipCtxCreate )( hipCtx_t *pctx, unsigned int flags, hipDevice_t dev );
     typedef hipError_t ( *PFN_hipCtxDestroy )( hipCtx_t ctx );
     typedef hipError_t ( *PFN_hipCtxGetCurrent )( hipCtx_t* pctx );
@@ -276,6 +277,7 @@ bool initializeHipDeviceApiFunctionTable() {
     g_hipDeviceApiFunctionTable.hipDrvGetErrorString = PFN_hipDrvGetErrorString(dlsym(g_hipLibraryHandle, TOSTRING(hipDrvGetErrorString)));
     g_hipDeviceApiFunctionTable.hipDeviceGet = PFN_hipDeviceGet(dlsym(g_hipLibraryHandle, TOSTRING(hipDeviceGet)));
     g_hipDeviceApiFunctionTable.hipGetDeviceCount = PFN_hipGetDeviceCount(dlsym(g_hipLibraryHandle, TOSTRING(hipGetDeviceCount)));
+    g_hipDeviceApiFunctionTable.hipDeviceGetName = PFN_hipDeviceGetName(dlsym(g_hipLibraryHandle, TOSTRING(hipDeviceGetName)));
     g_hipDeviceApiFunctionTable.hipDeviceGetUuid = PFN_hipDeviceGetUuid(dlsym(g_hipLibraryHandle, TOSTRING(hipDeviceGetUuid)));
     g_hipDeviceApiFunctionTable.hipDeviceGetAttribute = PFN_hipDeviceGetAttribute(dlsym(g_hipLibraryHandle, TOSTRING(hipDeviceGetAttribute)));
     g_hipDeviceApiFunctionTable.hipGetDeviceProperties = PFN_hipGetDeviceProperties(dlsym(g_hipLibraryHandle, TOSTRING(hipGetDeviceProperties)));
@@ -335,6 +337,7 @@ bool initializeHipDeviceApiFunctionTable() {
         || !g_hipDeviceApiFunctionTable.hipDrvGetErrorString
         || !g_hipDeviceApiFunctionTable.hipDeviceGet
         || !g_hipDeviceApiFunctionTable.hipGetDeviceCount
+        || !g_hipDeviceApiFunctionTable.hipDeviceGetName
         || !g_hipDeviceApiFunctionTable.hipDeviceGetUuid
         || !g_hipDeviceApiFunctionTable.hipDeviceGetAttribute
         || !g_hipDeviceApiFunctionTable.hipGetDeviceProperties

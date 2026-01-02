@@ -29,6 +29,8 @@
 #include "Device.hpp"
 #include "InteropHIP.hpp"
 
+#include <cstring>
+
 namespace sgl { namespace vk {
 
 bool getMatchingHipDevice(sgl::vk::Device* device, hipDevice_t* hipDevice) {
@@ -59,6 +61,41 @@ bool getMatchingHipDevice(sgl::vk::Device* device, hipDevice_t* hipDevice) {
             foundDevice = true;
             *hipDevice = currDevice;
             break;
+        }
+    }
+
+    /*
+     * hipDeviceGetUuid is not compatible with VkPhysicalDeviceIDProperties::deviceUUID:
+     * https://github.com/ROCm/hipamd/issues/50
+     * Use some reasonable fallback when no device could be matched.
+     */
+    if (!foundDevice) {
+        if (device->getDeviceDriverId() != VK_DRIVER_ID_AMD_PROPRIETARY
+                && device->getDeviceDriverId() != VK_DRIVER_ID_AMD_OPEN_SOURCE) {
+            return false;
+        }
+        if (numDevices == 1) {
+            hipDevice_t currDevice = 0;
+            hipResult = sgl::g_hipDeviceApiFunctionTable.hipDeviceGet(&currDevice, 0);
+            checkHipResult(hipResult, "Error in hipDeviceGet: ");
+            foundDevice = true;
+            *hipDevice = currDevice;
+        } else {
+            char deviceName[256];
+            for (int deviceIdx = 0; deviceIdx < numDevices; deviceIdx++) {
+                hipDevice_t currDevice = 0;
+                hipResult = sgl::g_hipDeviceApiFunctionTable.hipDeviceGet(&currDevice, deviceIdx);
+                checkHipResult(hipResult, "Error in hipDeviceGet: ");
+
+                memset(deviceName, 0, sizeof(deviceName));
+                hipResult = sgl::g_hipDeviceApiFunctionTable.hipDeviceGetName(deviceName, 255, currDevice);
+                checkHipResult(hipResult, "Error in hipDeviceGetUuid: ");
+
+                if (strcmp(device->getDeviceName(), deviceName) == 0) {
+                    foundDevice = true;
+                    *hipDevice = currDevice;
+                }
+            }
         }
     }
 
