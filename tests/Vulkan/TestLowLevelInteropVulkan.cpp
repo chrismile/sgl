@@ -497,6 +497,13 @@ void InteropTestLowLevelVk::checkSemaphoresSupported(bool& available) {
 #endif
     }
 #endif
+#ifdef SUPPORT_HIP_INTEROP
+    if (sgl::getIsHipDeviceApiFunctionTableInitialized() && !sgl::getHipInteropSupportsSemaphores()) {
+        available = false;
+        const char* errorString = "HIP does not support external semaphores.";
+        FAIL() << errorString;
+    }
+#endif
 }
 
 TEST_F(InteropTestLowLevelVk, BinarySemaphoreAllocationTest) {

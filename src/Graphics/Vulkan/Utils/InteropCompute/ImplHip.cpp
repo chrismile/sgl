@@ -53,6 +53,9 @@ void SemaphoreVkHipInterop::setExternalSemaphoreFd(int fileDescriptor) {
 #endif
 
 void SemaphoreVkHipInterop::importExternalSemaphore() {
+    if (!g_hipDeviceApiFunctionTable.hipImportExternalSemaphore) {
+        throw UnsupportedComputeApiFeatureException("HIP does not support external semaphore import");
+    }
     hipExternalSemaphore_t hipExternalSemaphore{};
     hipError_t hipResult = g_hipDeviceApiFunctionTable.hipImportExternalSemaphore(
             &hipExternalSemaphore, &externalSemaphoreHandleDescHip);
@@ -61,13 +64,18 @@ void SemaphoreVkHipInterop::importExternalSemaphore() {
 }
 
 SemaphoreVkHipInterop::~SemaphoreVkHipInterop() {
-    auto hipExternalSemaphore = reinterpret_cast<hipExternalSemaphore_t>(externalSemaphore);
-    hipError_t hipResult = g_hipDeviceApiFunctionTable.hipDestroyExternalSemaphore(hipExternalSemaphore);
-    checkHipResult(hipResult, "Error in hipDestroyExternalSemaphore: ");
+    if (externalSemaphore) {
+        auto hipExternalSemaphore = reinterpret_cast<hipExternalSemaphore_t>(externalSemaphore);
+        hipError_t hipResult = g_hipDeviceApiFunctionTable.hipDestroyExternalSemaphore(hipExternalSemaphore);
+        checkHipResult(hipResult, "Error in hipDestroyExternalSemaphore: ");
+    }
 }
 
 void SemaphoreVkHipInterop::signalSemaphoreComputeApi(
         StreamWrapper stream, unsigned long long timelineValue, void* eventIn, void* eventOut) {
+    if (!g_hipDeviceApiFunctionTable.hipImportExternalSemaphore) {
+        throw UnsupportedComputeApiFeatureException("HIP does not support signalling external semaphores");
+    }
     auto hipExternalSemaphore = reinterpret_cast<hipExternalSemaphore_t>(externalSemaphore);
     hipExternalSemaphoreSignalParams signalParams{};
     if (isTimelineSemaphore()) {
@@ -80,6 +88,9 @@ void SemaphoreVkHipInterop::signalSemaphoreComputeApi(
 
 void SemaphoreVkHipInterop::waitSemaphoreComputeApi(
         StreamWrapper stream, unsigned long long timelineValue, void* eventIn, void* eventOut) {
+    if (!g_hipDeviceApiFunctionTable.hipImportExternalSemaphore) {
+        throw UnsupportedComputeApiFeatureException("HIP does not support waiting on external semaphores");
+    }
     auto hipExternalSemaphore = reinterpret_cast<hipExternalSemaphore_t>(externalSemaphore);
     hipExternalSemaphoreWaitParams waitParams{};
     if (isTimelineSemaphore()) {
@@ -461,6 +472,9 @@ void ImageVkHipInterop::copyFromDevicePtrAsync(
     const sgl::vk::ImageSettings& imageSettings = vulkanImage->getImageSettings();
     size_t entryByteSize = getImageFormatEntryByteSize(imageSettings.format);
     if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_2D) {
+        if (!g_hipDeviceApiFunctionTable.hipMemcpy2DToArrayAsync) {
+            throw UnsupportedComputeApiFeatureException("HIP does not support 2D image copies");
+        }
         hipError_t hipResult = g_hipDeviceApiFunctionTable.hipMemcpy2DToArrayAsync(
                 getHipMipmappedArrayLevel(0), 0, 0, devicePtrSrc, imageSettings.width * entryByteSize,
                 imageSettings.width, imageSettings.height, hipMemcpyDeviceToDevice, stream.hipStream);
@@ -493,12 +507,14 @@ void ImageVkHipInterop::copyToDevicePtrAsync(
     const sgl::vk::ImageSettings& imageSettings = vulkanImage->getImageSettings();
     size_t entryByteSize = getImageFormatEntryByteSize(imageSettings.format);
     if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_2D) {
-        //( *hipMemcpy2DFromArrayAsync )( void* dst, size_t dpitch, hipArray_const_t src, size_t wOffset, size_t hOffset, size_t width, size_t height, hipMemcpyKind kind, hipStream_t stream );
+        if (!g_hipDeviceApiFunctionTable.hipMemcpy2DFromArrayAsync) {
+            throw UnsupportedComputeApiFeatureException("HIP does not support 2D image copies");
+        }
         hipError_t hipResult = g_hipDeviceApiFunctionTable.hipMemcpy2DFromArrayAsync(
                 devicePtrDst, imageSettings.width * entryByteSize,
                 getHipMipmappedArrayLevel(0), 0, 0, imageSettings.width, imageSettings.height,
                 hipMemcpyDeviceToDevice, stream.hipStream);
-        checkHipResult(hipResult, "Error in hipMemcpy2DToArrayAsync: ");
+        checkHipResult(hipResult, "Error in hipMemcpy2DFromArrayAsync: ");
     } else if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
         HIP_MEMCPY3D memcpySettings{};
         memcpySettings.srcMemoryType = hipMemoryTypeArray;

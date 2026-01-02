@@ -358,8 +358,8 @@ bool initializeHipDeviceApiFunctionTable() {
         || !g_hipDeviceApiFunctionTable.hipMemcpyAsync
         || !g_hipDeviceApiFunctionTable.hipMemcpyDtoHAsync
         || !g_hipDeviceApiFunctionTable.hipMemcpyHtoDAsync
-        || !g_hipDeviceApiFunctionTable.hipMemcpy2DToArrayAsync
-        || !g_hipDeviceApiFunctionTable.hipMemcpy2DFromArrayAsync
+        //|| !g_hipDeviceApiFunctionTable.hipMemcpy2DToArrayAsync
+        //|| !g_hipDeviceApiFunctionTable.hipMemcpy2DFromArrayAsync
         || !g_hipDeviceApiFunctionTable.hipDrvMemcpy3DAsync
         || !g_hipDeviceApiFunctionTable.hipArrayCreate
         || !g_hipDeviceApiFunctionTable.hipArray3DCreate
@@ -377,10 +377,10 @@ bool initializeHipDeviceApiFunctionTable() {
         || !g_hipDeviceApiFunctionTable.hipExternalMemoryGetMappedBuffer
         || !g_hipDeviceApiFunctionTable.hipExternalMemoryGetMappedMipmappedArray
         || !g_hipDeviceApiFunctionTable.hipDestroyExternalMemory
-        || !g_hipDeviceApiFunctionTable.hipImportExternalSemaphore
-        || !g_hipDeviceApiFunctionTable.hipSignalExternalSemaphoresAsync
-        || !g_hipDeviceApiFunctionTable.hipWaitExternalSemaphoresAsync
-        || !g_hipDeviceApiFunctionTable.hipDestroyExternalSemaphore
+        //|| !g_hipDeviceApiFunctionTable.hipImportExternalSemaphore
+        //|| !g_hipDeviceApiFunctionTable.hipSignalExternalSemaphoresAsync
+        //|| !g_hipDeviceApiFunctionTable.hipWaitExternalSemaphoresAsync
+        //|| !g_hipDeviceApiFunctionTable.hipDestroyExternalSemaphore
         || !g_hipDeviceApiFunctionTable.hipModuleLoad
         || !g_hipDeviceApiFunctionTable.hipModuleLoadData
         || !g_hipDeviceApiFunctionTable.hipModuleLoadDataEx
@@ -393,6 +393,16 @@ bool initializeHipDeviceApiFunctionTable() {
                 "Error in initializeHipDeviceApiFunctionTable: "
                 "At least one function pointer could not be loaded.");
     }
+
+    /*
+     * Not checked as of 2026-01-02 due to varying support:
+     * || !g_hipDeviceApiFunctionTable.hipMemcpy2DToArrayAsync
+     * || !g_hipDeviceApiFunctionTable.hipMemcpy2DFromArrayAsync
+     * || !g_hipDeviceApiFunctionTable.hipImportExternalSemaphore
+     * || !g_hipDeviceApiFunctionTable.hipSignalExternalSemaphoresAsync
+     * || !g_hipDeviceApiFunctionTable.hipWaitExternalSemaphoresAsync
+     * || !g_hipDeviceApiFunctionTable.hipDestroyExternalSemaphore
+     */
 
     return true;
 }
@@ -521,6 +531,26 @@ void _checkHiprtcResult(hiprtcResult result, const char* text, const char* locat
         throw std::runtime_error(
                 std::string() + locationText + ": " + text + g_hiprtcFunctionTable.hiprtcGetErrorString(result));
     }
+}
+
+bool getHipInteropSupportsSemaphores() {
+    if (!g_hipLibraryHandle) {
+        Logfile::get()->throwError("Error in getHipInteropSupportsImageCopy: HIP library not loaded.");
+    }
+    // Seems to be unsupported on Linux as of 2026-01-02 (according to docs, I have no access to a HIP-supported Linux AMD system):
+    // https://rocm.docs.amd.com/projects/HIP/en/latest/reference/hip_runtime_api/modules/memory_management/external_resource_interoperability.html).
+    return g_hipDeviceApiFunctionTable.hipImportExternalSemaphore
+            && g_hipDeviceApiFunctionTable.hipSignalExternalSemaphoresAsync
+            && g_hipDeviceApiFunctionTable.hipWaitExternalSemaphoresAsync
+            && g_hipDeviceApiFunctionTable.hipDestroyExternalSemaphore;
+}
+
+bool getHipInteropSupportsImageCopy() {
+    if (!g_hipLibraryHandle) {
+        Logfile::get()->throwError("Error in getHipInteropSupportsImageCopy: HIP library not loaded.");
+    }
+    // Seems to be unsupported (i.e., nullptr on loading amdhip64_7.dll) as of 2026-01-02.
+    return g_hipDeviceApiFunctionTable.hipMemcpy2DToArrayAsync && g_hipDeviceApiFunctionTable.hipMemcpy2DFromArrayAsync;
 }
 
 }

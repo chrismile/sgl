@@ -166,6 +166,9 @@ DLL_OBJECT bool initializeHiprtcFunctionTable();
 DLL_OBJECT bool getIsHiprtcFunctionTableInitialized();
 DLL_OBJECT void freeHiprtcFunctionTable();
 
+DLL_OBJECT bool getHipInteropSupportsSemaphores();
+DLL_OBJECT bool getHipInteropSupportsImageCopy();
+
 }
 
 #endif //SGL_INTEROPHIP_HPP
