@@ -63,9 +63,7 @@ class BufferVkHipInterop : public BufferVkComputeApiExternalMemory {
 public:
     ~BufferVkHipInterop() override;
 
-#ifdef SUPPORT_HIP_INTEROP
     [[nodiscard]] inline hipDeviceptr_t getHipDevicePtr() const { return reinterpret_cast<hipDeviceptr_t>(devicePtr); }
-#endif
 
     void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr) override;
     void copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream, void* eventOut = nullptr) override;
@@ -129,7 +127,7 @@ public:
     [[nodiscard]] inline hipMipmappedArray_t getHipMipmappedArray() const { return std::static_pointer_cast<ImageVkHipInterop>(image)->getHipMipmappedArray(); }
     hipArray_t getHipMipmappedArrayLevel(uint32_t level = 0) { return std::static_pointer_cast<ImageVkHipInterop>(image)->getHipMipmappedArrayLevel(level); }
 
-    hipSurfaceObject_t getCudaSurfaceObject() { return hipSurfaceObject; }
+    hipSurfaceObject_t getHipSurfaceObject() { return hipSurfaceObject; }
 
 protected:
     hipSurfaceObject_t hipSurfaceObject{};

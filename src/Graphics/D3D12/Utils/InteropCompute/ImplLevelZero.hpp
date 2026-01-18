@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2025, Christoph Neuhauser
+ * Copyright (c) 2026, Christoph Neuhauser
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,49 +26,38 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_IMPLLEVELZERO_HPP
-#define SGL_IMPLLEVELZERO_HPP
+#ifndef SGL_D3D12_IMPLLEVELZERO_HPP
+#define SGL_D3D12_IMPLLEVELZERO_HPP
 
 #include "../InteropCompute.hpp"
 #include "../InteropLevelZero.hpp"
 
-namespace sgl { namespace vk {
+namespace sgl { namespace d3d12 {
 
-class SemaphoreVkLevelZeroInterop : public SemaphoreVkComputeApiInterop {
+class FenceD3D12LevelZeroInterop : public FenceD3D12ComputeApiInterop {
 public:
-    SemaphoreVkLevelZeroInterop();
-    ~SemaphoreVkLevelZeroInterop() override;
+    ~FenceD3D12LevelZeroInterop() override;
 
-    /// Signal semaphore.
-    void signalSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue, void* eventIn, void* eventOut) override;
+    /// Signal fence.
+    void signalFenceComputeApi(StreamWrapper stream, unsigned long long timelineValue, void* eventIn, void* eventOut) override;
 
-    /// Wait on semaphore.
-    void waitSemaphoreComputeApi(StreamWrapper stream, unsigned long long timelineValue, void* eventIn, void* eventOut) override;
+    /// Wait on fence.
+    void waitFenceComputeApi(StreamWrapper stream, unsigned long long timelineValue, void* eventIn, void* eventOut) override;
 
 protected:
-#ifdef _WIN32
-    void setExternalSemaphoreWin32Handle(HANDLE handle) override;
-#endif
-#ifdef __linux__
-    void setExternalSemaphoreFd(int fileDescriptor) override;
-#endif
-    void importExternalSemaphore() override;
+    void importExternalFenceWin32Handle() override;
+    void free() override;
 
 private:
     ze_external_semaphore_ext_desc_t externalSemaphoreExtDesc{};
-#ifdef _WIN32
     ze_external_semaphore_win32_ext_desc_t externalSemaphoreWin32ExtDesc{};
-#endif
-#ifdef __linux__
-    ze_external_semaphore_fd_ext_desc_t externalSemaphoreFdExtDesc{};
-#endif
     void* externalSemaphore{};
 };
 
 
-class BufferVkLevelZeroInterop : public BufferVkComputeApiExternalMemory {
+class BufferD3D12LevelZeroInterop : public BufferD3D12ComputeApiExternalMemory {
 public:
-    ~BufferVkLevelZeroInterop() override;
+    ~BufferD3D12LevelZeroInterop() override;
 
     void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr) override;
     void copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream, void* eventOut = nullptr) override;
@@ -76,31 +65,21 @@ public:
     void copyToHostPtrAsync(void* hostPtrDst, StreamWrapper stream, void* eventOut = nullptr) override;
 
 protected:
-    void preCheckExternalMemoryImport() override;
-#ifdef _WIN32
-    void setExternalMemoryWin32Handle(HANDLE handle) override;
-#endif
-#ifdef __linux__
-    void setExternalMemoryFd(int fileDescriptor) override;
-#endif
-    void importExternalMemory() override;
+    void importExternalMemoryWin32Handle() override;
     void free() override;
 
 private:
     ze_device_mem_alloc_desc_t deviceMemAllocDesc{};
-#ifdef _WIN32
     ze_external_memory_import_win32_handle_t externalMemoryImportWin32Handle{};
-#endif
-#ifdef __linux__
-    ze_external_memory_import_fd_t externalMemoryImportFd{};
-#endif
     void* externalMemoryBuffer{}; // hipExternalMemory_t
 };
 
 
-class ImageVkLevelZeroInterop : public ImageVkComputeApiExternalMemory {
+class ImageD3D12LevelZeroInterop : public ImageD3D12ComputeApiExternalMemory {
+    friend class UnsampledImageD3D12LevelZeroInterop;
+    friend class SampledImageD3D12LevelZeroInterop;
 public:
-    ~ImageVkLevelZeroInterop() override;
+    ~ImageD3D12LevelZeroInterop() override;
 
     void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr) override;
     void copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream, void* eventOut = nullptr) override;
@@ -108,14 +87,7 @@ public:
     ze_image_handle_t getImageHandle() { return static_cast<ze_image_handle_t>(mipmappedArray); }
 
 protected:
-    void preCheckExternalMemoryImport() override;
-#ifdef _WIN32
-    void setExternalMemoryWin32Handle(HANDLE handle) override;
-#endif
-#ifdef __linux__
-    void setExternalMemoryFd(int fileDescriptor) override;
-#endif
-    void importExternalMemory() override;
+    void importExternalMemoryWin32Handle() override;
     void free() override;
 
 private:
@@ -128,38 +100,33 @@ private:
     ze_sampler_desc_t samplerDesc{};
     void* devicePtr{}; // void* device pointer; only used by bindless images.
 
-#ifdef _WIN32
     ze_external_memory_import_win32_handle_t externalMemoryImportWin32Handle{};
-#endif
-#ifdef __linux__
-    ze_external_memory_import_fd_t externalMemoryImportFd{};
-#endif
 
     void* mipmappedArray{}; // ze_image_handle_t
 };
 
 
-class DLL_OBJECT UnsampledImageVkLevelZeroInterop : public UnsampledImageVkComputeApiExternalMemory {
+class DLL_OBJECT UnsampledImageD3D12LevelZeroInterop : public UnsampledImageD3D12ComputeApiExternalMemory {
 public:
-    UnsampledImageVkLevelZeroInterop() = default;
-    void initialize(const ImageVkComputeApiExternalMemoryPtr& _image) override { image = _image; }
-    ~UnsampledImageVkLevelZeroInterop() override {}
+    UnsampledImageD3D12LevelZeroInterop() = default;
+    void initialize(const ImageD3D12ComputeApiExternalMemoryPtr& _image) override { image = _image; }
+    ~UnsampledImageD3D12LevelZeroInterop() override {}
 
-    [[nodiscard]] ze_image_handle_t getImageHandle() const { return std::static_pointer_cast<ImageVkLevelZeroInterop>(image)->getImageHandle(); }
+    [[nodiscard]] ze_image_handle_t getImageHandle() const { return std::static_pointer_cast<ImageD3D12LevelZeroInterop>(image)->getImageHandle(); }
 };
 
 
-class DLL_OBJECT SampledImageVkLevelZeroInterop : public SampledImageVkComputeApiExternalMemory {
+class DLL_OBJECT SampledImageD3D12LevelZeroInterop : public SampledImageD3D12ComputeApiExternalMemory {
 public:
-    SampledImageVkLevelZeroInterop() = default;
+    SampledImageD3D12LevelZeroInterop() = default;
     void initialize(
-            const ImageVkComputeApiExternalMemoryPtr& _image,
+            const ImageD3D12ComputeApiExternalMemoryPtr& _image,
             const TextureExternalMemorySettings& textureExternalMemorySettings) override { image = _image; }
-    ~SampledImageVkLevelZeroInterop() override {}
+    ~SampledImageD3D12LevelZeroInterop() override {}
 
-    [[nodiscard]] ze_image_handle_t getImageHandle() const { return std::static_pointer_cast<ImageVkLevelZeroInterop>(image)->getImageHandle(); }
+    [[nodiscard]] ze_image_handle_t getImageHandle() const { return std::static_pointer_cast<ImageD3D12LevelZeroInterop>(image)->getImageHandle(); }
 };
 
 }}
 
-#endif //SGL_IMPLLEVELZERO_HPP
+#endif //SGL_D3D12_IMPLLEVELZERO_HPP

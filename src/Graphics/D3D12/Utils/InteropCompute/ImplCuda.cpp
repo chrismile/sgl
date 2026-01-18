@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2025, Christoph Neuhauser
+ * Copyright (c) 2026, Christoph Neuhauser
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -156,7 +156,7 @@ void BufferD3D12CudaInterop::copyToHostPtrAsync(void* hostPtrDst, StreamWrapper 
 }
 
 
-CUarray_format getCudaArrayFormatFromD3D12Format(DXGI_FORMAT format) {
+static CUarray_format getCudaArrayFormatFromD3D12Format(DXGI_FORMAT format) {
     switch (format) {
         case DXGI_FORMAT_R8_UINT:
         case DXGI_FORMAT_R8G8_UINT:
@@ -169,7 +169,7 @@ CUarray_format getCudaArrayFormatFromD3D12Format(DXGI_FORMAT format) {
         case DXGI_FORMAT_R32_UINT:
         case DXGI_FORMAT_R32G32_UINT:
         case DXGI_FORMAT_R32G32B32A32_UINT:
-            return CU_AD_FORMAT_SIGNED_INT32;
+            return CU_AD_FORMAT_UNSIGNED_INT32;
         case DXGI_FORMAT_R8_SINT:
         case DXGI_FORMAT_R8G8_SINT:
         case DXGI_FORMAT_R8G8B8A8_SINT:
@@ -221,7 +221,7 @@ CUarray_format getCudaArrayFormatFromD3D12Format(DXGI_FORMAT format) {
         case DXGI_FORMAT_R32G32B32A32_FLOAT:
             return CU_AD_FORMAT_FLOAT;
         default:
-            sgl::Logfile::get()->throwError("Error in getCudaResourceViewFormatD3D12: Unsupported format.");
+            sgl::Logfile::get()->throwError("Error in getCudaArrayFormatFromD3D12Format: Unsupported format.");
             return CU_AD_FORMAT_FLOAT;
     }
 }
@@ -409,7 +409,6 @@ void ImageD3D12CudaInterop::copyToDevicePtrAsync(
 
 void UnsampledImageD3D12CudaInterop::initialize(const ImageD3D12ComputeApiExternalMemoryPtr& _image) {
     this->image = _image;
-    auto imageVkSycl = std::static_pointer_cast<ImageD3D12CudaInterop>(image);
 
     CUDA_RESOURCE_DESC cudaResourceDesc{};
     cudaResourceDesc.resType = CU_RESOURCE_TYPE_MIPMAPPED_ARRAY;
@@ -445,7 +444,7 @@ static CUaddress_mode getCudaSamplerAddressModeD3D12(D3D12_TEXTURE_ADDRESS_MODE 
     }
 }
 
-CUresourceViewFormat getCudaResourceViewFormatD3D12(DXGI_FORMAT format) {
+static CUresourceViewFormat getCudaResourceViewFormatD3D12(DXGI_FORMAT format) {
     switch (format) {
         case DXGI_FORMAT_R8_UINT:
             return CU_RES_VIEW_FORMAT_UINT_1X8;

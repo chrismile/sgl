@@ -587,7 +587,7 @@ TEST_P(InteropTestSyclVkImageCopy, Formats) {
 
     std::string errorMessage;
     try {
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 100; i++) {
             runTestsImageCopy(format);
         }
     } catch (sycl::exception const& e) {

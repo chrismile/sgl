@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2025-2026, Christoph Neuhauser
+ * Copyright (c) 2026, Christoph Neuhauser
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,16 +26,17 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_D3D12_IMPLSYCL_HPP
-#define SGL_D3D12_IMPLSYCL_HPP
+#ifndef SGL_D3D12_IMPLHIP_HPP
+#define SGL_D3D12_IMPLHIP_HPP
 
 #include "../InteropCompute.hpp"
+#include "../InteropHIP.hpp"
 
 namespace sgl { namespace d3d12 {
 
-class FenceD3D12SyclInterop : public FenceD3D12ComputeApiInterop {
+class FenceD3D12HipInterop : public FenceD3D12ComputeApiInterop {
 public:
-    ~FenceD3D12SyclInterop() override;
+    ~FenceD3D12HipInterop() override;
 
     /// Signal fence.
     void signalFenceComputeApi(StreamWrapper stream, unsigned long long timelineValue, void* eventIn, void* eventOut) override;
@@ -48,13 +49,16 @@ protected:
     void free() override;
 
 private:
+    hipExternalSemaphoreHandleDesc externalSemaphoreHandleDescHip{};
     void* externalSemaphore{};
 };
 
 
-class BufferD3D12SyclInterop : public BufferD3D12ComputeApiExternalMemory {
+class BufferD3D12HipInterop : public BufferD3D12ComputeApiExternalMemory {
 public:
-    ~BufferD3D12SyclInterop() override;
+    ~BufferD3D12HipInterop() override;
+
+    [[nodiscard]] inline hipDeviceptr_t getHipDevicePtr() const { return reinterpret_cast<hipDeviceptr_t>(devicePtr); }
 
     void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr) override;
     void copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream, void* eventOut = nullptr) override;
@@ -66,55 +70,51 @@ protected:
     void free() override;
 
 private:
-    void* externalMemory{}; // SyclExternalMemWrapper
+    hipExternalMemoryHandleDesc externalMemoryHandleDescHip{};
+    void* externalMemoryBuffer{}; // hipExternalMemory_t
 };
 
 
-class ImageD3D12SyclInterop : public ImageD3D12ComputeApiExternalMemory {
-    friend class UnsampledImageD3D12SyclInterop;
-    friend class SampledImageD3D12SyclInterop;
+class ImageD3D12HipInterop : public ImageD3D12ComputeApiExternalMemory {
+    friend class UnsampledImageD3D12HipInterop;
+    friend class SampledImageD3D12HipInterop;
 public:
-    ~ImageD3D12SyclInterop() override;
+    ~ImageD3D12HipInterop() override;
 
     void copyFromDevicePtrAsync(void* devicePtrSrc, StreamWrapper stream, void* eventOut = nullptr) override;
     void copyToDevicePtrAsync(void* devicePtrDst, StreamWrapper stream, void* eventOut = nullptr) override;
+
+    [[nodiscard]] inline hipMipmappedArray_t getHipMipmappedArray() const { return reinterpret_cast<hipMipmappedArray_t>(mipmappedArray); }
+    hipArray_t getHipMipmappedArrayLevel(uint32_t level = 0);
 
 protected:
     void importExternalMemoryWin32Handle() override;
     void free() override;
 
 private:
-    void* externalMemory{}; // SyclExternalMemWrapper
+    hipExternalMemoryHandleDesc externalMemoryHandleDescHip{};
+    void* externalMemoryBuffer{}; // hipExternalMemory_t
+
+    // Cache for storing the array for mipmap level 0.
+    void* arrayLevel0{}; // hipArray_t
 };
 
 
-class DLL_OBJECT UnsampledImageD3D12SyclInterop : public UnsampledImageD3D12ComputeApiExternalMemory {
+class DLL_OBJECT UnsampledImageD3D12HipInterop : public UnsampledImageD3D12ComputeApiExternalMemory {
 public:
-    UnsampledImageD3D12SyclInterop() = default;
+    UnsampledImageD3D12HipInterop() = default;
     void initialize(const ImageD3D12ComputeApiExternalMemoryPtr& _image) override;
-    ~UnsampledImageD3D12SyclInterop() override;
+    ~UnsampledImageD3D12HipInterop() override;
 
-    uint64_t getRawHandle();
+    [[nodiscard]] inline hipMipmappedArray_t getHipMipmappedArray() const { return std::static_pointer_cast<ImageD3D12HipInterop>(image)->getHipMipmappedArray(); }
+    hipArray_t getHipMipmappedArrayLevel(uint32_t level = 0) { return std::static_pointer_cast<ImageD3D12HipInterop>(image)->getHipMipmappedArrayLevel(level); }
 
-protected:
-    uint64_t rawImageHandle = 0;
-};
-
-
-class DLL_OBJECT SampledImageD3D12SyclInterop : public SampledImageD3D12ComputeApiExternalMemory {
-public:
-    SampledImageD3D12SyclInterop() = default;
-    void initialize(
-            const ImageD3D12ComputeApiExternalMemoryPtr& _image,
-            const TextureExternalMemorySettings& textureExternalMemorySettings) override;
-    ~SampledImageD3D12SyclInterop() override;
-
-    uint64_t getRawHandle();
+    hipSurfaceObject_t getHipSurfaceObject() { return hipSurfaceObject; }
 
 protected:
-    uint64_t rawImageHandle = 0;
+    hipSurfaceObject_t hipSurfaceObject{};
 };
 
 }}
 
-#endif //SGL_D3D12_IMPLSYCL_HPP
+#endif //SGL_D3D12_IMPLHIP_HPP

@@ -1,7 +1,7 @@
 /*
-* BSD 2-Clause License
+ * BSD 2-Clause License
  *
- * Copyright (c) 2025, Christoph Neuhauser
+ * Copyright (c) 2026, Christoph Neuhauser
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,6 +27,9 @@
  */
 
 #include "ImplHip.hpp"
+namespace sgl {
+extern bool openMessageBoxOnComputeApiError;
+}
 
 namespace sgl { namespace vk {
 
@@ -68,6 +71,7 @@ SemaphoreVkHipInterop::~SemaphoreVkHipInterop() {
         auto hipExternalSemaphore = reinterpret_cast<hipExternalSemaphore_t>(externalSemaphore);
         hipError_t hipResult = g_hipDeviceApiFunctionTable.hipDestroyExternalSemaphore(hipExternalSemaphore);
         checkHipResult(hipResult, "Error in hipDestroyExternalSemaphore: ");
+        externalSemaphore = {};
     }
 }
 
@@ -426,7 +430,18 @@ void ImageVkHipInterop::importExternalMemory() {
     hipMipmappedArray_t hipMipmappedArray{};
     hipResult = g_hipDeviceApiFunctionTable.hipExternalMemoryGetMappedMipmappedArray(
             &hipMipmappedArray, hipExternalMemory, &externalMemoryMipmappedArrayDesc);
-    checkHipResult(hipResult, "Error in hipImportExternalMemory: ");
+    if (hipResult == hipErrorInvalidValue) {
+        if (openMessageBoxOnComputeApiError) {
+            sgl::Logfile::get()->writeError(
+                    "Error in ImageVkHipInterop::importExternalMemory: Unsupported HIP image type.");
+        } else {
+            sgl::Logfile::get()->write(
+                    "Error in ImageVkHipInterop::importExternalMemory: Unsupported HIP image type.", sgl::RED);
+        }
+        throw UnsupportedComputeApiFeatureException("Unsupported HIP image type");
+    } else {
+        checkHipResult(hipResult, "Error in hipImportExternalMemory: ");
+    }
     mipmappedArray = reinterpret_cast<void*>(hipMipmappedArray);
 }
 
