@@ -98,7 +98,7 @@ protected:
         sgl::vk::DeviceFeatures requestedDeviceFeatures{};
         device->createDeviceHeadless(
                 instance, requiredDeviceExtensions, optionalDeviceExtensions, requestedDeviceFeatures);
-        std::cout << "Running on " << device->getDeviceName() << "\n";
+        std::cout << "Running on " << device->getDeviceName() << std::endl;
 
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
         if (device->getDeviceDriverId() == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS

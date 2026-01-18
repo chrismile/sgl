@@ -200,7 +200,8 @@ void ImageD3D12SyclInterop::importExternalMemoryWin32Handle() {
         // TODO: When syclImageDescriptor.array_size?
         syclImageDescriptor.depth = resourceDesc.DepthOrArraySize;
     }
-    syclImageDescriptor.num_levels = resourceDesc.MipLevels;
+    // CUDA_ERROR_ALREADY_MAPPED generated if numLevels == 0.
+    syclImageDescriptor.num_levels = std::max(static_cast<unsigned>(resourceDesc.MipLevels), 1u);
 
     syclImageDescriptor.num_channels = unsigned(getDXGIFormatNumChannels(resourceDesc.Format));
     if (syclImageDescriptor.num_levels > 1) {

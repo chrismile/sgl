@@ -503,10 +503,10 @@ D3D12_GPU_VIRTUAL_ADDRESS Resource::getGPUVirtualAddress() {
 
 HANDLE Resource::getSharedHandle(const std::wstring& handleName) {
     auto* d3d12Device = device->getD3D12Device2();
-    HANDLE fenceHandle{};
+    HANDLE resourceHandle{};
     ThrowIfFailed(d3d12Device->CreateSharedHandle(
-            resource.Get(), nullptr, GENERIC_ALL, handleName.data(), &fenceHandle));
-    return fenceHandle;
+            resource.Get(), nullptr, GENERIC_ALL, handleName.data(), &resourceHandle));
+    return resourceHandle;
 }
 
 HANDLE Resource::getSharedHandle() {

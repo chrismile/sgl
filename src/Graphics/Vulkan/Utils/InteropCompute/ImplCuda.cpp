@@ -79,9 +79,12 @@ void SemaphoreVkCudaInterop::importExternalSemaphore() {
 }
 
 SemaphoreVkCudaInterop::~SemaphoreVkCudaInterop() {
-    auto cuExternalSemaphore = reinterpret_cast<CUexternalSemaphore>(externalSemaphore);
-    CUresult cuResult = g_cudaDeviceApiFunctionTable.cuDestroyExternalSemaphore(cuExternalSemaphore);
-    checkCUresult(cuResult, "Error in cuDestroyExternalSemaphore: ");
+    if (externalSemaphore) {
+        auto cuExternalSemaphore = reinterpret_cast<CUexternalSemaphore>(externalSemaphore);
+        CUresult cuResult = g_cudaDeviceApiFunctionTable.cuDestroyExternalSemaphore(cuExternalSemaphore);
+        checkCUresult(cuResult, "Error in cuDestroyExternalSemaphore: ");
+        externalSemaphore = {};
+    }
 }
 
 void SemaphoreVkCudaInterop::signalSemaphoreComputeApi(

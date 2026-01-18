@@ -356,7 +356,7 @@ TEST_F(InteropTestSyclD3D12, ImageD3D12WriteSyclReadTest) {
     uint32_t height = 1024;
 
     const int NUM_ITERATIONS = 1000;
-    for (int i = 0; i < NUM_ITERATIONS; i++) {
+    for (int it = 0; it < NUM_ITERATIONS; it++) {
         sgl::d3d12::CommandListPtr commandList = std::make_shared<sgl::d3d12::CommandList>(
                 d3d12Device.get(), sgl::d3d12::CommandListType::DIRECT);
         uint64_t timelineValue = 0;
@@ -437,6 +437,9 @@ TEST_F(InteropTestSyclD3D12, ImageD3D12WriteSyclReadTest) {
         sycl::free(devicePtr, *syclQueue);
     }
 
+    descriptorAllocationUAV = {};
+    computeShader = {};
+    rootParameters = {};
     delete shaderManager;
     delete renderer;
 }
@@ -588,6 +591,8 @@ TEST_F(InteropTestSyclD3D12, ImageSyclWriteD3D12ReadTest) {
     }
 
     descriptorAllocation = {};
+    computeShader = {};
+    rootParameters = {};
     delete shaderManager;
     delete renderer;
 }
