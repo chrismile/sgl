@@ -71,7 +71,8 @@ bool getMatchingHipDevice(sgl::vk::Device* device, hipDevice_t* hipDevice) {
      */
     if (!foundDevice) {
         if (device->getDeviceDriverId() != VK_DRIVER_ID_AMD_PROPRIETARY
-                && device->getDeviceDriverId() != VK_DRIVER_ID_AMD_OPEN_SOURCE) {
+                && device->getDeviceDriverId() != VK_DRIVER_ID_AMD_OPEN_SOURCE
+                && device->getDeviceDriverId() != VK_DRIVER_ID_MESA_RADV) {
             return false;
         }
         if (numDevices == 1) {

@@ -26,12 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <cstring>
-
 #include "../Resource.hpp"
 #include "ImplLevelZero.hpp"
-
-#include "../../../../../../../../../../msys64/mingw64/include/glm/ext/scalar_uint_sized.hpp"
 
 #ifdef SUPPORT_SYCL_INTEROP
 #include <sycl/sycl.hpp>

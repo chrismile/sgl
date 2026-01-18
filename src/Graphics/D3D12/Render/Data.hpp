@@ -280,6 +280,7 @@ public:
     [[nodiscard]] size_t getNumIndices() const { return numIndices; }
     [[nodiscard]] size_t getNumVertices() const { return numVertices; }
     [[nodiscard]] uint32_t getNumInstances() const { return numInstances; }
+    [[nodiscard]] Renderer* getRenderer() const { return renderer; }
 
     void setDepthStencilView(const ResourcePtr& image, D3D12_DSV_FLAGS flags = D3D12_DSV_FLAG_NONE);
     void setRenderTargetView(const ResourcePtr& image, UINT index = 0);

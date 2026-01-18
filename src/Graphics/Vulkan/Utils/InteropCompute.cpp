@@ -80,7 +80,8 @@ InteropComputeApi decideInteropComputeApi(Device* device) {
 #endif
 #ifdef SUPPORT_HIP_INTEROP
     if ((device->getDeviceDriverId() == VK_DRIVER_ID_AMD_PROPRIETARY
-            || device->getDeviceDriverId() == VK_DRIVER_ID_AMD_OPEN_SOURCE)
+            || device->getDeviceDriverId() == VK_DRIVER_ID_AMD_OPEN_SOURCE
+            || device->getDeviceDriverId() == VK_DRIVER_ID_MESA_RADV)
             && getIsHipDeviceApiFunctionTableInitialized()) {
         api = InteropComputeApi::HIP;
     }

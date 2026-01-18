@@ -70,6 +70,7 @@ public:
 
     [[nodiscard]] ComPtr<ID3D12DescriptorHeap>& getD3D12DescriptorHeap() { return descriptorHeap; }
     [[nodiscard]] ID3D12DescriptorHeap* getD3D12DescriptorHeapPtr() { return descriptorHeap.Get(); }
+    [[nodiscard]] D3D12_DESCRIPTOR_HEAP_TYPE getDescriptorHeapType() { return descriptorHeapType; }
 
 private:
     D3D12_DESCRIPTOR_HEAP_TYPE descriptorHeapType;

@@ -54,6 +54,7 @@ public:
     inline ComPtr<T> getD3D12CommandListAs() { ComPtr<T> cmdList; commandList.As(&cmdList); return cmdList; }
     template<class T>
     inline T* getD3D12CommandListPtrAs() { ComPtr<T> cmdList; commandList.As(&cmdList); return cmdList.Get(); }
+    [[nodiscard]] Device* getDevice() const { return device; }
 
     inline ComPtr<ID3D12CommandAllocator>& getD3D12CommandAllocator() { return commandAllocator; }
     inline ID3D12CommandAllocator* getD3D12CommandAllocatorPtr() { return commandAllocator.Get(); }
