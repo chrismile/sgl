@@ -84,7 +84,7 @@ bool initializeLevelZeroAndFindMatchingDevice(
             zeResult = g_levelZeroFunctionTable.zeDeviceGetProperties(
                     deviceHandles[deviceIdx], &zeDeviceProperties);
             checkZeResult(zeResult, "Error in zeDeviceGetProperties: ");
-            if (deviceLuid == reinterpret_cast<uint64_t>(zeDeviceLuidProperties.luid.id)) {
+            if (deviceLuid == *reinterpret_cast<uint64_t*>(zeDeviceLuidProperties.luid.id)) {
                 *zeDriver = driverHandles[driverIdx];
                 *zeDevice = deviceHandles[deviceIdx];
                 delete[] deviceHandles;
