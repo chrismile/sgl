@@ -60,8 +60,10 @@ bool initializeLevelZeroAndFindMatchingDevice(
         checkZeResult(zeResult, "Error in zeDriverGet: ");
     }
 
-    ze_device_properties_t zeDeviceProperties{};
     ze_device_luid_ext_properties_t zeDeviceLuidProperties{};
+    zeDeviceLuidProperties.stype = ZE_STRUCTURE_TYPE_DEVICE_LUID_EXT_PROPERTIES;
+    ze_device_properties_t zeDeviceProperties{};
+    zeDeviceProperties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
     zeDeviceProperties.pNext = &zeDeviceLuidProperties;
 
     for (uint32_t driverIdx = 0; driverIdx < driverCount; driverIdx++) {

@@ -548,7 +548,7 @@ void InteropTestLowLevelVk::runTestsBufferCopySemaphore() {
     bufferVulkan->uploadData(sizeof(float), &sharedData);
     sgl::vk::BufferVkComputeApiExternalMemoryPtr bufferComputeApi;
     bufferComputeApi = sgl::vk::createBufferVkComputeApiExternalMemory(bufferVulkan);
-    auto* devicePtr = bufferComputeApi->getDevicePtr<float>();
+    //auto* devicePtr = bufferComputeApi->getDevicePtr<float>();
     float hostData = 0.0f;
 
     // Create renderer and command buffer.

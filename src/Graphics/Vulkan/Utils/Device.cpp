@@ -224,13 +224,12 @@ bool checkVulkanFeaturesAvailable(
         deviceFeatures2.pNext = &physicalDeviceVulkan11Features;
         vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
 
-        const size_t numVulkan11Features =
-                1 + (&requestedDeviceFeatures.requestedVulkan11Features.shaderDrawParameters)
-                - (&requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess);
-        auto requestedVulkan11FeaturesArray = reinterpret_cast<const VkBool32*>(
-                &requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess);
-        auto physicalDeviceVulkan11FeaturesArray = reinterpret_cast<VkBool32*>(
-                &physicalDeviceVulkan11Features.storageBuffer16BitAccess);
+        constexpr size_t numVulkan11Features =
+                1 + (offsetof(VkPhysicalDeviceVulkan11Features, shaderDrawParameters)
+                - offsetof(VkPhysicalDeviceVulkan11Features, storageBuffer16BitAccess)) / sizeof(VkBool32);
+        static_assert(numVulkan11Features == 12);
+        auto requestedVulkan11FeaturesArray = &requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess;
+        auto physicalDeviceVulkan11FeaturesArray = &physicalDeviceVulkan11Features.storageBuffer16BitAccess;
         for (size_t i = 0; i < numVulkan11Features; i++) {
             if (requestedVulkan11FeaturesArray[i] && !physicalDeviceVulkan11FeaturesArray[i]) {
                 requestedFeaturesAvailable = false;
@@ -249,13 +248,12 @@ bool checkVulkanFeaturesAvailable(
         deviceFeatures2.pNext = &physicalDeviceVulkan12Features;
         vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
 
-        const size_t numVulkan12Features =
-                1 + (&requestedDeviceFeatures.requestedVulkan12Features.subgroupBroadcastDynamicId)
-                - (&requestedDeviceFeatures.requestedVulkan12Features.samplerMirrorClampToEdge);
-        auto requestedVulkan12FeaturesArray = reinterpret_cast<const VkBool32*>(
-                &requestedDeviceFeatures.requestedVulkan12Features.samplerMirrorClampToEdge);
-        auto physicalDeviceVulkan12FeaturesArray = reinterpret_cast<VkBool32*>(
-                &physicalDeviceVulkan12Features.samplerMirrorClampToEdge);
+        constexpr size_t numVulkan12Features =
+                1 + (offsetof(VkPhysicalDeviceVulkan12Features, subgroupBroadcastDynamicId)
+                - offsetof(VkPhysicalDeviceVulkan12Features, samplerMirrorClampToEdge)) / sizeof(VkBool32);
+        static_assert(numVulkan12Features == 47);
+        auto requestedVulkan12FeaturesArray = &requestedDeviceFeatures.requestedVulkan12Features.samplerMirrorClampToEdge;
+        auto physicalDeviceVulkan12FeaturesArray = &physicalDeviceVulkan12Features.samplerMirrorClampToEdge;
         for (size_t i = 0; i < numVulkan12Features; i++) {
             if (requestedVulkan12FeaturesArray[i] && !physicalDeviceVulkan12FeaturesArray[i]) {
                 requestedFeaturesAvailable = false;
@@ -274,13 +272,12 @@ bool checkVulkanFeaturesAvailable(
         deviceFeatures2.pNext = &physicalDeviceVulkan13Features;
         vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
 
-        const size_t numVulkan13Features =
-                1 + (&requestedDeviceFeatures.requestedVulkan13Features.maintenance4)
-                - (&requestedDeviceFeatures.requestedVulkan13Features.robustImageAccess);
-        auto requestedVulkan13FeaturesArray = reinterpret_cast<const VkBool32*>(
-                &requestedDeviceFeatures.requestedVulkan13Features.robustImageAccess);
-        auto physicalDeviceVulkan13FeaturesArray = reinterpret_cast<VkBool32*>(
-                &physicalDeviceVulkan13Features.robustImageAccess);
+        constexpr size_t numVulkan13Features =
+                1 + (offsetof(VkPhysicalDeviceVulkan13Features, maintenance4)
+                - offsetof(VkPhysicalDeviceVulkan13Features, robustImageAccess)) / sizeof(VkBool32);
+        static_assert(numVulkan13Features == 15);
+        auto requestedVulkan13FeaturesArray = &requestedDeviceFeatures.requestedVulkan13Features.robustImageAccess;
+        auto physicalDeviceVulkan13FeaturesArray = &physicalDeviceVulkan13Features.robustImageAccess;
         for (size_t i = 0; i < numVulkan13Features; i++) {
             if (requestedVulkan13FeaturesArray[i] && !physicalDeviceVulkan13FeaturesArray[i]) {
                 requestedFeaturesAvailable = false;
@@ -299,13 +296,12 @@ bool checkVulkanFeaturesAvailable(
         deviceFeatures2.pNext = &physicalDeviceVulkan14Features;
         vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
 
-        const size_t numVulkan14Features =
-                1 + (&requestedDeviceFeatures.requestedVulkan14Features.pushDescriptor)
-                - (&requestedDeviceFeatures.requestedVulkan14Features.globalPriorityQuery);
-        auto requestedVulkan14FeaturesArray = reinterpret_cast<const VkBool32*>(
-                &requestedDeviceFeatures.requestedVulkan14Features.globalPriorityQuery);
-        auto physicalDeviceVulkan14FeaturesArray = reinterpret_cast<VkBool32*>(
-                &physicalDeviceVulkan14Features.globalPriorityQuery);
+        constexpr size_t numVulkan14Features =
+                1 + (offsetof(VkPhysicalDeviceVulkan14Features, pushDescriptor)
+                - offsetof(VkPhysicalDeviceVulkan14Features, globalPriorityQuery)) / sizeof(VkBool32);
+        static_assert(numVulkan14Features == 21);
+        auto requestedVulkan14FeaturesArray = &requestedDeviceFeatures.requestedVulkan14Features.globalPriorityQuery;
+        auto physicalDeviceVulkan14FeaturesArray = &physicalDeviceVulkan14Features.globalPriorityQuery;
         for (size_t i = 0; i < numVulkan14Features; i++) {
             if (requestedVulkan14FeaturesArray[i] && !physicalDeviceVulkan14FeaturesArray[i]) {
                 requestedFeaturesAvailable = false;
@@ -741,10 +737,12 @@ void mergePhysicalDeviceFeatures11(
         VkPhysicalDeviceVulkan11Features_Compat& featuresDst, const VkPhysicalDeviceVulkan11Features_Compat& featuresSrc) {
 #endif
 #ifdef VK_VERSION_1_1
-    const size_t numVulkan11Features =
-            1 + (&featuresDst.shaderDrawParameters) - (&featuresDst.storageBuffer16BitAccess);
-    auto featuresDstArray = reinterpret_cast<VkBool32*>(&featuresDst.storageBuffer16BitAccess);
-    auto featuresSrcArray = reinterpret_cast<const VkBool32*>(&featuresSrc.storageBuffer16BitAccess);
+    constexpr size_t numVulkan11Features =
+            1 + (offsetof(VkPhysicalDeviceVulkan11Features, shaderDrawParameters)
+            - offsetof(VkPhysicalDeviceVulkan11Features, storageBuffer16BitAccess)) / sizeof(VkBool32);
+    static_assert(numVulkan11Features == 12);
+    auto featuresDstArray = &featuresDst.storageBuffer16BitAccess;
+    auto featuresSrcArray = &featuresSrc.storageBuffer16BitAccess;
     for (size_t i = 0; i < numVulkan11Features; i++) {
         if (featuresSrcArray[i] && !featuresDstArray[i]) {
             featuresDstArray[i] = true;
@@ -760,10 +758,12 @@ void mergePhysicalDeviceFeatures12(
         VkPhysicalDeviceVulkan12Features_Compat& featuresDst, const VkPhysicalDeviceVulkan12Features_Compat& featuresSrc) {
 #endif
 #ifdef VK_VERSION_1_2
-    const size_t numVulkan12Features =
-            1 + (&featuresDst.subgroupBroadcastDynamicId) - (&featuresDst.samplerMirrorClampToEdge);
-    auto featuresDstArray = reinterpret_cast<VkBool32*>(&featuresDst.samplerMirrorClampToEdge);
-    auto featuresSrcArray = reinterpret_cast<const VkBool32*>(&featuresSrc.samplerMirrorClampToEdge);
+    constexpr size_t numVulkan12Features =
+            1 + (offsetof(VkPhysicalDeviceVulkan12Features, subgroupBroadcastDynamicId)
+            - offsetof(VkPhysicalDeviceVulkan12Features, samplerMirrorClampToEdge)) / sizeof(VkBool32);
+    static_assert(numVulkan12Features == 47);
+    auto featuresDstArray = &featuresDst.samplerMirrorClampToEdge;
+    auto featuresSrcArray = &featuresSrc.samplerMirrorClampToEdge;
     for (size_t i = 0; i < numVulkan12Features; i++) {
         if (featuresSrcArray[i] && !featuresDstArray[i]) {
             featuresDstArray[i] = true;
@@ -779,9 +779,12 @@ void mergePhysicalDeviceFeatures13(
         VkPhysicalDeviceVulkan13Features_Compat& featuresDst, const VkPhysicalDeviceVulkan13Features_Compat& featuresSrc) {
 #endif
 #ifdef VK_VERSION_1_3
-    const size_t numVulkan13Features = 1 + (&featuresDst.maintenance4) - (&featuresDst.robustImageAccess);
-    auto featuresDstArray = reinterpret_cast<VkBool32*>(&featuresDst.robustImageAccess);
-    auto featuresSrcArray = reinterpret_cast<const VkBool32*>(&featuresSrc.robustImageAccess);
+    constexpr size_t numVulkan13Features =
+            1 + (offsetof(VkPhysicalDeviceVulkan13Features, maintenance4)
+            - offsetof(VkPhysicalDeviceVulkan13Features, robustImageAccess)) / sizeof(VkBool32);
+    static_assert(numVulkan13Features == 15);
+    auto featuresDstArray = &featuresDst.robustImageAccess;
+    auto featuresSrcArray = &featuresSrc.robustImageAccess;
     for (size_t i = 0; i < numVulkan13Features; i++) {
         if (featuresSrcArray[i] && !featuresDstArray[i]) {
             featuresDstArray[i] = true;
@@ -797,9 +800,12 @@ void mergePhysicalDeviceFeatures14(
         VkPhysicalDeviceVulkan14Features_Compat& featuresDst, const VkPhysicalDeviceVulkan14Features_Compat& featuresSrc) {
 #endif
 #ifdef VK_VERSION_1_4
-    const size_t numVulkan14Features = 1 + (&featuresDst.pushDescriptor) - (&featuresDst.globalPriorityQuery);
-    auto featuresDstArray = reinterpret_cast<VkBool32*>(&featuresDst.globalPriorityQuery);
-    auto featuresSrcArray = reinterpret_cast<const VkBool32*>(&featuresSrc.globalPriorityQuery);
+    constexpr size_t numVulkan14Features =
+            1 + (offsetof(VkPhysicalDeviceVulkan14Features, pushDescriptor)
+            - offsetof(VkPhysicalDeviceVulkan14Features, globalPriorityQuery)) / sizeof(VkBool32);
+    static_assert(numVulkan14Features == 21);
+    auto featuresDstArray = &featuresDst.globalPriorityQuery;
+    auto featuresSrcArray = &featuresSrc.globalPriorityQuery;
     for (size_t i = 0; i < numVulkan14Features; i++) {
         if (featuresSrcArray[i] && !featuresDstArray[i]) {
             featuresDstArray[i] = true;
@@ -1188,15 +1194,13 @@ void Device::createLogicalDeviceAndQueues(
         deviceFeatures2.pNext = &physicalDeviceVulkan11Features;
         vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
 
-        const size_t numVulkan11Features =
-                1 + (&requestedDeviceFeatures.requestedVulkan11Features.shaderDrawParameters)
-                 - (&requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess);
-        auto requestedVulkan11FeaturesArray = reinterpret_cast<VkBool32*>(
-                &requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess);
-        auto optionalVulkan11FeaturesArray = reinterpret_cast<VkBool32*>(
-                &requestedDeviceFeatures.optionalVulkan11Features.storageBuffer16BitAccess);
-        auto physicalDeviceVulkan11FeaturesArray = reinterpret_cast<VkBool32*>(
-                &physicalDeviceVulkan11Features.storageBuffer16BitAccess);
+        constexpr size_t numVulkan11Features =
+                1 + (offsetof(VkPhysicalDeviceVulkan11Features, shaderDrawParameters)
+                - offsetof(VkPhysicalDeviceVulkan11Features, storageBuffer16BitAccess)) / sizeof(VkBool32);
+        static_assert(numVulkan11Features == 12);
+        auto requestedVulkan11FeaturesArray = &requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess;
+        auto optionalVulkan11FeaturesArray = &requestedDeviceFeatures.optionalVulkan11Features.storageBuffer16BitAccess;
+        auto physicalDeviceVulkan11FeaturesArray = &physicalDeviceVulkan11Features.storageBuffer16BitAccess;
         for (size_t i = 0; i < numVulkan11Features; i++) {
             if (optionalVulkan11FeaturesArray[i] && physicalDeviceVulkan11FeaturesArray[i]) {
                 requestedVulkan11FeaturesArray[i] = VK_TRUE;
@@ -1218,15 +1222,13 @@ void Device::createLogicalDeviceAndQueues(
         deviceFeatures2.pNext = &physicalDeviceVulkan12Features;
         vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
 
-        const size_t numVulkan12Features =
-                1 + (&requestedDeviceFeatures.requestedVulkan12Features.subgroupBroadcastDynamicId)
-                 - (&requestedDeviceFeatures.requestedVulkan12Features.samplerMirrorClampToEdge);
-        auto requestedVulkan12FeaturesArray = reinterpret_cast<VkBool32*>(
-                &requestedDeviceFeatures.requestedVulkan12Features.samplerMirrorClampToEdge);
-        auto optionalVulkan12FeaturesArray = reinterpret_cast<VkBool32*>(
-                &requestedDeviceFeatures.optionalVulkan12Features.samplerMirrorClampToEdge);
-        auto physicalDeviceVulkan12FeaturesArray = reinterpret_cast<VkBool32*>(
-                &physicalDeviceVulkan12Features.samplerMirrorClampToEdge);
+        constexpr size_t numVulkan12Features =
+                1 + (offsetof(VkPhysicalDeviceVulkan12Features, subgroupBroadcastDynamicId)
+                - offsetof(VkPhysicalDeviceVulkan12Features, samplerMirrorClampToEdge)) / sizeof(VkBool32);
+        static_assert(numVulkan12Features == 47);
+        auto requestedVulkan12FeaturesArray = &requestedDeviceFeatures.requestedVulkan12Features.samplerMirrorClampToEdge;
+        auto optionalVulkan12FeaturesArray = &requestedDeviceFeatures.optionalVulkan12Features.samplerMirrorClampToEdge;
+        auto physicalDeviceVulkan12FeaturesArray = &physicalDeviceVulkan12Features.samplerMirrorClampToEdge;
         for (size_t i = 0; i < numVulkan12Features; i++) {
             if (optionalVulkan12FeaturesArray[i] && physicalDeviceVulkan12FeaturesArray[i]) {
                 requestedVulkan12FeaturesArray[i] = VK_TRUE;
@@ -1244,15 +1246,13 @@ void Device::createLogicalDeviceAndQueues(
         deviceFeatures2.pNext = &physicalDeviceVulkan13Features;
         vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
 
-        const size_t numVulkan13Features =
-                1 + (&requestedDeviceFeatures.requestedVulkan13Features.maintenance4)
-                 - (&requestedDeviceFeatures.requestedVulkan13Features.robustImageAccess);
-        auto requestedVulkan13FeaturesArray = reinterpret_cast<VkBool32*>(
-                &requestedDeviceFeatures.requestedVulkan13Features.robustImageAccess);
-        auto optionalVulkan13FeaturesArray = reinterpret_cast<VkBool32*>(
-                &requestedDeviceFeatures.optionalVulkan13Features.robustImageAccess);
-        auto physicalDeviceVulkan13FeaturesArray = reinterpret_cast<VkBool32*>(
-                &physicalDeviceVulkan13Features.robustImageAccess);
+        constexpr size_t numVulkan13Features =
+                1 + (offsetof(VkPhysicalDeviceVulkan13Features, maintenance4)
+                - offsetof(VkPhysicalDeviceVulkan13Features, robustImageAccess)) / sizeof(VkBool32);
+        static_assert(numVulkan13Features == 15);
+        auto requestedVulkan13FeaturesArray = &requestedDeviceFeatures.requestedVulkan13Features.robustImageAccess;
+        auto optionalVulkan13FeaturesArray = &requestedDeviceFeatures.optionalVulkan13Features.robustImageAccess;
+        auto physicalDeviceVulkan13FeaturesArray = &physicalDeviceVulkan13Features.robustImageAccess;
         for (size_t i = 0; i < numVulkan13Features; i++) {
             if (optionalVulkan13FeaturesArray[i] && physicalDeviceVulkan13FeaturesArray[i]) {
                 requestedVulkan13FeaturesArray[i] = VK_TRUE;
@@ -1275,15 +1275,13 @@ void Device::createLogicalDeviceAndQueues(
         deviceFeatures2.pNext = &physicalDeviceVulkan14Features;
         vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
 
-        const size_t numVulkan14Features =
-                1 + (&requestedDeviceFeatures.requestedVulkan14Features.pushDescriptor)
-                - (&requestedDeviceFeatures.requestedVulkan14Features.globalPriorityQuery);
-        auto requestedVulkan14FeaturesArray = reinterpret_cast<VkBool32*>(
-                &requestedDeviceFeatures.requestedVulkan14Features.globalPriorityQuery);
-        auto optionalVulkan14FeaturesArray = reinterpret_cast<VkBool32*>(
-                &requestedDeviceFeatures.optionalVulkan14Features.globalPriorityQuery);
-        auto physicalDeviceVulkan14FeaturesArray = reinterpret_cast<VkBool32*>(
-                &physicalDeviceVulkan14Features.globalPriorityQuery);
+        constexpr size_t numVulkan14Features =
+                1 + (offsetof(VkPhysicalDeviceVulkan14Features, pushDescriptor)
+                - offsetof(VkPhysicalDeviceVulkan14Features, globalPriorityQuery)) / sizeof(VkBool32);
+        static_assert(numVulkan14Features == 21);
+        auto requestedVulkan14FeaturesArray = &requestedDeviceFeatures.requestedVulkan14Features.globalPriorityQuery;
+        auto optionalVulkan14FeaturesArray = &requestedDeviceFeatures.optionalVulkan14Features.globalPriorityQuery;
+        auto physicalDeviceVulkan14FeaturesArray = &physicalDeviceVulkan14Features.globalPriorityQuery;
         for (size_t i = 0; i < numVulkan14Features; i++) {
             if (optionalVulkan14FeaturesArray[i] && physicalDeviceVulkan14FeaturesArray[i]) {
                 requestedVulkan14FeaturesArray[i] = VK_TRUE;
@@ -1302,11 +1300,12 @@ void Device::createLogicalDeviceAndQueues(
     bool hasRequestedVulkan11Features = false;
     if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 1, 0)
             && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 1, 0)) {
-        const size_t numVulkan11Features =
-                1 + (&requestedDeviceFeatures.requestedVulkan11Features.shaderDrawParameters)
-                 - (&requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess);
-        auto requestedVulkan11FeaturesArray = reinterpret_cast<VkBool32*>(
-                &requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess);
+        constexpr size_t numVulkan11Features =
+                1 + (offsetof(VkPhysicalDeviceVulkan11Features, shaderDrawParameters)
+                - offsetof(VkPhysicalDeviceVulkan11Features, storageBuffer16BitAccess)) / sizeof(VkBool32);
+        static_assert(numVulkan11Features == 12);
+        auto requestedVulkan11FeaturesArray =
+                &requestedDeviceFeatures.requestedVulkan11Features.storageBuffer16BitAccess;
         for (size_t i = 0; i < numVulkan11Features; i++) {
             if (requestedVulkan11FeaturesArray[i]) {
                 hasRequestedVulkan11Features = true;
@@ -1318,11 +1317,11 @@ void Device::createLogicalDeviceAndQueues(
     bool hasRequestedVulkan12Features = false;
     if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 2, 0)
             && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 2, 0)) {
-        const size_t numVulkan12Features =
-                1 + (&requestedDeviceFeatures.requestedVulkan12Features.subgroupBroadcastDynamicId)
-                 - (&requestedDeviceFeatures.requestedVulkan12Features.samplerMirrorClampToEdge);
-        auto requestedVulkan12FeaturesArray = reinterpret_cast<VkBool32*>(
-                &requestedDeviceFeatures.requestedVulkan12Features.samplerMirrorClampToEdge);
+        constexpr size_t numVulkan12Features =
+                1 + (offsetof(VkPhysicalDeviceVulkan12Features, subgroupBroadcastDynamicId)
+                - offsetof(VkPhysicalDeviceVulkan12Features, samplerMirrorClampToEdge)) / sizeof(VkBool32);
+        static_assert(numVulkan12Features == 47);
+        auto requestedVulkan12FeaturesArray = &requestedDeviceFeatures.requestedVulkan12Features.samplerMirrorClampToEdge;
         for (size_t i = 0; i < numVulkan12Features; i++) {
             if (requestedVulkan12FeaturesArray[i]) {
                 hasRequestedVulkan12Features = true;
@@ -1334,11 +1333,11 @@ void Device::createLogicalDeviceAndQueues(
     bool hasRequestedVulkan13Features = false;
     if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 3, 0)
             && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 3, 0)) {
-        const size_t numVulkan13Features =
-                1 + (&requestedDeviceFeatures.requestedVulkan13Features.maintenance4)
-                 - (&requestedDeviceFeatures.requestedVulkan13Features.robustImageAccess);
-        auto requestedVulkan13FeaturesArray = reinterpret_cast<VkBool32*>(
-                &requestedDeviceFeatures.requestedVulkan13Features.robustImageAccess);
+        constexpr size_t numVulkan13Features =
+                1 + (offsetof(VkPhysicalDeviceVulkan13Features, maintenance4)
+                - offsetof(VkPhysicalDeviceVulkan13Features, robustImageAccess)) / sizeof(VkBool32);
+        static_assert(numVulkan13Features == 15);
+        auto requestedVulkan13FeaturesArray = &requestedDeviceFeatures.requestedVulkan13Features.robustImageAccess;
         for (size_t i = 0; i < numVulkan13Features; i++) {
             if (requestedVulkan13FeaturesArray[i]) {
                 hasRequestedVulkan13Features = true;
@@ -1358,11 +1357,11 @@ void Device::createLogicalDeviceAndQueues(
     bool hasRequestedVulkan14Features = false;
     if (getApiVersion() >= VK_MAKE_API_VERSION(0, 1, 4, 0)
             && getInstance()->getApplicationInfo().apiVersion >= VK_MAKE_API_VERSION(0, 1, 4, 0)) {
-        const size_t numVulkan14Features =
-                1 + (&requestedDeviceFeatures.requestedVulkan14Features.pushDescriptor)
-                - (&requestedDeviceFeatures.requestedVulkan14Features.globalPriorityQuery);
-        auto requestedVulkan14FeaturesArray = reinterpret_cast<VkBool32*>(
-                &requestedDeviceFeatures.requestedVulkan14Features.globalPriorityQuery);
+        constexpr size_t numVulkan14Features =
+                1 + (offsetof(VkPhysicalDeviceVulkan14Features, pushDescriptor)
+                - offsetof(VkPhysicalDeviceVulkan14Features, globalPriorityQuery)) / sizeof(VkBool32);
+        static_assert(numVulkan14Features == 21);
+        auto requestedVulkan14FeaturesArray = &requestedDeviceFeatures.requestedVulkan14Features.globalPriorityQuery;
         for (size_t i = 0; i < numVulkan14Features; i++) {
             if (requestedVulkan14FeaturesArray[i]) {
                 hasRequestedVulkan14Features = true;
@@ -2881,10 +2880,12 @@ bool Device::checkPhysicalDeviceFeatures11Supported(
         const VkPhysicalDeviceVulkan11Features_Compat& featuresRequired) {
 #endif
 #ifdef VK_VERSION_1_1
-    const size_t numVulkan11Features =
-            1 + (&physicalDeviceVulkan11Features.shaderDrawParameters) - (&physicalDeviceVulkan11Features.storageBuffer16BitAccess);
-    auto featuresSupportedArray = reinterpret_cast<VkBool32*>(&physicalDeviceVulkan11Features.storageBuffer16BitAccess);
-    auto featuresRequiredArray = reinterpret_cast<const VkBool32*>(&featuresRequired.storageBuffer16BitAccess);
+    constexpr size_t numVulkan11Features =
+            1 + (offsetof(VkPhysicalDeviceVulkan11Features, shaderDrawParameters)
+            - offsetof(VkPhysicalDeviceVulkan11Features, storageBuffer16BitAccess)) / sizeof(VkBool32);
+    static_assert(numVulkan11Features == 12);
+    auto featuresSupportedArray = &physicalDeviceVulkan11Features.storageBuffer16BitAccess;
+    auto featuresRequiredArray = &featuresRequired.storageBuffer16BitAccess;
     for (size_t i = 0; i < numVulkan11Features; i++) {
         if (featuresRequiredArray[i] && !featuresSupportedArray[i]) {
             return false;
@@ -2901,11 +2902,12 @@ bool Device::checkPhysicalDeviceFeatures12Supported(
         const VkPhysicalDeviceVulkan12Features_Compat& featuresRequired) {
 #endif
 #ifdef VK_VERSION_1_2
-    const size_t numVulkan12Features =
-            1 + (&physicalDeviceVulkan12Features.subgroupBroadcastDynamicId)
-            - (&physicalDeviceVulkan12Features.samplerMirrorClampToEdge);
-    auto featuresSupportedArray = reinterpret_cast<VkBool32*>(&physicalDeviceVulkan12Features.samplerMirrorClampToEdge);
-    auto featuresRequiredArray = reinterpret_cast<const VkBool32*>(&featuresRequired.samplerMirrorClampToEdge);
+    constexpr size_t numVulkan12Features =
+            1 + (offsetof(VkPhysicalDeviceVulkan12Features, subgroupBroadcastDynamicId)
+            - offsetof(VkPhysicalDeviceVulkan12Features, samplerMirrorClampToEdge)) / sizeof(VkBool32);
+    static_assert(numVulkan12Features == 47);
+    auto featuresSupportedArray = &physicalDeviceVulkan12Features.samplerMirrorClampToEdge;
+    auto featuresRequiredArray = &featuresRequired.samplerMirrorClampToEdge;
     for (size_t i = 0; i < numVulkan12Features; i++) {
         if (featuresRequiredArray[i] && !featuresSupportedArray[i]) {
             return false;
