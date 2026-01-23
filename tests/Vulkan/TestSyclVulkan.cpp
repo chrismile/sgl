@@ -238,7 +238,7 @@ TEST_P(InteropTestSyclVkImageCreation, Formats) {
         }
     }
 }
-INSTANTIATE_TEST_SUITE_P(TestFormats, InteropTestSyclVkImageCreation, testedImageFormats, PrintToStringFormatConfig());
+INSTANTIATE_TEST_SUITE_P(, InteropTestSyclVkImageCreation, testedImageFormats, PrintToStringFormatConfig());
 
 TEST_F(InteropTestSyclVkInOrder, BinarySemaphoreAllocationTest) {
     if (!syclQueue->get_device().has(sycl::aspect::ext_oneapi_external_semaphore_import)) {
@@ -628,7 +628,7 @@ TEST_P(InteropTestSyclVkImageCopy, Formats) {
         }
     }
 }
-INSTANTIATE_TEST_SUITE_P(TestFormats, InteropTestSyclVkImageCopy, testedImageFormatsCopy, PrintToStringFormatConfig());
+INSTANTIATE_TEST_SUITE_P(, InteropTestSyclVkImageCopy, testedImageFormatsCopy, PrintToStringFormatConfig());
 
 class InteropTestSyclVkImageVulkanWriteSyclRead
         : public InteropTestSyclVkInOrder, public testing::WithParamInterface<std::tuple<VkFormat, bool, bool>> {

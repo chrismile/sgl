@@ -328,7 +328,6 @@ TEST_P(InteropTestSyclD3D12Image, ImageCopyTest) {
     sycl::free(hostPtr, *syclQueue);
     sycl::free(devicePtr, *syclQueue);
 }
-INSTANTIATE_TEST_SUITE_P(ImageCopyTest, InteropTestSyclD3D12Image, testedImageFormatsD3D12, PrintToStringFormatD3D12Config());
 
 TEST_P(InteropTestSyclD3D12Image, ImageD3D12WriteSyclReadTests) {
 #ifndef SUPPORT_D3D_COMPILER
@@ -487,7 +486,6 @@ TEST_P(InteropTestSyclD3D12Image, ImageD3D12WriteSyclReadTests) {
     delete shaderManager;
     delete renderer;
 }
-INSTANTIATE_TEST_SUITE_P(ImageD3D12WriteSyclReadTests, InteropTestSyclD3D12Image, testedImageFormatsD3D12, PrintToStringFormatD3D12Config());
 
 TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
 #ifndef SUPPORT_D3D_COMPILER
@@ -652,4 +650,4 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
     delete shaderManager;
     delete renderer;
 }
-INSTANTIATE_TEST_SUITE_P(ImageSyclWriteD3D12ReadTests, InteropTestSyclD3D12Image, testedImageFormatsD3D12, PrintToStringFormatD3D12Config());
+INSTANTIATE_TEST_SUITE_P(, InteropTestSyclD3D12Image, testedImageFormatsD3D12, PrintToStringFormatD3D12Config());

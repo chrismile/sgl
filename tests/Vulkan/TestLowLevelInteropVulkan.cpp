@@ -480,8 +480,8 @@ TEST_P(InteropTestLowLevelVkBindlessImageCreation, Formats) {
     runTestImageCreation(format, isFormatRequired);
 }
 
-INSTANTIATE_TEST_SUITE_P(TestFormats, InteropTestLowLevelVkRegularImageCreation, testedImageFormats, PrintToStringFormatConfig());
-INSTANTIATE_TEST_SUITE_P(TestFormats, InteropTestLowLevelVkBindlessImageCreation, testedImageFormats, PrintToStringFormatConfig());
+INSTANTIATE_TEST_SUITE_P(, InteropTestLowLevelVkRegularImageCreation, testedImageFormats, PrintToStringFormatConfig());
+INSTANTIATE_TEST_SUITE_P(, InteropTestLowLevelVkBindlessImageCreation, testedImageFormats, PrintToStringFormatConfig());
 
 
 void InteropTestLowLevelVk::checkSemaphoresSupported(bool& available) {
