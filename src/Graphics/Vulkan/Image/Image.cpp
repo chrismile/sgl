@@ -335,7 +335,7 @@ size_t getImageFormatNumChannels(VkFormat format) {
 
 std::string getImageFormatGlslString(VkFormat format) {
     // TODO: Support r11f_g11f_b10f?
-    if (format == VK_FORMAT_R32_SFLOAT) {
+    if (format == VK_FORMAT_R32_SFLOAT || format == VK_FORMAT_D32_SFLOAT) {
         return "r32f";
     } else if (format == VK_FORMAT_R32G32_SFLOAT) {
         return "rg32f";
