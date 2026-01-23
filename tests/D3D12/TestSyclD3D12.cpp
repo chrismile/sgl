@@ -529,8 +529,9 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
         destBuffer[idx.x + idx.y * width] = srcImage[idx];
     }
     )";
-    auto shaderStringWriteImageCompute = sgl::formatStringRelaxed(
-            SHADER_STRING_COPY_IMAGE_FROM_BUFFER_COMPUTE_FMT, sgl::d3d12::getDXGIFormatHLSLStructuredTypeString(format));
+    auto shaderStringWriteImageCompute = sgl::formatStringPositional(
+            SHADER_STRING_COPY_IMAGE_FROM_BUFFER_COMPUTE_FMT,
+            sgl::d3d12::getDXGIFormatHLSLStructuredTypeString(format));
     auto computeShader = shaderManager->loadShaderFromHlslString(
             shaderStringWriteImageCompute, "CopyImageToBufferShader.hlsl",
             sgl::d3d12::ShaderModuleType::COMPUTE, "CSMain", {});
