@@ -30,6 +30,8 @@
 #define SGL_RESOURCE_HPP
 
 #include <optional>
+
+#include <Graphics/Utils/FormatInfo.hpp>
 #include "../Utils/d3d12.hpp"
 
 namespace sgl { namespace d3d12 {
@@ -59,7 +61,12 @@ class Resource;
 typedef std::shared_ptr<Resource> ResourcePtr;
 
 DLL_OBJECT size_t getDXGIFormatNumChannels(DXGI_FORMAT format);
+DLL_OBJECT size_t getDXGIFormatChannelSizeInBytes(DXGI_FORMAT format);
 DLL_OBJECT size_t getDXGIFormatSizeInBytes(DXGI_FORMAT format);
+DLL_OBJECT ChannelFormat getDXGIFormatChannelFormat(DXGI_FORMAT format);
+DLL_OBJECT ChannelCategory getDXGIFormatChannelCategory(DXGI_FORMAT format);
+DLL_OBJECT FormatInfo getDXGIFormatInfo(DXGI_FORMAT format);
+
 DLL_OBJECT std::string getDXGIFormatHLSLStructuredTypeString(DXGI_FORMAT format);
 DLL_OBJECT std::string convertDXGIFormatToString(DXGI_FORMAT format);
 

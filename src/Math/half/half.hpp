@@ -41,7 +41,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef _MSC_VER
 #include "stdint.h"
 #else
-#include <stdint.h>
+#include <cstdint>
 #endif
 
 #undef min

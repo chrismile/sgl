@@ -50,7 +50,10 @@ const auto testedImageFormatsCopy = testing::Values(
         std::pair<VkFormat, bool>{VK_FORMAT_R32_SFLOAT, true},
         std::pair<VkFormat, bool>{VK_FORMAT_R32G32_SFLOAT, true},
         std::pair<VkFormat, bool>{VK_FORMAT_R32G32B32A32_SFLOAT, true},
-        std::pair<VkFormat, bool>{VK_FORMAT_D32_SFLOAT, false}
+        std::pair<VkFormat, bool>{VK_FORMAT_D32_SFLOAT, false},
+        std::pair<VkFormat, bool>{VK_FORMAT_R32_UINT, true},
+        std::pair<VkFormat, bool>{VK_FORMAT_R32G32_UINT, true},
+        std::pair<VkFormat, bool>{VK_FORMAT_R32G32B32A32_UINT, true}
 );
 
 const auto testedImageFormatsReadWriteAsync = testing::Values(
@@ -59,15 +62,21 @@ const auto testedImageFormatsReadWriteAsync = testing::Values(
         std::tuple<VkFormat, bool, bool>{VK_FORMAT_R32_SFLOAT, true, true},
         std::tuple<VkFormat, bool, bool>{VK_FORMAT_R32G32_SFLOAT, true, true},
         std::tuple<VkFormat, bool, bool>{VK_FORMAT_R32G32B32A32_SFLOAT, true, true},
-        std::tuple<VkFormat, bool, bool>{VK_FORMAT_D32_SFLOAT, true, false}
+        std::tuple<VkFormat, bool, bool>{VK_FORMAT_D32_SFLOAT, true, false},
+        std::tuple<VkFormat, bool, bool>{VK_FORMAT_R32_UINT, true, true},
+        std::tuple<VkFormat, bool, bool>{VK_FORMAT_R32G32_UINT, true, true},
+        std::tuple<VkFormat, bool, bool>{VK_FORMAT_R32G32B32A32_UINT, true, true}
 );
 const auto testedImageFormatsReadWriteSync = testing::Values(
         // second bool entry shows if semaphores should be used
         // third bool entry shows if this format is required (true) or optional (false).
         std::tuple<VkFormat, bool, bool>{VK_FORMAT_R32_SFLOAT, false, true},
-        std::tuple<VkFormat, bool, bool>{VK_FORMAT_R32G32_SFLOAT, false, false},
-        std::tuple<VkFormat, bool, bool>{VK_FORMAT_R32G32B32A32_SFLOAT, false, false},
-        std::tuple<VkFormat, bool, bool>{VK_FORMAT_D32_SFLOAT, false, false}
+        std::tuple<VkFormat, bool, bool>{VK_FORMAT_R32G32_SFLOAT, false, true},
+        std::tuple<VkFormat, bool, bool>{VK_FORMAT_R32G32B32A32_SFLOAT, false, true},
+        std::tuple<VkFormat, bool, bool>{VK_FORMAT_D32_SFLOAT, false, false},
+        std::tuple<VkFormat, bool, bool>{VK_FORMAT_R32_UINT, false, true},
+        std::tuple<VkFormat, bool, bool>{VK_FORMAT_R32G32_UINT, false, true},
+        std::tuple<VkFormat, bool, bool>{VK_FORMAT_R32G32B32A32_UINT, false, true}
 );
 
 #endif //SGL_TESTS_IMAGEFORMATS_HPP

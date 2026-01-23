@@ -200,6 +200,121 @@ size_t getImageFormatEntryByteSize(VkFormat format) {
     }
 }
 
+size_t getImageFormatChannelByteSize(VkFormat format) {
+    switch (format) {
+        case VK_FORMAT_R8_UNORM:
+        case VK_FORMAT_R8_SNORM:
+        case VK_FORMAT_R8_USCALED:
+        case VK_FORMAT_R8_SSCALED:
+        case VK_FORMAT_R8_UINT:
+        case VK_FORMAT_R8_SINT:
+        case VK_FORMAT_R8_SRGB:
+        case VK_FORMAT_S8_UINT:
+        case VK_FORMAT_R8G8_UNORM:
+        case VK_FORMAT_R8G8_SNORM:
+        case VK_FORMAT_R8G8_USCALED:
+        case VK_FORMAT_R8G8_SSCALED:
+        case VK_FORMAT_R8G8_UINT:
+        case VK_FORMAT_R8G8_SINT:
+        case VK_FORMAT_R8G8_SRGB:
+        case VK_FORMAT_R8G8B8_UNORM:
+        case VK_FORMAT_R8G8B8_SNORM:
+        case VK_FORMAT_R8G8B8_USCALED:
+        case VK_FORMAT_R8G8B8_SSCALED:
+        case VK_FORMAT_R8G8B8_UINT:
+        case VK_FORMAT_R8G8B8_SINT:
+        case VK_FORMAT_R8G8B8_SRGB:
+        case VK_FORMAT_B8G8R8_UNORM:
+        case VK_FORMAT_B8G8R8_SNORM:
+        case VK_FORMAT_B8G8R8_USCALED:
+        case VK_FORMAT_B8G8R8_SSCALED:
+        case VK_FORMAT_B8G8R8_UINT:
+        case VK_FORMAT_B8G8R8_SINT:
+        case VK_FORMAT_B8G8R8_SRGB:
+        case VK_FORMAT_R8G8B8A8_UNORM:
+        case VK_FORMAT_R8G8B8A8_SNORM:
+        case VK_FORMAT_R8G8B8A8_USCALED:
+        case VK_FORMAT_R8G8B8A8_SSCALED:
+        case VK_FORMAT_R8G8B8A8_UINT:
+        case VK_FORMAT_R8G8B8A8_SINT:
+        case VK_FORMAT_R8G8B8A8_SRGB:
+        case VK_FORMAT_B8G8R8A8_UNORM:
+        case VK_FORMAT_B8G8R8A8_SNORM:
+        case VK_FORMAT_B8G8R8A8_USCALED:
+        case VK_FORMAT_B8G8R8A8_SSCALED:
+        case VK_FORMAT_B8G8R8A8_UINT:
+        case VK_FORMAT_B8G8R8A8_SINT:
+        case VK_FORMAT_B8G8R8A8_SRGB:
+        case VK_FORMAT_A8B8G8R8_UNORM_PACK32:
+        case VK_FORMAT_A8B8G8R8_SNORM_PACK32:
+        case VK_FORMAT_A8B8G8R8_USCALED_PACK32:
+        case VK_FORMAT_A8B8G8R8_SSCALED_PACK32:
+        case VK_FORMAT_A8B8G8R8_UINT_PACK32:
+        case VK_FORMAT_A8B8G8R8_SINT_PACK32:
+        case VK_FORMAT_A8B8G8R8_SRGB_PACK32:
+            return 1;
+        case VK_FORMAT_R16_UNORM:
+        case VK_FORMAT_R16_SNORM:
+        case VK_FORMAT_R16_USCALED:
+        case VK_FORMAT_R16_SSCALED:
+        case VK_FORMAT_R16_UINT:
+        case VK_FORMAT_R16_SINT:
+        case VK_FORMAT_R16_SFLOAT:
+        case VK_FORMAT_D16_UNORM:
+        case VK_FORMAT_R16G16_UNORM:
+        case VK_FORMAT_R16G16_SNORM:
+        case VK_FORMAT_R16G16_USCALED:
+        case VK_FORMAT_R16G16_SSCALED:
+        case VK_FORMAT_R16G16_UINT:
+        case VK_FORMAT_R16G16_SINT:
+        case VK_FORMAT_R16G16_SFLOAT:
+        case VK_FORMAT_R16G16B16_UNORM:
+        case VK_FORMAT_R16G16B16_SNORM:
+        case VK_FORMAT_R16G16B16_USCALED:
+        case VK_FORMAT_R16G16B16_SSCALED:
+        case VK_FORMAT_R16G16B16_UINT:
+        case VK_FORMAT_R16G16B16_SINT:
+        case VK_FORMAT_R16G16B16_SFLOAT:
+        case VK_FORMAT_R16G16B16A16_UNORM:
+        case VK_FORMAT_R16G16B16A16_SNORM:
+        case VK_FORMAT_R16G16B16A16_USCALED:
+        case VK_FORMAT_R16G16B16A16_SSCALED:
+        case VK_FORMAT_R16G16B16A16_UINT:
+        case VK_FORMAT_R16G16B16A16_SINT:
+        case VK_FORMAT_R16G16B16A16_SFLOAT:
+            return 2;
+        case VK_FORMAT_R32_UINT:
+        case VK_FORMAT_R32_SINT:
+        case VK_FORMAT_R32_SFLOAT:
+        case VK_FORMAT_D32_SFLOAT:
+        case VK_FORMAT_R32G32_UINT:
+        case VK_FORMAT_R32G32_SINT:
+        case VK_FORMAT_R32G32_SFLOAT:
+        case VK_FORMAT_R32G32B32_UINT:
+        case VK_FORMAT_R32G32B32_SINT:
+        case VK_FORMAT_R32G32B32_SFLOAT:
+        case VK_FORMAT_R32G32B32A32_UINT:
+        case VK_FORMAT_R32G32B32A32_SINT:
+        case VK_FORMAT_R32G32B32A32_SFLOAT:
+            return 4;
+        case VK_FORMAT_R64_UINT:
+        case VK_FORMAT_R64_SINT:
+        case VK_FORMAT_R64_SFLOAT:
+        case VK_FORMAT_R64G64_UINT:
+        case VK_FORMAT_R64G64_SINT:
+        case VK_FORMAT_R64G64_SFLOAT:
+        case VK_FORMAT_R64G64B64_UINT:
+        case VK_FORMAT_R64G64B64_SINT:
+        case VK_FORMAT_R64G64B64_SFLOAT:
+        case VK_FORMAT_R64G64B64A64_UINT:
+        case VK_FORMAT_R64G64B64A64_SINT:
+        case VK_FORMAT_R64G64B64A64_SFLOAT:
+            return 8;
+        default:
+            return 0;
+    }
+}
+
 size_t getImageFormatNumChannels(VkFormat format) {
     switch (format) {
         case VK_FORMAT_R8_UNORM:
@@ -333,8 +448,269 @@ size_t getImageFormatNumChannels(VkFormat format) {
     }
 }
 
+ChannelFormat getImageChannelFormat(VkFormat format) {
+    switch (format) {
+        case VK_FORMAT_R8_UNORM:
+        case VK_FORMAT_R8G8_UNORM:
+        case VK_FORMAT_R8G8B8_UNORM:
+        case VK_FORMAT_B8G8R8_UNORM:
+        case VK_FORMAT_R8G8B8A8_UNORM:
+        case VK_FORMAT_B8G8R8A8_UNORM:
+        case VK_FORMAT_A8B8G8R8_UNORM_PACK32:
+            return ChannelFormat::UNORM8;
+        case VK_FORMAT_R16_UNORM:
+        case VK_FORMAT_D16_UNORM:
+        case VK_FORMAT_R16G16_UNORM:
+        case VK_FORMAT_R16G16B16_UNORM:
+        case VK_FORMAT_R16G16B16A16_UNORM:
+            return ChannelFormat::UNORM16;
+        case VK_FORMAT_R8_SNORM:
+        case VK_FORMAT_R8G8_SNORM:
+        case VK_FORMAT_R8G8B8_SNORM:
+        case VK_FORMAT_B8G8R8_SNORM:
+        case VK_FORMAT_R8G8B8A8_SNORM:
+        case VK_FORMAT_B8G8R8A8_SNORM:
+        case VK_FORMAT_A8B8G8R8_SNORM_PACK32:
+            return ChannelFormat::SNORM8;
+        case VK_FORMAT_R16_SNORM:
+        case VK_FORMAT_R16G16_SNORM:
+        case VK_FORMAT_R16G16B16_SNORM:
+        case VK_FORMAT_R16G16B16A16_SNORM:
+            return ChannelFormat::SNORM16;
+        case VK_FORMAT_R8_USCALED:
+        case VK_FORMAT_R8G8_USCALED:
+        case VK_FORMAT_R8G8B8_USCALED:
+        case VK_FORMAT_B8G8R8_USCALED:
+        case VK_FORMAT_R8G8B8A8_USCALED:
+        case VK_FORMAT_B8G8R8A8_USCALED:
+        case VK_FORMAT_A8B8G8R8_USCALED_PACK32:
+            return ChannelFormat::USCALED8;
+        case VK_FORMAT_R16_USCALED:
+        case VK_FORMAT_R16G16_USCALED:
+        case VK_FORMAT_R16G16B16_USCALED:
+        case VK_FORMAT_R16G16B16A16_USCALED:
+            return ChannelFormat::USCALED16;
+        case VK_FORMAT_R8_SSCALED:
+        case VK_FORMAT_R8G8_SSCALED:
+        case VK_FORMAT_R8G8B8_SSCALED:
+        case VK_FORMAT_B8G8R8_SSCALED:
+        case VK_FORMAT_R8G8B8A8_SSCALED:
+        case VK_FORMAT_B8G8R8A8_SSCALED:
+        case VK_FORMAT_A8B8G8R8_SSCALED_PACK32:
+            return ChannelFormat::SSCALED8;
+        case VK_FORMAT_R16_SSCALED:
+        case VK_FORMAT_R16G16_SSCALED:
+        case VK_FORMAT_R16G16B16_SSCALED:
+        case VK_FORMAT_R16G16B16A16_SSCALED:
+            return ChannelFormat::SSCALED16;
+        case VK_FORMAT_R8_UINT:
+        case VK_FORMAT_S8_UINT:
+        case VK_FORMAT_R8G8_UINT:
+        case VK_FORMAT_R8G8B8_UINT:
+        case VK_FORMAT_B8G8R8_UINT:
+        case VK_FORMAT_R8G8B8A8_UINT:
+        case VK_FORMAT_B8G8R8A8_UINT:
+        case VK_FORMAT_A8B8G8R8_UINT_PACK32:
+            return ChannelFormat::UINT8;
+        case VK_FORMAT_R16_UINT:
+        case VK_FORMAT_R16G16_UINT:
+        case VK_FORMAT_R16G16B16_UINT:
+        case VK_FORMAT_R16G16B16A16_UINT:
+            return ChannelFormat::UINT16;
+        case VK_FORMAT_R32_UINT:
+        case VK_FORMAT_R32G32_UINT:
+        case VK_FORMAT_R32G32B32_UINT:
+        case VK_FORMAT_R32G32B32A32_UINT:
+            return ChannelFormat::UINT32;
+        case VK_FORMAT_R8_SINT:
+        case VK_FORMAT_R8G8_SINT:
+        case VK_FORMAT_R8G8B8_SINT:
+        case VK_FORMAT_B8G8R8_SINT:
+        case VK_FORMAT_R8G8B8A8_SINT:
+        case VK_FORMAT_B8G8R8A8_SINT:
+        case VK_FORMAT_A8B8G8R8_SINT_PACK32:
+            return ChannelFormat::SINT8;
+        case VK_FORMAT_R16_SINT:
+        case VK_FORMAT_R16G16_SINT:
+        case VK_FORMAT_R16G16B16_SINT:
+        case VK_FORMAT_R16G16B16A16_SINT:
+            return ChannelFormat::SINT16;
+        case VK_FORMAT_R32_SINT:
+        case VK_FORMAT_R32G32_SINT:
+        case VK_FORMAT_R32G32B32_SINT:
+        case VK_FORMAT_R32G32B32A32_SINT:
+            return ChannelFormat::SINT32;
+        case VK_FORMAT_R16_SFLOAT:
+        case VK_FORMAT_R16G16_SFLOAT:
+        case VK_FORMAT_R16G16B16_SFLOAT:
+        case VK_FORMAT_R16G16B16A16_SFLOAT:
+            return ChannelFormat::FLOAT16;
+        case VK_FORMAT_R32_SFLOAT:
+        case VK_FORMAT_D32_SFLOAT:
+        case VK_FORMAT_R32G32_SFLOAT:
+        case VK_FORMAT_R32G32B32_SFLOAT:
+        case VK_FORMAT_R32G32B32A32_SFLOAT:
+            return ChannelFormat::FLOAT32;
+        case VK_FORMAT_R64_UINT:
+        case VK_FORMAT_R64G64_UINT:
+        case VK_FORMAT_R64G64B64_UINT:
+        case VK_FORMAT_R64G64B64A64_UINT:
+            return ChannelFormat::UINT64;
+        case VK_FORMAT_R64_SINT:
+        case VK_FORMAT_R64G64_SINT:
+        case VK_FORMAT_R64G64B64_SINT:
+        case VK_FORMAT_R64G64B64A64_SINT:
+            return ChannelFormat::SINT64;
+        case VK_FORMAT_R64_SFLOAT:
+        case VK_FORMAT_R64G64_SFLOAT:
+        case VK_FORMAT_R64G64B64_SFLOAT:
+        case VK_FORMAT_R64G64B64A64_SFLOAT:
+            return ChannelFormat::FLOAT64;
+        default:
+            return ChannelFormat::UNDEFINED;
+    }
+}
+
+ChannelCategory getImageChannelCategory(VkFormat format) {
+    switch (format) {
+        case VK_FORMAT_R8_UNORM:
+        case VK_FORMAT_R8_SNORM:
+        case VK_FORMAT_R8_USCALED:
+        case VK_FORMAT_R8_SSCALED:
+        case VK_FORMAT_R8_SRGB:
+        case VK_FORMAT_R16_UNORM:
+        case VK_FORMAT_R16_SNORM:
+        case VK_FORMAT_R16_USCALED:
+        case VK_FORMAT_R16_SSCALED:
+        case VK_FORMAT_R16_SFLOAT:
+        case VK_FORMAT_R32_SFLOAT:
+        case VK_FORMAT_R64_SFLOAT:
+        case VK_FORMAT_D16_UNORM:
+        case VK_FORMAT_D32_SFLOAT:
+        case VK_FORMAT_R8G8_UNORM:
+        case VK_FORMAT_R8G8_SNORM:
+        case VK_FORMAT_R8G8_USCALED:
+        case VK_FORMAT_R8G8_SSCALED:
+        case VK_FORMAT_R8G8_SRGB:
+        case VK_FORMAT_R16G16_UNORM:
+        case VK_FORMAT_R16G16_SNORM:
+        case VK_FORMAT_R16G16_USCALED:
+        case VK_FORMAT_R16G16_SSCALED:
+        case VK_FORMAT_R16G16_SFLOAT:
+        case VK_FORMAT_R32G32_SFLOAT:
+        case VK_FORMAT_R64G64_SFLOAT:
+        case VK_FORMAT_R8G8B8_UNORM:
+        case VK_FORMAT_R8G8B8_SNORM:
+        case VK_FORMAT_R8G8B8_USCALED:
+        case VK_FORMAT_R8G8B8_SSCALED:
+        case VK_FORMAT_R8G8B8_SRGB:
+        case VK_FORMAT_B8G8R8_UNORM:
+        case VK_FORMAT_B8G8R8_SNORM:
+        case VK_FORMAT_B8G8R8_USCALED:
+        case VK_FORMAT_B8G8R8_SSCALED:
+        case VK_FORMAT_B8G8R8_SRGB:
+        case VK_FORMAT_R16G16B16_UNORM:
+        case VK_FORMAT_R16G16B16_SNORM:
+        case VK_FORMAT_R16G16B16_USCALED:
+        case VK_FORMAT_R16G16B16_SSCALED:
+        case VK_FORMAT_R16G16B16_SFLOAT:
+        case VK_FORMAT_R32G32B32_SFLOAT:
+        case VK_FORMAT_R64G64B64_SFLOAT:
+        case VK_FORMAT_B10G11R11_UFLOAT_PACK32:
+        case VK_FORMAT_R8G8B8A8_UNORM:
+        case VK_FORMAT_R8G8B8A8_SNORM:
+        case VK_FORMAT_R8G8B8A8_USCALED:
+        case VK_FORMAT_R8G8B8A8_SSCALED:
+        case VK_FORMAT_R8G8B8A8_SRGB:
+        case VK_FORMAT_B8G8R8A8_UNORM:
+        case VK_FORMAT_B8G8R8A8_SNORM:
+        case VK_FORMAT_B8G8R8A8_USCALED:
+        case VK_FORMAT_B8G8R8A8_SSCALED:
+        case VK_FORMAT_B8G8R8A8_SRGB:
+        case VK_FORMAT_A8B8G8R8_UNORM_PACK32:
+        case VK_FORMAT_A8B8G8R8_SNORM_PACK32:
+        case VK_FORMAT_A8B8G8R8_USCALED_PACK32:
+        case VK_FORMAT_A8B8G8R8_SSCALED_PACK32:
+        case VK_FORMAT_A8B8G8R8_SRGB_PACK32:
+        case VK_FORMAT_A2R10G10B10_UNORM_PACK32:
+        case VK_FORMAT_A2R10G10B10_SNORM_PACK32:
+        case VK_FORMAT_A2R10G10B10_USCALED_PACK32:
+        case VK_FORMAT_A2R10G10B10_SSCALED_PACK32:
+        case VK_FORMAT_A2B10G10R10_UNORM_PACK32:
+        case VK_FORMAT_A2B10G10R10_SNORM_PACK32:
+        case VK_FORMAT_A2B10G10R10_USCALED_PACK32:
+        case VK_FORMAT_A2B10G10R10_SSCALED_PACK32:
+        case VK_FORMAT_R16G16B16A16_UNORM:
+        case VK_FORMAT_R16G16B16A16_SNORM:
+        case VK_FORMAT_R16G16B16A16_USCALED:
+        case VK_FORMAT_R16G16B16A16_SSCALED:
+        case VK_FORMAT_R16G16B16A16_SFLOAT:
+        case VK_FORMAT_R64G64B64A64_SFLOAT:
+        case VK_FORMAT_E5B9G9R9_UFLOAT_PACK32:
+        case VK_FORMAT_R32G32B32A32_SFLOAT:
+            return ChannelCategory::FLOAT;
+        case VK_FORMAT_R8_UINT:
+        case VK_FORMAT_R16_UINT:
+        case VK_FORMAT_R32_UINT:
+        case VK_FORMAT_R64_UINT:
+        case VK_FORMAT_S8_UINT:
+        case VK_FORMAT_R8G8_UINT:
+        case VK_FORMAT_R16G16_UINT:
+        case VK_FORMAT_R32G32_UINT:
+        case VK_FORMAT_R64G64_UINT:
+        case VK_FORMAT_R8G8B8_UINT:
+        case VK_FORMAT_B8G8R8_UINT:
+        case VK_FORMAT_R16G16B16_UINT:
+        case VK_FORMAT_R32G32B32_UINT:
+        case VK_FORMAT_R64G64B64_UINT:
+        case VK_FORMAT_R8G8B8A8_UINT:
+        case VK_FORMAT_B8G8R8A8_UINT:
+        case VK_FORMAT_A8B8G8R8_UINT_PACK32:
+        case VK_FORMAT_A2R10G10B10_UINT_PACK32:
+        case VK_FORMAT_A2B10G10R10_UINT_PACK32:
+        case VK_FORMAT_R16G16B16A16_UINT:
+        case VK_FORMAT_R32G32B32A32_UINT:
+        case VK_FORMAT_R64G64B64A64_UINT:
+            return ChannelCategory::UINT;
+        case VK_FORMAT_R8_SINT:
+        case VK_FORMAT_R16_SINT:
+        case VK_FORMAT_R32_SINT:
+        case VK_FORMAT_R64_SINT:
+        case VK_FORMAT_R8G8_SINT:
+        case VK_FORMAT_R16G16_SINT:
+        case VK_FORMAT_R32G32_SINT:
+        case VK_FORMAT_R64G64_SINT:
+        case VK_FORMAT_R8G8B8_SINT:
+        case VK_FORMAT_B8G8R8_SINT:
+        case VK_FORMAT_R16G16B16_SINT:
+        case VK_FORMAT_R32G32B32_SINT:
+        case VK_FORMAT_R64G64B64_SINT:
+        case VK_FORMAT_R8G8B8A8_SINT:
+        case VK_FORMAT_B8G8R8A8_SINT:
+        case VK_FORMAT_A8B8G8R8_SINT_PACK32:
+        case VK_FORMAT_A2R10G10B10_SINT_PACK32:
+        case VK_FORMAT_A2B10G10R10_SINT_PACK32:
+        case VK_FORMAT_R16G16B16A16_SINT:
+        case VK_FORMAT_R32G32B32A32_SINT:
+        case VK_FORMAT_R64G64B64A64_SINT:
+            return ChannelCategory::SINT;
+        default:
+            return ChannelCategory::UNDEFINED;
+    }
+}
+
+FormatInfo getImageFormatInfo(VkFormat format) {
+    FormatInfo formatInfo{};
+    formatInfo.numChannels = getImageFormatNumChannels(format);
+    formatInfo.channelSizeInBytes = getImageFormatEntryByteSize(format);
+    formatInfo.formatSizeInBytes = getImageFormatEntryByteSize(format);
+    formatInfo.channelCategory = getImageChannelCategory(format);
+    formatInfo.channelFormat = getImageChannelFormat(format);
+    return formatInfo;
+}
+
+
 std::string getImageFormatGlslString(VkFormat format) {
-    // TODO: Support r11f_g11f_b10f?
     if (format == VK_FORMAT_R32_SFLOAT || format == VK_FORMAT_D32_SFLOAT) {
         return "r32f";
     } else if (format == VK_FORMAT_R32G32_SFLOAT) {
@@ -375,6 +751,8 @@ std::string getImageFormatGlslString(VkFormat format) {
         return "rgb10_a2";
     } else if (format == VK_FORMAT_R16G16B16A16_SNORM) {
         return "rgba16_snorm";
+    } else if (format == VK_FORMAT_B10G11R11_UFLOAT_PACK32) {
+        return "r11f_g11f_b10f";
     } else if (format == VK_FORMAT_R8_SINT) {
         return "r8i";
     } else if (format == VK_FORMAT_R8G8_SINT) {
@@ -414,6 +792,236 @@ std::string getImageFormatGlslString(VkFormat format) {
     } else {
         sgl::Logfile::get()->throwError("Error in getImageFormatGlslString: Invalid format.");
         return "r32f";
+    }
+}
+
+std::string getImageFormatGlslTypeStringUnsized(VkFormat format) {
+    switch (format) {
+    case VK_FORMAT_R32_SFLOAT:
+    case VK_FORMAT_D32_SFLOAT:
+    case VK_FORMAT_R8_UNORM:
+    case VK_FORMAT_R16_UNORM:
+    case VK_FORMAT_R8_SNORM:
+    case VK_FORMAT_R16_SNORM:
+    case VK_FORMAT_R8_USCALED:
+    case VK_FORMAT_R8_SSCALED:
+    case VK_FORMAT_R16_SFLOAT:
+    case VK_FORMAT_R64_SFLOAT:
+        return "float";
+    case VK_FORMAT_R32G32_SFLOAT:
+    case VK_FORMAT_R8G8_UNORM:
+    case VK_FORMAT_R16G16_UNORM:
+    case VK_FORMAT_R8G8_SNORM:
+    case VK_FORMAT_R16G16_SNORM:
+    case VK_FORMAT_R8G8_USCALED:
+    case VK_FORMAT_R8G8_SSCALED:
+    case VK_FORMAT_R16G16_SFLOAT:
+    case VK_FORMAT_R64G64_SFLOAT:
+        return "vec2";
+    case VK_FORMAT_R32G32B32_SFLOAT:
+    case VK_FORMAT_R8G8B8_UNORM:
+    case VK_FORMAT_R16G16B16_UNORM:
+    case VK_FORMAT_R8G8B8_SNORM:
+    case VK_FORMAT_R16G16B16_SNORM:
+    case VK_FORMAT_R8G8B8_USCALED:
+    case VK_FORMAT_R8G8B8_SSCALED:
+    case VK_FORMAT_R16G16B16_SFLOAT:
+    case VK_FORMAT_R64G64B64_SFLOAT:
+        return "vec3";
+    case VK_FORMAT_R32G32B32A32_SFLOAT:
+    case VK_FORMAT_R8G8B8A8_UNORM:
+    case VK_FORMAT_R16G16B16A16_UNORM:
+    case VK_FORMAT_R8G8B8A8_SNORM:
+    case VK_FORMAT_R16G16B16A16_SNORM:
+    case VK_FORMAT_R8G8B8A8_USCALED:
+    case VK_FORMAT_R8G8B8A8_SSCALED:
+    case VK_FORMAT_R16G16B16A16_SFLOAT:
+    case VK_FORMAT_R64G64B64A64_SFLOAT:
+        return "vec4";
+
+    case VK_FORMAT_R32_UINT:
+    case VK_FORMAT_R16_UINT:
+    case VK_FORMAT_R64_UINT:
+        return "uint";
+    case VK_FORMAT_R32G32_UINT:
+    case VK_FORMAT_R16G16_UINT:
+    case VK_FORMAT_R64G64_UINT:
+        return "uvec2";
+    case VK_FORMAT_R32G32B32_UINT:
+    case VK_FORMAT_R16G16B16_UINT:
+    case VK_FORMAT_R64G64B64_UINT:
+        return "uvec3";
+    case VK_FORMAT_R32G32B32A32_UINT:
+    case VK_FORMAT_R16G16B16A16_UINT:
+    case VK_FORMAT_R64G64B64A64_UINT:
+        return "uvec4";
+
+    case VK_FORMAT_R32_SINT:
+    case VK_FORMAT_R16_SINT:
+    case VK_FORMAT_R64_SINT:
+        return "int";
+    case VK_FORMAT_R32G32_SINT:
+    case VK_FORMAT_R16G16_SINT:
+    case VK_FORMAT_R64G64_SINT:
+        return "ivec2";
+    case VK_FORMAT_R32G32B32_SINT:
+    case VK_FORMAT_R16G16B16_SINT:
+    case VK_FORMAT_R64G64B64_SINT:
+        return "ivec3";
+    case VK_FORMAT_R32G32B32A32_SINT:
+    case VK_FORMAT_R16G16B16A16_SINT:
+    case VK_FORMAT_R64G64B64A64_SINT:
+        return "ivec4";
+    default:
+        sgl::Logfile::get()->throwError("Error in getImageFormatGlslType: Invalid format.");
+        return "UNKNOWN";
+    }
+}
+
+std::string getImageFormatGlslTypeStringUnsized(ChannelCategory channelCategory, size_t numChannels) {
+    if (channelCategory == ChannelCategory::FLOAT && numChannels == 1) {
+        return "float";
+    }
+    if (channelCategory == ChannelCategory::FLOAT && numChannels == 2) {
+        return "vec2";
+    }
+    if (channelCategory == ChannelCategory::FLOAT && numChannels == 3) {
+        return "vec3";
+    }
+    if (channelCategory == ChannelCategory::FLOAT && numChannels == 4) {
+        return "vec4";
+    }
+    if (channelCategory == ChannelCategory::UINT && numChannels == 1) {
+        return "uint";
+    }
+    if (channelCategory == ChannelCategory::UINT && numChannels == 2) {
+        return "uvec2";
+    }
+    if (channelCategory == ChannelCategory::UINT && numChannels == 3) {
+        return "uvec3";
+    }
+    if (channelCategory == ChannelCategory::UINT && numChannels == 4) {
+        return "uvec4";
+    }
+    if (channelCategory == ChannelCategory::INT && numChannels == 1) {
+        return "int";
+    }
+    if (channelCategory == ChannelCategory::INT && numChannels == 2) {
+        return "ivec2";
+    }
+    if (channelCategory == ChannelCategory::INT && numChannels == 3) {
+        return "ivec3";
+    }
+    if (channelCategory == ChannelCategory::INT && numChannels == 4) {
+        return "ivec4";
+    }
+    return "UNKNOWN";
+}
+
+std::string getImageFormatGlslTypeStringSized(VkFormat format) {
+    switch (format) {
+        case VK_FORMAT_R32_SFLOAT:
+        case VK_FORMAT_D32_SFLOAT:
+        case VK_FORMAT_R8_UNORM:
+        case VK_FORMAT_R16_UNORM:
+        case VK_FORMAT_R8_SNORM:
+        case VK_FORMAT_R16_SNORM:
+        case VK_FORMAT_R8_USCALED:
+        case VK_FORMAT_R8_SSCALED:
+            return "float";
+        case VK_FORMAT_R32G32_SFLOAT:
+        case VK_FORMAT_R8G8_UNORM:
+        case VK_FORMAT_R16G16_UNORM:
+        case VK_FORMAT_R8G8_SNORM:
+        case VK_FORMAT_R16G16_SNORM:
+        case VK_FORMAT_R8G8_USCALED:
+        case VK_FORMAT_R8G8_SSCALED:
+            return "vec2";
+        case VK_FORMAT_R32G32B32_SFLOAT:
+        case VK_FORMAT_R8G8B8_UNORM:
+        case VK_FORMAT_R16G16B16_UNORM:
+        case VK_FORMAT_R8G8B8_SNORM:
+        case VK_FORMAT_R16G16B16_SNORM:
+        case VK_FORMAT_R8G8B8_USCALED:
+        case VK_FORMAT_R8G8B8_SSCALED:
+            return "vec3";
+        case VK_FORMAT_R32G32B32A32_SFLOAT:
+        case VK_FORMAT_R8G8B8A8_UNORM:
+        case VK_FORMAT_R16G16B16A16_UNORM:
+        case VK_FORMAT_R8G8B8A8_SNORM:
+        case VK_FORMAT_R16G16B16A16_SNORM:
+        case VK_FORMAT_R8G8B8A8_USCALED:
+        case VK_FORMAT_R8G8B8A8_SSCALED:
+            return "vec4";
+        case VK_FORMAT_R16_SFLOAT:
+            return "float16_t";
+        case VK_FORMAT_R16G16_SFLOAT:
+            return "f16vec2";
+        case VK_FORMAT_R16G16B16_SFLOAT:
+            return "f16vec3";
+        case VK_FORMAT_R16G16B16A16_SFLOAT:
+            return "f16vec4";
+        case VK_FORMAT_R64_SFLOAT:
+            return "float64_t";
+        case VK_FORMAT_R64G64_SFLOAT:
+            return "f64vec2";
+        case VK_FORMAT_R64G64B64_SFLOAT:
+            return "f64vec3";
+        case VK_FORMAT_R64G64B64A64_SFLOAT:
+            return "f64vec4";
+
+        case VK_FORMAT_R32_UINT:
+            return "uint";
+        case VK_FORMAT_R32G32_UINT:
+            return "uvec2";
+        case VK_FORMAT_R32G32B32_UINT:
+            return "uvec3";
+        case VK_FORMAT_R32G32B32A32_UINT:
+            return "uvec4";
+        case VK_FORMAT_R16_UINT:
+            return "uint16_t";
+        case VK_FORMAT_R16G16_UINT:
+            return "u16vec2";
+        case VK_FORMAT_R16G16B16_UINT:
+            return "u16vec3";
+        case VK_FORMAT_R16G16B16A16_UINT:
+            return "u16vec4";
+        case VK_FORMAT_R64_UINT:
+            return "uint64_t";
+        case VK_FORMAT_R64G64_UINT:
+            return "u64vec2";
+        case VK_FORMAT_R64G64B64_UINT:
+            return "u64vec3";
+        case VK_FORMAT_R64G64B64A64_UINT:
+            return "u64vec4";
+
+        case VK_FORMAT_R32_SINT:
+            return "int";
+        case VK_FORMAT_R32G32_SINT:
+            return "ivec2";
+        case VK_FORMAT_R32G32B32_SINT:
+            return "ivec3";
+        case VK_FORMAT_R32G32B32A32_SINT:
+            return "ivec4";
+        case VK_FORMAT_R16_SINT:
+            return "int16_t";
+        case VK_FORMAT_R16G16_SINT:
+            return "i16vec2";
+        case VK_FORMAT_R16G16B16_SINT:
+            return "i16vec3";
+        case VK_FORMAT_R16G16B16A16_SINT:
+            return "i16vec4";
+        case VK_FORMAT_R64_SINT:
+            return "int64_t";
+        case VK_FORMAT_R64G64_SINT:
+            return "i64vec2";
+        case VK_FORMAT_R64G64B64_SINT:
+            return "i64vec3";
+        case VK_FORMAT_R64G64B64A64_SINT:
+            return "i64vec4";
+        default:
+            sgl::Logfile::get()->throwError("Error in getImageFormatGlslType: Invalid format.");
+            return "UNKNOWN";
     }
 }
 

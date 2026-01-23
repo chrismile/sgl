@@ -41,6 +41,7 @@
 #endif
 
 #include <Defs.hpp>
+#include <Graphics/Utils/FormatInfo.hpp>
 #include "../libs/volk/volk.h"
 #include "../libs/VMA/vk_mem_alloc.h"
 
@@ -109,11 +110,19 @@ inline bool isDepthStencilFormat(VkFormat format) {
            || format == VK_FORMAT_D24_UNORM_S8_UINT || format == VK_FORMAT_D32_SFLOAT_S8_UINT;
 }
 DLL_OBJECT size_t getImageFormatEntryByteSize(VkFormat format);
-
+DLL_OBJECT size_t getImageFormatChannelByteSize(VkFormat format);
 DLL_OBJECT size_t getImageFormatNumChannels(VkFormat format);
+DLL_OBJECT ChannelFormat getImageChannelFormat(VkFormat format);
+DLL_OBJECT ChannelCategory getImageChannelCategory(VkFormat format);
+DLL_OBJECT FormatInfo getImageFormatInfo(VkFormat format);
 
 // Returns the GLSL format specifier of the format, e.g., "rgba32f" or "r16".
 DLL_OBJECT std::string getImageFormatGlslString(VkFormat format);
+// Returns the GLSL type specifier of the format, e.g., "float" or "uvec4".
+DLL_OBJECT std::string getImageFormatGlslTypeStringUnsized(VkFormat format);
+DLL_OBJECT std::string getImageFormatGlslTypeStringUnsized(ChannelCategory channelCategory, size_t numChannels);
+// Returns the GLSL type specifier of the format, e.g., "float16_t" or "i64vec4".
+DLL_OBJECT std::string getImageFormatGlslTypeStringSized(VkFormat format);
 
 // Converts the VkFormat entry to a string representation.
 DLL_OBJECT std::string convertVkFormatToString(VkFormat format);

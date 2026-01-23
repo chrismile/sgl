@@ -1,7 +1,7 @@
 /*
  * BSD 2-Clause License
  *
- * Copyright (c) 2025, Christoph Neuhauser
+ * Copyright (c) 2026, Christoph Neuhauser
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,19 +26,21 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_TESTS_SYCLDEVICECODE_HPP
-#define SGL_TESTS_SYCLDEVICECODE_HPP
+#ifndef SGL_COMMON_HPP
+#define SGL_COMMON_HPP
 
+#include <string>
 #include <sycl/sycl.hpp>
+
 #include <Graphics/Utils/FormatInfo.hpp>
 
-DLL_OBJECT_SYCL sycl::event writeSyclBufferData(sycl::queue& queue, size_t numEntries, float* devicePtr);
-DLL_OBJECT_SYCL sycl::event copySyclBindlessImageToBuffer(
-        sycl::queue& queue, sycl::ext::oneapi::experimental::unsampled_image_handle img,
-        const sgl::FormatInfo& formatInfo, size_t width, size_t height,
-        void* devicePtr, const sycl::event& depEvent);
-DLL_OBJECT_SYCL sycl::event writeSyclBindlessImageIncreasingIndices(
-        sycl::queue& queue, sycl::ext::oneapi::experimental::unsampled_image_handle img,
-        const sgl::FormatInfo& formatInfo, size_t width, size_t height);
+void* sycl_malloc_host_typed(sgl::ChannelFormat channelFormat, size_t numEntries, sycl::queue& syclQueue);
+void* sycl_malloc_device_typed(sgl::ChannelFormat channelFormat, size_t numEntries, sycl::queue& syclQueue);
 
-#endif //SGL_TESTS_SYCLDEVICECODE_HPP
+void initializeHostPointerTyped(sgl::ChannelFormat channelFormat, size_t numEntries, int value, void* ptr);
+void initializeHostPointerLinearTyped(sgl::ChannelFormat channelFormat, size_t numEntries, void* ptr);
+
+bool checkIsArrayLinearTyped(
+        const sgl::FormatInfo& formatInfo, size_t width, size_t height, void* ptr, std::string& errorMessage);
+
+#endif //SGL_COMMON_HPP

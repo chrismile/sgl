@@ -44,6 +44,7 @@
 #include <Graphics/Vulkan/Render/ComputePipeline.hpp>
 #include <Graphics/Vulkan/Render/Data.hpp>
 
+#include "../SYCL/Common.hpp"
 #include "../SYCL/SyclDeviceCode.hpp"
 #include "ImageFormatsVulkan.hpp"
 
@@ -394,21 +395,16 @@ void InteropTestSyclVk::runTestsImageCopy(VkFormat format) {
     //}
 
     // Upload data to image.
-    auto numChannels = sgl::vk::getImageFormatNumChannels(format);
-    auto entryByteSize = sgl::vk::getImageFormatEntryByteSize(format);
-
-    // TODO: Add support for non-float entries.
-    size_t numEntries = imageSettings.width * imageSettings.height * numChannels;
-    size_t sizeInBytes = imageSettings.width * imageSettings.height * entryByteSize;
-    auto* hostPtr = sycl::malloc_host<float>(numEntries, *syclQueue);
-    for (size_t i = 0; i < numEntries; i++) {
-        hostPtr[i] = float(i);
-    }
+    auto formatInfo = sgl::vk::getImageFormatInfo(format);
+    size_t numEntries = imageSettings.width * imageSettings.height * formatInfo.numChannels;
+    size_t sizeInBytes = imageSettings.width * imageSettings.height * formatInfo.formatSizeInBytes;
+    auto* hostPtr = sycl_malloc_host_typed(formatInfo.channelFormat, numEntries, *syclQueue);
+    initializeHostPointerLinearTyped(formatInfo.channelFormat, numEntries, hostPtr);
     imageViewVulkan->getImage()->uploadData(sizeInBytes, hostPtr);
 
     // Copy and wait on CPU.
     memset(hostPtr, 0, sizeInBytes);
-    auto* devicePtr = sycl::malloc_device<float>(numEntries, *syclQueue);
+    auto* devicePtr = sycl_malloc_device_typed(formatInfo.channelFormat, numEntries, *syclQueue);
     sgl::StreamWrapper stream{};
     stream.syclQueuePtr = syclQueue;
     sycl::event copyEventImg{};
@@ -417,16 +413,9 @@ void InteropTestSyclVk::runTestsImageCopy(VkFormat format) {
     copyEvent.wait_and_throw();
 
     // Check equality.
-    for (size_t i = 0; i < numEntries; i++) {
-        if (hostPtr[i] != float(i)) {
-            size_t channelIdx = i % numChannels;
-            size_t x = (i / numChannels) % imageSettings.width;
-            size_t y = (i / numChannels) / imageSettings.width;
-            std::string errorMessage =
-                    "Image content mismatch at x=" + std::to_string(x) + ", y=" + std::to_string(y)
-                    + ", c=" + std::to_string(channelIdx);
-            ASSERT_TRUE(false) << errorMessage;
-        }
+    std::string errorMessage;
+    if (!checkIsArrayLinearTyped(formatInfo, imageSettings.width, imageSettings.height, hostPtr, errorMessage)) {
+        ASSERT_TRUE(false) << errorMessage;
     }
 
     // Free data.
@@ -462,15 +451,12 @@ void InteropTestSyclVk::runTestsImageVulkanWriteSyclRead(VkFormat format, bool u
     auto imageInteropSycl = std::static_pointer_cast<sgl::vk::UnsampledImageVkSyclInterop>(imageInterop);
 
     // Upload data to image.
-    auto numChannels = sgl::vk::getImageFormatNumChannels(format);
-    auto entryByteSize = sgl::vk::getImageFormatEntryByteSize(format);
-    size_t numEntries = imageSettings.width * imageSettings.height * numChannels;
-    size_t sizeInBytes = imageSettings.width * imageSettings.height * entryByteSize;
-    auto* hostPtr = sycl::malloc_host<float>(numEntries, *syclQueue);
-    auto* devicePtr = sycl::malloc_device<float>(numEntries, *syclQueue);
-    for (size_t i = 0; i < numEntries; i++) {
-        hostPtr[i] = 42.0f;
-    }
+    auto formatInfo = sgl::vk::getImageFormatInfo(format);
+    size_t numEntries = imageSettings.width * imageSettings.height * formatInfo.numChannels;
+    size_t sizeInBytes = imageSettings.width * imageSettings.height * formatInfo.formatSizeInBytes;
+    auto* hostPtr = sycl_malloc_host_typed(formatInfo.channelFormat, numEntries, *syclQueue);
+    auto* devicePtr = sycl_malloc_device_typed(formatInfo.channelFormat, numEntries, *syclQueue);
+    initializeHostPointerTyped(formatInfo.channelFormat, numEntries, 42, hostPtr);
     imageViewVulkan->getImage()->uploadData(sizeInBytes, hostPtr);
 
     // Create renderer and command buffer.
@@ -482,8 +468,9 @@ void InteropTestSyclVk::runTestsImageVulkanWriteSyclRead(VkFormat format, bool u
     const char* SHADER_STRING_WRITE_IMAGE_COMPUTE_FMT = R"(
     #version 450 core
     layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
-    layout(binding = 0, $0) uniform restrict writeonly image2D destImage;
+    layout(binding = 0, $0) uniform restrict writeonly $3image2D destImage;
     #define NUM_CHANNELS $1
+    #define tvec $2
     void main() {
         ivec2 destImageSize = imageSize(destImage);
         ivec2 idx = ivec2(gl_GlobalInvocationID.xy);
@@ -491,23 +478,31 @@ void InteropTestSyclVk::runTestsImageVulkanWriteSyclRead(VkFormat format, bool u
             return;
         }
     #if NUM_CHANNELS == 1
-        vec4 outputValue = vec4(idx.x + idx.y * destImageSize.x);
+        tvec outputValue = tvec(idx.x + idx.y * destImageSize.x);
     #elif NUM_CHANNELS == 2
-        float value = (idx.x + idx.y * destImageSize.x) * 2;
-        vec4 outputValue = vec4(value, value + 1, 0.0, 0.0);
+        int value = (idx.x + idx.y * destImageSize.x) * 2;
+        tvec outputValue = tvec(value, value + 1, 0.0, 0.0);
     #elif NUM_CHANNELS == 4
-        float value = (idx.x + idx.y * destImageSize.x) * 4;
-        vec4 outputValue = vec4(value, value + 1, value + 2, value + 3);
+        int value = (idx.x + idx.y * destImageSize.x) * 4;
+        tvec outputValue = tvec(value, value + 1, value + 2, value + 3);
     #else
     #error Unsupported number of image channels.
     #endif
         imageStore(destImage, idx, outputValue);
     }
     )";
+    std::string imageTypePrefix;
+    if (formatInfo.channelCategory == sgl::ChannelCategory::UINT) {
+        imageTypePrefix = "u";
+    } if (formatInfo.channelCategory == sgl::ChannelCategory::INT) {
+        imageTypePrefix = "i";
+    }
     auto shaderStringWriteImageCompute = sgl::formatStringPositional(
             SHADER_STRING_WRITE_IMAGE_COMPUTE_FMT,
             sgl::vk::getImageFormatGlslString(format),
-            sgl::vk::getImageFormatNumChannels(format));
+            sgl::vk::getImageFormatNumChannels(format),
+            sgl::vk::getImageFormatGlslTypeStringUnsized(formatInfo.channelCategory, 4),
+            imageTypePrefix);
     auto* shaderManager = new sgl::vk::ShaderManagerVk(device);
     auto shaderStages = shaderManager->compileComputeShaderFromStringCached(
             "WriteImage.Compute", shaderStringWriteImageCompute);
@@ -555,22 +550,18 @@ void InteropTestSyclVk::runTestsImageVulkanWriteSyclRead(VkFormat format, bool u
     sycl::ext::oneapi::experimental::unsampled_image_handle imageSyclHandle{};
     imageSyclHandle.raw_handle = imageInteropSycl->getRawHandle();
     sycl::event copyEventImg = copySyclBindlessImageToBuffer(
-            *syclQueue, imageSyclHandle, imageSettings.width, imageSettings.height, numChannels,
+            *syclQueue, imageSyclHandle, formatInfo, imageSettings.width, imageSettings.height,
             devicePtr, waitSemaphoreEvent);
     auto copyEvent = syclQueue->memcpy(hostPtr, devicePtr, sizeInBytes, copyEventImg);
     copyEvent.wait_and_throw();
 
     // Check equality.
-    for (size_t i = 0; i < numEntries; i++) {
-        if (hostPtr[i] != float(i)) {
-            size_t channelIdx = i % numChannels;
-            size_t x = (i / numChannels) % imageSettings.width;
-            size_t y = (i / numChannels) / imageSettings.width;
-            std::string errorMessage =
-                    "Image content mismatch at x=" + std::to_string(x) + ", y=" + std::to_string(y)
-                    + ", c=" + std::to_string(channelIdx);
-            ASSERT_TRUE(false) << errorMessage;
-        }
+    std::string errorMessage;
+    if (format == VK_FORMAT_R32G32B32A32_SFLOAT) {
+        std::cout << "HERE" << std::endl;
+    }
+    if (!checkIsArrayLinearTyped(formatInfo, imageSettings.width, imageSettings.height, hostPtr, errorMessage)) {
+        ASSERT_TRUE(false) << errorMessage;
     }
 
     device->waitIdle(); // Should not be necessary.

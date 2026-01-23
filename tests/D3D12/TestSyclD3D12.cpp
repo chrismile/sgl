@@ -45,6 +45,7 @@
 #include <Graphics/D3D12/Render/CommandList.hpp>
 #include <Graphics/D3D12/Render/DescriptorAllocator.hpp>
 
+#include "../SYCL/Common.hpp"
 #include "../SYCL/SyclDeviceCode.hpp"
 
 class InteropTestSyclD3D12 : public ::testing::Test {
@@ -171,7 +172,7 @@ TEST_F(InteropTestSyclD3D12, BufferCopyTest) {
     auto bufferSycl = sgl::d3d12::createBufferD3D12ComputeApiExternalMemory(bufferD3D12);
     auto* hostPtr = sycl::malloc_host<float>(numEntries, *syclQueue);
     for (size_t i = 0; i < numEntries; i++) {
-        hostPtr[i] = float(i);
+        hostPtr[i] = static_cast<float>(i);
     }
     bufferD3D12->uploadDataLinear(sizeInBytes, hostPtr);
 
@@ -270,10 +271,9 @@ TEST_P(InteropTestSyclD3D12Image, ImageCopyTest) {
 
     uint32_t width = 1024;
     uint32_t height = 1024;
-    auto numChannels = sgl::d3d12::getDXGIFormatNumChannels(format);
-    auto entryByteSize = sgl::d3d12::getDXGIFormatSizeInBytes(format);
-    size_t numEntries = width * height * numChannels;
-    size_t sizeInBytes = width * height * entryByteSize;
+    auto formatInfo = sgl::d3d12::getDXGIFormatInfo(format);
+    size_t numEntries = width * height * formatInfo.numChannels;
+    size_t sizeInBytes = width * height * formatInfo.formatSizeInBytes;
 
     sgl::d3d12::ResourceSettings imageSettings{};
     D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
@@ -289,15 +289,13 @@ TEST_P(InteropTestSyclD3D12Image, ImageCopyTest) {
     }
 
     // Upload data to image.
-    auto* hostPtr = sycl::malloc_host<float>(numEntries, *syclQueue);
-    for (size_t i = 0; i < numEntries; i++) {
-        hostPtr[i] = float(i);
-    }
+    auto* hostPtr = sycl_malloc_host_typed(formatInfo.channelFormat, numEntries, *syclQueue);
+    initializeHostPointerLinearTyped(formatInfo.channelFormat, numEntries, hostPtr);
     imageD3D12->uploadDataLinear(sizeInBytes, hostPtr);
 
     size_t imgRowPitch = imageD3D12->getRowPitchInBytes();
     size_t imgSizeInBytes = imageD3D12->getCopiableSizeInBytes();
-    if (imgRowPitch != width * numChannels * entryByteSize || imgSizeInBytes != sizeInBytes) {
+    if (imgRowPitch != width * formatInfo.formatSizeInBytes || imgSizeInBytes != sizeInBytes) {
         FAIL() << "Expected row pitch equal to row size.";
     }
 
@@ -312,16 +310,9 @@ TEST_P(InteropTestSyclD3D12Image, ImageCopyTest) {
     copyEvent.wait_and_throw();
 
     // Check equality.
-    for (size_t i = 0; i < numEntries; i++) {
-        if (hostPtr[i] != float(i)) {
-            size_t channelIdx = i % numChannels;
-            size_t x = (i / numChannels) % width;
-            size_t y = (i / numChannels) / width;
-            std::string errorMessage =
-                    "Image content mismatch at x=" + std::to_string(x) + ", y=" + std::to_string(y)
-                    + ", c=" + std::to_string(channelIdx);
-            ASSERT_TRUE(false) << errorMessage;
-        }
+    std::string errorMessage;
+    if (!checkIsArrayLinearTyped(formatInfo, width, height, hostPtr, errorMessage)) {
+        ASSERT_TRUE(false) << errorMessage;
     }
 
     // Free data.
@@ -350,13 +341,13 @@ TEST_P(InteropTestSyclD3D12Image, ImageD3D12WriteSyclReadTests) {
 
     uint32_t width = 1024;
     uint32_t height = 1024;
-    auto numChannels = sgl::d3d12::getDXGIFormatNumChannels(format);
-    auto entryByteSize = sgl::d3d12::getDXGIFormatSizeInBytes(format);
-    size_t numEntries = width * height * numChannels;
-    size_t sizeInBytes = width * height * entryByteSize;
+    auto formatInfo = sgl::d3d12::getDXGIFormatInfo(format);
+    size_t numEntries = width * height * formatInfo.numChannels;
+    size_t sizeInBytes = width * height * formatInfo.formatSizeInBytes;
 
     const char* SHADER_STRING_WRITE_IMAGE_COMPUTE_FMT = R"(
     RWTexture2D<$0> destImage : register(u0);
+    #define tvec $0
     #define NUM_CHANNELS $1
     [numthreads(16, 16, 1)]
     void CSMain(
@@ -369,13 +360,13 @@ TEST_P(InteropTestSyclD3D12Image, ImageD3D12WriteSyclReadTests) {
             return;
         }
     #if NUM_CHANNELS == 1
-        float outputValue = float(idx.x + idx.y * width);
+        tvec outputValue = tvec(idx.x + idx.y * width);
     #elif NUM_CHANNELS == 2
-        float value = (idx.x + idx.y * width) * 2;
-        float2 outputValue = float2(value, value + 1);
+        uint value = (idx.x + idx.y * width) * 2;
+        tvec outputValue = tvec(value, value + 1);
     #elif NUM_CHANNELS == 4
-        float value = (idx.x + idx.y * width) * 4;
-        float4 outputValue = float4(value, value + 1, value + 2, value + 3);
+        uint value = (idx.x + idx.y * width) * 4;
+        tvec outputValue = tvec(value, value + 1, value + 2, value + 3);
     #else
     #error Unsupported number of image channels.
     #endif
@@ -384,7 +375,7 @@ TEST_P(InteropTestSyclD3D12Image, ImageD3D12WriteSyclReadTests) {
     )";
     auto shaderStringWriteImageCompute = sgl::formatStringPositional(
             SHADER_STRING_WRITE_IMAGE_COMPUTE_FMT,
-            sgl::d3d12::getDXGIFormatHLSLStructuredTypeString(format), numChannels);
+            sgl::d3d12::getDXGIFormatHLSLStructuredTypeString(format), formatInfo.numChannels);
     auto computeShader = shaderManager->loadShaderFromHlslString(
             shaderStringWriteImageCompute, "WriteImageShader.hlsl",
             sgl::d3d12::ShaderModuleType::COMPUTE, "CSMain", {});
@@ -401,7 +392,7 @@ TEST_P(InteropTestSyclD3D12Image, ImageD3D12WriteSyclReadTests) {
     uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
 
     const int NUM_ITERATIONS = 1000;
-    for (int i = 0; i < NUM_ITERATIONS; i++) {
+    for (int it = 0; it < NUM_ITERATIONS; it++) {
         sgl::d3d12::CommandListPtr commandList = std::make_shared<sgl::d3d12::CommandList>(
                 d3d12Device.get(), sgl::d3d12::CommandListType::DIRECT);
         uint64_t timelineValue = 0;
@@ -430,11 +421,9 @@ TEST_P(InteropTestSyclD3D12Image, ImageD3D12WriteSyclReadTests) {
         computeData->setDescriptorTable(rpiDescriptorTable, descriptorAllocationUAV.get());
 
         // Upload data to image.
-        auto* hostPtr = sycl::malloc_host<float>(numEntries, *syclQueue);
-        auto* devicePtr = sycl::malloc_device<float>(numEntries, *syclQueue);
-        for (size_t i = 0; i < numEntries; i++) {
-            hostPtr[i] = 42.0f;
-        }
+        auto* hostPtr = sycl_malloc_host_typed(formatInfo.channelFormat, numEntries, *syclQueue);
+        auto* devicePtr = sycl_malloc_device_typed(formatInfo.channelFormat, numEntries, *syclQueue);
+        initializeHostPointerTyped(formatInfo.channelFormat, numEntries, 42, hostPtr);
         imageD3D12->uploadDataLinear(sizeInBytes, hostPtr);
 
         // Write new data with D3D12.
@@ -457,24 +446,17 @@ TEST_P(InteropTestSyclD3D12Image, ImageD3D12WriteSyclReadTests) {
         sycl::ext::oneapi::experimental::unsampled_image_handle imageSyclHandle{};
         imageSyclHandle.raw_handle = imageInteropSycl->getRawHandle();
         sycl::event copyEventImg = copySyclBindlessImageToBuffer(
-                *syclQueue, imageSyclHandle, width, height, numChannels, devicePtr, waitSemaphoreEvent);
+                *syclQueue, imageSyclHandle, formatInfo, width, height, devicePtr, waitSemaphoreEvent);
         auto copyEvent = syclQueue->memcpy(hostPtr, devicePtr, sizeInBytes, copyEventImg);
         copyEvent.wait_and_throw();
 
         // Check equality.
-        for (size_t i = 0; i < numEntries; i++) {
-            if (hostPtr[i] != float(i)) {
-                size_t channelIdx = i % numChannels;
-                size_t x = (i / numChannels) % width;
-                size_t y = (i / numChannels) / width;
-                std::string errorMessage =
-                        "Image content mismatch at x=" + std::to_string(x) + ", y=" + std::to_string(y)
-                        + ", c=" + std::to_string(channelIdx);
-                descriptorAllocationUAV = {};
-                delete shaderManager;
-                delete renderer;
-                ASSERT_TRUE(false) << errorMessage;
-            }
+        std::string errorMessage;
+        if (!checkIsArrayLinearTyped(formatInfo, width, height, hostPtr, errorMessage)) {
+            descriptorAllocationUAV = {};
+            delete shaderManager;
+            delete renderer;
+            ASSERT_TRUE(false) << errorMessage;
         }
 
         // Free data.
@@ -505,10 +487,9 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
 
     uint32_t width = 1024;
     uint32_t height = 1024;
-    auto numChannels = sgl::d3d12::getDXGIFormatNumChannels(format);
-    auto entryByteSize = sgl::d3d12::getDXGIFormatSizeInBytes(format);
-    size_t numEntries = width * height * numChannels;
-    size_t sizeInBytes = width * height * entryByteSize;
+    auto formatInfo = sgl::d3d12::getDXGIFormatInfo(format);
+    size_t numEntries = width * height * formatInfo.numChannels;
+    size_t sizeInBytes = width * height * formatInfo.formatSizeInBytes;
 
     auto* shaderManager = new sgl::d3d12::ShaderManagerD3D12();
     auto* renderer = new sgl::d3d12::Renderer(d3d12Device.get());
@@ -582,7 +563,7 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
         bufferSettings.resourceStates = D3D12_RESOURCE_STATE_COPY_DEST;
         sgl::d3d12::ResourcePtr stagingBufferD3D12 = std::make_shared<sgl::d3d12::Resource>(d3d12Device.get(), bufferSettings);*/
 
-        auto* hostPtr = new float[numEntries];
+        auto* hostPtr = sycl_malloc_host_typed(formatInfo.channelFormat, numEntries, *syclQueue);
 
         d3d12Device->getD3D12Device2()->CreateUnorderedAccessView(
                 imageD3D12->getD3D12ResourcePtr(), nullptr, &sourceImgUavDesc,
@@ -600,7 +581,7 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
         sycl::ext::oneapi::experimental::unsampled_image_handle imageSyclHandle{};
         imageSyclHandle.raw_handle = imageInteropSycl->getRawHandle();
         sycl::event writeImgEvent = writeSyclBindlessImageIncreasingIndices(
-                *syclQueue, imageSyclHandle, width, height, numChannels);
+                *syclQueue, imageSyclHandle, formatInfo, width, height);
         auto barrierEvent = syclQueue->ext_oneapi_submit_barrier({ writeImgEvent });
         sycl::event signalSemaphoreEvent{};
         timelineValue++;
@@ -625,24 +606,17 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
         // Check equality.
         //const auto* hostPtr = static_cast<float*>(stagingBufferD3D12->map());
         bufferD3D12->readBackDataLinear(sizeInBytes, hostPtr);
-        for (size_t i = 0; i < numEntries; i++) {
-            if (hostPtr[i] != float(i)) {
-                size_t channelIdx = i % numChannels;
-                size_t x = (i / numChannels) % width;
-                size_t y = (i / numChannels) / width;
-                std::string errorMessage =
-                        "Image content mismatch at x=" + std::to_string(x) + ", y=" + std::to_string(y)
-                        + ", c=" + std::to_string(channelIdx);
-                descriptorAllocation = {};
-                delete shaderManager;
-                delete renderer;
-                ASSERT_TRUE(false) << errorMessage;
-            }
+        std::string errorMessage;
+        if (!checkIsArrayLinearTyped(formatInfo, width, height, hostPtr, errorMessage)) {
+            descriptorAllocation = {};
+            delete shaderManager;
+            delete renderer;
+            ASSERT_TRUE(false) << errorMessage;
         }
         //stagingBufferD3D12->unmap();
 
         // Free data.
-        delete[] hostPtr;
+        sycl::free(hostPtr, *syclQueue);
     }
 
     descriptorAllocation = {};

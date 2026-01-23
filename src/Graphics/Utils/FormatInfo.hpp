@@ -26,19 +26,40 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_TESTS_SYCLDEVICECODE_HPP
-#define SGL_TESTS_SYCLDEVICECODE_HPP
+#ifndef SGL_FORMATINFO_HPP
+#define SGL_FORMATINFO_HPP
 
-#include <sycl/sycl.hpp>
-#include <Graphics/Utils/FormatInfo.hpp>
+#include <cstddef>
 
-DLL_OBJECT_SYCL sycl::event writeSyclBufferData(sycl::queue& queue, size_t numEntries, float* devicePtr);
-DLL_OBJECT_SYCL sycl::event copySyclBindlessImageToBuffer(
-        sycl::queue& queue, sycl::ext::oneapi::experimental::unsampled_image_handle img,
-        const sgl::FormatInfo& formatInfo, size_t width, size_t height,
-        void* devicePtr, const sycl::event& depEvent);
-DLL_OBJECT_SYCL sycl::event writeSyclBindlessImageIncreasingIndices(
-        sycl::queue& queue, sycl::ext::oneapi::experimental::unsampled_image_handle img,
-        const sgl::FormatInfo& formatInfo, size_t width, size_t height);
+namespace sgl {
 
-#endif //SGL_TESTS_SYCLDEVICECODE_HPP
+/// The general channel type category (without size) that would be used in a shader.
+enum class ChannelCategory {
+    UNDEFINED, FLOAT, UINT, SINT, INT = SINT
+};
+
+/// The format (sized) of an image channel.
+enum class ChannelFormat {
+    UNDEFINED,
+    FLOAT16, BFLOAT16, FLOAT32, FLOAT64,
+    UNORM8, UNORM16, SNORM8, SNORM16, USCALED8, USCALED16, SSCALED8, SSCALED16,
+    UINT8, UINT16, UINT32, UINT64,
+    SINT8, SINT16, SINT32, SINT64,
+    INT8 = SINT8, INT16 = SINT16, INT32 = SINT32, INT64 = SINT64,
+};
+
+/**
+ * Format info (independent of used API like Vulkan/D3D12/...).
+ * Not every entry may make sense for every format, and multi-planar formats are not yet supported.
+ */
+DLL_OBJECT struct FormatInfo {
+    size_t numChannels;
+    size_t channelSizeInBytes;
+    size_t formatSizeInBytes;
+    ChannelCategory channelCategory;
+    ChannelFormat channelFormat;
+};
+
+}
+
+#endif //SGL_FORMATINFO_HPP
