@@ -30,6 +30,8 @@
 
 #include "Format.hpp"
 
+namespace sgl {
+
 // Fallback for C++20 function std::format (or when the format string is not a constexpr).
 std::string formatStringList(const std::string_view& formatString, std::initializer_list<std::string> argsList) {
     std::string outputString;
@@ -69,4 +71,6 @@ std::string formatStringList(const std::string_view& formatString, std::initiali
     }
 
     return outputString;
+}
+
 }
