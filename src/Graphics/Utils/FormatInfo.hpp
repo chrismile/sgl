@@ -52,7 +52,7 @@ enum class ChannelFormat {
  * Format info (independent of used API like Vulkan/D3D12/...).
  * Not every entry may make sense for every format, and multi-planar formats are not yet supported.
  */
-DLL_OBJECT struct FormatInfo {
+struct DLL_OBJECT FormatInfo {
     size_t numChannels;
     size_t channelSizeInBytes;
     size_t formatSizeInBytes;

@@ -557,9 +557,6 @@ void InteropTestSyclVk::runTestsImageVulkanWriteSyclRead(VkFormat format, bool u
 
     // Check equality.
     std::string errorMessage;
-    if (format == VK_FORMAT_R32G32B32A32_SFLOAT) {
-        std::cout << "HERE" << std::endl;
-    }
     if (!checkIsArrayLinearTyped(formatInfo, imageSettings.width, imageSettings.height, hostPtr, errorMessage)) {
         ASSERT_TRUE(false) << errorMessage;
     }
