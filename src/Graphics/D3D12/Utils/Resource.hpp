@@ -60,6 +60,8 @@ typedef std::shared_ptr<Resource> ResourcePtr;
 
 DLL_OBJECT size_t getDXGIFormatNumChannels(DXGI_FORMAT format);
 DLL_OBJECT size_t getDXGIFormatSizeInBytes(DXGI_FORMAT format);
+DLL_OBJECT std::string getDXGIFormatHLSLStructuredTypeString(DXGI_FORMAT format);
+DLL_OBJECT std::string convertDXGIFormatToString(DXGI_FORMAT format);
 
 class DLL_OBJECT Resource {
 public:

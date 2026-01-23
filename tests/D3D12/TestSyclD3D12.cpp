@@ -30,6 +30,7 @@
 #include <sycl/sycl.hpp>
 
 #include <Math/Math.hpp>
+#include <Utils/Format.hpp>
 #include <Utils/File/Logfile.hpp>
 
 #include <Graphics/D3D12/Utils/DXGIFactory.hpp>
@@ -241,7 +242,23 @@ TEST_F(InteropTestSyclD3D12, BufferSyclWriteTest) {
     sycl::free(hostPtr, *syclQueue);
 }
 
-TEST_F(InteropTestSyclD3D12, ImageCopyTest) {
+
+const auto testedImageFormatsD3D12 = testing::Values(
+        DXGI_FORMAT_R32_FLOAT, DXGI_FORMAT_R32G32_FLOAT, DXGI_FORMAT_R32G32B32A32_FLOAT
+);
+
+struct PrintToStringFormatD3D12Config {
+    std::string operator()(const testing::TestParamInfo<DXGI_FORMAT>& info) const {
+        return sgl::d3d12::convertDXGIFormatToString(info.param);
+    }
+};
+class InteropTestSyclD3D12Image
+        : public InteropTestSyclD3D12, public testing::WithParamInterface<DXGI_FORMAT> {
+public:
+    InteropTestSyclD3D12Image() = default;
+};
+
+TEST_P(InteropTestSyclD3D12Image, ImageCopyTest) {
     if (!syclQueue->get_device().has(sycl::aspect::ext_oneapi_external_memory_import)) {
         GTEST_SKIP() << "ext_oneapi_external_memory_import not supported.";
     }
@@ -249,8 +266,14 @@ TEST_F(InteropTestSyclD3D12, ImageCopyTest) {
         GTEST_SKIP() << "ext_oneapi_bindless_images not supported.";
     }
 
+    DXGI_FORMAT format = GetParam();
+
     uint32_t width = 1024;
     uint32_t height = 1024;
+    auto numChannels = sgl::d3d12::getDXGIFormatNumChannels(format);
+    auto entryByteSize = sgl::d3d12::getDXGIFormatSizeInBytes(format);
+    size_t numEntries = width * height * numChannels;
+    size_t sizeInBytes = numEntries * entryByteSize;
 
     sgl::d3d12::ResourceSettings imageSettings{};
     D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
@@ -266,8 +289,6 @@ TEST_F(InteropTestSyclD3D12, ImageCopyTest) {
     }
 
     // Upload data to image.
-    size_t numEntries = width * height * 4;
-    size_t sizeInBytes = numEntries * sizeof(float);
     auto* hostPtr = sycl::malloc_host<float>(numEntries, *syclQueue);
     for (size_t i = 0; i < numEntries; i++) {
         hostPtr[i] = float(i);
@@ -293,9 +314,9 @@ TEST_F(InteropTestSyclD3D12, ImageCopyTest) {
     // Check equality.
     for (size_t i = 0; i < numEntries; i++) {
         if (hostPtr[i] != float(i)) {
-            size_t channelIdx = i % 4;
-            size_t x = (i / 4) % width;
-            size_t y = (i / 4) / width;
+            size_t channelIdx = i % numChannels;
+            size_t x = (i / numChannels) % width;
+            size_t y = (i / numChannels) / width;
             std::string errorMessage =
                     "Image content mismatch at x=" + std::to_string(x) + ", y=" + std::to_string(y)
                     + ", c=" + std::to_string(channelIdx);
@@ -307,8 +328,9 @@ TEST_F(InteropTestSyclD3D12, ImageCopyTest) {
     sycl::free(hostPtr, *syclQueue);
     sycl::free(devicePtr, *syclQueue);
 }
+INSTANTIATE_TEST_SUITE_P(ImageCopyTest, InteropTestSyclD3D12Image, testedImageFormatsD3D12, PrintToStringFormatD3D12Config());
 
-TEST_F(InteropTestSyclD3D12, ImageD3D12WriteSyclReadTest) {
+TEST_P(InteropTestSyclD3D12Image, ImageD3D12WriteSyclReadTests) {
 #ifndef SUPPORT_D3D_COMPILER
     GTEST_SKIP() << "D3D12 shader compiler is not enabled.";
 #endif
@@ -325,8 +347,10 @@ TEST_F(InteropTestSyclD3D12, ImageD3D12WriteSyclReadTest) {
     auto* shaderManager = new sgl::d3d12::ShaderManagerD3D12();
     auto* renderer = new sgl::d3d12::Renderer(d3d12Device.get());
 
-    auto computeShader = shaderManager->loadShaderFromHlslString(R"(
-    RWTexture2D<float> destImage : register(u0);
+    DXGI_FORMAT format = GetParam();
+
+    const char* SHADER_STRING_WRITE_IMAGE_COMPUTE_FMT = R"(
+    RWTexture2D<{}> destImage : register(u0);
     [numthreads(16, 16, 1)]
     void CSMain(
             uint3 groupID : SV_GroupID, uint3 dispatchThreadID : SV_DispatchThreadID,
@@ -337,9 +361,27 @@ TEST_F(InteropTestSyclD3D12, ImageD3D12WriteSyclReadTest) {
         if (idx.x >= width || idx.y >= height) {
             return;
         }
-        destImage[idx] = float(idx.x + idx.y * width);
+    #if NUM_CHANNELS == 1
+        float outputValue = float(idx.x + idx.y * width);
+    #elif NUM_CHANNELS == 2
+        float value = (idx.x + idx.y * width) * 2;
+        float2 outputValue = float2(value, value + 1);
+    #elif NUM_CHANNELS == 4
+        float value = (idx.x + idx.y * width) * 4;
+        float4 outputValue = float4(value, value + 1, value + 2, value + 3);
+    #else
+    #error Unsupported number of image channels.
+    #endif
+        destImage[idx] = outputValue;
     }
-    )", "WriteBufferShader.hlsl", sgl::d3d12::ShaderModuleType::COMPUTE, "CSMain", {});
+    )";
+    auto formatHlslString = sgl::d3d12::getDXGIFormatHLSLStructuredTypeString(format);
+    auto shaderStringWriteImageCompute = sgl::formatString(
+            SHADER_STRING_WRITE_IMAGE_COMPUTE_FMT,
+            formatHlslString, formatHlslString);
+    auto computeShader = shaderManager->loadShaderFromHlslString(
+            SHADER_STRING_WRITE_IMAGE_COMPUTE_FMT, "WriteImageShader.hlsl",
+            sgl::d3d12::ShaderModuleType::COMPUTE, "CSMain", {});
     auto rootParameters = std::make_shared<sgl::d3d12::RootParameters>(computeShader);
     D3D12_DESCRIPTOR_RANGE1 descriptorRange{};
     descriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
@@ -349,14 +391,18 @@ TEST_F(InteropTestSyclD3D12, ImageD3D12WriteSyclReadTest) {
             renderer->getDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     auto descriptorAllocationUAV = descriptorAllocatorUAV->allocate(1);
     D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc{};
-    uavDesc.Format = DXGI_FORMAT_R32_FLOAT;
+    uavDesc.Format = format;
     uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
 
     uint32_t width = 1024;
     uint32_t height = 1024;
+    auto numChannels = sgl::d3d12::getDXGIFormatNumChannels(format);
+    auto entryByteSize = sgl::d3d12::getDXGIFormatSizeInBytes(format);
+    size_t numEntries = width * height * numChannels;
+    size_t sizeInBytes = numEntries * entryByteSize;
 
     const int NUM_ITERATIONS = 1000;
-    for (int it = 0; it < NUM_ITERATIONS; it++) {
+    for (int i = 0; i < NUM_ITERATIONS; i++) {
         sgl::d3d12::CommandListPtr commandList = std::make_shared<sgl::d3d12::CommandList>(
                 d3d12Device.get(), sgl::d3d12::CommandListType::DIRECT);
         uint64_t timelineValue = 0;
@@ -366,7 +412,7 @@ TEST_F(InteropTestSyclD3D12, ImageD3D12WriteSyclReadTest) {
         sgl::d3d12::ResourceSettings imageSettings{};
         D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
         imageSettings.resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(
-                DXGI_FORMAT_R32_FLOAT, width, height, 1, 0, 1, 0, flags, D3D12_TEXTURE_LAYOUT_UNKNOWN);
+                format, width, height, 1, 0, 1, 0, flags, D3D12_TEXTURE_LAYOUT_UNKNOWN);
         imageSettings.heapFlags = D3D12_HEAP_FLAG_SHARED;
         sgl::d3d12::ResourcePtr imageD3D12 = std::make_shared<sgl::d3d12::Resource>(d3d12Device.get(), imageSettings);
         sgl::d3d12::UnsampledImageD3D12ComputeApiExternalMemoryPtr imageInterop;
@@ -385,14 +431,12 @@ TEST_F(InteropTestSyclD3D12, ImageD3D12WriteSyclReadTest) {
         computeData->setDescriptorTable(rpiDescriptorTable, descriptorAllocationUAV.get());
 
         // Upload data to image.
-        size_t numEntries = width * height;
-        size_t sizeInBytes = numEntries * sizeof(float);
         auto* hostPtr = sycl::malloc_host<float>(numEntries, *syclQueue);
         auto* devicePtr = sycl::malloc_device<float>(numEntries, *syclQueue);
         for (size_t i = 0; i < numEntries; i++) {
             hostPtr[i] = 42.0f;
         }
-        imageD3D12->uploadDataLinear(sizeof(float) * numEntries, hostPtr);
+        imageD3D12->uploadDataLinear(sizeInBytes, hostPtr);
 
         // Write new data with D3D12.
         ID3D12CommandQueue* d3d12CommandQueue = d3d12Device->getD3D12CommandQueue(commandList->getCommandListType());
@@ -414,17 +458,19 @@ TEST_F(InteropTestSyclD3D12, ImageD3D12WriteSyclReadTest) {
         sycl::ext::oneapi::experimental::unsampled_image_handle imageSyclHandle{};
         imageSyclHandle.raw_handle = imageInteropSycl->getRawHandle();
         sycl::event copyEventImg = copySyclBindlessImageToBuffer(
-                *syclQueue, imageSyclHandle, width, height, devicePtr, waitSemaphoreEvent);
+                *syclQueue, imageSyclHandle, width, height, numChannels, devicePtr, waitSemaphoreEvent);
         auto copyEvent = syclQueue->memcpy(hostPtr, devicePtr, sizeInBytes, copyEventImg);
         copyEvent.wait_and_throw();
 
         // Check equality.
         for (size_t i = 0; i < numEntries; i++) {
             if (hostPtr[i] != float(i)) {
-                size_t x = i % width;
-                size_t y = i / width;
+                size_t channelIdx = i % numChannels;
+                size_t x = (i / numChannels) % width;
+                size_t y = (i / numChannels) / width;
                 std::string errorMessage =
-                        "Image content mismatch at x=" + std::to_string(x) + ", y=" + std::to_string(y);
+                        "Image content mismatch at x=" + std::to_string(x) + ", y=" + std::to_string(y)
+                        + ", c=" + std::to_string(channelIdx);
                 descriptorAllocationUAV = {};
                 delete shaderManager;
                 delete renderer;
@@ -438,13 +484,12 @@ TEST_F(InteropTestSyclD3D12, ImageD3D12WriteSyclReadTest) {
     }
 
     descriptorAllocationUAV = {};
-    computeShader = {};
-    rootParameters = {};
     delete shaderManager;
     delete renderer;
 }
+INSTANTIATE_TEST_SUITE_P(ImageD3D12WriteSyclReadTests, InteropTestSyclD3D12Image, testedImageFormatsD3D12, PrintToStringFormatD3D12Config());
 
-TEST_F(InteropTestSyclD3D12, ImageSyclWriteD3D12ReadTest) {
+TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
 #ifndef SUPPORT_D3D_COMPILER
     GTEST_SKIP() << "D3D12 shader compiler is not enabled.";
 #endif
@@ -458,17 +503,21 @@ TEST_F(InteropTestSyclD3D12, ImageSyclWriteD3D12ReadTest) {
         GTEST_SKIP() << "ext_oneapi_bindless_images not supported.";
     }
 
+    DXGI_FORMAT format = GetParam();
+
     uint32_t width = 1024;
     uint32_t height = 1024;
-    size_t numEntries = width * height;
-    size_t sizeInBytes = numEntries * sizeof(float);
+    auto numChannels = sgl::d3d12::getDXGIFormatNumChannels(format);
+    auto entryByteSize = sgl::d3d12::getDXGIFormatSizeInBytes(format);
+    size_t numEntries = width * height * numChannels;
+    size_t sizeInBytes = numEntries * entryByteSize;
 
     auto* shaderManager = new sgl::d3d12::ShaderManagerD3D12();
     auto* renderer = new sgl::d3d12::Renderer(d3d12Device.get());
 
-    auto computeShader = shaderManager->loadShaderFromHlslString(R"(
-    RWTexture2D<float> srcImage : register(u0);
-    RWStructuredBuffer<float> destBuffer : register(u1);
+    const char* SHADER_STRING_COPY_IMAGE_FROM_BUFFER_COMPUTE_FMT = R"(
+    RWTexture2D<{}> srcImage : register(u0);
+    RWStructuredBuffer<{}> destBuffer : register(u1);
     [numthreads(16, 16, 1)]
     void CSMain(
             uint3 groupID : SV_GroupID, uint3 dispatchThreadID : SV_DispatchThreadID,
@@ -481,7 +530,14 @@ TEST_F(InteropTestSyclD3D12, ImageSyclWriteD3D12ReadTest) {
         }
         destBuffer[idx.x + idx.y * width] = srcImage[idx];
     }
-    )", "CopyImageToBufferShader.hlsl", sgl::d3d12::ShaderModuleType::COMPUTE, "CSMain", {});
+    )";
+    auto formatHlslString = sgl::d3d12::getDXGIFormatHLSLStructuredTypeString(format);
+    auto shaderStringWriteImageCompute = sgl::formatString(
+            SHADER_STRING_COPY_IMAGE_FROM_BUFFER_COMPUTE_FMT,
+            formatHlslString, formatHlslString);
+    auto computeShader = shaderManager->loadShaderFromHlslString(
+            shaderStringWriteImageCompute, "CopyImageToBufferShader.hlsl",
+            sgl::d3d12::ShaderModuleType::COMPUTE, "CSMain", {});
     auto rootParameters = std::make_shared<sgl::d3d12::RootParameters>(computeShader);
     D3D12_DESCRIPTOR_RANGE1 descriptorRange{};
     descriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
@@ -491,16 +547,16 @@ TEST_F(InteropTestSyclD3D12, ImageSyclWriteD3D12ReadTest) {
             renderer->getDescriptorAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     auto descriptorAllocation = descriptorAllocator->allocate(2);
     D3D12_UNORDERED_ACCESS_VIEW_DESC sourceImgUavDesc{};
-    sourceImgUavDesc.Format = DXGI_FORMAT_R32_FLOAT;
+    sourceImgUavDesc.Format = format;
     sourceImgUavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
     D3D12_UNORDERED_ACCESS_VIEW_DESC destBufferUavDesc{};
     destBufferUavDesc.Format = DXGI_FORMAT_UNKNOWN;
     destBufferUavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-    destBufferUavDesc.Buffer.NumElements = numEntries;
+    destBufferUavDesc.Buffer.NumElements = UINT(numEntries);
     destBufferUavDesc.Buffer.StructureByteStride = sizeof(float);
 
     const int NUM_ITERATIONS = 1000;
-    for (int i = 0; i < NUM_ITERATIONS; i++) {
+    for (int it = 0; it < NUM_ITERATIONS; it++) {
         sgl::d3d12::CommandListPtr commandList = std::make_shared<sgl::d3d12::CommandList>(
                 d3d12Device.get(), sgl::d3d12::CommandListType::DIRECT);
         uint64_t timelineValue = 0;
@@ -510,7 +566,7 @@ TEST_F(InteropTestSyclD3D12, ImageSyclWriteD3D12ReadTest) {
         sgl::d3d12::ResourceSettings imageSettings{};
         D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
         imageSettings.resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(
-                DXGI_FORMAT_R32_FLOAT, width, height, 1, 0, 1, 0, flags, D3D12_TEXTURE_LAYOUT_UNKNOWN);
+                format, width, height, 1, 0, 1, 0, flags, D3D12_TEXTURE_LAYOUT_UNKNOWN);
         imageSettings.heapFlags = D3D12_HEAP_FLAG_SHARED;
         sgl::d3d12::ResourcePtr imageD3D12 = std::make_shared<sgl::d3d12::Resource>(d3d12Device.get(), imageSettings);
         sgl::d3d12::UnsampledImageD3D12ComputeApiExternalMemoryPtr imageInterop;
@@ -547,7 +603,7 @@ TEST_F(InteropTestSyclD3D12, ImageSyclWriteD3D12ReadTest) {
         sycl::ext::oneapi::experimental::unsampled_image_handle imageSyclHandle{};
         imageSyclHandle.raw_handle = imageInteropSycl->getRawHandle();
         sycl::event writeImgEvent = writeSyclBindlessImageIncreasingIndices(
-                *syclQueue, imageSyclHandle, width, height);
+                *syclQueue, imageSyclHandle, width, height, numChannels);
         auto barrierEvent = syclQueue->ext_oneapi_submit_barrier({ writeImgEvent });
         sycl::event signalSemaphoreEvent{};
         timelineValue++;
@@ -574,10 +630,12 @@ TEST_F(InteropTestSyclD3D12, ImageSyclWriteD3D12ReadTest) {
         bufferD3D12->readBackDataLinear(sizeInBytes, hostPtr);
         for (size_t i = 0; i < numEntries; i++) {
             if (hostPtr[i] != float(i)) {
-                size_t x = i % width;
-                size_t y = i / width;
+                size_t channelIdx = i % numChannels;
+                size_t x = (i / numChannels) % width;
+                size_t y = (i / numChannels) / width;
                 std::string errorMessage =
-                        "Image content mismatch at x=" + std::to_string(x) + ", y=" + std::to_string(y);
+                        "Image content mismatch at x=" + std::to_string(x) + ", y=" + std::to_string(y)
+                        + ", c=" + std::to_string(channelIdx);
                 descriptorAllocation = {};
                 delete shaderManager;
                 delete renderer;
@@ -591,8 +649,7 @@ TEST_F(InteropTestSyclD3D12, ImageSyclWriteD3D12ReadTest) {
     }
 
     descriptorAllocation = {};
-    computeShader = {};
-    rootParameters = {};
     delete shaderManager;
     delete renderer;
 }
+INSTANTIATE_TEST_SUITE_P(ImageSyclWriteD3D12ReadTests, InteropTestSyclD3D12Image, testedImageFormatsD3D12, PrintToStringFormatD3D12Config());

@@ -32,6 +32,7 @@
 #include <sycl/sycl.hpp>
 
 #include <Math/Math.hpp>
+#include <Utils/Format.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Graphics/Vulkan/Utils/Instance.hpp>
 #include <Graphics/Vulkan/Utils/Device.hpp>
@@ -478,24 +479,38 @@ void InteropTestSyclVk::runTestsImageVulkanWriteSyclRead(VkFormat format, bool u
     commandPoolType.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     auto commandBuffer = std::make_shared<sgl::vk::CommandBuffer>(device, commandPoolType);
 
-    //sgl::vk::getImageFormatGlslString(format); TODO
-    const char* SHADER_STRING_WRITE_IMAGE_COMPUTE = R"(
+    const char* SHADER_STRING_WRITE_IMAGE_COMPUTE_FMT = R"(
     #version 450 core
     layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
-    layout(binding = 0, r32f) uniform restrict writeonly image2D destImage;
+    layout(binding = 0, {}) uniform restrict writeonly image2D destImage;
+    #define NUM_CHANNELS {}
     void main() {
         ivec2 destImageSize = imageSize(destImage);
         ivec2 idx = ivec2(gl_GlobalInvocationID.xy);
         if (idx.x >= destImageSize.x || idx.y >= destImageSize.y) {
             return;
         }
-        float value = float(idx.x + idx.y * destImageSize.x);
-        imageStore(destImage, idx, vec4(value));
+    #if NUM_CHANNELS == 1
+        vec4 outputValue = vec4(idx.x + idx.y * destImageSize.x);
+    #elif NUM_CHANNELS == 2
+        float value = (idx.x + idx.y * destImageSize.x) * 2;
+        vec4 outputValue = vec4(value, value + 1, 0.0, 0.0);
+    #elif NUM_CHANNELS == 4
+        float value = (idx.x + idx.y * destImageSize.x) * 4;
+        vec4 outputValue = vec4(value, value + 1, value + 2, value + 3);
+    #else
+    #error Unsupported number of image channels.
+    #endif
+        imageStore(destImage, idx, outputValue);
     }
     )";
+    auto shaderStringWriteImageCompute = sgl::formatString(
+            SHADER_STRING_WRITE_IMAGE_COMPUTE_FMT,
+            sgl::vk::getImageFormatGlslString(format),
+            sgl::vk::getImageFormatNumChannels(format));
     auto* shaderManager = new sgl::vk::ShaderManagerVk(device);
     auto shaderStages = shaderManager->compileComputeShaderFromStringCached(
-            "WriteImage.Compute", SHADER_STRING_WRITE_IMAGE_COMPUTE);
+            "WriteImage.Compute", shaderStringWriteImageCompute);
     sgl::vk::ComputePipelineInfo computePipelineInfo(shaderStages);
     sgl::vk::ComputePipelinePtr computePipeline(new sgl::vk::ComputePipeline(device, computePipelineInfo));
     auto computeData = std::make_shared<sgl::vk::ComputeData>(renderer, computePipeline);
@@ -540,7 +555,8 @@ void InteropTestSyclVk::runTestsImageVulkanWriteSyclRead(VkFormat format, bool u
     sycl::ext::oneapi::experimental::unsampled_image_handle imageSyclHandle{};
     imageSyclHandle.raw_handle = imageInteropSycl->getRawHandle();
     sycl::event copyEventImg = copySyclBindlessImageToBuffer(
-            *syclQueue, imageSyclHandle, imageSettings.width, imageSettings.height, devicePtr, waitSemaphoreEvent);
+            *syclQueue, imageSyclHandle, imageSettings.width, imageSettings.height, numChannels,
+            devicePtr, waitSemaphoreEvent);
     auto copyEvent = syclQueue->memcpy(hostPtr, devicePtr, sizeInBytes, copyEventImg);
     copyEvent.wait_and_throw();
 
@@ -571,7 +587,6 @@ void InteropTestSyclVk::runTestsImageVulkanWriteSyclRead(VkFormat format, bool u
     delete shaderManager;
 }
 
-#ifndef DISABLE_IMAGE_TESTS
 class InteropTestSyclVkImageCopy
         : public InteropTestSyclVkInOrder, public testing::WithParamInterface<std::pair<VkFormat, bool>> {
 public:
@@ -663,5 +678,3 @@ TEST_P(InteropTestSyclVkImageVulkanWriteSyclRead, Formats) {
 }
 INSTANTIATE_TEST_SUITE_P(TestFormatsAsync, InteropTestSyclVkImageVulkanWriteSyclRead, testedImageFormatsReadWriteAsync, PrintToStringFormatSemaphoreConfig());
 INSTANTIATE_TEST_SUITE_P(TestFormatsSync, InteropTestSyclVkImageVulkanWriteSyclRead, testedImageFormatsReadWriteSync, PrintToStringFormatSemaphoreConfig());
-#endif
-
