@@ -273,12 +273,12 @@ TEST_P(InteropTestSyclD3D12Image, ImageCopyTest) {
     auto numChannels = sgl::d3d12::getDXGIFormatNumChannels(format);
     auto entryByteSize = sgl::d3d12::getDXGIFormatSizeInBytes(format);
     size_t numEntries = width * height * numChannels;
-    size_t sizeInBytes = numEntries * entryByteSize;
+    size_t sizeInBytes = width * height * entryByteSize;
 
     sgl::d3d12::ResourceSettings imageSettings{};
     D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     imageSettings.resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(
-            DXGI_FORMAT_R32G32B32A32_FLOAT, width, height, 1, 0, 1, 0, flags, D3D12_TEXTURE_LAYOUT_UNKNOWN);
+            format, width, height, 1, 0, 1, 0, flags, D3D12_TEXTURE_LAYOUT_UNKNOWN);
     imageSettings.heapFlags = D3D12_HEAP_FLAG_SHARED;
     sgl::d3d12::ResourcePtr imageD3D12 = std::make_shared<sgl::d3d12::Resource>(d3d12Device.get(), imageSettings);
     sgl::d3d12::ImageD3D12ComputeApiExternalMemoryPtr imageSycl;
@@ -293,11 +293,11 @@ TEST_P(InteropTestSyclD3D12Image, ImageCopyTest) {
     for (size_t i = 0; i < numEntries; i++) {
         hostPtr[i] = float(i);
     }
-    imageD3D12->uploadDataLinear(sizeof(float) * numEntries, hostPtr);
+    imageD3D12->uploadDataLinear(sizeInBytes, hostPtr);
 
     size_t imgRowPitch = imageD3D12->getRowPitchInBytes();
     size_t imgSizeInBytes = imageD3D12->getCopiableSizeInBytes();
-    if (imgRowPitch != width * 4 * sizeof(float) || imgSizeInBytes != sizeInBytes) {
+    if (imgRowPitch != width * numChannels * entryByteSize || imgSizeInBytes != sizeInBytes) {
         FAIL() << "Expected row pitch equal to row size.";
     }
 
@@ -398,7 +398,7 @@ TEST_P(InteropTestSyclD3D12Image, ImageD3D12WriteSyclReadTests) {
     auto numChannels = sgl::d3d12::getDXGIFormatNumChannels(format);
     auto entryByteSize = sgl::d3d12::getDXGIFormatSizeInBytes(format);
     size_t numEntries = width * height * numChannels;
-    size_t sizeInBytes = numEntries * entryByteSize;
+    size_t sizeInBytes = width * height * entryByteSize;
 
     const int NUM_ITERATIONS = 1000;
     for (int i = 0; i < NUM_ITERATIONS; i++) {
@@ -508,7 +508,7 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
     auto numChannels = sgl::d3d12::getDXGIFormatNumChannels(format);
     auto entryByteSize = sgl::d3d12::getDXGIFormatSizeInBytes(format);
     size_t numEntries = width * height * numChannels;
-    size_t sizeInBytes = numEntries * entryByteSize;
+    size_t sizeInBytes = width * height * entryByteSize;
 
     auto* shaderManager = new sgl::d3d12::ShaderManagerD3D12();
     auto* renderer = new sgl::d3d12::Renderer(d3d12Device.get());
