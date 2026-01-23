@@ -26,13 +26,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#if __cplusplus >= 202002L
 
-#include <format>
 #include <gtest/gtest.h>
 #include <Utils/Format.hpp>
 
-TEST(FormatTest, MixedTyped) {
+#if __cplusplus >= 202002L
+
+#include <format>
+
+TEST(FormatTestStd, Default) {
     std::string formattedStringStd = std::format(
             "{} lies in {} and has more than {} shops {{}}", "Munich", "Germany", 20);
     std::string formattedString = sgl::formatString(
@@ -40,4 +42,33 @@ TEST(FormatTest, MixedTyped) {
     EXPECT_EQ(formattedString, formattedStringStd);
 }
 
+TEST(FormatTestStd, Positional) {
+    std::string formattedStringStd = std::format(
+            "{} lies in {} and {} lies in {}", "Munich", "Germany", "Frankfurt", "Germany");
+    std::string formattedString = sgl::formatStringPositional(
+            "$1 lies in $0 and $2 lies in $0", "Germany", "Munich", "Frankfurt");
+    EXPECT_EQ(formattedString, formattedStringStd);
+}
+
 #endif
+
+TEST(FormatTest, Default) {
+        std::string formattedStringStd = "Munich lies in Germany and has more than 20 shops {}";
+        std::string formattedString = sgl::formatString(
+                "{} lies in {} and has more than {} shops {{}}", "Munich", "Germany", 20);
+        EXPECT_EQ(formattedString, formattedStringStd);
+}
+
+TEST(FormatTest, PositionalSimple) {
+        std::string formattedStringStd = "Munich lies in Germany and Frankfurt lies in Germany";
+        std::string formattedString = sgl::formatStringPositional(
+                "$1 lies in $0 and $2 lies in $0", "Germany", "Munich", "Frankfurt");
+        EXPECT_EQ(formattedString, formattedStringStd);
+}
+
+TEST(FormatTest, PositionalAdvanced) {
+        std::string formattedStringStd = "Munich lies in Germany and Frankfurt lies in Germany $";
+        std::string formattedString = sgl::formatStringPositional(
+                "$1 lies in $0 and ${2} lies in $0 $$", "Germany", "Munich", "Frankfurt");
+        EXPECT_EQ(formattedString, formattedStringStd);
+}

@@ -31,13 +31,26 @@
 
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace sgl {
 
-/** Fallback for C++20 function std::format (or when the format string is not a constexpr). */
+/**
+ * Fallback for C++20 function std::format (or when the format string is not a constexpr).
+ * "{}" is replaced consecutively with the passed arguments.
+ *
+ * The "relaxed" version will not complain when '{' or '}' is used without alone.
+ * That is useful, e.g., when parsing C/C++/GLSL/HLSL code (as long as the empty expression "{}" is not used).
+ *
+ * The "positional" version used "$idx" instead of "{}" (e.g., "$0", "$1", ...).
+ */
 
 DLL_OBJECT std::string formatStringList(
         const std::string_view& formatString, std::initializer_list<std::string> argsList);
+DLL_OBJECT std::string formatStringListRelaxed(
+        const std::string_view& formatString, std::initializer_list<std::string> argsList);
+DLL_OBJECT std::string formatStringListPositional(
+        const std::string_view& formatString, std::vector<std::string> argsList);
 
 template<class T>
 std::string to_string(T val) {
@@ -54,6 +67,16 @@ inline std::string to_string(const std::string& val) {
 template<class... T>
 std::string formatString(const std::string_view& formatString, T... args) {
     return formatStringList(formatString, {to_string(args)...});
+}
+
+template<class... T>
+std::string formatStringRelaxed(const std::string_view& formatString, T... args) {
+    return formatStringListRelaxed(formatString, {to_string(args)...});
+}
+
+template<class... T>
+std::string formatStringPositional(const std::string_view& formatString, T... args) {
+    return formatStringListPositional(formatString, {to_string(args)...});
 }
 #endif
 

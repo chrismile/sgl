@@ -482,8 +482,8 @@ void InteropTestSyclVk::runTestsImageVulkanWriteSyclRead(VkFormat format, bool u
     const char* SHADER_STRING_WRITE_IMAGE_COMPUTE_FMT = R"(
     #version 450 core
     layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
-    layout(binding = 0, {}) uniform restrict writeonly image2D destImage;
-    #define NUM_CHANNELS {}
+    layout(binding = 0, $0) uniform restrict writeonly image2D destImage;
+    #define NUM_CHANNELS $1
     void main() {
         ivec2 destImageSize = imageSize(destImage);
         ivec2 idx = ivec2(gl_GlobalInvocationID.xy);
@@ -504,7 +504,7 @@ void InteropTestSyclVk::runTestsImageVulkanWriteSyclRead(VkFormat format, bool u
         imageStore(destImage, idx, outputValue);
     }
     )";
-    auto shaderStringWriteImageCompute = sgl::formatString(
+    auto shaderStringWriteImageCompute = sgl::formatStringPositional(
             SHADER_STRING_WRITE_IMAGE_COMPUTE_FMT,
             sgl::vk::getImageFormatGlslString(format),
             sgl::vk::getImageFormatNumChannels(format));

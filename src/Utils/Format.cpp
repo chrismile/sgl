@@ -28,11 +28,11 @@
 
 #include <stdexcept>
 
+#include "Convert.hpp"
 #include "Format.hpp"
 
 namespace sgl {
 
-// Fallback for C++20 function std::format (or when the format string is not a constexpr).
 std::string formatStringList(const std::string_view& formatString, std::initializer_list<std::string> argsList) {
     std::string outputString;
     auto argsListIt = argsList.begin();
@@ -65,6 +65,79 @@ std::string formatStringList(const std::string_view& formatString, std::initiali
                 continue;
             }
             throw std::runtime_error("No opening bracket in format string.");
+        }
+        outputString += formatString[formatStringIdx];
+        formatStringIdx += 1;
+    }
+
+    return outputString;
+}
+
+std::string formatStringListRelaxed(const std::string_view& formatString, std::initializer_list<std::string> argsList) {
+    std::string outputString;
+    auto argsListIt = argsList.begin();
+    size_t formatStringIdx = 0;
+    while (formatStringIdx < formatString.size()) {
+        if (formatString[formatStringIdx] == '{' && formatStringIdx + 1 < formatString.size()
+                && formatString[formatStringIdx + 1] == '}') {
+            // Add argument to output string.
+            if (argsListIt == argsList.end()) {
+                throw std::runtime_error("Insufficient number of arguments.");
+            }
+            outputString += *argsListIt;
+            argsListIt++;
+            formatStringIdx += 2;
+            continue;
+        }
+        outputString += formatString[formatStringIdx];
+        formatStringIdx += 1;
+    }
+
+    return outputString;
+}
+
+std::string formatStringListPositional(const std::string_view& formatString, std::vector<std::string> argsList) {
+    std::string outputString;
+    size_t formatStringIdx = 0;
+    while (formatStringIdx < formatString.size()) {
+        if (formatString[formatStringIdx] == '$') {
+            if (formatStringIdx + 1 < formatString.size()) {
+                if (formatString[formatStringIdx + 1] == '$') {
+                    outputString += "$";
+                    formatStringIdx += 2;
+                    continue;
+                }
+
+                // Format string.
+                std::string numberString;
+                if (formatString[formatStringIdx + 1] == '{') {
+                    formatStringIdx += 2;
+                    while (true) {
+                        if (formatStringIdx >= formatString.size()) {
+                            throw std::runtime_error("Positional argument is not terminated.");
+                        }
+                        if (formatString[formatStringIdx] == '}') {
+                            formatStringIdx += 1;
+                            break;
+                        }
+                        numberString += formatString[formatStringIdx];
+                        formatStringIdx += 1;
+                    }
+                } else {
+                    numberString = std::string(1, formatString[formatStringIdx + 1]);
+                    formatStringIdx += 2;
+                }
+                if (!isInteger(numberString)) {
+                    throw std::runtime_error("Positional argument is not an integer value.");
+                }
+                auto argsListIdx = sgl::fromString<size_t>(numberString);
+                if (argsListIdx >= argsList.size()) {
+                    throw std::runtime_error("Positional argument is too large.");
+                }
+                outputString += argsList[argsListIdx];
+                continue;
+            }
+            throw std::runtime_error("No closing '$' in format string.");
         }
         outputString += formatString[formatStringIdx];
         formatStringIdx += 1;

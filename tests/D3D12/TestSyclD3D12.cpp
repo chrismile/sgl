@@ -348,8 +348,16 @@ TEST_P(InteropTestSyclD3D12Image, ImageD3D12WriteSyclReadTests) {
 
     DXGI_FORMAT format = GetParam();
 
+    uint32_t width = 1024;
+    uint32_t height = 1024;
+    auto numChannels = sgl::d3d12::getDXGIFormatNumChannels(format);
+    auto entryByteSize = sgl::d3d12::getDXGIFormatSizeInBytes(format);
+    size_t numEntries = width * height * numChannels;
+    size_t sizeInBytes = width * height * entryByteSize;
+
     const char* SHADER_STRING_WRITE_IMAGE_COMPUTE_FMT = R"(
-    RWTexture2D<{}> destImage : register(u0);
+    RWTexture2D<$0> destImage : register(u0);
+    #define NUM_CHANNELS $1
     [numthreads(16, 16, 1)]
     void CSMain(
             uint3 groupID : SV_GroupID, uint3 dispatchThreadID : SV_DispatchThreadID,
@@ -374,12 +382,11 @@ TEST_P(InteropTestSyclD3D12Image, ImageD3D12WriteSyclReadTests) {
         destImage[idx] = outputValue;
     }
     )";
-    auto formatHlslString = sgl::d3d12::getDXGIFormatHLSLStructuredTypeString(format);
-    auto shaderStringWriteImageCompute = sgl::formatString(
+    auto shaderStringWriteImageCompute = sgl::formatStringPositional(
             SHADER_STRING_WRITE_IMAGE_COMPUTE_FMT,
-            formatHlslString, formatHlslString);
+            sgl::d3d12::getDXGIFormatHLSLStructuredTypeString(format), numChannels);
     auto computeShader = shaderManager->loadShaderFromHlslString(
-            SHADER_STRING_WRITE_IMAGE_COMPUTE_FMT, "WriteImageShader.hlsl",
+            shaderStringWriteImageCompute, "WriteImageShader.hlsl",
             sgl::d3d12::ShaderModuleType::COMPUTE, "CSMain", {});
     auto rootParameters = std::make_shared<sgl::d3d12::RootParameters>(computeShader);
     D3D12_DESCRIPTOR_RANGE1 descriptorRange{};
@@ -392,13 +399,6 @@ TEST_P(InteropTestSyclD3D12Image, ImageD3D12WriteSyclReadTests) {
     D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc{};
     uavDesc.Format = format;
     uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
-
-    uint32_t width = 1024;
-    uint32_t height = 1024;
-    auto numChannels = sgl::d3d12::getDXGIFormatNumChannels(format);
-    auto entryByteSize = sgl::d3d12::getDXGIFormatSizeInBytes(format);
-    size_t numEntries = width * height * numChannels;
-    size_t sizeInBytes = width * height * entryByteSize;
 
     const int NUM_ITERATIONS = 1000;
     for (int i = 0; i < NUM_ITERATIONS; i++) {
@@ -514,8 +514,8 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
     auto* renderer = new sgl::d3d12::Renderer(d3d12Device.get());
 
     const char* SHADER_STRING_COPY_IMAGE_FROM_BUFFER_COMPUTE_FMT = R"(
-    RWTexture2D<{}> srcImage : register(u0);
-    RWStructuredBuffer<{}> destBuffer : register(u1);
+    RWTexture2D<$0> srcImage : register(u0);
+    RWStructuredBuffer<$0> destBuffer : register(u1);
     [numthreads(16, 16, 1)]
     void CSMain(
             uint3 groupID : SV_GroupID, uint3 dispatchThreadID : SV_DispatchThreadID,
@@ -529,10 +529,8 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
         destBuffer[idx.x + idx.y * width] = srcImage[idx];
     }
     )";
-    auto formatHlslString = sgl::d3d12::getDXGIFormatHLSLStructuredTypeString(format);
-    auto shaderStringWriteImageCompute = sgl::formatString(
-            SHADER_STRING_COPY_IMAGE_FROM_BUFFER_COMPUTE_FMT,
-            formatHlslString, formatHlslString);
+    auto shaderStringWriteImageCompute = sgl::formatStringRelaxed(
+            SHADER_STRING_COPY_IMAGE_FROM_BUFFER_COMPUTE_FMT, sgl::d3d12::getDXGIFormatHLSLStructuredTypeString(format));
     auto computeShader = shaderManager->loadShaderFromHlslString(
             shaderStringWriteImageCompute, "CopyImageToBufferShader.hlsl",
             sgl::d3d12::ShaderModuleType::COMPUTE, "CSMain", {});
