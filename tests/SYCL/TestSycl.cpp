@@ -31,13 +31,15 @@
 
 #include <Math/Math.hpp>
 #include <Utils/File/Logfile.hpp>
+#include <Graphics/Utils/FormatInfo.hpp>
 
-#include "../SYCL/SyclDeviceCode.hpp"
+#include "Common.hpp"
+#include "SyclDeviceCode.hpp"
 
 class TestSycl : public ::testing::Test {
 protected:
     void SetUp() override {
-        sgl::Logfile::get()->createLogfile("LogfileSyclD3D12.html", "TestSyclD3D12");
+        sgl::Logfile::get()->createLogfile("LogfileSycl.html", "TestSycl");
 
         sycl::property_list syclQueueProperties = sycl::property_list{sycl::property::queue::in_order(), sycl::ext::intel::property::queue::immediate_command_list()};
         syclQueue = new sycl::queue{sycl::gpu_selector_v, syclQueueProperties};
@@ -69,4 +71,56 @@ TEST_F(TestSycl, WriteKernelLinearTest) {
 
     sycl::free(hostPtr, *syclQueue);
     sycl::free(devicePtr, *syclQueue);
+}
+
+TEST_F(TestSycl, WriteKernelImageTest) {
+    if (!syclQueue->get_device().has(sycl::aspect::ext_oneapi_external_memory_import)
+            || !syclQueue->get_device().has(sycl::aspect::ext_oneapi_bindless_images)) {
+        GTEST_SKIP() << "External bindless images import not supported.";
+    }
+
+    sycl::ext::oneapi::experimental::image_descriptor imageDescriptor{};
+    imageDescriptor.width = 1024;
+    imageDescriptor.height = 1024;
+    imageDescriptor.num_channels = 1;
+    imageDescriptor.verify();
+    sgl::FormatInfo formatInfo{};
+    formatInfo.channelCategory = sgl::ChannelCategory::FLOAT;
+    formatInfo.channelFormat = sgl::ChannelFormat::FLOAT32;
+    formatInfo.numChannels = 1;
+    formatInfo.channelSizeInBytes = 4;
+    formatInfo.formatSizeInBytes = formatInfo.numChannels * formatInfo.channelSizeInBytes;
+
+    const size_t numEntries = imageDescriptor.width * imageDescriptor.height * imageDescriptor.num_channels;
+    auto* hostPtr = sycl::malloc_host<float>(numEntries, *syclQueue);
+
+    std::vector<sycl::ext::oneapi::experimental::image_memory_handle_type> supportedImageMemoryHandleTypes =
+            sycl::ext::oneapi::experimental::get_image_memory_support(imageDescriptor, *syclQueue);
+    if (supportedImageMemoryHandleTypes.empty()) {
+        GTEST_FAIL() << "No image memory handle types supported.";
+    }
+    if (!sycl::ext::oneapi::experimental::is_image_handle_supported<sycl::ext::oneapi::experimental::unsampled_image_handle>(
+        imageDescriptor, sycl::ext::oneapi::experimental::image_memory_handle_type::opaque_handle, *syclQueue)) {
+        GTEST_FAIL() << "image_memory_handle_type::opaque_handle is not supported.";
+    }
+    auto imageMemoryHandle = sycl::ext::oneapi::experimental::alloc_image_mem(imageDescriptor, *syclQueue);
+
+    sycl::ext::oneapi::experimental::unsampled_image_handle imageSyclHandle =
+            sycl::ext::oneapi::experimental::create_image(imageMemoryHandle, imageDescriptor, *syclQueue);
+
+    sycl::event writeImgEvent = writeSyclBindlessImageIncreasingIndices(
+            *syclQueue, imageSyclHandle, formatInfo, imageDescriptor.width, imageDescriptor.height);
+    auto copyEvent = syclQueue->ext_oneapi_copy(imageMemoryHandle, hostPtr, imageDescriptor, writeImgEvent);
+    //auto barrierEvent = syclQueue->ext_oneapi_submit_barrier({ copyEvent }); // broken
+    sycl::event signalSemaphoreEvent{};
+    copyEvent.wait_and_throw();
+
+    std::string errorMessage;
+    if (!checkIsArrayLinearTyped(formatInfo, imageDescriptor.width, imageDescriptor.height, hostPtr, errorMessage)) {
+        ASSERT_TRUE(false) << errorMessage;
+    }
+
+    sycl::free(hostPtr, *syclQueue);
+    sycl::ext::oneapi::experimental::destroy_image_handle(imageSyclHandle, *syclQueue);
+    sycl::ext::oneapi::experimental::free_image_mem(imageMemoryHandle, imageDescriptor.type, *syclQueue);
 }

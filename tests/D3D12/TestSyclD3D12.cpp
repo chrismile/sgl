@@ -583,10 +583,10 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
         imageSyclHandle.raw_handle = imageInteropSycl->getRawHandle();
         sycl::event writeImgEvent = writeSyclBindlessImageIncreasingIndices(
                 *syclQueue, imageSyclHandle, formatInfo, width, height);
-        auto barrierEvent = syclQueue->ext_oneapi_submit_barrier({ writeImgEvent });
+        //auto barrierEvent = syclQueue->ext_oneapi_submit_barrier({ writeImgEvent }); // broken
         sycl::event signalSemaphoreEvent{};
         timelineValue++;
-        fence->signalFenceComputeApi(stream, timelineValue, &barrierEvent, &signalSemaphoreEvent);
+        fence->signalFenceComputeApi(stream, timelineValue, &writeImgEvent, &signalSemaphoreEvent);
 
         // Copy image data to buffer with D3D12.
         ID3D12CommandQueue* d3d12CommandQueue = d3d12Device->getD3D12CommandQueue(commandList->getCommandListType());
