@@ -130,7 +130,6 @@ protected:
 
     void runTestsBufferCopySemaphore(bool testRaceCondition);
     void runTestsImageCopy(VkFormat format);
-    void runTestsImageVulkanWriteSyclRead(VkFormat format, bool useSemaphore);
 
     sgl::vk::Instance* instance = nullptr;
     sgl::vk::Device* device = nullptr;
@@ -425,156 +424,6 @@ void InteropTestSyclVk::runTestsImageCopy(VkFormat format) {
     imageViewVulkan = {};
 }
 
-void InteropTestSyclVk::runTestsImageVulkanWriteSyclRead(VkFormat format, bool useSemaphore) {
-    // Create semaphore.
-    uint64_t timelineValue = 0;
-    sgl::vk::SemaphoreVkComputeApiInteropPtr semaphoreVulkan;
-    try {
-        semaphoreVulkan = sgl::vk::createSemaphoreVkComputeApiInterop(
-                device, 0, VK_SEMAPHORE_TYPE_TIMELINE, timelineValue);
-    } catch (sycl::exception const& e) {
-        FAIL() << e.what();
-    }
-
-    // Create image.
-    sgl::vk::ImageSettings imageSettings{};
-    imageSettings.width = 1024;
-    imageSettings.height = 1024;
-    imageSettings.format = format;
-    imageSettings.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
-    imageSettings.exportMemory = true;
-    imageSettings.useDedicatedAllocationForExportedMemory = true;
-    auto imageViewVulkan = std::make_shared<sgl::vk::ImageView>(
-            std::make_shared<sgl::vk::Image>(device, imageSettings));
-    sgl::vk::UnsampledImageVkComputeApiExternalMemoryPtr imageInterop =
-            sgl::vk::createUnsampledImageVkComputeApiExternalMemory(imageViewVulkan->getImage());
-    auto imageInteropSycl = std::static_pointer_cast<sgl::vk::UnsampledImageVkSyclInterop>(imageInterop);
-
-    // Upload data to image.
-    auto formatInfo = sgl::vk::getImageFormatInfo(format);
-    size_t numEntries = imageSettings.width * imageSettings.height * formatInfo.numChannels;
-    size_t sizeInBytes = imageSettings.width * imageSettings.height * formatInfo.formatSizeInBytes;
-    auto* hostPtr = sycl_malloc_host_typed(formatInfo.channelFormat, numEntries, *syclQueue);
-    auto* devicePtr = sycl_malloc_device_typed(formatInfo.channelFormat, numEntries, *syclQueue);
-    initializeHostPointerTyped(formatInfo.channelFormat, numEntries, 42, hostPtr);
-    imageViewVulkan->getImage()->uploadData(sizeInBytes, hostPtr);
-
-    // Create renderer and command buffer.
-    auto renderer = new sgl::vk::Renderer(device);
-    sgl::vk::CommandPoolType commandPoolType;
-    commandPoolType.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    auto commandBuffer = std::make_shared<sgl::vk::CommandBuffer>(device, commandPoolType);
-
-    const char* SHADER_STRING_WRITE_IMAGE_COMPUTE_FMT = R"(
-    #version 450 core
-    layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
-    layout(binding = 0, $0) uniform restrict writeonly $3image2D destImage;
-    #define NUM_CHANNELS $1
-    #define tvec $2
-    void main() {
-        ivec2 destImageSize = imageSize(destImage);
-        ivec2 idx = ivec2(gl_GlobalInvocationID.xy);
-        if (idx.x >= destImageSize.x || idx.y >= destImageSize.y) {
-            return;
-        }
-    #if NUM_CHANNELS == 1
-        tvec outputValue = tvec(idx.x + idx.y * destImageSize.x);
-    #elif NUM_CHANNELS == 2
-        int value = (idx.x + idx.y * destImageSize.x) * 2;
-        tvec outputValue = tvec(value, value + 1, 0.0, 0.0);
-    #elif NUM_CHANNELS == 4
-        int value = (idx.x + idx.y * destImageSize.x) * 4;
-        tvec outputValue = tvec(value, value + 1, value + 2, value + 3);
-    #else
-    #error Unsupported number of image channels.
-    #endif
-        imageStore(destImage, idx, outputValue);
-    }
-    )";
-    std::string imageTypePrefix;
-    if (formatInfo.channelCategory == sgl::ChannelCategory::UINT) {
-        imageTypePrefix = "u";
-    } if (formatInfo.channelCategory == sgl::ChannelCategory::INT) {
-        imageTypePrefix = "i";
-    }
-    auto shaderStringWriteImageCompute = sgl::formatStringPositional(
-            SHADER_STRING_WRITE_IMAGE_COMPUTE_FMT,
-            sgl::vk::getImageFormatGlslString(format),
-            sgl::vk::getImageFormatNumChannels(format),
-            sgl::vk::getImageFormatGlslTypeStringUnsized(formatInfo.channelCategory, 4),
-            imageTypePrefix);
-    auto* shaderManager = new sgl::vk::ShaderManagerVk(device);
-    auto shaderStages = shaderManager->compileComputeShaderFromStringCached(
-            "WriteImage.Compute", shaderStringWriteImageCompute);
-    sgl::vk::ComputePipelineInfo computePipelineInfo(shaderStages);
-    sgl::vk::ComputePipelinePtr computePipeline(new sgl::vk::ComputePipeline(device, computePipelineInfo));
-    auto computeData = std::make_shared<sgl::vk::ComputeData>(renderer, computePipeline);
-    computeData->setStaticImageView(imageViewVulkan, 0);
-
-    // Upload new data with Vulkan.
-    renderer->pushCommandBuffer(commandBuffer);
-    renderer->beginCommandBuffer();
-    renderer->insertImageMemoryBarrier(
-            imageViewVulkan->getImage(),
-            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
-            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-            VK_ACCESS_NONE_KHR, VK_ACCESS_SHADER_WRITE_BIT);
-    renderer->dispatch(computeData, sgl::uiceil(imageSettings.width, 16u), sgl::uiceil(imageSettings.height, 16u), 1);
-
-    if (useSemaphore) {
-        renderer->insertImageMemoryBarrier(
-                imageViewVulkan->getImage(),
-                VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
-                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
-                renderer->getDevice()->getGraphicsQueueIndex(), VK_QUEUE_FAMILY_EXTERNAL);
-
-        timelineValue++;
-        semaphoreVulkan->setSignalSemaphoreValue(timelineValue);
-        commandBuffer->pushSignalSemaphore(semaphoreVulkan);
-    }
-    renderer->endCommandBuffer();
-    if (useSemaphore) {
-        renderer->submitToQueue();
-    } else {
-        renderer->submitToQueueImmediate();
-    }
-
-    // Copy and wait on CPU.
-    sgl::StreamWrapper stream{};
-    stream.syclQueuePtr = syclQueue;
-    sycl::event waitSemaphoreEvent{};
-    if (useSemaphore) {
-        semaphoreVulkan->waitSemaphoreComputeApi(stream, timelineValue, &waitSemaphoreEvent);
-    }
-    sycl::ext::oneapi::experimental::unsampled_image_handle imageSyclHandle{};
-    imageSyclHandle.raw_handle = imageInteropSycl->getRawHandle();
-    sycl::event copyEventImg = copySyclBindlessImageToBuffer(
-            *syclQueue, imageSyclHandle, formatInfo, imageSettings.width, imageSettings.height,
-            devicePtr, waitSemaphoreEvent);
-    auto copyEvent = syclQueue->memcpy(hostPtr, devicePtr, sizeInBytes, copyEventImg);
-    copyEvent.wait_and_throw();
-
-    // Check equality.
-    std::string errorMessage;
-    if (!checkIsArrayLinearTyped(formatInfo, imageSettings.width, imageSettings.height, hostPtr, errorMessage)) {
-        ASSERT_TRUE(false) << errorMessage;
-    }
-
-    device->waitIdle(); // Should not be necessary.
-    computeData = {};
-    delete renderer;
-
-    // Free data.
-    sycl::free(hostPtr, *syclQueue);
-    sycl::free(devicePtr, *syclQueue);
-    imageInterop = {};
-    imageInteropSycl = {};
-    imageViewVulkan = {};
-    shaderStages = {};
-    delete shaderManager;
-}
-
 class InteropTestSyclVkImageCopy
         : public InteropTestSyclVkInOrder, public testing::WithParamInterface<std::pair<VkFormat, bool>> {
 public:
@@ -636,16 +485,166 @@ TEST_P(InteropTestSyclVkImageVulkanWriteSyclRead, Formats) {
     }
     const auto [format, useSemaphore, isFormatRequired] = GetParam();
 
+    auto* shaderManager = new sgl::vk::ShaderManagerVk(device);
+    auto renderer = new sgl::vk::Renderer(device);
+
+    sgl::vk::ImageSettings imageSettings{};
+    imageSettings.width = 1024;
+    imageSettings.height = 1024;
+    imageSettings.format = format;
+    imageSettings.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
+    imageSettings.exportMemory = true;
+    imageSettings.useDedicatedAllocationForExportedMemory = true;
+    auto formatInfo = sgl::vk::getImageFormatInfo(format);
+    size_t numEntries = imageSettings.width * imageSettings.height * formatInfo.numChannels;
+    size_t sizeInBytes = imageSettings.width * imageSettings.height * formatInfo.formatSizeInBytes;
+
+    const char* SHADER_STRING_WRITE_IMAGE_COMPUTE_FMT = R"(
+    #version 450 core
+    layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+    layout(binding = 0, $0) uniform restrict writeonly $3image2D destImage;
+    #define NUM_CHANNELS $1
+    #define tvec $2
+    void main() {
+        ivec2 destImageSize = imageSize(destImage);
+        ivec2 idx = ivec2(gl_GlobalInvocationID.xy);
+        if (idx.x >= destImageSize.x || idx.y >= destImageSize.y) {
+            return;
+        }
+    #if NUM_CHANNELS == 1
+        tvec outputValue = tvec(idx.x + idx.y * destImageSize.x);
+    #elif NUM_CHANNELS == 2
+        int value = (idx.x + idx.y * destImageSize.x) * 2;
+        tvec outputValue = tvec(value, value + 1, 0.0, 0.0);
+    #elif NUM_CHANNELS == 4
+        int value = (idx.x + idx.y * destImageSize.x) * 4;
+        tvec outputValue = tvec(value, value + 1, value + 2, value + 3);
+    #else
+    #error Unsupported number of image channels.
+    #endif
+        imageStore(destImage, idx, outputValue);
+    }
+    )";
+    std::string imageTypePrefix;
+    if (formatInfo.channelCategory == sgl::ChannelCategory::UINT) {
+        imageTypePrefix = "u";
+    } if (formatInfo.channelCategory == sgl::ChannelCategory::INT) {
+        imageTypePrefix = "i";
+    }
+    auto shaderStringWriteImageCompute = sgl::formatStringPositional(
+            SHADER_STRING_WRITE_IMAGE_COMPUTE_FMT,
+            sgl::vk::getImageFormatGlslString(format),
+            sgl::vk::getImageFormatNumChannels(format),
+            sgl::vk::getImageFormatGlslTypeStringUnsized(formatInfo.channelCategory, 4),
+            imageTypePrefix);
+    auto shaderStages = shaderManager->compileComputeShaderFromStringCached(
+            "WriteImage.Compute", shaderStringWriteImageCompute);
+
     std::string errorMessage;
     try {
-        for (int i = 0; i < 10; i++) {
-            runTestsImageVulkanWriteSyclRead(format, true);
+        for (int it = 0; it < 10; it++) {
+            // Create semaphore.
+            uint64_t timelineValue = 0;
+            sgl::vk::SemaphoreVkComputeApiInteropPtr semaphoreVulkan;
+            try {
+                semaphoreVulkan = sgl::vk::createSemaphoreVkComputeApiInterop(
+                        device, 0, VK_SEMAPHORE_TYPE_TIMELINE, timelineValue);
+            } catch (sycl::exception const& e) {
+                FAIL() << e.what();
+            }
+
+            // Create image.
+            auto imageViewVulkan = std::make_shared<sgl::vk::ImageView>(
+                    std::make_shared<sgl::vk::Image>(device, imageSettings));
+            sgl::vk::UnsampledImageVkComputeApiExternalMemoryPtr imageInterop =
+                    sgl::vk::createUnsampledImageVkComputeApiExternalMemory(imageViewVulkan->getImage());
+            auto imageInteropSycl = std::static_pointer_cast<sgl::vk::UnsampledImageVkSyclInterop>(imageInterop);
+
+            // Upload data to image.
+            auto* hostPtr = sycl_malloc_host_typed(formatInfo.channelFormat, numEntries, *syclQueue);
+            auto* devicePtr = sycl_malloc_device_typed(formatInfo.channelFormat, numEntries, *syclQueue);
+            initializeHostPointerTyped(formatInfo.channelFormat, numEntries, 42, hostPtr);
+            imageViewVulkan->getImage()->uploadData(sizeInBytes, hostPtr);
+
+            // Create renderer and command buffer.
+            sgl::vk::CommandPoolType commandPoolType;
+            commandPoolType.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+            auto commandBuffer = std::make_shared<sgl::vk::CommandBuffer>(device, commandPoolType);
+
+            sgl::vk::ComputePipelineInfo computePipelineInfo(shaderStages);
+            sgl::vk::ComputePipelinePtr computePipeline(new sgl::vk::ComputePipeline(device, computePipelineInfo));
+            auto computeData = std::make_shared<sgl::vk::ComputeData>(renderer, computePipeline);
+            computeData->setStaticImageView(imageViewVulkan, 0);
+
+            // Upload new data with Vulkan.
+            renderer->pushCommandBuffer(commandBuffer);
+            renderer->beginCommandBuffer();
+            renderer->insertImageMemoryBarrier(
+                    imageViewVulkan->getImage(),
+                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
+                    VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                    VK_ACCESS_NONE_KHR, VK_ACCESS_SHADER_WRITE_BIT);
+            renderer->dispatch(computeData, sgl::uiceil(imageSettings.width, 16u), sgl::uiceil(imageSettings.height, 16u), 1);
+
+            if (useSemaphore) {
+                renderer->insertImageMemoryBarrier(
+                        imageViewVulkan->getImage(),
+                        VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
+                        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                        VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
+                        renderer->getDevice()->getGraphicsQueueIndex(), VK_QUEUE_FAMILY_EXTERNAL);
+
+                timelineValue++;
+                semaphoreVulkan->setSignalSemaphoreValue(timelineValue);
+                commandBuffer->pushSignalSemaphore(semaphoreVulkan);
+            }
+            renderer->endCommandBuffer();
+            if (useSemaphore) {
+                renderer->submitToQueue();
+            } else {
+                renderer->submitToQueueImmediate();
+            }
+
+            // Copy and wait on CPU.
+            sgl::StreamWrapper stream{};
+            stream.syclQueuePtr = syclQueue;
+            sycl::event waitSemaphoreEvent{};
+            if (useSemaphore) {
+                semaphoreVulkan->waitSemaphoreComputeApi(stream, timelineValue, &waitSemaphoreEvent);
+            }
+            sycl::ext::oneapi::experimental::unsampled_image_handle imageSyclHandle{};
+            imageSyclHandle.raw_handle = imageInteropSycl->getRawHandle();
+            sycl::event copyEventImg = copySyclBindlessImageToBuffer(
+                    *syclQueue, imageSyclHandle, formatInfo, imageSettings.width, imageSettings.height,
+                    devicePtr, waitSemaphoreEvent);
+            auto copyEvent = syclQueue->memcpy(hostPtr, devicePtr, sizeInBytes, copyEventImg);
+            copyEvent.wait_and_throw();
+
+            // Check equality.
+            if (!checkIsArrayLinearTyped(formatInfo, imageSettings.width, imageSettings.height, hostPtr, errorMessage)) {
+                ASSERT_TRUE(false) << errorMessage;
+            }
+
+            device->waitIdle(); // Should not be necessary.
+            computeData = {};
+
+            // Free data.
+            sycl::free(hostPtr, *syclQueue);
+            sycl::free(devicePtr, *syclQueue);
+            imageInterop = {};
+            imageInteropSycl = {};
+            imageViewVulkan = {};
         }
     } catch (sycl::exception const& e) {
         errorMessage = e.what();
     } catch (sgl::UnsupportedComputeApiFeatureException const& e) {
         errorMessage = e.what();
     }
+
+    shaderStages = {};
+    delete renderer;
+    delete shaderManager;
+
     if (!errorMessage.empty()) {
         std::string errorString;
         if (isFormatRequired) {
