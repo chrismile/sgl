@@ -26,21 +26,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SGL_COMMON_HPP
-#define SGL_COMMON_HPP
+#ifndef SGL_CUDADEVICECODE_HPP
+#define SGL_CUDADEVICECODE_HPP
 
-#include <string>
-#include <sycl/sycl.hpp>
-
+#include <cuda.h>
 #include <Graphics/Utils/FormatInfo.hpp>
 
-void* sycl_malloc_host_typed(sgl::ChannelFormat channelFormat, size_t numEntries, sycl::queue& syclQueue);
-void* sycl_malloc_device_typed(sgl::ChannelFormat channelFormat, size_t numEntries, sycl::queue& syclQueue);
+DLL_OBJECT_CUDA bool getIsCudaRuntimeApiInitialized();
+DLL_OBJECT_CUDA void setCudaDevice(CUdevice cuDevice);
+DLL_OBJECT_CUDA void writeCudaSurfaceObjectIncreasingIndices(
+        CUstream cuStream, CUsurfObject surfaceObject, CUarray arrayL0, const sgl::FormatInfo& formatInfo, size_t width, size_t height);
 
-void initializeHostPointerTyped(sgl::ChannelFormat channelFormat, size_t numEntries, int value, void* ptr);
-void initializeHostPointerLinearTyped(sgl::ChannelFormat channelFormat, size_t numEntries, void* ptr);
-
-bool checkIsArrayLinearTyped(
-        const sgl::FormatInfo& formatInfo, size_t width, size_t height, void* ptr, std::string& errorMessage);
-
-#endif //SGL_COMMON_HPP
+#endif //SGL_CUDADEVICECODE_HPP

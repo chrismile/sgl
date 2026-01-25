@@ -892,11 +892,11 @@ SurfaceCudaExternalMemoryVk::SurfaceCudaExternalMemoryVk(vk::ImagePtr& vulkanIma
     imageCudaExternalMemory = std::make_shared<ImageCudaExternalMemoryVk>(vulkanImage, imageViewType, true);
 
     CUDA_RESOURCE_DESC cudaResourceDesc{};
-    cudaResourceDesc.resType = CU_RESOURCE_TYPE_MIPMAPPED_ARRAY;
-    cudaResourceDesc.res.mipmap.hMipmappedArray = imageCudaExternalMemory->getCudaMipmappedArray();
+    cudaResourceDesc.resType = CU_RESOURCE_TYPE_ARRAY;
+    cudaResourceDesc.res.array.hArray = imageCudaExternalMemory->getCudaMipmappedArrayLevel(0);
 
     CUresult cuResult = g_cudaDeviceApiFunctionTable.cuSurfObjectCreate(&cudaSurfaceObject, &cudaResourceDesc);
-    checkCUresult(cuResult, "Error in cuSurfObjectDestroy: ");
+    checkCUresult(cuResult, "Error in cuSurfObjectCreate: ");
 }
 
 SurfaceCudaExternalMemoryVk::SurfaceCudaExternalMemoryVk(vk::ImageViewPtr& vulkanImageView)

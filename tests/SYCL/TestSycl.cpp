@@ -33,7 +33,8 @@
 #include <Utils/File/Logfile.hpp>
 #include <Graphics/Utils/FormatInfo.hpp>
 
-#include "Common.hpp"
+#include "../Utils/Common.hpp"
+#include "CommonSycl.hpp"
 #include "SyclDeviceCode.hpp"
 
 class TestSycl : public ::testing::Test {

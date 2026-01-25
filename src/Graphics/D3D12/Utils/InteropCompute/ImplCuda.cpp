@@ -411,11 +411,11 @@ void UnsampledImageD3D12CudaInterop::initialize(const ImageD3D12ComputeApiExtern
     this->image = _image;
 
     CUDA_RESOURCE_DESC cudaResourceDesc{};
-    cudaResourceDesc.resType = CU_RESOURCE_TYPE_MIPMAPPED_ARRAY;
-    cudaResourceDesc.res.mipmap.hMipmappedArray = getCudaMipmappedArray();
+    cudaResourceDesc.resType = CU_RESOURCE_TYPE_ARRAY;
+    cudaResourceDesc.res.array.hArray = getCudaMipmappedArrayLevel(0);
 
     CUresult cuResult = g_cudaDeviceApiFunctionTable.cuSurfObjectCreate(&cudaSurfaceObject, &cudaResourceDesc);
-    checkCUresult(cuResult, "Error in cuSurfObjectDestroy: ");
+    checkCUresult(cuResult, "Error in cuSurfObjectCreate: ");
 }
 
 UnsampledImageD3D12CudaInterop::~UnsampledImageD3D12CudaInterop() {

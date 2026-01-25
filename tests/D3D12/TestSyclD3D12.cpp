@@ -45,7 +45,8 @@
 #include <Graphics/D3D12/Render/CommandList.hpp>
 #include <Graphics/D3D12/Render/DescriptorAllocator.hpp>
 
-#include "../SYCL/Common.hpp"
+#include "../Utils/Common.hpp"
+#include "../SYCL/CommonSycl.hpp"
 #include "../SYCL/SyclDeviceCode.hpp"
 
 class InteropTestSyclD3D12 : public ::testing::Test {

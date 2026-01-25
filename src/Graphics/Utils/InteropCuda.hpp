@@ -56,6 +56,11 @@ struct CudaDeviceApiFunctionTable {
     CUresult ( *cuCtxGetCurrent )( CUcontext* pctx );
     CUresult ( *cuCtxGetDevice )( CUdevice* device );
     CUresult ( *cuCtxSetCurrent )( CUcontext ctx );
+    CUresult ( *cuCtxPushCurrent )( CUcontext ctx );
+    CUresult ( *cuCtxPopCurrent )( CUcontext* pctx );
+    CUresult ( *cuDevicePrimaryCtxRetain )( CUcontext pctx, CUdevice dev );
+    CUresult ( *cuDevicePrimaryCtxRelease )( CUdevice dev );
+    CUresult ( *cuDevicePrimaryCtxReset )( CUdevice dev );
 
     CUresult ( *cuStreamCreate )( CUstream* phStream, unsigned int Flags );
     CUresult ( *cuStreamDestroy )( CUstream hStream );

@@ -44,7 +44,8 @@
 #include <Graphics/Vulkan/Render/ComputePipeline.hpp>
 #include <Graphics/Vulkan/Render/Data.hpp>
 
-#include "../SYCL/Common.hpp"
+#include "../Utils/Common.hpp"
+#include "../SYCL/CommonSycl.hpp"
 #include "../SYCL/SyclDeviceCode.hpp"
 #include "ImageFormatsVulkan.hpp"
 
@@ -740,7 +741,7 @@ TEST_P(InteropTestSyclVkImageSyclWriteVulkanRead, Formats) {
 
     std::string errorMessage;
     try {
-        for (int it = 0; it < 10; it++) {
+        for (int it = 0; it < 1000; it++) {
             // Create semaphore.
             uint64_t timelineValue = 0;
             sgl::vk::SemaphoreVkComputeApiInteropPtr semaphoreVulkan;
@@ -806,7 +807,7 @@ TEST_P(InteropTestSyclVkImageSyclWriteVulkanRead, Formats) {
                     imageViewVulkan->getImage(),
                     VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
                     VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                    VK_ACCESS_SHADER_READ_BIT, VK_ACCESS_SHADER_WRITE_BIT,
+                    VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
                     VK_QUEUE_FAMILY_EXTERNAL, renderer->getDevice()->getGraphicsQueueIndex());
             renderer->dispatch(computeData, sgl::uiceil(imageSettings.width, 16u), sgl::uiceil(imageSettings.height, 16u), 1);
             renderer->insertBufferMemoryBarrier(

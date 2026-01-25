@@ -26,37 +26,11 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <stdexcept>
+
 #include <Math/half/half.hpp>
 
 #include "Common.hpp"
-
-#include "Utils/libs/portable-file-dialogs.h"
-
-void* sycl_malloc_host_typed(sgl::ChannelFormat channelFormat, size_t numEntries, sycl::queue& syclQueue) {
-    if (channelFormat == sgl::ChannelFormat::FLOAT32) {
-        return sycl::malloc_host<float>(numEntries, syclQueue);
-    }
-    if (channelFormat == sgl::ChannelFormat::UINT32 || channelFormat == sgl::ChannelFormat::INT32) {
-        return sycl::malloc_host<uint32_t>(numEntries, syclQueue);
-    }
-    if (channelFormat == sgl::ChannelFormat::FLOAT16 || channelFormat == sgl::ChannelFormat::UINT16 || channelFormat == sgl::ChannelFormat::INT16) {
-        return sycl::malloc_host<uint16_t>(numEntries, syclQueue);
-    }
-    throw std::runtime_error("Unsupported channel format.");
-}
-
-void* sycl_malloc_device_typed(sgl::ChannelFormat channelFormat, size_t numEntries, sycl::queue& syclQueue) {
-    if (channelFormat == sgl::ChannelFormat::FLOAT32) {
-        return sycl::malloc_device<float>(numEntries, syclQueue);
-    }
-    if (channelFormat == sgl::ChannelFormat::UINT32 || channelFormat == sgl::ChannelFormat::INT32) {
-        return sycl::malloc_device<uint32_t>(numEntries, syclQueue);
-    }
-    if (channelFormat == sgl::ChannelFormat::FLOAT16 || channelFormat == sgl::ChannelFormat::UINT16 || channelFormat == sgl::ChannelFormat::INT16) {
-        return sycl::malloc_device<uint16_t>(numEntries, syclQueue);
-    }
-    throw std::runtime_error("Unsupported channel format.");
-}
 
 void initializeHostPointerTyped(sgl::ChannelFormat channelFormat, size_t numEntries, int value, void* ptr) {
     if (channelFormat == sgl::ChannelFormat::FLOAT32) {

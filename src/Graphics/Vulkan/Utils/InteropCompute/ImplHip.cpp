@@ -558,11 +558,11 @@ void UnsampledImageVkHipInterop::initialize(const ImageVkComputeApiExternalMemor
     image = _image;
 
     hipResourceDesc hipResourceDesc{};
-    hipResourceDesc.resType = hipResourceTypeMipmappedArray;
-    hipResourceDesc.res.mipmap.mipmap = getHipMipmappedArray();
+    hipResourceDesc.resType = hipResourceTypeArray;
+    hipResourceDesc.res.array.array = getHipMipmappedArrayLevel(0);
 
     hipError_t hipResult = g_hipDeviceApiFunctionTable.hipCreateSurfaceObject(&hipSurfaceObject, &hipResourceDesc);
-    checkHipResult(hipResult, "Error in hipSurfObjectDestroy: ");
+    checkHipResult(hipResult, "Error in hipCreateSurfaceObject: ");
 }
 
 UnsampledImageVkHipInterop::~UnsampledImageVkHipInterop() {
