@@ -195,17 +195,17 @@ protected:
 };
 
 
-class InteropTestCudaVulkanImageSyclWriteVulkanRead
+class InteropTestCudaVulkanImageCudaWriteVulkanRead
         : public InteropTestCudaVulkan, public testing::WithParamInterface<std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>> {
 public:
-    InteropTestCudaVulkanImageSyclWriteVulkanRead() = default;
+    InteropTestCudaVulkanImageCudaWriteVulkanRead() = default;
 };
 struct PrintToStringFormatSemaphoreConfig {
     std::string operator()(const testing::TestParamInfo<std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>>& info) const {
         return sgl::vk::convertVkFormatToString(std::get<0>(info.param));
     }
 };
-TEST_P(InteropTestCudaVulkanImageSyclWriteVulkanRead, Formats) {
+TEST_P(InteropTestCudaVulkanImageCudaWriteVulkanRead, Formats) {
     const auto [format, width, height, useSemaphore, isFormatRequired] = GetParam();
 
     auto* shaderManager = new sgl::vk::ShaderManagerVk(device);
@@ -288,7 +288,7 @@ TEST_P(InteropTestCudaVulkanImageSyclWriteVulkanRead, Formats) {
                     std::make_shared<sgl::vk::Image>(device, imageSettings));
             sgl::vk::UnsampledImageVkComputeApiExternalMemoryPtr imageInterop =
                     sgl::vk::createUnsampledImageVkComputeApiExternalMemory(imageViewVulkan->getImage());
-            auto imageInteropSycl = std::static_pointer_cast<sgl::vk::UnsampledImageVkCudaInterop>(imageInterop);
+            auto imageInteropCuda = std::static_pointer_cast<sgl::vk::UnsampledImageVkCudaInterop>(imageInterop);
 
             sgl::vk::BufferSettings bufferSettings{};
             bufferSettings.sizeInBytes = sizeInBytes;
@@ -309,9 +309,9 @@ TEST_P(InteropTestCudaVulkanImageSyclWriteVulkanRead, Formats) {
             computeData->setStaticImageView(imageViewVulkan, 0);
             computeData->setStaticBuffer(bufferVulkan, 1);
 
-            // Write data with SYCL.
-            CUsurfObject surfaceObject = imageInteropSycl->getCudaSurfaceObject();
-            CUarray arrayL0 = imageInteropSycl->getCudaMipmappedArrayLevel(0);
+            // Write data with CUDA.
+            CUsurfObject surfaceObject = imageInteropCuda->getCudaSurfaceObject();
+            CUarray arrayL0 = imageInteropCuda->getCudaMipmappedArrayLevel(0);
             writeCudaSurfaceObjectIncreasingIndices(
                     cuStream, surfaceObject, arrayL0, formatInfo, imageSettings.width, imageSettings.height);
             if (useSemaphore) {
@@ -358,7 +358,7 @@ TEST_P(InteropTestCudaVulkanImageSyclWriteVulkanRead, Formats) {
 
             // Free data.
             imageInterop = {};
-            imageInteropSycl = {};
+            imageInteropCuda = {};
             imageViewVulkan = {};
             bufferVulkan = {};
             stagingBufferVulkan = {};
@@ -389,5 +389,5 @@ TEST_P(InteropTestCudaVulkanImageSyclWriteVulkanRead, Formats) {
         }
     }
 }
-INSTANTIATE_TEST_SUITE_P(TestFormatsAsync, InteropTestCudaVulkanImageSyclWriteVulkanRead, testedImageFormatsReadWriteAsync, PrintToStringFormatSemaphoreConfig());
-INSTANTIATE_TEST_SUITE_P(TestFormatsSync, InteropTestCudaVulkanImageSyclWriteVulkanRead, testedImageFormatsReadWriteSync, PrintToStringFormatSemaphoreConfig());
+INSTANTIATE_TEST_SUITE_P(TestFormatsAsync, InteropTestCudaVulkanImageCudaWriteVulkanRead, testedImageFormatsReadWriteAsync, PrintToStringFormatSemaphoreConfig());
+INSTANTIATE_TEST_SUITE_P(TestFormatsSync, InteropTestCudaVulkanImageCudaWriteVulkanRead, testedImageFormatsReadWriteSync, PrintToStringFormatSemaphoreConfig());

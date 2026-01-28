@@ -28,13 +28,13 @@
 
 #define DLL_OBJECT
 
+#include <string>
 #include <stdexcept>
+
+#include <cuda_fp16.h>
+
 #include <Math/Math.hpp>
 #include "CudaDeviceCode.hpp"
-
-#include <string>
-
-#include "Graphics/Vulkan/libs/hip/include/hip/amd_detail/hip_fp16_gcc.h"
 
 static bool isCudaRuntimeApiInitialized = false;
 
@@ -90,13 +90,13 @@ template<> struct MakeVec<uint16_t, 4> {
     typedef union { ushort4 data; uint16_t arr[4]; } type;
 };
 template<> struct MakeVec<__half, 1> {
-    typedef union { float1 data; float arr[1]; } type;
+    typedef union { ushort1 data; __half arr[1]; } type;
 };
 template<> struct MakeVec<__half, 2> {
-    typedef union { float2 data; float arr[2]; } type;
+    typedef union { ushort2 data; __half arr[2]; } type;
 };
 template<> struct MakeVec<__half, 4> {
-    typedef union { float4 data; float arr[4]; } type;
+    typedef union { ushort4 data; __half arr[4]; } type;
 };
 
 template<typename T, int C>
@@ -112,7 +112,7 @@ __global__ void writeCudaSurfaceObjectIncreasingIndicesKernel(
     vect element;
     for (int c = 0; c < C; c++) {
         if constexpr (std::is_same_v<T, __half>) {
-            element.arr[c] = float(linearIdx + c);
+            element.arr[c] = __float2half(linearIdx + c);
         } else {
             element.arr[c] = T(linearIdx + c);
         }
