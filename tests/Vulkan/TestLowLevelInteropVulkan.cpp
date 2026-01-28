@@ -324,7 +324,7 @@ protected:
     void checkBindlessImagesSupported(bool& available);
     void checkSemaphoresSupported(bool& available);
     void runTestsBufferCopySemaphore();
-    void runTestImageCreation(VkFormat format, bool isFormatRequired);
+    void runTestImageCreation(VkFormat format, uint32_t width, uint32_t height, bool isFormatRequired);
 
     sgl::vk::Instance* instance = nullptr;
     sgl::vk::Device* device = nullptr;
@@ -401,22 +401,22 @@ void InteropTestLowLevelVk::checkBindlessImagesSupported(bool& available) {
 }
 
 class InteropTestLowLevelVkRegularImageCreation
-        : public InteropTestLowLevelVk, public testing::WithParamInterface<std::pair<VkFormat, bool>> {
+        : public InteropTestLowLevelVk, public testing::WithParamInterface<std::tuple<VkFormat, uint32_t, uint32_t, bool>> {
 public:
     InteropTestLowLevelVkRegularImageCreation() = default;
 };
 class InteropTestLowLevelVkBindlessImageCreation
-        : public InteropTestLowLevelVk, public testing::WithParamInterface<std::pair<VkFormat, bool>> {
+        : public InteropTestLowLevelVk, public testing::WithParamInterface<std::tuple<VkFormat, uint32_t, uint32_t, bool>> {
 public:
     InteropTestLowLevelVkBindlessImageCreation() = default;
 };
 struct PrintToStringFormatConfig {
-    std::string operator()(const testing::TestParamInfo<std::pair<VkFormat, bool>>& info) const {
-        return sgl::vk::convertVkFormatToString(info.param.first);
+    std::string operator()(const testing::TestParamInfo<std::tuple<VkFormat, uint32_t, uint32_t, bool>>& info) const {
+        return sgl::vk::convertVkFormatToString(std::get<0>(info.param));
     }
 };
 
-void InteropTestLowLevelVk::runTestImageCreation(VkFormat format, bool isFormatRequired) {
+void InteropTestLowLevelVk::runTestImageCreation(VkFormat format, uint32_t width, uint32_t height, bool isFormatRequired) {
     sgl::vk::ImageSettings imageSettings{};
     imageSettings.width = 1024;
     imageSettings.height = 1024;
@@ -453,14 +453,13 @@ void InteropTestLowLevelVk::runTestImageCreation(VkFormat format, bool isFormatR
 }
 
 TEST_P(InteropTestLowLevelVkRegularImageCreation, Formats) {
-    VkFormat format = GetParam().first;
-    bool isFormatRequired = GetParam().second;
+    const auto [format, width, height, isFormatRequired] = GetParam();
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
     if (sgl::getIsLevelZeroFunctionTableInitialized()) {
         sgl::setLevelZeroUseBindlessImagesInterop(false);
     }
 #endif
-    runTestImageCreation(format, isFormatRequired);
+    runTestImageCreation(format, width, height, isFormatRequired);
 }
 
 TEST_P(InteropTestLowLevelVkBindlessImageCreation, Formats) {
@@ -470,14 +469,13 @@ TEST_P(InteropTestLowLevelVkBindlessImageCreation, Formats) {
         return;
     }
 
-    VkFormat format = GetParam().first;
-    bool isFormatRequired = GetParam().second;
+    const auto [format, width, height, isFormatRequired] = GetParam();
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
     if (sgl::getIsLevelZeroFunctionTableInitialized()) {
         sgl::setLevelZeroUseBindlessImagesInterop(true);
     }
 #endif
-    runTestImageCreation(format, isFormatRequired);
+    runTestImageCreation(format, width, height, isFormatRequired);
 }
 
 INSTANTIATE_TEST_SUITE_P(, InteropTestLowLevelVkRegularImageCreation, testedImageFormats, PrintToStringFormatConfig());

@@ -196,25 +196,24 @@ protected:
 
 
 class InteropTestCudaVulkanImageSyclWriteVulkanRead
-        : public InteropTestCudaVulkan, public testing::WithParamInterface<std::tuple<VkFormat, bool, bool>> {
+        : public InteropTestCudaVulkan, public testing::WithParamInterface<std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>> {
 public:
     InteropTestCudaVulkanImageSyclWriteVulkanRead() = default;
 };
 struct PrintToStringFormatSemaphoreConfig {
-    std::string operator()(const testing::TestParamInfo<std::tuple<VkFormat, bool, bool>>& info) const {
-        const auto [format, useSemaphore, isFormatRequired] = info.param;
-        return sgl::vk::convertVkFormatToString(format);
+    std::string operator()(const testing::TestParamInfo<std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>>& info) const {
+        return sgl::vk::convertVkFormatToString(std::get<0>(info.param));
     }
 };
 TEST_P(InteropTestCudaVulkanImageSyclWriteVulkanRead, Formats) {
-    const auto [format, useSemaphore, isFormatRequired] = GetParam();
+    const auto [format, width, height, useSemaphore, isFormatRequired] = GetParam();
 
     auto* shaderManager = new sgl::vk::ShaderManagerVk(device);
     auto renderer = new sgl::vk::Renderer(device);
 
     sgl::vk::ImageSettings imageSettings{};
-    imageSettings.width = 1024;
-    imageSettings.height = 1024;
+    imageSettings.width = width;
+    imageSettings.height = height;
     imageSettings.format = format;
     imageSettings.usage = VK_IMAGE_USAGE_STORAGE_BIT;
     imageSettings.exportMemory = true;
@@ -224,6 +223,7 @@ TEST_P(InteropTestCudaVulkanImageSyclWriteVulkanRead, Formats) {
 
     const char* SHADER_STRING_COPY_IMAGE_FROM_BUFFER_COMPUTE_FMT = R"(
     #version 450 core
+    $5
     layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
     #define NUM_CHANNELS $1
     #define tvec4 $2
@@ -241,11 +241,11 @@ TEST_P(InteropTestCudaVulkanImageSyclWriteVulkanRead, Formats) {
         int linearIdx = idx.x + idx.y * srcImageSize.x;
         tvec4 imageEntry = imageLoad(srcImage, idx);
     #if NUM_CHANNELS == 1
-        destBuffer[linearIdx] = imageEntry.x;
+        destBuffer[linearIdx] = tvecx(imageEntry.x);
     #elif NUM_CHANNELS == 2
-        destBuffer[linearIdx] = imageEntry.xy;
+        destBuffer[linearIdx] = tvecx(imageEntry.xy);
     #elif NUM_CHANNELS == 4
-        destBuffer[linearIdx] = imageEntry;
+        destBuffer[linearIdx] = tvecx(imageEntry);
     #else
     #error Unsupported number of image channels.
     #endif
@@ -257,13 +257,20 @@ TEST_P(InteropTestCudaVulkanImageSyclWriteVulkanRead, Formats) {
     } if (formatInfo.channelCategory == sgl::ChannelCategory::INT) {
         imageTypePrefix = "i";
     }
+    std::string extensionString;
+    if (formatInfo.channelSizeInBytes == 1) {
+        extensionString = "#extension GL_EXT_shader_8bit_storage : require";
+    } else if (formatInfo.channelSizeInBytes == 2) {
+        extensionString = "#extension GL_EXT_shader_16bit_storage : require";
+    }
     auto shaderStringWriteImageCompute = sgl::formatStringPositional(
             SHADER_STRING_COPY_IMAGE_FROM_BUFFER_COMPUTE_FMT,
             sgl::vk::getImageFormatGlslString(format),
             sgl::vk::getImageFormatNumChannels(format),
             sgl::vk::getImageFormatGlslTypeStringUnsized(formatInfo.channelCategory, 4),
             sgl::vk::getImageFormatGlslTypeStringSized(format),
-            imageTypePrefix);
+            imageTypePrefix,
+            extensionString);
     auto shaderStages = shaderManager->compileComputeShaderFromStringCached(
             "CopyImageToBufferShader.Compute", shaderStringWriteImageCompute);
 

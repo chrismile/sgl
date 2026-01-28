@@ -116,6 +116,10 @@ protected:
         std::vector<const char*> optionalDeviceExtensions = sgl::vk::Device::getCudaInteropDeviceExtensions();
         std::vector<const char*> requiredDeviceExtensions = { VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME };
         sgl::vk::DeviceFeatures requestedDeviceFeatures{};
+        requestedDeviceFeatures.optionalVulkan11Features.storageBuffer16BitAccess = VK_TRUE;
+        requestedDeviceFeatures.optionalVulkan12Features.storageBuffer8BitAccess = VK_TRUE;
+        requestedDeviceFeatures.optionalVulkan12Features.shaderFloat16 = VK_TRUE;
+        requestedDeviceFeatures.optionalVulkan12Features.shaderInt8 = VK_TRUE;
         device->createDeviceHeadless(
                 instance, requiredDeviceExtensions, optionalDeviceExtensions, requestedDeviceFeatures);
     }
@@ -130,7 +134,7 @@ protected:
     }
 
     void runTestsBufferCopySemaphore(bool testRaceCondition);
-    void runTestsImageCopy(VkFormat format);
+    void runTestsImageCopy(VkFormat format, uint32_t width, uint32_t height);
 
     sgl::vk::Instance* instance = nullptr;
     sgl::vk::Device* device = nullptr;
@@ -185,13 +189,13 @@ TEST_F(InteropTestSyclVkInOrder, BufferSharingOnlyTest) {
 }
 
 class InteropTestSyclVkImageCreation
-        : public InteropTestSyclVkInOrder, public testing::WithParamInterface<std::pair<VkFormat, bool>> {
+        : public InteropTestSyclVkInOrder, public testing::WithParamInterface<std::tuple<VkFormat, uint32_t, uint32_t, bool>> {
 public:
     InteropTestSyclVkImageCreation() = default;
 };
 struct PrintToStringFormatConfig {
-    std::string operator()(const testing::TestParamInfo<std::pair<VkFormat, bool>>& info) const {
-        return sgl::vk::convertVkFormatToString(info.param.first);
+    std::string operator()(const testing::TestParamInfo<std::tuple<VkFormat, uint32_t, uint32_t, bool>>& info) const {
+        return sgl::vk::convertVkFormatToString(std::get<0>(info.param));
     }
 };
 
@@ -200,12 +204,11 @@ TEST_P(InteropTestSyclVkImageCreation, Formats) {
             || !syclQueue->get_device().has(sycl::aspect::ext_oneapi_bindless_images)) {
         GTEST_SKIP() << "External bindless images import not supported.";
     }
-    VkFormat format = GetParam().first;
-    bool isFormatRequired = GetParam().second;
+    const auto [format, width, height, isFormatRequired] = GetParam();
 
     sgl::vk::ImageSettings imageSettings{};
-    imageSettings.width = 1024;
-    imageSettings.height = 1024;
+    imageSettings.width = width;
+    imageSettings.height = height;
     imageSettings.format = format;
     imageSettings.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
     imageSettings.exportMemory = true;
@@ -375,11 +378,11 @@ TEST_F(InteropTestSyclVkOutOfOrder, BufferCopySemaphoreNoRaceConditionCheckTest)
 }
 
 
-void InteropTestSyclVk::runTestsImageCopy(VkFormat format) {
+void InteropTestSyclVk::runTestsImageCopy(VkFormat format, uint32_t width, uint32_t height) {
     // Image.
     sgl::vk::ImageSettings imageSettings{};
-    imageSettings.width = 1024;
-    imageSettings.height = 1024;
+    imageSettings.width = width;
+    imageSettings.height = height;
     imageSettings.format = format;
     imageSettings.usage =
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
@@ -426,7 +429,7 @@ void InteropTestSyclVk::runTestsImageCopy(VkFormat format) {
 }
 
 class InteropTestSyclVkImageCopy
-        : public InteropTestSyclVkInOrder, public testing::WithParamInterface<std::pair<VkFormat, bool>> {
+        : public InteropTestSyclVkInOrder, public testing::WithParamInterface<std::tuple<VkFormat, uint32_t, uint32_t, bool>> {
 public:
     InteropTestSyclVkImageCopy() = default;
 };
@@ -435,13 +438,12 @@ TEST_P(InteropTestSyclVkImageCopy, Formats) {
             || !syclQueue->get_device().has(sycl::aspect::ext_oneapi_bindless_images)) {
         GTEST_SKIP() << "External bindless images import not supported.";
     }
-    VkFormat format = GetParam().first;
-    bool isFormatRequired = GetParam().second;
+    const auto [format, width, height, isFormatRequired] = GetParam();
 
     std::string errorMessage;
     try {
         for (int i = 0; i < 100; i++) {
-            runTestsImageCopy(format);
+            runTestsImageCopy(format, width, height);
         }
     } catch (sycl::exception const& e) {
         errorMessage = e.what();
@@ -470,14 +472,13 @@ INSTANTIATE_TEST_SUITE_P(, InteropTestSyclVkImageCopy, testedImageFormatsCopy, P
 
 
 class InteropTestSyclVkImageVulkanWriteSyclRead
-        : public InteropTestSyclVkInOrder, public testing::WithParamInterface<std::tuple<VkFormat, bool, bool>> {
+        : public InteropTestSyclVkInOrder, public testing::WithParamInterface<std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>> {
 public:
     InteropTestSyclVkImageVulkanWriteSyclRead() = default;
 };
 struct PrintToStringFormatSemaphoreConfig {
-    std::string operator()(const testing::TestParamInfo<std::tuple<VkFormat, bool, bool>>& info) const {
-        const auto [format, useSemaphore, isFormatRequired] = info.param;
-        return sgl::vk::convertVkFormatToString(format);
+    std::string operator()(const testing::TestParamInfo<std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>>& info) const {
+        return sgl::vk::convertVkFormatToString(std::get<0>(info.param));
     }
 };
 TEST_P(InteropTestSyclVkImageVulkanWriteSyclRead, Formats) {
@@ -485,14 +486,14 @@ TEST_P(InteropTestSyclVkImageVulkanWriteSyclRead, Formats) {
             || !syclQueue->get_device().has(sycl::aspect::ext_oneapi_bindless_images)) {
         GTEST_SKIP() << "External bindless images import not supported.";
     }
-    const auto [format, useSemaphore, isFormatRequired] = GetParam();
+    const auto [format, width, height, useSemaphore, isFormatRequired] = GetParam();
 
     auto* shaderManager = new sgl::vk::ShaderManagerVk(device);
     auto renderer = new sgl::vk::Renderer(device);
 
     sgl::vk::ImageSettings imageSettings{};
-    imageSettings.width = 1024;
-    imageSettings.height = 1024;
+    imageSettings.width = width;
+    imageSettings.height = height;
     imageSettings.format = format;
     imageSettings.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
     imageSettings.exportMemory = true;
@@ -503,6 +504,7 @@ TEST_P(InteropTestSyclVkImageVulkanWriteSyclRead, Formats) {
 
     const char* SHADER_STRING_WRITE_IMAGE_COMPUTE_FMT = R"(
     #version 450 core
+    $4
     layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
     layout(binding = 0, $0) uniform restrict writeonly $3image2D destImage;
     #define NUM_CHANNELS $1
@@ -533,12 +535,19 @@ TEST_P(InteropTestSyclVkImageVulkanWriteSyclRead, Formats) {
     } if (formatInfo.channelCategory == sgl::ChannelCategory::INT) {
         imageTypePrefix = "i";
     }
+    std::string extensionString;
+    if (formatInfo.channelSizeInBytes == 1) {
+        extensionString = "#extension GL_EXT_shader_8bit_storage : require";
+    } else if (formatInfo.channelSizeInBytes == 2) {
+        extensionString = "#extension GL_EXT_shader_16bit_storage : require";
+    }
     auto shaderStringWriteImageCompute = sgl::formatStringPositional(
             SHADER_STRING_WRITE_IMAGE_COMPUTE_FMT,
             sgl::vk::getImageFormatGlslString(format),
             sgl::vk::getImageFormatNumChannels(format),
             sgl::vk::getImageFormatGlslTypeStringUnsized(formatInfo.channelCategory, 4),
-            imageTypePrefix);
+            imageTypePrefix,
+            extensionString);
     auto shaderStages = shaderManager->compileComputeShaderFromStringCached(
             "WriteImage.Compute", shaderStringWriteImageCompute);
 
@@ -670,7 +679,7 @@ INSTANTIATE_TEST_SUITE_P(TestFormatsSync, InteropTestSyclVkImageVulkanWriteSyclR
 
 
 class InteropTestSyclVkImageSyclWriteVulkanRead
-        : public InteropTestSyclVkInOrder, public testing::WithParamInterface<std::tuple<VkFormat, bool, bool>> {
+        : public InteropTestSyclVkInOrder, public testing::WithParamInterface<std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>> {
 public:
     InteropTestSyclVkImageSyclWriteVulkanRead() = default;
 };
@@ -679,14 +688,14 @@ TEST_P(InteropTestSyclVkImageSyclWriteVulkanRead, Formats) {
             || !syclQueue->get_device().has(sycl::aspect::ext_oneapi_bindless_images)) {
         GTEST_SKIP() << "External bindless images import not supported.";
     }
-    const auto [format, useSemaphore, isFormatRequired] = GetParam();
+    const auto [format, width, height, useSemaphore, isFormatRequired] = GetParam();
 
     auto* shaderManager = new sgl::vk::ShaderManagerVk(device);
     auto renderer = new sgl::vk::Renderer(device);
 
     sgl::vk::ImageSettings imageSettings{};
-    imageSettings.width = 1024;
-    imageSettings.height = 1024;
+    imageSettings.width = width;
+    imageSettings.height = height;
     imageSettings.format = format;
     imageSettings.usage = VK_IMAGE_USAGE_STORAGE_BIT;
     imageSettings.exportMemory = true;
@@ -696,6 +705,7 @@ TEST_P(InteropTestSyclVkImageSyclWriteVulkanRead, Formats) {
 
     const char* SHADER_STRING_COPY_IMAGE_FROM_BUFFER_COMPUTE_FMT = R"(
     #version 450 core
+    $5
     layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
     #define NUM_CHANNELS $1
     #define tvec4 $2
@@ -713,11 +723,11 @@ TEST_P(InteropTestSyclVkImageSyclWriteVulkanRead, Formats) {
         int linearIdx = idx.x + idx.y * srcImageSize.x;
         tvec4 imageEntry = imageLoad(srcImage, idx);
     #if NUM_CHANNELS == 1
-        destBuffer[linearIdx] = imageEntry.x;
+        destBuffer[linearIdx] = tvecx(imageEntry.x);
     #elif NUM_CHANNELS == 2
-        destBuffer[linearIdx] = imageEntry.xy;
+        destBuffer[linearIdx] = tvecx(imageEntry.xy);
     #elif NUM_CHANNELS == 4
-        destBuffer[linearIdx] = imageEntry;
+        destBuffer[linearIdx] = tvecx(imageEntry);
     #else
     #error Unsupported number of image channels.
     #endif
@@ -729,13 +739,20 @@ TEST_P(InteropTestSyclVkImageSyclWriteVulkanRead, Formats) {
     } if (formatInfo.channelCategory == sgl::ChannelCategory::INT) {
         imageTypePrefix = "i";
     }
+    std::string extensionString;
+    if (formatInfo.channelSizeInBytes == 1) {
+        extensionString = "#extension GL_EXT_shader_8bit_storage : require";
+    } else if (formatInfo.channelSizeInBytes == 2) {
+        extensionString = "#extension GL_EXT_shader_16bit_storage : require";
+    }
     auto shaderStringWriteImageCompute = sgl::formatStringPositional(
             SHADER_STRING_COPY_IMAGE_FROM_BUFFER_COMPUTE_FMT,
             sgl::vk::getImageFormatGlslString(format),
             sgl::vk::getImageFormatNumChannels(format),
             sgl::vk::getImageFormatGlslTypeStringUnsized(formatInfo.channelCategory, 4),
             sgl::vk::getImageFormatGlslTypeStringSized(format),
-            imageTypePrefix);
+            imageTypePrefix,
+            extensionString);
     auto shaderStages = shaderManager->compileComputeShaderFromStringCached(
             "CopyImageToBufferShader.Compute", shaderStringWriteImageCompute);
 

@@ -246,17 +246,29 @@ TEST_F(InteropTestSyclD3D12, BufferSyclWriteTest) {
 
 
 const auto testedImageFormatsD3D12 = testing::Values(
-        DXGI_FORMAT_R32_FLOAT, DXGI_FORMAT_R32G32_FLOAT, DXGI_FORMAT_R32G32B32A32_FLOAT,
-        DXGI_FORMAT_R32_UINT, DXGI_FORMAT_R32G32_UINT, DXGI_FORMAT_R32G32B32A32_UINT
+        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R32_FLOAT, 1024, 1024},
+        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R32G32_FLOAT, 1024, 1024},
+        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R32G32B32A32_FLOAT, 1024, 1024},
+        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R32_UINT, 1024, 1024},
+        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R32G32_UINT, 1024, 1024},
+        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R32G32B32A32_UINT, 1024, 1024},
+        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16_UINT, 128, 128},
+        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16_UINT, 128, 128},
+        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16B16A16_UINT, 128, 128},
+        // Maximum representable integer value is 2048 for float16_t.
+        // D3D12_TEXTURE_DATA_PITCH_ALIGNMENT: 256 bytes => Minimum 128 width.
+        //std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16_FLOAT, 128, 16},
+        //std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16_FLOAT, 128, 8},
+        //std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16B16A16_FLOAT, 128, 4}
 );
 
 struct PrintToStringFormatD3D12Config {
-    std::string operator()(const testing::TestParamInfo<DXGI_FORMAT>& info) const {
-        return sgl::d3d12::convertDXGIFormatToString(info.param);
+    std::string operator()(const testing::TestParamInfo<std::tuple<DXGI_FORMAT, uint32_t, uint32_t>>& info) const {
+        return sgl::d3d12::convertDXGIFormatToString(std::get<0>(info.param));
     }
 };
 class InteropTestSyclD3D12Image
-        : public InteropTestSyclD3D12, public testing::WithParamInterface<DXGI_FORMAT> {
+        : public InteropTestSyclD3D12, public testing::WithParamInterface<std::tuple<DXGI_FORMAT, uint32_t, uint32_t>> {
 public:
     InteropTestSyclD3D12Image() = default;
 };
@@ -268,11 +280,8 @@ TEST_P(InteropTestSyclD3D12Image, ImageCopyTest) {
     if (!syclQueue->get_device().has(sycl::aspect::ext_oneapi_bindless_images)) {
         GTEST_SKIP() << "ext_oneapi_bindless_images not supported.";
     }
+    const auto [format, width, height] = GetParam();
 
-    DXGI_FORMAT format = GetParam();
-
-    uint32_t width = 1024;
-    uint32_t height = 1024;
     auto formatInfo = sgl::d3d12::getDXGIFormatInfo(format);
     size_t numEntries = width * height * formatInfo.numChannels;
     size_t sizeInBytes = width * height * formatInfo.formatSizeInBytes;
@@ -335,14 +344,11 @@ TEST_P(InteropTestSyclD3D12Image, ImageD3D12WriteSyclReadTests) {
     if (!syclQueue->get_device().has(sycl::aspect::ext_oneapi_bindless_images)) {
         GTEST_SKIP() << "ext_oneapi_bindless_images not supported.";
     }
+    const auto [format, width, height] = GetParam();
 
     auto* shaderManager = new sgl::d3d12::ShaderManagerD3D12();
     auto* renderer = new sgl::d3d12::Renderer(d3d12Device.get());
 
-    DXGI_FORMAT format = GetParam();
-
-    uint32_t width = 1024;
-    uint32_t height = 1024;
     auto formatInfo = sgl::d3d12::getDXGIFormatInfo(format);
     size_t numEntries = width * height * formatInfo.numChannels;
     size_t sizeInBytes = width * height * formatInfo.formatSizeInBytes;
@@ -484,11 +490,8 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
     if (!syclQueue->get_device().has(sycl::aspect::ext_oneapi_bindless_images)) {
         GTEST_SKIP() << "ext_oneapi_bindless_images not supported.";
     }
+    const auto [format, width, height] = GetParam();
 
-    DXGI_FORMAT format = GetParam();
-
-    uint32_t width = 1024;
-    uint32_t height = 1024;
     auto formatInfo = sgl::d3d12::getDXGIFormatInfo(format);
     size_t numEntries = width * height * formatInfo.numChannels;
     size_t sizeInBytes = width * height * formatInfo.formatSizeInBytes;

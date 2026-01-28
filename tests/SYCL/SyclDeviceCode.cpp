@@ -83,6 +83,24 @@ sycl::event copySyclBindlessImageToBuffer(
     if (formatInfo.numChannels == 4 && formatInfo.channelFormat == sgl::ChannelFormat::UINT32) {
         return copySyclBindlessImageToBuffer<uint32_t, 4>(queue, img, width, height, static_cast<uint32_t*>(devicePtr), depEvent);
     }
+    if (formatInfo.numChannels == 1 && formatInfo.channelFormat == sgl::ChannelFormat::UINT16) {
+        return copySyclBindlessImageToBuffer<uint16_t, 1>(queue, img, width, height, static_cast<uint16_t*>(devicePtr), depEvent);
+    }
+    if (formatInfo.numChannels == 2 && formatInfo.channelFormat == sgl::ChannelFormat::UINT16) {
+        return copySyclBindlessImageToBuffer<uint16_t, 2>(queue, img, width, height, static_cast<uint16_t*>(devicePtr), depEvent);
+    }
+    if (formatInfo.numChannels == 4 && formatInfo.channelFormat == sgl::ChannelFormat::UINT16) {
+        return copySyclBindlessImageToBuffer<uint16_t, 4>(queue, img, width, height, static_cast<uint16_t*>(devicePtr), depEvent);
+    }
+    if (formatInfo.numChannels == 1 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
+        return copySyclBindlessImageToBuffer<sycl::half, 1>(queue, img, width, height, static_cast<sycl::half*>(devicePtr), depEvent);
+    }
+    if (formatInfo.numChannels == 2 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
+        return copySyclBindlessImageToBuffer<sycl::half, 2>(queue, img, width, height, static_cast<sycl::half*>(devicePtr), depEvent);
+    }
+    if (formatInfo.numChannels == 4 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
+        return copySyclBindlessImageToBuffer<sycl::half, 4>(queue, img, width, height, static_cast<sycl::half*>(devicePtr), depEvent);
+    }
     throw std::runtime_error("Error in writeSyclBindlessImageIncreasingIndices: Unsupported number of channels.");
     return sycl::event();
 }
@@ -126,6 +144,24 @@ sycl::event writeSyclBindlessImageIncreasingIndices(
     }
     if (formatInfo.numChannels == 4 && formatInfo.channelFormat == sgl::ChannelFormat::UINT32) {
         return writeSyclBindlessImageIncreasingIndices<uint32_t, 4>(queue, img, width, height);
+    }
+    if (formatInfo.numChannels == 1 && formatInfo.channelFormat == sgl::ChannelFormat::UINT16) {
+        return writeSyclBindlessImageIncreasingIndices<uint16_t, 1>(queue, img, width, height);
+    }
+    if (formatInfo.numChannels == 2 && formatInfo.channelFormat == sgl::ChannelFormat::UINT16) {
+        return writeSyclBindlessImageIncreasingIndices<uint16_t, 2>(queue, img, width, height);
+    }
+    if (formatInfo.numChannels == 4 && formatInfo.channelFormat == sgl::ChannelFormat::UINT16) {
+        return writeSyclBindlessImageIncreasingIndices<uint16_t, 4>(queue, img, width, height);
+    }
+    if (formatInfo.numChannels == 1 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
+        return writeSyclBindlessImageIncreasingIndices<sycl::half, 1>(queue, img, width, height);
+    }
+    if (formatInfo.numChannels == 2 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
+        return writeSyclBindlessImageIncreasingIndices<sycl::half, 2>(queue, img, width, height);
+    }
+    if (formatInfo.numChannels == 4 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
+        return writeSyclBindlessImageIncreasingIndices<sycl::half, 4>(queue, img, width, height);
     }
     throw std::runtime_error("Error in writeSyclBindlessImageIncreasingIndices: Unsupported number of channels.");
     return sycl::event();

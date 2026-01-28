@@ -702,7 +702,7 @@ ChannelCategory getImageChannelCategory(VkFormat format) {
 FormatInfo getImageFormatInfo(VkFormat format) {
     FormatInfo formatInfo{};
     formatInfo.numChannels = getImageFormatNumChannels(format);
-    formatInfo.channelSizeInBytes = getImageFormatEntryByteSize(format);
+    formatInfo.channelSizeInBytes = getImageFormatChannelByteSize(format);
     formatInfo.formatSizeInBytes = getImageFormatEntryByteSize(format);
     formatInfo.channelCategory = getImageChannelCategory(format);
     formatInfo.channelFormat = getImageChannelFormat(format);

@@ -34,6 +34,8 @@
 
 #include <string>
 
+#include "Graphics/Vulkan/libs/hip/include/hip/amd_detail/hip_fp16_gcc.h"
+
 static bool isCudaRuntimeApiInitialized = false;
 
 static void errorCheckCuda(cudaError_t cudaError, const char* name) {
@@ -78,6 +80,24 @@ template<> struct MakeVec<uint32_t, 2> {
 template<> struct MakeVec<uint32_t, 4> {
     typedef union { uint4 data; uint32_t arr[4]; } type;
 };
+template<> struct MakeVec<uint16_t, 1> {
+    typedef union { ushort1 data; uint16_t arr[1]; } type;
+};
+template<> struct MakeVec<uint16_t, 2> {
+    typedef union { ushort2 data; uint16_t arr[2]; } type;
+};
+template<> struct MakeVec<uint16_t, 4> {
+    typedef union { ushort4 data; uint16_t arr[4]; } type;
+};
+template<> struct MakeVec<__half, 1> {
+    typedef union { float1 data; float arr[1]; } type;
+};
+template<> struct MakeVec<__half, 2> {
+    typedef union { float2 data; float arr[2]; } type;
+};
+template<> struct MakeVec<__half, 4> {
+    typedef union { float4 data; float arr[4]; } type;
+};
 
 template<typename T, int C>
 __global__ void writeCudaSurfaceObjectIncreasingIndicesKernel(
@@ -91,7 +111,11 @@ __global__ void writeCudaSurfaceObjectIncreasingIndicesKernel(
     typedef typename MakeVec<T, C>::type vect;
     vect element;
     for (int c = 0; c < C; c++) {
-        element.arr[c] = T(linearIdx + c);
+        if constexpr (std::is_same_v<T, __half>) {
+            element.arr[c] = float(linearIdx + c);
+        } else {
+            element.arr[c] = T(linearIdx + c);
+        }
     }
     surf2Dwrite(element.data, surfaceObject, idX * sizeof(vect), idY);
 }
@@ -114,6 +138,18 @@ void writeCudaSurfaceObjectIncreasingIndices(
         writeCudaSurfaceObjectIncreasingIndicesKernel<uint32_t, 2><<<gridDim, blockDim, 0, cuStream>>>(surfaceObject, iwidth, iheight);
     } else if (formatInfo.numChannels == 4 && formatInfo.channelFormat == sgl::ChannelFormat::UINT32) {
         writeCudaSurfaceObjectIncreasingIndicesKernel<uint32_t, 4><<<gridDim, blockDim, 0, cuStream>>>(surfaceObject, iwidth, iheight);
+    } else if (formatInfo.numChannels == 1 && formatInfo.channelFormat == sgl::ChannelFormat::UINT16) {
+        writeCudaSurfaceObjectIncreasingIndicesKernel<uint16_t, 1><<<gridDim, blockDim, 0, cuStream>>>(surfaceObject, iwidth, iheight);
+    } else if (formatInfo.numChannels == 2 && formatInfo.channelFormat == sgl::ChannelFormat::UINT16) {
+        writeCudaSurfaceObjectIncreasingIndicesKernel<uint16_t, 2><<<gridDim, blockDim, 0, cuStream>>>(surfaceObject, iwidth, iheight);
+    } else if (formatInfo.numChannels == 4 && formatInfo.channelFormat == sgl::ChannelFormat::UINT16) {
+        writeCudaSurfaceObjectIncreasingIndicesKernel<uint16_t, 4><<<gridDim, blockDim, 0, cuStream>>>(surfaceObject, iwidth, iheight);
+    } else if (formatInfo.numChannels == 1 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
+        writeCudaSurfaceObjectIncreasingIndicesKernel<__half, 1><<<gridDim, blockDim, 0, cuStream>>>(surfaceObject, iwidth, iheight);
+    } else if (formatInfo.numChannels == 2 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
+        writeCudaSurfaceObjectIncreasingIndicesKernel<__half, 2><<<gridDim, blockDim, 0, cuStream>>>(surfaceObject, iwidth, iheight);
+    } else if (formatInfo.numChannels == 4 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
+        writeCudaSurfaceObjectIncreasingIndicesKernel<__half, 4><<<gridDim, blockDim, 0, cuStream>>>(surfaceObject, iwidth, iheight);
     } else {
         throw std::runtime_error("Error in writeCudaSurfaceObjectIncreasingIndices: Unsupported number of channels.");
     }

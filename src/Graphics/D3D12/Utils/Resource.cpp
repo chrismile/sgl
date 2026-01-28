@@ -896,6 +896,9 @@ void Resource::transition(
 void Resource::transition(
         D3D12_RESOURCE_STATES stateBefore, D3D12_RESOURCE_STATES stateAfter, uint32_t subresourcce,
         CommandList* commandList) {
+    if (stateBefore == stateAfter) {
+        return;
+    }
     ID3D12GraphicsCommandList* d3d12GraphicsCommandList = commandList->getD3D12GraphicsCommandListPtr();
     D3D12_RESOURCE_BARRIER resourceBarrier{};
     resourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
