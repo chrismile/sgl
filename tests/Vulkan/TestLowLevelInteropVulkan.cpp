@@ -418,8 +418,8 @@ struct PrintToStringFormatConfig {
 
 void InteropTestLowLevelVk::runTestImageCreation(VkFormat format, uint32_t width, uint32_t height, bool isFormatRequired) {
     sgl::vk::ImageSettings imageSettings{};
-    imageSettings.width = 1024;
-    imageSettings.height = 1024;
+    imageSettings.width = width;
+    imageSettings.height = height;
     imageSettings.format = format;
     imageSettings.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
     imageSettings.exportMemory = true;

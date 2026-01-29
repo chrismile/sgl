@@ -254,7 +254,7 @@ const auto testedImageFormatsD3D12 = testing::Values(
         std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R32G32B32A32_UINT, 1024, 1024},
         std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16_UINT, 128, 128},
         std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16_UINT, 128, 128},
-        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16B16A16_UINT, 128, 128},
+        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16B16A16_UINT, 128, 128}
         // Maximum representable integer value is 2048 for float16_t.
         // D3D12_TEXTURE_DATA_PITCH_ALIGNMENT: 256 bytes => Minimum 128 width.
         //std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16_FLOAT, 128, 16},
