@@ -87,6 +87,7 @@ protected:
     sycl::queue* syclQueue = nullptr;
 };
 
+
 TEST_F(InteropTestSyclD3D12, BufferCopySemaphoreTest) {
     if (!syclQueue->get_device().has(sycl::aspect::ext_oneapi_external_memory_import)) {
         GTEST_SKIP() << "ext_oneapi_external_memory_import not supported.";
@@ -251,10 +252,10 @@ const auto testedImageFormatsD3D12 = testing::Values(
         std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R32G32B32A32_FLOAT, 1024, 1024},
         std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R32_UINT, 1024, 1024},
         std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R32G32_UINT, 1024, 1024},
-        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R32G32B32A32_UINT, 1024, 1024}
-        //std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16_UINT, 128, 128},
-        //std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16_UINT, 128, 128},
-        //std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16B16A16_UINT, 128, 128}
+        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R32G32B32A32_UINT, 1024, 1024},
+        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16_UINT, 128, 128},
+        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16_UINT, 128, 128},
+        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16B16A16_UINT, 128, 128}
         // Maximum representable integer value is 2048 for float16_t.
         // D3D12_TEXTURE_DATA_PITCH_ALIGNMENT: 256 bytes => Minimum 128 width.
         //std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16_FLOAT, 128, 16},
@@ -345,6 +346,9 @@ TEST_P(InteropTestSyclD3D12Image, ImageD3D12WriteSyclReadTests) {
         GTEST_SKIP() << "ext_oneapi_bindless_images not supported.";
     }
     const auto [format, width, height] = GetParam();
+    if (!d3d12Device->getFormatSupportsTypedLoadStore(format, false, true)) {
+        GTEST_SKIP() << "D3D12 typed load/store not supported.";
+    }
 
     auto* shaderManager = new sgl::d3d12::ShaderManagerD3D12();
     auto* renderer = new sgl::d3d12::Renderer(d3d12Device.get());
@@ -492,6 +496,12 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
         GTEST_SKIP() << "ext_oneapi_bindless_images not supported.";
     }
     const auto [format, width, height] = GetParam();
+    if (!d3d12Device->getFormatSupportsTypedLoadStore(format, true, true)) {
+        GTEST_SKIP() << "D3D12 typed load/store not supported.";
+    }
+    if (format == DXGI_FORMAT_R16G16_UINT || format == DXGI_FORMAT_R16G16B16A16_UINT) {
+        GTEST_SKIP() << "D3D12 does not support RWBuffer into this format.";
+    }
 
     auto formatInfo = sgl::d3d12::getDXGIFormatInfo(format);
     size_t numEntries = width * height * formatInfo.numChannels;
@@ -502,7 +512,7 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
 
     const char* SHADER_STRING_COPY_IMAGE_FROM_BUFFER_COMPUTE_FMT = R"(
     RWTexture2D<$0> srcImage : register(u0);
-    RWStructuredBuffer<$0> destBuffer : register(u1);
+    RWBuffer<$0> destBuffer : register(u1);
     [numthreads(16, 16, 1)]
     void CSMain(
             uint3 groupID : SV_GroupID, uint3 dispatchThreadID : SV_DispatchThreadID,

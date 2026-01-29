@@ -142,6 +142,56 @@ bool Device::getSupportsROVs() const {
     return featureDataOptions.ROVsSupported;
 }
 
+bool Device::getFormatSupportsTypedLoadStore(DXGI_FORMAT format, bool typedLoad, bool typedStore) const {
+    if (format == DXGI_FORMAT_R32_FLOAT || format == DXGI_FORMAT_R32_UINT || format == DXGI_FORMAT_R32_SINT) {
+        return true;
+    }
+
+    D3D12_FEATURE_DATA_D3D12_OPTIONS featureDataOptions{};
+    if (!SUCCEEDED(d3d12Device2->CheckFeatureSupport(
+            D3D12_FEATURE_D3D12_OPTIONS, &featureDataOptions, sizeof(featureDataOptions)))) {
+        return false;
+    }
+    if (!featureDataOptions.TypedUAVLoadAdditionalFormats) {
+        return false;
+    }
+
+    if (format == DXGI_FORMAT_R32G32B32A32_FLOAT
+            || format == DXGI_FORMAT_R32G32B32A32_UINT
+            || format == DXGI_FORMAT_R32G32B32A32_SINT
+            || format == DXGI_FORMAT_R16G16B16A16_FLOAT
+            || format == DXGI_FORMAT_R16G16B16A16_UINT
+            || format == DXGI_FORMAT_R16G16B16A16_SINT
+            || format == DXGI_FORMAT_R8G8B8A8_UNORM
+            || format == DXGI_FORMAT_R8G8B8A8_UINT
+            || format == DXGI_FORMAT_R8G8B8A8_SINT
+            || format == DXGI_FORMAT_R16_FLOAT
+            || format == DXGI_FORMAT_R16_UINT
+            || format == DXGI_FORMAT_R16_SINT
+            || format == DXGI_FORMAT_R8_UNORM
+            || format == DXGI_FORMAT_R8_UINT
+            || format == DXGI_FORMAT_R8_SINT) {
+        return true;
+    }
+
+    D3D12_FEATURE_DATA_FORMAT_SUPPORT featureDataFormatSupport = {
+            format, D3D12_FORMAT_SUPPORT1_NONE, D3D12_FORMAT_SUPPORT2_NONE
+    };
+    if (!SUCCEEDED(d3d12Device2->CheckFeatureSupport(
+            D3D12_FEATURE_FORMAT_SUPPORT, &featureDataFormatSupport, sizeof(featureDataFormatSupport)))) {
+        return false;
+    }
+
+    DWORD mask = 0;
+    if (typedLoad) {
+        mask |= D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD;
+    }
+    if (typedStore) {
+        mask |= D3D12_FORMAT_SUPPORT2_UAV_TYPED_STORE;
+    }
+    return (featureDataFormatSupport.Support2 & mask) == mask;
+}
+
 ID3D12CommandQueue* Device::getD3D12CommandQueue(CommandListType commandListType) {
     if (commandListType == CommandListType::DIRECT) {
         return commandQueueDirect.Get();

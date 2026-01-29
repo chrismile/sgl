@@ -53,6 +53,7 @@ public:
     [[nodiscard]] inline uint64_t getAdapterLuid() const { return adapterLuid; }
     [[nodiscard]] DeviceVendor getVendor() const;
     [[nodiscard]] bool getSupportsROVs() const;
+    [[nodiscard]] bool getFormatSupportsTypedLoadStore(DXGI_FORMAT format, bool typedLoad, bool typedStore) const;
 
     [[nodiscard]] inline ID3D12Device2* getD3D12Device2() { return d3d12Device2.Get(); }
     [[nodiscard]] inline ID3D12Device2* getD3D12Device2Ptr() { return d3d12Device2.Get(); }
