@@ -33,7 +33,7 @@
 
 namespace sgl { namespace d3d12 {
 
-// Corresponds to D3D12_COMMAND_LIST_TYPE_DIRECT.
+// Corresponds to D3D12_COMMAND_LIST_TYPE.
 enum class CommandListType {
     DIRECT = 0, BUNDLE = 1, COMPUTE = 2, COPY = 3, VIDEO_DECODE = 4, VIDEO_PROCESS = 5, VIDEO_ENCODE = 6, MAX_VAL = 7
 };

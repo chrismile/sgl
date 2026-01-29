@@ -452,7 +452,7 @@ TEST_P(InteropTestSyclD3D12Image, ImageD3D12WriteSyclReadTests) {
         stream.syclQueuePtr = syclQueue;
         sycl::event waitSemaphoreEvent{};
         fence->waitFenceComputeApi(stream, timelineValue, &waitSemaphoreEvent);
-        sycl::ext::oneapi::experimental::unsampled_image_handle imageSyclHandle{};
+        syclexp::unsampled_image_handle imageSyclHandle{};
         imageSyclHandle.raw_handle = imageInteropSycl->getRawHandle();
         sycl::event copyEventImg = copySyclBindlessImageToBuffer(
                 *syclQueue, imageSyclHandle, formatInfo, width, height, devicePtr, waitSemaphoreEvent);
@@ -585,7 +585,7 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
         // Write data with SYCL.
         sgl::StreamWrapper stream{};
         stream.syclQueuePtr = syclQueue;
-        sycl::ext::oneapi::experimental::unsampled_image_handle imageSyclHandle{};
+        syclexp::unsampled_image_handle imageSyclHandle{};
         imageSyclHandle.raw_handle = imageInteropSycl->getRawHandle();
         sycl::event writeImgEvent = writeSyclBindlessImageIncreasingIndices(
                 *syclQueue, imageSyclHandle, formatInfo, width, height);

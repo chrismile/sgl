@@ -80,7 +80,7 @@ TEST_F(TestSycl, WriteKernelImageTest) {
         GTEST_SKIP() << "External bindless images import not supported.";
     }
 
-    sycl::ext::oneapi::experimental::image_descriptor imageDescriptor{};
+    syclexp::image_descriptor imageDescriptor{};
     imageDescriptor.width = 1024;
     imageDescriptor.height = 1024;
     imageDescriptor.num_channels = 1;
@@ -95,19 +95,19 @@ TEST_F(TestSycl, WriteKernelImageTest) {
     const size_t numEntries = imageDescriptor.width * imageDescriptor.height * imageDescriptor.num_channels;
     auto* hostPtr = sycl::malloc_host<float>(numEntries, *syclQueue);
 
-    std::vector<sycl::ext::oneapi::experimental::image_memory_handle_type> supportedImageMemoryHandleTypes =
-            sycl::ext::oneapi::experimental::get_image_memory_support(imageDescriptor, *syclQueue);
+    std::vector<syclexp::image_memory_handle_type> supportedImageMemoryHandleTypes =
+            syclexp::get_image_memory_support(imageDescriptor, *syclQueue);
     if (supportedImageMemoryHandleTypes.empty()) {
         GTEST_FAIL() << "No image memory handle types supported.";
     }
-    if (!sycl::ext::oneapi::experimental::is_image_handle_supported<sycl::ext::oneapi::experimental::unsampled_image_handle>(
-        imageDescriptor, sycl::ext::oneapi::experimental::image_memory_handle_type::opaque_handle, *syclQueue)) {
+    if (!syclexp::is_image_handle_supported<syclexp::unsampled_image_handle>(
+        imageDescriptor, syclexp::image_memory_handle_type::opaque_handle, *syclQueue)) {
         GTEST_FAIL() << "image_memory_handle_type::opaque_handle is not supported.";
     }
-    auto imageMemoryHandle = sycl::ext::oneapi::experimental::alloc_image_mem(imageDescriptor, *syclQueue);
+    auto imageMemoryHandle = syclexp::alloc_image_mem(imageDescriptor, *syclQueue);
 
-    sycl::ext::oneapi::experimental::unsampled_image_handle imageSyclHandle =
-            sycl::ext::oneapi::experimental::create_image(imageMemoryHandle, imageDescriptor, *syclQueue);
+    syclexp::unsampled_image_handle imageSyclHandle =
+            syclexp::create_image(imageMemoryHandle, imageDescriptor, *syclQueue);
 
     sycl::event writeImgEvent = writeSyclBindlessImageIncreasingIndices(
             *syclQueue, imageSyclHandle, formatInfo, imageDescriptor.width, imageDescriptor.height);
@@ -122,6 +122,6 @@ TEST_F(TestSycl, WriteKernelImageTest) {
     }
 
     sycl::free(hostPtr, *syclQueue);
-    sycl::ext::oneapi::experimental::destroy_image_handle(imageSyclHandle, *syclQueue);
-    sycl::ext::oneapi::experimental::free_image_mem(imageMemoryHandle, imageDescriptor.type, *syclQueue);
+    syclexp::destroy_image_handle(imageSyclHandle, *syclQueue);
+    syclexp::free_image_mem(imageMemoryHandle, imageDescriptor.type, *syclQueue);
 }

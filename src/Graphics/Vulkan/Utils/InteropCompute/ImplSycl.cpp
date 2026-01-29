@@ -35,39 +35,41 @@ extern bool openMessageBoxOnComputeApiError;
 extern sycl::queue* g_syclQueue;
 }
 
+namespace syclexp = sycl::ext::oneapi::experimental;
+
 namespace sgl { namespace vk {
 
 struct SyclExternalSemaphoreWrapper {
-    sycl::ext::oneapi::experimental::external_semaphore syclExternalSemaphore;
+    syclexp::external_semaphore syclExternalSemaphore;
 };
 struct SyclExternalMemWrapper {
-    sycl::ext::oneapi::experimental::external_mem syclExternalMem;
+    syclexp::external_mem syclExternalMem;
 };
 struct SyclImageMemHandleWrapper {
-    sycl::ext::oneapi::experimental::image_descriptor syclImageDescriptor;
-    sycl::ext::oneapi::experimental::image_mem_handle syclImageMemHandle;
+    syclexp::image_descriptor syclImageDescriptor;
+    syclexp::image_mem_handle syclImageMemHandle;
 };
 
 
 #ifdef _WIN32
 void SemaphoreVkSyclInterop::setExternalSemaphoreWin32Handle(HANDLE handle) {
     // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
-    sycl::ext::oneapi::experimental::external_semaphore_handle_type semaphoreHandleType;
+    syclexp::external_semaphore_handle_type semaphoreHandleType;
     if (isTimelineSemaphore()) {
 #ifndef SYCL_NO_EXTERNAL_TIMELINE_SEMAPHORE_SUPPORT
-        semaphoreHandleType = sycl::ext::oneapi::experimental::external_semaphore_handle_type::timeline_win32_nt_handle;
+        semaphoreHandleType = syclexp::external_semaphore_handle_type::timeline_win32_nt_handle;
 #else
         sgl::Logfile::get()->throwError(
                 "Error in SemaphoreVkSyclInterop::SemaphoreVkSyclInterop: "
                 "The installed version of SYCL does not support external timeline semaphores.");
 #endif
     } else {
-        semaphoreHandleType = sycl::ext::oneapi::experimental::external_semaphore_handle_type::win32_nt_handle;
+        semaphoreHandleType = syclexp::external_semaphore_handle_type::win32_nt_handle;
     }
-    sycl::ext::oneapi::experimental::external_semaphore_descriptor<sycl::ext::oneapi::experimental::resource_win32_handle>
+    syclexp::external_semaphore_descriptor<syclexp::resource_win32_handle>
             syclExternalSemaphoreDescriptor{handle, semaphoreHandleType};
     auto* wrapper = new SyclExternalSemaphoreWrapper;
-    wrapper->syclExternalSemaphore = sycl::ext::oneapi::experimental::import_external_semaphore(
+    wrapper->syclExternalSemaphore = syclexp::import_external_semaphore(
             syclExternalSemaphoreDescriptor, *g_syclQueue);
     externalSemaphore = reinterpret_cast<void*>(wrapper);
 }
@@ -76,22 +78,22 @@ void SemaphoreVkSyclInterop::setExternalSemaphoreWin32Handle(HANDLE handle) {
 #ifdef __linux__
 void SemaphoreVkSyclInterop::setExternalSemaphoreFd(int fileDescriptor) {
     // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
-    sycl::ext::oneapi::experimental::external_semaphore_handle_type semaphoreHandleType;
+    syclexp::external_semaphore_handle_type semaphoreHandleType;
     if (isTimelineSemaphore()) {
 #ifndef SYCL_NO_EXTERNAL_TIMELINE_SEMAPHORE_SUPPORT
-        semaphoreHandleType = sycl::ext::oneapi::experimental::external_semaphore_handle_type::timeline_fd;
+        semaphoreHandleType = syclexp::external_semaphore_handle_type::timeline_fd;
 #else
         sgl::Logfile::get()->throwError(
                 "Error in SemaphoreVkSyclInterop::SemaphoreVkSyclInterop: "
                 "The installed version of SYCL does not support external timeline semaphores.");
 #endif
     } else {
-        semaphoreHandleType = sycl::ext::oneapi::experimental::external_semaphore_handle_type::opaque_fd;
+        semaphoreHandleType = syclexp::external_semaphore_handle_type::opaque_fd;
     }
-    sycl::ext::oneapi::experimental::external_semaphore_descriptor<sycl::ext::oneapi::experimental::resource_fd>
+    syclexp::external_semaphore_descriptor<syclexp::resource_fd>
             syclExternalSemaphoreDescriptor{fileDescriptor, semaphoreHandleType};
     auto* wrapper = new SyclExternalSemaphoreWrapper;
-    wrapper->syclExternalSemaphore = sycl::ext::oneapi::experimental::import_external_semaphore(
+    wrapper->syclExternalSemaphore = syclexp::import_external_semaphore(
             syclExternalSemaphoreDescriptor, *g_syclQueue);
     externalSemaphore = reinterpret_cast<void*>(wrapper);
 }
@@ -100,7 +102,7 @@ void SemaphoreVkSyclInterop::setExternalSemaphoreFd(int fileDescriptor) {
 SemaphoreVkSyclInterop::~SemaphoreVkSyclInterop() {
     if (externalSemaphore) {
         auto* wrapper = reinterpret_cast<SyclExternalSemaphoreWrapper*>(externalSemaphore);
-        sycl::ext::oneapi::experimental::release_external_semaphore(wrapper->syclExternalSemaphore, *g_syclQueue);
+        syclexp::release_external_semaphore(wrapper->syclExternalSemaphore, *g_syclQueue);
         delete wrapper;
     }
 }
@@ -141,11 +143,11 @@ void SemaphoreVkSyclInterop::waitSemaphoreComputeApi(
 #ifdef _WIN32
 void BufferVkSyclInterop::setExternalMemoryWin32Handle(HANDLE handle) {
     // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
-    auto memoryHandleType = sycl::ext::oneapi::experimental::external_mem_handle_type::win32_nt_handle;
-    sycl::ext::oneapi::experimental::external_mem_descriptor<sycl::ext::oneapi::experimental::resource_win32_handle>
+    auto memoryHandleType = syclexp::external_mem_handle_type::win32_nt_handle;
+    syclexp::external_mem_descriptor<syclexp::resource_win32_handle>
             syclExternalMemDescriptor{(void*)handle, memoryHandleType, vulkanBuffer->getDeviceMemorySize()}; // memoryRequirements.size;
     auto* wrapper = new SyclExternalMemWrapper;
-    wrapper->syclExternalMem = sycl::ext::oneapi::experimental::import_external_memory(
+    wrapper->syclExternalMem = syclexp::import_external_memory(
             syclExternalMemDescriptor, *g_syclQueue);
     externalMemoryBuffer = reinterpret_cast<void*>(wrapper);
 }
@@ -154,11 +156,11 @@ void BufferVkSyclInterop::setExternalMemoryWin32Handle(HANDLE handle) {
 #ifdef __linux__
 void BufferVkSyclInterop::setExternalMemoryFd(int fileDescriptor) {
     // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
-    auto memoryHandleType = sycl::ext::oneapi::experimental::external_mem_handle_type::opaque_fd;
-    sycl::ext::oneapi::experimental::external_mem_descriptor<sycl::ext::oneapi::experimental::resource_fd>
+    auto memoryHandleType = syclexp::external_mem_handle_type::opaque_fd;
+    syclexp::external_mem_descriptor<syclexp::resource_fd>
         syclExternalMemDescriptor{fileDescriptor, memoryHandleType, vulkanBuffer->getDeviceMemorySize()}; // memoryRequirements.size;
     auto* wrapper = new SyclExternalMemWrapper;
-    wrapper->syclExternalMem = sycl::ext::oneapi::experimental::import_external_memory(
+    wrapper->syclExternalMem = syclexp::import_external_memory(
             syclExternalMemDescriptor, *g_syclQueue);
     externalMemoryBuffer = reinterpret_cast<void*>(wrapper);
 }
@@ -166,7 +168,7 @@ void BufferVkSyclInterop::setExternalMemoryFd(int fileDescriptor) {
 
 void BufferVkSyclInterop::importExternalMemory() {
     auto* wrapper = reinterpret_cast<SyclExternalMemWrapper*>(externalMemoryBuffer);
-    devicePtr = sycl::ext::oneapi::experimental::map_external_linear_memory(
+    devicePtr = syclexp::map_external_linear_memory(
             wrapper->syclExternalMem, 0, vulkanBuffer->getDeviceMemorySize(), *g_syclQueue);
 }
 
@@ -174,8 +176,8 @@ void BufferVkSyclInterop::free() {
     freeHandlesAndFds();
     if (externalMemoryBuffer) {
         auto* wrapper = reinterpret_cast<SyclExternalMemWrapper*>(externalMemoryBuffer);
-        sycl::ext::oneapi::experimental::unmap_external_linear_memory(devicePtr, *g_syclQueue);
-        sycl::ext::oneapi::experimental::release_external_memory(wrapper->syclExternalMem, *g_syclQueue);
+        syclexp::unmap_external_linear_memory(devicePtr, *g_syclQueue);
+        syclexp::release_external_memory(wrapper->syclExternalMem, *g_syclQueue);
         delete wrapper;
         externalMemoryBuffer = {};
     }
@@ -219,11 +221,11 @@ void BufferVkSyclInterop::copyToHostPtrAsync(void* hostPtrDst, StreamWrapper str
 #ifdef _WIN32
 void ImageVkSyclInterop::setExternalMemoryWin32Handle(HANDLE handle) {
     // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
-    auto memoryHandleType = sycl::ext::oneapi::experimental::external_mem_handle_type::win32_nt_handle;
-    sycl::ext::oneapi::experimental::external_mem_descriptor<sycl::ext::oneapi::experimental::resource_win32_handle>
+    auto memoryHandleType = syclexp::external_mem_handle_type::win32_nt_handle;
+    syclexp::external_mem_descriptor<syclexp::resource_win32_handle>
             syclExternalMemDescriptor{(void*)handle, memoryHandleType, vulkanImage->getDeviceMemorySize()}; // memoryRequirements.size;
     auto* wrapper = new SyclExternalMemWrapper;
-    wrapper->syclExternalMem = sycl::ext::oneapi::experimental::import_external_memory(
+    wrapper->syclExternalMem = syclexp::import_external_memory(
             syclExternalMemDescriptor, *g_syclQueue);
     externalMemoryBuffer = reinterpret_cast<void*>(wrapper);
 }
@@ -232,11 +234,11 @@ void ImageVkSyclInterop::setExternalMemoryWin32Handle(HANDLE handle) {
 #ifdef __linux__
 void ImageVkSyclInterop::setExternalMemoryFd(int fileDescriptor) {
     // https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc
-    auto memoryHandleType = sycl::ext::oneapi::experimental::external_mem_handle_type::opaque_fd;
-    sycl::ext::oneapi::experimental::external_mem_descriptor<sycl::ext::oneapi::experimental::resource_fd>
+    auto memoryHandleType = syclexp::external_mem_handle_type::opaque_fd;
+    syclexp::external_mem_descriptor<syclexp::resource_fd>
             syclExternalMemDescriptor{fileDescriptor, memoryHandleType, vulkanImage->getDeviceMemorySize()}; // memoryRequirements.size;
     auto* wrapper = new SyclExternalMemWrapper;
-    wrapper->syclExternalMem = sycl::ext::oneapi::experimental::import_external_memory(
+    wrapper->syclExternalMem = syclexp::import_external_memory(
             syclExternalMemDescriptor, *g_syclQueue);
     externalMemoryBuffer = reinterpret_cast<void*>(wrapper);
 }
@@ -245,7 +247,7 @@ void ImageVkSyclInterop::setExternalMemoryFd(int fileDescriptor) {
 void ImageVkSyclInterop::importExternalMemory() {
     const sgl::vk::ImageSettings& imageSettings = vulkanImage->getImageSettings();
     auto* wrapperImg = new SyclImageMemHandleWrapper;
-    sycl::ext::oneapi::experimental::image_descriptor& syclImageDescriptor = wrapperImg->syclImageDescriptor;
+    syclexp::image_descriptor& syclImageDescriptor = wrapperImg->syclImageDescriptor;
     syclImageDescriptor.width = imageSettings.width;
     if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_2D
             || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_3D
@@ -263,16 +265,16 @@ void ImageVkSyclInterop::importExternalMemory() {
     syclImageDescriptor.num_channels = unsigned(getImageFormatNumChannels(imageSettings.format));
     if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY
             || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
-        syclImageDescriptor.type = sycl::ext::oneapi::experimental::image_type::array;
+        syclImageDescriptor.type = syclexp::image_type::array;
     } else if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_CUBE) {
-        syclImageDescriptor.type = sycl::ext::oneapi::experimental::image_type::cubemap;
+        syclImageDescriptor.type = syclexp::image_type::cubemap;
     } else if (imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_1D
             || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_2D
             || imageComputeApiInfo.imageViewType == VK_IMAGE_VIEW_TYPE_3D) {
         if (syclImageDescriptor.num_levels > 1) {
-            syclImageDescriptor.type = sycl::ext::oneapi::experimental::image_type::mipmap;
+            syclImageDescriptor.type = syclexp::image_type::mipmap;
         } else {
-            syclImageDescriptor.type = sycl::ext::oneapi::experimental::image_type::standard;
+            syclImageDescriptor.type = syclexp::image_type::standard;
         }
     } else {
         Logfile::get()->throwError(
@@ -372,16 +374,16 @@ void ImageVkSyclInterop::importExternalMemory() {
 
     auto* wrapperMem = reinterpret_cast<SyclExternalMemWrapper*>(externalMemoryBuffer);
     bool supportsHandleType = false;
-    std::vector<sycl::ext::oneapi::experimental::image_memory_handle_type> supportedHandleTypes =
-            sycl::ext::oneapi::experimental::get_image_memory_support(syclImageDescriptor, *g_syclQueue);
+    std::vector<syclexp::image_memory_handle_type> supportedHandleTypes =
+            syclexp::get_image_memory_support(syclImageDescriptor, *g_syclQueue);
     for (auto supportedHandleType : supportedHandleTypes) {
-        if (supportedHandleType == sycl::ext::oneapi::experimental::image_memory_handle_type::opaque_handle) {
+        if (supportedHandleType == syclexp::image_memory_handle_type::opaque_handle) {
             supportsHandleType = true;
             break;
         }
     }
     if (!supportsHandleType) {
-        sycl::ext::oneapi::experimental::release_external_memory(wrapperMem->syclExternalMem, *g_syclQueue);
+        syclexp::release_external_memory(wrapperMem->syclExternalMem, *g_syclQueue);
         delete wrapperMem;
         externalMemoryBuffer = nullptr;
         if (openMessageBoxOnComputeApiError) {
@@ -396,7 +398,7 @@ void ImageVkSyclInterop::importExternalMemory() {
         throw UnsupportedComputeApiFeatureException("Unsupported SYCL image memory type");
     }
 
-    wrapperImg->syclImageMemHandle = sycl::ext::oneapi::experimental::map_external_image_memory(
+    wrapperImg->syclImageMemHandle = syclexp::map_external_image_memory(
             wrapperMem->syclExternalMem, syclImageDescriptor, *g_syclQueue);
     mipmappedArray = reinterpret_cast<void*>(wrapperImg);
 }
@@ -405,14 +407,14 @@ void ImageVkSyclInterop::free() {
     freeHandlesAndFds();
     if (mipmappedArray) {
         auto* wrapperImg = reinterpret_cast<SyclImageMemHandleWrapper*>(mipmappedArray);
-        sycl::ext::oneapi::experimental::free_image_mem(
+        syclexp::free_image_mem(
                 wrapperImg->syclImageMemHandle, wrapperImg->syclImageDescriptor.type, *g_syclQueue);
         delete wrapperImg;
         mipmappedArray = {};
     }
     if (externalMemoryBuffer) {
         auto* wrapperMem = reinterpret_cast<SyclExternalMemWrapper*>(externalMemoryBuffer);
-        sycl::ext::oneapi::experimental::release_external_memory(wrapperMem->syclExternalMem, *g_syclQueue);
+        syclexp::release_external_memory(wrapperMem->syclExternalMem, *g_syclQueue);
         delete wrapperMem;
         externalMemoryBuffer = {};
     }
@@ -444,13 +446,13 @@ void ImageVkSyclInterop::copyToDevicePtrAsync(
 
 
 void UnsampledImageVkSyclInterop::initialize(const ImageVkComputeApiExternalMemoryPtr& _image) {
-    static_assert(sizeof(sycl::ext::oneapi::experimental::unsampled_image_handle) == sizeof(rawImageHandle));
+    static_assert(sizeof(syclexp::unsampled_image_handle) == sizeof(rawImageHandle));
     this->image = _image;
     auto imageVkSycl = std::static_pointer_cast<ImageVkSyclInterop>(image);
     auto* wrapperImg = reinterpret_cast<SyclImageMemHandleWrapper*>(imageVkSycl->mipmappedArray);
 
-    if (!sycl::ext::oneapi::experimental::is_image_handle_supported<sycl::ext::oneapi::experimental::unsampled_image_handle>(
-            wrapperImg->syclImageDescriptor, sycl::ext::oneapi::experimental::image_memory_handle_type::opaque_handle,
+    if (!syclexp::is_image_handle_supported<syclexp::unsampled_image_handle>(
+            wrapperImg->syclImageDescriptor, syclexp::image_memory_handle_type::opaque_handle,
             *g_syclQueue)) {
         if (openMessageBoxOnComputeApiError) {
             sgl::Logfile::get()->writeError(
@@ -464,15 +466,15 @@ void UnsampledImageVkSyclInterop::initialize(const ImageVkComputeApiExternalMemo
         throw UnsupportedComputeApiFeatureException("Unsupported SYCL image handle type");
     }
 
-    auto handle = sycl::ext::oneapi::experimental::create_image(
+    auto handle = syclexp::create_image(
             wrapperImg->syclImageMemHandle, wrapperImg->syclImageDescriptor, *g_syclQueue);
     rawImageHandle = handle.raw_handle;
 }
 
 UnsampledImageVkSyclInterop::~UnsampledImageVkSyclInterop() {
     if (rawImageHandle) {
-        sycl::ext::oneapi::experimental::unsampled_image_handle handle{rawImageHandle};
-        sycl::ext::oneapi::experimental::destroy_image_handle(handle, *g_syclQueue);
+        syclexp::unsampled_image_handle handle{rawImageHandle};
+        syclexp::destroy_image_handle(handle, *g_syclQueue);
         rawImageHandle = {};
     }
 }
@@ -500,7 +502,7 @@ static sycl::addressing_mode getSyclSamplerAddressModeVk(VkSamplerAddressMode sa
 void SampledImageVkSyclInterop::initialize(
             const ImageVkComputeApiExternalMemoryPtr& _image,
             const TextureExternalMemorySettings& textureExternalMemorySettings) {
-    static_assert(sizeof(sycl::ext::oneapi::experimental::sampled_image_handle) == sizeof(rawImageHandle));
+    static_assert(sizeof(syclexp::sampled_image_handle) == sizeof(rawImageHandle));
     this->image = _image;
     const auto& imageComputeApiInfo = image->getImageComputeApiInfo();
     const auto& samplerSettings = imageComputeApiInfo.imageSamplerSettings;
@@ -508,8 +510,8 @@ void SampledImageVkSyclInterop::initialize(
     auto imageVkSycl = std::static_pointer_cast<ImageVkSyclInterop>(image);
     auto* wrapperImg = reinterpret_cast<SyclImageMemHandleWrapper*>(imageVkSycl->mipmappedArray);
 
-    if (!sycl::ext::oneapi::experimental::is_image_handle_supported<sycl::ext::oneapi::experimental::sampled_image_handle>(
-            wrapperImg->syclImageDescriptor, sycl::ext::oneapi::experimental::image_memory_handle_type::opaque_handle,
+    if (!syclexp::is_image_handle_supported<syclexp::sampled_image_handle>(
+            wrapperImg->syclImageDescriptor, syclexp::image_memory_handle_type::opaque_handle,
             *g_syclQueue)) {
         if (openMessageBoxOnComputeApiError) {
             sgl::Logfile::get()->writeError(
@@ -523,7 +525,7 @@ void SampledImageVkSyclInterop::initialize(
         throw UnsupportedComputeApiFeatureException("Unsupported SYCL image handle type");
     }
 
-    sycl::ext::oneapi::experimental::bindless_image_sampler syclSampler{};
+    syclexp::bindless_image_sampler syclSampler{};
     syclSampler.addressing[0] = getSyclSamplerAddressModeVk(samplerSettings.addressModeU);
     syclSampler.addressing[1] = getSyclSamplerAddressModeVk(samplerSettings.addressModeV);
     syclSampler.addressing[2] = getSyclSamplerAddressModeVk(samplerSettings.addressModeW);
@@ -537,20 +539,20 @@ void SampledImageVkSyclInterop::initialize(
     syclSampler.mipmap_filtering =
             samplerSettings.mipmapMode == VK_SAMPLER_MIPMAP_MODE_NEAREST
             ? sycl::filtering_mode::nearest : sycl::filtering_mode::linear;
-    syclSampler.cubemap_filtering = sycl::ext::oneapi::experimental::cubemap_filtering_mode::disjointed;
+    syclSampler.cubemap_filtering = syclexp::cubemap_filtering_mode::disjointed;
     syclSampler.min_mipmap_level_clamp = samplerSettings.minLod;
     syclSampler.max_mipmap_level_clamp = samplerSettings.maxLod;
     syclSampler.max_anisotropy = samplerSettings.maxAnisotropy;
 
-    auto handle = sycl::ext::oneapi::experimental::create_image(
+    auto handle = syclexp::create_image(
             wrapperImg->syclImageMemHandle, wrapperImg->syclImageDescriptor, *g_syclQueue);
     rawImageHandle = handle.raw_handle;
 }
 
 SampledImageVkSyclInterop::~SampledImageVkSyclInterop() {
     if (rawImageHandle) {
-        sycl::ext::oneapi::experimental::sampled_image_handle handle{rawImageHandle};
-        sycl::ext::oneapi::experimental::destroy_image_handle(handle, *g_syclQueue);
+        syclexp::sampled_image_handle handle{rawImageHandle};
+        syclexp::destroy_image_handle(handle, *g_syclQueue);
         rawImageHandle = {};
     }
 }

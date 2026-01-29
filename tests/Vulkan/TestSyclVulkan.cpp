@@ -623,7 +623,7 @@ TEST_P(InteropTestSyclVkImageVulkanWriteSyclRead, Formats) {
             if (useSemaphore) {
                 semaphoreVulkan->waitSemaphoreComputeApi(stream, timelineValue, &waitSemaphoreEvent);
             }
-            sycl::ext::oneapi::experimental::unsampled_image_handle imageSyclHandle{};
+            syclexp::unsampled_image_handle imageSyclHandle{};
             imageSyclHandle.raw_handle = imageInteropSycl->getRawHandle();
             sycl::event copyEventImg = copySyclBindlessImageToBuffer(
                     *syclQueue, imageSyclHandle, formatInfo, imageSettings.width, imageSettings.height,
@@ -799,7 +799,7 @@ TEST_P(InteropTestSyclVkImageSyclWriteVulkanRead, Formats) {
             // Write data with SYCL.
             sgl::StreamWrapper stream{};
             stream.syclQueuePtr = syclQueue;
-            sycl::ext::oneapi::experimental::unsampled_image_handle imageSyclHandle{};
+            syclexp::unsampled_image_handle imageSyclHandle{};
             imageSyclHandle.raw_handle = imageInteropSycl->getRawHandle();
             sycl::event writeImgEvent = writeSyclBindlessImageIncreasingIndices(
                     *syclQueue, imageSyclHandle, formatInfo, imageSettings.width, imageSettings.height);
