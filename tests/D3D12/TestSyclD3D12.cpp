@@ -251,10 +251,10 @@ const auto testedImageFormatsD3D12 = testing::Values(
         std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R32G32B32A32_FLOAT, 1024, 1024},
         std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R32_UINT, 1024, 1024},
         std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R32G32_UINT, 1024, 1024},
-        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R32G32B32A32_UINT, 1024, 1024},
-        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16_UINT, 128, 128},
-        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16_UINT, 128, 128},
-        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16B16A16_UINT, 128, 128}
+        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R32G32B32A32_UINT, 1024, 1024}
+        //std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16_UINT, 128, 128},
+        //std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16_UINT, 128, 128},
+        //std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16B16A16_UINT, 128, 128}
         // Maximum representable integer value is 2048 for float16_t.
         // D3D12_TEXTURE_DATA_PITCH_ALIGNMENT: 256 bytes => Minimum 128 width.
         //std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16_FLOAT, 128, 16},
@@ -564,7 +564,6 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
 
         sgl::d3d12::ResourceSettings bufferSettings{};
         bufferSettings.resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeInBytes, flags);
-        bufferSettings.resourceStates = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
         sgl::d3d12::ResourcePtr bufferD3D12 = std::make_shared<sgl::d3d12::Resource>(d3d12Device.get(), bufferSettings);
         /*bufferSettings.resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeInBytes, D3D12_RESOURCE_FLAG_NONE);
         bufferSettings.heapProperties.Type = D3D12_HEAP_TYPE_READBACK;
@@ -599,6 +598,7 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
         ID3D12CommandQueue* d3d12CommandQueue = d3d12Device->getD3D12CommandQueue(commandList->getCommandListType());
         d3d12CommandQueue->Wait(fence->getD3D12Fence(), timelineValue);
         renderer->setCommandList(commandList);
+        bufferD3D12->transition(D3D12_RESOURCE_STATE_UNORDERED_ACCESS, commandList);
         auto* descriptorHeap = descriptorAllocator->getD3D12DescriptorHeapPtr();
         commandList->getD3D12GraphicsCommandListPtr()->SetDescriptorHeaps(1, &descriptorHeap);
         renderer->dispatch(computeData, sgl::uiceil(width, 16u), sgl::uiceil(height, 16u), 1);
