@@ -552,6 +552,7 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
         imageSettings.resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(
                 format, width, height, 1, 0, 1, 0, flags, D3D12_TEXTURE_LAYOUT_UNKNOWN);
         imageSettings.heapFlags = D3D12_HEAP_FLAG_SHARED;
+        imageSettings.resourceStates = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
         sgl::d3d12::ResourcePtr imageD3D12 = std::make_shared<sgl::d3d12::Resource>(d3d12Device.get(), imageSettings);
         sgl::d3d12::UnsampledImageD3D12ComputeApiExternalMemoryPtr imageInterop;
         try {
@@ -560,12 +561,10 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
             FAIL() << e.what();
         }
         auto imageInteropSycl = std::static_pointer_cast<sgl::d3d12::UnsampledImageD3D12SyclInterop>(imageInterop);
-        d3d12Device->runSingleTimeCommands([&](sgl::d3d12::CommandList* commandList){
-            imageD3D12->transition(D3D12_RESOURCE_STATE_UNORDERED_ACCESS, commandList);
-        });
 
         sgl::d3d12::ResourceSettings bufferSettings{};
         bufferSettings.resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeInBytes, flags);
+        bufferSettings.resourceStates = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
         sgl::d3d12::ResourcePtr bufferD3D12 = std::make_shared<sgl::d3d12::Resource>(d3d12Device.get(), bufferSettings);
         /*bufferSettings.resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeInBytes, D3D12_RESOURCE_FLAG_NONE);
         bufferSettings.heapProperties.Type = D3D12_HEAP_TYPE_READBACK;
@@ -600,7 +599,6 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
         ID3D12CommandQueue* d3d12CommandQueue = d3d12Device->getD3D12CommandQueue(commandList->getCommandListType());
         d3d12CommandQueue->Wait(fence->getD3D12Fence(), timelineValue);
         renderer->setCommandList(commandList);
-        bufferD3D12->transition(D3D12_RESOURCE_STATE_UNORDERED_ACCESS, commandList);
         auto* descriptorHeap = descriptorAllocator->getD3D12DescriptorHeapPtr();
         commandList->getD3D12GraphicsCommandListPtr()->SetDescriptorHeaps(1, &descriptorHeap);
         renderer->dispatch(computeData, sgl::uiceil(width, 16u), sgl::uiceil(height, 16u), 1);
