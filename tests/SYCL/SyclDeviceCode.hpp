@@ -32,6 +32,8 @@
 #include <sycl/sycl.hpp>
 #include <Graphics/Utils/FormatInfo.hpp>
 
+namespace syclexp = sycl::ext::oneapi::experimental;
+
 DLL_OBJECT_SYCL sycl::event writeSyclBufferData(sycl::queue& queue, size_t numEntries, float* devicePtr);
 DLL_OBJECT_SYCL sycl::event copySyclBindlessImageToBuffer(
         sycl::queue& queue, syclexp::unsampled_image_handle img,
