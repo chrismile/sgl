@@ -438,6 +438,7 @@ TEST_P(InteropTestSyclD3D12Image, ImageD3D12WriteSyclReadTests) {
         ID3D12CommandQueue* d3d12CommandQueue = d3d12Device->getD3D12CommandQueue(commandList->getCommandListType());
         renderer->setCommandList(commandList);
         auto* descriptorHeap = descriptorAllocatorUAV->getD3D12DescriptorHeapPtr();
+        imageD3D12->transition(D3D12_RESOURCE_STATE_UNORDERED_ACCESS, commandList);
         commandList->getD3D12GraphicsCommandListPtr()->SetDescriptorHeaps(1, &descriptorHeap);
         renderer->dispatch(computeData, sgl::uiceil(width, 16u), sgl::uiceil(height, 16u), 1);
         commandList->close();
@@ -535,8 +536,8 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
     D3D12_UNORDERED_ACCESS_VIEW_DESC destBufferUavDesc{};
     destBufferUavDesc.Format = DXGI_FORMAT_UNKNOWN;
     destBufferUavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-    destBufferUavDesc.Buffer.NumElements = UINT(numEntries);
-    destBufferUavDesc.Buffer.StructureByteStride = sizeof(float);
+    destBufferUavDesc.Buffer.NumElements = UINT(width * height);
+    destBufferUavDesc.Buffer.StructureByteStride = formatInfo.formatSizeInBytes;
 
     const int NUM_ITERATIONS = 1000;
     for (int it = 0; it < NUM_ITERATIONS; it++) {
@@ -559,6 +560,9 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
             FAIL() << e.what();
         }
         auto imageInteropSycl = std::static_pointer_cast<sgl::d3d12::UnsampledImageD3D12SyclInterop>(imageInterop);
+        d3d12Device->runSingleTimeCommands([&](sgl::d3d12::CommandList* commandList){
+            imageD3D12->transition(D3D12_RESOURCE_STATE_UNORDERED_ACCESS, commandList);
+        });
 
         sgl::d3d12::ResourceSettings bufferSettings{};
         bufferSettings.resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeInBytes, flags);
@@ -596,6 +600,7 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
         ID3D12CommandQueue* d3d12CommandQueue = d3d12Device->getD3D12CommandQueue(commandList->getCommandListType());
         d3d12CommandQueue->Wait(fence->getD3D12Fence(), timelineValue);
         renderer->setCommandList(commandList);
+        bufferD3D12->transition(D3D12_RESOURCE_STATE_UNORDERED_ACCESS, commandList);
         auto* descriptorHeap = descriptorAllocator->getD3D12DescriptorHeapPtr();
         commandList->getD3D12GraphicsCommandListPtr()->SetDescriptorHeaps(1, &descriptorHeap);
         renderer->dispatch(computeData, sgl::uiceil(width, 16u), sgl::uiceil(height, 16u), 1);
