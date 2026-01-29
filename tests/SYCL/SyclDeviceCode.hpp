@@ -34,11 +34,11 @@
 
 DLL_OBJECT_SYCL sycl::event writeSyclBufferData(sycl::queue& queue, size_t numEntries, float* devicePtr);
 DLL_OBJECT_SYCL sycl::event copySyclBindlessImageToBuffer(
-        sycl::queue& queue, sycl::ext::oneapi::experimental::unsampled_image_handle img,
+        sycl::queue& queue, syclexp::unsampled_image_handle img,
         const sgl::FormatInfo& formatInfo, size_t width, size_t height,
         void* devicePtr, const sycl::event& depEvent);
 DLL_OBJECT_SYCL sycl::event writeSyclBindlessImageIncreasingIndices(
-        sycl::queue& queue, sycl::ext::oneapi::experimental::unsampled_image_handle img,
+        sycl::queue& queue, syclexp::unsampled_image_handle img,
         const sgl::FormatInfo& formatInfo, size_t width, size_t height);
 
 #endif //SGL_TESTS_SYCLDEVICECODE_HPP

@@ -44,7 +44,7 @@ sycl::event writeSyclBufferData(sycl::queue& queue, size_t numEntries, float* de
 
 template<typename T, int C>
 sycl::event copySyclBindlessImageToBuffer(
-        sycl::queue& queue, sycl::ext::oneapi::experimental::unsampled_image_handle img, size_t width, size_t height,
+        sycl::queue& queue, syclexp::unsampled_image_handle img, size_t width, size_t height,
         T* devicePtr, const sycl::event& depEvent) {
     auto event = queue.submit([&](sycl::handler& cgh) {
         cgh.depends_on(depEvent);
@@ -52,7 +52,7 @@ sycl::event copySyclBindlessImageToBuffer(
             const auto x = it[0];
             const auto y = it[1];
             const auto index = (x + y * width) * static_cast<size_t>(C);
-            auto data = sycl::ext::oneapi::experimental::fetch_image<sycl::vec<T, C>>(img, sycl::int2{x, y});
+            auto data = syclexp::fetch_image<sycl::vec<T, C>>(img, sycl::int2{x, y});
             for (int c = 0; c < C; c++) {
                 devicePtr[index + c] = data[c];
             }
@@ -62,7 +62,7 @@ sycl::event copySyclBindlessImageToBuffer(
 }
 
 sycl::event copySyclBindlessImageToBuffer(
-        sycl::queue& queue, sycl::ext::oneapi::experimental::unsampled_image_handle img,
+        sycl::queue& queue, syclexp::unsampled_image_handle img,
         const sgl::FormatInfo& formatInfo, size_t width, size_t height,
         void* devicePtr, const sycl::event& depEvent) {
     if (formatInfo.numChannels == 1 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT32) {
@@ -90,7 +90,7 @@ sycl::event copySyclBindlessImageToBuffer(
 
 template<typename T, int C>
 sycl::event writeSyclBindlessImageIncreasingIndices(
-        sycl::queue& queue, sycl::ext::oneapi::experimental::unsampled_image_handle img, size_t width, size_t height) {
+        sycl::queue& queue, syclexp::unsampled_image_handle img, size_t width, size_t height) {
     auto event = queue.submit([&](sycl::handler& cgh) {
         cgh.parallel_for(sycl::range<2>{width, height}, [=](sycl::id<2> it) {
             const auto x = it[0];
@@ -100,14 +100,14 @@ sycl::event writeSyclBindlessImageIncreasingIndices(
             for (int c = 0; c < C; c++) {
                 data[c] = T(index + c);
             }
-            sycl::ext::oneapi::experimental::write_image<sycl::vec<T, C>>(img, sycl::int2{x, y}, data);
+            syclexp::write_image<sycl::vec<T, C>>(img, sycl::int2{x, y}, data);
         });
     });
     return event;
 }
 
 sycl::event writeSyclBindlessImageIncreasingIndices(
-        sycl::queue& queue, sycl::ext::oneapi::experimental::unsampled_image_handle img,
+        sycl::queue& queue, syclexp::unsampled_image_handle img,
         const sgl::FormatInfo& formatInfo, size_t width, size_t height) {
     if (formatInfo.numChannels == 1 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT32) {
         return writeSyclBindlessImageIncreasingIndices<float, 1>(queue, img, width, height);
