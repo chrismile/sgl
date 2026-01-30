@@ -250,6 +250,7 @@ const auto testedImageFormatsD3D12 = testing::Values(
         std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R32_FLOAT, 1024, 1024},
         std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R32G32_FLOAT, 1024, 1024},
         std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R32G32B32A32_FLOAT, 1024, 1024},
+        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R32G32B32A32_FLOAT, 512, 256},
         std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R32_UINT, 1024, 1024},
         std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R32G32_UINT, 1024, 1024},
         std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R32G32B32A32_UINT, 1024, 1024},
@@ -263,9 +264,21 @@ const auto testedImageFormatsD3D12 = testing::Values(
         //std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16B16A16_FLOAT, 128, 4}
 );
 
+template<class T>
+std::string getDxgiFormatString(const T& info) {
+    DXGI_FORMAT format = std::get<0>(info.param);
+    uint32_t width = std::get<1>(info.param);
+    uint32_t height = std::get<2>(info.param);
+    auto formatString = sgl::d3d12::convertDXGIFormatToString(format);
+    if (width != height || (sgl::d3d12::getDXGIFormatChannelSizeInBytes(format) == 4 && (width != 1024 || height != 1024))) {
+        formatString += "_" + std::to_string(width) + "x" + std::to_string(height);
+    }
+    return formatString;
+}
+
 struct PrintToStringFormatD3D12Config {
     std::string operator()(const testing::TestParamInfo<std::tuple<DXGI_FORMAT, uint32_t, uint32_t>>& info) const {
-        return sgl::d3d12::convertDXGIFormatToString(std::get<0>(info.param));
+        return getDxgiFormatString(info);
     }
 };
 class InteropTestSyclD3D12Image

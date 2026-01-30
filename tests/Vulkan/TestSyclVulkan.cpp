@@ -48,6 +48,7 @@
 #include "../SYCL/CommonSycl.hpp"
 #include "../SYCL/SyclDeviceCode.hpp"
 #include "ImageFormatsVulkan.hpp"
+#include "Utils/libs/portable-file-dialogs.h"
 
 class InteropTestSyclVk : public ::testing::Test {
 protected:
@@ -188,6 +189,18 @@ TEST_F(InteropTestSyclVkInOrder, BufferSharingOnlyTest) {
     bufferVulkan = {};
 }
 
+template<class T>
+std::string getVkFormatString(const T& info) {
+    VkFormat format = std::get<0>(info.param);
+    uint32_t width = std::get<1>(info.param);
+    uint32_t height = std::get<2>(info.param);
+    auto formatString = sgl::vk::convertVkFormatToString(format);
+    if (width != height || (sgl::vk::getImageFormatChannelByteSize(format) == 4 && (width != 1024 || height != 1024))) {
+        formatString += "_" + std::to_string(width) + "x" + std::to_string(height);
+    }
+    return formatString;
+}
+
 class InteropTestSyclVkImageCreation
         : public InteropTestSyclVkInOrder, public testing::WithParamInterface<std::tuple<VkFormat, uint32_t, uint32_t, bool>> {
 public:
@@ -195,7 +208,7 @@ public:
 };
 struct PrintToStringFormatConfig {
     std::string operator()(const testing::TestParamInfo<std::tuple<VkFormat, uint32_t, uint32_t, bool>>& info) const {
-        return sgl::vk::convertVkFormatToString(std::get<0>(info.param));
+        return getVkFormatString(info);
     }
 };
 
@@ -478,7 +491,7 @@ public:
 };
 struct PrintToStringFormatSemaphoreConfig {
     std::string operator()(const testing::TestParamInfo<std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>>& info) const {
-        return sgl::vk::convertVkFormatToString(std::get<0>(info.param));
+        return getVkFormatString(info);
     }
 };
 TEST_P(InteropTestSyclVkImageVulkanWriteSyclRead, Formats) {
