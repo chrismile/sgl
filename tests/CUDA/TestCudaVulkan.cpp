@@ -195,6 +195,18 @@ protected:
 };
 
 
+template<class T>
+std::string getVkFormatStringCuda(const T& info) {
+    VkFormat format = std::get<0>(info.param);
+    uint32_t width = std::get<1>(info.param);
+    uint32_t height = std::get<2>(info.param);
+    auto formatString = sgl::vk::convertVkFormatToString(format);
+    if (sgl::vk::getImageFormatChannelByteSize(format) == 4 && (width != 1024 || height != 1024)) {
+        formatString += "_" + std::to_string(width) + "x" + std::to_string(height);
+    }
+    return formatString;
+}
+
 class InteropTestCudaVulkanImageCudaWriteVulkanRead
         : public InteropTestCudaVulkan, public testing::WithParamInterface<std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>> {
 public:
@@ -202,7 +214,7 @@ public:
 };
 struct PrintToStringFormatSemaphoreConfig {
     std::string operator()(const testing::TestParamInfo<std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>>& info) const {
-        return sgl::vk::convertVkFormatToString(std::get<0>(info.param));
+        return getVkFormatStringCuda(info);
     }
 };
 TEST_P(InteropTestCudaVulkanImageCudaWriteVulkanRead, Formats) {

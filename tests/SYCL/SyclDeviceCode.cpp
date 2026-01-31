@@ -56,7 +56,7 @@ sycl::event copySyclBindlessImageToBuffer(
             for (int c = 0; c < C; c++) {
                 devicePtr[index + c] = data[c];
             }
-        });
+    });
     });
     return event;
 }
@@ -92,15 +92,15 @@ sycl::event copySyclBindlessImageToBuffer(
     if (formatInfo.numChannels == 4 && formatInfo.channelFormat == sgl::ChannelFormat::UINT16) {
         return copySyclBindlessImageToBuffer<uint16_t, 4>(queue, img, width, height, static_cast<uint16_t*>(devicePtr), depEvent);
     }
-    //if (formatInfo.numChannels == 1 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
-    //    return copySyclBindlessImageToBuffer<sycl::half, 1>(queue, img, width, height, static_cast<sycl::half*>(devicePtr), depEvent);
-    //}
-    //if (formatInfo.numChannels == 2 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
-    //    return copySyclBindlessImageToBuffer<sycl::half, 2>(queue, img, width, height, static_cast<sycl::half*>(devicePtr), depEvent);
-    //}
-    //if (formatInfo.numChannels == 4 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
-    //    return copySyclBindlessImageToBuffer<sycl::half, 4>(queue, img, width, height, static_cast<sycl::half*>(devicePtr), depEvent);
-    //}
+    if (formatInfo.numChannels == 1 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
+        return copySyclBindlessImageToBuffer<uint16_t, 1>(queue, img, width, height, static_cast<uint16_t*>(devicePtr), depEvent);
+    }
+    if (formatInfo.numChannels == 2 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
+        return copySyclBindlessImageToBuffer<uint16_t, 2>(queue, img, width, height, static_cast<uint16_t*>(devicePtr), depEvent);
+    }
+    if (formatInfo.numChannels == 4 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
+        return copySyclBindlessImageToBuffer<uint16_t, 4>(queue, img, width, height, static_cast<uint16_t*>(devicePtr), depEvent);
+    }
     throw std::runtime_error("Error in writeSyclBindlessImageIncreasingIndices: Unsupported number of channels.");
     return sycl::event();
 }
@@ -114,11 +114,21 @@ sycl::event writeSyclBindlessImageIncreasingIndices(
             const auto x = it[0];
             const auto y = it[1];
             const auto index = (x + y * width) * static_cast<size_t>(C);
-            sycl::vec<T, C> data;
-            for (int c = 0; c < C; c++) {
-                data[c] = T(index + c);
+            if constexpr (std::is_same_v<T, sycl::half>) {
+                sycl::vec<uint16_t, C> data;
+                for (int c = 0; c < C; c++) {
+                    data[c] = sycl::bit_cast<uint16_t>(sycl::half(float(index + c)));
+                    //data[c] = sycl::detail::float2Half(index + c); // may not use __SYCL_DEVICE_ONLY__ code path
+                    //data[c] = sycl::half(index + c); // sycl::half constructor doesn't work, converts to float
+                }
+                syclexp::write_image<sycl::vec<uint16_t, C>>(img, sycl::int2{x, y}, data);
+            } else {
+                sycl::vec<T, C> data;
+                for (int c = 0; c < C; c++) {
+                    data[c] = T(index + c);
+                }
+                syclexp::write_image<sycl::vec<T, C>>(img, sycl::int2{x, y}, data);
             }
-            syclexp::write_image<sycl::vec<T, C>>(img, sycl::int2{x, y}, data);
         });
     });
     return event;
@@ -154,15 +164,15 @@ sycl::event writeSyclBindlessImageIncreasingIndices(
     if (formatInfo.numChannels == 4 && formatInfo.channelFormat == sgl::ChannelFormat::UINT16) {
         return writeSyclBindlessImageIncreasingIndices<uint16_t, 4>(queue, img, width, height);
     }
-    //if (formatInfo.numChannels == 1 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
-    //    return writeSyclBindlessImageIncreasingIndices<sycl::half, 1>(queue, img, width, height);
-    //}
-    //if (formatInfo.numChannels == 2 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
-    //    return writeSyclBindlessImageIncreasingIndices<sycl::half, 2>(queue, img, width, height);
-    //}
-    //if (formatInfo.numChannels == 4 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
-    //    return writeSyclBindlessImageIncreasingIndices<sycl::half, 4>(queue, img, width, height);
-    //}
+    if (formatInfo.numChannels == 1 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
+        return writeSyclBindlessImageIncreasingIndices<sycl::half, 1>(queue, img, width, height);
+    }
+    if (formatInfo.numChannels == 2 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
+        return writeSyclBindlessImageIncreasingIndices<sycl::half, 2>(queue, img, width, height);
+    }
+    if (formatInfo.numChannels == 4 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
+        return writeSyclBindlessImageIncreasingIndices<sycl::half, 4>(queue, img, width, height);
+    }
     throw std::runtime_error("Error in writeSyclBindlessImageIncreasingIndices: Unsupported number of channels.");
     return sycl::event();
 }

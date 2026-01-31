@@ -105,7 +105,7 @@ public:
 
 	/** Construction from a double-precision float
 	 */
-	inline HalfFloat(const double);
+	inline HalfFloat(double other);
 
 	inline HalfFloat(int other);
 //	inline HalfFloat(uint32_t other);
@@ -131,7 +131,7 @@ public:
 	 */
 	inline HalfFloat& operator= (HalfFloat other);
 	inline HalfFloat& operator= (float other);
-	inline HalfFloat& operator= (const double other);
+	inline HalfFloat& operator= (double other);
 
 
 	/** Comparison operators

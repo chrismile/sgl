@@ -112,6 +112,8 @@ __global__ void writeCudaSurfaceObjectIncreasingIndicesKernel(
     vect element;
     for (int c = 0; c < C; c++) {
         if constexpr (std::is_same_v<T, __half>) {
+            // https://stackoverflow.com/questions/77308513/how-can-i-write-to-an-fp16-surface
+            // Writing needs to be done with ushort4, but fetch could also be float4.
             element.arr[c] = __float2half(linearIdx + c);
         } else {
             element.arr[c] = T(linearIdx + c);

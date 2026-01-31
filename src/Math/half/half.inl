@@ -104,7 +104,7 @@ inline HalfFloat::HalfFloat(float other)
 	}
 }
 // ------------------------------------------------------------------------------------------------
-inline HalfFloat::HalfFloat(const double p_Reference)
+inline HalfFloat::HalfFloat(double p_Reference)
 {
 	const IEEEDouble & l_Reference = reinterpret_cast<const IEEEDouble &>(p_Reference);
 
@@ -174,9 +174,7 @@ inline HalfFloat::HalfFloat(const double p_Reference)
 	}; // else usual number
 } 
 
-inline HalfFloat::HalfFloat(int other){
-	HalfFloat(float(other));
-}
+inline HalfFloat::HalfFloat(int other) : HalfFloat(float(other)) {}
 //inline HalfFloat::HalfFloat(uint32_t other){
 //	HalfFloat(float(other));
 //}
@@ -312,7 +310,7 @@ inline HalfFloat& HalfFloat::operator= (float other)
 	return *this;
 }
 // ------------------------------------------------------------------------------------------------
-inline HalfFloat& HalfFloat::operator= (const double p_Reference)
+inline HalfFloat& HalfFloat::operator= (double p_Reference)
 {
 	return (*this) = HalfFloat(p_Reference);
 }

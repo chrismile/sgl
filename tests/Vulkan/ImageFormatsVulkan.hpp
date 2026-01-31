@@ -56,11 +56,11 @@ const auto testedImageFormatsCopy = testing::Values(
         std::tuple<VkFormat, uint32_t, uint32_t, bool>{VK_FORMAT_R32G32B32A32_UINT, 1024, 1024, true},
         std::tuple<VkFormat, uint32_t, uint32_t, bool>{VK_FORMAT_R16_UINT, 128, 128, true},
         std::tuple<VkFormat, uint32_t, uint32_t, bool>{VK_FORMAT_R16G16_UINT, 128, 128, true},
-        std::tuple<VkFormat, uint32_t, uint32_t, bool>{VK_FORMAT_R16G16B16A16_UINT, 128, 128, true}
+        std::tuple<VkFormat, uint32_t, uint32_t, bool>{VK_FORMAT_R16G16B16A16_UINT, 128, 128, true},
         // Maximum representable integer value is 2048 for float16_t.
-        //std::tuple<VkFormat, uint32_t, uint32_t, bool>{VK_FORMAT_R16_SFLOAT, 64, 32, true},
-        //std::tuple<VkFormat, uint32_t, uint32_t, bool>{VK_FORMAT_R16G16_SFLOAT, 32, 32, true},
-        //std::tuple<VkFormat, uint32_t, uint32_t, bool>{VK_FORMAT_R16G16B16A16_SFLOAT, 32, 16, true}
+        std::tuple<VkFormat, uint32_t, uint32_t, bool>{VK_FORMAT_R16_SFLOAT, 64, 32, true},
+        std::tuple<VkFormat, uint32_t, uint32_t, bool>{VK_FORMAT_R16G16_SFLOAT, 32, 32, true},
+        std::tuple<VkFormat, uint32_t, uint32_t, bool>{VK_FORMAT_R16G16B16A16_SFLOAT, 32, 16, true}
 );
 
 const auto testedImageFormatsReadWriteAsync = testing::Values(
@@ -77,11 +77,11 @@ const auto testedImageFormatsReadWriteAsync = testing::Values(
         std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>{VK_FORMAT_R32G32B32A32_UINT, 1024, 1024, true, true},
         std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>{VK_FORMAT_R16_UINT, 128, 128, true, true},
         std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>{VK_FORMAT_R16G16_UINT, 128, 128, true, true},
-        std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>{VK_FORMAT_R16G16B16A16_UINT, 128, 128, true, true}
+        std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>{VK_FORMAT_R16G16B16A16_UINT, 128, 128, true, true},
         // Maximum representable integer value is 2048 for float16_t.
-        //std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>{VK_FORMAT_R16_SFLOAT, 64, 32, true, true},
-        //std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>{VK_FORMAT_R16G16_SFLOAT, 32, 32, true, true},
-        //std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>{VK_FORMAT_R16G16B16A16_SFLOAT, 32, 16, true, true}
+        std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>{VK_FORMAT_R16_SFLOAT, 64, 32, true, true},
+        std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>{VK_FORMAT_R16G16_SFLOAT, 32, 32, true, true},
+        std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>{VK_FORMAT_R16G16B16A16_SFLOAT, 32, 16, true, true}
 );
 
 const auto testedImageFormatsReadWriteSync = testing::Values(
@@ -98,11 +98,11 @@ const auto testedImageFormatsReadWriteSync = testing::Values(
         std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>{VK_FORMAT_R32G32B32A32_UINT, 1024, 1024, false, true},
         std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>{VK_FORMAT_R16_UINT, 128, 128, false, true},
         std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>{VK_FORMAT_R16G16_UINT, 128, 128, false, true},
-        std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>{VK_FORMAT_R16G16B16A16_UINT, 128, 128, false, true}
+        std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>{VK_FORMAT_R16G16B16A16_UINT, 128, 128, false, true},
         // Maximum representable integer value is 2048 for float16_t.
-        //std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>{VK_FORMAT_R16_SFLOAT, 64, 32, false, true},
-        //std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>{VK_FORMAT_R16G16_SFLOAT, 32, 32, false, true},
-        //std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>{VK_FORMAT_R16G16B16A16_SFLOAT, 32, 16, false, true}
+        std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>{VK_FORMAT_R16_SFLOAT, 64, 32, false, true},
+        std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>{VK_FORMAT_R16G16_SFLOAT, 32, 32, false, true},
+        std::tuple<VkFormat, uint32_t, uint32_t, bool, bool>{VK_FORMAT_R16G16B16A16_SFLOAT, 32, 16, false, true}
 );
 
 #endif //SGL_TESTS_IMAGEFORMATS_HPP
