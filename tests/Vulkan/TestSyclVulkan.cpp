@@ -716,7 +716,7 @@ TEST_P(InteropTestSyclVkImageSyclWriteVulkanRead, Formats) {
     auto formatInfo = sgl::vk::getImageFormatInfo(format);
     size_t sizeInBytes = imageSettings.width * imageSettings.height * formatInfo.formatSizeInBytes;
 
-    const char* SHADER_STRING_COPY_IMAGE_FROM_BUFFER_COMPUTE_FMT = R"(
+    const char* SHADER_STRING_COPY_IMAGE_TO_BUFFER_COMPUTE_FMT = R"(
     #version 450 core
     $5
     layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
@@ -759,7 +759,7 @@ TEST_P(InteropTestSyclVkImageSyclWriteVulkanRead, Formats) {
         extensionString = "#extension GL_EXT_shader_16bit_storage : require";
     }
     auto shaderStringWriteImageCompute = sgl::formatStringPositional(
-            SHADER_STRING_COPY_IMAGE_FROM_BUFFER_COMPUTE_FMT,
+            SHADER_STRING_COPY_IMAGE_TO_BUFFER_COMPUTE_FMT,
             sgl::vk::getImageFormatGlslString(format),
             sgl::vk::getImageFormatNumChannels(format),
             sgl::vk::getImageFormatGlslTypeStringUnsized(formatInfo.channelCategory, 4),

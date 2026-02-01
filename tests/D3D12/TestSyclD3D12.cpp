@@ -523,7 +523,7 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
     auto* shaderManager = new sgl::d3d12::ShaderManagerD3D12();
     auto* renderer = new sgl::d3d12::Renderer(d3d12Device.get());
 
-    const char* SHADER_STRING_COPY_IMAGE_FROM_BUFFER_COMPUTE_FMT = R"(
+    const char* SHADER_STRING_COPY_IMAGE_TO_BUFFER_COMPUTE_FMT = R"(
     RWTexture2D<$0> srcImage : register(u0);
     RWBuffer<$0> destBuffer : register(u1);
     [numthreads(16, 16, 1)]
@@ -540,7 +540,7 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
     }
     )";
     auto shaderStringWriteImageCompute = sgl::formatStringPositional(
-            SHADER_STRING_COPY_IMAGE_FROM_BUFFER_COMPUTE_FMT,
+            SHADER_STRING_COPY_IMAGE_TO_BUFFER_COMPUTE_FMT,
             sgl::d3d12::getDXGIFormatHLSLStructuredTypeString(format));
     auto computeShader = shaderManager->loadShaderFromHlslString(
             shaderStringWriteImageCompute, "CopyImageToBufferShader.hlsl",

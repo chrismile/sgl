@@ -36,18 +36,17 @@
 #include <Graphics/Vulkan/Utils/Instance.hpp>
 #include <Graphics/Vulkan/Utils/Device.hpp>
 #include <Graphics/Vulkan/Utils/InteropCompute.hpp>
+#include <Graphics/Vulkan/Utils/InteropCuda.hpp>
+#include <Graphics/Vulkan/Utils/InteropCompute/ImplCuda.hpp>
 #include <Graphics/Vulkan/Shader/ShaderManager.hpp>
 #include <Graphics/Vulkan/Render/Renderer.hpp>
 #include <Graphics/Vulkan/Render/CommandBuffer.hpp>
 #include <Graphics/Vulkan/Render/ComputePipeline.hpp>
 #include <Graphics/Vulkan/Render/Data.hpp>
 
-#include <Graphics/Vulkan/Utils/InteropCuda.hpp>
-
 #include "../Utils/Common.hpp"
 #include "../Vulkan/ImageFormatsVulkan.hpp"
 #include "../CUDA/CudaDeviceCode.hpp"
-#include "Graphics/Vulkan/Utils/InteropCompute/ImplCuda.hpp"
 
 /*
  * Set of tests using either Level Zero, CUDA or HIP (depending on the GPU).
@@ -65,17 +64,6 @@ protected:
         instance = new sgl::vk::Instance;
         instance->createInstance({}, false);
 
-        // Prefer testing the dGPU if we have multiple GPUs available.
-        bool isDiscreteGpuAvailable = false;
-        std::vector<VkPhysicalDevice> physicalDevicesAvailable = sgl::vk::enumeratePhysicalDevices(instance);
-        for (VkPhysicalDevice physicalDevice : physicalDevicesAvailable) {
-            VkPhysicalDeviceProperties physicalDeviceProperties{};
-            sgl::vk::getPhysicalDeviceProperties(physicalDevice, physicalDeviceProperties);
-            if (physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
-                isDiscreteGpuAvailable = true;
-            }
-        }
-
         device = new sgl::vk::Device;
         auto physicalDeviceCheckCallback = [&](
                 VkPhysicalDevice physicalDevice,
@@ -86,10 +74,13 @@ protected:
             if (physicalDeviceProperties.apiVersion < VK_API_VERSION_1_1) {
                 return false;
             }
-            if (isDiscreteGpuAvailable && physicalDeviceProperties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
-                return false;
-            }
-            return true;
+            VkPhysicalDeviceDriverProperties physicalDeviceDriverProperties{};
+            physicalDeviceDriverProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
+            VkPhysicalDeviceProperties2 deviceProperties2 = {};
+            deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+            deviceProperties2.pNext = &physicalDeviceDriverProperties;
+            sgl::vk::getPhysicalDeviceProperties2(physicalDevice, deviceProperties2);
+            return physicalDeviceDriverProperties.driverID == VK_DRIVER_ID_NVIDIA_PROPRIETARY;
         };
         device->setPhysicalDeviceCheckCallback(physicalDeviceCheckCallback);
 
@@ -233,7 +224,7 @@ TEST_P(InteropTestCudaVulkanImageCudaWriteVulkanRead, Formats) {
     auto formatInfo = sgl::vk::getImageFormatInfo(format);
     size_t sizeInBytes = imageSettings.width * imageSettings.height * formatInfo.formatSizeInBytes;
 
-    const char* SHADER_STRING_COPY_IMAGE_FROM_BUFFER_COMPUTE_FMT = R"(
+    const char* SHADER_STRING_COPY_IMAGE_TO_BUFFER_COMPUTE_FMT = R"(
     #version 450 core
     $5
     layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
@@ -276,7 +267,7 @@ TEST_P(InteropTestCudaVulkanImageCudaWriteVulkanRead, Formats) {
         extensionString = "#extension GL_EXT_shader_16bit_storage : require";
     }
     auto shaderStringWriteImageCompute = sgl::formatStringPositional(
-            SHADER_STRING_COPY_IMAGE_FROM_BUFFER_COMPUTE_FMT,
+            SHADER_STRING_COPY_IMAGE_TO_BUFFER_COMPUTE_FMT,
             sgl::vk::getImageFormatGlslString(format),
             sgl::vk::getImageFormatNumChannels(format),
             sgl::vk::getImageFormatGlslTypeStringUnsized(formatInfo.channelCategory, 4),
