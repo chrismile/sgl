@@ -218,6 +218,9 @@ BufferCudaDriverApiExternalMemoryVk::BufferCudaDriverApiExternalMemoryVk(vk::Buf
     externalMemoryHandleDesc.size = memoryRequirements.size;*/
     CUDA_EXTERNAL_MEMORY_HANDLE_DESC externalMemoryHandleDesc{};
     externalMemoryHandleDesc.size = vulkanBuffer->getDeviceMemorySize();
+    if (vulkanBuffer->getIsDedicatedAllocation()) {
+        externalMemoryHandleDesc.flags = CUDA_EXTERNAL_MEMORY_DEDICATED;
+    }
 
 #if defined(_WIN32)
     auto _vkGetMemoryWin32HandleKHR = (PFN_vkGetMemoryWin32HandleKHR)vkGetDeviceProcAddr(
@@ -437,6 +440,9 @@ void ImageCudaExternalMemoryVk::_initialize(
 
     CUDA_EXTERNAL_MEMORY_HANDLE_DESC externalMemoryHandleDesc{};
     externalMemoryHandleDesc.size = vulkanImage->getDeviceMemorySize();
+    if (vulkanImage->getIsDedicatedAllocation()) {
+        externalMemoryHandleDesc.flags = CUDA_EXTERNAL_MEMORY_DEDICATED;
+    }
 
 #if defined(_WIN32)
     auto _vkGetMemoryWin32HandleKHR = (PFN_vkGetMemoryWin32HandleKHR)vkGetDeviceProcAddr(

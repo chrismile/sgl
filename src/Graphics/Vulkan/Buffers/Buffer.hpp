@@ -307,6 +307,7 @@ public:
     [[nodiscard]] inline VkDeviceSize getDeviceMemoryOffset() const { return deviceMemoryOffset; }
     [[nodiscard]] inline VkDeviceSize getDeviceMemorySize() const { return deviceMemorySize; }
     [[nodiscard]] inline VkDeviceSize getDeviceMemoryAllocationSize() const { return deviceMemoryAllocationSize; }
+    [[nodiscard]] inline bool getIsDedicatedAllocation() const { return isDedicatedAllocation; }
 
     /**
      * https://docs.vulkan.org/refpages/latest/refpages/source/VkImportMemoryHostPointerInfoEXT.html

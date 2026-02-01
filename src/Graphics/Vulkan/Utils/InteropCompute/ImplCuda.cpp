@@ -114,6 +114,9 @@ void SemaphoreVkCudaInterop::waitSemaphoreComputeApi(
 void BufferVkCudaInterop::preCheckExternalMemoryImport() {
     externalMemoryHandleDesc = {};
     externalMemoryHandleDesc.size = vulkanBuffer->getDeviceMemorySize(); // memoryRequirements.size
+    if (vulkanBuffer->getIsDedicatedAllocation()) {
+        externalMemoryHandleDesc.flags = CUDA_EXTERNAL_MEMORY_DEDICATED;
+    }
 }
 
 #ifdef _WIN32
@@ -199,6 +202,9 @@ void BufferVkCudaInterop::copyToHostPtrAsync(void* hostPtrDst, StreamWrapper str
 void ImageVkCudaInterop::preCheckExternalMemoryImport() {
     externalMemoryHandleDesc = {};
     externalMemoryHandleDesc.size = vulkanImage->getDeviceMemorySize(); // memoryRequirements.size
+    if (vulkanImage->getIsDedicatedAllocation()) {
+        externalMemoryHandleDesc.flags = CUDA_EXTERNAL_MEMORY_DEDICATED;
+    }
 }
 
 #ifdef _WIN32
