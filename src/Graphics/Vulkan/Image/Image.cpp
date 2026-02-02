@@ -1786,6 +1786,18 @@ Image::Image(Device* device, const ImageSettings& imageSettings) : device(device
         if (memoryDedicatedRequirements.requiresDedicatedAllocation) {
             needsDedicatedAllocation = true;
         }
+#ifdef _WIN32
+        /*
+         * According to https://docs.nvidia.com/cuda/cuda-c-programming-guide/#importing-memory-objects,
+         * Windows 10+ should support non-dedicated memory allocation.
+         * But there seems to be some issue as indicated by
+         * https://forums.developer.nvidia.com/t/cuda-vulkan-image-interop-broken-on-windows/359258.
+         */
+        if (device->getDeviceDriverId() == VK_DRIVER_ID_NVIDIA_PROPRIETARY) {
+            needsDedicatedAllocation = true;
+        }
+#endif
+        isDedicatedAllocation = needsDedicatedAllocation;
 
         VkMemoryRequirements memoryRequirements;
         vkGetImageMemoryRequirements(device->getVkDevice(), image, &memoryRequirements);

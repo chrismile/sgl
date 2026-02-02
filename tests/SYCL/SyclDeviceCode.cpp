@@ -56,7 +56,7 @@ sycl::event copySyclBindlessImageToBuffer(
             for (int c = 0; c < C; c++) {
                 devicePtr[index + c] = data[c];
             }
-    });
+        });
     });
     return event;
 }

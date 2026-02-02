@@ -270,7 +270,7 @@ std::string getDxgiFormatString(const T& info) {
     uint32_t width = std::get<1>(info.param);
     uint32_t height = std::get<2>(info.param);
     auto formatString = sgl::d3d12::convertDXGIFormatToString(format);
-    if (width != height || (sgl::d3d12::getDXGIFormatChannelSizeInBytes(format) == 4 && (width != 1024 || height != 1024))) {
+    if (sgl::d3d12::getDXGIFormatChannelSizeInBytes(format) == 4 && (width != 1024 || height != 1024)) {
         formatString += "_" + std::to_string(width) + "x" + std::to_string(height);
     }
     return formatString;
