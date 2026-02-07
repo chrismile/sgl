@@ -275,11 +275,12 @@ void ImGuiWrapper::initialize(
     //ImGui::StyleColorsLight();
 
     ImGuiStyle &style = ImGui::GetStyle();
-    style.ScaleAllSizes(uiScaleFactor); // HiDPI scaling
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
         style.WindowRounding = 0.0f;
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
+    defaultStyle = style;
+    style.ScaleAllSizes(uiScaleFactor); // HiDPI scaling
 
     auto windowBgColor = style.Colors[ImGuiCol_WindowBg];
     //float backgroundLuminance = (0.2126f * windowBgColor.x + 0.7152f * windowBgColor.y + 0.0722f * windowBgColor.z);
@@ -313,6 +314,10 @@ void ImGuiWrapper::addFonts() {
     ImGuiIO &io = ImGui::GetIO();
     float fontScaleFactor = uiScaleFactor;
     //io.FontGlobalScale = fontScaleFactor*2.0f;
+
+    ImGuiStyle& style = ImGui::GetStyle();
+    style = defaultStyle;
+    style.ScaleAllSizes(uiScaleFactor); // HiDPI scaling
 
     fontSizeNormal = 16.0f * fontScaleFactor;
     fontNormal = io.Fonts->AddFontFromMemoryTTF(

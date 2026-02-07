@@ -185,6 +185,7 @@ private:
     float fontSizeSmall = 0.0f;
     ImFont* fontNormal = nullptr;
     ImFont* fontSmall = nullptr;
+    ImGuiStyle defaultStyle{};
 
     // Dock space mode.
     bool useDockSpaceMode = false;
