@@ -323,7 +323,7 @@ protected:
 
     void checkBindlessImagesSupported(bool& available);
     void checkSemaphoresSupported(bool& available);
-    void runTestsBufferCopySemaphore();
+    void runTestsBufferCopySemaphore(bool useTimelineSemaphore);
     void runTestImageCreation(VkFormat format, uint32_t width, uint32_t height, bool isFormatRequired);
 
     sgl::vk::Instance* instance = nullptr;
@@ -522,7 +522,7 @@ TEST_F(InteropTestLowLevelVk, TimelineSemaphoreAllocationTest) {
     auto semaphoreTimelineVulkan = sgl::vk::createSemaphoreVkComputeApiInterop(device, 0, VK_SEMAPHORE_TYPE_TIMELINE, 0);
 }
 
-void InteropTestLowLevelVk::runTestsBufferCopySemaphore() {
+void InteropTestLowLevelVk::runTestsBufferCopySemaphore(bool useTimelineSemaphore) {
     bool semaphoresSupported = true;
     checkSemaphoresSupported(semaphoresSupported);
     if (!semaphoresSupported) {
@@ -530,9 +530,10 @@ void InteropTestLowLevelVk::runTestsBufferCopySemaphore() {
     }
 
     // Create semaphore.
+    VkSemaphoreType semaphoreType = useTimelineSemaphore ? VK_SEMAPHORE_TYPE_TIMELINE : VK_SEMAPHORE_TYPE_BINARY;
     uint64_t timelineValue = 0;
     sgl::vk::SemaphoreVkComputeApiInteropPtr semaphoreVulkan = sgl::vk::createSemaphoreVkComputeApiInterop(
-            device, 0, VK_SEMAPHORE_TYPE_TIMELINE, timelineValue);
+            device, 0, semaphoreType, timelineValue);
 
     // Create buffer data.
     float sharedData = 42.0f;
@@ -560,8 +561,10 @@ void InteropTestLowLevelVk::runTestsBufferCopySemaphore() {
     renderer->beginCommandBuffer();
     float newData = 11.0f;
     bufferVulkan->updateData(0, sizeof(float), &newData, commandBuffer->getVkCommandBuffer());
-    timelineValue++;
-    semaphoreVulkan->setSignalSemaphoreValue(timelineValue);
+    if (useTimelineSemaphore) {
+        timelineValue++;
+        semaphoreVulkan->setSignalSemaphoreValue(timelineValue);
+    }
     commandBuffer->pushSignalSemaphore(semaphoreVulkan);
     renderer->endCommandBuffer();
     renderer->submitToQueue();
@@ -616,8 +619,14 @@ void InteropTestLowLevelVk::runTestsBufferCopySemaphore() {
 
 const int NUM_BUFFER_COPY_RUNS = 1000;
 
-TEST_F(InteropTestLowLevelVk, BufferCopySemaphoreTest) {
+TEST_F(InteropTestLowLevelVk, BufferCopyBinarySemaphoreTest) {
     for (int i = 0; i < NUM_BUFFER_COPY_RUNS; i++) {
-        runTestsBufferCopySemaphore();
+        runTestsBufferCopySemaphore(false);
+    }
+}
+
+TEST_F(InteropTestLowLevelVk, BufferCopyTimelineSemaphoreTest) {
+    for (int i = 0; i < NUM_BUFFER_COPY_RUNS; i++) {
+        runTestsBufferCopySemaphore(true);
     }
 }
