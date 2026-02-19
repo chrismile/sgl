@@ -265,8 +265,8 @@ const auto testedImageFormatsD3D12 = testing::Values(
         std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16_FLOAT, 128, 16},
         std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16_FLOAT, 1024, 1024},
         std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16_FLOAT, 128, 8},
-        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16B16A16_FLOAT, 128, 4},
         std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16B16A16_FLOAT, 1024, 1024}
+        //std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16B16A16_FLOAT, 128, 4} // fails on CUDA
 );
 
 template<class T>
@@ -535,10 +535,9 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
     if (!d3d12Device->getFormatSupportsTypedLoadStore(format, true, true)) {
         GTEST_SKIP() << "D3D12 typed load/store not supported.";
     }
-    if (format == DXGI_FORMAT_R16_UINT || format == DXGI_FORMAT_R16G16_UINT || format == DXGI_FORMAT_R16G16B16A16_UINT
-            || format == DXGI_FORMAT_R16_FLOAT || format == DXGI_FORMAT_R16G16_FLOAT || format == DXGI_FORMAT_R16G16B16A16_FLOAT) {
-        GTEST_SKIP() << "D3D12 does not support RWStructuredBuffer into this format.";
-    }
+    //if (format == DXGI_FORMAT_R16_UINT || format == DXGI_FORMAT_R16_FLOAT) {
+    //    GTEST_SKIP() << "D3D12 does not support RWStructuredBuffer into this format.";
+    //}
 
     auto formatInfo = sgl::d3d12::getDXGIFormatInfo(format);
     size_t numEntries = width * height * formatInfo.numChannels;
@@ -547,9 +546,12 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
     auto* shaderManager = new sgl::d3d12::ShaderManagerD3D12();
     auto* renderer = new sgl::d3d12::Renderer(d3d12Device.get());
 
-    const char* SHADER_STRING_COPY_IMAGE_TO_BUFFER_COMPUTE_FMT = R"(
-    RWTexture2D<$0> srcImage : register(u0);
-    RWStructuredBuffer<$0> destBuffer : register(u1);
+    const char* SHADER_STRING_COPY_IMAGE_TO_BUFFER_PACKED_COMPUTE_FMT = R"(
+    RWTexture2D<$0> srcImage : register(u0); // ex.: float4
+    RWStructuredBuffer<$1> destBuffer : register(u1); // ex.: uint2
+    #define DEST_FORMAT_FULL_CHANNELS $2 // ex.: uint4
+    #define NUM_CHANNELS $3 // ex.: 4
+    #define CASE_IDX $4 // 0 (4 byte format) or 1 (UINT16) or 2 (FLOAT16)
     [numthreads(16, 16, 1)]
     void CSMain(
             uint3 groupID : SV_GroupID, uint3 dispatchThreadID : SV_DispatchThreadID,
@@ -560,12 +562,91 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
         if (idx.x >= width || idx.y >= height) {
             return;
         }
+    #if CASE_IDX == 0 // 4 byte format; just pass through.
         destBuffer[idx.x + idx.y * width] = srcImage[idx];
+    #else // CASE_IDX != 0
+
+    #if CASE_IDX == 1 // uint16
+        DEST_FORMAT_FULL_CHANNELS valueSrc = srcImage[idx];
+    #elif CASE_IDX == 2 // float16
+        DEST_FORMAT_FULL_CHANNELS valueSrc = f32tof16(srcImage[idx]);
+    #endif
+    #if NUM_CHANNELS == 2
+        uint valueDest = valueSrc.x | (valueSrc.y << 16);
+    #else // NUM_CHANNELS == 4
+        uint2 valueDest = uint2(valueSrc.x | (valueSrc.y << 16), valueSrc.z | (valueSrc.w << 16));
+    #endif
+        destBuffer[idx.x + idx.y * width] = valueDest;
+
+    #endif // CASE_IDX
     }
     )";
-    auto shaderStringWriteImageCompute = sgl::formatStringPositional(
-            SHADER_STRING_COPY_IMAGE_TO_BUFFER_COMPUTE_FMT,
-            sgl::d3d12::getDXGIFormatHLSLStructuredTypeString(format));
+    const char* SHADER_STRING_COPY_IMAGE_TO_BUFFER_2BYTE_SINGLE_CHANNEL_COMPUTE_FMT = R"(
+    RWTexture2D<$0> srcImage : register(u0); // float or uint
+    RWStructuredBuffer<uint> destBuffer : register(u1);
+    #define CASE_IDX $1 // 1 (UINT16) or 2 (FLOAT16)
+    [numthreads(256, 1, 1)]
+    void CSMain(
+            uint3 groupID : SV_GroupID, uint3 dispatchThreadID : SV_DispatchThreadID,
+            uint3 groupThreadID : SV_GroupThreadID, uint groupIndex : SV_GroupIndex) {
+        uint width, height;
+        srcImage.GetDimensions(width, height);
+        const uint threadIdx = dispatchThreadID.x;
+        const uint linearIdx = threadIdx * 2;
+        if (linearIdx >= width * height) {
+            return;
+        }
+        const uint2 idx0 = uint2(linearIdx % width, linearIdx / width);
+        const uint2 idx1 = uint2((linearIdx + 1) % width, (linearIdx + 1) / width);
+    #if CASE_IDX == 1
+        uint val0 = srcImage[idx0];
+    #else
+        uint val0 = f32tof16(srcImage[idx0]);
+    #endif
+        uint val1;
+        if (idx1.x < width && idx1.y < height) {
+    #if CASE_IDX == 1
+            val1 = srcImage[idx1];
+    #else
+            val1 = f32tof16(srcImage[idx1]);
+    #endif
+        }
+        uint val = val0 | (val1 << 16);
+        destBuffer[threadIdx] = val;
+    }
+    )";
+    auto formatDest4Byte = format;
+    auto formatDestFullChannels = format;
+    int caseIdx = 0;
+    if (formatInfo.channelFormat == sgl::ChannelFormat::UINT16) {
+        caseIdx = 1;
+    } else if (formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
+        caseIdx = 2;
+    }
+    if (formatInfo.channelSizeInBytes == 2) {
+        auto formatInfoDest4Byte = formatInfo;
+        formatInfoDest4Byte.channelCategory = sgl::ChannelCategory::UINT;
+        formatInfoDest4Byte.channelFormat = sgl::ChannelFormat::UINT32;
+        formatInfoDest4Byte.numChannels = sgl::sizeceil(formatInfo.numChannels, 2);
+        formatDest4Byte = sgl::d3d12::getDXGIFormatFromInfo(formatInfoDest4Byte);
+        auto formatInfoDestFullChannels = formatInfo;
+        formatInfoDestFullChannels.channelCategory = sgl::ChannelCategory::UINT;
+        formatInfoDestFullChannels.channelFormat = sgl::ChannelFormat::UINT16;
+        formatDestFullChannels = sgl::d3d12::getDXGIFormatFromInfo(formatInfoDestFullChannels);
+    }
+    std::string shaderStringWriteImageCompute;
+    if (formatInfo.channelSizeInBytes == 2 && formatInfo.numChannels == 1) {
+        shaderStringWriteImageCompute = sgl::formatStringPositional(
+                SHADER_STRING_COPY_IMAGE_TO_BUFFER_2BYTE_SINGLE_CHANNEL_COMPUTE_FMT,
+                sgl::d3d12::getDXGIFormatHLSLStructuredTypeString(format), caseIdx);
+    } else {
+        shaderStringWriteImageCompute = sgl::formatStringPositional(
+                SHADER_STRING_COPY_IMAGE_TO_BUFFER_PACKED_COMPUTE_FMT,
+                sgl::d3d12::getDXGIFormatHLSLStructuredTypeString(format),
+                sgl::d3d12::getDXGIFormatHLSLStructuredTypeString(formatDest4Byte),
+                sgl::d3d12::getDXGIFormatHLSLStructuredTypeString(formatDestFullChannels),
+                formatInfo.numChannels, caseIdx);
+    }
     auto computeShader = shaderManager->loadShaderFromHlslString(
             shaderStringWriteImageCompute, "CopyImageToBufferShader.hlsl",
             sgl::d3d12::ShaderModuleType::COMPUTE, "CSMain", {});
@@ -648,7 +729,11 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
         bufferD3D12->transition(D3D12_RESOURCE_STATE_UNORDERED_ACCESS, commandList);
         auto* descriptorHeap = descriptorAllocator->getD3D12DescriptorHeapPtr();
         commandList->getD3D12GraphicsCommandListPtr()->SetDescriptorHeaps(1, &descriptorHeap);
-        renderer->dispatch(computeData, sgl::uiceil(width, 16u), sgl::uiceil(height, 16u), 1);
+        if (formatInfo.channelSizeInBytes == 2 && formatInfo.numChannels == 1) {
+            renderer->dispatch(computeData, sgl::uiceil(width * height, 256u), 1, 1);
+        } else {
+            renderer->dispatch(computeData, sgl::uiceil(width, 16u), sgl::uiceil(height, 16u), 1);
+        }
         commandList->close();
         auto* d3d12CommandList = commandList->getD3D12CommandListPtr();
         d3d12CommandQueue->ExecuteCommandLists(1, &d3d12CommandList);

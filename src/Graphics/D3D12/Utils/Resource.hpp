@@ -66,6 +66,7 @@ DLL_OBJECT size_t getDXGIFormatSizeInBytes(DXGI_FORMAT format);
 DLL_OBJECT ChannelFormat getDXGIFormatChannelFormat(DXGI_FORMAT format);
 DLL_OBJECT ChannelCategory getDXGIFormatChannelCategory(DXGI_FORMAT format);
 DLL_OBJECT FormatInfo getDXGIFormatInfo(DXGI_FORMAT format);
+DLL_OBJECT DXGI_FORMAT getDXGIFormatFromInfo(const FormatInfo& formatInfo);
 
 DLL_OBJECT std::string getDXGIFormatHLSLStructuredTypeString(DXGI_FORMAT format);
 DLL_OBJECT std::string convertDXGIFormatToString(DXGI_FORMAT format);

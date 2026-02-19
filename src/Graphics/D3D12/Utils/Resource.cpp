@@ -324,6 +324,113 @@ FormatInfo getDXGIFormatInfo(DXGI_FORMAT format) {
     return formatInfo;
 }
 
+DXGI_FORMAT getDXGIFormatFromInfo(const FormatInfo& formatInfo) {
+    if (formatInfo.channelFormat == sgl::ChannelFormat::UNORM8) {
+        if (formatInfo.numChannels == 1) {
+            return DXGI_FORMAT_R8_UNORM;
+        } else if (formatInfo.numChannels == 2) {
+            return DXGI_FORMAT_R8G8_UNORM;
+        } else if (formatInfo.numChannels == 4) {
+            return DXGI_FORMAT_R8G8B8A8_UNORM;
+        }
+    } else if (formatInfo.channelFormat == sgl::ChannelFormat::SNORM8) {
+        if (formatInfo.numChannels == 1) {
+            return DXGI_FORMAT_R8_SNORM;
+        } else if (formatInfo.numChannels == 2) {
+            return DXGI_FORMAT_R8G8_SNORM;
+        } else if (formatInfo.numChannels == 4) {
+            return DXGI_FORMAT_R8G8B8A8_SNORM;
+        }
+    } else if (formatInfo.channelFormat == sgl::ChannelFormat::UNORM16) {
+        if (formatInfo.numChannels == 1) {
+            return DXGI_FORMAT_R16_UNORM;
+        } else if (formatInfo.numChannels == 2) {
+            return DXGI_FORMAT_R16G16_UNORM;
+        } else if (formatInfo.numChannels == 4) {
+            return DXGI_FORMAT_R16G16B16A16_UNORM;
+        }
+    } else if (formatInfo.channelFormat == sgl::ChannelFormat::SNORM16) {
+        if (formatInfo.numChannels == 1) {
+            return DXGI_FORMAT_R16_SNORM;
+        } else if (formatInfo.numChannels == 2) {
+            return DXGI_FORMAT_R16G16_SNORM;
+        } else if (formatInfo.numChannels == 4) {
+            return DXGI_FORMAT_R16G16B16A16_SNORM;
+        }
+    } else if (formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
+        if (formatInfo.numChannels == 1) {
+            return DXGI_FORMAT_R16_FLOAT;
+        } else if (formatInfo.numChannels == 2) {
+            return DXGI_FORMAT_R16G16_FLOAT;
+        } else if (formatInfo.numChannels == 4) {
+            return DXGI_FORMAT_R16G16B16A16_FLOAT;
+        }
+    } else if (formatInfo.channelFormat == sgl::ChannelFormat::FLOAT32) {
+        if (formatInfo.numChannels == 1) {
+            return DXGI_FORMAT_R32_FLOAT;
+        } else if (formatInfo.numChannels == 2) {
+            return DXGI_FORMAT_R32G32_FLOAT;
+        } else if (formatInfo.numChannels == 3) {
+            return DXGI_FORMAT_R32G32B32_FLOAT;
+        } else if (formatInfo.numChannels == 4) {
+            return DXGI_FORMAT_R32G32B32A32_FLOAT;
+        }
+    } else if (formatInfo.channelFormat == sgl::ChannelFormat::UINT8) {
+        if (formatInfo.numChannels == 1) {
+            return DXGI_FORMAT_R8_UINT;
+        } else if (formatInfo.numChannels == 2) {
+            return DXGI_FORMAT_R8G8_UINT;
+        } else if (formatInfo.numChannels == 4) {
+            return DXGI_FORMAT_R8G8B8A8_UINT;
+        }
+    } else if (formatInfo.channelFormat == sgl::ChannelFormat::UINT16) {
+        if (formatInfo.numChannels == 1) {
+            return DXGI_FORMAT_R16_UINT;
+        } else if (formatInfo.numChannels == 2) {
+            return DXGI_FORMAT_R16G16_UINT;
+        } else if (formatInfo.numChannels == 4) {
+            return DXGI_FORMAT_R16G16B16A16_UINT;
+        }
+    } else if (formatInfo.channelFormat == sgl::ChannelFormat::UINT32) {
+        if (formatInfo.numChannels == 1) {
+            return DXGI_FORMAT_R32_UINT;
+        } else if (formatInfo.numChannels == 2) {
+            return DXGI_FORMAT_R32G32_UINT;
+        } else if (formatInfo.numChannels == 3) {
+            return DXGI_FORMAT_R32G32B32_UINT;
+        } else if (formatInfo.numChannels == 4) {
+            return DXGI_FORMAT_R32G32B32A32_UINT;
+        }
+    } else if (formatInfo.channelFormat == sgl::ChannelFormat::SINT8) {
+        if (formatInfo.numChannels == 1) {
+            return DXGI_FORMAT_R8_SINT;
+        } else if (formatInfo.numChannels == 2) {
+            return DXGI_FORMAT_R8G8_SINT;
+        } else if (formatInfo.numChannels == 4) {
+            return DXGI_FORMAT_R8G8B8A8_SINT;
+        }
+    } else if (formatInfo.channelFormat == sgl::ChannelFormat::SINT16) {
+        if (formatInfo.numChannels == 1) {
+            return DXGI_FORMAT_R16_SINT;
+        } else if (formatInfo.numChannels == 2) {
+            return DXGI_FORMAT_R16G16_SINT;
+        } else if (formatInfo.numChannels == 4) {
+            return DXGI_FORMAT_R16G16B16A16_SINT;
+        }
+    } else if (formatInfo.channelFormat == sgl::ChannelFormat::SINT32) {
+        if (formatInfo.numChannels == 1) {
+            return DXGI_FORMAT_R32_SINT;
+        } else if (formatInfo.numChannels == 2) {
+            return DXGI_FORMAT_R32G32_SINT;
+        } else if (formatInfo.numChannels == 3) {
+            return DXGI_FORMAT_R32G32B32_SINT;
+        } else if (formatInfo.numChannels == 4) {
+            return DXGI_FORMAT_R32G32B32A32_SINT;
+        }
+    }
+    return DXGI_FORMAT_UNKNOWN;
+}
+
 
 std::string getDXGIFormatHLSLStructuredTypeString(DXGI_FORMAT format) {
     switch (format) {
