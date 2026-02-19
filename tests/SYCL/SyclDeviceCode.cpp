@@ -31,6 +31,9 @@
 #include <stdexcept>
 #include "SyclDeviceCode.hpp"
 
+typedef sycl::half half;
+#include "../Utils/FormatRange.hpp"
+
 sycl::event writeSyclBufferData(sycl::queue& queue, size_t numEntries, float* devicePtr) {
     auto event = queue.submit([&](sycl::handler& cgh) {
         cgh.parallel_for<class LinearWriteKernel>(sycl::range<1>{numEntries}, [=](sycl::id<1> it) {
@@ -134,6 +137,32 @@ sycl::event writeSyclBindlessImageIncreasingIndices(
     return event;
 }
 
+template<typename T, int C>
+sycl::event writeSyclBindlessImageIncreasingIndicesModulo(
+        sycl::queue& queue, syclexp::unsampled_image_handle img, size_t width, size_t height) {
+    auto event = queue.submit([&](sycl::handler& cgh) {
+        cgh.parallel_for(sycl::range<2>{width, height}, [=](sycl::id<2> it) {
+            const auto x = it[0];
+            const auto y = it[1];
+            const auto index = (x + y * width) * static_cast<size_t>(C);
+            if constexpr (std::is_same_v<T, sycl::half>) {
+                sycl::vec<uint16_t, C> data;
+                for (int c = 0; c < C; c++) {
+                    data[c] = sycl::bit_cast<uint16_t>(sycl::half(float((index + c) % size_t(format_range<T>::modulo_value))));
+                }
+                syclexp::write_image<sycl::vec<uint16_t, C>>(img, sycl::int2{x, y}, data);
+            } else {
+                sycl::vec<T, C> data;
+                for (int c = 0; c < C; c++) {
+                    data[c] = T((index + c) % size_t(format_range<T>::modulo_value));
+                }
+                syclexp::write_image<sycl::vec<T, C>>(img, sycl::int2{x, y}, data);
+            }
+        });
+    });
+    return event;
+}
+
 sycl::event writeSyclBindlessImageIncreasingIndices(
         sycl::queue& queue, syclexp::unsampled_image_handle img,
         const sgl::FormatInfo& formatInfo, size_t width, size_t height) {
@@ -155,23 +184,25 @@ sycl::event writeSyclBindlessImageIncreasingIndices(
     if (formatInfo.numChannels == 4 && formatInfo.channelFormat == sgl::ChannelFormat::UINT32) {
         return writeSyclBindlessImageIncreasingIndices<uint32_t, 4>(queue, img, width, height);
     }
+    // Maximum representable integer value is 2048 for uint16_t.
     if (formatInfo.numChannels == 1 && formatInfo.channelFormat == sgl::ChannelFormat::UINT16) {
-        return writeSyclBindlessImageIncreasingIndices<uint16_t, 1>(queue, img, width, height);
+        return writeSyclBindlessImageIncreasingIndicesModulo<uint16_t, 1>(queue, img, width, height);
     }
     if (formatInfo.numChannels == 2 && formatInfo.channelFormat == sgl::ChannelFormat::UINT16) {
-        return writeSyclBindlessImageIncreasingIndices<uint16_t, 2>(queue, img, width, height);
+        return writeSyclBindlessImageIncreasingIndicesModulo<uint16_t, 2>(queue, img, width, height);
     }
     if (formatInfo.numChannels == 4 && formatInfo.channelFormat == sgl::ChannelFormat::UINT16) {
-        return writeSyclBindlessImageIncreasingIndices<uint16_t, 4>(queue, img, width, height);
+        return writeSyclBindlessImageIncreasingIndicesModulo<uint16_t, 4>(queue, img, width, height);
     }
+    // Maximum representable integer value is 2048 for float16_t.
     if (formatInfo.numChannels == 1 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
-        return writeSyclBindlessImageIncreasingIndices<sycl::half, 1>(queue, img, width, height);
+        return writeSyclBindlessImageIncreasingIndicesModulo<sycl::half, 1>(queue, img, width, height);
     }
     if (formatInfo.numChannels == 2 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
-        return writeSyclBindlessImageIncreasingIndices<sycl::half, 2>(queue, img, width, height);
+        return writeSyclBindlessImageIncreasingIndicesModulo<sycl::half, 2>(queue, img, width, height);
     }
     if (formatInfo.numChannels == 4 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
-        return writeSyclBindlessImageIncreasingIndices<sycl::half, 4>(queue, img, width, height);
+        return writeSyclBindlessImageIncreasingIndicesModulo<sycl::half, 4>(queue, img, width, height);
     }
     throw std::runtime_error("Error in writeSyclBindlessImageIncreasingIndices: Unsupported number of channels.");
     return sycl::event();

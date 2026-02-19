@@ -32,6 +32,7 @@
 #include <sycl/sycl.hpp>
 
 #include <Math/Math.hpp>
+#include <Math/half/half.hpp>
 #include <Utils/Format.hpp>
 #include <Utils/File/Logfile.hpp>
 #include <Graphics/Vulkan/Utils/Instance.hpp>
@@ -45,6 +46,7 @@
 #include <Graphics/Vulkan/Render/Data.hpp>
 
 #include "../Utils/Common.hpp"
+#include "../Utils/FormatRange.hpp"
 #include "../SYCL/CommonSycl.hpp"
 #include "../SYCL/SyclDeviceCode.hpp"
 #include "ImageFormatsVulkan.hpp"
@@ -195,7 +197,7 @@ std::string getVkFormatString(const T& info) {
     uint32_t width = std::get<1>(info.param);
     uint32_t height = std::get<2>(info.param);
     auto formatString = sgl::vk::convertVkFormatToString(format);
-    if (sgl::vk::getImageFormatChannelByteSize(format) == 4 && (width != 1024 || height != 1024)) {
+    if (width != 1024 || height != 1024) {
         formatString += "_" + std::to_string(width) + "x" + std::to_string(height);
     }
     return formatString;
@@ -517,11 +519,12 @@ TEST_P(InteropTestSyclVkImageVulkanWriteSyclRead, Formats) {
 
     const char* SHADER_STRING_WRITE_IMAGE_COMPUTE_FMT = R"(
     #version 450 core
-    $4
+    $5
     layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
-    layout(binding = 0, $0) uniform restrict writeonly $3image2D destImage;
+    layout(binding = 0, $0) uniform restrict writeonly $4image2D destImage;
     #define NUM_CHANNELS $1
-    #define tvec4 $2
+    #define MODULO_VALUE $2
+    #define tvec4 $3
     void main() {
         ivec2 destImageSize = imageSize(destImage);
         ivec2 idx = ivec2(gl_GlobalInvocationID.xy);
@@ -529,15 +532,30 @@ TEST_P(InteropTestSyclVkImageVulkanWriteSyclRead, Formats) {
             return;
         }
     #if NUM_CHANNELS == 1
-        tvec4 outputValue = tvec4(idx.x + idx.y * destImageSize.x);
+        int value = idx.x + idx.y * destImageSize.x;
     #elif NUM_CHANNELS == 2
         int value = (idx.x + idx.y * destImageSize.x) * 2;
-        tvec4 outputValue = tvec4(value, value + 1, 0.0, 0.0);
     #elif NUM_CHANNELS == 4
         int value = (idx.x + idx.y * destImageSize.x) * 4;
-        tvec4 outputValue = tvec4(value, value + 1, value + 2, value + 3);
     #else
     #error Unsupported number of image channels.
+    #endif
+    #if MODULO_VALUE <= 1
+    #if NUM_CHANNELS == 1
+        tvec4 outputValue = tvec4(value);
+    #elif NUM_CHANNELS == 2
+        tvec4 outputValue = tvec4(value, value + 1, 0.0, 0.0);
+    #elif NUM_CHANNELS == 4
+        tvec4 outputValue = tvec4(value, value + 1, value + 2, value + 3);
+    #endif
+    #else
+    #if NUM_CHANNELS == 1
+        tvec4 outputValue = tvec4(value % MODULO_VALUE);
+    #elif NUM_CHANNELS == 2
+        tvec4 outputValue = tvec4(value % MODULO_VALUE, (value + 1)  % MODULO_VALUE, 0.0, 0.0);
+    #elif NUM_CHANNELS == 4
+        tvec4 outputValue = tvec4(value % MODULO_VALUE, (value + 1) % MODULO_VALUE, (value + 2) % MODULO_VALUE, (value + 3) % MODULO_VALUE);
+    #endif
     #endif
         imageStore(destImage, idx, outputValue);
     }
@@ -558,6 +576,7 @@ TEST_P(InteropTestSyclVkImageVulkanWriteSyclRead, Formats) {
             SHADER_STRING_WRITE_IMAGE_COMPUTE_FMT,
             sgl::vk::getImageFormatGlslString(format),
             sgl::vk::getImageFormatNumChannels(format),
+            getFormatRangeModuloValue(formatInfo.channelFormat),
             sgl::vk::getImageFormatGlslTypeStringUnsized(formatInfo.channelCategory, 4),
             imageTypePrefix,
             extensionString);

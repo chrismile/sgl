@@ -31,6 +31,7 @@
 #include <Math/half/half.hpp>
 
 #include "Common.hpp"
+#include "FormatRange.hpp"
 
 void initializeHostPointerTyped(sgl::ChannelFormat channelFormat, size_t numEntries, int value, void* ptr) {
     if (channelFormat == sgl::ChannelFormat::FLOAT32) {
@@ -72,17 +73,17 @@ void initializeHostPointerLinearTyped(sgl::ChannelFormat channelFormat, size_t n
     } else if (channelFormat == sgl::ChannelFormat::UINT16) {
         auto* hostPtr = static_cast<uint16_t*>(ptr);
         for (size_t i = 0; i < numEntries; i++) {
-            hostPtr[i] = static_cast<uint16_t>(i);
+            hostPtr[i] = static_cast<uint16_t>(i % static_cast<size_t>(format_range<uint16_t>::modulo_value));
         }
     } else if (channelFormat == sgl::ChannelFormat::INT16) {
         auto* hostPtr = static_cast<int16_t*>(ptr);
         for (size_t i = 0; i < numEntries; i++) {
-            hostPtr[i] = static_cast<int16_t>(i);
+            hostPtr[i] = static_cast<int16_t>(i % static_cast<size_t>(format_range<int16_t>::modulo_value));
         }
     } else if (channelFormat == sgl::ChannelFormat::FLOAT16) {
         auto* hostPtr = static_cast<HalfFloat*>(ptr);
         for (size_t i = 0; i < numEntries; i++) {
-            hostPtr[i] = HalfFloat(static_cast<int>(i));
+            hostPtr[i] = HalfFloat(static_cast<int>(i) % format_range<half>::modulo_value);
         }
     } else {
         throw std::runtime_error("Unsupported channel format.");
@@ -109,6 +110,26 @@ bool checkIsArrayLinear(
     return true;
 }
 
+template<typename T>
+bool checkIsArrayLinearModulo(
+        const sgl::FormatInfo& formatInfo, size_t width, size_t height, void* ptr, std::string& errorMessage) {
+    size_t numEntries = width * height * formatInfo.numChannels;
+    auto* hostPtr = static_cast<T*>(ptr);
+    for (size_t i = 0; i < numEntries; i++) {
+        size_t idx = i % static_cast<size_t>(format_range<T>::modulo_value);
+        if (hostPtr[i] != T(static_cast<int>(idx))) {
+            size_t channelIdx = i % formatInfo.numChannels;
+            size_t x = (i / formatInfo.numChannels) % width;
+            size_t y = (i / formatInfo.numChannels) / width;
+            errorMessage =
+                    "Image content mismatch at x=" + std::to_string(x) + ", y=" + std::to_string(y)
+                    + ", c=" + std::to_string(channelIdx);
+            return false;
+        }
+    }
+    return true;
+}
+
 bool checkIsArrayLinearTyped(
         const sgl::FormatInfo& formatInfo, size_t width, size_t height, void* ptr, std::string& errorMessage) {
     auto channelFormat = formatInfo.channelFormat;
@@ -119,13 +140,13 @@ bool checkIsArrayLinearTyped(
         return checkIsArrayLinear<uint32_t>(formatInfo, width, height, ptr, errorMessage);
     }
     if (channelFormat == sgl::ChannelFormat::UINT16) {
-        return checkIsArrayLinear<uint16_t>(formatInfo, width, height, ptr, errorMessage);
+        return checkIsArrayLinearModulo<uint16_t>(formatInfo, width, height, ptr, errorMessage);
     }
     if (channelFormat == sgl::ChannelFormat::INT16) {
-        return checkIsArrayLinear<int16_t>(formatInfo, width, height, ptr, errorMessage);
+        return checkIsArrayLinearModulo<int16_t>(formatInfo, width, height, ptr, errorMessage);
     }
     if (channelFormat == sgl::ChannelFormat::FLOAT16) {
-        return checkIsArrayLinear<half>(formatInfo, width, height, ptr, errorMessage);
+        return checkIsArrayLinearModulo<half>(formatInfo, width, height, ptr, errorMessage);
     }
     throw std::runtime_error("Unsupported channel format.");
 }

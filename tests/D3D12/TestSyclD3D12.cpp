@@ -30,6 +30,7 @@
 #include <sycl/sycl.hpp>
 
 #include <Math/Math.hpp>
+#include <Math/half/half.hpp>
 #include <Utils/Format.hpp>
 #include <Utils/File/Logfile.hpp>
 
@@ -46,6 +47,7 @@
 #include <Graphics/D3D12/Render/DescriptorAllocator.hpp>
 
 #include "../Utils/Common.hpp"
+#include "../Utils/FormatRange.hpp"
 #include "../SYCL/CommonSycl.hpp"
 #include "../SYCL/SyclDeviceCode.hpp"
 
@@ -254,14 +256,17 @@ const auto testedImageFormatsD3D12 = testing::Values(
         std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R32_UINT, 1024, 1024},
         std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R32G32_UINT, 1024, 1024},
         std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R32G32B32A32_UINT, 1024, 1024},
-        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16_UINT, 128, 128},
-        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16_UINT, 128, 128},
-        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16B16A16_UINT, 128, 128}
+        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16_UINT, 1024, 1024},
+        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16_UINT, 1024, 1024},
+        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16B16A16_UINT, 1024, 1024},
         // Maximum representable integer value is 2048 for float16_t.
         // D3D12_TEXTURE_DATA_PITCH_ALIGNMENT: 256 bytes => Minimum 128 width.
-        //std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16_FLOAT, 128, 16},
-        //std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16_FLOAT, 128, 8},
-        //std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16B16A16_FLOAT, 128, 4}
+        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16_FLOAT, 1024, 1024},
+        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16_FLOAT, 128, 16},
+        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16_FLOAT, 1024, 1024},
+        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16_FLOAT, 128, 8},
+        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16B16A16_FLOAT, 128, 4},
+        std::tuple<DXGI_FORMAT, uint32_t, uint32_t>{DXGI_FORMAT_R16G16B16A16_FLOAT, 1024, 1024}
 );
 
 template<class T>
@@ -270,7 +275,7 @@ std::string getDxgiFormatString(const T& info) {
     uint32_t width = std::get<1>(info.param);
     uint32_t height = std::get<2>(info.param);
     auto formatString = sgl::d3d12::convertDXGIFormatToString(format);
-    if (sgl::d3d12::getDXGIFormatChannelSizeInBytes(format) == 4 && (width != 1024 || height != 1024)) {
+    if (width != 1024 || height != 1024) {
         formatString += "_" + std::to_string(width) + "x" + std::to_string(height);
     }
     return formatString;
@@ -374,6 +379,7 @@ TEST_P(InteropTestSyclD3D12Image, ImageD3D12WriteSyclReadTests) {
     RWTexture2D<$0> destImage : register(u0);
     #define tvec $0
     #define NUM_CHANNELS $1
+    #define MODULO_VALUE $2
     [numthreads(16, 16, 1)]
     void CSMain(
             uint3 groupID : SV_GroupID, uint3 dispatchThreadID : SV_DispatchThreadID,
@@ -385,22 +391,39 @@ TEST_P(InteropTestSyclD3D12Image, ImageD3D12WriteSyclReadTests) {
             return;
         }
     #if NUM_CHANNELS == 1
-        tvec outputValue = tvec(idx.x + idx.y * width);
+        uint value = idx.x + idx.y * width;
     #elif NUM_CHANNELS == 2
         uint value = (idx.x + idx.y * width) * 2;
-        tvec outputValue = tvec(value, value + 1);
     #elif NUM_CHANNELS == 4
         uint value = (idx.x + idx.y * width) * 4;
-        tvec outputValue = tvec(value, value + 1, value + 2, value + 3);
     #else
     #error Unsupported number of image channels.
+    #endif
+    #if MODULO_VALUE <= 1
+    #if NUM_CHANNELS == 1
+        tvec outputValue = tvec(value);
+    #elif NUM_CHANNELS == 2
+        tvec outputValue = tvec(value, value + 1);
+    #elif NUM_CHANNELS == 4
+        tvec outputValue = tvec(value, value + 1, value + 2, value + 3);
+    #endif
+    #else
+    #if NUM_CHANNELS == 1
+        tvec outputValue = tvec(value % MODULO_VALUE);
+    #elif NUM_CHANNELS == 2
+        tvec outputValue = tvec(value % MODULO_VALUE, (value + 1) % MODULO_VALUE);
+    #elif NUM_CHANNELS == 4
+        tvec outputValue = tvec(value % MODULO_VALUE, (value + 1) % MODULO_VALUE, (value + 2) % MODULO_VALUE, (value + 3) % MODULO_VALUE);
+    #endif
     #endif
         destImage[idx] = outputValue;
     }
     )";
     auto shaderStringWriteImageCompute = sgl::formatStringPositional(
             SHADER_STRING_WRITE_IMAGE_COMPUTE_FMT,
-            sgl::d3d12::getDXGIFormatHLSLStructuredTypeString(format), formatInfo.numChannels);
+            sgl::d3d12::getDXGIFormatHLSLStructuredTypeString(format),
+            formatInfo.numChannels,
+            getFormatRangeModuloValue(formatInfo.channelFormat));
     auto computeShader = shaderManager->loadShaderFromHlslString(
             shaderStringWriteImageCompute, "WriteImageShader.hlsl",
             sgl::d3d12::ShaderModuleType::COMPUTE, "CSMain", {});
@@ -512,8 +535,9 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
     if (!d3d12Device->getFormatSupportsTypedLoadStore(format, true, true)) {
         GTEST_SKIP() << "D3D12 typed load/store not supported.";
     }
-    if (format == DXGI_FORMAT_R16G16_UINT || format == DXGI_FORMAT_R16G16B16A16_UINT) {
-        GTEST_SKIP() << "D3D12 does not support RWBuffer into this format.";
+    if (format == DXGI_FORMAT_R16_UINT || format == DXGI_FORMAT_R16G16_UINT || format == DXGI_FORMAT_R16G16B16A16_UINT
+            || format == DXGI_FORMAT_R16_FLOAT || format == DXGI_FORMAT_R16G16_FLOAT || format == DXGI_FORMAT_R16G16B16A16_FLOAT) {
+        GTEST_SKIP() << "D3D12 does not support RWStructuredBuffer into this format.";
     }
 
     auto formatInfo = sgl::d3d12::getDXGIFormatInfo(format);
@@ -525,7 +549,7 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
 
     const char* SHADER_STRING_COPY_IMAGE_TO_BUFFER_COMPUTE_FMT = R"(
     RWTexture2D<$0> srcImage : register(u0);
-    RWBuffer<$0> destBuffer : register(u1);
+    RWStructuredBuffer<$0> destBuffer : register(u1);
     [numthreads(16, 16, 1)]
     void CSMain(
             uint3 groupID : SV_GroupID, uint3 dispatchThreadID : SV_DispatchThreadID,

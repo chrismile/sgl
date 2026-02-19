@@ -35,6 +35,7 @@
 
 #include <Math/Math.hpp>
 #include "CudaDeviceCode.hpp"
+#include "../Utils/FormatRange.hpp"
 
 static bool isCudaRuntimeApiInitialized = false;
 
@@ -122,6 +123,29 @@ __global__ void writeCudaSurfaceObjectIncreasingIndicesKernel(
     surf2Dwrite(element.data, surfaceObject, idX * sizeof(vect), idY);
 }
 
+template<typename T, int C>
+__global__ void writeCudaSurfaceObjectIncreasingIndicesModuloKernel(
+        cudaSurfaceObject_t surfaceObject, int width, int height) {
+    int idX = static_cast<int>(blockIdx.x) * blockDim.x + threadIdx.x;
+    int idY = static_cast<int>(blockIdx.y) * blockDim.y + threadIdx.y;
+    int linearIdx = (idX + idY * width) * C;
+    if (idX >= width || idY >= height) {
+        return;
+    }
+    typedef typename MakeVec<T, C>::type vect;
+    vect element;
+    for (int c = 0; c < C; c++) {
+        if constexpr (std::is_same_v<T, __half>) {
+            // https://stackoverflow.com/questions/77308513/how-can-i-write-to-an-fp16-surface
+            // Writing needs to be done with ushort4, but fetch could also be float4.
+            element.arr[c] = __float2half((linearIdx + c) % format_range<T>::modulo_value);
+        } else {
+            element.arr[c] = T((linearIdx + c) % format_range<T>::modulo_value);
+        }
+    }
+    surf2Dwrite(element.data, surfaceObject, idX * sizeof(vect), idY);
+}
+
 void writeCudaSurfaceObjectIncreasingIndices(
         CUstream cuStream, CUsurfObject surfaceObject, CUarray arrayL0, const sgl::FormatInfo& formatInfo, size_t width, size_t height) {
     auto iwidth = static_cast<int>(width);
@@ -141,17 +165,17 @@ void writeCudaSurfaceObjectIncreasingIndices(
     } else if (formatInfo.numChannels == 4 && formatInfo.channelFormat == sgl::ChannelFormat::UINT32) {
         writeCudaSurfaceObjectIncreasingIndicesKernel<uint32_t, 4><<<gridDim, blockDim, 0, cuStream>>>(surfaceObject, iwidth, iheight);
     } else if (formatInfo.numChannels == 1 && formatInfo.channelFormat == sgl::ChannelFormat::UINT16) {
-        writeCudaSurfaceObjectIncreasingIndicesKernel<uint16_t, 1><<<gridDim, blockDim, 0, cuStream>>>(surfaceObject, iwidth, iheight);
+        writeCudaSurfaceObjectIncreasingIndicesModuloKernel<uint16_t, 1><<<gridDim, blockDim, 0, cuStream>>>(surfaceObject, iwidth, iheight);
     } else if (formatInfo.numChannels == 2 && formatInfo.channelFormat == sgl::ChannelFormat::UINT16) {
-        writeCudaSurfaceObjectIncreasingIndicesKernel<uint16_t, 2><<<gridDim, blockDim, 0, cuStream>>>(surfaceObject, iwidth, iheight);
+        writeCudaSurfaceObjectIncreasingIndicesModuloKernel<uint16_t, 2><<<gridDim, blockDim, 0, cuStream>>>(surfaceObject, iwidth, iheight);
     } else if (formatInfo.numChannels == 4 && formatInfo.channelFormat == sgl::ChannelFormat::UINT16) {
-        writeCudaSurfaceObjectIncreasingIndicesKernel<uint16_t, 4><<<gridDim, blockDim, 0, cuStream>>>(surfaceObject, iwidth, iheight);
+        writeCudaSurfaceObjectIncreasingIndicesModuloKernel<uint16_t, 4><<<gridDim, blockDim, 0, cuStream>>>(surfaceObject, iwidth, iheight);
     } else if (formatInfo.numChannels == 1 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
-        writeCudaSurfaceObjectIncreasingIndicesKernel<__half, 1><<<gridDim, blockDim, 0, cuStream>>>(surfaceObject, iwidth, iheight);
+        writeCudaSurfaceObjectIncreasingIndicesModuloKernel<__half, 1><<<gridDim, blockDim, 0, cuStream>>>(surfaceObject, iwidth, iheight);
     } else if (formatInfo.numChannels == 2 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
-        writeCudaSurfaceObjectIncreasingIndicesKernel<__half, 2><<<gridDim, blockDim, 0, cuStream>>>(surfaceObject, iwidth, iheight);
+        writeCudaSurfaceObjectIncreasingIndicesModuloKernel<__half, 2><<<gridDim, blockDim, 0, cuStream>>>(surfaceObject, iwidth, iheight);
     } else if (formatInfo.numChannels == 4 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
-        writeCudaSurfaceObjectIncreasingIndicesKernel<__half, 4><<<gridDim, blockDim, 0, cuStream>>>(surfaceObject, iwidth, iheight);
+        writeCudaSurfaceObjectIncreasingIndicesModuloKernel<__half, 4><<<gridDim, blockDim, 0, cuStream>>>(surfaceObject, iwidth, iheight);
     } else {
         throw std::runtime_error("Error in writeCudaSurfaceObjectIncreasingIndices: Unsupported number of channels.");
     }

@@ -192,7 +192,7 @@ std::string getVkFormatStringCuda(const T& info) {
     uint32_t width = std::get<1>(info.param);
     uint32_t height = std::get<2>(info.param);
     auto formatString = sgl::vk::convertVkFormatToString(format);
-    if (sgl::vk::getImageFormatChannelByteSize(format) == 4 && (width != 1024 || height != 1024)) {
+    if (width != 1024 || height != 1024) {
         formatString += "_" + std::to_string(width) + "x" + std::to_string(height);
     }
     return formatString;
