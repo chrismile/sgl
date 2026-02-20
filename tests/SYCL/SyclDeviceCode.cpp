@@ -184,7 +184,7 @@ sycl::event writeSyclBindlessImageIncreasingIndices(
     if (formatInfo.numChannels == 4 && formatInfo.channelFormat == sgl::ChannelFormat::UINT32) {
         return writeSyclBindlessImageIncreasingIndices<uint32_t, 4>(queue, img, width, height);
     }
-    // Maximum representable integer value is 2048 for uint16_t.
+    // Maximum representable integer value is 2^16 for uint16_t.
     if (formatInfo.numChannels == 1 && formatInfo.channelFormat == sgl::ChannelFormat::UINT16) {
         return writeSyclBindlessImageIncreasingIndicesModulo<uint16_t, 1>(queue, img, width, height);
     }
