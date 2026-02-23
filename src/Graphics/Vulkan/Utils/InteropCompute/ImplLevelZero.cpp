@@ -208,10 +208,9 @@ void BufferVkLevelZeroInterop::importExternalMemory() {
 
 void BufferVkLevelZeroInterop::free() {
     freeHandlesAndFds();
-    if (externalMemoryBuffer) {
+    if (devicePtr) {
         ze_result_t zeResult = g_levelZeroFunctionTable.zeMemFree(g_zeContext, devicePtr);
         checkZeResult(zeResult, "Error in zeMemFree: ");
-        externalMemoryBuffer = {};
     }
 }
 
@@ -652,6 +651,7 @@ void ImageVkLevelZeroInterop::free() {
     if (devicePtr && g_useBindlessImagesInterop) {
         ze_result_t zeResult = g_levelZeroFunctionTable.zeMemFree(g_zeContext, devicePtr);
         checkZeResult(zeResult, "Error in zeMemFree: ");
+        devicePtr = {};
     }
 }
 

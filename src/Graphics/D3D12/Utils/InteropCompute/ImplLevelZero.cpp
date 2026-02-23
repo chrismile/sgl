@@ -171,10 +171,10 @@ void BufferD3D12LevelZeroInterop::importExternalMemoryWin32Handle() {
 
 void BufferD3D12LevelZeroInterop::free() {
     freeHandle();
-    if (externalMemoryBuffer) {
+    if (devicePtr) {
         ze_result_t zeResult = g_levelZeroFunctionTable.zeMemFree(g_zeContext, devicePtr);
         checkZeResult(zeResult, "Error in zeMemFree: ");
-        externalMemoryBuffer = {};
+        devicePtr = {};
     }
 }
 

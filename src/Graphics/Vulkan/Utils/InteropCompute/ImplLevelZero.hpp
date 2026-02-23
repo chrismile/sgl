@@ -94,7 +94,6 @@ private:
 #ifdef __linux__
     ze_external_memory_import_fd_t externalMemoryImportFd{};
 #endif
-    void* externalMemoryBuffer{}; // hipExternalMemory_t
 };
 
 

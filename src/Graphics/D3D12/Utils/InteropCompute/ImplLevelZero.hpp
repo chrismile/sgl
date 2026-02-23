@@ -71,7 +71,6 @@ protected:
 private:
     ze_device_mem_alloc_desc_t deviceMemAllocDesc{};
     ze_external_memory_import_win32_handle_t externalMemoryImportWin32Handle{};
-    void* externalMemoryBuffer{}; // hipExternalMemory_t
 };
 
 
