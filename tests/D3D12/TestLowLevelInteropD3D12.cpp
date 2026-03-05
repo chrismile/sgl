@@ -278,6 +278,7 @@ protected:
 
     void checkBindlessImagesSupported(bool& available);
     void checkSemaphoresSupported(bool& available);
+    void checkExternalMemorySupported(bool& available, bool useLinearMemory);
     void runTestsBufferCopySemaphore();
 
     sgl::d3d12::DXGIFactoryPtr dxgiFactory;
@@ -349,6 +350,38 @@ void InteropTestLowLevelInteropD3D12::checkSemaphoresSupported(bool& available) 
 #endif
 }
 
+void InteropTestLowLevelInteropD3D12::checkExternalMemorySupported(bool& available, bool useLinearMemory) {
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+    if (sgl::getIsLevelZeroFunctionTableInitialized()) {
+        ze_device_external_memory_properties_t zeExternalMemoryProperties{};
+        zeExternalMemoryProperties.stype = ZE_STRUCTURE_TYPE_DEVICE_EXTERNAL_MEMORY_PROPERTIES;
+        ze_result_t zeResult = sgl::g_levelZeroFunctionTable.zeDeviceGetExternalMemoryProperties(
+                zeDevice, &zeExternalMemoryProperties);
+        sgl::checkZeResult(zeResult, "Error in zeDeviceGetExternalMemoryProperties: ");
+
+        ze_external_memory_type_flag_t zeExtMemFlag = ZE_EXTERNAL_MEMORY_TYPE_FLAG_D3D12_RESOURCE;
+        if (useLinearMemory) {
+            if ((zeExternalMemoryProperties.memoryAllocationImportTypes & zeExtMemFlag) != zeExtMemFlag) {
+                available = false;
+                const char* errorString = "Level Zero driver does not support external D3D12 memory resource handles.";
+                FAIL() << errorString;
+            }
+        } else {
+            if ((zeExternalMemoryProperties.imageImportTypes & zeExtMemFlag) != zeExtMemFlag) {
+                available = false;
+                const char* errorString = "Level Zero driver does not support external D3D12 image resource handles.";
+#ifdef SKIP_UNSUPPORTED_LEVEL_ZERO_TESTS
+                GTEST_SKIP() << errorString; // Should be handled as a warning.
+                sgl::Logfile::get()->writeWarning(errorString);
+#else
+                FAIL() << errorString;
+#endif
+            }
+        }
+    }
+#endif
+}
+
 
 TEST_F(InteropTestLowLevelInteropD3D12, FenceAllocationTest) {
     if (computeApi == sgl::InteropComputeApi::NONE) {
@@ -368,6 +401,11 @@ TEST_F(InteropTestLowLevelInteropD3D12, FenceAllocationTest) {
 TEST_F(InteropTestLowLevelInteropD3D12, BufferAllocationTest) {
     if (computeApi == sgl::InteropComputeApi::NONE) {
         GTEST_SKIP() << "Compute API not initialized.";
+    }
+    bool supported = true;
+    checkExternalMemorySupported(supported, true);
+    if (!supported) {
+        return;
     }
 
     uint32_t width = 1024;
@@ -389,6 +427,7 @@ TEST_F(InteropTestLowLevelInteropD3D12, ImageAllocationTest) {
     }
     bool bindlessImagesSupported = true;
     checkBindlessImagesSupported(bindlessImagesSupported);
+    checkExternalMemorySupported(bindlessImagesSupported, false);
     if (!bindlessImagesSupported) {
         return;
     }

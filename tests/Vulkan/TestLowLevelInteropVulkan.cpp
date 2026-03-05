@@ -323,6 +323,7 @@ protected:
 
     void checkBindlessImagesSupported(bool& available);
     void checkSemaphoresSupported(bool& available);
+    void checkExternalMemorySupported(bool& available, bool useLinearMemory);
     void runTestsBufferCopySemaphore(bool useTimelineSemaphore);
     void runTestImageCreation(VkFormat format, uint32_t width, uint32_t height, bool isFormatRequired);
 
@@ -356,7 +357,99 @@ protected:
 #endif
 };
 
+
+#define SKIP_UNSUPPORTED_LEVEL_ZERO_TESTS
+void InteropTestLowLevelVk::checkBindlessImagesSupported(bool& available) {
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+    if (sgl::getIsLevelZeroFunctionTableInitialized() && !sgl::queryLevelZeroDriverSupportsBindlessImages(zeDriver)) {
+        available = false;
+        const char* errorString = "Level Zero driver does not support bindless images.";
+#ifdef SKIP_UNSUPPORTED_LEVEL_ZERO_TESTS
+        GTEST_SKIP() << errorString; // Should be handled as a warning.
+        sgl::Logfile::get()->writeWarning(errorString);
+#else
+        FAIL() << errorString;
+#endif
+    }
+#endif
+}
+
+void InteropTestLowLevelVk::checkSemaphoresSupported(bool& available) {
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+    if (sgl::getIsLevelZeroFunctionTableInitialized() && !sgl::queryLevelZeroDriverSupportsExternalSemaphores(zeDriver)) {
+        available = false;
+        const char* errorString = "Level Zero driver does not support external semaphores.";
+#ifdef SKIP_UNSUPPORTED_LEVEL_ZERO_TESTS
+        GTEST_SKIP() << errorString; // Should be handled as a warning.
+        sgl::Logfile::get()->writeWarning(errorString);
+#else
+        FAIL() << errorString;
+#endif
+    }
+#endif
+#ifdef SUPPORT_HIP_INTEROP
+    if (sgl::getIsHipDeviceApiFunctionTableInitialized() && !sgl::getHipInteropSupportsSemaphores()) {
+        available = false;
+        const char* errorString = "HIP does not support external semaphores.";
+        FAIL() << errorString;
+    }
+#endif
+}
+
+void InteropTestLowLevelVk::checkExternalMemorySupported(bool& available, bool useLinearMemory) {
+#ifdef SUPPORT_LEVEL_ZERO_INTEROP
+    if (sgl::getIsLevelZeroFunctionTableInitialized()) {
+        ze_device_external_memory_properties_t zeExternalMemoryProperties{};
+        zeExternalMemoryProperties.stype = ZE_STRUCTURE_TYPE_DEVICE_EXTERNAL_MEMORY_PROPERTIES;
+        ze_result_t zeResult = sgl::g_levelZeroFunctionTable.zeDeviceGetExternalMemoryProperties(
+                zeDevice, &zeExternalMemoryProperties);
+        sgl::checkZeResult(zeResult, "Error in zeDeviceGetExternalMemoryProperties: ");
+
+        ze_external_memory_type_flag_t zeExtMemFlag;
+#ifdef _WIN32
+        zeExtMemFlag = ZE_EXTERNAL_MEMORY_TYPE_FLAG_OPAQUE_WIN32;
+#else
+        zeExtMemFlag = ZE_EXTERNAL_MEMORY_TYPE_FLAG_OPAQUE_FD;
+#endif
+
+        if (useLinearMemory) {
+            if ((zeExternalMemoryProperties.memoryAllocationImportTypes & zeExtMemFlag) != zeExtMemFlag) {
+                available = false;
+#ifdef _WIN32
+                const char* errorString = "Level Zero driver does not support external opaque Win32 memory handles.";
+#else
+                const char* errorString = "Level Zero driver does not support external opaque image file descriptors.";
+#endif
+                FAIL() << errorString;
+            }
+        } else {
+            if ((zeExternalMemoryProperties.imageImportTypes & zeExtMemFlag) != zeExtMemFlag) {
+                available = false;
+#ifdef _WIN32
+                const char* errorString = "Level Zero driver does not support external opaque Win32 image handles.";
+#else
+                const char* errorString = "Level Zero driver does not support external opaque memory file descriptors.";
+#endif
+#ifdef SKIP_UNSUPPORTED_LEVEL_ZERO_TESTS
+                GTEST_SKIP() << errorString; // Should be handled as a warning.
+                sgl::Logfile::get()->writeWarning(errorString);
+#else
+                FAIL() << errorString;
+#endif
+            }
+        }
+    }
+#endif
+}
+
+
 TEST_F(InteropTestLowLevelVk, BufferSharingOnlyTest) {
+    bool supported = true;
+    checkExternalMemorySupported(supported, true);
+    if (!supported) {
+        return;
+    }
+
     // Create buffer data.
     float sharedData = 42.0f;
     sgl::vk::BufferSettings bufferSettings{};
@@ -384,21 +477,6 @@ TEST_F(InteropTestLowLevelVk, BufferSharingOnlyTest) {
     bufferVulkan = {};
 }
 
-#define SKIP_UNSUPPORTED_LEVEL_ZERO_TESTS
-void InteropTestLowLevelVk::checkBindlessImagesSupported(bool& available) {
-#ifdef SUPPORT_LEVEL_ZERO_INTEROP
-    if (sgl::getIsLevelZeroFunctionTableInitialized() && !sgl::queryLevelZeroDriverSupportsBindlessImages(zeDriver)) {
-        available = false;
-        const char* errorString = "Level Zero driver does not support bindless images.";
-#ifdef SKIP_UNSUPPORTED_LEVEL_ZERO_TESTS
-        GTEST_SKIP() << errorString; // Should be handled as a warning.
-        sgl::Logfile::get()->writeWarning(errorString);
-#else
-        FAIL() << errorString;
-#endif
-    }
-#endif
-}
 
 class InteropTestLowLevelVkRegularImageCreation
         : public InteropTestLowLevelVk, public testing::WithParamInterface<std::tuple<VkFormat, uint32_t, uint32_t, bool>> {
@@ -453,6 +531,12 @@ void InteropTestLowLevelVk::runTestImageCreation(VkFormat format, uint32_t width
 }
 
 TEST_P(InteropTestLowLevelVkRegularImageCreation, Formats) {
+    bool imageInteropSupported = true;
+    checkExternalMemorySupported(imageInteropSupported, false);
+    if (!imageInteropSupported) {
+        return;
+    }
+
     const auto [format, width, height, isFormatRequired] = GetParam();
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
     if (sgl::getIsLevelZeroFunctionTableInitialized()) {
@@ -465,6 +549,7 @@ TEST_P(InteropTestLowLevelVkRegularImageCreation, Formats) {
 TEST_P(InteropTestLowLevelVkBindlessImageCreation, Formats) {
     bool bindlessImagesSupported = true;
     checkBindlessImagesSupported(bindlessImagesSupported);
+    checkExternalMemorySupported(bindlessImagesSupported, false);
     if (!bindlessImagesSupported) {
         return;
     }
@@ -481,28 +566,6 @@ TEST_P(InteropTestLowLevelVkBindlessImageCreation, Formats) {
 INSTANTIATE_TEST_SUITE_P(, InteropTestLowLevelVkRegularImageCreation, testedImageFormats, PrintToStringFormatConfig());
 INSTANTIATE_TEST_SUITE_P(, InteropTestLowLevelVkBindlessImageCreation, testedImageFormats, PrintToStringFormatConfig());
 
-
-void InteropTestLowLevelVk::checkSemaphoresSupported(bool& available) {
-#ifdef SUPPORT_LEVEL_ZERO_INTEROP
-    if (sgl::getIsLevelZeroFunctionTableInitialized() && !sgl::queryLevelZeroDriverSupportsExternalSemaphores(zeDriver)) {
-        available = false;
-        const char* errorString = "Level Zero driver does not support external semaphores.";
-#ifdef SKIP_UNSUPPORTED_LEVEL_ZERO_TESTS
-        GTEST_SKIP() << errorString; // Should be handled as a warning.
-        sgl::Logfile::get()->writeWarning(errorString);
-#else
-        FAIL() << errorString;
-#endif
-    }
-#endif
-#ifdef SUPPORT_HIP_INTEROP
-    if (sgl::getIsHipDeviceApiFunctionTableInitialized() && !sgl::getHipInteropSupportsSemaphores()) {
-        available = false;
-        const char* errorString = "HIP does not support external semaphores.";
-        FAIL() << errorString;
-    }
-#endif
-}
 
 TEST_F(InteropTestLowLevelVk, BinarySemaphoreAllocationTest) {
     bool semaphoresSupported = true;
@@ -523,9 +586,10 @@ TEST_F(InteropTestLowLevelVk, TimelineSemaphoreAllocationTest) {
 }
 
 void InteropTestLowLevelVk::runTestsBufferCopySemaphore(bool useTimelineSemaphore) {
-    bool semaphoresSupported = true;
-    checkSemaphoresSupported(semaphoresSupported);
-    if (!semaphoresSupported) {
+    bool supported = true;
+    checkSemaphoresSupported(supported);
+    checkExternalMemorySupported(supported, true);
+    if (!supported) {
         return;
     }
 
