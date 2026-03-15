@@ -34,6 +34,9 @@
 #ifdef SUPPORT_CUDA_INTEROP
 #include <Graphics/Vulkan/Utils/InteropCuda.hpp>
 #endif
+#ifdef SUPPORT_HIP_INTEROP
+#include <Graphics/Vulkan/Utils/InteropHIP.hpp>
+#endif
 #ifdef SUPPORT_OPENCL_INTEROP
 #include <Graphics/Vulkan/Utils/InteropOpenCL.hpp>
 #endif
@@ -102,6 +105,19 @@ DeviceThreadInfo getDeviceThreadInfo(sgl::vk::Device* device) {
 
         if (foundDevice) {
             getCudaDeviceThreadInfo(cuDevice, info);
+        }
+    }
+#endif
+#ifdef SUPPORT_CUDA_INTEROP
+    else if ((device->getDeviceDriverId() == VK_DRIVER_ID_AMD_PROPRIETARY
+            || device->getDeviceDriverId() == VK_DRIVER_ID_AMD_OPEN_SOURCE
+            || device->getDeviceDriverId() == VK_DRIVER_ID_MESA_RADV)
+            && sgl::getIsHipDeviceApiFunctionTableInitialized()) {
+        hipDevice_t hipDevice = 0;
+        bool foundDevice = sgl::vk::getMatchingHipDevice(device, &hipDevice);
+
+        if (foundDevice) {
+            getHipDeviceThreadInfo(hipDevice, info);
         }
     }
 #endif
@@ -218,6 +234,49 @@ void getCudaDeviceThreadInfo(CUdevice cuDevice, DeviceThreadInfo& info) {
 DeviceThreadInfo getCudaDeviceThreadInfo(CUdevice cuDevice) {
     DeviceThreadInfo info{};
     getCudaDeviceThreadInfo(cuDevice, info);
+    return info;
+}
+#endif
+
+#ifdef SUPPORT_HIP_INTEROP
+// TODO: Test.
+void getHipDeviceThreadInfo(hipDevice_t hipDevice, DeviceThreadInfo& info) {
+    /*
+     * Only use one thread block per shader multiprocessor (SM) to improve chance of fair scheduling.
+     * See, e.g.: https://stackoverflow.com/questions/33150040/doubling-buffering-in-cuda-so-the-cpu-can-operate-on-data-produced-by-a-persiste/33158954#33158954%5B/
+     */
+    hipError_t hipResult;
+    int numMultiprocessors = 16, numMaxResidentThreadsPerMultiprocessor = 16;
+    hipResult = sgl::g_hipDeviceApiFunctionTable.hipDeviceGetAttribute(
+            &numMultiprocessors, hipDeviceAttributeMultiprocessorCount, hipDevice);
+    sgl::checkHipResult(hipResult, "Error in hipDeviceGetAttribute: ");
+    hipResult = sgl::g_hipDeviceApiFunctionTable.hipDeviceGetAttribute(
+            &numMaxResidentThreadsPerMultiprocessor, hipDeviceAttributeMaxThreadsPerMultiProcessor, hipDevice);
+    sgl::checkHipResult(hipResult, "Error in hipDeviceGetAttribute: ");
+    info.numMultiprocessors = uint32_t(numMultiprocessors);
+
+    /*
+     * Use more threads than warp size. Factor 4 seems to make sense at least for RTX 3090.
+     * For more details see: https://stackoverflow.com/questions/32530604/how-can-i-get-number-of-cores-in-cuda-device
+     * Or: https://github.com/NVIDIA/cuda-samples/blob/master/Common/helper_cuda.h
+     * https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#compute-capabilities
+     * https://developer.nvidia.com/blog/inside-pascal/
+     */
+    int warpSize = 64;
+    hipResult = sgl::g_hipDeviceApiFunctionTable.hipDeviceGetAttribute(
+            &warpSize, hipDeviceAttributeWarpSize, hipDevice);
+    sgl::checkHipResult(hipResult, "Error in hipDeviceGetAttribute: ");
+    info.warpSize = uint32_t(warpSize);
+
+    info.numCoresPerMultiprocessor = uint32_t(numMaxResidentThreadsPerMultiprocessor) * info.warpSize;
+    info.numCoresTotal = info.numMultiprocessors * info.numCoresPerMultiprocessor;
+    info.numCudaCoresEquivalent = info.numCoresTotal;
+    info.optimalWorkgroupSizePT = uint32_t(numMaxResidentThreadsPerMultiprocessor);
+    info.optimalNumWorkgroupsPT = numMultiprocessors;
+}
+DeviceThreadInfo getHipDeviceThreadInfo(hipDevice_t hipDevice) {
+    DeviceThreadInfo info{};
+    getHipDeviceThreadInfo(hipDevice, info);
     return info;
 }
 #endif

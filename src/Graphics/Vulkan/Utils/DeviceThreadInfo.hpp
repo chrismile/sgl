@@ -39,6 +39,9 @@ extern "C" {
 #ifdef SUPPORT_CUDA_INTEROP
 typedef int CUdevice;
 #endif
+#ifdef SUPPORT_HIP_INTEROP
+typedef int hipDevice_t;
+#endif
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
 typedef struct _ze_device_handle_t* ze_device_handle_t;
 #endif
@@ -80,6 +83,11 @@ DLL_OBJECT DeviceThreadInfo getDeviceThreadInfo(sgl::vk::Device* device);
 #ifdef SUPPORT_CUDA_INTEROP
 DLL_OBJECT void getCudaDeviceThreadInfo(CUdevice cuDevice, DeviceThreadInfo& deviceThreadInfo);
 DLL_OBJECT DeviceThreadInfo getCudaDeviceThreadInfo(CUdevice cuDevice);
+#endif
+
+#ifdef SUPPORT_HIP_INTEROP
+DLL_OBJECT void getHipDeviceThreadInfo(hipDevice_t hipDevice, DeviceThreadInfo& deviceThreadInfo);
+DLL_OBJECT DeviceThreadInfo getHipDeviceThreadInfo(hipDevice_t hipDevice);
 #endif
 
 #ifdef SUPPORT_LEVEL_ZERO_INTEROP
