@@ -123,6 +123,10 @@ public:
     void transitionImageLayoutEx(
             vk::ImagePtr& image, VkImageLayout newLayout,
             VkPipelineStageFlags dstStage, VkAccessFlags dstAccessMask);
+    void transitionImageLayoutSubresourceEx(
+            vk::ImagePtr& image, VkImageLayout newLayout,
+            VkPipelineStageFlags dstStage, VkAccessFlags dstAccessMask,
+            uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount);
     void transitionImageLayoutEx(
             vk::ImageViewPtr& imageView, VkImageLayout newLayout,
             VkPipelineStageFlags dstStage, VkAccessFlags dstAccessMask);

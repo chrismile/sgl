@@ -2418,6 +2418,16 @@ void Image::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayo
 void Image::transitionImageLayoutEx(
         VkImageLayout newLayout, VkPipelineStageFlags dstStage, VkAccessFlags dstAccessMask,
         VkCommandBuffer commandBuffer) {
+    transitionImageLayoutSubresourceEx(
+            newLayout, dstStage, dstAccessMask, commandBuffer,
+            0, this->getImageSettings().mipLevels,
+            0, this->getImageSettings().arrayLayers);
+}
+
+void Image::transitionImageLayoutSubresourceEx(
+        VkImageLayout newLayout, VkPipelineStageFlags dstStage, VkAccessFlags dstAccessMask,
+        VkCommandBuffer commandBuffer,
+        uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount) {
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     barrier.oldLayout = imageLayout;
@@ -2425,10 +2435,10 @@ void Image::transitionImageLayoutEx(
     barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.image = image;
-    barrier.subresourceRange.baseMipLevel = 0;
-    barrier.subresourceRange.levelCount = this->getImageSettings().mipLevels;
-    barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount = this->getImageSettings().arrayLayers;
+    barrier.subresourceRange.baseMipLevel = baseMipLevel;
+    barrier.subresourceRange.levelCount = levelCount;
+    barrier.subresourceRange.baseArrayLayer = baseArrayLayer;
+    barrier.subresourceRange.layerCount = layerCount;
     if (isDepthStencilFormat(imageSettings.format)) {
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
         if (hasStencilComponent(imageSettings.format)) {
@@ -2942,7 +2952,10 @@ void ImageView::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout new
 void ImageView::transitionImageLayoutEx(
         VkImageLayout newLayout, VkPipelineStageFlags dstStage, VkAccessFlags dstAccessMask,
         VkCommandBuffer commandBuffer) {
-    image->transitionImageLayoutEx(newLayout, dstStage, dstAccessMask, commandBuffer);
+    image->transitionImageLayoutSubresourceEx(
+            newLayout, dstStage, dstAccessMask, commandBuffer,
+            subresourceRange.baseMipLevel, subresourceRange.levelCount,
+            subresourceRange.baseArrayLayer, subresourceRange.layerCount);
 }
 
 void ImageView::insertMemoryBarrier(

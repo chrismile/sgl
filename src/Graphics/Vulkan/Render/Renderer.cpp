@@ -741,6 +741,21 @@ void Renderer::transitionImageLayoutEx(
     }
 }
 
+void Renderer::transitionImageLayoutSubresourceEx(
+        vk::ImagePtr& image, VkImageLayout newLayout,
+        VkPipelineStageFlags dstStage, VkAccessFlags dstAccessMask,
+        uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount) {
+    if (!useGraphicsQueue) {
+        image->setUseInComputeQueueTemp(true);
+    }
+    image->transitionImageLayoutSubresourceEx(
+            newLayout, dstStage, dstAccessMask, commandBuffer,
+            baseMipLevel, levelCount, baseArrayLayer, layerCount);
+    if (!useGraphicsQueue) {
+        image->setUseInComputeQueueTemp(false);
+    }
+}
+
 void Renderer::transitionImageLayoutEx(
         vk::ImageViewPtr& imageView, VkImageLayout newLayout,
         VkPipelineStageFlags dstStage, VkAccessFlags dstAccessMask) {

@@ -295,6 +295,10 @@ public:
     void transitionImageLayoutEx(
             VkImageLayout newLayout, VkPipelineStageFlags dstStage, VkAccessFlags dstAccessMask,
             VkCommandBuffer commandBuffer);
+    void transitionImageLayoutSubresourceEx(
+            VkImageLayout newLayout, VkPipelineStageFlags dstStage, VkAccessFlags dstAccessMask,
+            VkCommandBuffer commandBuffer,
+            uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount);
     void insertMemoryBarrier(
             VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout,
             VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
