@@ -418,7 +418,7 @@ void InteropTestLowLevelVk::checkExternalMemorySupported(bool& available, bool u
 #ifdef _WIN32
                 const char* errorString = "Level Zero driver does not support external opaque Win32 memory handles.";
 #else
-                const char* errorString = "Level Zero driver does not support external opaque image file descriptors.";
+                const char* errorString = "Level Zero driver does not support external opaque memory file descriptors.";
 #endif
                 FAIL() << errorString;
             }
@@ -428,7 +428,7 @@ void InteropTestLowLevelVk::checkExternalMemorySupported(bool& available, bool u
 #ifdef _WIN32
                 const char* errorString = "Level Zero driver does not support external opaque Win32 image handles.";
 #else
-                const char* errorString = "Level Zero driver does not support external opaque memory file descriptors.";
+                const char* errorString = "Level Zero driver does not support external opaque image file descriptors.";
 #endif
 #ifdef SKIP_UNSUPPORTED_LEVEL_ZERO_TESTS
                 GTEST_SKIP() << errorString; // Should be handled as a warning.
@@ -611,7 +611,6 @@ void InteropTestLowLevelVk::runTestsBufferCopySemaphore(bool useTimelineSemaphor
     bufferVulkan->uploadData(sizeof(float), &sharedData);
     sgl::vk::BufferVkComputeApiExternalMemoryPtr bufferComputeApi;
     bufferComputeApi = sgl::vk::createBufferVkComputeApiExternalMemory(bufferVulkan);
-    //auto* devicePtr = bufferComputeApi->getDevicePtr<float>();
     float hostData = 0.0f;
 
     // Create renderer and command buffer.
