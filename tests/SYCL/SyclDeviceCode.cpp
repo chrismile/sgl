@@ -117,6 +117,7 @@ sycl::event writeSyclBindlessImageIncreasingIndices(
             const auto x = it[0];
             const auto y = it[1];
             const auto index = (x + y * width) * static_cast<size_t>(C);
+#ifdef __NVPTX__
             if constexpr (std::is_same_v<T, sycl::half>) {
                 sycl::vec<uint16_t, C> data;
                 for (int c = 0; c < C; c++) {
@@ -126,12 +127,15 @@ sycl::event writeSyclBindlessImageIncreasingIndices(
                 }
                 syclexp::write_image<sycl::vec<uint16_t, C>>(img, sycl::int2{x, y}, data);
             } else {
+#endif
                 sycl::vec<T, C> data;
                 for (int c = 0; c < C; c++) {
                     data[c] = T(index + c);
                 }
                 syclexp::write_image<sycl::vec<T, C>>(img, sycl::int2{x, y}, data);
+#ifdef __NVPTX__
             }
+#endif
         });
     });
     return event;
@@ -145,6 +149,7 @@ sycl::event writeSyclBindlessImageIncreasingIndicesModulo(
             const auto x = it[0];
             const auto y = it[1];
             const auto index = (x + y * width) * static_cast<size_t>(C);
+#ifdef __NVPTX__
             if constexpr (std::is_same_v<T, sycl::half>) {
                 sycl::vec<uint16_t, C> data;
                 for (int c = 0; c < C; c++) {
@@ -152,12 +157,15 @@ sycl::event writeSyclBindlessImageIncreasingIndicesModulo(
                 }
                 syclexp::write_image<sycl::vec<uint16_t, C>>(img, sycl::int2{x, y}, data);
             } else {
+#endif
                 sycl::vec<T, C> data;
                 for (int c = 0; c < C; c++) {
                     data[c] = T((index + c) % size_t(format_range<T>::modulo_value));
                 }
                 syclexp::write_image<sycl::vec<T, C>>(img, sycl::int2{x, y}, data);
+#ifdef __NVPTX__
             }
+#endif
         });
     });
     return event;
