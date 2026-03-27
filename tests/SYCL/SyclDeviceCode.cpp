@@ -95,14 +95,39 @@ sycl::event copySyclBindlessImageToBuffer(
     if (formatInfo.numChannels == 4 && formatInfo.channelFormat == sgl::ChannelFormat::UINT16) {
         return copySyclBindlessImageToBuffer<uint16_t, 4>(queue, img, width, height, static_cast<uint16_t*>(devicePtr), depEvent);
     }
-    if (formatInfo.numChannels == 1 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
-        return copySyclBindlessImageToBuffer<uint16_t, 1>(queue, img, width, height, static_cast<uint16_t*>(devicePtr), depEvent);
+
+    // half float is a special case; NVPTX does not support it, and SPIR-V does not support reading as uint16_t.
+    [[maybe_unused]] bool isCudaOrHip = false;
+#if defined(SUPPORT_CUDA_INTEROP) && defined(SYCL_EXT_ONEAPI_BACKEND_CUDA) && SYCL_EXT_ONEAPI_BACKEND_CUDA
+    if (queue.get_backend() == sycl::backend::ext_oneapi_cuda) {
+        isCudaOrHip = true;
     }
-    if (formatInfo.numChannels == 2 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
-        return copySyclBindlessImageToBuffer<uint16_t, 2>(queue, img, width, height, static_cast<uint16_t*>(devicePtr), depEvent);
+#endif
+#if defined(SUPPORT_HIP_INTEROP) && defined(SYCL_EXT_ONEAPI_BACKEND_HIP) && SYCL_EXT_ONEAPI_BACKEND_HIP
+    if (queue.get_backend() == sycl::backend::ext_oneapi_hip) {
+        isCudaOrHip = true;
     }
-    if (formatInfo.numChannels == 4 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
-        return copySyclBindlessImageToBuffer<uint16_t, 4>(queue, img, width, height, static_cast<uint16_t*>(devicePtr), depEvent);
+#endif
+    if (isCudaOrHip) {
+        if (formatInfo.numChannels == 1 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
+            return copySyclBindlessImageToBuffer<uint16_t, 1>(queue, img, width, height, static_cast<uint16_t*>(devicePtr), depEvent);
+        }
+        if (formatInfo.numChannels == 2 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
+            return copySyclBindlessImageToBuffer<uint16_t, 2>(queue, img, width, height, static_cast<uint16_t*>(devicePtr), depEvent);
+        }
+        if (formatInfo.numChannels == 4 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
+            return copySyclBindlessImageToBuffer<uint16_t, 4>(queue, img, width, height, static_cast<uint16_t*>(devicePtr), depEvent);
+        }
+    } else {
+        if (formatInfo.numChannels == 1 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
+            return copySyclBindlessImageToBuffer<sycl::half, 1>(queue, img, width, height, static_cast<sycl::half*>(devicePtr), depEvent);
+        }
+        if (formatInfo.numChannels == 2 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
+            return copySyclBindlessImageToBuffer<sycl::half, 2>(queue, img, width, height, static_cast<sycl::half*>(devicePtr), depEvent);
+        }
+        if (formatInfo.numChannels == 4 && formatInfo.channelFormat == sgl::ChannelFormat::FLOAT16) {
+            return copySyclBindlessImageToBuffer<sycl::half, 4>(queue, img, width, height, static_cast<sycl::half*>(devicePtr), depEvent);
+        }
     }
     throw std::runtime_error("Error in writeSyclBindlessImageIncreasingIndices: Unsupported number of channels.");
     return sycl::event();
