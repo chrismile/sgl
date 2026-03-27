@@ -203,13 +203,13 @@ function(compile_sycl_kernels target_name sources compiler_flags linker_flags)
             list(APPEND SYCL_CONFIG_LIB_LIST "$<$<CONFIG:${CONFIG}>:${ONEAPI_KERNEL_LIB_PATH}>")
         endforeach()
 
-        # Copy shared library to binary directory.
-        add_custom_command(TARGET ${target_name}
-                POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ${SYCL_CONFIG_DLL_LIST} "$<TARGET_FILE_DIR:${target_name}>")
-
         # Add the custom target for the kernel library.
         add_custom_target(SyclKernels ALL DEPENDS ${SYCL_CONFIG_LIB_LIST})
         target_link_libraries(${target_name} PRIVATE ${SYCL_CONFIG_LIB_LIST})
+
+        # Copy shared library to binary directory.
+        add_custom_command(TARGET SyclKernels
+                POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ${SYCL_CONFIG_DLL_LIST} "$<TARGET_FILE_DIR:${target_name}>")
     else()
         set(ONEAPI_KERNEL_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/${target_name}.dir")
         compile_sycl_kernels_single("${ONEAPI_KERNEL_OUTPUT_DIR}" "${sources}" "${compiler_flags}" "${linker_flags}")

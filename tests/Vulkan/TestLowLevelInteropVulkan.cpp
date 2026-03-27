@@ -488,7 +488,7 @@ class InteropTestLowLevelVkBindlessImageCreation
 public:
     InteropTestLowLevelVkBindlessImageCreation() = default;
 };
-struct PrintToStringFormatConfig {
+struct PrintToStringFormatConfigVkLowLevel {
     std::string operator()(const testing::TestParamInfo<std::tuple<VkFormat, uint32_t, uint32_t, bool>>& info) const {
         return sgl::vk::convertVkFormatToString(std::get<0>(info.param));
     }
@@ -563,8 +563,8 @@ TEST_P(InteropTestLowLevelVkBindlessImageCreation, Formats) {
     runTestImageCreation(format, width, height, isFormatRequired);
 }
 
-INSTANTIATE_TEST_SUITE_P(, InteropTestLowLevelVkRegularImageCreation, testedImageFormats, PrintToStringFormatConfig());
-INSTANTIATE_TEST_SUITE_P(, InteropTestLowLevelVkBindlessImageCreation, testedImageFormats, PrintToStringFormatConfig());
+INSTANTIATE_TEST_SUITE_P(, InteropTestLowLevelVkRegularImageCreation, testedImageFormats, PrintToStringFormatConfigVkLowLevel());
+INSTANTIATE_TEST_SUITE_P(, InteropTestLowLevelVkBindlessImageCreation, testedImageFormats, PrintToStringFormatConfigVkLowLevel());
 
 
 TEST_F(InteropTestLowLevelVk, BinarySemaphoreAllocationTest) {

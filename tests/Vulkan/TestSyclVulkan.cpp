@@ -208,7 +208,7 @@ class InteropTestSyclVkImageCreation
 public:
     InteropTestSyclVkImageCreation() = default;
 };
-struct PrintToStringFormatConfig {
+struct PrintToStringFormatConfigVk {
     std::string operator()(const testing::TestParamInfo<std::tuple<VkFormat, uint32_t, uint32_t, bool>>& info) const {
         return getVkFormatString(info);
     }
@@ -257,7 +257,7 @@ TEST_P(InteropTestSyclVkImageCreation, Formats) {
         }
     }
 }
-INSTANTIATE_TEST_SUITE_P(, InteropTestSyclVkImageCreation, testedImageFormats, PrintToStringFormatConfig());
+INSTANTIATE_TEST_SUITE_P(, InteropTestSyclVkImageCreation, testedImageFormats, PrintToStringFormatConfigVk());
 
 TEST_F(InteropTestSyclVkInOrder, BinarySemaphoreAllocationTest) {
     if (!syclQueue->get_device().has(sycl::aspect::ext_oneapi_external_semaphore_import)) {
@@ -483,7 +483,7 @@ TEST_P(InteropTestSyclVkImageCopy, Formats) {
         }
     }
 }
-INSTANTIATE_TEST_SUITE_P(, InteropTestSyclVkImageCopy, testedImageFormatsCopy, PrintToStringFormatConfig());
+INSTANTIATE_TEST_SUITE_P(, InteropTestSyclVkImageCopy, testedImageFormatsCopy, PrintToStringFormatConfigVk());
 
 
 class InteropTestSyclVkImageVulkanWriteSyclRead
