@@ -41,7 +41,7 @@ else()
 endif()
 
 # Check if the compiler is icpx or clang++.
-find_program(ONEAPI_COMPILER NAMES "icpx" "clang++" HINTS "${ONEAPI_PATH}/bin")
+find_program(ONEAPI_COMPILER NAMES "icpx" "clang++" HINTS "${ONEAPI_PATH}/bin" NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
 #find_path(ONEAPI_INCLUDE_DIR NAMES sycl.hpp HINTS "${ONEAPI_PATH}/include/sycl")
 #cmake_path(GET ONEAPI_INCLUDE_DIR PARENT_PATH ONEAPI_INCLUDE_DIR)
 # spir64_gen not added to targets, as currently only using JIT compilation is supported.
