@@ -574,6 +574,9 @@ public:
         return shader64BitIndexingFeaturesEXT;
     }
 #endif
+    [[nodiscard]] const VkPhysicalDeviceConservativeRasterizationPropertiesEXT& getPhysicalDeviceConservativeRasterizationPropertiesEXT() const {
+        return conservativeRasterizationPropertiesEXT;
+    }
 
     [[nodiscard]] VkSampleCountFlagBits getMaxUsableSampleCount() const;
 
@@ -843,6 +846,7 @@ private:
 #else
     MAYBE_UNUSED_MEMBER VkPhysicalDeviceMeshShaderPropertiesEXT_Compat meshShaderPropertiesEXT{};
 #endif
+    VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservativeRasterizationPropertiesEXT{};
 
     VkPhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeatures{};
     VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures{};

@@ -113,7 +113,7 @@ public:
     void setMinSampleShading(bool enableMinSampleShading, float minSampleShading = 1.0f);
 
     /**
-     * In Vulkan, the coordinate origin is usually at the top left corner of the viewport.
+     * In Vulkan, the coordinate origin is usually in the top left corner of the viewport.
      * In Vulkan >= 1.1 (or when using VK_KHR_maintenance1), it is possible to move it to the bottom left.
      * In this case,
      */
@@ -141,7 +141,7 @@ public:
             uint32_t binding, uint32_t stride, VkVertexInputRate inputRate = VK_VERTEX_INPUT_RATE_VERTEX);
 
     /**
-     * Specifies that an attribute should be read from an vertex buffer with the specified binding point.
+     * Specifies that an attribute should be read from a vertex buffer with the specified binding point.
      * The offset specifies the element offset in byte used for reading from the buffer.
      * Example for "layout(location = 1) in float vertexAttribute;" (for same vertex data as above):
      * - setInputAttributeDescription(0, offsetof(Vertex, vertexAttribute), 1);
@@ -152,7 +152,7 @@ public:
     void setInputAttributeDescription(uint32_t bufferBinding, uint32_t bufferOffset, uint32_t attributeLocation);
 
     /**
-     * Specifies that an attribute should be read from an vertex buffer with the specified binding point.
+     * Specifies that an attribute should be read from a vertex buffer with the specified binding point.
      * The offset specifies the element offset in byte used for reading from the buffer.
      * Example for "layout(location = 1) in float vertexAttribute;" (for same vertex data as above):
      * - setInputAttributeDescription(0, offsetof(Vertex, vertexAttribute), "vertexAttribute");
@@ -172,6 +172,12 @@ public:
 
     // Getters for VkPipeline*StateCreateInfo data.
     VkPipelineViewportStateCreateInfo& getViewportStateCreateInfo() { return viewportStateInfo; }
+
+    void setUseConservativeRasterization(
+            VkConservativeRasterizationModeEXT conservativeRasterizationMode = VK_CONSERVATIVE_RASTERIZATION_MODE_OVERESTIMATE_EXT,
+            float extraPrimitiveOverestimationSize = 0.0f,
+            VkPipelineRasterizationConservativeStateCreateFlagsEXT flags = 0);
+    void disableConservativeRasterization();
 
     /// Can be used to enable 64-bit indexing if device extension VK_EXT_shader_64bit_indexing is enabled.
     void setUse64BitIndexing(bool _useShader64BitIndexing);
@@ -207,8 +213,9 @@ protected:
     VkPipelineDepthStencilStateCreateInfo depthStencilInfo = {};
     std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments = {};
     VkPipelineColorBlendStateCreateInfo colorBlendInfo = {};
-
+    VkPipelineRasterizationConservativeStateCreateInfoEXT conservativeRasterizationInfoEXT = {};
     // Extensions.
+    bool useConservativeRasterization = false;
     bool useShader64BitIndexing = false;
 };
 

@@ -2466,6 +2466,16 @@ void Device::_getDeviceInformation() {
         vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
     }
 #endif
+
+    if (isDeviceExtensionSupported(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME)) {
+        conservativeRasterizationPropertiesEXT = {};
+        conservativeRasterizationPropertiesEXT.sType =
+                VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONSERVATIVE_RASTERIZATION_PROPERTIES_EXT;
+        VkPhysicalDeviceProperties2 deviceProperties2 = {};
+        deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        deviceProperties2.pNext = &conservativeRasterizationPropertiesEXT;
+        vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
+    }
 }
 
 #ifdef VK_NV_cooperative_matrix

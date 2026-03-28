@@ -105,6 +105,10 @@ void GraphicsPipelineInfo::reset() {
     depthStencilInfo.front = {};
     depthStencilInfo.back = {};
 
+    conservativeRasterizationInfoEXT = {};
+    conservativeRasterizationInfoEXT.sType =
+            VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT;
+
     useShader64BitIndexing = false;
 }
 
@@ -437,6 +441,21 @@ void GraphicsPipelineInfo::setVertexBufferBindingByLocationIndexOptional(
         setVertexBufferBinding(vertexNormalBinding, stride, inputRate);
         setInputAttributeDescription(vertexNormalBinding, 0, attributeName);
     }
+}
+
+void GraphicsPipelineInfo::setUseConservativeRasterization(
+        VkConservativeRasterizationModeEXT conservativeRasterizationMode, float extraPrimitiveOverestimationSize,
+        VkPipelineRasterizationConservativeStateCreateFlagsEXT flags) {
+    useConservativeRasterization = true;
+    conservativeRasterizationInfoEXT.flags = flags;
+    conservativeRasterizationInfoEXT.conservativeRasterizationMode = conservativeRasterizationMode;
+    conservativeRasterizationInfoEXT.extraPrimitiveOverestimationSize = extraPrimitiveOverestimationSize;
+    rasterizerInfo.pNext = &conservativeRasterizationInfoEXT;
+}
+
+void GraphicsPipelineInfo::disableConservativeRasterization() {
+    useConservativeRasterization = false;
+    rasterizerInfo.pNext = nullptr;
 }
 
 void GraphicsPipelineInfo::setUse64BitIndexing(bool _useShader64BitIndexing) {
