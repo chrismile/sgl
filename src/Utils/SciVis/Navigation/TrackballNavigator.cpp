@@ -62,13 +62,13 @@ bool TrackballNavigator::moveCameraMouse(sgl::CameraPtr &camera, float dt) {
 
         // Mouse rotation.
         if (sgl::Mouse->isButtonDown(turntableMouseButtonIndex) && sgl::Mouse->mouseMoved()) {
-            sgl::Point2 mouseDiff = sgl::Mouse->mouseMovement();
+            auto mouseDiff = sgl::Mouse->mouseMovementFractional();
 
             const float pixelsForCompleteRotation =
                     sgl::ImGuiWrapper::get()->getScaleDependentSize(1000.0f / MOUSE_ROT_SPEED * 0.05f);
 
-            float theta = sgl::TWO_PI * float(mouseDiff.x) / pixelsForCompleteRotation;
-            float phi   = sgl::TWO_PI * float(mouseDiff.y) / pixelsForCompleteRotation;
+            float theta = sgl::TWO_PI * mouseDiff.first / pixelsForCompleteRotation;
+            float phi   = sgl::TWO_PI * mouseDiff.second / pixelsForCompleteRotation;
 
             glm::vec3 rotPhiAxis;
             glm::vec3 cameraUp = camera->getCameraUp();
@@ -95,7 +95,7 @@ bool TrackballNavigator::moveCameraMouse(sgl::CameraPtr &camera, float dt) {
     // Move look-at position.
     if (sgl::Mouse->isButtonDown(turntableMouseButtonIndex) && sgl::Mouse->mouseMoved()
             && sgl::Keyboard->getModifier(ImGuiKey_ModShift)) {
-        sgl::Point2 mouseDiff = sgl::Mouse->mouseMovement();
+        auto mouseDiff = sgl::Mouse->mouseMovementFractional();
         glm::vec3 lookAt = camera->getLookAtLocation();
         glm::vec3 lookOffset = camera->getPosition() - camera->getLookAtLocation();
         float lookOffsetLength = glm::length(lookOffset);
@@ -113,8 +113,8 @@ bool TrackballNavigator::moveCameraMouse(sgl::CameraPtr &camera, float dt) {
         }
         float wWorld = 2.0f * lookOffsetLength * std::tan(camera->getFOVx() * 0.5f);
         float hWorld = 2.0f * lookOffsetLength * std::tan(camera->getFOVy() * 0.5f);
-        float shiftX = -float(mouseDiff.x) / wPixel * wWorld;
-        float shiftY = float(mouseDiff.y) / hPixel * hWorld;
+        float shiftX = -mouseDiff.first / wPixel * wWorld;
+        float shiftY = mouseDiff.second / hPixel * hWorld;
         lookAt = lookAt + camera->getCameraRight() * shiftX + camera->getCameraUp() * shiftY;
 
         camera->setLookAtViewMatrix(lookOffset + lookAt, lookAt, camera->getCameraUp());

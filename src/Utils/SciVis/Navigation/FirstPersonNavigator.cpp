@@ -110,8 +110,8 @@ bool FirstPersonNavigator::moveCameraMouse(sgl::CameraPtr &camera, float dt) {
         // Mouse rotation
         if (sgl::Mouse->isButtonDown(1) && sgl::Mouse->mouseMoved()) {
             auto pixelMovement = sgl::Mouse->mouseMovementFractional();
-            float yaw = dt * MOUSE_ROT_SPEED * float(pixelMovement.first);
-            float pitch = -dt * MOUSE_ROT_SPEED * float(pixelMovement.second);
+            float yaw = dt * MOUSE_ROT_SPEED * pixelMovement.first;
+            float pitch = -dt * MOUSE_ROT_SPEED * pixelMovement.second;
 
             //glm::quat rotYaw = glm::quat(glm::vec3(0.0f, yaw, 0.0f));
             //glm::quat rotPitch = glm::quat(
