@@ -438,7 +438,7 @@ bool DeviceFeatures::setRequestedFeaturesFromPNextChain(
 #endif
 #ifdef VK_VERSION_1_4
             else if (structureType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_4_FEATURES) {
-            mergePhysicalDeviceFeatures14(
+                mergePhysicalDeviceFeatures14(
                     this->requestedVulkan14Features, *reinterpret_cast<const VkPhysicalDeviceVulkan14Features*>(pNext));
         }
 #endif
