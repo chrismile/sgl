@@ -146,7 +146,8 @@ void SDLWindow::errorCheckSDL() {
                 // "Couldn't get DPI" happens on an Ubuntu 22.04 VM. We have good fallbacks, so don't open a message box.
                 || sgl::stringContains(errorString, "Couldn't get DPI")
                 || sgl::stringContains(errorString, "X server refused mouse capture")
-                || sgl::stringContains(errorString, "Unknown touch device id -1, cannot reset")) {
+                || sgl::stringContains(errorString, "Unknown touch device id -1, cannot reset")
+                || sgl::stringContains(errorString, "No HID devices found in the system")) {
             openMessageBox = false;
         }
         Logfile::get()->writeError(std::string() + "SDL error: " + errorString, openMessageBox);
