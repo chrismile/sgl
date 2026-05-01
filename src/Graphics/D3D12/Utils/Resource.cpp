@@ -819,7 +819,7 @@ void Resource::uploadDataLinear(size_t sizeInBytesData, const void* dataPtr) {
             &heapPropertiesUpload,
             D3D12_HEAP_FLAG_NONE,
             &bufferDescUpload,
-            D3D12_RESOURCE_STATE_COPY_SOURCE,
+            D3D12_RESOURCE_STATE_GENERIC_READ,
             nullptr,
             IID_PPV_ARGS(&intermediateResource)));
 
