@@ -295,9 +295,7 @@ bool Instance::checkRequestedLayersAvailable(const std::vector<const char*> &req
 
         if (availableLayers.find(requestedLayer) == availableLayers.end()) {
             if (isValidationLayer) {
-                sgl::Logfile::get()->writeWarning(
-                        std::string() + "Warning: Invalid Vulkan layer name \"" + requestedLayer + "\".",
-                        false);
+                sgl::Logfile::get()->writeWarning("Info: Vulkan validation layer is not available.", false);
             } else {
                 sgl::Logfile::get()->writeError(
                         std::string() + "Error: Invalid Vulkan layer name \"" + requestedLayer + "\".");

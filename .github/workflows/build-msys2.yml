@@ -55,13 +55,18 @@ jobs:
             ${{ matrix.pkg_prefix }}-directx-headers
             ${{ matrix.pkg_prefix }}-opencl-headers
             ${{ matrix.pkg_prefix }}-opencl-icd
+            ${{ matrix.pkg_prefix }}-gtest
 
       - uses: actions/checkout@v2
         with:
           submodules: true
 
       - name: Configure CMake
-        run: cmake -B "${{github.workspace}}/build" -G "MSYS Makefiles" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSUPPORT_D3D12=ON
+        run: cmake -B "${{github.workspace}}/build" -G "MSYS Makefiles" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSUPPORT_D3D12=ON -DUSE_GTEST=ON -DBUILD_VULKAN_TESTS=OFF
 
       - name: Build
         run: cmake --build "${{github.workspace}}/build" --config ${{env.BUILD_TYPE}} --parallel 4
+
+      - name: Run tests
+        run: |
+          "${{github.workspace}}/build/sgl_test.exe"

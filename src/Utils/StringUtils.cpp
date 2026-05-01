@@ -26,16 +26,25 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if !defined(USE_ICU) && !defined(_WIN32) && (!defined(__cplusplus) || __cplusplus < 201703L) && (!defined(_MSVC_LANG) || _MSVC_LANG < 201703L)
+// codecvt is deprecated in C++17 and removed in C++26.
+#define USE_CODECVT
+#endif
+
 // ICU can be used, but for legacy reasons strings will be converted to/from std::string.
 #ifdef USE_ICU
 #include <unicode/unistr.h>
 #include <unicode/ustream.h>
 #include <unicode/locid.h>
 #include <unicode/ustring.h>
-#else
+#elif defined(USE_CODECVT)
 #include <locale>
 #include <sstream>
 #include <codecvt>
+#else
+#include <cstdint>
+#include <cwchar>
+#include <vector>
 #endif
 
 #if !defined(USE_ICU) && defined(_WIN32)
@@ -59,6 +68,71 @@
 #include "StringUtils.hpp"
 
 namespace sgl {
+
+#if !defined(USE_ICU) && !defined(_WIN32)
+static bool utf8ToCodePoint(const uint8_t* utf8String, size_t utf8StringSize, uint32_t& codePoint, size_t& idx) {
+    codePoint = 0;
+    if (idx >= utf8StringSize) {
+        return false;
+    }
+    uint8_t byte0 = utf8String[idx];
+    if ((byte0 & 0x80u) == 0u) {
+        idx += 1;
+        codePoint |= byte0;
+        return true;
+    }
+    if ((byte0 & 0x40u) == 0u) {
+        // The two most significant bits must be set.
+        return false;
+    }
+    uint8_t numBytes = 2;
+    if ((byte0 & 0x20u) != 0u) {
+        numBytes++;
+        if ((byte0 & 0x10u) != 0u) {
+            numBytes++;
+        }
+    }
+    if ((byte0 & 1u << (7u - numBytes)) != 0u) {
+        // There must be one zero bit.
+        return false;
+    }
+    if (idx + numBytes > utf8StringSize) {
+        return false;
+    }
+    codePoint |= static_cast<uint32_t>(static_cast<uint8_t>(byte0 << numBytes) >> numBytes) << ((numBytes - 1u) * 6u);
+    for (uint8_t byteIdx = 1; byteIdx < numBytes; byteIdx++) {
+        uint8_t byteI = utf8String[idx + byteIdx];
+        codePoint |= (byteI & 0x3Fu) << ((numBytes - byteIdx - 1u) * 6u);
+    }
+    idx += numBytes;
+    return true;
+}
+
+#if WCHAR_MAX <= 0xFFFFu
+static bool utf16ToCodePoint(const uint16_t* utf16String, size_t utf16StringSize, uint32_t& codePoint, size_t& idx) {
+    codePoint = 0;
+    if (idx >= utf16StringSize) {
+        return false;
+    }
+    uint16_t entry0 = utf16String[idx];
+    if (entry0 <= 0xD7FFu || entry0 >= 0xE000u) {
+        // Basic Multilingual Plane (BMP) code point.
+        idx += 1;
+        codePoint |= entry0;
+        return true;
+    }
+    if (idx + 2 > utf16StringSize) {
+        return false;
+    }
+    uint16_t entry1 = utf16String[idx + 1];
+    codePoint += (entry0 - 0xD800u) << 10u;
+    codePoint += entry1 - 0xDC00;
+    codePoint += 0x10000u;
+    idx += 2;
+    return true;
+}
+#endif
+#endif
 
 bool startsWith(const std::string& str, const std::string& prefix) {
 #if defined(USE_ICU)
@@ -245,7 +319,7 @@ std::string wideStringArrayToStdString(const wchar_t* wcharStr) {
 #error "Error in wideStringArrayToStdString: Unsupported wchar_t format detected."
 #  endif
     std::string outString;
-    unicodeStr.toUpper().toUTF8String(outString);
+    unicodeStr.toUTF8String(outString);
     return outString;
 #elif defined(_WIN32)
     size_t wideStringLen = std::wcslen(wcharStr);
@@ -258,15 +332,52 @@ std::string wideStringArrayToStdString(const wchar_t* wcharStr) {
     WideCharToMultiByte                  (
             CP_UTF8, 0, wcharStr, int(wideStringLen), utf8String.data(), utf8StringSize, NULL, NULL);
     return utf8String;
-#else
-    std::ostringstream stm;
-    while(*wcharStr != L'\0') {
-        stm << std::use_facet< std::ctype<wchar_t> >(std::locale()).narrow(*wcharStr++, '?');
-    }
-    return stm.str();
+#elif USE_CODECVT
     // Better solution below? Will be deprecated, though... (https://stackoverflow.com/questions/2573834/c-convert-string-or-char-to-wstring-or-wchar-t)
-    //std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-    //return converter.to_bytes(wcharStr);
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    return converter.to_bytes(wcharStr);
+    // Code block below does not handle wide chars.
+    //std::ostringstream stm;
+    //while(*wcharStr != L'\0') {
+    //    stm << std::use_facet< std::ctype<wchar_t> >(std::locale()).narrow(*wcharStr++, '?');
+    //}
+    //return stm.str();
+#else
+    // Convert to UTF-8, see https://en.wikipedia.org/wiki/UTF-8.
+    size_t wcharStrLen = std::wcslen(wcharStr);
+    std::vector<uint8_t> utf8Buffer;
+    utf8Buffer.reserve(wcharStrLen);
+    for (size_t i = 0; i < wcharStrLen; ) {
+#  if WCHAR_MAX > 0xFFFFu
+        // Input is UTF-32, see https://en.wikipedia.org/wiki/UTF-32.
+        auto codePoint = reinterpret_cast<const uint32_t*>(wcharStr)[i];
+        i++;
+#  else
+        // Input is UTF-16, see https://en.wikipedia.org/wiki/UTF-32.
+        uint32_t codePoint;
+        if (!utf16ToCodePoint(reinterpret_cast<const uint16_t*>(wcharStr), wcharStrLen, codePoint, i)) {
+            // Invalid UTF-16 stream.
+            return {};
+        }
+#  endif
+        if (codePoint < 0x80u) {
+            utf8Buffer.push_back(static_cast<uint8_t>(codePoint));
+        } else if (codePoint < 0x800u) {
+            utf8Buffer.push_back(0xC0u | ((codePoint >> 6u) & 0x1Fu));
+            utf8Buffer.push_back(0x80u | (codePoint & 0x3Fu));
+        } else if (codePoint < 0x10000u) {
+            utf8Buffer.push_back(0xE0u | ((codePoint >> 12u) & 0xFu));
+            utf8Buffer.push_back(0x80u | ((codePoint >> 6u) & 0x3Fu));
+            utf8Buffer.push_back(0x80u | (codePoint & 0x3Fu));
+        } else {
+            utf8Buffer.push_back(0xF0u | ((codePoint >> 18u) & 0x7u));
+            utf8Buffer.push_back(0x80u | ((codePoint >> 12u) & 0x3Fu));
+            utf8Buffer.push_back(0x80u | ((codePoint >> 6u) & 0x3Fu));
+            utf8Buffer.push_back(0x80u | (codePoint & 0x3Fu));
+        }
+    }
+    std::string utf8String(reinterpret_cast<char*>(utf8Buffer.data()), utf8Buffer.size());
+    return utf8String;
 #endif
 }
 
@@ -291,9 +402,36 @@ std::wstring stdStringToWideString(const std::string& stdString) {
     std::wstring wstrString(wstringSize, 0);
     MultiByteToWideChar(CP_UTF8, 0, stdString.data(), int(stdString.size()), wstrString.data(), wstringSize);
     return wstrString;
-#else
+#elif USE_CODECVT
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
     return converter.from_bytes(stdString);
+#else
+    size_t charStrLen = stdString.size();
+    std::vector<wchar_t> wcharBuffer;
+    wcharBuffer.reserve(charStrLen);
+    for (size_t i = 0; i < charStrLen; ) {
+        // Input is UTF-8, see https://en.wikipedia.org/wiki/UTF-8.
+        uint32_t codePoint;
+        if (!utf8ToCodePoint(reinterpret_cast<const uint8_t*>(stdString.data()), charStrLen, codePoint, i)) {
+            // Invalid UTF-8 stream.
+            return {};
+        }
+#  if WCHAR_MAX > 0xFFFFu
+        // Output is UTF-32, see https://en.wikipedia.org/wiki/UTF-32.
+        wcharBuffer.push_back(static_cast<wchar_t>(codePoint));
+#  else
+        // Output is UTF-16, see https://en.wikipedia.org/wiki/UTF-32.
+        if (codePoint < 0x10000u) {
+            wcharBuffer.push_back(static_cast<wchar_t>(codePoint));
+        } else {
+            codePoint -= 0x10000u;
+            wcharBuffer.push_back(static_cast<wchar_t>((codePoint >> 10u) + 0xD800u));
+            wcharBuffer.push_back(static_cast<wchar_t>(((codePoint >> 10u) & 0x3FFu) + 0xDC00u));
+        }
+#  endif
+    }
+    std::wstring utf8String(wcharBuffer.data(), wcharBuffer.size());
+    return utf8String;
 #endif
 }
 

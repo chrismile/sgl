@@ -147,7 +147,12 @@ void SDLWindow::errorCheckSDL() {
                 || sgl::stringContains(errorString, "Couldn't get DPI")
                 || sgl::stringContains(errorString, "X server refused mouse capture")
                 || sgl::stringContains(errorString, "Unknown touch device id -1, cannot reset")
-                || sgl::stringContains(errorString, "No HID devices found in the system")) {
+                || sgl::stringContains(errorString, "No HID devices found in the system")
+                // GNOME does not support xdg_toplevel_icon_v1 as of 2026. The error when calling SDL_SetWindowIcon
+                // is not something that requires user attention, so no message box needs to be opened.
+                // For more details see: https://gitlab.gnome.org/GNOME/mutter/-/work_items/4100,
+                // https://github.com/libsdl-org/SDL/blob/f0b89704e915bc0d678cec9efbf961cf979d1ba6/src/video/wayland/SDL_waylandwindow.c#L3258
+                || sgl::stringContains(errorString, "xdg_toplevel_icon_v1")) {
             openMessageBox = false;
         }
         Logfile::get()->writeError(std::string() + "SDL error: " + errorString, openMessageBox);
