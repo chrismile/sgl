@@ -185,11 +185,7 @@ protected:
     PreprocessorGlsl* preprocessor = nullptr;
 
     // Shader module compiler.
-#ifdef SUPPORT_SHADERC_BACKEND
-    ShaderCompilerBackend shaderCompilerBackend = ShaderCompilerBackend::SHADERC;
-#else
     ShaderCompilerBackend shaderCompilerBackend = ShaderCompilerBackend::GLSLANG;
-#endif
     bool generateDebugInfo = false;
     bool isOptimizationLevelSet = false;
     bool isFirstShaderCompilation = true;
