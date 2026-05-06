@@ -653,6 +653,7 @@ void AabbsAccelerationStructureInput::setAabbsBuffer(BufferPtr& buffer, VkDevice
 }
 
 
+#ifdef VK_NV_ray_tracing_linear_swept_spheres
 LinearSweptSpheresAccelerationStructureInput::LinearSweptSpheresAccelerationStructureInput(
         Device* device, VkGeometryFlagsKHR geometryFlags) : BottomLevelAccelerationStructureInput(device, geometryFlags) {
     asGeometry.geometryType = VK_GEOMETRY_TYPE_LINEAR_SWEPT_SPHERES_NV;
@@ -757,6 +758,7 @@ void LinearSweptSpheresAccelerationStructureInput::setRadiusBuffer(
     linearSweptSpheresData.radiusData.deviceAddress = radiusBuffer->getVkDeviceAddress();
     linearSweptSpheresData.radiusStride = this->radiusStride;
 }
+#endif
 
 
 BottomLevelAccelerationStructure::~BottomLevelAccelerationStructure() {
