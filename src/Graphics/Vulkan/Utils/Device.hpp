@@ -171,7 +171,7 @@ struct DLL_OBJECT DeviceFeatures {
         rayTracingLinearSweptSpheresFeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_LINEAR_SWEPT_SPHERES_FEATURES_NV;
 #endif
 #ifdef VK_NV_cuda_kernel_launch
-        cudaKernelLaunchFeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_FEATURES_NV;
+        cudaKernelLaunchFeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_FEATURES_NV_COMPAT;
 #endif
 #ifdef VK_NV_shader_sm_builtins
         shaderSMBuiltinsFeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SM_BUILTINS_FEATURES_NV;

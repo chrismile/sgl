@@ -724,7 +724,7 @@ bool DeviceFeatures::setExtensionFeaturesFromPNextEntry(
     }
 #endif
 #ifdef VK_NV_cuda_kernel_launch
-    else if (structureType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_FEATURES_NV) {
+    else if (structureType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_FEATURES_NV_COMPAT) {
         this->cudaKernelLaunchFeaturesNV =
                 *reinterpret_cast<const VkPhysicalDeviceCudaKernelLaunchFeaturesNV*>(pNext);
         if (this->cudaKernelLaunchFeaturesNV.cudaKernelLaunchFeatures) {
@@ -1823,7 +1823,7 @@ void Device::createLogicalDeviceAndQueues(
 #endif
 #ifdef VK_NV_cuda_kernel_launch
     if (deviceExtensionsSet.find(VK_NV_CUDA_KERNEL_LAUNCH_EXTENSION_NAME) != deviceExtensionsSet.end()) {
-        cudaKernelLaunchFeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_FEATURES_NV;
+        cudaKernelLaunchFeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_FEATURES_NV_COMPAT;
         VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
         deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
         deviceFeatures2.pNext = &cudaKernelLaunchFeaturesNV;
@@ -2568,7 +2568,7 @@ void Device::_getDeviceInformation() {
 #ifdef VK_NV_cuda_kernel_launch
     if (isDeviceExtensionSupported(VK_NV_CUDA_KERNEL_LAUNCH_EXTENSION_NAME)) {
         cudaKernelLaunchPropertiesNV = {};
-        cudaKernelLaunchPropertiesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_PROPERTIES_NV;
+        cudaKernelLaunchPropertiesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_PROPERTIES_NV_COMPAT;
         VkPhysicalDeviceProperties2 deviceProperties2 = {};
         deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
         deviceProperties2.pNext = &cudaKernelLaunchPropertiesNV;

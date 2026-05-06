@@ -495,6 +495,15 @@ typedef struct VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV_Compat {
     VkBool32           linearSweptSpheres;
 } VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV_Compat;
 
+// https://github.com/KhronosGroup/Vulkan-Headers/commit/cacef3039d277c448c89336290ec3937270b0996
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+#define VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_FEATURES_NV_COMPAT VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_FEATURES_NV
+#define VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_PROPERTIES_NV_COMPAT VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_PROPERTIES_NV
+#else
+#define VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_FEATURES_NV_COMPAT static_cast<VkStructureType>(1000307003)
+#define VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_PROPERTIES_NV_COMPAT static_cast<VkStructureType>(1000307004)
+#endif
+
 typedef struct VkPhysicalDeviceCudaKernelLaunchFeaturesNV_Compat {
     VkStructureType    sType;
     void*              pNext;
