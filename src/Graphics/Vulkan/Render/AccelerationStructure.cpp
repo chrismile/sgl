@@ -34,6 +34,7 @@
 #include <Utils/File/Logfile.hpp>
 #include <Graphics/Vulkan/Utils/Device.hpp>
 #include <Graphics/Vulkan/Buffers/Buffer.hpp>
+#include <Graphics/Vulkan/Image/Image.hpp>
 
 #include "Helpers.hpp"
 #include "AccelerationStructure.hpp"
@@ -649,6 +650,112 @@ void AabbsAccelerationStructureInput::setAabbsBuffer(BufferPtr& buffer, VkDevice
     aabbsData.stride = aabbsBufferStride;
     aabbsData.data.deviceAddress = aabbsBuffer->getVkDeviceAddress();
     buildRangeInfo.primitiveCount = uint32_t(numAabbs);
+}
+
+
+LinearSweptSpheresAccelerationStructureInput::LinearSweptSpheresAccelerationStructureInput(
+        Device* device, VkGeometryFlagsKHR geometryFlags) : BottomLevelAccelerationStructureInput(device, geometryFlags) {
+    asGeometry.geometryType = VK_GEOMETRY_TYPE_LINEAR_SWEPT_SPHERES_NV;
+    linearSweptSpheresData.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_LINEAR_SWEPT_SPHERES_DATA_NV;
+    asGeometry.pNext = &linearSweptSpheresData;
+}
+
+void LinearSweptSpheresAccelerationStructureInput::setIndexingMode(VkRayTracingLssIndexingModeNV indexingMode) {
+    linearSweptSpheresData.indexingMode = indexingMode;
+}
+
+void LinearSweptSpheresAccelerationStructureInput::setEndCapsMode(VkRayTracingLssPrimitiveEndCapsModeNV endCapsMode) {
+    linearSweptSpheresData.endCapsMode = endCapsMode;
+}
+
+void LinearSweptSpheresAccelerationStructureInput::setIndexBuffer(
+        BufferPtr& buffer, VkIndexType indexType, VkDeviceSize indexStride) {
+    if (indexStride == 0) {
+        this->indexStride = getIndexTypeByteSize(indexType);
+    } else {
+        this->indexStride = indexStride;
+    }
+    this->indexBuffer = buffer;
+    this->indexType = indexType;
+    this->numIndices = buffer->getSizeInBytes() / getIndexTypeByteSize(indexType);
+
+    buildRangeInfo.firstVertex = 0;
+    buildRangeInfo.primitiveCount = uint32_t(numIndices / 3);
+    buildRangeInfo.primitiveOffset = 0;
+    buildRangeInfo.transformOffset = 0;
+
+    linearSweptSpheresData.indexType = indexType;
+    linearSweptSpheresData.indexData.deviceAddress = indexBuffer->getVkDeviceAddress();
+    linearSweptSpheresData.indexStride = this->indexStride;
+}
+
+void LinearSweptSpheresAccelerationStructureInput::setIndexBufferOffset(
+        BufferPtr& buffer, uint32_t primitiveOffset, uint32_t numIndices,
+        VkIndexType indexType, VkDeviceSize indexStride) {
+    if (indexStride == 0) {
+        this->indexStride = getIndexTypeByteSize(indexType);
+    } else {
+        this->indexStride = indexStride;
+    }
+    this->indexBuffer = buffer;
+    this->indexType = indexType;
+    this->numIndices = numIndices;
+
+    buildRangeInfo.firstVertex = 0;
+    buildRangeInfo.primitiveCount = uint32_t(numIndices / 3);
+    buildRangeInfo.primitiveOffset = primitiveOffset;
+    buildRangeInfo.transformOffset = 0;
+
+    linearSweptSpheresData.indexType = indexType;
+    linearSweptSpheresData.indexData.deviceAddress = indexBuffer->getVkDeviceAddress();
+    linearSweptSpheresData.indexStride = this->indexStride;
+}
+
+void LinearSweptSpheresAccelerationStructureInput::setVertexBuffer(
+        BufferPtr& buffer, VkFormat vertexFormat, VkDeviceSize vertexStride) {
+    this->vertexBuffer = buffer;
+    this->vertexFormat = vertexFormat;
+    if (vertexStride == 0) {
+        if (vertexFormat == VK_FORMAT_R32G32B32_SFLOAT) {
+            this->vertexStride = 3 * sizeof(float);
+        } else if (vertexFormat == VK_FORMAT_R32G32B32A32_SFLOAT) {
+            this->vertexStride = 4 * sizeof(float);
+        } else {
+            Logfile::get()->throwError(
+                    "Error in TrianglesAccelerationStructure::setVertexBuffer: vertexStride == 0, "
+                    "but unhandled vertex format is used.");
+        }
+    } else {
+        this->vertexStride = vertexStride;
+    }
+    this->numVertices = buffer->getSizeInBytes() / this->vertexStride;
+
+    linearSweptSpheresData.vertexFormat = this->vertexFormat;
+    linearSweptSpheresData.vertexData.deviceAddress = vertexBuffer->getVkDeviceAddress();
+    linearSweptSpheresData.vertexStride = this->vertexStride;
+}
+
+void LinearSweptSpheresAccelerationStructureInput::setRadiusBuffer(
+        BufferPtr& buffer, VkFormat radiusFormat, VkDeviceSize radiusStride) {
+    this->radiusBuffer = buffer;
+    this->radiusFormat = radiusFormat;
+    auto singleEntryByteSize = getImageFormatEntryByteSize(radiusFormat);
+    if (radiusStride == 0 && buffer->getSizeInBytes() != singleEntryByteSize) {
+        if (radiusFormat == VK_FORMAT_R32_SFLOAT) {
+            this->radiusStride = sizeof(float);
+        } else {
+            Logfile::get()->throwError(
+                    "Error in TrianglesAccelerationStructure::setRadiusBuffer: radiusStride == 0, "
+                    "but unhandled radius format is used.");
+        }
+    } else {
+        this->radiusStride = radiusStride;
+    }
+    //this->numVertices = buffer->getSizeInBytes() / this->radiusStride;
+
+    linearSweptSpheresData.radiusFormat = this->radiusFormat;
+    linearSweptSpheresData.radiusData.deviceAddress = radiusBuffer->getVkDeviceAddress();
+    linearSweptSpheresData.radiusStride = this->radiusStride;
 }
 
 

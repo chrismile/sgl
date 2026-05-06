@@ -713,6 +713,34 @@ bool DeviceFeatures::setExtensionFeaturesFromPNextEntry(
         }
     }
 #endif
+#ifdef VK_NV_ray_tracing_linear_swept_spheres
+    else if (structureType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_LINEAR_SWEPT_SPHERES_FEATURES_NV) {
+        this->rayTracingLinearSweptSpheresFeaturesNV =
+                *reinterpret_cast<const VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV*>(pNext);
+        if (this->rayTracingLinearSweptSpheresFeaturesNV.spheres
+                || this->rayTracingLinearSweptSpheresFeaturesNV.linearSweptSpheres) {
+            deviceExtensions.push_back(VK_NV_RAY_TRACING_LINEAR_SWEPT_SPHERES_EXTENSION_NAME);
+        }
+    }
+#endif
+#ifdef VK_NV_cuda_kernel_launch
+    else if (structureType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_FEATURES_NV) {
+        this->cudaKernelLaunchFeaturesNV =
+                *reinterpret_cast<const VkPhysicalDeviceCudaKernelLaunchFeaturesNV*>(pNext);
+        if (this->cudaKernelLaunchFeaturesNV.cudaKernelLaunchFeatures) {
+            deviceExtensions.push_back(VK_NV_CUDA_KERNEL_LAUNCH_EXTENSION_NAME);
+        }
+    }
+#endif
+#ifdef VK_NV_shader_sm_builtins
+    else if (structureType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SM_BUILTINS_FEATURES_NV) {
+        this->shaderSMBuiltinsFeaturesNV =
+                *reinterpret_cast<const VkPhysicalDeviceShaderSMBuiltinsFeaturesNV*>(pNext);
+        if (this->shaderSMBuiltinsFeaturesNV.shaderSMBuiltins) {
+            deviceExtensions.push_back(VK_NV_SHADER_SM_BUILTINS_EXTENSION_NAME);
+        }
+    }
+#endif
     else {
         return false;
     }
@@ -1779,6 +1807,46 @@ void Device::createLogicalDeviceAndQueues(
         }
     }
 #endif
+#ifdef VK_NV_ray_tracing_linear_swept_spheres
+    if (deviceExtensionsSet.find(VK_NV_RAY_TRACING_LINEAR_SWEPT_SPHERES_EXTENSION_NAME) != deviceExtensionsSet.end()) {
+        rayTracingLinearSweptSpheresFeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_LINEAR_SWEPT_SPHERES_FEATURES_NV;
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &rayTracingLinearSweptSpheresFeaturesNV;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        if (requestedDeviceFeatures.rayTracingLinearSweptSpheresFeaturesNV.spheres == VK_FALSE
+                && requestedDeviceFeatures.rayTracingLinearSweptSpheresFeaturesNV.linearSweptSpheres == VK_FALSE) {
+            requestedDeviceFeatures.rayTracingLinearSweptSpheresFeaturesNV = rayTracingLinearSweptSpheresFeaturesNV;
+        }
+    }
+#endif
+#ifdef VK_NV_cuda_kernel_launch
+    if (deviceExtensionsSet.find(VK_NV_CUDA_KERNEL_LAUNCH_EXTENSION_NAME) != deviceExtensionsSet.end()) {
+        cudaKernelLaunchFeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_FEATURES_NV;
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &cudaKernelLaunchFeaturesNV;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        if (requestedDeviceFeatures.cudaKernelLaunchFeaturesNV.cudaKernelLaunchFeatures == VK_FALSE) {
+            requestedDeviceFeatures.cudaKernelLaunchFeaturesNV = cudaKernelLaunchFeaturesNV;
+        }
+    }
+#endif
+#ifdef VK_NV_shader_sm_builtins
+    if (deviceExtensionsSet.find(VK_NV_SHADER_SM_BUILTINS_EXTENSION_NAME) != deviceExtensionsSet.end()) {
+        shaderSMBuiltinsFeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SM_BUILTINS_FEATURES_NV;
+        VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &shaderSMBuiltinsFeaturesNV;
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+
+        if (requestedDeviceFeatures.shaderSMBuiltinsFeaturesNV.shaderSMBuiltins == VK_FALSE) {
+            requestedDeviceFeatures.shaderSMBuiltinsFeaturesNV = shaderSMBuiltinsFeaturesNV;
+        }
+    }
+#endif
 
 
     VkDeviceCreateInfo deviceInfo{};
@@ -1928,6 +1996,25 @@ void Device::createLogicalDeviceAndQueues(
     if (requestedDeviceFeatures.shader64BitIndexingFeaturesEXT.shader64BitIndexing) {
         *pNextPtr = &requestedDeviceFeatures.shader64BitIndexingFeaturesEXT;
         pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.shader64BitIndexingFeaturesEXT.pNext);
+    }
+#endif
+#ifdef VK_NV_ray_tracing_linear_swept_spheres
+    if (requestedDeviceFeatures.rayTracingLinearSweptSpheresFeaturesNV.spheres
+            || requestedDeviceFeatures.rayTracingLinearSweptSpheresFeaturesNV.linearSweptSpheres) {
+        *pNextPtr = &requestedDeviceFeatures.rayTracingLinearSweptSpheresFeaturesNV;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.rayTracingLinearSweptSpheresFeaturesNV.pNext);
+    }
+#endif
+#ifdef VK_NV_cuda_kernel_launch
+    if (requestedDeviceFeatures.cudaKernelLaunchFeaturesNV.cudaKernelLaunchFeatures) {
+        *pNextPtr = &requestedDeviceFeatures.cudaKernelLaunchFeaturesNV;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.cudaKernelLaunchFeaturesNV.pNext);
+    }
+#endif
+#ifdef VK_NV_shader_sm_builtins
+    if (requestedDeviceFeatures.shaderSMBuiltinsFeaturesNV.shaderSMBuiltins) {
+        *pNextPtr = &requestedDeviceFeatures.shaderSMBuiltinsFeaturesNV;
+        pNextPtr = const_cast<const void**>(&requestedDeviceFeatures.shaderSMBuiltinsFeaturesNV.pNext);
     }
 #endif
 #ifdef VK_VERSION_1_1
@@ -2141,7 +2228,8 @@ void Device::createVulkanMemoryAllocator() {
 #endif
     allocatorInfo.pVulkanFunctions = &vulkanFunctions;
 #endif
-    if (isDeviceExtensionSupported(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) {
+    if ((vulkanApiVersion >= VK_API_VERSION_1_2 && physicalDeviceVulkan12Features.bufferDeviceAddress)
+                || isDeviceExtensionSupported(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) {
         allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
     }
 
@@ -2476,6 +2564,28 @@ void Device::_getDeviceInformation() {
         deviceProperties2.pNext = &conservativeRasterizationPropertiesEXT;
         vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
     }
+
+#ifdef VK_NV_cuda_kernel_launch
+    if (isDeviceExtensionSupported(VK_NV_CUDA_KERNEL_LAUNCH_EXTENSION_NAME)) {
+        cudaKernelLaunchPropertiesNV = {};
+        cudaKernelLaunchPropertiesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_PROPERTIES_NV;
+        VkPhysicalDeviceProperties2 deviceProperties2 = {};
+        deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        deviceProperties2.pNext = &cudaKernelLaunchPropertiesNV;
+        vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
+    }
+#endif
+
+#ifdef VK_NV_shader_sm_builtins
+    if (isDeviceExtensionSupported(VK_NV_SHADER_SM_BUILTINS_EXTENSION_NAME)) {
+        shaderSMBuiltinsPropertiesNV = {};
+        shaderSMBuiltinsPropertiesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SM_BUILTINS_PROPERTIES_NV;
+        VkPhysicalDeviceProperties2 deviceProperties2 = {};
+        deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        deviceProperties2.pNext = &shaderSMBuiltinsPropertiesNV;
+        vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
+    }
+#endif
 }
 
 #ifdef VK_NV_cooperative_matrix

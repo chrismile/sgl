@@ -488,4 +488,37 @@ typedef struct VkPipelineCreateFlags2CreateInfo_Compat {
     VkFlags64          flags; //< is actually VkPipelineCreateFlags2
 } VkPipelineCreateFlags2CreateInfo_Compat;
 
+typedef struct VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV_Compat {
+    VkStructureType    sType;
+    void*              pNext;
+    VkBool32           spheres;
+    VkBool32           linearSweptSpheres;
+} VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV_Compat;
+
+typedef struct VkPhysicalDeviceCudaKernelLaunchFeaturesNV_Compat {
+    VkStructureType    sType;
+    void*              pNext;
+    VkBool32           cudaKernelLaunchFeatures;
+} VkPhysicalDeviceCudaKernelLaunchFeaturesNV_Compat;
+
+typedef struct VkPhysicalDeviceCudaKernelLaunchPropertiesNV_Compat {
+    VkStructureType    sType;
+    void*              pNext;
+    uint32_t           computeCapabilityMinor;
+    uint32_t           computeCapabilityMajor;
+} VkPhysicalDeviceCudaKernelLaunchPropertiesNV_Compat;
+
+typedef struct VkPhysicalDeviceShaderSMBuiltinsPropertiesNV_Compat {
+    VkStructureType    sType;
+    void*              pNext;
+    uint32_t           shaderSMCount;
+    uint32_t           shaderWarpsPerSM;
+} VkPhysicalDeviceShaderSMBuiltinsPropertiesNV_Compat;
+
+typedef struct VkPhysicalDeviceShaderSMBuiltinsFeaturesNV_Compat {
+    VkStructureType    sType;
+    void*              pNext;
+    VkBool32           shaderSMBuiltins;
+} VkPhysicalDeviceShaderSMBuiltinsFeaturesNV_Compat;
+
 #endif //SGL_VULKANCOMPAT_HPP

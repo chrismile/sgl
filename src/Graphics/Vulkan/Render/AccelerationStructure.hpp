@@ -129,6 +129,46 @@ protected:
     size_t numAabbs = 0;
 };
 
+#ifdef VK_NV_ray_tracing_linear_swept_spheres
+class DLL_OBJECT LinearSweptSpheresAccelerationStructureInput : public BottomLevelAccelerationStructureInput {
+public:
+    /**
+     * @param device A Vulkan device.
+     * @param geometryFlags The following flags are supported:
+     * - VK_GEOMETRY_OPAQUE_BIT_KHR: Call only first-hit.
+     * - VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR: Call any-hit once.
+     */
+    explicit LinearSweptSpheresAccelerationStructureInput(
+            Device* device, VkGeometryFlagsKHR geometryFlags = VkGeometryFlagsKHR(0));
+
+    void setIndexingMode(VkRayTracingLssIndexingModeNV indexingMode);
+    void setEndCapsMode(VkRayTracingLssPrimitiveEndCapsModeNV endCapsMode);
+    void setIndexBuffer(BufferPtr& buffer, VkIndexType indexType = VK_INDEX_TYPE_UINT32, VkDeviceSize indexStride = 0);
+    void setIndexBufferOffset(
+            BufferPtr& buffer, uint32_t primitiveOffset, uint32_t numIndices,
+            VkIndexType indexType = VK_INDEX_TYPE_UINT32, VkDeviceSize indexStride = 0);
+    void setVertexBuffer(BufferPtr& buffer, VkFormat vertexFormat, VkDeviceSize vertexStride = 0);
+    void setRadiusBuffer(BufferPtr& buffer, VkFormat radiusFormat = VK_FORMAT_R32_SFLOAT, VkDeviceSize radiusStride = 0);
+
+protected:
+    VkAccelerationStructureGeometryLinearSweptSpheresDataNV linearSweptSpheresData{};
+
+    BufferPtr indexBuffer;
+    VkIndexType indexType = VK_INDEX_TYPE_UINT32;
+    VkDeviceSize indexStride = 0;
+    size_t numIndices = 0;
+
+    BufferPtr vertexBuffer;
+    VkFormat vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
+    VkDeviceSize vertexStride = 0;
+    size_t numVertices = 0;
+
+    BufferPtr radiusBuffer;
+    VkFormat radiusFormat = VK_FORMAT_R32_SFLOAT;
+    VkDeviceSize radiusStride = 0;
+};
+#endif
+
 class DLL_OBJECT BottomLevelAccelerationStructure {
 public:
     explicit BottomLevelAccelerationStructure(

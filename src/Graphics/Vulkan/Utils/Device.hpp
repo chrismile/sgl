@@ -152,6 +152,30 @@ struct DLL_OBJECT DeviceFeatures {
 #ifdef VK_EXT_mesh_shader
         meshShaderFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
 #endif
+#ifdef VK_NV_cooperative_matrix
+        cooperativeMatrixFeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_NV;
+#endif
+#ifdef VK_KHR_cooperative_matrix
+        cooperativeMatrixFeaturesKHR.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_KHR;
+#endif
+#ifdef VK_NV_cooperative_matrix2
+        cooperativeMatrix2FeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_2_FEATURES_NV;
+#endif
+#ifdef VK_NV_cooperative_vector
+        cooperativeVectorFeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_VECTOR_FEATURES_NV;
+#endif
+#ifdef VK_EXT_shader_64bit_indexing
+        shader64BitIndexingFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_64_BIT_INDEXING_FEATURES_EXT;
+#endif
+#ifdef VK_NV_ray_tracing_linear_swept_spheres
+        rayTracingLinearSweptSpheresFeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_LINEAR_SWEPT_SPHERES_FEATURES_NV;
+#endif
+#ifdef VK_NV_cuda_kernel_launch
+        cudaKernelLaunchFeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_FEATURES_NV;
+#endif
+#ifdef VK_NV_shader_sm_builtins
+        shaderSMBuiltinsFeaturesNV.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SM_BUILTINS_FEATURES_NV;
+#endif
 #ifdef VK_VERSION_1_1
         requestedVulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
         optionalVulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
@@ -238,6 +262,21 @@ struct DLL_OBJECT DeviceFeatures {
     VkPhysicalDeviceShader64BitIndexingFeaturesEXT shader64BitIndexingFeaturesEXT{};
 #else
     VkPhysicalDeviceShader64BitIndexingFeaturesEXT_Compat shader64BitIndexingFeaturesEXT{};
+#endif
+#ifdef VK_NV_ray_tracing_linear_swept_spheres
+    VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV rayTracingLinearSweptSpheresFeaturesNV{};
+#else
+    VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV_Compat rayTracingLinearSweptSpheresFeaturesNV{};
+#endif
+#ifdef VK_NV_cuda_kernel_launch
+    VkPhysicalDeviceCudaKernelLaunchFeaturesNV cudaKernelLaunchFeaturesNV{};
+#else
+    VkPhysicalDeviceCudaKernelLaunchFeaturesNV_Compat cudaKernelLaunchFeaturesNV{};
+#endif
+#ifdef VK_NV_shader_sm_builtins
+    VkPhysicalDeviceShaderSMBuiltinsFeaturesNV shaderSMBuiltinsFeaturesNV{};
+#else
+    VkPhysicalDeviceShaderSMBuiltinsFeaturesNV_Compat shaderSMBuiltinsFeaturesNV{};
 #endif
     // The following features have no extensions, thus use
     bool optionalEnableShaderDrawParametersFeatures = false;
@@ -577,6 +616,27 @@ public:
     [[nodiscard]] const VkPhysicalDeviceConservativeRasterizationPropertiesEXT& getPhysicalDeviceConservativeRasterizationPropertiesEXT() const {
         return conservativeRasterizationPropertiesEXT;
     }
+#ifdef VK_NV_ray_tracing_linear_swept_spheres
+    [[nodiscard]] const VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV& getRayTracingLinearSweptSpheresFeaturesNV() const {
+        return rayTracingLinearSweptSpheresFeaturesNV;
+    }
+#endif
+#ifdef VK_NV_cuda_kernel_launch
+    [[nodiscard]] const VkPhysicalDeviceCudaKernelLaunchFeaturesNV& getCudaKernelLaunchFeaturesNV() const {
+        return cudaKernelLaunchFeaturesNV;
+    }
+    [[nodiscard]] const VkPhysicalDeviceCudaKernelLaunchPropertiesNV& getCudaKernelLaunchPropertiesNV() const {
+        return cudaKernelLaunchPropertiesNV;
+    }
+#endif
+#ifdef VK_NV_shader_sm_builtins
+    [[nodiscard]] const VkPhysicalDeviceShaderSMBuiltinsFeaturesNV& getShaderSMBuiltinsFeaturesNV() const {
+        return shaderSMBuiltinsFeaturesNV;
+    }
+    [[nodiscard]] const VkPhysicalDeviceShaderSMBuiltinsPropertiesNV& getShaderSMBuiltinsPropertiesNV() const {
+        return shaderSMBuiltinsPropertiesNV;
+    }
+#endif
 
     [[nodiscard]] VkSampleCountFlagBits getMaxUsableSampleCount() const;
 
@@ -930,6 +990,25 @@ private:
     VkPhysicalDeviceShader64BitIndexingFeaturesEXT shader64BitIndexingFeaturesEXT{};
 #else
     VkPhysicalDeviceShader64BitIndexingFeaturesEXT_Compat shader64BitIndexingFeaturesEXT{};
+#endif
+#ifdef VK_NV_ray_tracing_linear_swept_spheres
+    VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV rayTracingLinearSweptSpheresFeaturesNV{};
+#else
+    VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV_Compat rayTracingLinearSweptSpheresFeaturesNV{};
+#endif
+#ifdef VK_NV_cuda_kernel_launch
+    VkPhysicalDeviceCudaKernelLaunchFeaturesNV cudaKernelLaunchFeaturesNV{};
+    VkPhysicalDeviceCudaKernelLaunchPropertiesNV cudaKernelLaunchPropertiesNV{};
+#else
+    VkPhysicalDeviceCudaKernelLaunchFeaturesNV_Compat cudaKernelLaunchFeaturesNV{};
+    VkPhysicalDeviceCudaKernelLaunchPropertiesNV_Compat cudaKernelLaunchPropertiesNV{};
+#endif
+#ifdef VK_NV_shader_sm_builtins
+    VkPhysicalDeviceShaderSMBuiltinsFeaturesNV shaderSMBuiltinsFeaturesNV{};
+    VkPhysicalDeviceShaderSMBuiltinsPropertiesNV shaderSMBuiltinsPropertiesNV{};
+#else
+    VkPhysicalDeviceShaderSMBuiltinsFeaturesNV_Compat shaderSMBuiltinsFeaturesNV{};
+    VkPhysicalDeviceShaderSMBuiltinsPropertiesNV_Compat shaderSMBuiltinsPropertiesNV{};
 #endif
 
     // Driver version string (mapped from VkPhysicalDeviceProperties::driverVersion).

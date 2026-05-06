@@ -52,6 +52,40 @@ extern ze_device_handle_t g_zeDevice;
 
 static std::map<uint64_t, DeviceThreadInfo> deviceThreadInfoMap;
 
+static uint32_t getNvidiaNumCoresPerMultiprocessor(uint32_t warpSize, uint32_t major, uint32_t minor) {
+    // Use warp size * 4 as fallback for unknown architectures.
+    auto numCoresPerMultiprocessor = warpSize * 4;
+
+    if (major == 2) {
+        if (minor == 1) {
+            numCoresPerMultiprocessor = 48;
+        } else {
+            numCoresPerMultiprocessor = 32;
+        }
+    } else if (major == 3) {
+        numCoresPerMultiprocessor = 192;
+    } else if (major == 5) {
+        numCoresPerMultiprocessor = 128;
+    } else if (major == 6) {
+        if (minor == 0) {
+            numCoresPerMultiprocessor = 64;
+        } else {
+            numCoresPerMultiprocessor = 128;
+        }
+    } else if (major == 7) {
+        numCoresPerMultiprocessor = 64;
+    } else if (major == 8) {
+        if (minor == 0) {
+            numCoresPerMultiprocessor = 64;
+        } else {
+            numCoresPerMultiprocessor = 128;
+        }
+    } else if (major == 9 || major == 10 || major == 12) {
+        numCoresPerMultiprocessor = 128;
+    }
+    return numCoresPerMultiprocessor;
+}
+
 DeviceThreadInfo getDeviceThreadInfo(sgl::vk::Device* device) {
     uint64_t deviceId = uint64_t(device->getDeviceId()) + (uint64_t(device->getVendorId()) << uint64_t(32));
     auto it = deviceThreadInfoMap.find(deviceId);
@@ -97,6 +131,38 @@ DeviceThreadInfo getDeviceThreadInfo(sgl::vk::Device* device) {
         info.numCudaCoresEquivalent = info.numCoresTotal * 2;
         info.optimalNumWorkgroupsPT = shaderCoreProps2.activeComputeUnitCount;
     }
+#if defined(VK_NV_cuda_kernel_launch) && defined(VK_NV_shader_sm_builtins)
+    if (device->isDeviceExtensionSupported(VK_NV_CUDA_KERNEL_LAUNCH_EXTENSION_NAME)
+            && device->isDeviceExtensionSupported(VK_NV_SHADER_SM_BUILTINS_EXTENSION_NAME)) {
+        const auto& cudaKernelLaunchProperties = device->getCudaKernelLaunchPropertiesNV();
+        const auto& shaderSMBultinsProperties = device->getShaderSMBuiltinsPropertiesNV();
+
+        /*
+         * Only use one thread block per shader multiprocessor (SM) to improve chance of fair scheduling.
+         * See, e.g.: https://stackoverflow.com/questions/33150040/doubling-buffering-in-cuda-so-the-cpu-can-operate-on-data-produced-by-a-persiste/33158954#33158954%5B/
+         */
+        info.numMultiprocessors = shaderSMBultinsProperties.shaderSMCount;
+
+        /*
+         * Use more threads than warp size. Factor 4 seems to make sense at least for RTX 3090.
+         * For more details see: https://stackoverflow.com/questions/32530604/how-can-i-get-number-of-cores-in-cuda-device
+         * Or: https://github.com/NVIDIA/cuda-samples/blob/master/Common/helper_cuda.h
+         * https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#compute-capabilities
+         * https://developer.nvidia.com/blog/inside-pascal/
+         */
+        info.warpSize = device->getPhysicalDeviceSubgroupProperties().subgroupSize;
+
+        auto major = cudaKernelLaunchProperties.computeCapabilityMajor;
+        auto minor = cudaKernelLaunchProperties.computeCapabilityMinor;
+        auto numCoresPerMultiprocessor = getNvidiaNumCoresPerMultiprocessor(info.warpSize, major, minor);
+
+        info.numCoresPerMultiprocessor = uint32_t(numCoresPerMultiprocessor);
+        info.numCoresTotal = info.numMultiprocessors * info.numCoresPerMultiprocessor;
+        info.numCudaCoresEquivalent = info.numCoresTotal;
+        info.optimalWorkgroupSizePT = numCoresPerMultiprocessor;
+        info.optimalNumWorkgroupsPT = info.numMultiprocessors;
+    }
+#endif
 #ifdef SUPPORT_CUDA_INTEROP
     else if (device->getDeviceDriverId() == VK_DRIVER_ID_NVIDIA_PROPRIETARY
             && sgl::getIsCudaDeviceApiFunctionTableInitialized()) {
@@ -196,36 +262,9 @@ void getCudaDeviceThreadInfo(CUdevice cuDevice, DeviceThreadInfo& info) {
     sgl::checkCUresult(cuResult, "Error in cuDeviceGetAttribute: ");
 
     // Use warp size * 4 as fallback for unknown architectures.
-    int numCoresPerMultiprocessor = warpSize * 4;
-
-    if (major == 2) {
-        if (minor == 1) {
-            numCoresPerMultiprocessor = 48;
-        } else {
-            numCoresPerMultiprocessor = 32;
-        }
-    } else if (major == 3) {
-        numCoresPerMultiprocessor = 192;
-    } else if (major == 5) {
-        numCoresPerMultiprocessor = 128;
-    } else if (major == 6) {
-        if (minor == 0) {
-            numCoresPerMultiprocessor = 64;
-        } else {
-            numCoresPerMultiprocessor = 128;
-        }
-    } else if (major == 7) {
-        numCoresPerMultiprocessor = 64;
-    } else if (major == 8) {
-        if (minor == 0) {
-            numCoresPerMultiprocessor = 64;
-        } else {
-            numCoresPerMultiprocessor = 128;
-        }
-    } else if (major == 9) {
-        numCoresPerMultiprocessor = 128;
-    }
-    info.numCoresPerMultiprocessor = uint32_t(numCoresPerMultiprocessor);
+    auto numCoresPerMultiprocessor = getNvidiaNumCoresPerMultiprocessor(
+            static_cast<uint32_t>(warpSize), static_cast<uint32_t>(major), static_cast<uint32_t>(minor));
+    info.numCoresPerMultiprocessor = numCoresPerMultiprocessor;
     info.numCoresTotal = info.numMultiprocessors * info.numCoresPerMultiprocessor;
     info.numCudaCoresEquivalent = info.numCoresTotal;
     info.optimalWorkgroupSizePT = numCoresPerMultiprocessor;
