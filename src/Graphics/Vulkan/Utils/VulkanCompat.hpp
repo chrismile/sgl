@@ -495,7 +495,14 @@ typedef struct VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV_Compat {
     VkBool32           linearSweptSpheres;
 } VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV_Compat;
 
-// https://github.com/KhronosGroup/Vulkan-Headers/commit/cacef3039d277c448c89336290ec3937270b0996
+/*
+ * VK_NV_cuda_kernel_launch is handled very weirdly.
+ * - With header version 1.4.310, the structure types were guarded by VK_ENABLE_BETA_EXTENSIONS
+ *   (https://github.com/KhronosGroup/Vulkan-Headers/commit/cacef3039d277c448c89336290ec3937270b0996).
+ * - With header version 1.4.316, the rest was moved to vulkan_beta.h
+ *   (https://github.com/KhronosGroup/Vulkan-Headers/commit/b11eecd68fb4b770f30fe2c9da522ff966f95b1e).
+ * This becomes an issue for sgl, as vulkan_beta.h is included in Device.cpp on macOS AFTER the Device.hpp header.
+ */
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 #define VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_FEATURES_NV_COMPAT VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_FEATURES_NV
 #define VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_PROPERTIES_NV_COMPAT VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_PROPERTIES_NV

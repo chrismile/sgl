@@ -32,6 +32,14 @@
 
 #define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
 
+#include "../libs/volk/volk.h"
+#include "../libs/VMA/vk_mem_alloc.h"
+#include <vulkan/vk_platform.h>
+#ifdef __APPLE__
+//#define VK_ENABLE_BETA_EXTENSIONS
+#include <vulkan/vulkan_beta.h>
+#endif
+
 #include <Math/Math.hpp>
 #include <Utils/StringUtils.hpp>
 #include <Utils/Env.hpp>
@@ -55,10 +63,6 @@
 #ifdef _WIN32
 #include <windows.h>
 #include <vulkan/vulkan_win32.h>
-#endif
-#ifdef __APPLE__
-//#define VK_ENABLE_BETA_EXTENSIONS
-#include <vulkan/vulkan_beta.h>
 #endif
 
 #ifdef SUPPORT_GLSLANG_BACKEND
