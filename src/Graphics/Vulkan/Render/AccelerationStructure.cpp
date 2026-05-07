@@ -662,6 +662,11 @@ LinearSweptSpheresAccelerationStructureInput::LinearSweptSpheresAccelerationStru
 }
 
 void LinearSweptSpheresAccelerationStructureInput::setIndexingMode(VkRayTracingLssIndexingModeNV indexingMode) {
+    if (buildRangeInfo.primitiveCount != 0) {
+        sgl::Logfile::get()->throwError(
+                "Error in LinearSweptSpheresAccelerationStructureInput::setIndexingMode: "
+                "setIndexingMode needs to be called before setIndexBuffer.");
+    }
     linearSweptSpheresData.indexingMode = indexingMode;
 }
 
@@ -681,7 +686,15 @@ void LinearSweptSpheresAccelerationStructureInput::setIndexBuffer(
     this->numIndices = buffer->getSizeInBytes() / getIndexTypeByteSize(indexType);
 
     buildRangeInfo.firstVertex = 0;
-    buildRangeInfo.primitiveCount = uint32_t(numIndices / 3);
+    if (linearSweptSpheresData.indexingMode == VK_RAY_TRACING_LSS_INDEXING_MODE_LIST_NV) {
+        buildRangeInfo.primitiveCount = uint32_t(numIndices / 2);
+    } else if (linearSweptSpheresData.indexingMode == VK_RAY_TRACING_LSS_INDEXING_MODE_SUCCESSIVE_NV) {
+        buildRangeInfo.primitiveCount = uint32_t(numIndices);
+    } else {
+        sgl::Logfile::get()->throwError(
+                "Error in LinearSweptSpheresAccelerationStructureInput::setIndexBufferOffset: "
+                "Invalid LSS indexing mode.");
+    }
     buildRangeInfo.primitiveOffset = 0;
     buildRangeInfo.transformOffset = 0;
 
@@ -703,7 +716,15 @@ void LinearSweptSpheresAccelerationStructureInput::setIndexBufferOffset(
     this->numIndices = numIndices;
 
     buildRangeInfo.firstVertex = 0;
-    buildRangeInfo.primitiveCount = uint32_t(numIndices / 3);
+    if (linearSweptSpheresData.indexingMode == VK_RAY_TRACING_LSS_INDEXING_MODE_LIST_NV) {
+        buildRangeInfo.primitiveCount = uint32_t(numIndices / 2);
+    } else if (linearSweptSpheresData.indexingMode == VK_RAY_TRACING_LSS_INDEXING_MODE_SUCCESSIVE_NV) {
+        buildRangeInfo.primitiveCount = uint32_t(numIndices);
+    } else {
+        sgl::Logfile::get()->throwError(
+                "Error in LinearSweptSpheresAccelerationStructureInput::setIndexBufferOffset: "
+                "Invalid LSS indexing mode.");
+    }
     buildRangeInfo.primitiveOffset = primitiveOffset;
     buildRangeInfo.transformOffset = 0;
 
