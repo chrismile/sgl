@@ -1213,6 +1213,8 @@ void Device::createLogicalDeviceAndQueues(
     for (size_t i = 0; i < numFeatures; i++) {
         if (optionalPhysicalDeviceFeaturesArray[i] && physicalDeviceFeaturesArray[i]) {
             requestedPhysicalDeviceFeaturesArray[i] = VK_TRUE;
+        } else {
+            physicalDeviceFeaturesArray[i] = VK_FALSE;
         }
     }
 
@@ -1236,6 +1238,8 @@ void Device::createLogicalDeviceAndQueues(
         for (size_t i = 0; i < numVulkan11Features; i++) {
             if (optionalVulkan11FeaturesArray[i] && physicalDeviceVulkan11FeaturesArray[i]) {
                 requestedVulkan11FeaturesArray[i] = VK_TRUE;
+            } else {
+                physicalDeviceVulkan11FeaturesArray[i] = VK_FALSE;
             }
         }
 
@@ -1264,6 +1268,8 @@ void Device::createLogicalDeviceAndQueues(
         for (size_t i = 0; i < numVulkan12Features; i++) {
             if (optionalVulkan12FeaturesArray[i] && physicalDeviceVulkan12FeaturesArray[i]) {
                 requestedVulkan12FeaturesArray[i] = VK_TRUE;
+            } else {
+                physicalDeviceVulkan12FeaturesArray[i] = VK_FALSE;
             }
         }
     }
@@ -1288,6 +1294,8 @@ void Device::createLogicalDeviceAndQueues(
         for (size_t i = 0; i < numVulkan13Features; i++) {
             if (optionalVulkan13FeaturesArray[i] && physicalDeviceVulkan13FeaturesArray[i]) {
                 requestedVulkan13FeaturesArray[i] = VK_TRUE;
+            } else {
+                physicalDeviceVulkan13FeaturesArray[i] = VK_FALSE;
             }
         }
 
@@ -1317,6 +1325,8 @@ void Device::createLogicalDeviceAndQueues(
         for (size_t i = 0; i < numVulkan14Features; i++) {
             if (optionalVulkan14FeaturesArray[i] && physicalDeviceVulkan14FeaturesArray[i]) {
                 requestedVulkan14FeaturesArray[i] = VK_TRUE;
+            } else {
+                physicalDeviceVulkan14FeaturesArray[i] = VK_FALSE;
             }
         }
 
