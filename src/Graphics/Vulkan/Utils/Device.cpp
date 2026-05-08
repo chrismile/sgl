@@ -2274,6 +2274,7 @@ bool Device::getBufferSettingsMemoryRequirements(
         return false;
     }
     vkGetBufferMemoryRequirements(device, buffer, &memoryRequirements);
+    vkDestroyBuffer(device, buffer, nullptr);
     return true;
 }
 
