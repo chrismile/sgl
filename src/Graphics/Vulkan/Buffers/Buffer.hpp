@@ -84,6 +84,11 @@ struct DLL_OBJECT BufferSettings {
      * sub-buffers.
      */
     bool useDedicatedAllocationForExportedMemory = true;
+    /**
+     * For directly requesting memory belonging to a specific memory type index.
+     */
+    bool useMemoryTypeIndex = false;
+    uint32_t memoryTypeIndex = 0;
 };
 
 class DLL_OBJECT Buffer {

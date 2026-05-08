@@ -60,7 +60,7 @@ Buffer::Buffer(
         bool exportMemory, bool useDedicatedAllocationForExportedMemory) : Buffer(device, BufferSettings{
             sizeInBytes, usage, memoryUsage,
             queueExclusive ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT, 0, nullptr, 0,
-            exportMemory, useDedicatedAllocationForExportedMemory}) {}
+            exportMemory, useDedicatedAllocationForExportedMemory, false, 0}) {}
 
 Buffer::Buffer(Device* device, const BufferSettings& bufferSettings)
         : device(device), sizeInBytes(bufferSettings.sizeInBytes), bufferUsageFlags(bufferSettings.usage),
@@ -124,6 +124,9 @@ Buffer::Buffer(Device* device, const BufferSettings& bufferSettings)
 
         VmaPool pool = device->getExternalMemoryHandlePool(memoryTypeIndex, true);
         allocCreateInfo.pool = pool;
+    }
+    if (bufferSettings.useMemoryTypeIndex) {
+        allocCreateInfo.memoryTypeBits = 1u << bufferSettings.memoryTypeIndex;
     }
 
     if (!exportMemory || !useDedicatedAllocationForExportedMemory) {
