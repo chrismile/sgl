@@ -2256,6 +2256,27 @@ void Device::createVulkanMemoryAllocator() {
     vmaCreateAllocator(&allocatorInfo, &allocator);
 }
 
+bool Device::getBufferSettingsMemoryRequirements(
+        const sgl::vk::BufferSettings& bufferSettings, VkMemoryRequirements& memoryRequirements) {
+    VkBufferCreateInfo bufferCreateInfo{};
+    bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferCreateInfo.size = bufferSettings.sizeInBytes;
+    bufferCreateInfo.usage = bufferSettings.usage;
+    bufferCreateInfo.sharingMode = bufferSettings.sharingMode;
+    if (bufferSettings.sharingMode == VK_SHARING_MODE_CONCURRENT) {
+        uint32_t queueFamilyIndexCount = bufferSettings.queueFamilyIndexCount;
+        const uint32_t* pQueueFamilyIndices = bufferSettings.pQueueFamilyIndices;
+        bufferCreateInfo.queueFamilyIndexCount = queueFamilyIndexCount;
+        bufferCreateInfo.pQueueFamilyIndices = pQueueFamilyIndices;
+    }
+    VkBuffer buffer{};
+    if (vkCreateBuffer(getVkDevice(), &bufferCreateInfo, nullptr, &buffer) != VK_SUCCESS) {
+        return false;
+    }
+    vkGetBufferMemoryRequirements(device, buffer, &memoryRequirements);
+    return true;
+}
+
 VmaPool Device::getExternalMemoryHandlePool(uint32_t memoryTypeIndex, bool isBuffer) {
     MemoryPoolType memoryPoolType;
     memoryPoolType.memoryTypeIndex = memoryTypeIndex;

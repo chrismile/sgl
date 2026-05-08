@@ -110,6 +110,7 @@ template<> struct hash<sgl::vk::MemoryPoolType> {
 namespace sgl { namespace vk {
 
 class Instance;
+class BufferSettings;
 class Buffer;
 typedef std::shared_ptr<Buffer> BufferPtr;
 
@@ -726,6 +727,10 @@ public:
             VkCommandBufferLevel commandBufferLevel = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
     void freeCommandBuffer(VkCommandPool commandPool, VkCommandBuffer commandBuffer);
     void freeCommandBuffers(VkCommandPool commandPool, const std::vector<VkCommandBuffer>& commandBuffers);
+
+    // Query the memory requirements for a buffer created from the passed buffer settings.
+    bool getBufferSettingsMemoryRequirements(
+            const sgl::vk::BufferSettings& bufferSettings, VkMemoryRequirements& memoryRequirements);
 
     // Query memory pools (automatically created).
     [[nodiscard]] VmaPool getExternalMemoryHandlePool(uint32_t memoryTypeIndex, bool isBuffer);
