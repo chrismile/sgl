@@ -125,8 +125,8 @@ Buffer::Buffer(Device* device, const BufferSettings& bufferSettings)
         VmaPool pool = device->getExternalMemoryHandlePool(memoryTypeIndex, true);
         allocCreateInfo.pool = pool;
     }
-    if (bufferSettings.useMemoryTypeIndex) {
-        allocCreateInfo.memoryTypeBits = 1u << bufferSettings.memoryTypeIndex;
+    if (bufferSettings.useMemoryTypeBits) {
+        allocCreateInfo.memoryTypeBits = bufferSettings.memoryTypeBits;
     }
 
     if (!exportMemory || !useDedicatedAllocationForExportedMemory) {
@@ -451,8 +451,8 @@ void Buffer::uploadDataChunked(size_t sizeInBytesData, size_t chunkSize, const v
         }
 
         size_t chunkSizeReal = std::min(chunkSize, sizeInBytesData);
-        BufferPtr stagingBuffer(new Buffer(
-                device, chunkSizeReal, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY, queueExclusive));
+        BufferPtr stagingBuffer = std::make_shared<Buffer>(
+                device, chunkSizeReal, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY, queueExclusive);
 
         size_t sizeLeft = sizeInBytesData;
         size_t writeOffset = 0;

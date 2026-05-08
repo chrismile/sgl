@@ -87,8 +87,8 @@ struct DLL_OBJECT BufferSettings {
     /**
      * For directly requesting memory belonging to a specific memory type index.
      */
-    bool useMemoryTypeIndex = false;
-    uint32_t memoryTypeIndex = 0;
+    bool useMemoryTypeBits = false;
+    uint32_t memoryTypeBits = 0;
 };
 
 class DLL_OBJECT Buffer {
