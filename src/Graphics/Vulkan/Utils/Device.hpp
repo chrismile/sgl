@@ -110,7 +110,7 @@ template<> struct hash<sgl::vk::MemoryPoolType> {
 namespace sgl { namespace vk {
 
 class Instance;
-class BufferSettings;
+struct BufferSettings;
 class Buffer;
 typedef std::shared_ptr<Buffer> BufferPtr;
 
