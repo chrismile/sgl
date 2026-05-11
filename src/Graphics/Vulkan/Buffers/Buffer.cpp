@@ -229,6 +229,7 @@ Buffer::Buffer(Device* device, const BufferSettings& bufferSettings)
         if (memoryAllocateInfo.memoryTypeIndex == std::numeric_limits<uint32_t>::max()) {
             Logfile::get()->throwError("Error in Buffer::Buffer: No suitable memory type index found!");
         }
+        bufferAllocationInfo.memoryType = memoryAllocateInfo.memoryTypeIndex;
 
         if (vkAllocateMemory(device->getVkDevice(), &memoryAllocateInfo, nullptr, &deviceMemory) != VK_SUCCESS) {
             Logfile::get()->throwError("Error in Buffer::Buffer: Could not allocate memory!");
@@ -401,8 +402,9 @@ void Buffer::uploadData(size_t sizeInBytesData, const void* dataPtr) {
                 "Error in Buffer::uploadData: sizeInBytesData > sizeInBytes");
     }
 
-    if (memoryUsage == VMA_MEMORY_USAGE_CPU_ONLY || memoryUsage == VMA_MEMORY_USAGE_CPU_TO_GPU
-            || memoryUsage == VMA_MEMORY_USAGE_CPU_COPY) {
+    const VkPhysicalDeviceMemoryProperties& physicalDeviceMemoryProperties = device->getMemoryProperties();
+    if ((physicalDeviceMemoryProperties.memoryTypes[bufferAllocationInfo.memoryType].propertyFlags
+            & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0) {
         void* mappedData = mapMemory();
         memcpy(mappedData, dataPtr, sizeInBytesData);
         unmapMemory();
@@ -439,8 +441,9 @@ void Buffer::uploadDataChunked(size_t sizeInBytesData, size_t chunkSize, const v
                 "Error in Buffer::uploadDataChunked: sizeInBytesData > sizeInBytes");
     }
 
-    if (memoryUsage == VMA_MEMORY_USAGE_CPU_ONLY || memoryUsage == VMA_MEMORY_USAGE_CPU_TO_GPU
-            || memoryUsage == VMA_MEMORY_USAGE_CPU_COPY) {
+    const VkPhysicalDeviceMemoryProperties& physicalDeviceMemoryProperties = device->getMemoryProperties();
+    if ((physicalDeviceMemoryProperties.memoryTypes[bufferAllocationInfo.memoryType].propertyFlags
+            & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0) {
         void* mappedData = mapMemory();
         memcpy(mappedData, dataPtr, sizeInBytesData);
         unmapMemory();
@@ -489,8 +492,9 @@ void Buffer::uploadData(size_t sizeInBytesData, const void* dataPtr, VkCommandBu
                 "Error in Buffer::uploadData: sizeInBytesData > sizeInBytes");
     }
 
-    if (memoryUsage == VMA_MEMORY_USAGE_CPU_ONLY || memoryUsage == VMA_MEMORY_USAGE_CPU_TO_GPU
-            || memoryUsage == VMA_MEMORY_USAGE_CPU_COPY) {
+    const VkPhysicalDeviceMemoryProperties& physicalDeviceMemoryProperties = device->getMemoryProperties();
+    if ((physicalDeviceMemoryProperties.memoryTypes[bufferAllocationInfo.memoryType].propertyFlags
+            & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0) {
         void* mappedData = mapMemory();
         memcpy(mappedData, dataPtr, sizeInBytesData);
         unmapMemory();
@@ -509,8 +513,9 @@ void Buffer::uploadData(
                 "Error in Buffer::uploadData: sizeInBytesData > sizeInBytes");
     }
 
-    if (memoryUsage == VMA_MEMORY_USAGE_CPU_ONLY || memoryUsage == VMA_MEMORY_USAGE_CPU_TO_GPU
-            || memoryUsage == VMA_MEMORY_USAGE_CPU_COPY) {
+    const VkPhysicalDeviceMemoryProperties& physicalDeviceMemoryProperties = device->getMemoryProperties();
+    if ((physicalDeviceMemoryProperties.memoryTypes[bufferAllocationInfo.memoryType].propertyFlags
+            & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0) {
         void* mappedData = mapMemory();
         memcpy(mappedData, dataPtr, sizeInBytesData);
         unmapMemory();
@@ -542,8 +547,9 @@ void Buffer::uploadDataOffset(size_t regionOffset, size_t sizeInBytesData, const
                 "Error in Buffer::uploadData: sizeInBytesData > sizeInBytes");
     }
 
-    if (memoryUsage == VMA_MEMORY_USAGE_CPU_ONLY || memoryUsage == VMA_MEMORY_USAGE_CPU_TO_GPU
-            || memoryUsage == VMA_MEMORY_USAGE_CPU_COPY) {
+    const VkPhysicalDeviceMemoryProperties& physicalDeviceMemoryProperties = device->getMemoryProperties();
+    if ((physicalDeviceMemoryProperties.memoryTypes[bufferAllocationInfo.memoryType].propertyFlags
+            & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0) {
         void* mappedData = mapMemory();
         uint8_t* dstRegion = reinterpret_cast<uint8_t*>(mappedData) + regionOffset;
         memcpy(dstRegion, dataPtr, sizeInBytesData);
@@ -582,8 +588,9 @@ void Buffer::uploadDataOffset(
                 "Error in Buffer::uploadData: sizeInBytesData > sizeInBytes");
     }
 
-    if (memoryUsage == VMA_MEMORY_USAGE_CPU_ONLY || memoryUsage == VMA_MEMORY_USAGE_CPU_TO_GPU
-            || memoryUsage == VMA_MEMORY_USAGE_CPU_COPY) {
+    const VkPhysicalDeviceMemoryProperties& physicalDeviceMemoryProperties = device->getMemoryProperties();
+    if ((physicalDeviceMemoryProperties.memoryTypes[bufferAllocationInfo.memoryType].propertyFlags
+            & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0) {
         void* mappedData = mapMemory();
         uint8_t* dstRegion = reinterpret_cast<uint8_t*>(mappedData) + regionOffset;
         memcpy(dstRegion, dataPtr, sizeInBytesData);
@@ -604,8 +611,9 @@ void Buffer::uploadDataOffset(
                 "Error in Buffer::uploadData: sizeInBytesData > sizeInBytes");
     }
 
-    if (memoryUsage == VMA_MEMORY_USAGE_CPU_ONLY || memoryUsage == VMA_MEMORY_USAGE_CPU_TO_GPU
-            || memoryUsage == VMA_MEMORY_USAGE_CPU_COPY) {
+    const VkPhysicalDeviceMemoryProperties& physicalDeviceMemoryProperties = device->getMemoryProperties();
+    if ((physicalDeviceMemoryProperties.memoryTypes[bufferAllocationInfo.memoryType].propertyFlags
+            & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0) {
         void* mappedData = mapMemory();
         uint8_t* dstRegion = reinterpret_cast<uint8_t*>(mappedData) + regionOffset;
         memcpy(dstRegion, dataPtr, sizeInBytesData);
