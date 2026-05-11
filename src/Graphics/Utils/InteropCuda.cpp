@@ -138,7 +138,10 @@ bool initializeCudaDeviceApiFunctionTable() {
     g_cudaDeviceApiFunctionTable.cuDeviceGetUuid = PFN_cuDeviceGetUuid(dlsym(g_cudaLibraryHandle, TOSTRING(cuDeviceGetUuid)));
     g_cudaDeviceApiFunctionTable.cuDeviceGetLuid = PFN_cuDeviceGetLuid(dlsym(g_cudaLibraryHandle, TOSTRING(cuDeviceGetLuid)));
     g_cudaDeviceApiFunctionTable.cuDeviceGetAttribute = PFN_cuDeviceGetAttribute(dlsym(g_cudaLibraryHandle, TOSTRING(cuDeviceGetAttribute)));
-    g_cudaDeviceApiFunctionTable.cuCtxCreate = PFN_cuCtxCreate(dlsym(g_cudaLibraryHandle, TOSTRING(cuCtxCreate)));
+    g_cudaDeviceApiFunctionTable.cuCtxCreate = PFN_cuCtxCreate(dlsym(g_cudaLibraryHandle, "cuCtxCreate_v2"));
+    if (!g_cudaDeviceApiFunctionTable.cuCtxCreate) {
+        g_cudaDeviceApiFunctionTable.cuCtxCreate = PFN_cuCtxCreate(dlsym(g_cudaLibraryHandle, "cuCtxCreate"));
+    }
     g_cudaDeviceApiFunctionTable.cuCtxDestroy = PFN_cuCtxDestroy(dlsym(g_cudaLibraryHandle, TOSTRING(cuCtxDestroy)));
     g_cudaDeviceApiFunctionTable.cuCtxGetCurrent = PFN_cuCtxGetCurrent(dlsym(g_cudaLibraryHandle, TOSTRING(cuCtxGetCurrent)));
     g_cudaDeviceApiFunctionTable.cuCtxGetDevice = PFN_cuCtxGetDevice(dlsym(g_cudaLibraryHandle, TOSTRING(cuCtxGetDevice)));
