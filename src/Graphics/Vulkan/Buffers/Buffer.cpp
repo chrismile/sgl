@@ -359,6 +359,7 @@ void Buffer::createFromD3D12SharedResourceHandle(
         Logfile::get()->throwError(
                 "Error in Buffer::createFromD3D12SharedResourceHandle: No suitable memory type index found!");
     }
+    bufferAllocationInfo.memoryType = memoryAllocateInfo.memoryTypeIndex;
 
     if (vkAllocateMemory(device->getVkDevice(), &memoryAllocateInfo, nullptr, &deviceMemory) != VK_SUCCESS) {
         Logfile::get()->throwError(
@@ -871,6 +872,7 @@ void Buffer::createFromHostPointer(
     if (memoryAllocateInfo.memoryTypeIndex == std::numeric_limits<uint32_t>::max()) {
         Logfile::get()->throwError("Error in Buffer::createFromHostPointer: No suitable memory type index found!");
     }
+    bufferAllocationInfo.memoryType = memoryAllocateInfo.memoryTypeIndex;
 
     if (vkAllocateMemory(device->getVkDevice(), &memoryAllocateInfo, nullptr, &deviceMemory) != VK_SUCCESS) {
         Logfile::get()->throwError("Error in Buffer::createFromHostPointer: Could not allocate memory!");
