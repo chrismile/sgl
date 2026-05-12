@@ -662,10 +662,11 @@ TEST_P(InteropTestSyclD3D12Image, ImageSyclWriteD3D12ReadTests) {
     sourceImgUavDesc.Format = format;
     sourceImgUavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
     D3D12_UNORDERED_ACCESS_VIEW_DESC destBufferUavDesc{};
-    destBufferUavDesc.Format = DXGI_FORMAT_UNKNOWN;
     destBufferUavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
     destBufferUavDesc.Buffer.NumElements = UINT(width * height);
+    destBufferUavDesc.Format = DXGI_FORMAT_UNKNOWN;
     destBufferUavDesc.Buffer.StructureByteStride = formatInfo.formatSizeInBytes;
+    // For RWBuffer: destBufferUavDesc.Format = format; destBufferUavDesc.Buffer.StructureByteStride = 0;
 
     const int NUM_ITERATIONS = 1000;
     for (int it = 0; it < NUM_ITERATIONS; it++) {
