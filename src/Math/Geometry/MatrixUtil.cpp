@@ -30,32 +30,32 @@
 
 namespace sgl {
 
-glm::vec3 transformPoint(const glm::mat4 &mat, const glm::vec3 &vec) {
+glm::vec3 transformPoint(const glm::mat4& mat, const glm::vec3& vec) {
     glm::vec4 transVec = mat * glm::vec4(vec.x, vec.y, vec.z, 1.0f);
     if (transVec.w != 1.0f)
         transVec /= transVec.w;
     return glm::vec3(transVec.x, transVec.y, transVec.z);
 }
 
-glm::vec3 transformDirection(const glm::mat4 &mat, const glm::vec3 &vec) {
+glm::vec3 transformDirection(const glm::mat4& mat, const glm::vec3& vec) {
     glm::vec4 transVec = mat * glm::vec4(vec.x, vec.y, vec.z, 0.0f);
     return glm::vec3(transVec.x, transVec.y, transVec.z);
 }
 
-glm::vec2 transformPoint(const glm::mat4 &mat, const glm::vec2 &vec) {
+glm::vec2 transformPoint(const glm::mat4& mat, const glm::vec2& vec) {
     glm::vec4 transVec = mat * glm::vec4(vec.x, vec.y, 0.0f, 1.0f);
     if (transVec.w != 1.0f)
         transVec /= transVec.w;
     return glm::vec2(transVec.x, transVec.y);
 }
 
-glm::vec2 transformDirection(const glm::mat4 &mat, const glm::vec2 &vec) {
+glm::vec2 transformDirection(const glm::mat4& mat, const glm::vec2& vec) {
     glm::vec4 transVec = mat * glm::vec4(vec.x, vec.y, 0.0f, 0.0f);
     return glm::vec2(transVec.x, transVec.y);
 }
 
 
-glm::mat4 matrixTranslation(const glm::vec3 &v) {
+glm::mat4 matrixTranslation(const glm::vec3& v) {
     /*return glm::translate(glm::vec3(v.x, v.y, v.z));*/
     return glm::mat4(1.0f, 0.0f, 0.0f, 0.0f,
                   0.0f, 1.0f, 0.0f, 0.0f,
@@ -64,7 +64,7 @@ glm::mat4 matrixTranslation(const glm::vec3 &v) {
 
 }
 
-glm::mat4 matrixTranslation(const glm::vec2 &v) {
+glm::mat4 matrixTranslation(const glm::vec2& v) {
     //return glm::translate(glm::vec3(v.x, v.y, 0.0f));
     return glm::mat4(1.0f, 0.0f, 0.0f, 0.0f,
                   0.0f, 1.0f, 0.0f, 0.0f,
@@ -72,11 +72,11 @@ glm::mat4 matrixTranslation(const glm::vec2 &v) {
                   v.x,  v.y,  0.0f, 1.0f);
 }
 
-glm::mat4 matrixScaling(const glm::vec3 &vec) {
+glm::mat4 matrixScaling(const glm::vec3& vec) {
     return glm::scale(glm::vec3(vec.x, vec.y, vec.z));
 }
 
-glm::mat4 matrixScaling(const glm::vec2 &vec) {
+glm::mat4 matrixScaling(const glm::vec2& vec) {
     return glm::scale(glm::vec3(vec.x, vec.y, 1.0f));
 }
 
@@ -130,6 +130,68 @@ glm::mat4 matrixColumnMajor(
             m12, m22, m32, m42,
             m13, m23, m33, m43,
             m14, m24, m34, m44);
+}
+
+/// Square root of the sum of the squared entry values.
+float matrixNormFrobenius(const glm::mat4& mat) {
+    float val;
+    float sum = 0.0f;
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            val = mat[i][j];
+            sum += val * val;
+        }
+    }
+    return std::sqrt(sum);
+}
+
+/// Maximum of the absolute column sums ($\max_j \sum_{i=1}^n |a_{ij}|$ in row-major notation).
+float matrixNormOne(const glm::mat4& mat) {
+    float val;
+    float colSum;
+    float maxVal = 0.0f;
+    for (int i = 0; i < 4; i++) {
+        colSum = 0.0f;
+        for (int j = 0; j < 4; j++) {
+            val = mat[i][j];
+            colSum += std::abs(val);
+        }
+        if (colSum > maxVal) {
+            maxVal = colSum;
+        }
+    }
+    return maxVal;
+}
+
+/// Maximum of the absolute row sums ($\max_i \sum_{j=1}^n |a_{ij}|$ in row-major notation).
+float matrixNormInfinity(const glm::mat4& mat) {
+    float val;
+    float rowSum;
+    float maxVal = 0.0f;
+    for (int i = 0; i < 4; i++) {
+        rowSum = 0.0f;
+        for (int j = 0; j < 4; j++) {
+            val = mat[j][i];
+            rowSum += std::abs(val);
+        }
+        if (rowSum > maxVal) {
+            maxVal = rowSum;
+        }
+    }
+    return maxVal;
+}
+
+float matrixMaximumAbsoluteEntry(const glm::mat4& mat) {
+    float maxVal = 0.0f;
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            float absVal = std::abs(mat[j][i]);
+            if (absVal > maxVal) {
+                maxVal = absVal;
+            }
+        }
+    }
+    return maxVal;
 }
 
 }

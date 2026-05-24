@@ -40,18 +40,18 @@
 
 namespace sgl {
 
-DLL_OBJECT glm::vec3 transformPoint(const glm::mat4 &mat, const glm::vec3 &vec);
-DLL_OBJECT glm::vec3 transformDirection(const glm::mat4 &mat, const glm::vec3 &vec);
-DLL_OBJECT glm::vec2 transformPoint(const glm::mat4 &mat, const glm::vec2 &vec);
-DLL_OBJECT glm::vec2 transformDirection(const glm::mat4 &mat, const glm::vec2 &vec);
+DLL_OBJECT glm::vec3 transformPoint(const glm::mat4& mat, const glm::vec3& vec);
+DLL_OBJECT glm::vec3 transformDirection(const glm::mat4& mat, const glm::vec3& vec);
+DLL_OBJECT glm::vec2 transformPoint(const glm::mat4& mat, const glm::vec2& vec);
+DLL_OBJECT glm::vec2 transformDirection(const glm::mat4& mat, const glm::vec2& vec);
 
 /// Special types of matrices
 inline     glm::mat4 matrixIdentity() {return glm::mat4(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);}
 inline     glm::mat4 matrixZero() {return glm::mat4(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);}
-DLL_OBJECT glm::mat4 matrixTranslation(const glm::vec3 &vec);
-DLL_OBJECT glm::mat4 matrixTranslation(const glm::vec2 &vec);
-DLL_OBJECT glm::mat4 matrixScaling(const glm::vec3 &vec);
-DLL_OBJECT glm::mat4 matrixScaling(const glm::vec2 &vec);
+DLL_OBJECT glm::mat4 matrixTranslation(const glm::vec3& vec);
+DLL_OBJECT glm::mat4 matrixTranslation(const glm::vec2& vec);
+DLL_OBJECT glm::mat4 matrixScaling(const glm::vec3& vec);
+DLL_OBJECT glm::mat4 matrixScaling(const glm::vec2& vec);
 DLL_OBJECT glm::mat4 matrixOrthogonalProjection(float left, float right, float bottom, float top, float near, float far);
 DLL_OBJECT glm::mat4 matrixSkewX(float f);
 DLL_OBJECT glm::mat4 matrixSkewY(float f);
@@ -69,6 +69,16 @@ DLL_OBJECT glm::mat4 matrixColumnMajor(
         float m12, float m22, float m32, float m42,
         float m13, float m23, float m33, float m43,
         float m14, float m24, float m34, float m44);
+
+// Matrix norms.
+/// Square root of the sum of the squared entry values.
+DLL_OBJECT float matrixNormFrobenius(const glm::mat4& mat);
+/// Maximum of the absolute column sums.
+DLL_OBJECT float matrixNormOne(const glm::mat4& mat);
+/// Maximum of the absolute row sums.
+DLL_OBJECT float matrixNormInfinity(const glm::mat4& mat);
+/// Maximum absolute entry of the matrix.
+DLL_OBJECT float matrixMaximumAbsoluteEntry(const glm::mat4& mat);
 
 }
 
