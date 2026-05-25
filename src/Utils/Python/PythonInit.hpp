@@ -35,7 +35,9 @@
 #if defined(PYTHONHOME_PATH) || defined(__APPLE__)
 #include <cstdlib>
 #endif
-#include <Python.h>
+
+#include "PythonIncludeSafe.hpp"
+
 #ifdef __APPLE__
 #include <mach-o/dyld.h>
 #endif
