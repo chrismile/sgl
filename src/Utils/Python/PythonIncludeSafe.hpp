@@ -40,6 +40,9 @@
 
 #if defined(USE_PYTHON_LINKER_FIX) && defined(_DEBUG)
 #define PYTHON_LINKER_FIX_IN_USE
+/*
+ * The list of system headers was made for Python 3.12. It may change in the future.
+ */
 #include <io.h>
 #include <basetsd.h>
 #include <stdio.h>

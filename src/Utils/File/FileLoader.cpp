@@ -57,10 +57,14 @@ bool loadFileFromSource(
 #endif
 #if defined(__linux__) || defined(__MINGW32__) // __GNUC__? Does GCC generally work on non-POSIX systems?
     FILE* file = fopen64(filename.c_str(), "rb");
+    if (!file) {
+#elif defined(_MSC_VER)
+    FILE* file = nullptr;
+    if (fopen_s(&file, filename.c_str(), "rb") != 0) {
 #else
     FILE* file = fopen(filename.c_str(), "rb");
-#endif
     if (!file) {
+#endif
         sgl::Logfile::get()->writeError(
                 std::string() + "Error in loadFileFromSource: File \"" + filename + "\" could not be opened.");
         return false;
@@ -107,10 +111,14 @@ bool loadFileFromSourceRanged(
 #endif
 #if defined(__linux__) || defined(__MINGW32__) // __GNUC__? Does GCC generally work on non-POSIX systems?
     FILE* file = fopen64(filename.c_str(), "rb");
+    if (!file) {
+#elif defined(_MSC_VER)
+    FILE* file = nullptr;
+    if (fopen_s(&file, filename.c_str(), "rb") != 0) {
 #else
     FILE* file = fopen(filename.c_str(), "rb");
-#endif
     if (!file) {
+#endif
         sgl::Logfile::get()->writeError(
                 std::string() + "Error in loadFileFromSource: File \"" + filename + "\" could not be opened.");
         return false;

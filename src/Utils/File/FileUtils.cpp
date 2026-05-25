@@ -507,10 +507,14 @@ bool FileUtils::getPathAbsoluteEquivalent(const std::string &pathStr0, const std
 size_t FileUtils::getFileSizeInBytes(const std::string &path) {
 #if defined(__linux__) || defined(__MINGW32__) // __GNUC__? Does GCC generally work on non-POSIX systems?
     FILE* file = fopen64(path.c_str(), "rb");
+    if (!file) {
+#elif defined(_MSC_VER)
+    FILE* file = nullptr;
+    if (fopen_s(&file, path.c_str(), "rb") != 0) {
 #else
     FILE* file = fopen(path.c_str(), "rb");
-#endif
     if (!file) {
+#endif
         sgl::Logfile::get()->writeError(
                 std::string() + "Error in FileUtils::getFileSizeInBytes: File \""
                 + path + "\" could not be opened.");
