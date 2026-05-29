@@ -408,6 +408,7 @@ void Buffer::uploadData(size_t sizeInBytesData, const void* dataPtr) {
             & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0) {
         void* mappedData = mapMemory();
         memcpy(mappedData, dataPtr, sizeInBytesData);
+        flushMappedMemoryRanges(sizeInBytesData);
         unmapMemory();
     } else {
         if ((bufferUsageFlags & VK_BUFFER_USAGE_TRANSFER_DST_BIT) == 0) {
@@ -421,6 +422,7 @@ void Buffer::uploadData(size_t sizeInBytesData, const void* dataPtr) {
                 queueExclusive));
         void* mappedData = stagingBuffer->mapMemory();
         memcpy(mappedData, dataPtr, sizeInBytesData);
+        stagingBuffer->flushMappedMemoryRanges(sizeInBytesData);
         stagingBuffer->unmapMemory();
 
         VkCommandBuffer commandBuffer = device->beginSingleTimeCommands();
@@ -447,6 +449,7 @@ void Buffer::uploadDataChunked(size_t sizeInBytesData, size_t chunkSize, const v
             & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0) {
         void* mappedData = mapMemory();
         memcpy(mappedData, dataPtr, sizeInBytesData);
+        flushMappedMemoryRanges(sizeInBytesData);
         unmapMemory();
     } else {
         if ((bufferUsageFlags & VK_BUFFER_USAGE_TRANSFER_DST_BIT) == 0) {
@@ -465,6 +468,7 @@ void Buffer::uploadDataChunked(size_t sizeInBytesData, size_t chunkSize, const v
         while (sizeLeft > 0) {
             size_t copySize = std::min(chunkSizeReal, sizeLeft);
             memcpy(mappedData, sourcePtr, copySize);
+            stagingBuffer->flushMappedMemoryRanges(copySize);
 
             VkCommandBuffer commandBuffer = device->beginSingleTimeCommands();
             VkBufferCopy bufferCopy{};
@@ -498,6 +502,7 @@ void Buffer::uploadData(size_t sizeInBytesData, const void* dataPtr, VkCommandBu
             & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0) {
         void* mappedData = mapMemory();
         memcpy(mappedData, dataPtr, sizeInBytesData);
+        flushMappedMemoryRanges(sizeInBytesData);
         unmapMemory();
     } else {
         sgl::Logfile::get()->throwError(
@@ -519,6 +524,7 @@ void Buffer::uploadData(
             & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0) {
         void* mappedData = mapMemory();
         memcpy(mappedData, dataPtr, sizeInBytesData);
+        flushMappedMemoryRanges(sizeInBytesData);
         unmapMemory();
     } else {
         if ((bufferUsageFlags & VK_BUFFER_USAGE_TRANSFER_DST_BIT) == 0) {
@@ -531,6 +537,7 @@ void Buffer::uploadData(
                 queueExclusive);
         void* mappedData = stagingBuffer->mapMemory();
         memcpy(mappedData, dataPtr, sizeInBytesData);
+        stagingBuffer->flushMappedMemoryRanges(sizeInBytesData);
         stagingBuffer->unmapMemory();
 
         VkBufferCopy bufferCopy{};
@@ -554,6 +561,7 @@ void Buffer::uploadDataOffset(size_t regionOffset, size_t sizeInBytesData, const
         void* mappedData = mapMemory();
         uint8_t* dstRegion = reinterpret_cast<uint8_t*>(mappedData) + regionOffset;
         memcpy(dstRegion, dataPtr, sizeInBytesData);
+        flushMappedMemoryRanges(sizeInBytesData);
         unmapMemory();
     } else {
         if ((bufferUsageFlags & VK_BUFFER_USAGE_TRANSFER_DST_BIT) == 0) {
@@ -567,6 +575,7 @@ void Buffer::uploadDataOffset(size_t regionOffset, size_t sizeInBytesData, const
                 queueExclusive));
         void* mappedData = stagingBuffer->mapMemory();
         memcpy(mappedData, dataPtr, sizeInBytesData);
+        stagingBuffer->flushMappedMemoryRanges(sizeInBytesData);
         stagingBuffer->unmapMemory();
 
         VkCommandBuffer commandBuffer = device->beginSingleTimeCommands();
@@ -595,6 +604,7 @@ void Buffer::uploadDataOffset(
         void* mappedData = mapMemory();
         uint8_t* dstRegion = reinterpret_cast<uint8_t*>(mappedData) + regionOffset;
         memcpy(dstRegion, dataPtr, sizeInBytesData);
+        flushMappedMemoryRanges(sizeInBytesData);
         unmapMemory();
     } else {
         sgl::Logfile::get()->throwError(
@@ -618,6 +628,7 @@ void Buffer::uploadDataOffset(
         void* mappedData = mapMemory();
         uint8_t* dstRegion = reinterpret_cast<uint8_t*>(mappedData) + regionOffset;
         memcpy(dstRegion, dataPtr, sizeInBytesData);
+        flushMappedMemoryRanges(sizeInBytesData);
         unmapMemory();
     } else {
         if ((bufferUsageFlags & VK_BUFFER_USAGE_TRANSFER_DST_BIT) == 0) {
@@ -630,6 +641,7 @@ void Buffer::uploadDataOffset(
                 queueExclusive);
         void* mappedData = stagingBuffer->mapMemory();
         memcpy(mappedData, dataPtr, sizeInBytesData);
+        stagingBuffer->flushMappedMemoryRanges(sizeInBytesData);
         stagingBuffer->unmapMemory();
 
         VkBufferCopy bufferCopy{};
@@ -761,7 +773,40 @@ void Buffer::flushMappedMemoryRanges() {
     }
 }
 
+void Buffer::flushMappedMemoryRanges(VkDeviceSize numBytesToFlush) {
+    const VkPhysicalDeviceMemoryProperties& physicalDeviceMemoryProperties = device->getMemoryProperties();
+    if ((physicalDeviceMemoryProperties.memoryTypes[bufferAllocationInfo.memoryType].propertyFlags
+            & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0) {
+        return;
+    }
+
+    if (bufferAllocation) {
+        if (numBytesToFlush > bufferAllocationInfo.size) {
+            sgl::Logfile::get()->writeError(
+                    "Error in Buffer::flushMappedMemoryRanges: Flush range larger than allocation size.");
+        }
+        vmaFlushAllocation(device->getAllocator(), bufferAllocation, 0, numBytesToFlush);
+    } else if (deviceMemory) {
+        if (numBytesToFlush > sizeInBytes) {
+            sgl::Logfile::get()->writeError(
+                    "Error in Buffer::flushMappedMemoryRanges: Flush range larger than allocation size.");
+        }
+        VkMappedMemoryRange mappedMemoryRange{};
+        mappedMemoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+        mappedMemoryRange.memory = deviceMemory;
+        mappedMemoryRange.offset = deviceMemoryOffset;
+        mappedMemoryRange.size = numBytesToFlush;
+        vkFlushMappedMemoryRanges(device->getVkDevice(), 1, &mappedMemoryRange);
+    }
+}
+
 void Buffer::invalidateMappedMemoryRanges() {
+    const VkPhysicalDeviceMemoryProperties& physicalDeviceMemoryProperties = device->getMemoryProperties();
+    if ((physicalDeviceMemoryProperties.memoryTypes[bufferAllocationInfo.memoryType].propertyFlags
+            & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0) {
+        return;
+    }
+
     if (bufferAllocation) {
         vmaInvalidateAllocation(device->getAllocator(), bufferAllocation, 0, bufferAllocationInfo.size);
     } else if (deviceMemory) {

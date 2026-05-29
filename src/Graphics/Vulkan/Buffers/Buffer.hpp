@@ -294,6 +294,7 @@ public:
      * The flag VK_ACCESS_HOST_WRITE_BIT should be used for operations on the GPU afterwards.
      */
     void flushMappedMemoryRanges();
+    void flushMappedMemoryRanges(VkDeviceSize numBytesToFlush);
 
     /**
      * If the memory used for buffer allocation does not have the MEMORY_PROPERTY_HOST_COHERENT_BIT flag bit set,
