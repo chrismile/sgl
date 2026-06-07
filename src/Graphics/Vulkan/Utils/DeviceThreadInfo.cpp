@@ -52,6 +52,7 @@ extern ze_device_handle_t g_zeDevice;
 
 static std::map<uint64_t, DeviceThreadInfo> deviceThreadInfoMap;
 
+#if defined(SUPPORT_CUDA_INTEROP) || (defined(VK_NV_cuda_kernel_launch) && defined(VK_NV_shader_sm_builtins))
 static uint32_t getNvidiaNumCoresPerMultiprocessor(uint32_t warpSize, uint32_t major, uint32_t minor) {
     // Use warp size * 4 as fallback for unknown architectures.
     auto numCoresPerMultiprocessor = warpSize * 4;
@@ -85,6 +86,7 @@ static uint32_t getNvidiaNumCoresPerMultiprocessor(uint32_t warpSize, uint32_t m
     }
     return numCoresPerMultiprocessor;
 }
+#endif
 
 DeviceThreadInfo getDeviceThreadInfo(sgl::vk::Device* device) {
     uint64_t deviceId = uint64_t(device->getDeviceId()) + (uint64_t(device->getVendorId()) << uint64_t(32));
