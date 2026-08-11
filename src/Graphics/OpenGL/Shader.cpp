@@ -73,9 +73,9 @@ void ShaderGL::setShaderText(const std::string &text) {
 
 bool ShaderGL::compile() {
     glCompileShader(shaderID);
-    GLint succes;
-    glGetShaderiv(shaderID, GL_COMPILE_STATUS, &succes);
-    if (!succes) {
+    GLint success;
+    glGetShaderiv(shaderID, GL_COMPILE_STATUS, &success);
+    if (!success) {
         GLint infoLogLength;
         glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &infoLogLength);
         GLchar* infoLog = new GLchar[infoLogLength + 1];
