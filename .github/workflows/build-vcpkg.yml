@@ -31,7 +31,7 @@ jobs:
       VCPKG_ROOT: ${{ github.workspace }}/third_party/vcpkg
       VCPKG_CACHE_DIR: ${{ github.workspace }}/third_party/vcpkg/bincache
       VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/third_party/vcpkg/bincache,readwrite
-      VCPKG_COMMIT_ID: "a9eee3b18df395dbb8be71a31bd78ea441056e42"
+      VCPKG_COMMIT_ID: "aae277acf4e7de287ddb5e208b5316614de6aad7"
 
     steps:
       - uses: actions/checkout@v2
