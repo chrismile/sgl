@@ -45,19 +45,24 @@ bool initializeLevelZeroAndFindMatchingDevice(
         initDriverTypeDesc.flags = ZE_INIT_DRIVER_TYPE_FLAG_GPU;
         zeResult = g_levelZeroFunctionTable.zeInitDrivers(
                 &driverCount, nullptr, &initDriverTypeDesc);
-        checkZeResult(zeResult, "Error in zeInitDrivers: ");
-        driverHandles = new ze_driver_handle_t[driverCount];
-        zeResult = g_levelZeroFunctionTable.zeInitDrivers(
-                &driverCount, driverHandles, &initDriverTypeDesc);
-        checkZeResult(zeResult, "Error in zeInitDrivers: ");
+        // Only call zeInitDrivers a second time if drivers exist; https://github.com/oneapi-src/level-zero/pull/435
+        if (driverCount > 0) {
+            checkZeResult(zeResult, "Error in zeInitDrivers: ");
+            driverHandles = new ze_driver_handle_t[driverCount];
+            zeResult = g_levelZeroFunctionTable.zeInitDrivers(
+                    &driverCount, driverHandles, &initDriverTypeDesc);
+            checkZeResult(zeResult, "Error in zeInitDrivers: ");
+        }
     } else {
         zeResult = g_levelZeroFunctionTable.zeInit(ZE_INIT_FLAG_GPU_ONLY);
         checkZeResult(zeResult, "Error in zeInit: ");
         zeResult = g_levelZeroFunctionTable.zeDriverGet(&driverCount, nullptr);
-        checkZeResult(zeResult, "Error in zeDriverGet: ");
-        driverHandles = new ze_driver_handle_t[driverCount];
-        zeResult = g_levelZeroFunctionTable.zeDriverGet(&driverCount, driverHandles);
-        checkZeResult(zeResult, "Error in zeDriverGet: ");
+        if (driverCount > 0) {
+            checkZeResult(zeResult, "Error in zeDriverGet: ");
+            driverHandles = new ze_driver_handle_t[driverCount];
+            zeResult = g_levelZeroFunctionTable.zeDriverGet(&driverCount, driverHandles);
+            checkZeResult(zeResult, "Error in zeDriverGet: ");
+        }
     }
 
     ze_device_luid_ext_properties_t zeDeviceLuidProperties{};
