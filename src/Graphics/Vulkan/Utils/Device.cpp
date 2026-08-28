@@ -1139,7 +1139,7 @@ void Device::setAppWantsMultithreadedRendering() {
 }
 
 void Device::createLogicalDeviceAndQueues(
-        VkPhysicalDevice physicalDevice, bool useValidationLayer, const std::vector<const char*>& layerNames,
+        VkPhysicalDevice physicalDevice,
         const std::vector<const char*>& deviceExtensions, const std::set<std::string>& deviceExtensionsSet,
         DeviceFeatures requestedDeviceFeatures, bool computeOnly) {
     vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
@@ -1865,17 +1865,11 @@ void Device::createLogicalDeviceAndQueues(
 
     VkDeviceCreateInfo deviceInfo{};
     deviceInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    deviceInfo.queueCreateInfoCount = (computeOnly || graphicsQueueIndex == computeQueueIndex) ? 1 : 2;
+    deviceInfo.queueCreateInfoCount = computeOnly || graphicsQueueIndex == computeQueueIndex ? 1 : 2;
     deviceInfo.pQueueCreateInfos = queueInfosPtr;
     deviceInfo.enabledExtensionCount = uint32_t(deviceExtensions.size());
     deviceInfo.ppEnabledExtensionNames = deviceExtensions.data();
     deviceInfo.pEnabledFeatures = &requestedDeviceFeatures.requestedPhysicalDeviceFeatures;
-    if (useValidationLayer) {
-        deviceInfo.enabledLayerCount = uint32_t(layerNames.size());
-        deviceInfo.ppEnabledLayerNames = layerNames.data();
-    } else {
-        deviceInfo.enabledLayerCount = 0;
-    }
 
     const void** pNextPtr = &deviceInfo.pNext;
     if (requestedDeviceFeatures.timelineSemaphoreFeatures.timelineSemaphore) {
@@ -2785,9 +2779,7 @@ void Device::createDeviceSwapchain(
     _getDeviceInformation();
 
     createLogicalDeviceAndQueues(
-            physicalDevice, instance->getUseValidationLayer(),
-            instance->getInstanceLayerNames(), enabledDeviceExtensionNames,
-            deviceExtensionsSet, requestedDeviceFeatures, computeOnly);
+            physicalDevice, enabledDeviceExtensionNames, deviceExtensionsSet, requestedDeviceFeatures, computeOnly);
 
     writeDeviceInfoToLog(enabledDeviceExtensionNames);
 
@@ -2823,9 +2815,7 @@ void Device::createDeviceHeadless(
     _getDeviceInformation();
 
     createLogicalDeviceAndQueues(
-            physicalDevice, instance->getUseValidationLayer(),
-            instance->getInstanceLayerNames(), enabledDeviceExtensionNames,
-            deviceExtensionsSet, requestedDeviceFeatures, computeOnly);
+            physicalDevice, enabledDeviceExtensionNames, deviceExtensionsSet, requestedDeviceFeatures, computeOnly);
 
     writeDeviceInfoToLog(enabledDeviceExtensionNames);
 
@@ -2870,9 +2860,7 @@ void Device::createDeviceHeadlessFromPhysicalDevice(
     _getDeviceInformation();
 
     createLogicalDeviceAndQueues(
-            physicalDevice, instance->getUseValidationLayer(),
-            instance->getInstanceLayerNames(), enabledDeviceExtensionNames,
-            deviceExtensionsSet, requestedDeviceFeatures, computeOnly);
+            physicalDevice, enabledDeviceExtensionNames, deviceExtensionsSet, requestedDeviceFeatures, computeOnly);
 
     writeDeviceInfoToLog(enabledDeviceExtensionNames);
 

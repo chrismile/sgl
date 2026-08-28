@@ -803,7 +803,7 @@ private:
     VmaPool createExternalMemoryHandlePool(uint32_t memoryTypeIndex);
 
     void createLogicalDeviceAndQueues(
-            VkPhysicalDevice physicalDevice, bool useValidationLayer, const std::vector<const char*>& layerNames,
+            VkPhysicalDevice physicalDevice,
             const std::vector<const char*>& deviceExtensions, const std::set<std::string>& deviceExtensionsSet,
             DeviceFeatures requestedDeviceFeatures, bool computeOnly);
     uint32_t findQueueFamilies(VkPhysicalDevice physicalDevice, VkQueueFlagBits queueFlags);
