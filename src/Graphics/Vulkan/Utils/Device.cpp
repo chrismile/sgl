@@ -2616,6 +2616,17 @@ void Device::_getDeviceInformation() {
         vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
     }
 #endif
+
+#ifdef VK_INTEL_device_info
+    if (isDeviceExtensionSupported(VK_INTEL_DEVICE_INFO_EXTENSION_NAME)) {
+        physicalDeviceInfoPropertiesINTEL = {};
+        physicalDeviceInfoPropertiesINTEL.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INFO_PROPERTIES_INTEL;
+        VkPhysicalDeviceProperties2 deviceProperties2 = {};
+        deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        deviceProperties2.pNext = &physicalDeviceInfoPropertiesINTEL;
+        vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
+    }
+#endif
 }
 
 #ifdef VK_NV_cooperative_matrix

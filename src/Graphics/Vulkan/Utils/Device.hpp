@@ -638,6 +638,11 @@ public:
         return shaderSMBuiltinsPropertiesNV;
     }
 #endif
+#ifdef VK_INTEL_device_info
+    [[nodiscard]] const VkPhysicalDeviceInfoPropertiesINTEL& getPhysicalDeviceInfoPropertiesINTEL() const {
+        return physicalDeviceInfoPropertiesINTEL;
+    }
+#endif
 
     [[nodiscard]] VkSampleCountFlagBits getMaxUsableSampleCount() const;
 
@@ -1014,6 +1019,11 @@ private:
 #else
     VkPhysicalDeviceShaderSMBuiltinsFeaturesNV_Compat shaderSMBuiltinsFeaturesNV{};
     VkPhysicalDeviceShaderSMBuiltinsPropertiesNV_Compat shaderSMBuiltinsPropertiesNV{};
+#endif
+#ifdef VK_INTEL_device_info
+    VkPhysicalDeviceInfoPropertiesINTEL physicalDeviceInfoPropertiesINTEL{};
+#else
+    VkPhysicalDeviceInfoPropertiesINTEL_Compat physicalDeviceInfoPropertiesINTEL{};
 #endif
 
     // Driver version string (mapped from VkPhysicalDeviceProperties::driverVersion).

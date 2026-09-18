@@ -537,4 +537,12 @@ typedef struct VkPhysicalDeviceShaderSMBuiltinsFeaturesNV_Compat {
     VkBool32           shaderSMBuiltins;
 } VkPhysicalDeviceShaderSMBuiltinsFeaturesNV_Compat;
 
+typedef struct VkPhysicalDeviceInfoPropertiesINTEL_Compat {
+    VkStructureType    sType;
+    void*              pNext;
+    uint32_t           deviceIpVersionArch;
+    uint32_t           deviceIpVersionRelease;
+    uint32_t           deviceIpVersionRevision;
+} VkPhysicalDeviceInfoPropertiesINTEL_Compat;
+
 #endif //SGL_VULKANCOMPAT_HPP
